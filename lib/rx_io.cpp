@@ -1,0 +1,211 @@
+
+
+/****************************************************************************
+*
+*  lib\rx_io.cpp
+*
+*  Copyright (c) 2017 Dusan Ciric
+*
+*  
+*  This file is part of rx-platform
+*
+*  
+*  rx-platform is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
+*  
+*  rx-platform is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*  
+*  You should have received a copy of the GNU General Public License
+*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  
+****************************************************************************/
+
+
+#include "stdafx.h"
+
+
+// rx_io
+#include "lib/rx_io.h"
+
+
+
+namespace rx {
+
+namespace io {
+int dispatcher_accept_callback(void* data, dword status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_accept_callback(handle, (sockaddr_in*)addr, (sockaddr_in*)local_addr, status);
+	whose->release();
+	return ret;
+}
+int dispatcher_shutdown_callback(void* data, dword status)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_shutdown_callback(status);
+	whose->release();
+	return ret;
+}
+
+int dispatcher_read_callback(void* data, dword status, size_t size)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_read_callback(size, status);
+	whose->release();
+	return ret;
+}
+int dispatcher_write_callback(void* data, dword status)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_write_callback(status);
+	whose->release();
+	return ret;
+}
+int dispatcher_connect_callback(void* data, dword status)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_connect_callback(status);
+	whose->release();
+	return ret;
+}
+
+// Class rx::io::dispatcher_subscriber 
+
+time_aware_subscribers_type dispatcher_subscriber::m_time_aware_subscribers;
+
+locks::lockable dispatcher_subscriber::m_time_aware_subscribers_lock;
+
+dispatcher_subscriber::dispatcher_subscriber (rx_thread_handle_t destination)
+      : m_dispatcher_handle(0),
+        m_destination_context(destination)
+{
+	memzero(&m_dispatcher_data, sizeof(m_dispatcher_data));
+
+	m_dispatcher_data.read_callback = dispatcher_read_callback;
+	m_dispatcher_data.write_callback = dispatcher_write_callback;
+	m_dispatcher_data.connect_callback = dispatcher_connect_callback;
+	m_dispatcher_data.accept_callback = dispatcher_accept_callback;
+	m_dispatcher_data.shutdown_callback = dispatcher_shutdown_callback;
+}
+
+
+dispatcher_subscriber::~dispatcher_subscriber()
+{
+}
+
+
+
+bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool::smart_ptr& dispatcher)
+{
+	dword ret = rx_dispatcher_register(dispatcher->m_dispatcher, &m_dispatcher_data);
+	if (ret)
+	{
+		m_disptacher = dispatcher;
+		m_dispatcher_handle = dispatcher->m_dispatcher;
+	}
+	return ret != 0;
+}
+
+bool dispatcher_subscriber::disconnect_dispatcher ()
+{
+	int ret = rx_dispatcher_unregister(m_dispatcher_handle, &m_dispatcher_data);
+	if(ret>0)
+	{
+        for(int i=0; i<ret; i++)
+        {
+            release();
+        }
+	}
+	return ret >= 0;
+}
+
+void dispatcher_subscriber::register_timed ()
+{
+	locks::auto_lock dummy(&m_time_aware_subscribers_lock);
+	m_time_aware_subscribers.emplace(smart_this());
+}
+
+void dispatcher_subscriber::unregister_timed ()
+{
+	locks::auto_lock dummy(&m_time_aware_subscribers_lock);
+	m_time_aware_subscribers.erase(smart_this());
+}
+
+void dispatcher_subscriber::propagate_timer ()
+{
+	dword tick = rx_get_tick_count();
+	m_time_aware_subscribers_lock.lock();
+	std::vector<dispatcher_subscriber::smart_ptr> helper;
+	helper.reserve(m_time_aware_subscribers.size());
+	for (auto one : m_time_aware_subscribers)
+	{
+		helper.emplace_back(one);
+	}
+	m_time_aware_subscribers_lock.unlock();
+	for (auto one : helper)
+		one->timer_tick(tick);
+}
+
+void dispatcher_subscriber::timer_tick (dword tick)
+{
+}
+
+int dispatcher_subscriber::internal_read_callback (size_t count, dword status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::internal_write_callback (dword status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::internal_shutdown_callback (dword status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::_internal_read_callback (size_t count, dword status)
+{
+	return internal_read_callback(count, status);
+}
+
+int dispatcher_subscriber::_internal_write_callback (dword status)
+{
+	return internal_write_callback(status);
+}
+
+int dispatcher_subscriber::_internal_shutdown_callback (dword status)
+{
+	return internal_shutdown_callback(status);
+}
+
+int dispatcher_subscriber::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::_internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
+{
+	return internal_accept_callback(handle, addr, local_addr, status);
+}
+
+int dispatcher_subscriber::internal_connect_callback (dword status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::_internal_connect_callback (dword status)
+{
+	return internal_connect_callback(status);
+}
+
+
+} // namespace io
+} // namespace rx
+
