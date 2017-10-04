@@ -119,10 +119,12 @@ void py_script::do_testing_stuff ()
 
 bool py_script::init_thread ()
 {
+	return false;
 }
 
 bool py_script::deinit_thread ()
 {
+	return false;
 }
 
 
