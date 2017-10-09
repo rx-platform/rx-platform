@@ -33,13 +33,7 @@
 
 
 
-
-
-#define RX_HAL_NAME "Win32"
-#define RX_HAL_MAJOR_VERSION 0
-#define RX_HAL_MINOR_VERSION 8
-#define RX_HAL_BUILD_NUMBER 1
-
+#include "rx_win32_version.h"
 
 //#pragma warning ( disable : 4786 )
 

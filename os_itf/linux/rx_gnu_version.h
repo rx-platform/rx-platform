@@ -1,8 +1,8 @@
 #pragma once
 
-
-#define RX_GNU_MAJOR_VERSION 0
-#define RX_GNU_MINOR_VERSION 5
-#define RX_GNU_BUILD_NUMBER 0
+#define RX_HAL_NAME "GNU"
+#define RX_HAL_MAJOR_VERSION 0
+#define RX_HAL_MINOR_VERSION 8
+#define RX_HAL_BUILD_NUMBER 1
 
 
