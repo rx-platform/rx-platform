@@ -157,6 +157,12 @@ class rx_server : public security::secured_object
       }
 
 
+      const string_type& get_hal_version () const
+      {
+        return m_hal_version;
+      }
+
+
 
   protected:
 
@@ -198,6 +204,8 @@ class rx_server : public security::secured_object
       string_type m_rx_name;
 
       string_type m_comp_version;
+
+      string_type m_hal_version;
 
 
 };

@@ -136,7 +136,11 @@ void interactive_console_host::main (interactive_console_host& host)
 
 const string_type& interactive_console_host::get_host_info ()
 {
-	static string_type ret=CREATE_MODULE_VERSION("Interactive Console Host Ver 0.8.0");
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, "Interactive Console Host Ver 0.8.1");
+	}
 	return ret;
 }
 

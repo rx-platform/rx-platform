@@ -1,0 +1,8 @@
+#pragma once
+
+
+#define RX_WIN32_MAJOR_VERSION 0
+#define RX_WIN32_MINOR_VERSION 5
+#define RX_WIN32_BUILD_NUMBER 0
+
+

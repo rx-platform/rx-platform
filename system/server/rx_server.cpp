@@ -51,13 +51,16 @@ rx_server::rx_server()
 	rx_collect_system_info(buff, 0x100);
 	m_os_info = buff;
 
-	m_rx_version = RX_SERVER_NAME " Ver ";
-	sprintf(buff,"%d.%d.%d", RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
-	m_rx_version += CREATE_MODULE_VERSION(buff);
+	m_rx_version =  " Ver ";
+	sprintf(buff,"%s Ver %d.%d.%d", RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
+	{
+		ASSIGN_MODULE_VERSION(m_rx_version, buff);
+	}
 	m_rx_name = rx_get_server_name();
-
-	sprintf(buff, "%d.%d.%d", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER);
-	m_lib_version = CREATE_MODULE_VERSION(buff);
+	m_lib_version = g_lib_version;
+	m_hal_version = g_ositf_version;
+	
+	
 
 	sprintf(buff, "%s %d.%d.%d",
 		RX_COMPILER_NAME,

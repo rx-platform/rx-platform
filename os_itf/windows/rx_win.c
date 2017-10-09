@@ -32,7 +32,7 @@
 // rx_win
 #include "os_itf/windows/rx_win.h"
 
-
+#include "version/rx_version.h"
 #include "os_itf/rx_ositf.h"
 
 #include <process.h>
@@ -267,8 +267,16 @@ const char* rx_get_server_name()
 
 extern HCRYPTPROV hcrypt;
 
+const char* g_ositf_version = "ERROR!!!";
+char ver_buffer[0x100];
+
 void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
+	char temp[0x20];
+	sprintf(temp, "%s Ver %d.%d.%d", RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER);
+	create_module_version_string(temp, __DATE__, __TIME__, ver_buffer);
+	g_ositf_version = ver_buffer;
+
 	rx_server_name = server_name;
 	rx_tls = tls;
 	// determine big endian or little endian
@@ -719,6 +727,12 @@ void rx_collect_memory_info(qword* total, qword* free)
 
 	*total = statex.ullTotalPhys;
 	*free = statex.ullAvailPhys;
+}
+
+
+void rx_collect_code_info(char* buffer, size_t buffer_size)
+{
+	create_module_version_string("Win32 0.8.1", __DATE__, __TIME__, buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

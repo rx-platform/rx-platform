@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,7 +31,7 @@
 // rx_linux
 #include "os_itf/linux/rx_linux.h"
 
-
+#include "version/rx_version.h"
 #include "os_itf/rx_ositf.h"
 #include <pthread.h>
 #include <ctype.h>
@@ -88,8 +88,19 @@ extern "C" {
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//
+
+	const char* g_ositf_version = "ERROR!!!";
+	char ver_buffer[0x100];
+
 	void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
 	{
+
+		char temp[0x20];
+		sprintf(temp, "%s Ver %d.%d.%d", RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER);
+		create_module_version_string(temp, __DATE__, __TIME__, ver_buffer);
+		g_ositf_version = ver_buffer;
+
+
         rx_server_name=server_name;
 		rx_tls = tls;
 		// determine big endian or little endian
@@ -499,6 +510,12 @@ extern "C" {
             free(cores);
         }
 	}
+
+	void rx_collect_code_info(char* buffer, size_t buffer_size)
+	{
+		create_module_version_string("GNU 0.8.1", __DATE__, __TIME__, buffer);
+	}
+
 	void rx_collect_memory_info(qword* total, qword* free)
 	{
         struct sysinfo info;

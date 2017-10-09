@@ -698,7 +698,11 @@ void telnet_client::send_string_response (const string_type& line, bool with_pro
 
 const string_type& telnet_client::get_console_name ()
 {
-	static string_type ret(CREATE_MODULE_VERSION(BASIC_TERMINAL_DATA));
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret,BASIC_TERMINAL_DATA);
+	}
 	return ret;
 }
 
@@ -1221,6 +1225,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	out << "Engine Name: " << rx_server::instance().get_rx_name() << "\r\n";
 	out << "Engine Version: " << rx_server::instance().get_rx_version() << "\r\n";
 	out << "Library Version: " << rx_server::instance().get_lib_version() << "\r\n";
+	out << "OS/HW Interface: " << rx_server::instance().get_hal_version() << "\r\n";
 	out << "Compiler: " << rx_server::instance().get_comp_version() << "\r\n";
 
 	out << "Host: " << rx_server::instance().get_host_info() << "\r\nOS: " << rx_server::instance().get_os_info() << "\r\n";

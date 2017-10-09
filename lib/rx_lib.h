@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,7 +31,8 @@
 
 
 
-
+#include "rx_lib_version.h"
+#include "version/rx_version.h"
 
 #define DEFAULT_NAMESPACE 1
 #define DEFAULT_OPC_NAMESPACE 0
@@ -98,16 +99,14 @@ private:
 };
 
 extern const char* g_complie_time;
+extern const char* g_lib_version;
 
 
 string_type& to_upper(string_type& str);
 
 string_type get_code_module(const string_type& full);
 
-string_type create_module_compile_time_string(const string_type& date, const string_type& time);
-string_type create_module_version_string(const string_type& prefix, const string_type& date, const string_type& time);
 
-#define CREATE_MODULE_VERSION(arg) (create_module_version_string(arg,__DATE__,__TIME__))
 
 #include "lib/rx_lib.h"
 
@@ -122,6 +121,8 @@ public:\
 		}\
 	void fill_code_info(std::ostream& info,const string_type& name)\
 	{\
+		char compile_buffer[0x100];\
+		create_module_compile_time_string(__DATE__, __TIME__,compile_buffer);\
 		string_type pera=g_complie_time;\
 		string_type temp="aaa";\
 		info << "CODE INFO" << "\r\n";\
@@ -134,7 +135,7 @@ public:\
 		info << smart_ptr::get_pointee_class_name(); \
 		info << "\r\n";\
 		info << "version    : "<< version << "\r\n";\
-		info << "compiled   : " << create_module_compile_time_string(__DATE__,__TIME__) << "\r\n";\
+		info << "compiled   : " << compile_buffer << "\r\n";\
 		info << "comment\r\n";\
 		info << "/*\r\n";\
 		info << comment << "\r\n";\

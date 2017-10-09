@@ -32,6 +32,7 @@
 // rx_lib
 #include "lib/rx_lib.h"
 
+#include "version/rx_version.h"
 
 #define MS_IN_DAY (1000*60*60*24)
 #define MS_START_1984 0x00000afe0bd9e400L
@@ -495,8 +496,31 @@ void rx_node_id::set_node_type(rx_node_id_type value)
 	m_node_type = value;
 }
 
+const char* g_complie_time;
+const char* g_lib_version;
 
-const char* g_complie_time = create_module_compile_time_string(__DATE__, __TIME__).c_str();
+namespace
+{
+	class dummy_starter
+	{
+	public:
+
+		char compile_buffer[0x100];
+		char version_buffer[0x100];
+		dummy_starter()
+		{
+			char buff[0x100];
+			create_module_compile_time_string(__DATE__, __TIME__, compile_buffer);
+			g_complie_time = compile_buffer;
+			sprintf(buff, "%d.%d.%d", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER);
+			create_module_version_string(buff, __DATE__, __TIME__, version_buffer);
+			g_lib_version = version_buffer;
+		}
+	};
+
+	dummy_starter g_obj;
+}
+
 
 string_type& to_upper(string_type& str)
 {
@@ -534,122 +558,6 @@ string_type get_code_module(const string_type& full)
 	}
 	return full;
 }
-
-string_type create_module_compile_time_string(const string_type& date, const string_type& time)
-{
-	{
-		char buff[0x100];
-
-		int year;
-		int month;
-		int day;
-		int hour = 0;
-		int minute;
-		int second;
-		char delimeter;
-
-		std::stringstream stream(time);
-		stream >> hour;
-		stream >> delimeter;
-		stream >> minute;
-		stream >> delimeter;
-		stream >> second;
-
-		std::string str;
-
-		std::stringstream streamd(date);
-		streamd >> str;
-		streamd >> day;
-		streamd >> year;
-		if (str == "Jan")
-			month = 1;
-		if (str == "Feb")
-			month = 2;
-		if (str == "Mar")
-			month = 3;
-		if (str == "Apr")
-			month = 4;
-		if (str == "May")
-			month = 5;
-		if (str == "Jun")
-			month = 6;
-		if (str == "Jul")
-			month = 7;
-		if (str == "Aug")
-			month = 8;
-		if (str == "Sep")
-			month = 9;
-		if (str == "Oct")
-			month = 10;
-		if (str == "Nov")
-			month = 11;
-		if (str == "Dec")
-			month = 12;
-
-		sprintf(buff, "%04d-%02d-%02d %02d:%02d:%02d",
-			year, month,
-			day, hour, minute, minute);
-		return string_type(buff);
-	}
-}
-
-string_type create_module_version_string(const string_type& prefix, const string_type& date, const string_type& time)
-{
-	char buff[0x100];
-
-	int year;
-	int month;
-	int day;
-	int hour = 0;
-	int minute;
-	int second;
-	char delimeter;
-
-	std::stringstream stream(time);
-	stream >> hour;
-	stream >> delimeter;
-	stream >> minute;
-	stream >> delimeter;
-	stream >> second;
-
-	std::string str;
-
-	std::stringstream streamd(date);
-	streamd >> str;
-	streamd >> day;
-	streamd >> year;
-	if (str == "Jan")
-		month = 1;
-	if (str == "Feb")
-		month = 2;
-	if (str == "Mar")
-		month = 3;
-	if (str == "Apr")
-		month = 4;
-	if (str == "May")
-		month = 5;
-	if (str == "Jun")
-		month = 6;
-	if (str == "Jul")
-		month = 7;
-	if (str == "Aug")
-		month = 8;
-	if (str == "Sep")
-		month = 9;
-	if (str == "Oct")
-		month = 10;
-	if (str == "Nov")
-		month = 11;
-	if (str == "Dec")
-		month = 12;
-
-	sprintf(buff, "%s.%d%04d", prefix.c_str(),
-		(year) , month * 100 + day);
-	return string_type(buff);
-}
-
-
-
 
 namespace
 {

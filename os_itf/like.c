@@ -1,9 +1,14 @@
 
+
 /****************************************************************************
 *
-*  os_itf\like.c - Copyright (c) 2017 Dusan Ciric
+*  os_itf\like.c
+*
+*  Copyright (c) 2017 Dusan Ciric
+*
 *
 *  This file is part of rx-platform
+*
 *
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -21,6 +26,11 @@
 ****************************************************************************/
 
 
+
+
+
+
+
 //*************************************************************************
 // I don't know whose code is this and where did i get it...
 // It's a good peace of code!
@@ -28,7 +38,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-int ConvertCase( int c, int bCaseSensitive )
+int ConvertCase(int c, int bCaseSensitive)
 {
 	return bCaseSensitive ? c : toupper(c);
 }
@@ -40,16 +50,16 @@ int ConvertCase( int c, int bCaseSensitive )
 // -- uses Visual Basic LIKE operator syntax
 // CAUTION: Function is recursive
 //*************************************************************************
-int match_pattern( const char *string, const char *Pattern, int bCaseSensitive )
+int match_pattern(const char *string, const char *Pattern, int bCaseSensitive)
 {
-	if( !string )
+	if (!string)
 		return 0;
-	if( !Pattern )
+	if (!Pattern)
 		return 1;
 	char   c, p, l;
 	for (; ;)
 	{
-		switch (p = ConvertCase( *Pattern++, bCaseSensitive ) )
+		switch (p = ConvertCase(*Pattern++, bCaseSensitive))
 		{
 		case 0:                             // end of pattern
 			return *string ? 0 : 1;  // if end of string TRUE
@@ -68,22 +78,22 @@ int match_pattern( const char *string, const char *Pattern, int bCaseSensitive )
 			break;
 
 		case '[':
-			if ( (c = ConvertCase( *string++, bCaseSensitive) ) == 0)      // match char set
+			if ((c = ConvertCase(*string++, bCaseSensitive)) == 0)      // match char set
 				return 0;                   // syntax
 			l = 0;
-			if( *Pattern == '!' )  // match a char if NOT in set []
+			if (*Pattern == '!')  // match a char if NOT in set []
 			{
 				++Pattern;
 
-				while( (p = ConvertCase( *Pattern++, bCaseSensitive) ) != '\0' )
+				while ((p = ConvertCase(*Pattern++, bCaseSensitive)) != '\0')
 				{
 					if (p == ']')               // if end of char set, then
 						break;           // no match found
 
 					if (p == '-')
 					{            // check a range of chars?
-						p = ConvertCase( *Pattern, bCaseSensitive );   // get high limit of range
-						if (p == 0  ||  p == ']')
+						p = ConvertCase(*Pattern, bCaseSensitive);   // get high limit of range
+						if (p == 0 || p == ']')
 							return 0;           // syntax
 
 						if (c >= l  &&  c <= p)
@@ -96,15 +106,15 @@ int match_pattern( const char *string, const char *Pattern, int bCaseSensitive )
 			}
 			else	// match if char is in set []
 			{
-				while( (p = ConvertCase( *Pattern++, bCaseSensitive) ) != '\0' )
+				while ((p = ConvertCase(*Pattern++, bCaseSensitive)) != '\0')
 				{
 					if (p == ']')               // if end of char set, then
 						return 0;           // no match found
 
 					if (p == '-')
 					{            // check a range of chars?
-						p = ConvertCase( *Pattern, bCaseSensitive );   // get high limit of range
-						if (p == 0  ||  p == ']')
+						p = ConvertCase(*Pattern, bCaseSensitive);   // get high limit of range
+						if (p == 0 || p == ']')
 							return 0;           // syntax
 
 						if (c >= l  &&  c <= p)
@@ -123,18 +133,21 @@ int match_pattern( const char *string, const char *Pattern, int bCaseSensitive )
 
 		case '#':
 			c = *string++;
-			if( !isdigit( c ) )
+			if (!isdigit(c))
 				return 0;		// not a digit
 
 			break;
 
 		default:
-			c = ConvertCase( *string++, bCaseSensitive );
-			if( c != p )            // check for exact char
+			c = ConvertCase(*string++, bCaseSensitive);
+			if (c != p)            // check for exact char
 				return 0;                   // not a match
 
 			break;
 		}
 	}
 }
+
+
+
 
