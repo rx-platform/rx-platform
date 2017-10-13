@@ -146,7 +146,7 @@ class cpp_classes_manager
 
 
 
-      definitions_type m_definitions;
+      definitions_type _definitions;
 
 
 };

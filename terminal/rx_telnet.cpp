@@ -338,11 +338,11 @@ io::tcp_socket_str_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 // Class terminal::console::telnet_client 
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
-      : m_security_context(*addr,*local_addr),
-        m_send_echo(false),
-        m_cancel_current(false),
-        m_verified(false),
-        m_exit(false)
+      : _security_context(*addr,*local_addr),
+        _send_echo(false),
+        _cancel_current(false),
+        _verified(false),
+        _exit(false)
   , io::tcp_socket_str_buffer(handle, addr,local_addr, dispatcher)
 {
 }
@@ -365,18 +365,18 @@ bool telnet_client::on_startup (rx_thread_handle_t destination)
 
 void telnet_client::on_shutdown (rx_thread_handle_t destination)
 {
-	m_security_context->logout();
+	_security_context->logout();
 }
 
 telnet_client::buffer_ptr telnet_client::get_free_buffer ()
 {
-	locks::auto_slim_lock dummy(&m_buffers_lock);
-	if (m_buffers.empty())
+	locks::auto_slim_lock dummy(&_buffers_lock);
+	if (_buffers.empty())
 		return buffer_ptr(pointers::_create_new);
 	else
 	{
-		buffer_ptr ret(m_buffers.top());
-		m_buffers.pop();
+		buffer_ptr ret(_buffers.top());
+		_buffers.pop();
 		return ret;
 	}
 }
@@ -387,24 +387,24 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 	if (!is_postponed() && (buff[0] == 13 || buff[0]==3))
 	{
 		idx++;
-		if (m_verified && m_send_echo)
+		if (_verified && _send_echo)
 		{
 			buffer_ptr buff = get_free_buffer();
 			buff->push_data("\r\n", 2);
 			send(buff);
 		}
-		std::string temp = m_receiving_string;
-		m_receiving_string.clear();
+		std::string temp = _receiving_string;
+		_receiving_string.clear();
 
-		if (!m_verified)
+		if (!_verified)
 		{
-			m_verified = true;
+			_verified = true;
 
 			if (temp == MY_PASSWORD)
 			{
-				m_security_context->login();
+				_security_context->login();
 
-				security::security_auto_context dummy(m_security_context);
+				security::security_auto_context dummy(_security_context);
 
 				buffer_ptr buff = get_free_buffer();
 
@@ -438,7 +438,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		else
 		{
 
-			security::security_auto_context dummy(m_security_context);
+			security::security_auto_context dummy(_security_context);
 
 			buffer_ptr out_buffer = get_free_buffer();
 			std::ostream out(out_buffer.unsafe_ptr());
@@ -477,21 +477,21 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 
 
-			bool ret = do_command(temp, out_buffer, err_buffer,*m_security_context);
+			bool ret = do_command(temp, out_buffer, err_buffer,*_security_context);
 
 			if (ret)
 			{// success, out buffer is active
 
 				if (is_postponed())
 				{// async stuff, nothing to do
-					locks::auto_slim_lock dummy(&m_buffers_lock);
-					m_buffers.push(err_buffer);
-					m_buffers.push(out_buffer);
+					locks::auto_slim_lock dummy(&_buffers_lock);
+					_buffers.push(err_buffer);
+					_buffers.push(out_buffer);
 					return true;
 				}
 				else
 				{
-					if (m_exit)
+					if (_exit)
 					{
 						send(out_buffer);
 						send(buffer_ptr::null_ptr);// exit the loop
@@ -540,9 +540,9 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			{
 				if (buff[1] == DONT)
 				{
-					if (m_send_echo)
+					if (_send_echo)
 					{
-						m_send_echo = false;
+						_send_echo = false;
 						char resp[] = { IAC, WONT, ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
@@ -552,9 +552,9 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				}
 				else if (buff[1] == DO)
 				{
-					if (!m_send_echo)
+					if (!_send_echo)
 					{
-						m_send_echo = true;
+						_send_echo = true;
 						char resp[] = { IAC, WILL, ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
@@ -582,11 +582,11 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			case BRK:
 			case IP:
 			case EL:
-				m_cancel_current = true;
+				_cancel_current = true;
 				send_string_response("\r\nCanceling...\r\n", false);
 				break;
 			case AYT:
-				m_cancel_current = true;
+				_cancel_current = true;
 				send_string_response("\r\nHello!\r\n");
 				break;
 			}
@@ -600,10 +600,10 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		if (buff[0] == 8 || buff[0]==0x7f) // backspace ( delete on linux )
 		{
 			// backspace pressed
-			if (m_receiving_string.size() > 0)
+			if (_receiving_string.size() > 0)
 			{
 				// cut off one char
-				m_receiving_string = m_receiving_string.substr(0, m_receiving_string.size() - 1);
+				_receiving_string = _receiving_string.substr(0, _receiving_string.size() - 1);
 				echo_buff[0] = 8;
 				echo_buff[1] = 32;
 				echo_buff[2] = 8;
@@ -648,7 +648,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		{
 
 			// ordinary char pressed
-			if (!m_verified)
+			if (!_verified)
 			{
 				if (buff[0] >= 0x20)// no special characters
 				{
@@ -656,7 +656,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 					strcpy(echo_buff, "*");
 					size_of_echo_buff = 1;
 					// add to result buffer
-					m_receiving_string += buff[0];
+					_receiving_string += buff[0];
 				}
 			}
 			else
@@ -666,13 +666,13 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				size_of_echo_buff = 1;
 				// add to result buffer
 
-				m_receiving_string += buff[0];
+				_receiving_string += buff[0];
 			}
 		}
 		idx++;
 
 		// echo
-		if (m_send_echo && size_of_echo_buff)
+		if (_send_echo && size_of_echo_buff)
 		{
 			buffer_ptr buff = get_free_buffer();
 			buff->push_data(echo_buff, size_of_echo_buff);
@@ -708,7 +708,7 @@ const string_type& telnet_client::get_console_name ()
 
 void telnet_client::exit_console ()
 {
-	m_exit = true;
+	_exit = true;
 }
 
 bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t destination)
@@ -731,9 +731,9 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 
 void telnet_client::release_buffer (buffer_ptr what)
 {
-	locks::auto_slim_lock dummy(&m_buffers_lock);
+	locks::auto_slim_lock dummy(&_buffers_lock);
 	what->reinit();
-	m_buffers.push(what);
+	_buffers.push(what);
 }
 
 
@@ -745,12 +745,12 @@ telnet_security_context::telnet_security_context()
 
 telnet_security_context::telnet_security_context (const sockaddr_in& addr, const sockaddr_in& local_addr)
 {
-	m_location = inet_ntoa(addr.sin_addr);
-	m_port = "telnet@TCP/IP[";
-	m_port += inet_ntoa(local_addr.sin_addr);
-	m_port += "]";
-	m_user_name += "console";
-	m_full_name = "console@" + m_location;
+	_location = inet_ntoa(addr.sin_addr);
+	_port = "telnet@TCP/IP[";
+	_port += inet_ntoa(local_addr.sin_addr);
+	_port += "]";
+	_user_name += "console";
+	_full_name = "console@" + _location;
 
 }
 

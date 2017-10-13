@@ -174,7 +174,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       const rx_time get_created () const
       {
-        return m_created;
+        return _created;
       }
 
 
@@ -184,18 +184,18 @@ class rx_server_directory : public rx::pointers::reference_object
   private:
 
 
-      rx_server_directory::smart_ptr m_parent;
+      rx_server_directory::smart_ptr _parent;
 
-      sub_directories_type m_sub_directories;
+      sub_directories_type _sub_directories;
 
-      sub_items_type m_sub_items;
+      sub_items_type _sub_items;
 
 
-      string_type m_name;
+      string_type _name;
 
-      rx_time m_created;
+      rx_time _created;
 
-      rx::locks::slim_lock m_structure_lock;
+      rx::locks::slim_lock _structure_lock;
 
 
 };
@@ -257,10 +257,10 @@ class rx_server_item : public rx::pointers::virtual_reference_object
   private:
 
 
-      rx_server_directory::smart_ptr m_parent;
+      rx_server_directory::smart_ptr _parent;
 
 
-      locks::lockable m_item_lock;
+      locks::lockable _item_lock;
 
 
 };

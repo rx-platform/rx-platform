@@ -43,12 +43,12 @@ namespace internal_ns {
 
 // Class sys_internal::internal_ns::root_server_directory 
 
-server_directories_type root_server_directory::m_root_directories;
+server_directories_type root_server_directory::_root_directories;
 
-server_items_type root_server_directory::m_root_items;
+server_items_type root_server_directory::_root_items;
 
 root_server_directory::root_server_directory()
-	: rx_server_directory("",m_root_directories,m_root_items)
+	: rx_server_directory("",_root_directories,_root_items)
 {
 }
 
@@ -74,14 +74,14 @@ void root_server_directory::initialize (host::rx_server_host* host, namespace_da
 
 
 
-	m_root_directories.push_back(world);
+	_root_directories.push_back(world);
 
 	dirs.clear();
 	items.clear();	
 	items.push_back(rx_server::instance().get_manager().get_unassigned_app());
 	items.push_back(rx_server::instance().get_manager().get_unassigned_domain());
 	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
-	m_root_directories.push_back(unassigned);
+	_root_directories.push_back(unassigned);
 
 	dirs.clear();
 	items.clear();
@@ -148,10 +148,7 @@ void root_server_directory::initialize (host::rx_server_host* host, namespace_da
 
 	namespace_directory::smart_ptr sys(RX_NS_SYS_NAME, dirs, items);
 
-	m_root_directories.push_back(sys);
-
-
-
+	_root_directories.push_back(sys);
 
 }
 

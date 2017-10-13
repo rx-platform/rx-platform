@@ -49,7 +49,6 @@ class interactive_console_host;
 using namespace rx;
 using namespace server;
 
-void test_timers();
 
 
 namespace host {
@@ -119,10 +118,10 @@ class interactive_console_client : public server::prog::console_client
   private:
 
 
-      interactive_security_context::smart_ptr m_security_context;
+      interactive_security_context::smart_ptr _security_context;
 
 
-      bool m_exit;
+      bool _exit;
 
 
 };
@@ -162,7 +161,9 @@ class interactive_console_host : public rx_server_host
   private:
 
 
-      bool m_exit;
+      bool _exit;
+
+      server::objects::server_const_value_item<bool> _testBool;
 
 
 };

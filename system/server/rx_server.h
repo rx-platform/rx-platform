@@ -104,62 +104,62 @@ class rx_server : public security::secured_object
 
       runtime::server_rt& get_runtime ()
       {
-        return m_runtime;
+        return _runtime;
       }
 
 
       mngt::server_manager& get_manager ()
       {
-        return m_manager;
+        return _manager;
       }
 
 
 
       const rx_time get_started () const
       {
-        return m_started;
+        return _started;
       }
 
 
       const string_type& get_os_info () const
       {
-        return m_os_info;
+        return _os_info;
       }
 
 
       const string_type& get_rx_version () const
       {
-        return m_rx_version;
+        return _rx_version;
       }
 
 
       const string_type& get_lib_version () const
       {
-        return m_lib_version;
+        return _lib_version;
       }
 
 
       const string_type& get_host_info () const
       {
-        return m_host_info;
+        return _host_info;
       }
 
 
       const string_type& get_rx_name () const
       {
-        return m_rx_name;
+        return _rx_name;
       }
 
 
       const string_type& get_comp_version () const
       {
-        return m_comp_version;
+        return _comp_version;
       }
 
 
       const string_type& get_hal_version () const
       {
-        return m_hal_version;
+        return _hal_version;
       }
 
 
@@ -178,34 +178,34 @@ class rx_server : public security::secured_object
 
 
 
-      runtime::server_rt m_runtime;
+      runtime::server_rt _runtime;
 
-      ns::rx_server_directory::smart_ptr m_root;
+      ns::rx_server_directory::smart_ptr _root;
 
-      mngt::server_manager m_manager;
+      mngt::server_manager _manager;
 
-      host::rx_server_host *m_host;
+      host::rx_server_host *_host;
 
-      scripts_type m_scripts;
+      scripts_type _scripts;
 
 
       static rx_server* g_instance;
 
-      rx_time m_started;
+      rx_time _started;
 
-      string_type m_os_info;
+      string_type _os_info;
 
-      string_type m_rx_version;
+      string_type _rx_version;
 
-      string_type m_lib_version;
+      string_type _lib_version;
 
-      string_type m_host_info;
+      string_type _host_info;
 
-      string_type m_rx_name;
+      string_type _rx_name;
 
-      string_type m_comp_version;
+      string_type _comp_version;
 
-      string_type m_hal_version;
+      string_type _hal_version;
 
 
 };

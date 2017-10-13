@@ -76,7 +76,7 @@ and general usage thread pool resources\r\n\
 
       rx::threads::dispatcher_pool::smart_ptr get_pool ()
       {
-        return m_pool;
+        return _pool;
       }
 
 
@@ -89,10 +89,10 @@ and general usage thread pool resources\r\n\
   private:
 
 
-      rx::threads::dispatcher_pool::smart_ptr m_pool;
+      rx::threads::dispatcher_pool::smart_ptr _pool;
 
 
-      objects::server_const_value_item<dword> m_threads_count;
+      objects::server_const_value_item<dword> _threads_count;
 
 
 };
@@ -167,10 +167,10 @@ thread pool resources\r\n\
   private:
 
 
-      workers_type m_workers;
+      workers_type _workers;
 
 
-      objects::server_const_value_item<dword> m_pool_size;
+      objects::server_const_value_item<dword> _pool_size;
 
 
 };
@@ -239,19 +239,19 @@ callcualation ( normal priority)");
 
       server_dispatcher_object::smart_ptr get_io_pool ()
       {
-        return m_io_pool;
+        return _io_pool;
       }
 
 
       const server_dispatcher_object::smart_ptr get_general_pool () const
       {
-        return m_general_pool;
+        return _general_pool;
       }
 
 
       const domains_pool::smart_ptr get_workers () const
       {
-        return m_workers;
+        return _workers;
       }
 
 
@@ -270,17 +270,17 @@ callcualation ( normal priority)");
   private:
 
 
-      rx::threads::timer::smart_ptr m_general_timer;
+      rx::threads::timer::smart_ptr _general_timer;
 
-      rx::threads::timer::smart_ptr m_callculation_timer;
+      rx::threads::timer::smart_ptr _callculation_timer;
 
-      server_dispatcher_object::smart_ptr m_io_pool;
+      server_dispatcher_object::smart_ptr _io_pool;
 
-      server_dispatcher_object::smart_ptr m_general_pool;
+      server_dispatcher_object::smart_ptr _general_pool;
 
-      dispatcher_subscribers_job::smart_ptr m_dispatcher_timer;
+      dispatcher_subscribers_job::smart_ptr _dispatcher_timer;
 
-      domains_pool::smart_ptr m_workers;
+      domains_pool::smart_ptr _workers;
 
 
 };

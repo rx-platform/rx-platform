@@ -102,7 +102,7 @@ class value_item
   private:
 
 
-      static const dword m_type_id;
+      static const dword _type_id;
 
 
 };
@@ -133,7 +133,7 @@ class const_value_item
   private:
 
 
-      static const dword m_type_id;
+      static const dword _type_id;
 
 
 };
@@ -187,9 +187,9 @@ class server_const_value_item : public const_value_item
   private:
 
 
-      simple_const_value<valT> m_storage;
+      simple_const_value<valT> _storage;
 
-      std::atomic<ref_counting_type> m_ref_count;
+      std::atomic<ref_counting_type> _ref_count;
 
 
 };
@@ -272,18 +272,18 @@ class complex_runtime_item : public rx::pointers::reference_object
 
 
 
-      values_type m_values;
+      values_type _values;
 
-      const_values_type m_const_values;
+      const_values_type _const_values;
 
-      sub_items_type m_sub_items;
+      sub_items_type _sub_items;
 
-      object_runtime_ptr m_my_object;
+      object_runtime_ptr _my_object;
 
 
-      names_cahce_type m_names_cache;
+      names_cahce_type _names_cache;
 
-      const_values_callbacks_type m_const_values_callbacks;
+      const_values_callbacks_type _const_values_callbacks;
 
 
 };
@@ -333,26 +333,26 @@ class object_runtime : public object_runtime_t
 
       complex_runtime_item::smart_ptr get_complex_item ()
       {
-        return m_complex_item;
+        return _complex_item;
       }
 
 
 
       const rx_time get_created_time () const
       {
-        return m_created_time;
+        return _created_time;
       }
 
 
       const rx_mode_type& get_mode () const
       {
-        return m_mode;
+        return _mode;
       }
 
 
       const rx_time get_modified_time () const
       {
-        return m_modified_time;
+        return _modified_time;
       }
 
 
@@ -362,11 +362,11 @@ class object_runtime : public object_runtime_t
 	  template<typename... Args>
 	  callback::callback_handle_t register_callback(const string_type& path,Args... args)
 	  {
-		  return m_complex_item->register_callback(path, args...);
+		  return _complex_item->register_callback(path, args...);
 	  }
 	  void unregister_callback(const string_type& path, callback::callback_handle_t)
 	  {
-		//  return m_items->unregister_callaback(path);
+		//  return _items->unregister_callaback(path);
 	  }
   protected:
       object_runtime();
@@ -379,22 +379,22 @@ class object_runtime : public object_runtime_t
       bool init_object ();
 
 
-      application_runtime_ptr m_my_application;
+      application_runtime_ptr _my_application;
 
-      domain_runtime_ptr m_my_domain;
+      domain_runtime_ptr _my_domain;
 
 
   private:
 
 
-      complex_runtime_item::smart_ptr m_complex_item;
+      complex_runtime_item::smart_ptr _complex_item;
 
 
-      rx_time m_created_time;
+      rx_time _created_time;
 
-      rx_mode_type m_mode;
+      rx_mode_type _mode;
 
-      rx_time m_modified_time;
+      rx_time _modified_time;
 
 
 };
@@ -518,11 +518,11 @@ class variable_runtime : public complex_runtime_item
   private:
 
 
-      filters_type m_filters;
+      filters_type _filters;
 
-      sources_type m_input_sources;
+      sources_type _input_sources;
 
-      sources_type m_output_sources;
+      sources_type _output_sources;
 
 
 };
@@ -563,7 +563,7 @@ system domain class. basic implementation of a domain");
   private:
 
 
-      objects_type m_objects;
+      objects_type _objects;
 
 
 };
@@ -660,9 +660,9 @@ system application class. contains system default application");
 
 
 
-      domains_type m_domains;
+      domains_type _domains;
 
-      ports_type m_ports;
+      ports_type _ports;
 
 
 };
@@ -704,8 +704,8 @@ user object class. basic implementation of a user object");
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
-      : m_ref_count(1)
-	, m_storage(value)
+      : _ref_count(1)
+	, _storage(value)
 {
 }
 
@@ -720,25 +720,25 @@ server_const_value_item<valT>::~server_const_value_item()
 template <typename valT>
 simple_const_value<valT>& server_const_value_item<valT>::value ()
 {
-	return (m_storage);
+	return (_storage);
 }
 
 template <typename valT>
 const simple_const_value<valT>& server_const_value_item<valT>::value () const
 {
-	return (m_storage);
+	return (_storage);
 }
 
 template <typename valT>
 void server_const_value_item<valT>::bind ()
 {
-	m_ref_count++;
+	_ref_count++;
 }
 
 template <typename valT>
 void server_const_value_item<valT>::release ()
 {
-	if (0 == --m_ref_count)
+	if (0 == --_ref_count)
 		delete this;
 }
 

@@ -6,7 +6,10 @@
 #include "lib/rx_job.h"
 #include "lib/rx_io.h"
 #include "lib/rx_std.h"
+#include "system/meta/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
+#include "system/constructors/rx_construct.h"
+#include "lib/rx_log.h"
 
 
 using namespace rx;
@@ -15,6 +18,42 @@ using namespace rx;
 namespace testing
 {
 
+
+	class my_periodic_job : public rx::jobs::periodic_job
+	{
+		DECLARE_REFERENCE_PTR(my_periodic_job);
+	public:
+		my_periodic_job()
+		{
+		}
+		void process()
+		{
+			printf("Timer fired at %s\r\n", rx::rx_time(rx::time_stamp::now().rx_time).get_string().c_str());
+		}
+	};
+
+	void test_timers()
+	{
+		rx::threads::dispatcher_pool pool(2, "ime");
+		rx::threads::timer tm;
+
+		pool.run();
+		tm.start();
+
+		printf("Sleeping\r\n");
+
+		my_periodic_job::smart_ptr job(rx::pointers::_create_new);
+		tm.append_job(job, &pool, 100, false);
+
+		rx_msleep(1000);
+
+
+		printf("Stopping\r\n");
+
+		tm.stop();
+		tm.wait_handle();
+		pool.end();
+	}
 
 /////////////// callbacks
 
@@ -70,6 +109,10 @@ void static_callback(const int& arg, callback::callback_state_t state)
 
 typedef decltype(std::mem_fn(&dummy::dummy_method)) element_type;
 
+void callback_func(const rx_value&, dword state)
+{
+	printf("Callback occured!!!");
+}
 
 typedef void(dummy::*callback_t)(const int&);
 void test_callbacks()
@@ -303,6 +346,16 @@ void test_thread()
     printf("Izasao Main\r\n");
 }
 
+
+void test_values()
+{
+	rx::values::simple_const_value<dword> perica(6);
+	dword zike = perica + 5;
+}
+void test_classes()
+{
+	server::meta::object_class_ptr obj("test_class", 55, true);
+}
 
 #ifndef NO_PYTHON_SUPPORT
 namespace python

@@ -37,42 +37,6 @@
 #include "system/constructors/rx_construct.h"
 #include "lib/rx_log.h"
 
-class my_periodic_job : public rx::jobs::periodic_job
-{
-    DECLARE_REFERENCE_PTR(my_periodic_job);
-public:
-    my_periodic_job()
-    {
-    }
-    void process()
-    {
-        printf("Timer fired at %s\r\n",rx::rx_time(rx::time_stamp::now().rx_time).get_string().c_str());
-    }
-};
-
-void test_timers()
-{
-    rx::threads::dispatcher_pool pool(2,"ime");
-    rx::threads::timer tm;
-
-    pool.run();
-    tm.start();
-
-    printf("Sleeping\r\n");
-
-    my_periodic_job::smart_ptr job(rx::pointers::_create_new);
-    tm.append_job(job,&pool,100,false);
-
-    rx_msleep(1000);
-
-
-    printf("Stopping\r\n");
-
-    tm.stop();
-    tm.wait_handle();
-    pool.end();
-}
-
 
 namespace host {
 
@@ -81,7 +45,8 @@ namespace interactive {
 // Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
-      : m_exit(false)
+      : _exit(false),
+        _testBool(true)
 {
 }
 
@@ -155,14 +120,14 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
 	std::cout << ANSI_COLOR_RESET "\r\n";
 	std::cout.flush();
-	m_exit = true;
+	_exit = true;
 
 	return true;
 }
 
 bool interactive_console_host::exit () const
 {
-	return m_exit;
+	return _exit;
 }
 
 void interactive_console_host::get_host_objects (std::vector<server::objects::object_runtime_ptr>& items)
@@ -170,6 +135,7 @@ void interactive_console_host::get_host_objects (std::vector<server::objects::ob
 	constructors::user_object_constructor constructor;
 //	server::objects::user_object::smart_ptr test(pointers::_create_new);
 	server::objects::user_object::smart_ptr test("test_object", 55);
+	test->register_const_value("testBool", _testBool);
 	items.push_back(test);
 }
 
@@ -184,10 +150,10 @@ void interactive_console_host::get_host_classes (std::vector<server::meta::objec
 // Class host::interactive::interactive_console_client 
 
 interactive_console_client::interactive_console_client()
-      : m_exit(false)
-  , m_security_context(pointers::_create_new)
+      : _exit(false)
+  , _security_context(pointers::_create_new)
 {
-	m_security_context->login();
+	_security_context->login();
 }
 
 
@@ -206,14 +172,14 @@ const string_type& interactive_console_client::get_console_name ()
 void interactive_console_client::run_interactive (const interactive_console_host& host)
 {
 
-	security::security_auto_context dummy(m_security_context);
+	security::security_auto_context dummy(_security_context);
 
 	string_type temp;
 	get_wellcome(temp);
 	std::cout << temp<<"\r\n";
 
 
-	while (!m_exit && !host.exit())
+	while (!_exit && !host.exit())
 	{
 
 		while (is_postponed())
@@ -238,11 +204,11 @@ void interactive_console_client::run_interactive (const interactive_console_host
 			memory::buffer_ptr out_buffer(pointers::_create_new);
 			memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			if (!do_command(line, out_buffer, err_buffer,*m_security_context))
+			if (!do_command(line, out_buffer, err_buffer,*_security_context))
 			{
 				if (!err_buffer->empty())
 					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
-				if (!m_exit && !host.exit())
+				if (!_exit && !host.exit())
 				{
 					std::cout << "\r\n";
 					std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
@@ -263,7 +229,7 @@ void interactive_console_client::run_interactive (const interactive_console_host
 		}
 
 	}
-	m_security_context->logout();
+	_security_context->logout();
 }
 
 void interactive_console_client::virtual_bind ()
@@ -276,12 +242,12 @@ void interactive_console_client::virtual_release ()
 
 security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
 {
-	return m_security_context;
+	return _security_context;
 }
 
 void interactive_console_client::exit_console ()
 {
-	m_exit = true;
+	_exit = true;
 }
 
 
@@ -289,10 +255,10 @@ void interactive_console_client::exit_console ()
 
 interactive_security_context::interactive_security_context()
 {
-	m_user_name = "interactive";
-	m_full_name = m_user_name + "@";
-	m_full_name += m_location;
-	m_port = "internal";
+	_user_name = "interactive";
+	_full_name = _user_name + "@";
+	_full_name += _location;
+	_port = "internal";
 }
 
 

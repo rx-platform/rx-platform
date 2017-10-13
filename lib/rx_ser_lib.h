@@ -121,12 +121,12 @@ public:
 
       const dword get_version () const
       {
-        return m_version;
+        return _version;
       }
 
       void set_version (dword value)
       {
-        m_version = value;
+        _version = value;
       }
 
 
@@ -140,7 +140,7 @@ public:
 
 
 
-      dword m_version;
+      dword _version;
 
 
 };
@@ -203,12 +203,12 @@ class base_meta_reader
 
       const dword get_version () const
       {
-        return m_version;
+        return _version;
       }
 
       void set_version (dword value)
       {
-        m_version = value;
+        _version = value;
       }
 
 
@@ -222,7 +222,7 @@ class base_meta_reader
 
 
 
-      dword m_version;
+      dword _version;
 
 
 };

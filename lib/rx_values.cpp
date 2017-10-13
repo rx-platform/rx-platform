@@ -44,119 +44,119 @@ namespace values {
 
 rx_value::rx_value()
 {
-	m_origin = RX_DEFUALT_ORIGIN;
-	m_quality = RX_DEFAULT_VALUE_QUALITY;
-	m_type = RX_NULL_TYPE;
+	_origin = RX_DEFUALT_ORIGIN;
+	_quality = RX_DEFAULT_VALUE_QUALITY;
+	_type = RX_NULL_TYPE;
 }
 
 rx_value::rx_value(const rx_value &right)
 {
 	memcpy(this, &right, sizeof(rx_value));
-	m_type = right.m_type;
-	copy_union(m_type, m_value, right.m_value);
+	_type = right._type;
+	copy_union(_type, _value, right._value);
 }
 
 rx_value::rx_value (bool val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_BOOL_TYPE;
-	m_value.bool_value = val;
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_BOOL_TYPE;
+	_value.bool_value = val;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (sbyte val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_SBYTE_TYPE;
-	m_value.sbyte_value = val;
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_SBYTE_TYPE;
+	_value.sbyte_value = val;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (byte val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_BYTE_TYPE;
-	m_value.byte_value = val;
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_BYTE_TYPE;
+	_value.byte_value = val;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (const bit_string& val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
+	_type = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
-	m_value.array_value = new std::vector<rx_value_union>(count);
+	_value.array_value = new std::vector<rx_value_union>(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		m_value.array_value->at(i).bool_value = val[i];
+		_value.array_value->at(i).bool_value = val[i];
 	}
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (const std::vector<sbyte>& val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
+	_type = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
-	m_value.array_value = new std::vector<rx_value_union>(count);
+	_value.array_value = new std::vector<rx_value_union>(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		m_value.array_value->at(i).sbyte_value = val[i];
+		_value.array_value->at(i).sbyte_value = val[i];
 	}
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (rx_value&& right)
 {
 	memcpy(this, &right, sizeof(rx_value));
-	right.m_type = RX_NULL_TYPE;
+	right._type = RX_NULL_TYPE;
 }
 
 rx_value::rx_value (sdword val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_SDWORD_TYPE;
-	m_value.sdword_value = val;
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_SDWORD_TYPE;
+	_value.sdword_value = val;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (dword val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_DWORD_TYPE;
-	m_value.dword_value = val;
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_DWORD_TYPE;
+	_value.dword_value = val;
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 rx_value::rx_value (const string_type& val, rx_time time, dword quality, dword origin)
 {
-	m_type = RX_STRING_TYPE;
-	m_value.string_value = new string_type(val);
-	m_origin = origin;
-	m_time = time;
-	m_quality = quality;
+	_type = RX_STRING_TYPE;
+	_value.string_value = new string_type(val);
+	_origin = origin;
+	_time = time;
+	_quality = quality;
 }
 
 
 rx_value::~rx_value()
 {
-	clear_union(m_type, m_value);
+	clear_union(_type, _value);
 }
 
 
 rx_value & rx_value::operator=(const rx_value &right)
 {
-	clear_union(m_type, m_value);
+	clear_union(_type, _value);
 	memcpy(this, &right, sizeof(rx_value));
-	m_type = right.m_type;
-	copy_union(m_type, m_value, right.m_value);
+	_type = right._type;
+	copy_union(_type, _value, right._value);
 	return *this;
 }
 
@@ -175,7 +175,7 @@ bool rx_value::operator!=(const rx_value &right) const
 
 void rx_value::get_string (string_type& val)
 {
-	switch (m_type)
+	switch (_type)
 	{
 		char buffer[0x20];
 
@@ -186,14 +186,14 @@ void rx_value::get_string (string_type& val)
 		break;
 		case RX_BOOL_TYPE:
 		{
-				val =  m_value.bool_value ? "true" : "false";
+				val =  _value.bool_value ? "true" : "false";
 		}
 		break;
 		case RX_SBYTE_TYPE:
 		case RX_SWORD_TYPE:
 		case RX_SDWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (dword)m_value.byte_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (dword)_value.byte_value);
 				val = buffer;
 			}
 			break;
@@ -201,7 +201,7 @@ void rx_value::get_string (string_type& val)
 		case RX_WORD_TYPE:
 		case RX_DWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (dword)m_value.byte_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (dword)_value.byte_value);
 				val = buffer;
 
 			}
@@ -228,7 +228,7 @@ void rx_value::get_string (string_type& val)
 			break;
 		case RX_STRING_TYPE:
 			{
-				val = *m_value.string_value;
+				val = *_value.string_value;
 			}
 			break;
 		case RX_TIME_TYPE:
@@ -261,38 +261,38 @@ void rx_value::get_string (string_type& val)
 
 bool rx_value::is_good () const
 {
-	return ((m_quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
+	return ((_quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
 }
 
 bool rx_value::is_bad () const
 {
-	return ((m_quality & RX_QUALITY_MASK) == RX_BAD_QUALITY);
+	return ((_quality & RX_QUALITY_MASK) == RX_BAD_QUALITY);
 }
 
 bool rx_value::is_uncertain () const
 {
-	return ((m_quality & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
+	return ((_quality & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
 }
 
 bool rx_value::is_test () const
 {
-	return ((m_origin & RX_TEST_ORIGIN_MASK) == RX_TEST_ORIGIN_MASK);
+	return ((_origin & RX_TEST_ORIGIN_MASK) == RX_TEST_ORIGIN_MASK);
 }
 
 bool rx_value::is_substituted () const
 {
-	return ((m_origin & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
+	return ((_origin & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
 }
 
 void rx_value::clear_union (byte type, rx_value_union& value)
 {
 	if (IS_ARRAY_VALUE(type))
 	{// array stuff
-		for (auto& one : *(m_value.array_value))
+		for (auto& one : *(_value.array_value))
 		{
 			clear_union(type&RX_SIMPLE_VALUE_MASK, one);
 		}
-		delete m_value.array_value;
+		delete _value.array_value;
 	}
 	else
 	{// simple value stuff
@@ -348,37 +348,37 @@ void rx_value::copy_union (byte type, rx_value_union& to, const rx_value_union& 
 
 bool rx_value::is_array () const
 {
-	return IS_ARRAY_VALUE(m_type);
+	return IS_ARRAY_VALUE(_type);
 }
 
 bool rx_value::operator > (const rx_value& right)
 {
-	return m_value.sdword_value < right.m_value.sdword_value;
+	return _value.sdword_value < right._value.sdword_value;
 }
 
 bool rx_value::operator < (const rx_value& right)
 {
-	return m_value.sdword_value > right.m_value.sdword_value;
+	return _value.sdword_value > right._value.sdword_value;
 }
 
 rx_value::operator int () const
 {
-	return m_value.sdword_value;
+	return _value.sdword_value;
 }
 
 void rx_value::set_substituted ()
 {
-	m_origin |= RX_FORCED_ORIGIN_MASK;
+	_origin |= RX_FORCED_ORIGIN_MASK;
 }
 
 void rx_value::set_test ()
 {
-	m_origin |= RX_TEST_ORIGIN_MASK;
+	_origin |= RX_TEST_ORIGIN_MASK;
 }
 
 void rx_value::get_type_string (string_type& val)
 {
-	switch (m_type)
+	switch (_type)
 	{
 	case RX_NULL_TYPE:
 		{
@@ -475,36 +475,36 @@ void rx_value::get_type_string (string_type& val)
 
 bool rx_value::serialize (base_meta_writter& stream) const
 {
-	if (!stream.write_uint("Quality", m_quality))
+	if (!stream.write_uint("Quality", _quality))
 		return false;
-	if (!stream.write_time("Time", m_time))
+	if (!stream.write_time("Time", _time))
 		return false;
-	if (!stream.write_uint("Origin", m_origin))
+	if (!stream.write_uint("Origin", _origin))
 		return false;
 	/*if (!stream.write_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.write_byte("Type", m_type))
+	if (!stream.write_byte("Type", _type))
 		return false;
-	if (!serialize_value(stream, m_type, m_value))
+	if (!serialize_value(stream, _type, _value))
 		return false;
 	return true;
 }
 
 bool rx_value::deserialize (base_meta_reader& stream)
 {
-	clear_union(m_type, m_value);
+	clear_union(_type, _value);
 
-	if (!stream.read_uint("Quality", m_quality))
+	if (!stream.read_uint("Quality", _quality))
 		return false;
-	if (!stream.read_time("Time", m_time))
+	if (!stream.read_time("Time", _time))
 		return false;
-	if (!stream.read_uint("Origin", m_origin))
+	if (!stream.read_uint("Origin", _origin))
 		return false;
 	/*if (!stream.read_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.read_byte("Type", m_type))
+	if (!stream.read_byte("Type", _type))
 		return false;
-	if (!deserialize_value(stream, m_type, m_value))
+	if (!deserialize_value(stream, _type, _value))
 		return false;
 	return true;
 }
@@ -802,7 +802,7 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 {
 	bool ret = false;
-	if (((m_origin&RX_TEST_ORIGIN_MASK)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
+	if (((_origin&RX_TEST_ORIGIN_MASK)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
 	{
 		ret = true;
 		if (is_test())
@@ -817,26 +817,26 @@ bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 
 bool rx_value::serialize_value (base_meta_writter& stream) const
 {
-	if (!stream.write_byte("Type", m_type))
+	if (!stream.write_byte("Type", _type))
 		return false;
-	return serialize_value(stream, m_type, m_value);
+	return serialize_value(stream, _type, _value);
 }
 
 bool rx_value::deserialize_value (base_meta_reader& stream)
 {
-	if (!stream.read_byte("Type", m_type))
+	if (!stream.read_byte("Type", _type))
 		return false;
-	return deserialize_value(stream, m_type, m_value);
+	return deserialize_value(stream, _type, _value);
 }
 
 rx_value::operator dword () const
 {
-	return m_value.dword_value;
+	return _value.dword_value;
 }
 
 rx_value::operator bool () const
 {
-	return m_value.bool_value;
+	return _value.bool_value;
 }
 
 

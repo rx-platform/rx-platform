@@ -76,10 +76,10 @@ void rx_server_host::server_stopping_event ()
 
 host_security_context::host_security_context()
 {
-	m_user_name = "host";
-	m_full_name = m_user_name + "@";
-	m_full_name += m_location;
-	m_port = "internal";
+	_user_name = "host";
+	_full_name = _user_name + "@";
+	_full_name += _location;
+	_port = "internal";
 }
 
 

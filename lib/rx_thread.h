@@ -89,9 +89,9 @@ class thread : public locks::waitable
       static void _inner_handler (void* arg);
 
 
-      string_type m_name;
+      string_type _name;
 
-      dword m_thread_id;
+      dword _thread_id;
 
 
 };
@@ -196,12 +196,12 @@ class physical_job_thread : public thread,
   private:
 
 
-      queue_type m_queue;
+      queue_type _queue;
 
-      jobs::job_ptr m_current;
+      jobs::job_ptr _current;
 
 
-      locks::event m_has_job;
+      locks::event _has_job;
 
 
 };
@@ -228,7 +228,7 @@ class dispatcher_thread : public thread
   private:
 
 
-      rx_kernel_dispather_t m_dispatcher;
+      rx_kernel_dispather_t _dispatcher;
 
 
 };
@@ -259,7 +259,7 @@ class dispatcher_pool : public job_thread,
       void append (job_ptr pjob);
 
 
-      rx_kernel_dispather_t m_dispatcher;
+      rx_kernel_dispather_t _dispatcher;
 
 
   protected:
@@ -272,10 +272,10 @@ class dispatcher_pool : public job_thread,
   private:
 
 
-      threads_type m_threads;
+      threads_type _threads;
 
 
-      string_type m_name;
+      string_type _name;
 
 
 };
@@ -315,12 +315,12 @@ class timer : public thread,
 
 
 
-      jobs_type m_jobs;
+      jobs_type _jobs;
 
 
-      locks::event m_wake_up;
+      locks::event _wake_up;
 
-      bool m_should_exit;
+      bool _should_exit;
 
 
 };

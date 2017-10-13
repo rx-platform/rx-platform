@@ -42,25 +42,25 @@ namespace locks {
 
 slim_lock::slim_lock()
 {
-	rx_slim_lock_create(&m_slim_lock);
+	rx_slim_lock_create(&_slim_lock);
 }
 
 
 slim_lock::~slim_lock()
 {
-	rx_slim_lock_destroy(&m_slim_lock);
+	rx_slim_lock_destroy(&_slim_lock);
 }
 
 
 
 void slim_lock::lock ()
 {
-	rx_slim_lock_aquire(&m_slim_lock);
+	rx_slim_lock_aquire(&_slim_lock);
 }
 
 void slim_lock::unlock ()
 {
-	rx_slim_lock_release(&m_slim_lock);
+	rx_slim_lock_release(&_slim_lock);
 }
 
 
@@ -68,37 +68,37 @@ void slim_lock::unlock ()
 
 lockable::lockable()
 {
-	rx_slim_lock_create(&m_slim_lock);
+	rx_slim_lock_create(&_slim_lock);
 }
 
 
 lockable::~lockable()
 {
-	rx_slim_lock_destroy(&m_slim_lock);
+	rx_slim_lock_destroy(&_slim_lock);
 }
 
 
 
 void lockable::lock ()
 {
-	rx_slim_lock_aquire(&m_slim_lock);
+	rx_slim_lock_aquire(&_slim_lock);
 }
 
 void lockable::unlock ()
 {
-	rx_slim_lock_release(&m_slim_lock);
+	rx_slim_lock_release(&_slim_lock);
 }
 
 
 // Class rx::locks::waitable 
 
 waitable::waitable()
-      : m_handle(0)
+      : _handle(0)
 {
 }
 
 waitable::waitable(const waitable &right)
-      : m_handle(0)
+      : _handle(0)
 {
 	RX_ASSERT(false);
 }
@@ -119,7 +119,7 @@ waitable & waitable::operator=(const waitable &right)
 
 dword waitable::wait_handle (dword timeout)
 {
-	return rx_handle_wait(m_handle, timeout);
+	return rx_handle_wait(_handle, timeout);
 }
 
 
@@ -127,21 +127,21 @@ dword waitable::wait_handle (dword timeout)
 
 event::event (bool initial)
 {
-	m_handle = rx_event_create(initial);
+	_handle = rx_event_create(initial);
 }
 
 
 event::~event()
 {
-	if (m_handle)
-		rx_event_destroy(m_handle);
+	if (_handle)
+		rx_event_destroy(_handle);
 }
 
 
 
 void event::set ()
 {
-	rx_event_set(m_handle);
+	rx_event_set(_handle);
 }
 
 

@@ -75,13 +75,13 @@ class job : private pointers::reference_object
 
       const rx_security_handle_t get_security_context () const
       {
-        return m_security_context;
+        return _security_context;
       }
 
 
       const rx_thread_handle_t get_destination () const
       {
-        return m_destination;
+        return _destination;
       }
 
 
@@ -99,11 +99,11 @@ class job : private pointers::reference_object
 
 
 
-      bool m_canceled;
+      bool _canceled;
 
-      rx_security_handle_t m_security_context;
+      rx_security_handle_t _security_context;
 
-      rx_thread_handle_t m_destination;
+      rx_thread_handle_t _destination;
 
 	  friend void threads::execute_job(void*);
     friend class threads::dispatcher_pool;
@@ -132,18 +132,18 @@ class timer_job : public job,
 
   protected:
 
-      threads::job_thread *m_executer;
+      threads::job_thread *_executer;
 
 
-      dword m_next;
+      dword _next;
 
-      dword m_period;
+      dword _period;
 
 
   private:
 
 
-      threads::timer *m_my_timer;
+      threads::timer *_my_timer;
 
 
     friend class threads::timer;
@@ -186,8 +186,8 @@ class labmda_job : public job
 
   public:
       labmda_job (std::function<void(argT)> f, argT args)
-            : m_f(f),
-              m_args(args)
+            : _f(f),
+              _args(args)
       {
       }
 
@@ -198,7 +198,7 @@ class labmda_job : public job
 
       void process ()
       {
-		  (m_f)(m_args);
+		  (_f)(_args);
       }
 
 
@@ -207,9 +207,9 @@ class labmda_job : public job
   private:
 
 
-      std::function<void(argT)> m_f;
+      std::function<void(argT)> _f;
 
-      argT m_args;
+      argT _args;
 
 
 };

@@ -78,9 +78,9 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 // Class server::prog::program_context_base 
 
 program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory)
-      : m_root(root_context),
-        m_holder(holder),
-        m_current_directory(current_directory)
+      : _root(root_context),
+        _holder(holder),
+        _current_directory(current_directory)
 {
 }
 
@@ -100,7 +100,7 @@ bool program_context_base::is_postponed () const
 // Class server::prog::server_command_base 
 
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
-      : m_console_name(console_name)
+      : _console_name(console_name)
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
 }
@@ -114,14 +114,14 @@ server_command_base::~server_command_base()
 
 const string_type& server_command_base::get_console_name (std::istream& in, std::ostream& out, std::ostream& err)
 {
-	return m_console_name;
+	return _console_name;
 }
 
 void server_command_base::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 	class_name = "_ServerCommand";
 	has_own_code_info = true;
-	console = m_console_name;
+	console = _console_name;
 }
 
 string_type server_command_base::get_type_name () const
@@ -197,7 +197,7 @@ program_executer_base::~program_executer_base()
 // Class server::prog::server_program_holder 
 
 server_program_holder::server_program_holder (program_executer_ptr executer)
-      : m_executer(executer)
+      : _executer(executer)
 {
 }
 
@@ -211,11 +211,11 @@ server_program_holder::~server_program_holder()
 // Class server::prog::console_program_context 
 
 console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
-      : m_current_line(0),
-        m_out(out),
-        m_err(err),
-        m_out_std(out.unsafe_ptr()),
-        m_err_std(err.unsafe_ptr())
+      : _current_line(0),
+        _out(out),
+        _err(err),
+        _out_std(out.unsafe_ptr()),
+        _err_std(err.unsafe_ptr())
   , prog::program_context_base(holder, root_context,current_directory)
 
 {
@@ -230,18 +230,18 @@ console_program_context::~console_program_context()
 
 size_t console_program_context::next_line ()
 {
-	m_current_line++;
-	return m_current_line;
+	_current_line++;
+	return _current_line;
 }
 
 std::ostream& console_program_context::get_stdout ()
 {
-	return m_out_std;
+	return _out_std;
 }
 
 std::ostream& console_program_context::get_stderr ()
 {
-	return m_err_std;
+	return _err_std;
 }
 
 
@@ -253,18 +253,18 @@ server_console_program::server_console_program (std::istream& in)
 	{
 		char temp[SCRIPT_LINE_LENGTH];
 		in.getline(temp, SCRIPT_LINE_LENGTH);
-		m_lines.emplace_back(temp);
+		_lines.emplace_back(temp);
 	}
 }
 
 server_console_program::server_console_program (const string_vector& lines)
-  : m_lines(lines)
+  : _lines(lines)
 {
 }
 
 server_console_program::server_console_program (const string_type& line)
 {
-	m_lines.emplace_back(line);
+	_lines.emplace_back(line);
 }
 
 
@@ -278,7 +278,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 {
 
 	console_program_context::smart_ptr ctx = context.cast_to<console_program_context::smart_ptr>();
-	size_t total_lines = m_lines.size();
+	size_t total_lines = _lines.size();
 	size_t current_line = ctx->get_current_line();
 	string_type label;
 
@@ -288,7 +288,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 	while (current_line < total_lines)
 	{
 		label.clear();
-		std::istringstream in(m_lines[current_line]);
+		std::istringstream in(_lines[current_line]);
 		string_type name;
 		in >> name;
 		if (!name.empty())
@@ -323,9 +323,9 @@ prog::program_context_ptr server_console_program::create_program_context (prog::
 console_client::console_client()
 {
 #ifdef _DEBUG
-	m_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
+	_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
 #else
-	m_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("world");
+	_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("world");
 #endif
 }
 
@@ -338,7 +338,7 @@ console_client::~console_client()
 
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
-	RX_ASSERT(!m_current);
+	RX_ASSERT(!_current);
 	if (line == "exit")
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
@@ -362,18 +362,18 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 	{
 		prog::server_console_program temp_prog(line);
 		
-		prog::program_context_base_ptr ctx = temp_prog.create_program_context(prog::server_program_holder_ptr::null_ptr, prog::program_context_base_ptr::null_ptr,m_current_directory,out_buffer,err_buffer);
-		ctx->set_current_directory(m_current_directory);
+		prog::program_context_base_ptr ctx = temp_prog.create_program_context(prog::server_program_holder_ptr::null_ptr, prog::program_context_base_ptr::null_ptr,_current_directory,out_buffer,err_buffer);
+		ctx->set_current_directory(_current_directory);
 		bool ret = temp_prog.process_program(ctx, rx_time::now(), false);
 		if (ret)
 		{
 			if (ctx->is_postponed())
 			{
-				m_current = ctx;
+				_current = ctx;
 			}
 			else
 			{
-				m_current_directory = ctx->get_current_directory();
+				_current_directory = ctx->get_current_directory();
 			}
 		}
 		return ret;
@@ -385,7 +385,7 @@ void console_client::get_prompt (string_type& prompt)
 	prompt = ANSI_COLOR_GREEN;
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;
-	prompt += m_current_directory->get_path();
+	prompt += _current_directory->get_path();
 	prompt += ">";
 }
 
@@ -401,7 +401,7 @@ void console_client::get_wellcome (string_type& wellcome)
 
 bool console_client::is_postponed () const
 {
-	if (m_current)
+	if (_current)
 		return true;
 	else
 		return false;

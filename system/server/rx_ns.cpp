@@ -123,12 +123,12 @@ void rx_server_item::code_info_to_string (string_type& info)
 
 void rx_server_item::item_lock ()
 {
-	m_item_lock.lock();
+	_item_lock.lock();
 }
 
 void rx_server_item::item_unlock ()
 {
-	m_item_lock.unlock();
+	_item_lock.unlock();
 }
 
 void rx_server_item::item_lock () const
@@ -141,13 +141,13 @@ void rx_server_item::item_unlock () const
 
 server_directory_ptr rx_server_item::get_parent () const
 {
-	return m_parent;
+	return _parent;
 }
 
 void rx_server_item::set_parent (server_directory_ptr parent)
 {
 	item_lock();
-	m_parent = parent;
+	_parent = parent;
 	item_unlock();
 }
 
@@ -155,7 +155,7 @@ string_type rx_server_item::get_path () const
 {
 	server_directory_ptr parent;
 	item_lock();
-	parent = m_parent;
+	parent = _parent;
 	item_unlock();
 	string_type full;
 	if (parent)
@@ -190,37 +190,37 @@ bool rx_server_item::deserialize (base_meta_reader& stream)
 // Class server::ns::rx_server_directory 
 
 rx_server_directory::rx_server_directory()
-      : m_created(rx_time::now())
-, m_name("<unnamed>")
+      : _created(rx_time::now())
+, _name("<unnamed>")
 {
 }
 
 rx_server_directory::rx_server_directory (const string_type& name)
-      : m_created(rx_time::now())
-	, m_name(name)
+      : _created(rx_time::now())
+	, _name(name)
 {
 }
 
 rx_server_directory::rx_server_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-      : m_created(rx_time::now())
-	, m_name(name)
+      : _created(rx_time::now())
+	, _name(name)
 {
 	for (auto one : sub_directories)
 	{
-		auto it = m_sub_directories.find(one->get_name());
-		if (it == m_sub_directories.end())
+		auto it = _sub_directories.find(one->get_name());
+		if (it == _sub_directories.end())
 		{
 			one->set_parent(smart_this());
-			m_sub_directories.emplace(one->get_name(), one);
+			_sub_directories.emplace(one->get_name(), one);
 		}
 	}
 	for (auto one : items)
 	{
-		auto it = m_sub_items.find(one->get_item_name());
-		if (it == m_sub_items.end())
+		auto it = _sub_items.find(one->get_item_name());
+		if (it == _sub_items.end())
 		{
 			one->set_parent(smart_this());
-			m_sub_items.emplace(one->get_item_name(), one);
+			_sub_items.emplace(one->get_item_name(), one);
 		}
 	}
 }
@@ -234,12 +234,12 @@ rx_server_directory::~rx_server_directory()
 
 void rx_server_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
 {
-	locks::auto_slim_lock dummy(&m_structure_lock);
-	for (const auto& one : m_sub_directories)
+	locks::auto_slim_lock dummy(&_structure_lock);
+	for (const auto& one : _sub_directories)
 	{
 		sub_directories.emplace_back(one.second);
 	}
-	for (const auto& one : m_sub_items)
+	for (const auto& one : _sub_items)
 	{
 		sub_items.emplace_back(one.second);
 	}
@@ -247,23 +247,23 @@ void rx_server_directory::get_content (server_directories_type& sub_directories,
 
 void rx_server_directory::structure_lock ()
 {
-	m_structure_lock.lock();
+	_structure_lock.lock();
 }
 
 void rx_server_directory::structure_unlock ()
 {
-	m_structure_lock.unlock();
+	_structure_lock.unlock();
 }
 
 server_directory_ptr rx_server_directory::get_parent () const
 {
 	server_directory_ptr ret;
 	structure_lock();
-	if (m_parent)
+	if (_parent)
 	{
-		m_parent->structure_lock();
-		ret = m_parent;
-		m_parent->structure_unlock();
+		_parent->structure_lock();
+		ret = _parent;
+		_parent->structure_unlock();
 	}
 	structure_unlock();
 	return ret;
@@ -339,9 +339,9 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 		else
 		{// local stuff
 
-			locks::auto_slim_lock dummy(&m_structure_lock);
-			auto it = m_sub_directories.find(next);
-			if (it != m_sub_directories.end())
+			locks::auto_slim_lock dummy(&_structure_lock);
+			auto it = _sub_directories.find(next);
+			if (it != _sub_directories.end())
 			{
 				if (rest.empty())
 					return it->second;
@@ -363,28 +363,28 @@ string_type rx_server_directory::get_path () const
 
 string_type rx_server_directory::get_name (bool plain) const
 {
-	locks::auto_slim_lock dummy(&m_structure_lock);
-	if (plain && m_name.empty())
+	locks::auto_slim_lock dummy(&_structure_lock);
+	if (plain && _name.empty())
 		return "/";
 	else
-		return m_name;
+		return _name;
 }
 
 void rx_server_directory::fill_path (string_type& path) const
 {
 
 	structure_lock();
-	if (m_parent)
+	if (_parent)
 	{
-		m_parent->fill_path(path);
+		_parent->fill_path(path);
 	}
-	if (m_name.empty())
+	if (_name.empty())
 		path = '/';
 	else
 	{
 		if (path != "/")
 			path += '/';
-		path += m_name;
+		path += _name;
 	}
 	structure_unlock();
 }
@@ -393,13 +393,13 @@ void rx_server_directory::set_parent (server_directory_ptr parent)
 {
 	/*if (library::cpp_classes_manager::instance().check_class(parent.get_code_behind()))
 	{
-		locks::auto_slim_lock dummy(&m_structure_lock);
-		m_parent = parent;
+		locks::auto_slim_lock dummy(&_structure_lock);
+		_parent = parent;
 	}
 	else
 		RX_ASSERT(false);*/
-	locks::auto_slim_lock dummy(&m_structure_lock);
-	m_parent = parent;
+	locks::auto_slim_lock dummy(&_structure_lock);
+	_parent = parent;
 }
 
 void rx_server_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -422,9 +422,9 @@ server_item_ptr rx_server_directory::get_sub_item (const string_type& path) cons
 	size_t idx = path.rfind('/');
 	if (idx == string_type::npos)
 	{// plain item
-		locks::auto_slim_lock dummy(&m_structure_lock);
-		auto it = m_sub_items.find(path);
-		if (it != m_sub_items.end())
+		locks::auto_slim_lock dummy(&_structure_lock);
+		auto it = _sub_items.find(path);
+		if (it != _sub_items.end())
 			return it->second;
 		else
 			return server_item_ptr::null_ptr;
@@ -447,12 +447,12 @@ server_item_ptr rx_server_directory::get_sub_item (const string_type& path) cons
 
 void rx_server_directory::structure_lock () const
 {
-	const_cast<rx_server_directory*>(this)->m_structure_lock.lock();
+	const_cast<rx_server_directory*>(this)->_structure_lock.lock();
 }
 
 void rx_server_directory::structure_unlock () const
 {
-	const_cast<rx_server_directory*>(this)->m_structure_lock.unlock();
+	const_cast<rx_server_directory*>(this)->_structure_lock.unlock();
 }
 
 void rx_server_directory::get_value (rx_value& value)

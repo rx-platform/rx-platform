@@ -174,13 +174,13 @@ class base_meta_type : public ns::rx_server_item
 
       const rx_node_id& get_id () const
       {
-        return m_id;
+        return _id;
       }
 
 
       const bool get_system () const
       {
-        return m_system;
+        return _system;
       }
 
 
@@ -192,9 +192,9 @@ class base_meta_type : public ns::rx_server_item
   private:
 
 
-      rx_node_id m_id;
+      rx_node_id _id;
 
-      bool m_system;
+      bool _system;
 
 
 };
@@ -263,13 +263,13 @@ class checkable_type : public base_meta_type<metaT>
 
       const string_type& get_name () const
       {
-        return m_name;
+        return _name;
       }
 
 
       const rx_node_id& get_parent () const
       {
-        return m_parent;
+        return _parent;
       }
 
 
@@ -284,9 +284,9 @@ class checkable_type : public base_meta_type<metaT>
   private:
 
 
-      string_type m_name;
+      string_type _name;
 
-      rx_node_id m_parent;
+      rx_node_id _parent;
 
 
 };
@@ -320,7 +320,7 @@ class const_value
 
       const string_type& get_name () const
       {
-        return m_name;
+        return _name;
       }
 
 
@@ -330,7 +330,7 @@ class const_value
   private:
 
 
-      string_type m_name;
+      string_type _name;
 
 
 };
@@ -362,13 +362,13 @@ class internal_value
 
       const bool get_read_only () const
       {
-        return m_read_only;
+        return _read_only;
       }
 
 
       const string_type& get_name () const
       {
-        return m_name;
+        return _name;
       }
 
 
@@ -378,9 +378,9 @@ class internal_value
   private:
 
 
-      bool m_read_only;
+      bool _read_only;
 
-      string_type m_name;
+      string_type _name;
 
 
 };
@@ -423,13 +423,13 @@ class base_complex_type : public checkable_type<metaT>,
 
       const bool is_sealed () const
       {
-        return m_sealed;
+        return _sealed;
       }
 
 
       const bool is_abstract () const
       {
-        return m_abstract;
+        return _abstract;
       }
 
 
@@ -449,20 +449,20 @@ class base_complex_type : public checkable_type<metaT>,
   private:
 
 
-      const_values_type m_const_values;
+      const_values_type _const_values;
 
-      internal_values_type m_internal_values;
+      internal_values_type _internal_values;
 
-      structs_type m_structs;
+      structs_type _structs;
 
-      variables_type m_variables;
+      variables_type _variables;
 
 
-      bool m_sealed;
+      bool _sealed;
 
-      names_cahce_type m_names_cache;
+      names_cahce_type _names_cache;
 
-      bool m_abstract;
+      bool _abstract;
 
 
 };
@@ -499,7 +499,7 @@ class base_mapped_class : public base_complex_type<metaT>
   private:
 
 
-      mappers_type m_mappers;
+      mappers_type _mappers;
 
 
 };
@@ -770,7 +770,7 @@ class class_const_value : public const_value
   private:
 
 
-      simple_const_value<valT> m_storage;
+      simple_const_value<valT> _storage;
 
 
 };
@@ -796,13 +796,13 @@ class complex_class_attribute
 
       const string_type& get_name () const
       {
-        return m_name;
+        return _name;
       }
 
 
       const rx_node_id& get_target_id () const
       {
-        return m_target_id;
+        return _target_id;
       }
 
 
@@ -812,9 +812,9 @@ class complex_class_attribute
   private:
 
 
-      string_type m_name;
+      string_type _name;
 
-      rx_node_id m_target_id;
+      rx_node_id _target_id;
 
 
 };
@@ -979,11 +979,11 @@ class base_variable_class : public base_mapped_class<metaT>
   private:
 
 
-      sources_type m_sources;
+      sources_type _sources;
 
-      filters_type m_filters;
+      filters_type _filters;
 
-      events_type m_events;
+      events_type _events;
 
 
 };
@@ -1140,7 +1140,7 @@ class internal_value_item : public internal_value
   private:
 
 
-      simple_const_value<valT> m_storage;
+      simple_const_value<valT> _storage;
 
 
 };
@@ -1155,8 +1155,8 @@ base_meta_type<metaT>::base_meta_type()
 
 template <class metaT>
 base_meta_type<metaT>::base_meta_type (const string_type& name, const rx_node_id& id, bool system)
-	: m_id(id),
-	m_system(system)
+	: _id(id),
+	_system(system)
 {
 }
 
@@ -1171,9 +1171,9 @@ base_meta_type<metaT>::~base_meta_type()
 template <class metaT>
 bool base_meta_type<metaT>::serialize (base_meta_writter& stream) const
 {
-	if (!stream.write_id("NodeId", m_id))
+	if (!stream.write_id("NodeId", _id))
 		return false;
-	if (!stream.write_bool("System", m_system))
+	if (!stream.write_bool("System", _system))
 		return false;
 	return true;
 }
@@ -1181,9 +1181,9 @@ bool base_meta_type<metaT>::serialize (base_meta_writter& stream) const
 template <class metaT>
 bool base_meta_type<metaT>::deserialize (base_meta_reader& stream)
 {
-	if (!stream.read_id("NodeId", m_id))
+	if (!stream.read_id("NodeId", _id))
 		return false;
-	if (!stream.read_bool("System", m_system))
+	if (!stream.read_bool("System", _system))
 		return false;
 	return true;
 }
@@ -1204,7 +1204,7 @@ checkable_type<metaT>::checkable_type()
 
 template <class metaT>
 checkable_type<metaT>::checkable_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system)
-	: m_name(name),
+	: _name(name),
 	base_meta_type<metaT>(name, id, system)
 {
 }
@@ -1265,9 +1265,9 @@ bool checkable_type<metaT>::serialize_definition (base_meta_writter& stream, byt
 	if (!base_meta_type<metaT>::serialize(stream))
 		return false;
 
-	if (!stream.write_id("SuperId", m_parent))
+	if (!stream.write_id("SuperId", _parent))
 		return false;
-	if (!stream.write_string("Name", m_name.c_str()))
+	if (!stream.write_string("Name", _name.c_str()))
 		return false;
 
 	return true;
@@ -1279,9 +1279,9 @@ bool checkable_type<metaT>::deserialize_definition (base_meta_reader& stream, by
 	if (!base_meta_type<metaT>::deserialize(stream))
 		return false;
 
-	if (!stream.read_id("Parent", m_parent))
+	if (!stream.read_id("Parent", _parent))
 		return false;
-	if (!stream.read_string("Name", m_name))
+	if (!stream.read_string("Name", _name))
 		return false;
 
 	return true;
@@ -1322,9 +1322,9 @@ bool base_mapped_class<metaT>::serialize_definition (base_meta_writter& stream, 
 	if (!base_complex_type<metaT>::serialize_definition(stream, type))
 		return false;
 
-	if (!stream.start_array("Mappers", m_mappers.size()))
+	if (!stream.start_array("Mappers", _mappers.size()))
 		return false;
-	for (const auto& one : m_mappers)
+	for (const auto& one : _mappers)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -1413,7 +1413,7 @@ class_const_value<valT>::class_const_value (const valT& value)
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value, const string_type& name)
-	: m_storage(value)
+	: _storage(value)
 	, const_value(name)
 {
 }
@@ -1429,7 +1429,7 @@ class_const_value<valT>::~class_const_value()
 template <typename valT>
 void class_const_value<valT>::get_value (values::rx_value& val) const
 {
-	m_storage.get_value(val);
+	_storage.get_value(val);
 }
 
 
@@ -1535,11 +1535,11 @@ bool base_complex_type<metaT>::register_const_value(const string_type& name, con
 {
     typedef class_const_value<constT> const_t;
 
-	auto it = m_names_cache.find(name);
-	if (it == m_names_cache.end())
+	auto it = _names_cache.find(name);
+	if (it == _names_cache.end())
 	//if (check_name(name))
 	{
-		m_const_values.emplace_back(new const_t(value, name));
+		_const_values.emplace_back(new const_t(value, name));
 		return true;
 	}
 	else

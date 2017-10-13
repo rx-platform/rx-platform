@@ -97,18 +97,18 @@ class memory_buffer_base : public pointers::reference_object
 	  }
   protected:
 
-      size_t m_current_read;
+      size_t _current_read;
 
-      size_t m_next_push;
+      size_t _next_push;
 
-      allocT m_allocator;
+      allocT _allocator;
 
 
   private:
 	  template<typename T>
 	  T* get_buffer_internal(tl::type2type<T>)
 	  {
-		  return m_allocator.get_buffer<T>();
+		  return _allocator.get_buffer<T>();
 	  }
 	  template<typename T>
 	  void to_buffer(const T& val, std::true_type&)
@@ -147,7 +147,7 @@ private:
 	template<typename otherT>
 	otherT* _internal_get_buffer(tl::type2type<otherT>) const
 	{
-		otherT* ret = (otherT*)&this->m_buffer[0];
+		otherT* ret = (otherT*)&this->_buffer[0];
 		return ret;
 	}
 public:
@@ -161,7 +161,7 @@ public:
   private:
 
 
-      byte_string m_buffer;
+      byte_string _buffer;
 
       static ref_counting_type g_memory_consuption;
 
@@ -258,11 +258,11 @@ class backward_memory_buffer_base : public pointers::reference_object
 	  }
   protected:
 
-      size_t m_current_read;
+      size_t _current_read;
 
-      size_t m_next_push;
+      size_t _next_push;
 
-      allocT m_allocator;
+      allocT _allocator;
 
 	  template<typename T>
 	  T* get_buffer_internal(tl::type2type<T>)
@@ -314,11 +314,11 @@ class backward_simple_allocator
   private:
 
 
-      byte* m_buffer;
+      byte* _buffer;
 
       static ref_counting_type g_memory_consuption;
 
-      size_t m_size;
+      size_t _size;
 
 
 };
@@ -336,20 +336,20 @@ typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 template <class allocT>
 memory_buffer_base<allocT>::memory_buffer_base()
-      : m_current_read(0),
-        m_next_push(0)
+      : _current_read(0),
+        _next_push(0)
 {
-	m_allocator.allocate(0);// default allocation
+	_allocator.allocate(0);// default allocation
 }
 
 template <class allocT>
 memory_buffer_base<allocT>::memory_buffer_base (const void* ptr, size_t size)
-      : m_current_read(0),
-        m_next_push(0)
+      : _current_read(0),
+        _next_push(0)
 {
-	m_next_push = (int)size;
-	m_allocator.allocate(size);
-	memcpy(m_allocator.get_buffer<byte>(), ptr, size);
+	_next_push = (int)size;
+	_allocator.allocate(size);
+	memcpy(_allocator.get_buffer<byte>(), ptr, size);
 }
 
 
@@ -363,26 +363,26 @@ memory_buffer_base<allocT>::~memory_buffer_base()
 template <class allocT>
 void memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
 {
-	while (m_next_push + size>m_allocator.get_buffer_size())
-		m_allocator.reallocate(m_next_push + size);
-	memcpy(&m_allocator.get_buffer<byte>()[m_next_push], ptr, size);
-	m_next_push += size;
+	while (_next_push + size>_allocator.get_buffer_size())
+		_allocator.reallocate(_next_push + size);
+	memcpy(&_allocator.get_buffer<byte>()[_next_push], ptr, size);
+	_next_push += size;
 }
 
 template <class allocT>
 void memory_buffer_base<allocT>::read_data (void* ptr, size_t size)
 {
-	if (m_current_read + size>m_next_push)
+	if (_current_read + size>_next_push)
 		throw std::exception("buffer end of file!");
-	memcpy(ptr, &m_allocator.get_buffer<byte>()[m_current_read], size);
-	m_current_read += size;
+	memcpy(ptr, &_allocator.get_buffer<byte>()[_current_read], size);
+	_current_read += size;
 }
 
 template <class allocT>
 bool memory_buffer_base<allocT>::eof () const
 {
-	RX_ASSERT(m_current_read <= m_next_push);// check first
-	return m_current_read >= m_next_push;// just in case
+	RX_ASSERT(_current_read <= _next_push);// check first
+	return _current_read >= _next_push;// just in case
 }
 
 template <class allocT>
@@ -403,15 +403,15 @@ void memory_buffer_base<allocT>::read_line (string_type& line)
 {
 	if (eof())
 		return;
-	char* buff = m_allocator.get_buffer<char>();
+	char* buff = _allocator.get_buffer<char>();
 	char* start = buff;
 	while (*buff!='\r' && *buff!='\n' && !eof())
 		buff++;
 	if (buff - start > 0)
 	{
-		m_current_read += (buff - start);
+		_current_read += (buff - start);
 		if (*buff == '\r' || *buff == '\n')
-			m_current_read++;
+			_current_read++;
 		line.assign(start, (buff - start));
 	}
 }
@@ -420,27 +420,27 @@ template <class allocT>
 void memory_buffer_base<allocT>::reinit (bool clear_memory)
 {
 	if (clear_memory)
-		m_allocator.deallocate();
-	m_current_read = 0;
-	m_next_push = 0;
+		_allocator.deallocate();
+	_current_read = 0;
+	_next_push = 0;
 }
 
 template <class allocT>
 size_t memory_buffer_base<allocT>::get_size () const
 {
-	return m_next_push;
+	return _next_push;
 }
 
 template <class allocT>
 bool memory_buffer_base<allocT>::empty () const
 {
-	return m_next_push == 0;
+	return _next_push == 0;
 }
 
 template <class allocT>
 void* memory_buffer_base<allocT>::get_data () const
 {
-  return m_allocator.get_char_buffer();
+  return _allocator.get_char_buffer();
 }
 
 
@@ -462,20 +462,20 @@ std_strbuff<allocT>::~std_strbuff()
 template <class allocT>
 char* std_strbuff<allocT>::pbase () const
 {
-	return this->m_allocator.get_char_buffer();
+	return this->_allocator.get_char_buffer();
 }
 
 template <class allocT>
 char* std_strbuff<allocT>::pptr () const
 {
-	char* ret= &this->m_allocator.get_char_buffer()[this->m_next_push];
+	char* ret= &this->_allocator.get_char_buffer()[this->_next_push];
 	return ret;
 }
 
 template <class allocT>
 char* std_strbuff<allocT>::epptr () const
 {
-	return &this->m_allocator.get_char_buffer()[this->m_allocator.get_size()];
+	return &this->_allocator.get_char_buffer()[this->_allocator.get_size()];
 }
 
 
@@ -483,12 +483,12 @@ char* std_strbuff<allocT>::epptr () const
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)
-      : m_current_read(0),
-        m_next_push(0)
-	, m_allocator(size)
+      : _current_read(0),
+        _next_push(0)
+	, _allocator(size)
 {
-	m_next_push = (int)size;
-	m_allocator.allocate(size);
+	_next_push = (int)size;
+	_allocator.allocate(size);
 }
 
 
@@ -502,10 +502,10 @@ backward_memory_buffer_base<allocT>::~backward_memory_buffer_base()
 template <class allocT>
 void backward_memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
 {
-	while (m_next_push + size>m_allocator.get_buffer_size())
-		m_allocator.reallocate(m_next_push+size);
-	memcpy(&m_allocator.get_buffer<byte>()[m_allocator.get_buffer_size() - m_next_push - size], ptr, size);
-	m_next_push += ((int)size);
+	while (_next_push + size>_allocator.get_buffer_size())
+		_allocator.reallocate(_next_push+size);
+	memcpy(&_allocator.get_buffer<byte>()[_allocator.get_buffer_size() - _next_push - size], ptr, size);
+	_next_push += ((int)size);
 }
 
 template <class allocT>
@@ -525,27 +525,27 @@ template <class allocT>
 void backward_memory_buffer_base<allocT>::reinit (bool clear_memory)
 {
 	if (clear_memory)
-		m_allocator.deallocate();
-	m_current_read = 0;
-	m_next_push = 0;
+		_allocator.deallocate();
+	_current_read = 0;
+	_next_push = 0;
 }
 
 template <class allocT>
 size_t backward_memory_buffer_base<allocT>::get_size () const
 {
-	return m_next_push;
+	return _next_push;
 }
 
 template <class allocT>
 bool backward_memory_buffer_base<allocT>::empty () const
 {
-	return m_next_push == 0;
+	return _next_push == 0;
 }
 
 template <class allocT>
 void* backward_memory_buffer_base<allocT>::get_data () const
 {
-	return &m_allocator.get_buffer<byte>()[m_allocator.size() - m_next_push];
+	return &_allocator.get_buffer<byte>()[_allocator.size() - _next_push];
 }
 
 

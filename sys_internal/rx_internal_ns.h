@@ -79,9 +79,9 @@ contains root server folders\
   private:
 
 
-      static server_directories_type m_root_directories;
+      static server_directories_type _root_directories;
 
-      static server_items_type m_root_items;
+      static server_items_type _root_items;
 
 
 };

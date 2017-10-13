@@ -52,9 +52,9 @@ namespace mngt {
 // Class server::mngt::server_manager 
 
 server_manager::server_manager()
-      : m_telnet_port(0)
+      : _telnet_port(0)
 {
-	m_commands_manager = server_command_manager::smart_ptr(pointers::_create_new);
+	_commands_manager = server_command_manager::smart_ptr(pointers::_create_new);
 }
 
 
@@ -75,12 +75,12 @@ void server_manager::virtual_release ()
 dword server_manager::initialize (host::rx_server_host* host, managment_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
-	m_telnet_port = data.telnet_port;
-	m_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
-	m_unassigned_domain = sys_internal::sys_objects::unssigned_domain::smart_ptr(pointers::_create_new);
-	m_unassigned_app = sys_internal::sys_objects::unassigned_application::smart_ptr(pointers::_create_new);
-	m_system_app = sys_internal::sys_objects::system_application::smart_ptr(pointers::_create_new);
-	m_system_domain = sys_internal::sys_objects::system_domain::smart_ptr(pointers::_create_new);
+	_telnet_port = data.telnet_port;
+	_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
+	_unassigned_domain = sys_internal::sys_objects::unssigned_domain::smart_ptr(pointers::_create_new);
+	_unassigned_app = sys_internal::sys_objects::unassigned_application::smart_ptr(pointers::_create_new);
+	_system_app = sys_internal::sys_objects::system_application::smart_ptr(pointers::_create_new);
+	_system_domain = sys_internal::sys_objects::system_domain::smart_ptr(pointers::_create_new);
 	return RX_OK;
 }
 
@@ -91,24 +91,24 @@ dword server_manager::deinitialize ()
 
 dword server_manager::start (host::rx_server_host* host, const managment_data_t& data)
 {
-	if (m_telnet_port)
+	if (_telnet_port)
 	{
-		m_telnet_listener = terminal::console::server_telnet_socket::smart_ptr(pointers::_create_new);
-		m_telnet_listener->start(rx_server::instance().get_runtime().get_io_pool()->get_pool(), m_telnet_port);
+		_telnet_listener = terminal::console::server_telnet_socket::smart_ptr(pointers::_create_new);
+		_telnet_listener->start(rx_server::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{
-		m_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_command(one);
+		_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_command(one);
 	}
 	return RX_OK;
 }
 
 dword server_manager::stop ()
 {
-	if (m_telnet_listener)
+	if (_telnet_listener)
 	{
-		m_telnet_listener->stop();
-		m_telnet_listener = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
+		_telnet_listener->stop();
+		_telnet_listener = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
 	}
 	return RX_OK;
 }
@@ -145,7 +145,7 @@ manager_initialization_context & manager_initialization_context::operator=(const
 
 void manager_initialization_context::register_command (server_command_base_ptr cmd)
 {
-	m_to_register.emplace_back(cmd);
+	_to_register.emplace_back(cmd);
 }
 
 

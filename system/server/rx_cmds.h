@@ -90,12 +90,12 @@ class program_context_base : public rx::pointers::reference_object
 
       server_directory_ptr get_current_directory ()
       {
-        return m_current_directory;
+        return _current_directory;
       }
 
       void set_current_directory (server_directory_ptr value)
       {
-        m_current_directory = value;
+        _current_directory = value;
       }
 
 
@@ -105,12 +105,12 @@ class program_context_base : public rx::pointers::reference_object
   private:
 
 
-      program_context_base::smart_ptr m_root;
+      program_context_base::smart_ptr _root;
 
-      server_program_holder_ptr m_holder;
+      server_program_holder_ptr _holder;
 
 
-      server_directory_ptr m_current_directory;
+      server_directory_ptr _current_directory;
 
 
 };
@@ -161,7 +161,7 @@ class program_executer_base : public rx::pointers::virtual_reference_object
   private:
 
 
-      server_program_holder_ptr m_holder;
+      server_program_holder_ptr _holder;
 
 
     friend class server_program_holder;
@@ -189,13 +189,13 @@ class server_program_holder : public rx::pointers::reference_object
   private:
 
 
-      server_program_base::smart_ptr m_main_program;
+      server_program_base::smart_ptr _main_program;
 
-      sub_programs_type m_sub_programs;
+      sub_programs_type _sub_programs;
 
-      program_executer_base::smart_ptr m_executer;
+      program_executer_base::smart_ptr _executer;
 
-      program_context_base_ptr m_main_context;
+      program_context_base_ptr _main_context;
 
 
 };
@@ -229,7 +229,7 @@ class console_program_context : public program_context_base
 
       const size_t get_current_line () const
       {
-        return m_current_line;
+        return _current_line;
       }
 
 
@@ -239,15 +239,15 @@ class console_program_context : public program_context_base
   private:
 
 
-      size_t m_current_line;
+      size_t _current_line;
 
-      buffer_ptr m_out;
+      buffer_ptr _out;
 
-      buffer_ptr m_err;
+      buffer_ptr _err;
 
-      std::ostream m_out_std;
+      std::ostream _out_std;
 
-      std::ostream m_err_std;
+      std::ostream _err_std;
 
 
 };
@@ -293,20 +293,20 @@ class server_command_base : public ns::rx_server_item
 
       const string_type& get_console_name () const
       {
-        return m_console_name;
+        return _console_name;
       }
 
 
 	  virtual const char* get_help() const = 0;
   protected:
 
-      rx_time m_time_stamp;
+      rx_time _time_stamp;
 
 
   private:
 
 
-      string_type m_console_name;
+      string_type _console_name;
 
 
 };
@@ -343,7 +343,7 @@ class server_console_program : public server_program_base
   private:
 
 
-      string_vector m_lines;
+      string_vector _lines;
 
 
 };
@@ -380,14 +380,14 @@ class console_client : public rx::pointers::virtual_reference_object
 
   private:
 
-      server_directory_ptr m_current_directory;
+      server_directory_ptr _current_directory;
 
 
 
-      program_context_base::smart_ptr m_current;
+      program_context_base::smart_ptr _current;
 
 
-      string_type m_line;
+      string_type _line;
 
 
 };
@@ -460,7 +460,7 @@ class server_script_host
 
       const script_def_t& get_definition () const
       {
-        return m_definition;
+        return _definition;
       }
 
 
@@ -470,7 +470,7 @@ class server_script_host
   private:
 
 
-      script_def_t m_definition;
+      script_def_t _definition;
 
 
 };

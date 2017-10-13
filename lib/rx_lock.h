@@ -63,7 +63,7 @@ class slim_lock
   private:
 
 
-      slim_lock_t m_slim_lock;
+      slim_lock_t _slim_lock;
 
 
 };
@@ -95,7 +95,7 @@ class lockable
   private:
 
 
-      slim_lock_t m_slim_lock;
+      slim_lock_t _slim_lock;
 
 
 };
@@ -122,7 +122,7 @@ class auto_lock_t
   private:
 
 
-      T* m_p;
+      T* _p;
 
 
 };
@@ -162,7 +162,7 @@ class waitable
 
   protected:
 
-      sys_handle_t m_handle;
+      sys_handle_t _handle;
 
 
   private:
@@ -238,23 +238,23 @@ typedef auto_lock_t< empty_slim_lock  > auto_dummy_slim_lock;
 
 template <class T>
 auto_lock_t<T>::auto_lock_t (T* who)
-  : m_p(who)
+  : _p(who)
 {
-		m_p->lock();
+		_p->lock();
 }
 
 template <class T>
 auto_lock_t<T>::auto_lock_t (const T* who)
-  : m_p(const_cast<T*>(who))
+  : _p(const_cast<T*>(who))
 {
-	m_p->lock();
+	_p->lock();
 }
 
 
 template <class T>
 auto_lock_t<T>::~auto_lock_t()
 {
-	m_p->unlock();
+	_p->unlock();
 }
 
 

@@ -87,50 +87,50 @@ class security_context : public rx::pointers::interface_object
 
       const rx_security_handle_t get_handle () const
       {
-        return m_handle;
+        return _handle;
       }
 
 
       const string_type& get_location () const
       {
-        return m_location;
+        return _location;
       }
 
 
       const string_type& get_full_name () const
       {
-        return m_full_name;
+        return _full_name;
       }
 
 
       const string_type& get_user_name () const
       {
-        return m_user_name;
+        return _user_name;
       }
 
 
       const string_type& get_port () const
       {
-        return m_port;
+        return _port;
       }
 
 
 
   protected:
 
-      string_type m_location;
+      string_type _location;
 
-      string_type m_full_name;
+      string_type _full_name;
 
-      string_type m_user_name;
+      string_type _user_name;
 
-      string_type m_port;
+      string_type _port;
 
 
   private:
 
 
-      rx_security_handle_t m_handle;
+      rx_security_handle_t _handle;
 
 
 };
@@ -182,12 +182,12 @@ class security_manager
 
 
 
-      active_contexts_type m_active_contexts;
+      active_contexts_type _active_contexts;
 
 
-      locks::lockable m_active_lock;
+      locks::lockable _active_lock;
 
-      qword m_last_id;
+      qword _last_id;
 
 
 };
@@ -238,7 +238,7 @@ class security_auto_context
   private:
 
 
-      rx_security_handle_t m_ctx;
+      rx_security_handle_t _ctx;
 
 
 };

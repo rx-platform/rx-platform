@@ -139,22 +139,22 @@ class telnet_client : public server::prog::console_client,
 
 
 
-      telnet_security_context::smart_ptr m_security_context;
+      telnet_security_context::smart_ptr _security_context;
 
 
-      locks::slim_lock m_buffers_lock;
+      locks::slim_lock _buffers_lock;
 
-      buffers_type m_buffers;
+      buffers_type _buffers;
 
-      string_type m_receiving_string;
+      string_type _receiving_string;
 
-      bool m_send_echo;
+      bool _send_echo;
 
-      bool m_cancel_current;
+      bool _cancel_current;
 
-      bool m_verified;
+      bool _verified;
 
-      bool m_exit;
+      bool _exit;
 
 
 };

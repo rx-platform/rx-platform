@@ -109,11 +109,11 @@ class callback_functor_cotainer
 			callback_handle_t ret = g_new_handle++;
 			ret <<= 1;
 			callback_data_t one(p, std::mem_fn((storage_function_type)func));
-			this->m_my_lock.lock();
-			if (this->m_callbacks == nullptr)
-				this->m_callbacks = new callbacks_type;
-			this->m_callbacks->emplace(ret, one);
-			this->m_my_lock.unlock();
+			this->_my_lock.lock();
+			if (this->_callbacks == nullptr)
+				this->_callbacks = new callbacks_type;
+			this->_callbacks->emplace(ret, one);
+			this->_my_lock.unlock();
 			return ret;
 
 		}
@@ -123,11 +123,11 @@ class callback_functor_cotainer
 			ret <<= 1;
 			ret |= 1;
 			callback_data_t one(func);
-			this->m_my_lock.lock();
-			if (this->m_callbacks == nullptr)
-				this->m_callbacks = new callbacks_type;
-			this->m_callbacks->emplace(ret, one);
-			this->m_my_lock.unlock();
+			this->_my_lock.lock();
+			if (this->_callbacks == nullptr)
+				this->_callbacks = new callbacks_type;
+			this->_callbacks->emplace(ret, one);
+			this->_my_lock.unlock();
 			return ret;
 		}
 		template<typename callbackT>
@@ -136,12 +136,12 @@ class callback_functor_cotainer
 			callback_handle_t ret = g_new_handle++;
 			ret <<= 1;
 			callback_data_t one(p, std::mem_fn((storage_function_type)func));
-			this->m_my_lock.lock();
-			if (this->m_callbacks == nullptr)
-				this->m_callbacks = new callbacks_type;
+			this->_my_lock.lock();
+			if (this->_callbacks == nullptr)
+				this->_callbacks = new callbacks_type;
 			(func)((callbackT*)p, initial, 0);
-			this->m_callbacks->emplace(ret, one);
-			this->m_my_lock.unlock();
+			this->_callbacks->emplace(ret, one);
+			this->_my_lock.unlock();
 			return ret;
 
 		}
@@ -151,12 +151,12 @@ class callback_functor_cotainer
 			ret <<= 1;
 			ret |= 1;
 			callback_data_t one(func);
-			this->m_my_lock.lock();
-			if (this->m_callbacks == nullptr)
-				this->m_callbacks = new callbacks_type;
+			this->_my_lock.lock();
+			if (this->_callbacks == nullptr)
+				this->_callbacks = new callbacks_type;
 			(func)(initial, 0);
-			this->m_callbacks->emplace(ret, one);
-			this->m_my_lock.unlock();
+			this->_callbacks->emplace(ret, one);
+			this->_my_lock.unlock();
 			return ret;
 		}
   protected:
@@ -164,12 +164,12 @@ class callback_functor_cotainer
   private:
 
 
-      callbacks_type* m_callbacks;
+      callbacks_type* _callbacks;
 
 
       static std::atomic<callback_handle_t> g_new_handle;
 
-      lockT m_my_lock;
+      lockT _my_lock;
 
 
 };
@@ -182,7 +182,7 @@ std::atomic<callback_handle_t> callback_functor_cotainer<lockT,argT>::g_new_hand
 
 template <typename lockT, typename argT>
 callback_functor_cotainer<lockT,argT>::callback_functor_cotainer()
-      : m_callbacks(nullptr)
+      : _callbacks(nullptr)
 {
 }
 
@@ -190,8 +190,8 @@ callback_functor_cotainer<lockT,argT>::callback_functor_cotainer()
 template <typename lockT, typename argT>
 callback_functor_cotainer<lockT,argT>::~callback_functor_cotainer()
 {
-	if (this->m_callbacks != nullptr)
-		delete this->m_callbacks;
+	if (this->_callbacks != nullptr)
+		delete this->_callbacks;
 }
 
 
@@ -200,16 +200,16 @@ template <typename lockT, typename argT>
 dword callback_functor_cotainer<lockT,argT>::unregister_callback (callback_handle_t handle)
 {
 	dword ret = RX_ERROR;
-	this->m_my_lock.lock();
-	if (this->m_callbacks != nullptr)
+	this->_my_lock.lock();
+	if (this->_callbacks != nullptr)
 	{
-		auto it = m_callbacks->find(handle);
-		if (it != m_callbacks->end())
+		auto it = _callbacks->find(handle);
+		if (it != _callbacks->end())
 		{
-			m_callbacks->erase(it);
+			_callbacks->erase(it);
 			ret = RX_OK;
 		}
-		this->m_my_lock.unlock();
+		this->_my_lock.unlock();
 	}
 	return ret;
 }
@@ -217,10 +217,10 @@ dword callback_functor_cotainer<lockT,argT>::unregister_callback (callback_handl
 template <typename lockT, typename argT>
 void callback_functor_cotainer<lockT,argT>::operator () (const argT& argument, dword state)
 {
-	this->m_my_lock.lock();
-	if (this->m_callbacks != nullptr && !m_callbacks->empty())
+	this->_my_lock.lock();
+	if (this->_callbacks != nullptr && !_callbacks->empty())
 	{
-		for (auto& it : *m_callbacks)
+		for (auto& it : *_callbacks)
 		{
 			if (it.first & 0x1)
 			{// global function
@@ -233,7 +233,7 @@ void callback_functor_cotainer<lockT,argT>::operator () (const argT& argument, d
 			}
 		}
 	}
-	this->m_my_lock.unlock();
+	this->_my_lock.unlock();
 }
 
 

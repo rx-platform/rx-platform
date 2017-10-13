@@ -44,7 +44,7 @@ base_meta_writter::base_meta_writter(const base_meta_writter &right)
 }
 
 base_meta_writter::base_meta_writter (int version)
-	: m_version(version)
+	: _version(version)
 {
 }
 

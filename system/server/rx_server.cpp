@@ -44,21 +44,21 @@ namespace server {
 rx_server* rx_server::g_instance = nullptr;
 
 rx_server::rx_server()
-      : m_host(nullptr),
-        m_started(rx_time::now())
+      : _host(nullptr),
+        _started(rx_time::now())
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
-	m_os_info = buff;
+	_os_info = buff;
 
-	m_rx_version =  " Ver ";
+	_rx_version =  " Ver ";
 	sprintf(buff,"%s Ver %d.%d.%d", RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 	{
-		ASSIGN_MODULE_VERSION(m_rx_version, buff);
+		ASSIGN_MODULE_VERSION(_rx_version, buff);
 	}
-	m_rx_name = rx_get_server_name();
-	m_lib_version = g_lib_version;
-	m_hal_version = g_ositf_version;
+	_rx_name = rx_get_server_name();
+	_lib_version = g_lib_version;
+	_hal_version = g_ositf_version;
 	
 	
 
@@ -67,7 +67,7 @@ rx_server::rx_server()
 		RX_COMPILER_VERSION,
 		RX_COMPILER_MINOR,
 		RX_COMPILER_BUILD);
-	m_comp_version = buff;
+	_comp_version = buff;
 
 }
 
@@ -95,26 +95,26 @@ void rx_server::cleanup ()
 dword rx_server::initialize (host::rx_server_host* host, configuration_data_t& data)
 {
 	python::py_script* python = &python::py_script::instance();
-	m_scripts.emplace(python->get_definition().name, python);
+	_scripts.emplace(python->get_definition().name, python);
 	
-	m_host = host;
-	m_host_info = host->get_host_info();
+	_host = host;
+	_host_info = host->get_host_info();
 
-	if (m_runtime.initialize(host, data.runtime_data))
+	if (_runtime.initialize(host, data.runtime_data))
 	{
-		if (m_manager.initialize(host, data.managment_data))
+		if (_manager.initialize(host, data.managment_data))
 		{
 			sys_internal::internal_ns::root_server_directory::initialize(host,data.namespace_data);
-			m_root = sys_internal::internal_ns::root_server_directory::smart_ptr(pointers::_create_new);
+			_root = sys_internal::internal_ns::root_server_directory::smart_ptr(pointers::_create_new);
 
-			for (auto one : m_scripts)
+			for (auto one : _scripts)
 				one.second->initialize();
 			
 			return RX_OK;
 		}
 		else
 		{
-			m_runtime.deinitialize();
+			_runtime.deinitialize();
 		}
 	}
 	return RX_ERROR;
@@ -123,19 +123,19 @@ dword rx_server::initialize (host::rx_server_host* host, configuration_data_t& d
 dword rx_server::deinitialize ()
 {
 	
-	for (auto one : m_scripts)
+	for (auto one : _scripts)
 		one.second->deinitialize();
 
-	m_manager.deinitialize();
-	m_runtime.deinitialize();
+	_manager.deinitialize();
+	_runtime.deinitialize();
 	return RX_OK;
 }
 
 dword rx_server::start (host::rx_server_host* host, const configuration_data_t& data)
 {
-	if (m_runtime.start(host, data.runtime_data))
+	if (_runtime.start(host, data.runtime_data))
 	{
-		if (m_manager.start(host, data.managment_data))
+		if (_manager.start(host, data.managment_data))
 		{
 			host->server_started_event();
 
@@ -143,7 +143,7 @@ dword rx_server::start (host::rx_server_host* host, const configuration_data_t& 
 		}
 		else
 		{
-			m_runtime.stop();
+			_runtime.stop();
 		}
 	}
 	return RX_ERROR;
@@ -151,14 +151,14 @@ dword rx_server::start (host::rx_server_host* host, const configuration_data_t& 
 
 dword rx_server::stop ()
 {
-	m_manager.stop();
-	m_runtime.stop();
+	_manager.stop();
+	_runtime.stop();
 	return RX_OK;
 }
 
 server_directory_ptr rx_server::get_root_directory ()
 {
-	return m_root;
+	return _root;
 }
 
 bool rx_server::shutdown (const string_type& msg, std::ostream& err)
@@ -168,7 +168,7 @@ bool rx_server::shutdown (const string_type& msg, std::ostream& err)
 		err << "Access Denied!";
 		return false;
 	}
-	m_host->shutdown(msg);
+	_host->shutdown(msg);
 	return true;
 }
 

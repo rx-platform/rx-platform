@@ -105,7 +105,7 @@ const_value::const_value(const const_value &right)
 }
 
 const_value::const_value (const string_type& name)
-	: m_name(name)
+	: _name(name)
 {
 }
 
@@ -125,7 +125,7 @@ const_value & const_value::operator=(const const_value &right)
 
 bool const_value::serialize_definition (base_meta_writter& stream, byte type) const
 {
-	stream.write_string("Name", m_name.c_str());
+	stream.write_string("Name", _name.c_str());
 	rx_value val;
 	get_value(val);
 	if (!val.serialize_value(stream))
@@ -142,12 +142,12 @@ bool const_value::deserialize_definition (base_meta_reader& stream, byte type)
 // Class server::meta::internal_value 
 
 internal_value::internal_value()
-      : m_read_only(true)
+      : _read_only(true)
 {
 }
 
 internal_value::internal_value(const internal_value &right)
-      : m_read_only(true)
+      : _read_only(true)
 {
 }
 
@@ -229,8 +229,8 @@ base_complex_type<metaT>::base_complex_type()
 template <class metaT>
 base_complex_type<metaT>::base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
 	: checkable_type<metaT>(name,id,parent,system)
-	, m_sealed(sealed)
-	, m_abstract(abstract)
+	, _sealed(sealed)
+	, _abstract(abstract)
 {
 }
 
@@ -238,7 +238,7 @@ base_complex_type<metaT>::base_complex_type (const string_type& name, const rx_n
 template <class metaT>
 base_complex_type<metaT>::~base_complex_type()
 {
-	for (auto one : m_internal_values)
+	for (auto one : _internal_values)
 		delete one;
 }
 
@@ -250,15 +250,15 @@ bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, 
 	if (!checkable_type<metaT>::serialize_definition(stream, type))
 		return false;
 
-	if (!stream.write_bool("Sealed", m_sealed))
+	if (!stream.write_bool("Sealed", _sealed))
 		return false;
 
-	if (!stream.write_bool("Abstract", m_abstract))
+	if (!stream.write_bool("Abstract", _abstract))
 		return false;
 
-	if (!stream.start_array("Const", m_const_values.size()))
+	if (!stream.start_array("Const", _const_values.size()))
 		return false;
-	for (const auto& one : m_const_values)
+	for (const auto& one : _const_values)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -270,9 +270,9 @@ bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, 
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Vals", m_internal_values.size()))
+	if (!stream.start_array("Vals", _internal_values.size()))
 		return false;
-	for (const auto& one : m_internal_values)
+	for (const auto& one : _internal_values)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -284,9 +284,9 @@ bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, 
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Structs", m_structs.size()))
+	if (!stream.start_array("Structs", _structs.size()))
 		return false;
-	for (const auto& one : m_structs)
+	for (const auto& one : _structs)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -298,9 +298,9 @@ bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, 
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Vars", m_variables.size()))
+	if (!stream.start_array("Vars", _variables.size()))
 		return false;
-	for (const auto& one : m_variables)
+	for (const auto& one : _variables)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -321,7 +321,7 @@ bool base_complex_type<metaT>::deserialize_definition (base_meta_reader& stream,
 	if (!checkable_type<metaT>::deserialize_definition(stream, type))
 		return false;
 
-	if (!stream.read_bool("Sealed", m_sealed))
+	if (!stream.read_bool("Sealed", _sealed))
 		return false;
 
 	return true;
@@ -394,10 +394,10 @@ bool base_complex_type<metaT>::register_variable (const variable_attribute& item
 template <class metaT>
 bool base_complex_type<metaT>::check_name (const string_type& name)
 {
-	auto it = m_names_cache.find(name);
-	if (it == m_names_cache.end())
+	auto it = _names_cache.find(name);
+	if (it == _names_cache.end())
 	{
-		m_names_cache.emplace(name);
+		_names_cache.emplace(name);
 		return true;
 	}
 	else
@@ -546,18 +546,18 @@ complex_class_attribute::~complex_class_attribute()
 
 bool complex_class_attribute::serialize_definition (base_meta_writter& stream, byte type) const
 {
-	if (!stream.write_string("Name", m_name.c_str()))
+	if (!stream.write_string("Name", _name.c_str()))
 		return false;
-	if (!stream.write_id("Id", m_target_id))
+	if (!stream.write_id("Id", _target_id))
 		return false;
 	return true;
 }
 
 bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, byte type)
 {
-	if (!stream.read_string("Name", m_name))
+	if (!stream.read_string("Name", _name))
 		return false;
-	if (!stream.read_id("Id", m_target_id))
+	if (!stream.read_id("Id", _target_id))
 		return false;
 	return true;
 }

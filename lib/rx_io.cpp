@@ -76,21 +76,21 @@ int dispatcher_connect_callback(void* data, dword status)
 
 // Class rx::io::dispatcher_subscriber 
 
-time_aware_subscribers_type dispatcher_subscriber::m_time_aware_subscribers;
+time_aware_subscribers_type dispatcher_subscriber::_time_aware_subscribers;
 
-locks::lockable dispatcher_subscriber::m_time_aware_subscribers_lock;
+locks::lockable dispatcher_subscriber::_time_aware_subscribers_lock;
 
 dispatcher_subscriber::dispatcher_subscriber (rx_thread_handle_t destination)
-      : m_dispatcher_handle(0),
-        m_destination_context(destination)
+      : _dispatcher_handle(0),
+        _destination_context(destination)
 {
-	memzero(&m_dispatcher_data, sizeof(m_dispatcher_data));
+	memzero(&_dispatcher_data, sizeof(_dispatcher_data));
 
-	m_dispatcher_data.read_callback = dispatcher_read_callback;
-	m_dispatcher_data.write_callback = dispatcher_write_callback;
-	m_dispatcher_data.connect_callback = dispatcher_connect_callback;
-	m_dispatcher_data.accept_callback = dispatcher_accept_callback;
-	m_dispatcher_data.shutdown_callback = dispatcher_shutdown_callback;
+	_dispatcher_data.read_callback = dispatcher_read_callback;
+	_dispatcher_data.write_callback = dispatcher_write_callback;
+	_dispatcher_data.connect_callback = dispatcher_connect_callback;
+	_dispatcher_data.accept_callback = dispatcher_accept_callback;
+	_dispatcher_data.shutdown_callback = dispatcher_shutdown_callback;
 }
 
 
@@ -102,18 +102,18 @@ dispatcher_subscriber::~dispatcher_subscriber()
 
 bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool::smart_ptr& dispatcher)
 {
-	dword ret = rx_dispatcher_register(dispatcher->m_dispatcher, &m_dispatcher_data);
+	dword ret = rx_dispatcher_register(dispatcher->_dispatcher, &_dispatcher_data);
 	if (ret)
 	{
-		m_disptacher = dispatcher;
-		m_dispatcher_handle = dispatcher->m_dispatcher;
+		_disptacher = dispatcher;
+		_dispatcher_handle = dispatcher->_dispatcher;
 	}
 	return ret != 0;
 }
 
 bool dispatcher_subscriber::disconnect_dispatcher ()
 {
-	int ret = rx_dispatcher_unregister(m_dispatcher_handle, &m_dispatcher_data);
+	int ret = rx_dispatcher_unregister(_dispatcher_handle, &_dispatcher_data);
 	if(ret>0)
 	{
         for(int i=0; i<ret; i++)
@@ -126,27 +126,27 @@ bool dispatcher_subscriber::disconnect_dispatcher ()
 
 void dispatcher_subscriber::register_timed ()
 {
-	locks::auto_lock dummy(&m_time_aware_subscribers_lock);
-	m_time_aware_subscribers.emplace(smart_this());
+	locks::auto_lock dummy(&_time_aware_subscribers_lock);
+	_time_aware_subscribers.emplace(smart_this());
 }
 
 void dispatcher_subscriber::unregister_timed ()
 {
-	locks::auto_lock dummy(&m_time_aware_subscribers_lock);
-	m_time_aware_subscribers.erase(smart_this());
+	locks::auto_lock dummy(&_time_aware_subscribers_lock);
+	_time_aware_subscribers.erase(smart_this());
 }
 
 void dispatcher_subscriber::propagate_timer ()
 {
 	dword tick = rx_get_tick_count();
-	m_time_aware_subscribers_lock.lock();
+	_time_aware_subscribers_lock.lock();
 	std::vector<dispatcher_subscriber::smart_ptr> helper;
-	helper.reserve(m_time_aware_subscribers.size());
-	for (auto one : m_time_aware_subscribers)
+	helper.reserve(_time_aware_subscribers.size());
+	for (auto one : _time_aware_subscribers)
 	{
 		helper.emplace_back(one);
 	}
-	m_time_aware_subscribers_lock.unlock();
+	_time_aware_subscribers_lock.unlock();
 	for (auto one : helper)
 		one->timer_tick(tick);
 }

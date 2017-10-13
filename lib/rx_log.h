@@ -173,7 +173,7 @@ class stream_log_subscriber : public log_subscriber,
   private:
 
 
-      std::ostream& m_stream;
+      std::ostream& _stream;
 
 
 };
@@ -206,13 +206,13 @@ class cache_log_subscriber : public log_subscriber,
   private:
 
 
-      size_t m_max_size;
+      size_t _max_size;
 
-      events_cache_type m_events_cache;
+      events_cache_type _events_cache;
 
-      size_t m_current_size;
+      size_t _current_size;
 
-      locks::lockable m_cache_lock;
+      locks::lockable _cache_lock;
 
 
 };
@@ -263,11 +263,11 @@ class log_object : public locks::lockable
 
       static log_object *g_object;
 
-      subscribers_type m_subscribers;
+      subscribers_type _subscribers;
 
-      threads::physical_job_thread m_worker;
+      threads::physical_job_thread _worker;
 
-      cache_log_subscriber::smart_ptr m_cache;
+      cache_log_subscriber::smart_ptr _cache;
 
 
     friend class log_event_job;
@@ -297,22 +297,22 @@ class log_event_job : public jobs::job
   private:
 
 
-      locks::event *m_sync_event;
+      locks::event *_sync_event;
 
 
-      log_event_type m_event_type;
+      log_event_type _event_type;
 
-      string_type m_library;
+      string_type _library;
 
-      string_type m_source;
+      string_type _source;
 
-      string_type m_code;
+      string_type _code;
 
-      int m_level;
+      int _level;
 
-      string_type m_message;
+      string_type _message;
 
-      rx_time m_when;
+      rx_time _when;
 
 
 };

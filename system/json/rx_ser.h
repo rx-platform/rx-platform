@@ -123,11 +123,11 @@ class json_reader : public rx::base_meta_reader
 
 
 
-      std::stack<json_read_stack_data> m_stack;
+      std::stack<json_read_stack_data> _stack;
 
-      Json::Value m_envelope;
+      Json::Value _envelope;
 
-      string_type m_result;
+      string_type _result;
 
 
 };
@@ -206,13 +206,13 @@ class json_writter : public rx::base_meta_writter
 
 
 
-      std::stack<json_write_stack_data> m_stack;
+      std::stack<json_write_stack_data> _stack;
 
-      Json::Value m_envelope;
+      Json::Value _envelope;
 
-      string_type m_result;
+      string_type _result;
 
-      int m_type;
+      int _type;
 
 
 };

@@ -69,7 +69,7 @@ class manager_initialization_context
 
       const to_register_type& get_to_register () const
       {
-        return m_to_register;
+        return _to_register;
       }
 
 
@@ -83,7 +83,7 @@ class manager_initialization_context
 
 
 
-      to_register_type m_to_register;
+      to_register_type _to_register;
 
 
 };
@@ -129,31 +129,31 @@ class server_manager
 
       server_item_ptr get_commands_manager ()
       {
-        return m_commands_manager;
+        return _commands_manager;
       }
 
 
       objects::domain_runtime::smart_ptr get_unassigned_domain ()
       {
-        return m_unassigned_domain;
+        return _unassigned_domain;
       }
 
 
       objects::application_runtime::smart_ptr get_unassigned_app ()
       {
-        return m_unassigned_app;
+        return _unassigned_app;
       }
 
 
       objects::application_runtime::smart_ptr get_system_app ()
       {
-        return m_system_app;
+        return _system_app;
       }
 
 
       objects::domain_runtime::smart_ptr get_system_domain ()
       {
-        return m_system_domain;
+        return _system_domain;
       }
 
 
@@ -168,20 +168,20 @@ class server_manager
   private:
 
 
-      rx::io::tcp_listent_str_buffer::smart_ptr m_telnet_listener;
+      rx::io::tcp_listent_str_buffer::smart_ptr _telnet_listener;
 
-      server_item_ptr m_commands_manager;
+      server_item_ptr _commands_manager;
 
-      objects::domain_runtime::smart_ptr m_unassigned_domain;
+      objects::domain_runtime::smart_ptr _unassigned_domain;
 
-      objects::application_runtime::smart_ptr m_unassigned_app;
+      objects::application_runtime::smart_ptr _unassigned_app;
 
-      objects::application_runtime::smart_ptr m_system_app;
+      objects::application_runtime::smart_ptr _system_app;
 
-      objects::domain_runtime::smart_ptr m_system_domain;
+      objects::domain_runtime::smart_ptr _system_domain;
 
 
-      word m_telnet_port;
+      word _telnet_port;
 
 
 };

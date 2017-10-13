@@ -127,7 +127,7 @@ bin folder in file hierarcyh\
   private:
 
 
-      registred_commands_type m_registred_commands;
+      registred_commands_type _registred_commands;
 
 
 };

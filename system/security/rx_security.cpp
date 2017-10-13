@@ -47,7 +47,7 @@ namespace security {
 // Class server::security::security_context 
 
 security_context::security_context()
-      : m_handle(0)
+      : _handle(0)
 {
 }
 
@@ -60,12 +60,12 @@ security_context::~security_context()
 
 void security_context::logout ()
 {
-	m_handle = security_manager::instance().context_deactivated(smart_this());
+	_handle = security_manager::instance().context_deactivated(smart_this());
 }
 
 void security_context::login ()
 {
-	m_handle = security_manager::instance().context_activated(smart_this());
+	_handle = security_manager::instance().context_activated(smart_this());
 }
 
 bool security_context::has_console () const
@@ -96,12 +96,12 @@ bool security_context::is_hosted () const
 // Class server::security::security_manager 
 
 security_manager::security_manager()
-      : m_last_id(0)
+      : _last_id(0)
 {
 }
 
 security_manager::security_manager(const security_manager &right)
-      : m_last_id(0)
+      : _last_id(0)
 {
 	RX_ASSERT(false);
 }
@@ -131,12 +131,12 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 	char buff[0x100];
 	snprintf(buff, sizeof(buff), "User %s, security context created.", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
-	locks::auto_lock dummy(&m_active_lock);
-	m_last_id++;
-	if (m_last_id == 0)
-		m_last_id++;
-	m_active_contexts.emplace(m_last_id, who);
-	return m_last_id;
+	locks::auto_lock dummy(&_active_lock);
+	_last_id++;
+	if (_last_id == 0)
+		_last_id++;
+	_active_contexts.emplace(_last_id, who);
+	return _last_id;
 }
 
 rx_security_handle_t security_manager::context_deactivated (security_context::smart_ptr who)
@@ -144,11 +144,11 @@ rx_security_handle_t security_manager::context_deactivated (security_context::sm
 	char buff[0x100];
 	snprintf(buff, sizeof(buff), "User %s, security context destroying.", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
-	locks::auto_lock dummy(&m_active_lock);
-	auto it = m_active_contexts.find(who->get_handle());
-	if (it != m_active_contexts.end())
+	locks::auto_lock dummy(&_active_lock);
+	auto it = _active_contexts.find(who->get_handle());
+	if (it != _active_contexts.end())
 	{
-		m_active_contexts.erase(it);
+		_active_contexts.erase(it);
 		return 0;
 	}
 	else
@@ -160,9 +160,9 @@ rx_security_handle_t security_manager::context_deactivated (security_context::sm
 
 void security_manager::get_active_contexts (std::vector<security_context_ptr >& ctxs)
 {
-	locks::auto_lock dummy(&m_active_lock);
-	ctxs.reserve(m_active_contexts.size());
-	for (auto one : m_active_contexts)
+	locks::auto_lock dummy(&_active_lock);
+	ctxs.reserve(_active_contexts.size());
+	for (auto one : _active_contexts)
 	{
 		ctxs.emplace_back(one.second);
 	}
@@ -173,9 +173,9 @@ security_context_ptr security_manager::get_context (rx_security_handle_t handle)
 	if(handle==0)
 		return security_context_ptr::null_ptr;
 
-	locks::auto_lock dummy(&m_active_lock);
-	auto it = m_active_contexts.find(handle);
-	if (it != m_active_contexts.end())
+	locks::auto_lock dummy(&_active_lock);
+	auto it = _active_contexts.find(handle);
+	if (it != _active_contexts.end())
 	{
 		return it->second;
 	}
@@ -259,16 +259,16 @@ security_context_ptr secured_object::basic_check (bool& ret)
 // Class server::security::security_auto_context 
 
 security_auto_context::security_auto_context (security_context_ptr ctx)
-	: m_ctx(ctx->get_handle())
+	: _ctx(ctx->get_handle())
 {
-	if (m_ctx)
-		rx_push_security_context(m_ctx);
+	if (_ctx)
+		rx_push_security_context(_ctx);
 }
 
 
 security_auto_context::~security_auto_context()
 {
-	if (m_ctx)
+	if (_ctx)
 		rx_pop_security_context();
 }
 
@@ -278,7 +278,7 @@ security_auto_context::~security_auto_context()
 
 built_in_security_context::built_in_security_context()
 {
-	m_location = rx_get_server_name();
+	_location = rx_get_server_name();
 }
 
 
@@ -292,11 +292,11 @@ built_in_security_context::~built_in_security_context()
 
 unathorized_security_context::unathorized_security_context()
 {
-	m_user_name = "unathorized";
-	m_full_name = m_user_name + "@";
-	m_location = rx_get_server_name();
-	m_full_name += m_location;
-	m_port = "host";
+	_user_name = "unathorized";
+	_full_name = _user_name + "@";
+	_location = rx_get_server_name();
+	_full_name += _location;
+	_port = "host";
 }
 
 

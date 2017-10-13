@@ -75,7 +75,7 @@ class dispatcher_subscriber : public pointers::reference_object
 
       const rx_thread_handle_t get_destination_context () const
       {
-        return m_destination_context;
+        return _destination_context;
       }
 
 
@@ -91,10 +91,10 @@ class dispatcher_subscriber : public pointers::reference_object
       void unregister_timed ();
 
 
-      threads::dispatcher_pool::smart_ptr m_disptacher;
+      threads::dispatcher_pool::smart_ptr _disptacher;
 
 
-      rx_io_register_data m_dispatcher_data;
+      rx_io_register_data _dispatcher_data;
 
 
   private:
@@ -121,14 +121,14 @@ class dispatcher_subscriber : public pointers::reference_object
 
 
 
-      static time_aware_subscribers_type m_time_aware_subscribers;
+      static time_aware_subscribers_type _time_aware_subscribers;
 
 
-      static locks::lockable m_time_aware_subscribers_lock;
+      static locks::lockable _time_aware_subscribers_lock;
 
-      rx_kernel_dispather_t m_dispatcher_handle;
+      rx_kernel_dispather_t _dispatcher_handle;
 
-      rx_thread_handle_t m_destination_context;
+      rx_thread_handle_t _destination_context;
 
 	  friend int dispatcher_read_callback(void* data, dword status, size_t size);
 	  friend int dispatcher_write_callback(void* data, dword status);
@@ -177,7 +177,7 @@ protected:
 
       void set_receive_timeout (dword value)
       {
-        m_receive_timeout = value;
+        _receive_timeout = value;
       }
 
 
@@ -191,9 +191,9 @@ protected:
       virtual void release_buffer (buffer_ptr what) = 0;
 
 
-      locks::lockable m_read_lock;
+      locks::lockable _read_lock;
 
-      locks::lockable m_write_lock;
+      locks::lockable _write_lock;
 
 
   private:
@@ -208,23 +208,23 @@ protected:
 
 
 
-      dword m_send_timeout;
+      dword _send_timeout;
 
-      dword m_receive_timeout;
+      dword _receive_timeout;
 
-      bool m_sending;
+      bool _sending;
 
-      bool m_receiving;
+      bool _receiving;
 
-      dword m_send_tick;
+      dword _send_tick;
 
-      dword m_receive_tick;
+      dword _receive_tick;
 
-      bool m_shutdown_called;
+      bool _shutdown_called;
 
-      queue_type m_sending_queue;
+      queue_type _sending_queue;
 
-      buffer_ptr m_current_buffer;
+      buffer_ptr _current_buffer;
 
 
 };
@@ -253,7 +253,7 @@ class tcp_socket : public full_duplex_comm<buffT>
 
       void set_connect_timeout (dword value)
       {
-        m_connect_timeout = value;
+        _connect_timeout = value;
       }
 
 
@@ -266,15 +266,15 @@ class tcp_socket : public full_duplex_comm<buffT>
 
 
 
-      byte* m_buffer;
+      byte* _buffer;
 
-      dword m_connect_timeout;
+      dword _connect_timeout;
 
-      bool m_connecting;
+      bool _connecting;
 
-      dword m_connect_tick;
+      dword _connect_tick;
 
-      string_type m_peer_name;
+      string_type _peer_name;
 
 	  friend int dispatcher_connect_callback(void* data, dword status);
 };
@@ -320,7 +320,7 @@ protected:
 
 
 
-      byte m_buffer[ACCEPT_BUFFER_SIZE];
+      byte _buffer[ACCEPT_BUFFER_SIZE];
 
 	  friend int dispatcher_accept_callback(void* data, dword status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
 	  friend int listen_dispatcher_shutdown_callback(void* data, dword status);
@@ -345,25 +345,25 @@ typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_soc
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
-      : m_send_timeout(2000),
-        m_receive_timeout(10000),
-        m_sending(false),
-        m_receiving(false),
-        m_send_tick(0),
-        m_receive_tick(0),
-        m_shutdown_called(false)
+      : _send_timeout(2000),
+        _receive_timeout(10000),
+        _sending(false),
+        _receiving(false),
+        _send_tick(0),
+        _receive_tick(0),
+        _shutdown_called(false)
 {
 }
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm (sys_handle_t handle, threads::dispatcher_pool::smart_ptr& dispatcher)
-      : m_send_timeout(2000),
-        m_receive_timeout(10000),
-        m_sending(false),
-        m_receiving(false),
-        m_send_tick(0),
-        m_receive_tick(0),
-        m_shutdown_called(false)
+      : _send_timeout(2000),
+        _receive_timeout(10000),
+        _sending(false),
+        _receiving(false),
+        _send_tick(0),
+        _receive_tick(0),
+        _shutdown_called(false)
 {
 }
 
@@ -380,16 +380,16 @@ int full_duplex_comm<buffT>::internal_read_callback (size_t count, dword status)
 {
     bool receiving;
 	bool ret = false;
-	m_read_lock.lock();
-	receiving=m_receiving;
-	m_receiving = false;
-	m_read_lock.unlock();
+	_read_lock.lock();
+	receiving=_receiving;
+	_receiving = false;
+	_read_lock.unlock();
 	if(!receiving)
         return 0;
 
 	if (status == 0 && count != 0)
 	{
-		if (readed(m_dispatcher_data.read_buffer, count,get_destination_context()))
+		if (readed(_dispatcher_data.read_buffer, count,get_destination_context()))
 		{
 			ret = read_loop();
 			if(!ret)
@@ -407,11 +407,11 @@ int full_duplex_comm<buffT>::internal_write_callback (dword status)
 
 	buffer_ptr current;
 	bool ret = true;
-	m_write_lock.lock();
-	m_sending = false;
-	current = m_current_buffer;
-	m_current_buffer = buffer_ptr::null_ptr;
-	m_write_lock.unlock();
+	_write_lock.lock();
+	_sending = false;
+	current = _current_buffer;
+	_current_buffer = buffer_ptr::null_ptr;
+	_write_lock.unlock();
 	if (current)
 	{
 		release_buffer(current);
@@ -427,23 +427,23 @@ template <class buffT>
 int full_duplex_comm<buffT>::internal_shutdown_callback (dword status)
 {
 
-	if (m_shutdown_called)
+	if (_shutdown_called)
 		return 0;
-	m_read_lock.lock();
-	m_write_lock.lock();
-	if (m_shutdown_called)
+	_read_lock.lock();
+	_write_lock.lock();
+	if (_shutdown_called)
 	{
-		m_write_lock.unlock();
-		m_read_lock.unlock();
+		_write_lock.unlock();
+		_read_lock.unlock();
 		return 0;
 	}
-	m_receiving = false;
-	m_sending = false;
+	_receiving = false;
+	_sending = false;
 	disconnect_dispatcher();
-	rx_close_socket(m_dispatcher_data.handle);
-	m_shutdown_called = true;
-	m_write_lock.unlock();
-	m_read_lock.unlock();
+	rx_close_socket(_dispatcher_data.handle);
+	_shutdown_called = true;
+	_write_lock.unlock();
+	_read_lock.unlock();
 	on_shutdown(get_destination_context());
 	unregister_timed();
 	return 1;
@@ -453,15 +453,15 @@ template <class buffT>
 void full_duplex_comm<buffT>::timer_tick (dword tick)
 {
 
-	m_read_lock.lock();
-	dword rec_diff = tick - m_receive_tick;
-	bool receiving = m_receiving;
-	m_read_lock.unlock();
+	_read_lock.lock();
+	dword rec_diff = tick - _receive_tick;
+	bool receiving = _receiving;
+	_read_lock.unlock();
 
-	m_write_lock.lock();
-	dword send_diff = tick - m_send_tick;
-	bool sending = m_sending;
-	m_write_lock.unlock();
+	_write_lock.lock();
+	dword send_diff = tick - _send_tick;
+	bool sending = _sending;
+	_write_lock.unlock();
 
 
 	if (rec_diff>0x80000000)
@@ -469,18 +469,18 @@ void full_duplex_comm<buffT>::timer_tick (dword tick)
 	if (send_diff>0x80000000)
 		send_diff = 0;
 
-	if (receiving && m_receive_timeout>0)
+	if (receiving && _receive_timeout>0)
 	{
-		if (rec_diff>m_receive_timeout)
+		if (rec_diff>_receive_timeout)
 		{
             initiate_shutdown();
 			return;
 		}
 
 	}
-	else if (sending && m_send_timeout>0)
+	else if (sending && _send_timeout>0)
 	{
-		if (send_diff>m_send_timeout)
+		if (send_diff>_send_timeout)
 		{
             initiate_shutdown();
 			return;
@@ -497,17 +497,17 @@ bool full_duplex_comm<buffT>::write_loop ()
 	bool ret = true;
 	bool shutdown = false;
 
-	m_write_lock.lock();
+	_write_lock.lock();
 
 	while (result == RX_OK)
 	{
 		void* data = nullptr;
 		size_t size = 0;
-		if (!m_current_buffer && !m_sending_queue.empty())
+		if (!_current_buffer && !_sending_queue.empty())
 		{
-			m_current_buffer = m_sending_queue.front();
-			m_sending_queue.pop();
-			if (!m_current_buffer)
+			_current_buffer = _sending_queue.front();
+			_sending_queue.pop();
+			if (!_current_buffer)
 			{// close sign
 				ret = false;
 				shutdown = true;
@@ -515,22 +515,22 @@ bool full_duplex_comm<buffT>::write_loop ()
 			}
 			else
 			{
-				data = this->m_current_buffer->get_data();
-				size = m_current_buffer->get_size();
+				data = this->_current_buffer->get_data();
+				size = _current_buffer->get_size();
 			}
 		}
 		if (data && size)
 		{// do the sending
 
-			m_send_tick = rx_get_tick_count();
-			m_sending = true;
+			_send_tick = rx_get_tick_count();
+			_sending = true;
 			bind();
-			result = rx_system_write(&m_dispatcher_data, data, size);
+			result = rx_system_write(&_dispatcher_data, data, size);
 			if (result != RX_ASYNC)
 			{
 				release();
 
-				m_sending = false;
+				_sending = false;
 
 				if (ret == RX_ERROR)
 				{
@@ -540,10 +540,10 @@ bool full_duplex_comm<buffT>::write_loop ()
 				else if (ret == RX_OK)
 				{
 					buffer_ptr current;
-					if (m_current_buffer)
+					if (_current_buffer)
 					{
-						current = m_current_buffer;
-						m_current_buffer = buffer_ptr::null_ptr;
+						current = _current_buffer;
+						_current_buffer = buffer_ptr::null_ptr;
 					}
 					if(current)
                         release_buffer(current);
@@ -557,7 +557,7 @@ bool full_duplex_comm<buffT>::write_loop ()
 		}
 	}
 
-	m_write_lock.unlock();
+	_write_lock.unlock();
 
 	if (shutdown)
 		internal_shutdown_callback(255);
@@ -575,18 +575,18 @@ bool full_duplex_comm<buffT>::read_loop ()
 	bool ret = true;
 	size_t bytes = 0;
 
-    m_read_lock.lock();
+    _read_lock.lock();
 
 	do
 	{
-		m_receiving = true;
-		m_receive_tick = rx_get_tick_count();
+		_receiving = true;
+		_receive_tick = rx_get_tick_count();
 		bind();
-		result = rx_system_read(&m_dispatcher_data, &bytes);
+		result = rx_system_read(&_dispatcher_data, &bytes);
 		if (result != RX_ASYNC)
 		{
 			release();
-			m_receiving = false;
+			_receiving = false;
 			if (result == RX_OK)
 			{// done in sync fire it
                 if(bytes==0)
@@ -594,7 +594,7 @@ bool full_duplex_comm<buffT>::read_loop ()
                     ret=false;
                     break;
                 }
-				if (!readed(m_dispatcher_data.read_buffer, bytes, get_destination_context()))
+				if (!readed(_dispatcher_data.read_buffer, bytes, get_destination_context()))
 				{
 					ret = false;
 					break;
@@ -609,7 +609,7 @@ bool full_duplex_comm<buffT>::read_loop ()
 
 	} while (result == RX_OK);
 
-    m_read_lock.unlock();
+    _read_lock.unlock();
 
 	return ret;
 }
@@ -638,9 +638,9 @@ bool full_duplex_comm<buffT>::write (buffer_ptr what)
 {
 	if (what->empty())
 		return true;
-	m_write_lock.lock();
-	m_sending_queue.push(what);
-	m_write_lock.unlock();
+	_write_lock.lock();
+	_sending_queue.push(what);
+	_write_lock.unlock();
 	write_loop();
 	return true;
 }
@@ -651,9 +651,9 @@ bool full_duplex_comm<buffT>::send (buffer_ptr what)
 	// same code as previous, hope the compiler will figure it out :)
 	if (what && what->empty())
 		return true;
-	m_write_lock.lock();
-	m_sending_queue.push(what);
-	m_write_lock.unlock();
+	_write_lock.lock();
+	_sending_queue.push(what);
+	_write_lock.unlock();
 	write_loop();
 	return true;
 }
@@ -669,35 +669,35 @@ bool full_duplex_comm<buffT>::start_loops ()
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
-      : m_connect_timeout(2000),
-        m_connecting(false),
-        m_connect_tick(0)
+      : _connect_timeout(2000),
+        _connecting(false),
+        _connect_tick(0)
 {
 
   // allocate paged memory to be faster
-	m_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
-	this->m_dispatcher_data.read_buffer = m_buffer;
-	this->m_dispatcher_data.read_buffer_size = TCP_BUFFER_SIZE;
-	this->m_dispatcher_data.data = this;
+	_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
+	this->_dispatcher_data.read_buffer = _buffer;
+	this->_dispatcher_data.read_buffer_size = TCP_BUFFER_SIZE;
+	this->_dispatcher_data.data = this;
 }
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
-      : m_connect_timeout(2000),
-        m_connecting(false),
-        m_connect_tick(0)
+      : _connect_timeout(2000),
+        _connecting(false),
+        _connect_tick(0)
 {
 
   // allocate paged memory to be faster
-	m_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
-	m_peer_name = inet_ntoa(addr->sin_addr);
-	if (m_peer_name.empty())
-		m_peer_name = "<unknown>";
+	_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
+	_peer_name = inet_ntoa(addr->sin_addr);
+	if (_peer_name.empty())
+		_peer_name = "<unknown>";
 
-	this->m_dispatcher_data.handle = handle;
-	this->m_dispatcher_data.read_buffer = m_buffer;
-	this->m_dispatcher_data.read_buffer_size = TCP_BUFFER_SIZE;
-	this->m_dispatcher_data.data = this;
+	this->_dispatcher_data.handle = handle;
+	this->_dispatcher_data.read_buffer = _buffer;
+	this->_dispatcher_data.read_buffer_size = TCP_BUFFER_SIZE;
+	this->_dispatcher_data.data = this;
 	this->connect_dispatcher(dispatcher);
 
 	this->register_timed();
@@ -708,7 +708,7 @@ template <class buffT>
 tcp_socket<buffT>::~tcp_socket()
 {
 	printf("###### tcp sockwet destroyed\r\n");
-	rx_deallocate_os_memory(m_buffer, TCP_BUFFER_SIZE);
+	rx_deallocate_os_memory(_buffer, TCP_BUFFER_SIZE);
 }
 
 
@@ -716,9 +716,9 @@ tcp_socket<buffT>::~tcp_socket()
 template <class buffT>
 int tcp_socket<buffT>::internal_connect_callback (dword status)
 {
-	this->m_write_lock.lock();
-	m_connecting = false;
-	this->m_write_lock.unlock();
+	this->_write_lock.lock();
+	_connecting = false;
+	this->_write_lock.unlock();
 	if (status == 0)
 	{
 		//if (connect_complete())
@@ -733,20 +733,20 @@ void tcp_socket<buffT>::timer_tick (dword tick)
 {
 	full_duplex_comm<buffT>::timer_tick(tick);
 
-	if (!this->m_connecting)
+	if (!this->_connecting)
 		return;// don't have to lock here because we have double lock bellow
 
-	this->m_write_lock.lock();
-	dword conn_diff = tick - this->m_connect_tick;
-	bool connecting = this->m_connecting;
+	this->_write_lock.lock();
+	dword conn_diff = tick - this->_connect_tick;
+	bool connecting = this->_connecting;
 
-	this->m_write_lock.unlock();
+	this->_write_lock.unlock();
 
 	if (conn_diff>0x80000000)
 		conn_diff = 0;
-	if (connecting && this->m_connect_timeout>0)
+	if (connecting && this->_connect_timeout>0)
 	{
-		if (conn_diff>this->m_connect_timeout)
+		if (conn_diff>this->_connect_timeout)
 		{
 			this->initiate_shutdown();
 			return;
@@ -761,9 +761,9 @@ template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket()
 {
 
-	m_dispatcher_data.read_buffer = m_buffer;
-	m_dispatcher_data.read_buffer_size = ACCEPT_BUFFER_SIZE;
-	m_dispatcher_data.data = this;
+	_dispatcher_data.read_buffer = _buffer;
+	_dispatcher_data.read_buffer_size = ACCEPT_BUFFER_SIZE;
+	_dispatcher_data.data = this;
 
 }
 
@@ -780,7 +780,7 @@ template <class buffT>
 int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
 {
     typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
-	target_ptr created = make_client(handle, addr, local_addr, m_disptacher,get_destination_context());
+	target_ptr created = make_client(handle, addr, local_addr, _disptacher,get_destination_context());
 	if (created)
 	{
 		if (created->start_loops())
@@ -799,10 +799,10 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 template <class buffT>
 bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
 {
-	m_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
-	if (m_dispatcher_data.handle)
+	_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
+	if (_dispatcher_data.handle)
 	{
-		if (rx_socket_listen(m_dispatcher_data.handle))
+		if (rx_socket_listen(_dispatcher_data.handle))
 		{
 			if (connect_dispatcher(dispatcher))
 			{
@@ -811,8 +811,8 @@ bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispat
 			}
 		}
 	}
-	if (m_dispatcher_data.handle)
-		rx_close_socket(m_dispatcher_data.handle);
+	if (_dispatcher_data.handle)
+		rx_close_socket(_dispatcher_data.handle);
 	return false;
 }
 
@@ -830,14 +830,14 @@ template <class buffT>
 void tcp_listen_socket<buffT>::stop ()
 {
 	disconnect_dispatcher();
-	rx_close_socket(m_dispatcher_data.handle);
+	rx_close_socket(_dispatcher_data.handle);
 }
 
 template <class buffT>
 bool tcp_listen_socket<buffT>::accept_new ()
 {
 	bind();
-	dword ret = rx_system_accept(&m_dispatcher_data);
+	dword ret = rx_system_accept(&_dispatcher_data);
 	if (ret == RX_ERROR)
 	{
 		release();
