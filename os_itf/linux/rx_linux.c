@@ -91,8 +91,8 @@ extern "C" {
 
 	const char* g_ositf_version = "ERROR!!!";
 	char ver_buffer[0x100];
-
-	void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
+    rx_pid_t rx_pid;
+	void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls,const char* server_name)
 	{
 
 		char temp[0x20];
@@ -103,6 +103,7 @@ extern "C" {
 
         rx_server_name=server_name;
 		rx_tls = tls;
+		rx_pid=pid;
 		// determine big endian or little endian
 		union {
 			dword i;

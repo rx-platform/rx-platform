@@ -45,11 +45,14 @@ rx_server* rx_server::g_instance = nullptr;
 
 rx_server::rx_server()
       : _host(nullptr),
-        _started(rx_time::now())
+        _started(rx_time::now()),
+        _pid(0)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
 	_os_info = buff;
+
+	_pid = rx_pid;
 
 	_rx_version =  " Ver ";
 	sprintf(buff,"%s Ver %d.%d.%d", RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);

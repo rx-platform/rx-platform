@@ -127,10 +127,10 @@ class cpp_classes_manager
 	  rx::pointers::code_behind_definition_t* register_class_for_usage()
 	  {
 		  rx::pointers::code_behind_definition_t* cd = _internal_read_class<clsT>(tl::type2type<clsT>());
-		  auto& it = this->m_definitions.find(cd);
-		  if (it ==  this->m_definitions.end())
+		  auto& it = this->_definitions.find(cd);
+		  if (it ==  this->_definitions.end())
 		  {
-			   this->m_definitions.insert(cd);
+			   this->_definitions.insert(cd);
 		  }
 		  return cd;
 

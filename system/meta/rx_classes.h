@@ -1353,7 +1353,7 @@ bool base_mapped_class<metaT>::register_mapper (const mapper_attribute& item)
 {
 	if (this->check_name(item.get_name()))
 	{
-		m_mappers.emplace_back(item);
+		_mappers.emplace_back(item);
 		return true;
 	}
 	else
@@ -1407,7 +1407,7 @@ bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream,
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value)
-	: m_storage(value)
+	: _storage(value)
 {
 }
 
@@ -1459,7 +1459,7 @@ bool base_variable_class<metaT>::register_source (const source_attribute& item)
 {
 	if (this->check_name(item.get_name()))
 	{
-		m_sources.emplace_back(item);
+		_sources.emplace_back(item);
 		return true;
 	}
 	else
@@ -1473,7 +1473,7 @@ bool base_variable_class<metaT>::register_filter (const filter_attribute& item)
 {
 	if (this->check_name(item.get_name()))
 	{
-		m_filters.emplace_back(item);
+		_filters.emplace_back(item);
 		return true;
 	}
 	else
@@ -1487,7 +1487,7 @@ bool base_variable_class<metaT>::register_event (const event_attribute& item)
 {
 	if (this->check_name(item.get_name()))
 	{
-		m_events.emplace_back(item);
+		_events.emplace_back(item);
 		return true;
 	}
 	else

@@ -1228,7 +1228,8 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	out << "OS/HW Interface: " << rx_server::instance().get_hal_version() << "\r\n";
 	out << "Compiler: " << rx_server::instance().get_comp_version() << "\r\n";
 
-	out << "Host: " << rx_server::instance().get_host_info() << "\r\nOS: " << rx_server::instance().get_os_info() << "\r\n";
+	out << "Host: " << rx_server::instance().get_host_info() << "\r\n";
+	out << "OS: " << rx_server::instance().get_os_info() << " [PID:" << rx_server::instance().get_pid() << "]\r\n";
 
 	
 	/////////////////////////////////////////////////////////////////////////

@@ -163,6 +163,12 @@ class rx_server : public security::secured_object
       }
 
 
+      const rx_pid_t get_pid () const
+      {
+        return _pid;
+      }
+
+
 
   protected:
 
@@ -206,6 +212,8 @@ class rx_server : public security::secured_object
       string_type _comp_version;
 
       string_type _hal_version;
+
+      rx_pid_t _pid;
 
 
 };

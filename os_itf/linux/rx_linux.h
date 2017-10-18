@@ -148,6 +148,8 @@ typedef long long sqword;
 typedef int sdword;
 typedef short sword;
 
+typedef pid_t rx_pid_t;
+
 
 #define memzero(S, N) memset((S), 0, (N))
 

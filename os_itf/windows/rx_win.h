@@ -111,6 +111,8 @@ typedef __int64 sqword;
 typedef __int32 sdword;
 typedef __int16 sword;
 
+typedef DWORD rx_pid_t;
+
 #define memzero(S, N) ZeroMemory(S,N) 
 
 #ifdef _MSC_VER

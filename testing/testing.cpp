@@ -350,7 +350,7 @@ void test_thread()
 void test_values()
 {
 	rx::values::simple_const_value<dword> perica(6);
-	dword zike = perica + 5;
+	//dword zike = perica + 5;
 }
 void test_classes()
 {
