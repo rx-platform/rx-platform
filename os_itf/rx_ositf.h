@@ -119,7 +119,6 @@ extern "C" {
 
 	void rx_collect_system_info(char* buffer, size_t buffer_size);
 	void rx_collect_processor_info(char* buffer, size_t buffer_size);
-	void rx_collect_code_info(char* buffer, size_t buffer_size);
 	void rx_collect_memory_info(qword* total, qword* free);
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -731,12 +731,6 @@ void rx_collect_memory_info(qword* total, qword* free)
 	*free = statex.ullAvailPhys;
 }
 
-
-void rx_collect_code_info(char* buffer, size_t buffer_size)
-{
-	create_module_version_string("Win32 0.8.1", __DATE__, __TIME__, buffer);
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // slim lock apstraction
 void rx_slim_lock_create(pslim_lock_t plock)
