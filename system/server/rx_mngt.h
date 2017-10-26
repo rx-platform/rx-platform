@@ -168,7 +168,7 @@ class server_manager
   private:
 
 
-      rx::io::tcp_listent_str_buffer::smart_ptr _telnet_listener;
+      rx::io::tcp_listent_std_buffer::smart_ptr _telnet_listener;
 
       server_item_ptr _commands_manager;
 

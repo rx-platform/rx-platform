@@ -9,7 +9,9 @@
 #include "system/meta/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
 #include "system/constructors/rx_construct.h"
+#include "system/server/rx_inf.h"
 #include "lib/rx_log.h"
+#include "system/server/rx_server.h"
 
 
 using namespace rx;
@@ -375,6 +377,44 @@ void dump_python_information(std::ostream& out)
 
 	Py_Finalize();
 }
+
+void do_python_test(std::ostream& out,const string_type& command)
+{
+	PyRun_SimpleString(command.c_str());
+}
+
+} //namespace python
+
+namespace tcp_connect_test
+{
+	class tcp_test_client : public rx::io::tcp_client_socket<rx::memory::std_buffer>
+	{
+		DECLARE_REFERENCE_PTR(tcp_test_client);
+	public:
+		tcp_test_client()
+		{
+		}
+	protected:
+		bool readed(const void* data, size_t count, rx_thread_handle_t destination)
+		{
+			return true;
+		}
+		virtual void release_buffer(buffer_ptr what)
+		{
+		}
+	};
+	void test_tcp_client()
+	{
+		tcp_test_client::smart_ptr client_socket(pointers::_create_new);
+		if (client_socket->bind_socket(server::rx_server::instance().get_runtime().get_io_pool()->get_pool()))
+		{
+			if (client_socket->connect_to(0x7f000001, 12345))
+			{
+
+			}
+		}
+	}
+
 }
 #endif
 

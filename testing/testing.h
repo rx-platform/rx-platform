@@ -14,6 +14,7 @@ void test_callbacks();
 namespace python
 {
 void dump_python_information(std::ostream& out);
+void do_python_test(std::ostream& out, const string_type& command);
 }
 #endif
 

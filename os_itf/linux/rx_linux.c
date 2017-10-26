@@ -1285,7 +1285,7 @@ extern "C" {
 
         return RX_OK;
     }
-    dword rx_system_connect(struct rx_io_register_data_t* what, const void* data, size_t size, struct sockaddr* addr, size_t addrsize)
+    dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
     {
         return RX_ERROR;
     }

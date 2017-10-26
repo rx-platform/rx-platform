@@ -1468,7 +1468,7 @@ dword rx_system_accept(struct rx_io_register_data_t* what)
 
 
 
-dword rx_system_connect(struct rx_io_register_data_t* what, const void* data, size_t size, struct sockaddr* addr, size_t addrsize)
+dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
 {
 	dword err;
 	DWORD sent = 0;
@@ -1492,7 +1492,7 @@ dword rx_system_connect(struct rx_io_register_data_t* what, const void* data, si
 	//Initialize Overlapped
 	ZeroMemory(povl, sizeof(OVERLAPPED));
 
-	BOOL ret = (internal_data->m_connectex)((SOCKET)what->handle, addr, (int)addrsize,(void*)data, (DWORD)size, &sent, (LPOVERLAPPED)povl);
+	BOOL ret = (internal_data->m_connectex)((SOCKET)what->handle, addr, (int)addrsize,NULL, 0, NULL, (LPOVERLAPPED)povl);
 	if (!ret)
 	{
 		err = GetLastError();

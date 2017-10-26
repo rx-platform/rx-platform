@@ -165,7 +165,7 @@ class telnet_client : public server::prog::console_client,
 
 
 
-class server_telnet_socket : public rx::io::tcp_listent_str_buffer  
+class server_telnet_socket : public rx::io::tcp_listent_std_buffer  
 {
 	DECLARE_REFERENCE_PTR(server_telnet_socket);
 
@@ -177,7 +177,7 @@ class server_telnet_socket : public rx::io::tcp_listent_str_buffer
 
   protected:
 
-      io::tcp_socket_str_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination);
+      io::tcp_socket_std_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination);
 
 
   private:

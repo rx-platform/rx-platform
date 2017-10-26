@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -331,17 +331,56 @@ protected:
 
 
 
-typedef tcp_listen_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_listent_str_buffer;
+typedef tcp_listen_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_listent_std_buffer;
 
 
 
 
 
 
-typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_str_buffer;
+typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm 
+
+
+
+
+template <class buffT>
+class tcp_client_socket : public tcp_socket<buffT>  
+{
+	DECLARE_REFERENCE_PTR(tcp_client_socket<buffT>);
+
+  public:
+      tcp_client_socket();
+
+      virtual ~tcp_client_socket();
+
+
+      bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
+
+      bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, word port = 0);
+
+      bool connect_to (sockaddr_in* addr);
+
+      bool connect_to (unsigned long address, word port);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
+
+
+// Parameterized Class rx::io::full_duplex_comm
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -630,7 +669,7 @@ void full_duplex_comm<buffT>::initiate_shutdown ()
 {
 
 	internal_shutdown_callback(255);
-	
+
 }
 
 template <class buffT>
@@ -665,7 +704,7 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket 
+// Parameterized Class rx::io::tcp_socket
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -755,7 +794,7 @@ void tcp_socket<buffT>::timer_tick (dword tick)
 }
 
 
-// Parameterized Class rx::io::tcp_listen_socket 
+// Parameterized Class rx::io::tcp_listen_socket
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket()
@@ -851,6 +890,79 @@ template <class buffT>
 int tcp_listen_socket<buffT>::internal_shutdown_callback (dword status)
 {
 	return 1;
+}
+
+
+// Parameterized Class rx::io::tcp_client_socket
+
+template <class buffT>
+tcp_client_socket<buffT>::tcp_client_socket()
+{
+}
+
+
+template <class buffT>
+tcp_client_socket<buffT>::~tcp_client_socket()
+{
+}
+
+
+
+template <class buffT>
+bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
+{
+	connect_dispatcher(dispatcher);
+	_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
+	if (_dispatcher_data.handle)
+	{
+		return true;
+	}
+	if (_dispatcher_data.handle)
+		rx_close_socket(_dispatcher_data.handle);
+	return false;
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, word port)
+{
+	struct sockaddr_in temp_addr;
+	memzero(&temp_addr, sizeof(temp_addr));
+	temp_addr.sin_port = htons(port);
+	temp_addr.sin_addr.s_addr = INADDR_ANY;
+	return bind_socket(dispatcher, &temp_addr);
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::connect_to (sockaddr_in* addr)
+{
+	{
+		locks::auto_lock dummy(this);
+
+		if (_connect_status != status_idle || _send_status != status_idle || _receive_status != status_idle)
+			return false;
+
+		_connect_tick = gs_get_tick_count();
+
+		_connect_status = status_sending;
+	}
+	pin();
+	bool ret = (RX_OK == rx_system_connect(&_dispatcher_data, data, count, addr, addr.get_size()));
+	if (!ret)
+	{
+		unpin();
+		close();
+	}
+	return ret;
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::connect_to (unsigned long address, word port)
+{
+	struct sockaddr_in temp_addr;
+	memzero(&temp_addr, sizeof(temp_addr));
+	temp_addr.sin_port = htons(port);
+	temp_addr.sin_addr.s_addr = htonl(address);
+	return connect_to(&temp_addr);
 }
 
 

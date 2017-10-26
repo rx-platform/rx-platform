@@ -263,7 +263,7 @@ extern "C" {
 
 
 	dword rx_system_accept(struct rx_io_register_data_t* what);
-	dword rx_system_connect(struct rx_io_register_data_t* what, const void* data, size_t size, struct sockaddr* addr, size_t addrsize);
+	dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// socket apstractions
 	sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr);

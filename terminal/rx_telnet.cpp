@@ -32,6 +32,8 @@
 // rx_telnet
 #include "terminal/rx_telnet.h"
 
+#include "testing/testing.h"
+
 #include "system/server/rx_server.h"
 #include "system/python/py_support.h"
 
@@ -326,7 +328,7 @@ server_telnet_socket::~server_telnet_socket()
 
 
 
-io::tcp_socket_str_buffer::smart_ptr server_telnet_socket::make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination)
+io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination)
 {
 	telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
 	ret->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
@@ -343,7 +345,7 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
         _cancel_current(false),
         _verified(false),
         _exit(false)
-  , io::tcp_socket_str_buffer(handle, addr,local_addr, dispatcher)
+  , io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
 {
 }
 
@@ -1638,6 +1640,12 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 		out << "Embedded Python Version\r\n======================================\r\n";
 		python::py_script::instance().dump_script_information(out);
 		out << "\r\n";
+	}
+	else if (sub_command == "test")
+	{
+		string_type what;
+		in >> what;
+		testing::python::do_python_test(out, what);
 	}
 	return true;
 }
