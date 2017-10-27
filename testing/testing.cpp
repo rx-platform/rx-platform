@@ -12,6 +12,7 @@
 #include "system/server/rx_inf.h"
 #include "lib/rx_log.h"
 #include "system/server/rx_server.h"
+#include "lib/rx_ptr.h"
 
 
 using namespace rx;
@@ -387,36 +388,38 @@ void do_python_test(std::ostream& out,const string_type& command)
 
 namespace tcp_connect_test
 {
-	class tcp_test_client : public rx::io::tcp_client_socket<rx::memory::std_buffer>
+class tcp_test_client : public rx::io::tcp_client_socket<rx::memory::std_buffer>
+{
+	DECLARE_REFERENCE_PTR(tcp_test_client);
+public:
+	tcp_test_client()
 	{
-		DECLARE_REFERENCE_PTR(tcp_test_client);
-	public:
-		tcp_test_client()
-		{
-		}
-	protected:
-		bool readed(const void* data, size_t count, rx_thread_handle_t destination)
-		{
-			return true;
-		}
-		virtual void release_buffer(buffer_ptr what)
-		{
-		}
-	};
-	void test_tcp_client()
+	}
+protected:
+	bool readed(const void* data, size_t count, rx_thread_handle_t destination)
 	{
-		tcp_test_client::smart_ptr client_socket(pointers::_create_new);
-		if (client_socket->bind_socket(server::rx_server::instance().get_runtime().get_io_pool()->get_pool()))
+		return true;
+	}
+	virtual void release_buffer(buffer_ptr what)
+	{
+	}
+};
+void test_tcp_client()
+{
+	tcp_test_client::smart_ptr client_socket(pointers::_create_new);
+	if (client_socket->bind_socket_tcpip_4(server::rx_server::instance().get_runtime().get_io_pool()->get_pool()))
+	{
+		if (client_socket->connect_to_tcpip_4(server::rx_server::instance().get_runtime().get_io_pool()->get_pool(),"192.168.56.101", 12345))
 		{
-			if (client_socket->connect_to(0x7f000001, 12345))
-			{
-
-			}
+			rx_msleep(200);
+			client_socket->close();
 		}
 	}
 
 }
+
 #endif
 
+}// tcp_connect_test
 
-}//testing
+}// testing

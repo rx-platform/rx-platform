@@ -94,7 +94,7 @@ dword server_manager::start (host::rx_server_host* host, const managment_data_t&
 	if (_telnet_port)
 	{
 		_telnet_listener = terminal::console::server_telnet_socket::smart_ptr(pointers::_create_new);
-		_telnet_listener->start(rx_server::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
+		_telnet_listener->start_tcpip_4(rx_server::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{

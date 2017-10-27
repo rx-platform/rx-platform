@@ -30,6 +30,7 @@
 #define rx_io_h 1
 
 
+#include "os_itf/rx_ositf.h"
 
 // rx_ptr
 #include "lib/rx_ptr.h"
@@ -191,6 +192,12 @@ protected:
       virtual void release_buffer (buffer_ptr what) = 0;
 
 
+      bool _sending;
+
+      bool _receiving;
+
+      bool _shutdown_called;
+
       locks::lockable _read_lock;
 
       locks::lockable _write_lock;
@@ -212,15 +219,9 @@ protected:
 
       dword _receive_timeout;
 
-      bool _sending;
-
-      bool _receiving;
-
       dword _send_tick;
 
       dword _receive_tick;
-
-      bool _shutdown_called;
 
       queue_type _sending_queue;
 
@@ -241,38 +242,19 @@ class tcp_socket : public full_duplex_comm<buffT>
 
 
   public:
-      tcp_socket();
-
       tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher);
 
       virtual ~tcp_socket();
 
 
-      void timer_tick (dword tick);
-
-
-      void set_connect_timeout (dword value)
-      {
-        _connect_timeout = value;
-      }
-
-
-
   protected:
+      tcp_socket();
+
 
   private:
 
-      int internal_connect_callback (dword status);
-
-
 
       byte* _buffer;
-
-      dword _connect_timeout;
-
-      bool _connecting;
-
-      dword _connect_tick;
 
       string_type _peer_name;
 
@@ -300,7 +282,7 @@ protected:
 
       bool start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
 
-      bool start (threads::dispatcher_pool::smart_ptr dispatcher, word port);
+      bool start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port);
 
       void stop ();
 
@@ -358,16 +340,39 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
 
-      bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, word port = 0);
+      bool bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port = 0);
 
-      bool connect_to (sockaddr_in* addr);
+      bool connect_to (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr* addr, size_t addrsize);
 
-      bool connect_to (unsigned long address, word port);
+      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, word port);
+
+      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, word port);
+
+      void timer_tick (dword tick);
+
+      void close ();
+
+
+      void set_connect_timeout (dword value)
+      {
+        _connect_timeout = value;
+      }
+
 
 
   protected:
 
   private:
+
+      int internal_connect_callback (dword status);
+
+
+
+      dword _connect_timeout;
+
+      bool _connecting;
+
+      dword _connect_tick;
 
 
 };
@@ -708,9 +713,6 @@ bool full_duplex_comm<buffT>::start_loops ()
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
-      : _connect_timeout(2000),
-        _connecting(false),
-        _connect_tick(0)
 {
 
   // allocate paged memory to be faster
@@ -722,9 +724,6 @@ tcp_socket<buffT>::tcp_socket()
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
-      : _connect_timeout(2000),
-        _connecting(false),
-        _connect_tick(0)
 {
 
   // allocate paged memory to be faster
@@ -750,48 +749,6 @@ tcp_socket<buffT>::~tcp_socket()
 	rx_deallocate_os_memory(_buffer, TCP_BUFFER_SIZE);
 }
 
-
-
-template <class buffT>
-int tcp_socket<buffT>::internal_connect_callback (dword status)
-{
-	this->_write_lock.lock();
-	_connecting = false;
-	this->_write_lock.unlock();
-	if (status == 0)
-	{
-		//if (connect_complete())
-		return 1;
-	}
-	this->initiate_shutdown();
-	return 0;
-}
-
-template <class buffT>
-void tcp_socket<buffT>::timer_tick (dword tick)
-{
-	full_duplex_comm<buffT>::timer_tick(tick);
-
-	if (!this->_connecting)
-		return;// don't have to lock here because we have double lock bellow
-
-	this->_write_lock.lock();
-	dword conn_diff = tick - this->_connect_tick;
-	bool connecting = this->_connecting;
-
-	this->_write_lock.unlock();
-
-	if (conn_diff>0x80000000)
-		conn_diff = 0;
-	if (connecting && this->_connect_timeout>0)
-	{
-		if (conn_diff>this->_connect_timeout)
-		{
-			this->initiate_shutdown();
-			return;
-		}
-	}
-}
 
 
 // Parameterized Class rx::io::tcp_listen_socket
@@ -838,25 +795,25 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 template <class buffT>
 bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
 {
-	_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
-	if (_dispatcher_data.handle)
+	this->_dispatcher_data.handle = ::rx_create_and_bind_ip4_tcp_socket(addr);
+	if (this->_dispatcher_data.handle)
 	{
-		if (rx_socket_listen(_dispatcher_data.handle))
+		if (rx_socket_listen(this->_dispatcher_data.handle))
 		{
-			if (connect_dispatcher(dispatcher))
+			if (this->connect_dispatcher(dispatcher))
 			{
 				if (accept_new())
 					return true;
 			}
 		}
 	}
-	if (_dispatcher_data.handle)
-		rx_close_socket(_dispatcher_data.handle);
+	if (this->_dispatcher_data.handle)
+		rx_close_socket(this->_dispatcher_data.handle);
 	return false;
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispatcher, word port)
+bool tcp_listen_socket<buffT>::start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -897,6 +854,9 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (dword status)
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
+      : _connect_timeout(2000),
+        _connecting(false),
+        _connect_tick(0)
 {
 }
 
@@ -911,19 +871,19 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 template <class buffT>
 bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
 {
-	connect_dispatcher(dispatcher);
-	_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
-	if (_dispatcher_data.handle)
+	this->connect_dispatcher(dispatcher);
+	this->_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
+	if (this->_dispatcher_data.handle)
 	{
 		return true;
 	}
-	if (_dispatcher_data.handle)
-		rx_close_socket(_dispatcher_data.handle);
+	if (this->_dispatcher_data.handle)
+		rx_close_socket(this->_dispatcher_data.handle);
 	return false;
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, word port)
+bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -933,36 +893,95 @@ bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr 
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to (sockaddr_in* addr)
+bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr* addr, size_t addrsize)
 {
 	{
-		locks::auto_lock dummy(this);
 
-		if (_connect_status != status_idle || _send_status != status_idle || _receive_status != status_idle)
+		if (this->_connecting || !this->_sending || !this->_receiving)
 			return false;
 
-		_connect_tick = gs_get_tick_count();
+		this->_connect_tick = ::rx_get_tick_count();
 
-		_connect_status = status_sending;
+		this->_connecting = true;
 	}
-	pin();
-	bool ret = (RX_OK == rx_system_connect(&_dispatcher_data, data, count, addr, addr.get_size()));
+	this->bind();
+	bool ret = (RX_OK == rx_system_connect(&this->_dispatcher_data,  addr, addrsize));
 	if (!ret)
 	{
-		unpin();
+		this->_connecting = false;
+		this->release();
 		close();
 	}
 	return ret;
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to (unsigned long address, word port)
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, word port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = htonl(address);
-	return connect_to(&temp_addr);
+	return connect_to(dispatcher,(sockaddr*)&temp_addr,sizeof(temp_addr));
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, word port)
+{
+    unsigned long num_addr=inet_addr(address.c_str());
+    struct sockaddr_in temp_addr;
+    memzero(&temp_addr, sizeof(temp_addr));
+	temp_addr.sin_port = htons(port);
+	temp_addr.sin_addr.s_addr = htonl(num_addr);
+	return connect_to(dispatcher, (sockaddr*)&temp_addr,sizeof(temp_addr));
+}
+
+template <class buffT>
+int tcp_client_socket<buffT>::internal_connect_callback (dword status)
+{
+	this->_write_lock.lock();
+	_connecting = false;
+	this->_write_lock.unlock();
+	if (status == 0)
+	{
+		//if (connect_complete())
+		return 1;
+	}
+	this->initiate_shutdown();
+	return 0;
+}
+
+template <class buffT>
+void tcp_client_socket<buffT>::timer_tick (dword tick)
+{
+	full_duplex_comm<buffT>::timer_tick(tick);
+
+	if (!this->_connecting)
+		return;// don't have to lock here because we have double lock bellow
+
+	this->_write_lock.lock();
+	dword conn_diff = tick - this->_connect_tick;
+	bool connecting = this->_connecting;
+
+	this->_write_lock.unlock();
+
+	if (conn_diff>0x80000000)
+		conn_diff = 0;
+	if (connecting && this->_connect_timeout>0)
+	{
+		if (conn_diff>this->_connect_timeout)
+		{
+			this->initiate_shutdown();
+			return;
+		}
+	}
+}
+
+template <class buffT>
+void tcp_client_socket<buffT>::close ()
+{
+	this->disconnect_dispatcher();
+	::rx_close_socket(this->_dispatcher_data.handle);
 }
 
 

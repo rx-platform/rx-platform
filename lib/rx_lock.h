@@ -112,8 +112,6 @@ class auto_lock_t
   public:
       auto_lock_t (T* who);
 
-      auto_lock_t (const T* who);
-
       ~auto_lock_t();
 
 
@@ -231,7 +229,64 @@ class empty_slim_lock
 
 
 
-typedef auto_lock_t< empty_slim_lock  > auto_dummy_slim_lock;
+typedef auto_lock_t< empty_slim_lock  > auto_no_lock;
+
+
+
+
+
+
+
+typedef auto_lock_t< empty_slim_lock  > auto_empty_slim_lock;
+
+
+
+
+
+
+template <class T>
+class const_auto_lock_t 
+{
+
+  public:
+      const_auto_lock_t (const T* who);
+
+      virtual ~const_auto_lock_t();
+
+
+  protected:
+
+  private:
+
+
+      T* _p;
+
+
+};
+
+
+
+
+
+
+
+typedef const_auto_lock_t< lockable  > const_auto_lock;
+
+
+
+
+
+
+
+typedef const_auto_lock_t< slim_lock  > const_auto_slim_lock;
+
+
+
+
+
+
+
+typedef const_auto_lock_t< empty_slim_lock  > const_auto_no_lock;
 
 
 // Parameterized Class rx::locks::auto_lock_t 
@@ -243,18 +298,27 @@ auto_lock_t<T>::auto_lock_t (T* who)
 		_p->lock();
 }
 
-template <class T>
-auto_lock_t<T>::auto_lock_t (const T* who)
-  : _p(const_cast<T*>(who))
-{
-	_p->lock();
-}
-
 
 template <class T>
 auto_lock_t<T>::~auto_lock_t()
 {
 	_p->unlock();
+}
+
+
+
+// Parameterized Class rx::locks::const_auto_lock_t 
+
+template <class T>
+const_auto_lock_t<T>::const_auto_lock_t (const T* who)
+	: _p(const_cast<T*>(who))
+{
+}
+
+
+template <class T>
+const_auto_lock_t<T>::~const_auto_lock_t()
+{
 }
 
 

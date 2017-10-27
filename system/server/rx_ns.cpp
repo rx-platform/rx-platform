@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -104,7 +104,7 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class server::ns::rx_server_item 
+// Class server::ns::rx_server_item
 
 rx_server_item::rx_server_item()
 {
@@ -187,7 +187,7 @@ bool rx_server_item::deserialize (base_meta_reader& stream)
 }
 
 
-// Class server::ns::rx_server_directory 
+// Class server::ns::rx_server_directory
 
 rx_server_directory::rx_server_directory()
       : _created(rx_time::now())
@@ -234,7 +234,7 @@ rx_server_directory::~rx_server_directory()
 
 void rx_server_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
 {
-	locks::auto_slim_lock dummy(&_structure_lock);
+	locks::const_auto_slim_lock dummy(&_structure_lock);
 	for (const auto& one : _sub_directories)
 	{
 		sub_directories.emplace_back(one.second);
@@ -339,7 +339,7 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 		else
 		{// local stuff
 
-			locks::auto_slim_lock dummy(&_structure_lock);
+			locks::const_auto_slim_lock dummy(&_structure_lock);
 			auto it = _sub_directories.find(next);
 			if (it != _sub_directories.end())
 			{
@@ -363,7 +363,7 @@ string_type rx_server_directory::get_path () const
 
 string_type rx_server_directory::get_name (bool plain) const
 {
-	locks::auto_slim_lock dummy(&_structure_lock);
+	locks::const_auto_slim_lock dummy(&_structure_lock);
 	if (plain && _name.empty())
 		return "/";
 	else
@@ -422,7 +422,7 @@ server_item_ptr rx_server_directory::get_sub_item (const string_type& path) cons
 	size_t idx = path.rfind('/');
 	if (idx == string_type::npos)
 	{// plain item
-		locks::auto_slim_lock dummy(&_structure_lock);
+		locks::const_auto_slim_lock dummy(&_structure_lock);
 		auto it = _sub_items.find(path);
 		if (it != _sub_items.end())
 			return it->second;
