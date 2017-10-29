@@ -21,7 +21,8 @@ using namespace rx;
 namespace testing
 {
 
-
+namespace obsolite
+{
 	class my_periodic_job : public rx::jobs::periodic_job
 	{
 		DECLARE_REFERENCE_PTR(my_periodic_job);
@@ -360,31 +361,6 @@ void test_classes()
 	server::meta::object_class_ptr obj("test_class", 55, true);
 }
 
-#ifndef NO_PYTHON_SUPPORT
-namespace python
-{
-
-void dump_python_information(std::ostream& out)
-{
-	Py_Initialize();
-	if (!Py_IsInitialized()) {
-		out<<"Unable to initialize Python interpreter!!!\r\n";
-		return;
-	}
-
-	out<<"Python information\r\n==============================\r\n";
-	out<<"Version:\r\n"<< Py_GetVersion()<<"\r\n";
-	out<<"\r\n" << Py_GetCopyright() << "\r\n\r\n";
-
-	Py_Finalize();
-}
-
-void do_python_test(std::ostream& out,const string_type& command)
-{
-	PyRun_SimpleString(command.c_str());
-}
-
-} //namespace python
 
 namespace tcp_connect_test
 {
@@ -404,22 +380,10 @@ protected:
 	{
 	}
 };
-void test_tcp_client()
-{
-	tcp_test_client::smart_ptr client_socket(pointers::_create_new);
-	if (client_socket->bind_socket_tcpip_4(server::rx_server::instance().get_runtime().get_io_pool()->get_pool()))
-	{
-		if (client_socket->connect_to_tcpip_4(server::rx_server::instance().get_runtime().get_io_pool()->get_pool(),"192.168.56.101", 12345))
-		{
-			rx_msleep(200);
-			client_socket->close();
-		}
-	}
 
-}
-
-#endif
 
 }// tcp_connect_test
+
+}// obsolite
 
 }// testing

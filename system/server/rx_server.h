@@ -33,6 +33,10 @@
 #include "system/rx_version.h"
 #include "rx_configuration.h"
 
+// rx_host
+#include "host/rx_host.h"
+// rx_security
+#include "system/security/rx_security.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -41,10 +45,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_host
-#include "host/rx_host.h"
-// rx_security
-#include "system/security/rx_security.h"
 
 
 #include "lib/rx_log.h"

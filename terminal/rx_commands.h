@@ -31,12 +31,12 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 using namespace server::prog;
 using namespace server; 
@@ -52,39 +52,6 @@ class server_command;
 typedef rx::pointers::reference<commands::server_command> server_command_ptr;
 
 namespace commands {
-
-
-
-
-
-class server_command : public server::prog::server_command_base, 
-                       	public rx::poin
-{
-	DECLARE_REFERENCE_PTR(server_command);
-
-  public:
-      server_command (const string_type& console_name);
-
-      virtual ~server_command();
-
-
-      namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
-
-  protected:
-
-      void virtual_bind ();
-
-      void virtual_release ();
-
-
-  private:
-
-
-};
-
 
 
 
@@ -128,6 +95,39 @@ bin folder in file hierarcyh\
 
 
       registred_commands_type _registred_commands;
+
+
+};
+
+
+
+
+
+
+class server_command : public server::prog::server_command_base, 
+                       	public rx::poin
+{
+	DECLARE_REFERENCE_PTR(server_command);
+
+  public:
+      server_command (const string_type& console_name);
+
+      virtual ~server_command();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+
+  protected:
+
+      void virtual_bind ();
+
+      void virtual_release ();
+
+
+  private:
 
 
 };

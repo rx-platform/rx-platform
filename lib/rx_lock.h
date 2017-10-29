@@ -131,7 +131,7 @@ class auto_lock_t
 
 
 
-typedef auto_lock_t< lockable  > auto_lock;
+typedef auto_lock_t< rx::locks::lockable  > auto_lock;
 
 
 
@@ -139,7 +139,7 @@ typedef auto_lock_t< lockable  > auto_lock;
 
 
 
-typedef auto_lock_t< slim_lock  > auto_slim_lock;
+typedef auto_lock_t< rx::locks::slim_lock  > auto_slim_lock;
 
 
 
@@ -229,15 +229,7 @@ class empty_slim_lock
 
 
 
-typedef auto_lock_t< empty_slim_lock  > auto_no_lock;
-
-
-
-
-
-
-
-typedef auto_lock_t< empty_slim_lock  > auto_empty_slim_lock;
+typedef auto_lock_t< rx::locks::empty_slim_lock  > auto_no_lock;
 
 
 
@@ -270,7 +262,7 @@ class const_auto_lock_t
 
 
 
-typedef const_auto_lock_t< lockable  > const_auto_lock;
+typedef const_auto_lock_t< rx::locks::empty_slim_lock  > const_auto_no_lock;
 
 
 
@@ -278,7 +270,7 @@ typedef const_auto_lock_t< lockable  > const_auto_lock;
 
 
 
-typedef const_auto_lock_t< slim_lock  > const_auto_slim_lock;
+typedef const_auto_lock_t< rx::locks::slim_lock  > const_auto_slim_lock;
 
 
 
@@ -286,7 +278,15 @@ typedef const_auto_lock_t< slim_lock  > const_auto_slim_lock;
 
 
 
-typedef const_auto_lock_t< empty_slim_lock  > const_auto_no_lock;
+typedef auto_lock_t< rx::locks::empty_slim_lock  > auto_empty_slim_lock;
+
+
+
+
+
+
+
+typedef const_auto_lock_t< rx::locks::lockable  > const_auto_lock;
 
 
 // Parameterized Class rx::locks::auto_lock_t 

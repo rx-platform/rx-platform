@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ namespace server {
 
 namespace meta {
 
-// Class server::meta::command_class
+// Class server::meta::command_class 
 
 string_type command_class::type_name = "COMMAND";
 
@@ -55,7 +55,7 @@ command_class::~command_class()
 
 
 
-// Class server::meta::variable_class
+// Class server::meta::variable_class 
 
 string_type variable_class::type_name = "VARIABLE CLASS";
 
@@ -75,7 +75,7 @@ variable_class::~variable_class()
 
 
 
-// Class server::meta::struct_class
+// Class server::meta::struct_class 
 
 string_type struct_class::type_name = "STRUCT CLASS";
 
@@ -94,7 +94,7 @@ struct_class::~struct_class()
 
 
 
-// Class server::meta::const_value
+// Class server::meta::const_value 
 
 const_value::const_value()
 {
@@ -139,7 +139,7 @@ bool const_value::deserialize_definition (base_meta_reader& stream, byte type)
 }
 
 
-// Class server::meta::internal_value
+// Class server::meta::internal_value 
 
 internal_value::internal_value()
       : _read_only(true)
@@ -180,7 +180,7 @@ bool internal_value::deserialize_definition (base_meta_reader& stream, byte type
 }
 
 
-// Class server::meta::object_class
+// Class server::meta::object_class 
 
 string_type object_class::type_name = "OBJECT CLASS";
 
@@ -219,7 +219,7 @@ namespace_item_attributes object_class::get_attributes () const
 }
 
 
-// Parameterized Class server::meta::base_complex_type
+// Parameterized Class server::meta::base_complex_type 
 
 template <class metaT>
 base_complex_type<metaT>::base_complex_type()
@@ -407,7 +407,7 @@ bool base_complex_type<metaT>::check_name (const string_type& name)
 }
 
 
-// Class server::meta::mapper_class
+// Class server::meta::mapper_class 
 
 string_type mapper_class::type_name = "MAPPER CLASS";
 
@@ -422,7 +422,7 @@ mapper_class::~mapper_class()
 
 
 
-// Class server::meta::domain_class
+// Class server::meta::domain_class 
 
 string_type domain_class::type_name = "DOMAIN CLASS";
 
@@ -441,7 +441,7 @@ domain_class::~domain_class()
 
 
 
-// Class server::meta::application_class
+// Class server::meta::application_class 
 
 string_type application_class::type_name = "DOMAIN CLASS";
 
@@ -460,7 +460,7 @@ application_class::~application_class()
 
 
 
-// Class server::meta::port_class
+// Class server::meta::port_class 
 
 string_type port_class::type_name = "PORT CLASS";
 
@@ -479,7 +479,7 @@ port_class::~port_class()
 
 
 
-// Class server::meta::struct_attribute
+// Class server::meta::struct_attribute 
 
 struct_attribute::struct_attribute()
 {
@@ -492,7 +492,7 @@ struct_attribute::~struct_attribute()
 
 
 
-// Class server::meta::variable_attribute
+// Class server::meta::variable_attribute 
 
 variable_attribute::variable_attribute()
 {
@@ -505,7 +505,7 @@ variable_attribute::~variable_attribute()
 
 
 
-// Class server::meta::mapper_attribute
+// Class server::meta::mapper_attribute 
 
 mapper_attribute::mapper_attribute()
 {
@@ -518,7 +518,7 @@ mapper_attribute::~mapper_attribute()
 
 
 
-// Class server::meta::source_attribute
+// Class server::meta::source_attribute 
 
 source_attribute::source_attribute()
 {
@@ -531,7 +531,7 @@ source_attribute::~source_attribute()
 
 
 
-// Class server::meta::complex_class_attribute
+// Class server::meta::complex_class_attribute 
 
 complex_class_attribute::complex_class_attribute()
 {
@@ -563,7 +563,7 @@ bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, 
 }
 
 
-// Class server::meta::filter_attribute
+// Class server::meta::filter_attribute 
 
 filter_attribute::filter_attribute()
 {
@@ -576,7 +576,7 @@ filter_attribute::~filter_attribute()
 
 
 
-// Class server::meta::event_attribute
+// Class server::meta::event_attribute 
 
 event_attribute::event_attribute()
 {
@@ -589,7 +589,7 @@ event_attribute::~event_attribute()
 
 
 
-// Class server::meta::source_class
+// Class server::meta::source_class 
 
 string_type source_class::type_name = "SOURCE CLASS";
 
@@ -604,7 +604,7 @@ source_class::~source_class()
 
 
 
-// Class server::meta::filter_class
+// Class server::meta::filter_class 
 
 string_type filter_class::type_name = "FILTER CLASS";
 
@@ -619,7 +619,7 @@ filter_class::~filter_class()
 
 
 
-// Class server::meta::event_class
+// Class server::meta::event_class 
 
 string_type event_class::type_name = "EVENT CLASS";
 

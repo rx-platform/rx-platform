@@ -140,8 +140,8 @@
 
 
 namespace rx {
-class base_meta_writter;
 class base_meta_reader;
+class base_meta_writter;
 
 } // namespace rx
 

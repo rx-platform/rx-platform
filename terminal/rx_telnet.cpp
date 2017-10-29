@@ -1641,11 +1641,10 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 		python::py_script::instance().dump_script_information(out);
 		out << "\r\n";
 	}
-	else if (sub_command == "test")
+	else 
 	{
-		string_type what;
-		in >> what;
-		testing::python::do_python_test(out, what);
+		err << "Unknown command type!!!!\r\n";
+		return false;
 	}
 	return true;
 }
@@ -1655,3 +1654,11 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 } // namespace console
 } // namespace terminal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	: server_command("test")
+
+#endif

@@ -31,14 +31,14 @@
 
 
 
-// rx_mngt
-#include "system/server/rx_mngt.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_mngt
+#include "system/server/rx_mngt.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 namespace server {
 namespace prog {
@@ -63,9 +63,9 @@ namespace prog {
 class program_executer_base;
 class server_program_base;
 class server_command_base;
+typedef pointers::virtual_reference<server_command_base> command_ptr;
 typedef pointers::reference<program_context_base> program_context_ptr;
 typedef pointers::reference<server_program_base> server_program_ptr;
-typedef pointers::virtual_reference<server_command_base> command_ptr;
 typedef pointers::virtual_reference<program_executer_base> program_executer_ptr;
 typedef pointers::reference<server_program_holder> server_program_holder_ptr;
 typedef pointers::reference<program_context_base> program_context_base_ptr;

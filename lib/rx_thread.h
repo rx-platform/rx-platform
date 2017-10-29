@@ -52,10 +52,6 @@ namespace jobs
 typedef pointers::reference<job> job_ptr;
 typedef pointers::reference<timer_job> timer_job_ptr;
 }
-namespace io
-{
-//typedef pointers::reference<dispatcher_subscriber> dispatcher_subscriber_ptr;
-}
 using namespace jobs;
 
 namespace threads {

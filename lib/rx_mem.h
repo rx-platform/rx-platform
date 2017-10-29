@@ -31,10 +31,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// dummy
+#include "dummy.h"
 
 #include <type_traits>
 
@@ -174,7 +174,7 @@ public:
 
 
 
-typedef memory_buffer_base< std_vector_allocator  > std_buffer;
+typedef memory_buffer_base< rx::memory::std_vector_allocator  > std_buffer;
 
 typedef pointers::reference<memory_buffer_base< std_vector_allocator> > std_buffer_ptr;
 
@@ -329,7 +329,7 @@ class backward_simple_allocator
 
 
 
-typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
+typedef backward_memory_buffer_base< rx::memory::backward_simple_allocator  > back_buffer;
 
 
 // Parameterized Class rx::memory::memory_buffer_base 

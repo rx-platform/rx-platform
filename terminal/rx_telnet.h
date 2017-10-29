@@ -38,8 +38,6 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_io
@@ -48,6 +46,8 @@
 #include "terminal/rx_commands.h"
 // rx_security
 #include "system/security/rx_security.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 
 
@@ -652,5 +652,12 @@ pyhton command for interfacing python scripting");
 } // namespace terminal
 
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
 
 #endif

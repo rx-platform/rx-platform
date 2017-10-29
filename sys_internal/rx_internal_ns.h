@@ -31,12 +31,12 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "host/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 using namespace server::ns;
 

@@ -2,20 +2,22 @@
 
 namespace testing
 {
+	namespace obsolite
+	{
+		int test_smart_ptr();
 
-int test_smart_ptr();
+		void test_thread();
 
-void test_thread();
-
-void test_callbacks();
+		void test_callbacks();
 
 
 #ifndef NO_PYTHON_SUPPORT
-namespace python
-{
-void dump_python_information(std::ostream& out);
-void do_python_test(std::ostream& out, const string_type& command);
-}
+		namespace python
+		{
+			void dump_python_information(std::ostream& out);
+			void do_python_test(std::ostream& out, const string_type& command);
+		}
 #endif
 
+}//namespace obsolite
 }// testing

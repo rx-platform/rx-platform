@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_std.h
+*  testing\rx_test_script.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -26,33 +26,49 @@
 ****************************************************************************/
 
 
-#ifndef rx_std_h
-#define rx_std_h 1
+#ifndef rx_test_script_h
+#define rx_test_script_h 1
+
+
+
+// rx_test
+#include "testing/rx_test.h"
+
+
+
+namespace testing {
+
+namespace script_test {
+
+namespace py_test {
 
 
 
 
-// general stuff
-#include <ios>
-#include <iostream>
-#include <stdio.h>
-#include <atomic>
-#include <assert.h>
-#include <functional>
-#include <sstream>
-#include <type_traits>
-#include <algorithm>
-#include <limits>
-#include <memory>
-// containers
-#include <vector>
-#include <set>
-#include <map>
-#include <queue>
-#include <list>
-#include <stack>
+
+class python_basic_test : public code_test  
+{
+
+  public:
+      python_basic_test();
+
+      virtual ~python_basic_test();
 
 
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace py_test
+} // namespace script_test
+} // namespace testing
 
 
 
