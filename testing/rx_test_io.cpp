@@ -40,25 +40,19 @@ namespace testing {
 namespace io_test {
 
 namespace ip_test {
-// Class testing::io_test::ip_test::tcp_client_test 
+// Class testing::io_test::ip_test::tcp_test 
 
-tcp_client_test::tcp_client_test()
-	: code_test("tcpip-client")
+tcp_test::tcp_test()
+	: test_category("tcpip")
 {
+	register_test_case(std::make_unique<test_client_basics>());
 }
 
 
-tcp_client_test::~tcp_client_test()
+tcp_test::~tcp_test()
 {
 }
 
-
-
-bool tcp_client_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
-{
-	out << "Testing TCP/IP Client\r\n==========================\r\n";
-	return true;
-}
 
 
 // Class testing::io_test::ip_test::tcp_test_client 
@@ -76,11 +70,19 @@ tcp_test_client::~tcp_test_client()
 
 bool tcp_test_client::readed (const void* data, size_t count, rx_thread_handle_t destination)
 {
+	printf("stiglo %d bajtova\r\n", (int)count);
 	return true;
 }
 
 void tcp_test_client::release_buffer (buffer_ptr what)
 {
+}
+
+bool tcp_test_client::connect_complete ()
+{
+	rx::io::tcp_client_socket_std_buffer::connect_complete();
+	printf("Stigo callback\r\n");
+	return true;
 }
 
 
@@ -97,6 +99,63 @@ void test_tcp_client()
 	}
 
 }
+// Class testing::io_test::ip_test::test_client_basics 
+
+test_client_basics::test_client_basics()
+	: test_case("client-basic")
+{
+}
+
+
+test_client_basics::~test_client_basics()
+{
+}
+
+
+
+bool test_client_basics::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	string_type addr;
+	word port=0;
+	if (!in.eof())
+	{
+		in >> addr;
+		if (!in.eof())
+		{
+			in >> port;
+		}
+	}
+	if (!addr.empty() && port != 0)
+	{
+		out << "Testing TCP/IP Client Basic\r\n==========================\r\n";
+
+		for (int i = 0; i < 10; i++)
+		{
+			out << "Connecting to " << addr << ":" << port << "...\r\n";
+			out << "Creating TCP client...\r\n";
+			tcp_test_client::smart_ptr client(pointers::_create_new);
+			out << "Binding TCP client...\r\n";
+			if (client->bind_socket_tcpip_4(rx_server::instance().get_runtime().get_io_pool()->get_pool()))
+			{
+				out << "Sending Connect...\r\n";
+				if (client->connect_to_tcpip_4(rx_server::instance().get_runtime().get_io_pool()->get_pool(), addr, port))
+				{
+					rx_msleep(200);
+					out << "Closing Connection...\r\n";
+				}
+			}
+			client->close();
+		}
+
+	}
+	else
+	{
+		out << "Test usage:\r\n" ANSI_COLOR_YELLOW " test tcpip " << get_name() << " <tcp/ip address> <port>" ANSI_COLOR_RESET "\r\n";
+	}
+	return true;
+}
+
+
 } // namespace ip_test
 } // namespace io_test
 } // namespace testing

@@ -31,6 +31,7 @@
 
 
 #include "system/meta/rx_objbase.h"
+#include "lib/rx_mem.h"
 /////////////////////////////////////////////////////////////
 // logging macros for host library
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)
@@ -62,6 +63,8 @@ namespace host {
 class rx_server_host 
 {
 
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
   public:
       rx_server_host();
 
@@ -79,6 +82,8 @@ class rx_server_host
       virtual void get_host_objects (std::vector<server::objects::object_runtime_ptr>& items) = 0;
 
       virtual void get_host_classes (std::vector<server::meta::object_class_ptr>& items) = 0;
+
+      virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
 
   protected:

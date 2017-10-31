@@ -46,16 +46,38 @@ namespace py_test {
 
 
 
-class python_basic_test : public code_test  
+class dump_version_test : public test_case  
 {
 
   public:
-      python_basic_test();
+      dump_version_test();
 
-      virtual ~python_basic_test();
+      virtual ~dump_version_test();
 
 
       bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class python_test : public test_category  
+{
+
+  public:
+      python_test();
+
+      virtual ~python_test();
 
 
   protected:

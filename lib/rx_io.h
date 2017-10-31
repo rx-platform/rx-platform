@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -320,6 +320,13 @@ typedef tcp_listen_socket< memory::std_strbuff<memory::std_vector_allocator>  > 
 
 
 
+typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_std_buffer;
+
+
+
+
+
+
 template <class buffT>
 class tcp_client_socket : public tcp_socket<buffT>  
 {
@@ -344,6 +351,8 @@ class tcp_client_socket : public tcp_socket<buffT>
       void timer_tick (dword tick);
 
       void close ();
+
+      virtual bool connect_complete ();
 
 
       void set_connect_timeout (dword value)
@@ -378,14 +387,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
-
-
-
-
-typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_std_buffer;
-
-
-// Parameterized Class rx::io::full_duplex_comm 
+// Parameterized Class rx::io::full_duplex_comm
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -569,7 +571,7 @@ bool full_duplex_comm<buffT>::write_loop ()
 			_send_tick = rx_get_tick_count();
 			_sending = true;
 			bind();
-			result = rx_system_write(&_dispatcher_data, data, size);
+			result = rx_socket_write(&_dispatcher_data, data, size);
 			if (result != RX_ASYNC)
 			{
 				release();
@@ -626,7 +628,7 @@ bool full_duplex_comm<buffT>::read_loop ()
 		_receiving = true;
 		_receive_tick = rx_get_tick_count();
 		bind();
-		result = rx_system_read(&_dispatcher_data, &bytes);
+		result = rx_socket_read(&_dispatcher_data, &bytes);
 		if (result != RX_ASYNC)
 		{
 			release();
@@ -709,7 +711,7 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket 
+// Parameterized Class rx::io::tcp_socket
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -751,7 +753,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket 
+// Parameterized Class rx::io::tcp_listen_socket
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket()
@@ -833,7 +835,7 @@ template <class buffT>
 bool tcp_listen_socket<buffT>::accept_new ()
 {
 	bind();
-	dword ret = rx_system_accept(&_dispatcher_data);
+	dword ret = rx_socket_accept(&_dispatcher_data);
 	if (ret == RX_ERROR)
 	{
 		release();
@@ -850,7 +852,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (dword status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket 
+// Parameterized Class rx::io::tcp_client_socket
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -871,10 +873,10 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 template <class buffT>
 bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
 {
-	this->connect_dispatcher(dispatcher);
 	this->_dispatcher_data.handle = rx_create_and_bind_ip4_tcp_socket(addr);
 	if (this->_dispatcher_data.handle)
 	{
+		this->connect_dispatcher(dispatcher);
 		return true;
 	}
 	if (this->_dispatcher_data.handle)
@@ -897,7 +899,7 @@ bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr d
 {
 	{
 
-		if (this->_connecting || !this->_sending || !this->_receiving)
+		if (this->_connecting || this->_sending || this->_receiving)
 			return false;
 
 		this->_connect_tick = ::rx_get_tick_count();
@@ -905,7 +907,7 @@ bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr d
 		this->_connecting = true;
 	}
 	this->bind();
-	bool ret = (RX_OK == rx_system_connect(&this->_dispatcher_data,  addr, addrsize));
+	bool ret = (RX_ERROR != rx_socket_connect(&this->_dispatcher_data,  addr, addrsize));
 	if (!ret)
 	{
 		this->_connecting = false;
@@ -920,8 +922,9 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::sma
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
+	temp_addr.sin_family = AF_INET;
 	temp_addr.sin_port = htons(port);
-	temp_addr.sin_addr.s_addr = htonl(address);
+	temp_addr.sin_addr.s_addr = address;
 	return connect_to(dispatcher,(sockaddr*)&temp_addr,sizeof(temp_addr));
 }
 
@@ -931,8 +934,9 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::sma
     unsigned long num_addr=inet_addr(address.c_str());
     struct sockaddr_in temp_addr;
     memzero(&temp_addr, sizeof(temp_addr));
+	temp_addr.sin_family = AF_INET;
 	temp_addr.sin_port = htons(port);
-	temp_addr.sin_addr.s_addr = htonl(num_addr);
+	temp_addr.sin_addr.s_addr = num_addr;
 	return connect_to(dispatcher, (sockaddr*)&temp_addr,sizeof(temp_addr));
 }
 
@@ -944,8 +948,8 @@ int tcp_client_socket<buffT>::internal_connect_callback (dword status)
 	this->_write_lock.unlock();
 	if (status == 0)
 	{
-		//if (connect_complete())
-		return 1;
+		if (connect_complete())
+			return 1;
 	}
 	this->initiate_shutdown();
 	return 0;
@@ -982,6 +986,13 @@ void tcp_client_socket<buffT>::close ()
 {
 	this->disconnect_dispatcher();
 	::rx_close_socket(this->_dispatcher_data.handle);
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::connect_complete ()
+{
+	this->read_loop();
+	return true;
 }
 
 

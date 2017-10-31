@@ -31,14 +31,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 namespace server {
 namespace prog {

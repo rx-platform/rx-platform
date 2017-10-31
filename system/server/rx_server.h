@@ -101,6 +101,8 @@ class rx_server : public security::secured_object
 
       bool read_log (const log::log_query_type& query, log::log_events_type& result);
 
+      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
+
 
       runtime::server_rt& get_runtime ()
       {

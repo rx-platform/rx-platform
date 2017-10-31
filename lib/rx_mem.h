@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,10 +31,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // dummy
 #include "dummy.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include <type_traits>
 
@@ -80,6 +80,8 @@ class memory_buffer_base : public pointers::reference_object
 
       void* get_data () const;
 
+      bool fill_with_file_content (sys_handle_t file);
+
 	  template<typename T>
 	  void read_data(T& val)
 	  {
@@ -123,7 +125,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator 
+class std_vector_allocator
 {
 
   public:
@@ -174,7 +176,7 @@ public:
 
 
 
-typedef memory_buffer_base< rx::memory::std_vector_allocator  > std_buffer;
+typedef memory_buffer_base< std_vector_allocator  > std_buffer;
 
 typedef pointers::reference<memory_buffer_base< std_vector_allocator> > std_buffer_ptr;
 
@@ -201,13 +203,22 @@ class std_strbuff : public memory_buffer_base<allocT>,
 
       char* epptr () const;
 
+      char* eback () const;
+
+      char* gptr () const;
+
+      char* egptr () const;
+
 
   protected:
-	  virtual int_type overflow( int_type _Meta = traits_type::eof())
+	  virtual int_type overflow( int_type ch = traits_type::eof())
 	  {
-		  traits_type::char_type temp = traits_type::to_char_type(_Meta);
-		  this->push_data(&temp, sizeof(temp));
-		  return traits_type::not_eof(_Meta);
+		  if(traits_type::not_eof(ch))
+		  {
+			  traits_type::char_type temp = traits_type::to_char_type(ch);
+			  this->push_data(&temp, sizeof(temp));
+		  }
+		  return ch;
 	  }
 
   private:
@@ -289,7 +300,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator 
+class backward_simple_allocator
 {
 
   public:
@@ -329,10 +340,10 @@ class backward_simple_allocator
 
 
 
-typedef backward_memory_buffer_base< rx::memory::backward_simple_allocator  > back_buffer;
+typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
-// Parameterized Class rx::memory::memory_buffer_base 
+// Parameterized Class rx::memory::memory_buffer_base
 
 template <class allocT>
 memory_buffer_base<allocT>::memory_buffer_base()
@@ -403,16 +414,20 @@ void memory_buffer_base<allocT>::read_line (string_type& line)
 {
 	if (eof())
 		return;
-	char* buff = _allocator.get_buffer<char>();
+	char* buff = &_allocator.get_buffer<char>()[_current_read];
 	char* start = buff;
 	while (*buff!='\r' && *buff!='\n' && !eof())
 		buff++;
 	if (buff - start > 0)
 	{
 		_current_read += (buff - start);
-		if (*buff == '\r' || *buff == '\n')
+		size_t len = (buff - start);
+		while ((*buff == '\r' || *buff == '\n') && !eof())
+		{
+			buff++;
 			_current_read++;
-		line.assign(start, (buff - start));
+		}
+		line.assign(start, len);
 	}
 }
 
@@ -443,8 +458,29 @@ void* memory_buffer_base<allocT>::get_data () const
   return _allocator.get_char_buffer();
 }
 
+template <class allocT>
+bool memory_buffer_base<allocT>::fill_with_file_content (sys_handle_t file)
+{
+	qword sz = 0;
+	if (rx_file_get_size(file, &sz))
+	{
+		if (sz == 0)
+			return true;
+		// init buffer
+		_current_read = 0;
+		_next_push = (int)sz;
+		_allocator.reallocate((size_t)sz);
+		dword readed = 0;
+		if (rx_file_read(file, _allocator.get_buffer<void>(), (dword)sz, &readed) && readed == sz)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
-// Parameterized Class rx::memory::std_strbuff 
+
+// Parameterized Class rx::memory::std_strbuff
 
 template <class allocT>
 std_strbuff<allocT>::std_strbuff()
@@ -478,8 +514,27 @@ char* std_strbuff<allocT>::epptr () const
 	return &this->_allocator.get_char_buffer()[this->_allocator.get_size()];
 }
 
+template <class allocT>
+char* std_strbuff<allocT>::eback () const
+{
+  return this->_allocator.get_char_buffer();
+}
 
-// Parameterized Class rx::memory::backward_memory_buffer_base 
+template <class allocT>
+char* std_strbuff<allocT>::gptr () const
+{
+  char* ret= &this->_allocator.get_char_buffer()[this->_current_read];
+  return ret;
+}
+
+template <class allocT>
+char* std_strbuff<allocT>::egptr () const
+{
+  return nullptr;
+}
+
+
+// Parameterized Class rx::memory::backward_memory_buffer_base
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)

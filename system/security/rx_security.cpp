@@ -92,6 +92,12 @@ bool security_context::is_hosted () const
 
 }
 
+bool security_context::is_interactive () const
+{
+  return false;
+
+}
+
 
 // Class server::security::security_manager 
 

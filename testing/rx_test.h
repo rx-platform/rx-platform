@@ -38,6 +38,14 @@
 
 using namespace rx;
 
+/////////////////////////////////////////////////////////////
+// logging macros for testing library
+#define TEST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Test",src,lvl,msg)
+#define TEST_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Test",src,lvl,msg)
+#define TEST_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Test",src,lvl,msg)
+#define TEST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Test",src,lvl,msg)
+#define TEST_LOG_TRACE(src,lvl,msg) RX_TRACE("Test",src,lvl,msg)
+
 
 namespace testing {
 
@@ -45,18 +53,65 @@ namespace testing {
 
 
 
-class code_test 
+class test_case 
 {
 public:
-	typedef std::unique_ptr<code_test> smart_ptr;
+	typedef std::unique_ptr<test_case> smart_ptr;
 
   public:
-      code_test (const string_type& category);
+      test_case (const string_type& name);
 
-      virtual ~code_test();
+      virtual ~test_case();
 
 
       virtual bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx) = 0;
+
+      bool test_start (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      void test_end (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+      const string_type& get_name () const
+      {
+        return _name;
+      }
+
+
+
+  protected:
+
+  private:
+      test_case(const test_case &right);
+
+      test_case & operator=(const test_case &right);
+
+
+
+      string_type _name;
+
+      qword _start_tick;
+
+
+};
+
+
+
+
+
+
+class test_category 
+{
+	typedef std::map<string_type, test_case::smart_ptr> cases_type;
+public:
+	typedef std::unique_ptr<test_category> smart_ptr;
+
+  public:
+      test_category (const string_type& category);
+
+      virtual ~test_category();
+
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
 
       const string_type& get_category () const
@@ -68,11 +123,17 @@ public:
 
   protected:
 
+      void register_test_case (test_case::smart_ptr test);
+
+
   private:
-      code_test(const code_test &right);
+      test_category(const test_category &right);
 
-      code_test & operator=(const code_test &right);
+      test_category & operator=(const test_category &right);
 
+
+
+      cases_type _cases;
 
 
       string_type _category;
@@ -89,15 +150,15 @@ class test_command : public terminal::commands::server_command,
                      	public server::secu
 {
 	DECLARE_REFERENCE_PTR(test_command);
-
 	DECLARE_DERIVED_FROM_INTERFACE;
-
 	DECLARE_CODE_INFO("rx", "0.1.0", "\
 class intendend for console or script usage\r\n\
-this is command responsable of executing the code from test part of project");
+responsable of executing the test cases for rx-platform or for your plugis.\r\n\
+test cases are devided into several categories. you can use test command to explore this test cases\
+");
 
 public:
-	typedef std::map<string_type, code_test::smart_ptr> registred_tests_type;
+	typedef std::map<string_type, test_category::smart_ptr> registered_tests_type;
 
   public:
       test_command();
@@ -112,11 +173,57 @@ public:
 
   private:
 
-      void register_code_test (code_test::smart_ptr test);
+      void register_code_test (test_category::smart_ptr test);
 
 
 
-      registred_tests_type _registred_tests;
+      registered_tests_type _registered_tests;
+
+
+};
+
+
+
+
+
+
+class basic_test_case_test : public test_case  
+{
+
+  public:
+      basic_test_case_test();
+
+      virtual ~basic_test_case_test();
+
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class test_test : public test_category  
+{
+
+  public:
+      test_test();
+
+      virtual ~test_test();
+
+
+  protected:
+
+  private:
 
 
 };

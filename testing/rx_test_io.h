@@ -31,10 +31,10 @@
 
 
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 
@@ -57,6 +57,9 @@ class tcp_test_client : public rx::io::tcp_client_socket_std_buffer
       virtual ~tcp_test_client();
 
 
+      bool connect_complete ();
+
+
   protected:
 
       bool readed (const void* data, size_t count, rx_thread_handle_t destination);
@@ -75,16 +78,38 @@ class tcp_test_client : public rx::io::tcp_client_socket_std_buffer
 
 
 
-class tcp_client_test : public code_test  
+class test_client_basics : public test_case  
 {
 
   public:
-      tcp_client_test();
+      test_client_basics();
 
-      virtual ~tcp_client_test();
+      virtual ~test_client_basics();
 
 
       bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class tcp_test : public test_category  
+{
+
+  public:
+      tcp_test();
+
+      virtual ~tcp_test();
 
 
   protected:

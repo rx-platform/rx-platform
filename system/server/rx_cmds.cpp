@@ -339,6 +339,10 @@ console_client::~console_client()
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
 	RX_ASSERT(!_current);
+	if (line.size() > 0 && line[0] == '@')
+	{// this is console command
+		return server::rx_server::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
+	}
 	if (line == "exit")
 	{
 		std::ostream out(out_buffer.unsafe_ptr());

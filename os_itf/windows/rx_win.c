@@ -1156,7 +1156,7 @@ int rx_create_directory(const char* dir, int fail_on_exsists)
 	return RX_OK;
 }
 
-sys_handle_t rx_file_create(const char* path, int access, int creation)
+sys_handle_t rx_file(const char* path, int access, int creation)
 {
 	DWORD waccess = 0;
 	DWORD wshare = 0;
@@ -1383,7 +1383,7 @@ int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_d
 	return 0;// nothing here on windows closing handle is enougth
 }
 
-dword rx_system_read(struct rx_io_register_data_t* what, size_t* readed)
+dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1401,7 +1401,7 @@ dword rx_system_read(struct rx_io_register_data_t* what, size_t* readed)
 	}
 	return RX_ASYNC;
 }
-dword rx_system_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1419,7 +1419,7 @@ dword rx_system_write(struct rx_io_register_data_t* what, const void* data, size
 	return RX_ASYNC;
 }
 
-dword rx_system_accept(struct rx_io_register_data_t* what)
+dword rx_socket_accept(struct rx_io_register_data_t* what)
 {
 
 	int buff = 1024 * 1024;
@@ -1468,7 +1468,7 @@ dword rx_system_accept(struct rx_io_register_data_t* what)
 
 
 
-dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+dword rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
 {
 	dword err;
 	DWORD sent = 0;
@@ -1499,6 +1499,7 @@ dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* add
 		if (err == ERROR_IO_PENDING)
 			ret = TRUE;
 	}
+
 	return ret != FALSE ? RX_ASYNC : RX_ERROR;
 }
 

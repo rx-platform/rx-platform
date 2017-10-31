@@ -104,7 +104,7 @@ const string_type& interactive_console_host::get_host_info ()
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, "Interactive Console Host Ver 0.8.1");
+		ASSIGN_MODULE_VERSION(ret, "Interactive Console Host Ver 0.8.2");
 	}
 	return ret;
 }
@@ -144,6 +144,60 @@ void interactive_console_host::get_host_classes (std::vector<server::meta::objec
 	server::meta::object_class_ptr test("test_class", 55, true);
 	test->register_const_value("testBool", false);
 	items.push_back(test);
+}
+
+bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+{
+	std::ostream out(out_buffer.unsafe_ptr());
+	std::stringstream in(line);
+	std::ostream err(err_buffer.unsafe_ptr());
+
+	bool ret = false;
+
+	string_type command;
+	in >> command;
+	if (command == "frun")
+	{
+		string_type file_name;
+		in >> file_name;
+		file_name = "D:\\RX\\Native\\Source/host/scripts/platform script one.rxs";
+		sys_handle_t file = rx_file(file_name.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+			if (buffer->fill_with_file_content(file))
+			{
+				out << "file loadad in memory...\r\n";
+				out << "Running file script:" << file_name;
+				out << "\r\n=====================================\r\n";
+
+				while (!buffer->eof())
+				{
+					string_type line;
+					buffer->read_line(line);
+					out << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+				}
+
+				out << "=====================================\r\nScript done.\r\n";
+				ret = true;
+			}
+			else
+			{
+				err << "error reading file contet\r\n";
+			}
+			rx_file_close(file);
+			return ret;
+		}
+		else
+		{
+			err << "error oppening file\r\n";
+		}
+	}
+	else
+	{
+		err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
+	}
+	return ret;
 }
 
 
@@ -275,6 +329,12 @@ bool interactive_security_context::has_console () const
 }
 
 bool interactive_security_context::is_system () const
+{
+  return true;
+
+}
+
+bool interactive_security_context::is_interactive () const
 {
   return true;
 

@@ -84,6 +84,8 @@ class security_context : public rx::pointers::interface_object
 
       virtual bool is_hosted () const;
 
+      virtual bool is_interactive () const;
+
 
       const rx_security_handle_t get_handle () const
       {

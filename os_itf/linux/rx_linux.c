@@ -841,7 +841,7 @@ extern "C" {
 		return RX_OK;
 	}
 
-	sys_handle_t rx_file_create(const char* path, int access, int creation)
+	sys_handle_t rx_file(const char* path, int access, int creation)
 	{
 		int ret;
 		int flags = 0;
@@ -1157,7 +1157,7 @@ extern "C" {
         }
         return NULL;
 	}
-	dword rx_system_read(struct rx_io_register_data_t* what, size_t* readed)
+	dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 	{
 		struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 		internal->read_type = EPOLL_READ_TYPE;
@@ -1189,7 +1189,7 @@ extern "C" {
 
 		return RX_OK;
 	}
-	dword rx_system_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+	dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 	{
 		struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 		internal->write_buffer = data;
@@ -1236,7 +1236,7 @@ extern "C" {
 
 				byte* temp = (byte*)data;
 				temp += written;
-				return rx_system_write(what, temp, count - written);
+				return rx_socket_write(what, temp, count - written);
 			}
 			else
 			{
@@ -1248,7 +1248,7 @@ extern "C" {
 	}
 
 
-    dword rx_system_accept(struct rx_io_register_data_t* what)
+    dword rx_socket_accept(struct rx_io_register_data_t* what)
     {
         struct sockaddr* addr=(struct sockaddr*)what->read_buffer;
         socklen_t addrsize=sizeof(struct sockaddr_in);
@@ -1285,9 +1285,33 @@ extern "C" {
 
         return RX_OK;
     }
-    dword rx_system_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+    dword rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
     {
-        return RX_ERROR;
+        int ret;
+        struct linux_epoll_subscriber_t* internal=(struct linux_epoll_subscriber_t*)what->internal;
+		internal->write_type = EPOLL_CONNECT_TYPE;
+        add_pending_op(internal);
+        ret=connect(what->handle,addr,addrsize);
+        if(ret==-1)
+        {
+            int err=errno;
+            if(err==EAGAIN || err==EWOULDBLOCK || ret==EINPROGRESS)
+            {
+                return RX_OK;
+            }
+            else
+            {
+                remove_pending_op(internal);
+                return RX_ERROR;
+            }
+        }
+        else// performed in sync
+        {
+            remove_pending_op(internal);
+            (what->connect_callback)(what->data,0);
+        }
+
+        return RX_OK;
     }
 
     dword rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
@@ -1457,7 +1481,7 @@ extern "C" {
                                         {
                                             socklen_t addr_size=sizeof(local_addr);
                                             getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
-                                            (io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer,(struct sockaddr*)&local_addr, addr_size);
+                                            (io_data->connect_callback)(io_data->data, 0);
                                         }
                                     }
 
@@ -1528,6 +1552,32 @@ extern "C" {
                                 break;
                             case EPOLL_CONNECT_TYPE:
                                 {
+                                    type_data->write_type = 0;
+                                    socklen_t addr_size = io_data->read_buffer_size;
+                                    int err = accept4(io_data->handle, (struct sockaddr*)io_data->read_buffer, &addr_size, SOCK_NONBLOCK);
+                                    if (err == -1)
+                                    {
+                                        if (err != EAGAIN && err != EWOULDBLOCK)
+                                        {
+                                            int ops=remove_pending_op(type_data);
+                                            if(ops>=0)
+                                                (io_data->shutdown_callback)(io_data->data, errno);
+                                        }
+                                        // nothing to do here, he will call us again any way
+                                    }
+                                    else
+                                    {
+                                        int ops=remove_pending_op(type_data);
+                                        if(ops>=0)
+                                        {
+                                            socklen_t addr_size=sizeof(local_addr);
+                                            getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
+                                            (io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer,(struct sockaddr*)&local_addr, addr_size);
+                                        }
+                                    }
+
+                                    one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
+                                    epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
                                 }
                                 break;
                             case 0:

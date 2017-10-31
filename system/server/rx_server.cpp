@@ -188,6 +188,11 @@ bool rx_server::read_log (const log::log_query_type& query, log::log_events_type
 	return log::log_object::instance().read_cache(query, result);
 }
 
+bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+{
+	return _host->do_host_command(line, out_buffer, err_buffer, ctx);
+}
+
 
 } // namespace server
 

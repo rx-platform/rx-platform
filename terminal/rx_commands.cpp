@@ -42,6 +42,43 @@ namespace terminal {
 
 namespace commands {
 
+// Class terminal::commands::server_command 
+
+server_command::server_command (const string_type& console_name)
+ : server::prog::server_command_base(console_name,ns::namespace_item_system)
+{
+}
+
+
+server_command::~server_command()
+{
+}
+
+
+
+void server_command::virtual_bind ()
+{
+  bind();
+
+}
+
+void server_command::virtual_release ()
+{
+  release();
+
+}
+
+namespace_item_attributes server_command::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_execute | namespace_item_read_access | namespace_item_system);
+}
+
+bool server_command::generate_json (std::ostream& def, std::ostream& err) const
+{
+	return true;
+}
+
+
 // Class terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
@@ -171,43 +208,6 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 	}
 	else
 		out << "echo";
-	return true;
-}
-
-
-// Class terminal::commands::server_command 
-
-server_command::server_command (const string_type& console_name)
- : server::prog::server_command_base(console_name,ns::namespace_item_system)
-{
-}
-
-
-server_command::~server_command()
-{
-}
-
-
-
-void server_command::virtual_bind ()
-{
-  bind();
-
-}
-
-void server_command::virtual_release ()
-{
-  release();
-
-}
-
-namespace_item_attributes server_command::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_execute | namespace_item_read_access | namespace_item_system);
-}
-
-bool server_command::generate_json (std::ostream& def, std::ostream& err) const
-{
 	return true;
 }
 

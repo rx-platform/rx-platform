@@ -41,17 +41,10 @@ namespace script_test {
 namespace py_test {
 void dump_python_information(std::ostream& out)
 {
-	Py_Initialize();
-	if (!Py_IsInitialized()) {
-		out << "Unable to initialize Python interpreter!!!\r\n";
-		return;
-	}
 
 	out << "Python information\r\n==============================\r\n";
 	out << "Version:\r\n" << Py_GetVersion() << "\r\n";
 	out << "\r\n" << Py_GetCopyright() << "\r\n\r\n";
-
-	Py_Finalize();
 }
 
 void do_python_test(std::ostream& out, const string_type& command)
@@ -59,29 +52,38 @@ void do_python_test(std::ostream& out, const string_type& command)
 	PyRun_SimpleString(command.c_str());
 }
 
-// Class testing::script_test::py_test::python_basic_test 
+// Class testing::script_test::py_test::python_test 
 
-python_basic_test::python_basic_test()
-	: code_test("py-basic")
+python_test::python_test()
+	: test_category("python")
+{
+	register_test_case(std::make_unique<dump_version_test>());
+}
+
+
+python_test::~python_test()
 {
 }
 
 
-python_basic_test::~python_basic_test()
+
+// Class testing::script_test::py_test::dump_version_test 
+
+dump_version_test::dump_version_test()
+	: test_case("version")
+{
+}
+
+
+dump_version_test::~dump_version_test()
 {
 }
 
 
 
-bool python_basic_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool dump_version_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	out << "Testing Python Scripting\r\n==========================\r\n";
-	string_type what;
-	in >> what;
-	if (what.empty())
-		dump_python_information(out);
-	else
-		do_python_test(out, what);
+	dump_python_information(out);
 	return true;
 }
 

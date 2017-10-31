@@ -74,6 +74,8 @@ class interactive_security_context : public server::security::built_in_security_
 
       bool is_system () const;
 
+      bool is_interactive () const;
+
 
   protected:
 
@@ -154,6 +156,8 @@ class interactive_console_host : public rx_server_host
       void get_host_objects (std::vector<server::objects::object_runtime_ptr>& items);
 
       void get_host_classes (std::vector<server::meta::object_class_ptr>& items);
+
+      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
 
   protected:
