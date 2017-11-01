@@ -81,8 +81,8 @@ void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 		str[11] = 'a';
 	if (attr&namespace_item_domain)
 		str[12] = 'd';
-	if (attr&namespace_item_domain)
-		str[12] = 'p';
+	if (attr&namespace_item_test_case)
+		str[13] = 't';
 }
 
 void fill_quality_string(values::rx_value val, string_type& str)

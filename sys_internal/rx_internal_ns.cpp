@@ -35,6 +35,7 @@
 #include "system/server/rx_server.h"
 #include "terminal/rx_commands.h"
 #include "system/server/rx_inf.h"
+#include "testing/rx_test.h"
 
 
 namespace sys_internal {
@@ -94,6 +95,11 @@ void root_server_directory::initialize (host::rx_server_host* host, namespace_da
 
 	dirs.clear();
 	items.clear();
+	testing::testing_enviroment::instance().collect_test_cases(items);
+	namespace_directory::smart_ptr test(RX_NS_TEST_NAME, dirs, items);
+
+	dirs.clear();
+	items.clear();
 	sub_items.clear();// just in case
 	sub_items.push_back(rx_server::instance().get_manager().get_system_app());
 	sub_items.push_back(rx_server::instance().get_manager().get_system_domain());
@@ -149,6 +155,7 @@ void root_server_directory::initialize (host::rx_server_host* host, namespace_da
 	namespace_directory::smart_ptr sys(RX_NS_SYS_NAME, dirs, items);
 
 	_root_directories.push_back(sys);
+	_root_directories.push_back(test);
 
 }
 

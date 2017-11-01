@@ -93,7 +93,7 @@ class server_command : public server::prog::server_command_base,
 class server_command_manager : public server::objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 server commands managment object\r\n\
 bin folder in file hierarcyh\
 ")
@@ -140,8 +140,7 @@ bin folder in file hierarcyh\
 class echo_server_command : public server_command  
 {
 	DECLARE_REFERENCE_PTR(echo_server_command);
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-basic echo class intendend for console usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO(0, 5, 0, "\
 displays string behid on console\r\n\
 acctualiy first command class good for testing.)");
 

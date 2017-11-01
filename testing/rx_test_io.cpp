@@ -45,7 +45,7 @@ namespace ip_test {
 tcp_test::tcp_test()
 	: test_category("tcpip")
 {
-	register_test_case(std::make_unique<test_client_basics>());
+	register_test_case(test_client_basics::smart_ptr(pointers::_create_new));
 }
 
 

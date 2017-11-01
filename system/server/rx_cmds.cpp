@@ -159,7 +159,7 @@ void server_command_base::item_unlock () const
 
 namespace_item_attributes server_command_base::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value | namespace_item_execute| namespace_item_command);
+	return (namespace_item_attributes)(namespace_item_system_const_value | namespace_item_execute| namespace_item_test_case);
 }
 
 const string_type& server_command_base::get_item_name () const

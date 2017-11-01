@@ -47,7 +47,7 @@ namespace sys_objects {
 
 class system_application : public server::objects::application_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system application. contains system objects and internal system communication");
 
 	DECLARE_REFERENCE_PTR(system_application);
@@ -75,7 +75,7 @@ system application. contains system objects and internal system communication");
 
 class system_domain : public server::objects::domain_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 this domain is used by system objects");
 	DECLARE_REFERENCE_PTR(system_domain);
 
@@ -102,7 +102,7 @@ this domain is used by system objects");
 
 class unassigned_application : public server::objects::application_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 this application is for unassigned domains.it allways has bad quality");
 
 	DECLARE_REFERENCE_PTR(unassigned_application);
@@ -130,7 +130,7 @@ this application is for unassigned domains.it allways has bad quality");
 
 class unssigned_domain : public server::objects::domain_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 this domain is for uassigned objects.it allways has bad quality");
 
 	DECLARE_REFERENCE_PTR(unssigned_domain);

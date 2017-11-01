@@ -110,12 +110,14 @@ string_type get_code_module(const string_type& full);
 
 #include "lib/rx_lib.h"
 
-#define DECLARE_CODE_INFO(subsytem,version,comment) \
+#define DECLARE_CODE_INFO(subsytem,major, minor, build,comment) \
 public:\
 	static rx::pointers::code_behind_definition_t* get_code_behind()\
 		{\
+			char buff[0x100];\
+			sprintf(buff,"%d.%d.%d",major,minor,build);\
 			static rx::pointers::code_behind_definition_t temp = {\
-				smart_ptr::get_pointee_class_name() , subsytem , comment , version \
+				smart_ptr::get_pointee_class_name() , subsytem , comment , buff \
 								}; \
 				return &temp;\
 		}\
@@ -134,7 +136,7 @@ public:\
 		info << "class name : ";\
 		info << smart_ptr::get_pointee_class_name(); \
 		info << "\r\n";\
-		info << "version    : "<< version << "\r\n";\
+		info << "version    : "<< major << "." << minor << "." << build << "\r\n";\
 		info << "compiled   : " << compile_buffer << "\r\n";\
 		info << "comment\r\n";\
 		info << "/*\r\n";\
@@ -146,6 +148,13 @@ public:\
 		return comment;\
 	}\
 private:\
+
+#define DECLARE_TEST_CODE_INFO(maj,min,build,comment) \
+DECLARE_CODE_INFO("test",maj,min,build,"class intendend for testing puprposes\r\n"#comment)\
+
+
+#define DECLARE_CONSOLE_CODE_INFO(maj,min,build,comment) \
+DECLARE_CODE_INFO("console",maj,min,build,"class intendend for console usage\r\n"#comment)\
 
 
 ///////////////////////////////////////////////////////////////

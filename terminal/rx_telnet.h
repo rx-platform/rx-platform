@@ -194,8 +194,7 @@ namespace console_commands {
 
 class directory_command : public commands::server_command  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 list current directory on console ( dir, ls ");
 
   public:
@@ -271,8 +270,7 @@ class ls_command : public directory_command
 class cd_command : public commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(cd_command);
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 changes current active directory");
 
   public:
@@ -301,8 +299,7 @@ class rx_name_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(rx_name_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 displays details of software and system information");
 
   public:
@@ -331,8 +328,7 @@ class cls_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(cls_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 clears the console screen");
 
   public:
@@ -360,8 +356,7 @@ class shutdown_command : public commands::server_command
 {
 	DECLARE_REFERENCE_PTR(shutdown_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 all about shutdown of a server");
 
   public:
@@ -390,8 +385,7 @@ class log_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(log_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 all about doing stuff with log");
 
   public:
@@ -424,8 +418,7 @@ class sec_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(sec_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 all about doing stuff with security");
 
   public:
@@ -456,8 +449,7 @@ class time_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(time_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 time related stuff ( start time, current time... )");
 
   public:
@@ -486,8 +478,7 @@ class sleep_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(sleep_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 sleeps for the amaount of time specified in miliseconds");
 
   public:
@@ -536,8 +527,7 @@ class info_command : public directory_aware_command
 {
 	DECLARE_REFERENCE_PTR(info_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 displays details of selected item");
 
   public:
@@ -566,7 +556,7 @@ displays details of selected item");
 class code_command : public directory_aware_command  
 {
 	DECLARE_REFERENCE_PTR(code_command);
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 intendend for console usage\r\n\
 dumps information of C++ class of object on console\
 uses fill_server_info function");
@@ -596,7 +586,7 @@ class def_command : public directory_aware_command
 {
 	DECLARE_REFERENCE_PTR(def_command);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 command that dumps specified object into a Json stream and write it on a console");
 
   public:
@@ -626,8 +616,7 @@ class phyton_command : public commands::server_command
 {
 	DECLARE_REFERENCE_PTR(phyton_command);
 
-	DECLARE_CODE_INFO("rx", "0.1.0", "\
-class intendend for console or script usage\r\n\
+	DECLARE_CONSOLE_CODE_INFO( 0,1,0, "\
 pyhton command for interfacing python scripting");
 
   public:

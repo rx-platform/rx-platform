@@ -30,6 +30,7 @@
 #define rx_test_script_h 1
 
 
+#include "lib/rx_lib.h"
 
 // rx_test
 #include "testing/rx_test.h"
@@ -48,6 +49,9 @@ namespace py_test {
 
 class dump_version_test : public test_case  
 {
+	DECLARE_REFERENCE_PTR(dump_version_test)
+	DECLARE_TEST_CODE_INFO( 0,1,0, "\
+loading a file->reading it line by line->executing.");
 
   public:
       dump_version_test();
@@ -89,6 +93,59 @@ class python_test : public test_category
 
 
 } // namespace py_test
+
+namespace rxs {
+
+
+
+
+
+class read_and_run_file : public test_case  
+{
+	DECLARE_REFERENCE_PTR(read_and_run_file)
+	DECLARE_TEST_CODE_INFO(0,1,0, "\
+loading a file->reading it line by line->executing.");
+
+  public:
+      read_and_run_file();
+
+      virtual ~read_and_run_file();
+
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class rx_script_category : public test_category  
+{
+
+  public:
+      rx_script_category();
+
+      virtual ~rx_script_category();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace rxs
 } // namespace script_test
 } // namespace testing
 

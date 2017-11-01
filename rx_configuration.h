@@ -3,6 +3,7 @@
 
 #define RX_NS_WORLD_NAME "world"
 #define RX_NS_SYS_NAME "_sys"
+#define RX_NS_TEST_NAME "_test"
 #define RX_NS_UNASSIGNED_NAME "_unassigned"
 #define RX_NS_BIN_NAME "bin"
 #define RX_NS_OBJ_NAME "objects"

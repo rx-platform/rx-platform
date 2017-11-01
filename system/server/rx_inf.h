@@ -63,7 +63,7 @@ class server_dispatcher_object : public objects::server_object
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
-	DECLARE_CODE_INFO("rx","1.0.0", "\
+	DECLARE_CODE_INFO("rx",1,0,0, "\
 class managing io operation resources\r\n\
 and general usage thread pool resources\r\n\
 ");
@@ -134,7 +134,7 @@ class domains_pool : public rx::threads::job_thread,
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 	DECLARE_DERIVED_FROM_INTERFACE;
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 class managing execution domains \r\n\
 thread pool resources\r\n\
 ");
@@ -201,7 +201,7 @@ struct runtime_data_t
 
 class server_rt : public objects::server_object  
 {
-	DECLARE_CODE_INFO("rx","1.0.0", "\
+	DECLARE_CODE_INFO("rx",1,0,0, "\
 class managing runtime resources:\r\n\
 i/o pool, general pool,\
 and thread pool for applications.\r\n\

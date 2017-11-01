@@ -54,7 +54,7 @@ class root_server_directory : public server::ns::rx_server_directory
 {
 	DECLARE_REFERENCE_PTR(root_server_directory);
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 root server directory:\r\n\
 contains root server folders\
 ");
@@ -96,7 +96,7 @@ class namespace_directory : public server::ns::rx_server_directory
 	DECLARE_REFERENCE_PTR(namespace_directory);
 
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 server directory:\r\n\
 used to create system defined folders...\
 ");
@@ -129,7 +129,7 @@ class unassigned_directory : public server::ns::rx_server_directory
 	DECLARE_REFERENCE_PTR(unassigned_directory);
 
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 storing unassigned domains and applications\r\n\
 All objects here are with unassgned state and hawing a bad quality\
 ");
@@ -162,7 +162,7 @@ class world_directory : public server::ns::rx_server_directory
 	DECLARE_REFERENCE_PTR(world_directory);
 
 
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 user directory:\r\n\
 used to create user defined folders...\
 ");

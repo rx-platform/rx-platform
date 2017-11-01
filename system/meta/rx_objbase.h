@@ -407,7 +407,7 @@ class object_runtime : public object_runtime_t
 class server_object : public object_runtime, 
                       	public rx::point
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system object class. basic implementation of a system object");
 
 	DECLARE_REFERENCE_PTR(server_object);
@@ -535,7 +535,7 @@ class variable_runtime : public complex_runtime_item
 class domain_runtime : public object_runtime, 
                        	public rx::poin
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system domain class. basic implementation of a domain");
 
 	DECLARE_REFERENCE_PTR(domain_runtime);
@@ -597,7 +597,7 @@ class struct_runtime : public complex_runtime_item
 
 class port_runtime : public object_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system port class. basic implementation of a port");
 
 	DECLARE_VIRTUAL_REFERENCE_PTR(port_runtime);
@@ -632,7 +632,7 @@ system port class. basic implementation of a port");
 
 class application_runtime : public domain_runtime  
 {
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system application class. contains system default application");
 
 	DECLARE_VIRTUAL_REFERENCE_PTR(application_runtime);
@@ -675,7 +675,7 @@ system application class. contains system default application");
 class user_object : public object_runtime, 
                     	public rx::pointer
 {
-	DECLARE_CODE_INFO("rx", "0.1.0", "\
+	DECLARE_CODE_INFO("rx", 0,1,0, "\
 user object class. basic implementation of a user object");
 
 	DECLARE_REFERENCE_PTR(user_object);

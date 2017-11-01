@@ -95,6 +95,7 @@ enum namespace_item_attributes
 	namespace_item_application = 0x400,
 	namespace_item_domain = 0x800,
 	namespace_item_port = 0x1000,
+	namespace_item_test_case = 0x2000,
 
 	namespace_item_system_const_value = 0xfffff211,
 	namespace_item_system_value = 0xfffff111,

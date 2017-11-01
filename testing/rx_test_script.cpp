@@ -32,6 +32,7 @@
 // rx_test_script
 #include "testing/rx_test_script.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace testing {
@@ -57,7 +58,7 @@ void do_python_test(std::ostream& out, const string_type& command)
 python_test::python_test()
 	: test_category("python")
 {
-	register_test_case(std::make_unique<dump_version_test>());
+	register_test_case(dump_version_test::smart_ptr(pointers::_create_new));
 }
 
 
@@ -89,6 +90,85 @@ bool dump_version_test::do_console_test (std::istream& in, std::ostream& out, st
 
 
 } // namespace py_test
+
+namespace rxs {
+
+// Class testing::script_test::rxs::rx_script_category 
+
+rx_script_category::rx_script_category()
+	: test_category("rx-script")
+{
+
+	register_test_case(read_and_run_file::smart_ptr(pointers::_create_new));
+}
+
+
+rx_script_category::~rx_script_category()
+{
+}
+
+
+
+// Class testing::script_test::rxs::read_and_run_file 
+
+read_and_run_file::read_and_run_file()
+	: test_case("file-run")
+{
+}
+
+
+read_and_run_file::~read_and_run_file()
+{
+}
+
+
+
+bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	bool ret = false;
+	string_type file_name;
+	in >> file_name;
+	if (file_name.empty())
+	{
+		out << "\r\n" << get_help() << "\r\n";
+		return true;
+	}
+	else
+	{
+		file_name = "D:\\RX\\Native\\Source/host/scripts/platform script one.rxs";
+		sys_handle_t file = rx_file(file_name.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+			if (buffer->fill_with_file_content(file))
+			{
+				out << "file loadad in memory...\r\n";
+				out << "Running file script:" << file_name;
+				out << "\r\n=====================================\r\n";
+
+				while (!buffer->eof())
+				{
+					string_type line;
+					buffer->read_line(line);
+					out << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+				}
+
+				out << "=====================================\r\nScript done.\r\n";
+				ret = true;
+			}
+			else
+			{
+				err << "error reading file contet\r\n";
+			}
+			rx_file_close(file);
+			return ret;
+		}
+		return true;
+	}
+}
+
+
+} // namespace rxs
 } // namespace script_test
 } // namespace testing
 

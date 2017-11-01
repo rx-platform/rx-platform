@@ -80,6 +80,10 @@ class tcp_test_client : public rx::io::tcp_client_socket_std_buffer
 
 class test_client_basics : public test_case  
 {
+	DECLARE_REFERENCE_PTR(test_client_basics)
+	DECLARE_TEST_CODE_INFO(0,1,0, "\
+class intendend for testing puprposes\r\n\
+loading a file->reading it line by line->executing.");
 
   public:
       test_client_basics();

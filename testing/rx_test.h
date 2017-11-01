@@ -31,10 +31,14 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_security
 #include "system/security/rx_security.h"
+// rx_ns
+#include "system/server/rx_ns.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using namespace rx;
 
@@ -53,10 +57,49 @@ namespace testing {
 
 
 
-class test_case 
+class test_command : public terminal::commands::server_command, 
+                     	public server::secu
 {
+	DECLARE_REFERENCE_PTR(test_command);
+	DECLARE_DERIVED_FROM_INTERFACE;
+	DECLARE_CODE_INFO("rx", 0,1,0, "\
+class intendend for console or script usage\r\n\
+responsable of executing the test cases for rx-platform or for your plugis.\r\n\
+test cases are devided into several categories. you can use test command to explore this test cases\
+");
+
+
+  public:
+      test_command();
+
+      virtual ~test_command();
+
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class test_case : public rx::pointers::reference_object, 
+                  	public server::n
+{
+	DECLARE_REFERENCE_PTR(test_case);
+	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
+
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+class intendend for console or script usage\r\n\
+all about doing stuff with security");
 public:
-	typedef std::unique_ptr<test_case> smart_ptr;
 
   public:
       test_case (const string_type& name);
@@ -69,6 +112,18 @@ public:
       bool test_start (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
       void test_end (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      string_type get_type_name () const;
+
+      void get_value (values::rx_value& val) const;
+
+      namespace_item_attributes get_attributes () const;
+
+      const string_type& get_item_name () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
 
 
       const string_type& get_name () const
@@ -99,6 +154,34 @@ public:
 
 
 
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      virtual ~basic_test_case_test();
+
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class test_category 
 {
 	typedef std::map<string_type, test_case::smart_ptr> cases_type;
@@ -111,7 +194,9 @@ public:
       virtual ~test_category();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx, bool code);
+
+      void collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases);
 
 
       const string_type& get_category () const
@@ -146,71 +231,6 @@ public:
 
 
 
-class test_command : public terminal::commands::server_command, 
-                     	public server::secu
-{
-	DECLARE_REFERENCE_PTR(test_command);
-	DECLARE_DERIVED_FROM_INTERFACE;
-	DECLARE_CODE_INFO("rx", "0.1.0", "\
-class intendend for console or script usage\r\n\
-responsable of executing the test cases for rx-platform or for your plugis.\r\n\
-test cases are devided into several categories. you can use test command to explore this test cases\
-");
-
-public:
-	typedef std::map<string_type, test_category::smart_ptr> registered_tests_type;
-
-  public:
-      test_command();
-
-      virtual ~test_command();
-
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
-
-      void register_code_test (test_category::smart_ptr test);
-
-
-
-      registered_tests_type _registered_tests;
-
-
-};
-
-
-
-
-
-
-class basic_test_case_test : public test_case  
-{
-
-  public:
-      basic_test_case_test();
-
-      virtual ~basic_test_case_test();
-
-
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class test_test : public test_category  
 {
@@ -224,6 +244,43 @@ class test_test : public test_category
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class testing_enviroment 
+{
+
+public:
+	typedef std::map<string_type, test_category::smart_ptr> registered_tests_type;
+
+  public:
+      virtual ~testing_enviroment();
+
+
+      static testing_enviroment& instance ();
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      void collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases);
+
+
+  protected:
+
+  private:
+      testing_enviroment();
+
+
+      void register_code_test (test_category::smart_ptr test);
+
+
+
+      registered_tests_type _registered_tests;
 
 
 };

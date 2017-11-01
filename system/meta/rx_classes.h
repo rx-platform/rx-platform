@@ -582,7 +582,7 @@ typedef base_object_class< object_class  > object_class_t;
 class object_class : public object_class_t  
 {
 	DECLARE_REFERENCE_PTR(object_class);
-	DECLARE_CODE_INFO("rx", "0.5.0", "\
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
 basic object class.\r\n\
 basic implementation of object class");
 
