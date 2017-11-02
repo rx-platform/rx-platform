@@ -1295,9 +1295,9 @@ extern "C" {
         if(ret==-1)
         {
             int err=errno;
-            if(err==EAGAIN || err==EWOULDBLOCK || ret==EINPROGRESS)
+            if(err==EAGAIN || err==EWOULDBLOCK || err==EINPROGRESS)
             {
-                return RX_OK;
+                return RX_ASYNC;
             }
             else
             {
@@ -1481,7 +1481,7 @@ extern "C" {
                                         {
                                             socklen_t addr_size=sizeof(local_addr);
                                             getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
-                                            (io_data->connect_callback)(io_data->data, 0);
+											(io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer, (struct sockaddr*)&local_addr, addr_size);
                                         }
                                     }
 
