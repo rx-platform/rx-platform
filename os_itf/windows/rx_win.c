@@ -32,6 +32,7 @@
 // rx_win
 #include "os_itf/windows/rx_win.h"
 
+//#include <winternl.h">
 #include "version/rx_version.h"
 #include "os_itf/rx_ositf.h"
 
@@ -86,6 +87,42 @@ dword rx_string_to_uuid(const char* str, uuid_t* u)
 		return RX_OK;
 	}
 }
+
+typedef enum  _PROCESS_INFORMATION_CLASS_EX {
+	ProcessBasicInformation,
+	ProcessQuotaLimits,
+	ProcessIoCounters,
+	ProcessVmCounters,
+	ProcessTimes,
+	ProcessBasePriority,
+	ProcessRaisePriority,
+	ProcessDebugPort,
+	ProcessExceptionPort,
+	ProcessAccessToken,
+	ProcessLdtInformation,
+	ProcessLdtSize,
+	ProcessDefaultHardErrorMode,
+	ProcessIoPortHandlers,
+	ProcessPooledUsageAndLimits,
+	ProcessWorkingSetWatch,
+	ProcessUserModeIOPL,
+	ProcessEnableAlignmentFaultFixup,
+	ProcessPriorityClass,
+	ProcessWx86Information,
+	ProcessHandleCount,
+	ProcessAffinityMask,
+	ProcessPriorityBoost,
+	MaxProcessInfoClass
+
+} PROCESS_INFORMATION_CLASS_EX, *PPROCESS_INFORMATION_CLASS_EX;
+
+
+typedef DWORD(__stdcall * 
+	NtSetInformationProcess)(
+	IN HANDLE               ProcessHandle,
+	IN PROCESS_INFORMATION_CLASS_EX ProcessInformationClass,
+	IN PVOID                ProcessInformation,
+	IN ULONG                ProcessInformationLength);
 
 
 typedef DWORD(__stdcall *
@@ -265,6 +302,7 @@ const char* rx_get_server_name()
 	return rx_server_name;
 }
 
+
 extern HCRYPTPROV hcrypt;
 
 const char* g_ositf_version = "ERROR!!!";
@@ -300,7 +338,14 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 	g_res = res.QuadPart;
 	g_start = start.QuadPart;
 
-	HMODULE hLib = LoadLibrary(L"ntdll.dl");
+	DWORD err = 0;
+
+	HMODULE hLib = LoadLibraryEx(L"ntdll.dll",NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	//HMODULE hLib = GetModuleHandle(L"ntdll.dl");
+
+	if (hLib == NULL)
+		err = GetLastError();
+
 
 	if (hLib)
 	{
@@ -346,8 +391,10 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 //#ifndef _DEBUG
 	if (rt)
 	{
-		SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-		printf("Process priority class set to RT!\r\n");
+		//SE_INC_BASE_PRIORITY_NAME
+
+		BOOL pret = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+		printf("Process priority class set to RT %d!\r\n",(int)pret);
 	}
 //#endif
 }
