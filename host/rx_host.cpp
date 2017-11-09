@@ -80,6 +80,11 @@ bool rx_server_host::do_host_command (const string_type& line, memory::buffer_pt
 	return true;
 }
 
+sys_handle_t rx_server_host::get_host_test_file (string_type& path)
+{
+	return 0;
+}
+
 
 // Class host::host_security_context 
 

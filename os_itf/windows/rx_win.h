@@ -37,6 +37,8 @@
 
 //#pragma warning ( disable : 4786 )
 
+
+
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_NON_CONFORMING__snprintfS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -49,6 +51,7 @@
 #include "stdafx.h"
 
 #define _CRT_RAND_S
+
 
 #ifndef _rx_func_
 #define _rx_func_ __FUNCTION__

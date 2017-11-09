@@ -159,7 +159,7 @@ bool test_category::do_console_test (std::istream& in, std::ostream& out, std::o
 	}
 	else if(case_name.empty())
 	{
-		out << "Registred Test Cases for ";
+		out << "Registered Test Cases for ";
 		out << _category<< " :\r\n=====================================\r\n" ANSI_COLOR_YELLOW;
 		for (const auto& one : _cases)
 		{

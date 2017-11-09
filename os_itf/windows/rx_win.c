@@ -388,7 +388,7 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 
 	BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
 
-//#ifndef _DEBUG
+#ifndef _DEBUG
 	if (rt)
 	{
 		//SE_INC_BASE_PRIORITY_NAME
@@ -396,7 +396,7 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 		BOOL pret = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 		printf("Process priority class set to RT %d!\r\n",(int)pret);
 	}
-//#endif
+#endif
 }
 void rx_deinitialize_os()
 {
@@ -1272,6 +1272,11 @@ int rx_file_delete(const char* path)
 int rx_file_rename(const char* old_path, const char* new_path)
 {
 	return MoveFileA(old_path, new_path);
+}
+
+int rx_file_exsist(const char* path)
+{
+	return _access(path, 0x7fffffff) == 0;
 }
 
 

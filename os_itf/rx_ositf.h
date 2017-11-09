@@ -208,6 +208,12 @@ extern "C" {
 #define RX_FILE_OPEN_ALWAYS 3
 #define RX_FILE_OPEN_EXISTING 4
 
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	// file related stuff
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	int rx_create_directory(const char* path, int fail_on_exsist);
+
+
 	sys_handle_t rx_file(const char* path, int access, int creation);
 	int rx_file_read(sys_handle_t hndl, void* buffer, dword size, dword* readed);
 	int rx_file_write(sys_handle_t hndl, const void* buffer, dword size, dword* written);
@@ -216,6 +222,7 @@ extern "C" {
 	int rx_file_close(sys_handle_t hndl);
 	int rx_file_delete(const char* path);
 	int rx_file_rename(const char* old_path, const char* new_path);
+	int rx_file_exsist(const char* path);
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////////////////////////////

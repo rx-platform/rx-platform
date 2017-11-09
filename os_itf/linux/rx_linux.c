@@ -938,6 +938,11 @@ extern "C" {
 	}
 
 
+	int rx_file_exsist(const char* path)
+	{
+        return access(path,0x7fffffff)==0;
+	}
+
 	int rx_file_get_size(sys_handle_t hndl, qword* size)
 	{
 		struct stat data;

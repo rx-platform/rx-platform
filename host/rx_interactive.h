@@ -31,12 +31,14 @@
 
 
 
+#include "system/server/rx_server.h"
+
+// rx_cmds
+#include "system/server/rx_cmds.h"
 // rx_host
 #include "host/rx_host.h"
 // rx_security
 #include "system/security/rx_security.h"
-// rx_cmds
-#include "system/server/rx_cmds.h"
 
 namespace host {
 namespace interactive {
@@ -143,8 +145,6 @@ class interactive_console_host : public rx_server_host
       virtual ~interactive_console_host();
 
 
-      static void main (interactive_console_host& host);
-
       const string_type& get_host_info ();
 
       void server_started_event ();
@@ -159,8 +159,13 @@ class interactive_console_host : public rx_server_host
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
+      int console_main (int argc, char* argv[]);
+
 
   protected:
+
+      void console_loop (server::configuration_data_t& config);
+
 
   private:
 

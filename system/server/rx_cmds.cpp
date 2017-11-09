@@ -244,6 +244,13 @@ std::ostream& console_program_context::get_stderr ()
 	return _err_std;
 }
 
+console_program_context::smart_ptr console_program_context::create_console_sub_context ()
+{
+	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
+		, get_current_directory(), _out, _err);
+	return ctx_ret;
+}
+
 
 // Class server::prog::server_console_program 
 
@@ -462,3 +469,13 @@ server_script_host::~server_script_host()
 } // namespace prog
 } // namespace server
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return _out;
+
+	return _err;
+
+#endif

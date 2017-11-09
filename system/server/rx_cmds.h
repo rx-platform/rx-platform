@@ -88,6 +88,13 @@ class program_context_base : public rx::pointers::reference_object
       bool is_postponed () const;
 
 
+      const server_program_holder_ptr get_holder () const
+      {
+        return _holder;
+      }
+
+
+
       server_directory_ptr get_current_directory ()
       {
         return _current_directory;
@@ -209,10 +216,8 @@ class server_program_holder : public rx::pointers::reference_object
 class console_program_context : public program_context_base  
 {
 	DECLARE_REFERENCE_PTR(console_program_context);
-
-
+public:
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-
 
   public:
       console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
@@ -225,6 +230,8 @@ class console_program_context : public program_context_base
       std::ostream& get_stdout ();
 
       std::ostream& get_stderr ();
+
+      console_program_context::smart_ptr create_console_sub_context ();
 
 
       const size_t get_current_line () const

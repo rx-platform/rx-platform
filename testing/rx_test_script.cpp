@@ -150,11 +150,22 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 				{
 					string_type line;
 					buffer->read_line(line);
-					out << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+					out << "\r\n" << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+
+					prog::server_console_program temp_prog(line);
+
+					prog::program_context_base_ptr ctx_script = ctx->create_console_sub_context();
+
+					bool ret = temp_prog.process_program(ctx_script, rx_time::now(), false);
+					if (!ret)
+					{
+						ret = false;
+						break;
+					}
+					ret = true;
 				}
 
 				out << "=====================================\r\nScript done.\r\n";
-				ret = true;
 			}
 			else
 			{

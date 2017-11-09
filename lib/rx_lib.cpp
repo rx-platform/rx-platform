@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,6 +45,70 @@
 
 namespace rx
 {
+
+
+
+bool create_directory(const std::string& dir, bool fail_on_exsists)
+{
+	return rx_create_directory(dir.c_str(), fail_on_exsists ? 1 : 0) != 0;
+}
+bool delete_all_files(const std::string& dir, const std::string& pattern)
+{
+	bool succeeded = true;
+	std::vector<std::string> files;
+	list_files(dir, pattern, files);
+	for (auto& one : files)
+	{
+		if (!rx_file_delete(one.c_str()))
+			succeeded = false;
+	}
+	return succeeded;
+}
+
+void list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files)
+{
+	std::string search;
+	combine_paths(dir, pattern, search);
+	rx_file_directory_entry_t one;
+
+	find_file_handle_t hndl = rx_open_find_file_list(search.c_str(), &one);
+	if (hndl)
+	{
+		do
+		{
+			if (one.is_directory)
+				continue; // continue for directory
+
+			std::string file;
+			combine_paths(dir, one.file_name, file);
+			files.push_back(file);
+		} while (rx_get_next_file(hndl, &one));
+		rx_find_file_close(hndl);
+	}
+}
+
+void combine_paths(const std::string& path1, const std::string& path2, std::string& path)
+{
+	path = path1;
+	if (!path1.empty())
+	{
+		if (path1.at(path1.size() - 1) != '\\' && path1.at(path1.size() - 1) != '/')
+		{
+			path += "/";
+		}
+	}
+	if (!path2.empty())
+	{
+		if (path2.at(0) == '\\' || path2.at(0) == '/')
+			path += path2.substr(1);
+		else
+			path += path2;
+	}
+}
+bool file_exist(const std::string& file)
+{
+	return rx_file_exsist(file.c_str())!=0;
+}
 
 
 rx_uuid::rx_uuid()

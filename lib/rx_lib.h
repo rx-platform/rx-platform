@@ -65,6 +65,7 @@ typedef std::string string_type;
 typedef std::vector<byte> byte_string;
 typedef std::vector<bool> bit_string;
 typedef std::vector<string_type> string_vector;
+typedef std::vector<string_type> string_array;
 
 
 
@@ -79,11 +80,15 @@ typedef std::vector<string_type> string_vector;
 ////////////////////////////////////////////////////////////////////////////////////////////
 namespace rx
 {
+void list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files);
+void combine_paths(const std::string& path1, const std::string& path2, std::string& path);
 
+bool create_directory(const std::string& dir, bool fail_on_exsists);
+bool delete_all_files(const std::string& dir, const std::string& pattern);
 
-
-
-
+bool file_exist(const std::string& path, const std::string& file);
+bool file_exist(const std::string& file);
+void get_full_path(const std::string& base, std::string& path);
 
 class svr_except : public std::exception
 {
