@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -33,14 +33,14 @@
 #include "testing/rx_test.h"
 
 #include "rx_test_io.h"
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 #include "rx_test_script.h"
 #include "system/server/rx_server.h"
 
 
 namespace testing {
 
-// Class testing::test_command
+// Class testing::test_command 
 
 test_command::test_command()
 	: server_command("test")
@@ -66,45 +66,7 @@ bool test_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_test_case_test
-
-basic_test_case_test::basic_test_case_test()
-	: test_case("test")
-{
-}
-
-
-basic_test_case_test::~basic_test_case_test()
-{
-}
-
-
-
-bool basic_test_case_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
-{
-
-	out << "Testing Test Category apstract....\r\n==========================\r\n";
-	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
-	return true;
-}
-
-
-// Class testing::test_test
-
-test_test::test_test()
-	: test_category("test")
-{
-	register_test_case(basic_test_case_test::smart_ptr(pointers::_create_new));
-}
-
-
-test_test::~test_test()
-{
-}
-
-
-
-// Class testing::test_category
+// Class testing::test_category 
 
 test_category::test_category(const test_category &right)
 {
@@ -188,7 +150,7 @@ void test_category::collect_test_cases (std::vector<rx_server_item::smart_ptr>& 
 }
 
 
-// Class testing::test_case
+// Class testing::test_case 
 
 test_case::test_case(const test_case &right)
       : _start_tick(0)
@@ -279,7 +241,7 @@ bool test_case::generate_json (std::ostream& def, std::ostream& err) const
 }
 
 
-// Class testing::testing_enviroment
+// Class testing::testing_enviroment 
 
 testing_enviroment::testing_enviroment()
 {
@@ -350,6 +312,44 @@ void testing_enviroment::collect_test_cases (std::vector<rx_server_item::smart_p
 	for (auto& one : _registered_tests)
 		one.second->collect_test_cases(cases);
 }
+
+
+// Class testing::basic_test_case_test 
+
+basic_test_case_test::basic_test_case_test()
+	: test_case("test")
+{
+}
+
+
+basic_test_case_test::~basic_test_case_test()
+{
+}
+
+
+
+bool basic_test_case_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+
+	out << "Testing Test Category apstract....\r\n==========================\r\n";
+	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
+	return true;
+}
+
+
+// Class testing::test_test 
+
+test_test::test_test()
+	: test_category("test")
+{
+	register_test_case(basic_test_case_test::smart_ptr(pointers::_create_new));
+}
+
+
+test_test::~test_test()
+{
+}
+
 
 
 } // namespace testing

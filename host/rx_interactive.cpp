@@ -34,154 +34,13 @@
 #include "host/rx_interactive.h"
 
 #include "system/constructors/rx_construct.h"
-#include "lib/rx_log.h"
 
-#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.0"
+#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.1"
 
 
 namespace host {
 
 namespace interactive {
-
-// Class host::interactive::interactive_console_client 
-
-interactive_console_client::interactive_console_client()
-      : _exit(false)
-  , _security_context(pointers::_create_new)
-{
-	_security_context->login();
-}
-
-
-interactive_console_client::~interactive_console_client()
-{
-}
-
-
-
-const string_type& interactive_console_client::get_console_name ()
-{
-	static string_type ret("Process Interactive Console");
-	return ret;
-}
-
-void interactive_console_client::run_interactive (const interactive_console_host& host)
-{
-
-	security::security_auto_context dummy(_security_context);
-
-	string_type temp;
-	get_wellcome(temp);
-	std::cout << temp<<"\r\n";
-
-
-	while (!_exit && !host.exit())
-	{
-
-		while (is_postponed())
-		{
-			rx_msleep(50);
-		}
-
-		temp.clear();
-		get_prompt(temp);
-
-		std::cout << temp;
-
-		string_type line;
-		std::getline(std::cin, line);
-
-		if(std::cin.fail())
-		{
-            std::cin.clear();
-		}
-		if (!line.empty())
-		{
-			memory::buffer_ptr out_buffer(pointers::_create_new);
-			memory::buffer_ptr err_buffer(pointers::_create_new);
-
-			if (!do_command(line, out_buffer, err_buffer,*_security_context))
-			{
-				if (!err_buffer->empty())
-					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
-				if (!_exit && !host.exit())
-				{
-					std::cout << "\r\n";
-					std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
-					std::cout << "\r\n";
-				}
-				if (!out_buffer->empty())
-					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
-			}
-			else
-			{
-
-				if (!out_buffer->empty())
-					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
-
-				//std::cout << "\r\n";
-			}
-
-		}
-
-	}
-	_security_context->logout();
-}
-
-void interactive_console_client::virtual_bind ()
-{
-}
-
-void interactive_console_client::virtual_release ()
-{
-}
-
-security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
-{
-	return _security_context;
-}
-
-void interactive_console_client::exit_console ()
-{
-	_exit = true;
-}
-
-
-// Class host::interactive::interactive_security_context 
-
-interactive_security_context::interactive_security_context()
-{
-	_user_name = "interactive";
-	_full_name = _user_name + "@";
-	_full_name += _location;
-	_port = "internal";
-}
-
-
-interactive_security_context::~interactive_security_context()
-{
-}
-
-
-
-bool interactive_security_context::has_console () const
-{
-  return true;
-
-}
-
-bool interactive_security_context::is_system () const
-{
-  return true;
-
-}
-
-bool interactive_security_context::is_interactive () const
-{
-  return true;
-
-}
-
 
 // Class host::interactive::interactive_console_host 
 
@@ -344,6 +203,146 @@ int interactive_console_host::console_main (int argc, char* argv[])
 	bool ret = start(arguments);
 
 	return ret ? 0 : -1;
+
+}
+
+
+// Class host::interactive::interactive_console_client 
+
+interactive_console_client::interactive_console_client()
+      : _exit(false)
+  , _security_context(pointers::_create_new)
+{
+	_security_context->login();
+}
+
+
+interactive_console_client::~interactive_console_client()
+{
+}
+
+
+
+const string_type& interactive_console_client::get_console_name ()
+{
+	static string_type ret("Process Interactive Console");
+	return ret;
+}
+
+void interactive_console_client::run_interactive (const interactive_console_host& host)
+{
+
+	security::security_auto_context dummy(_security_context);
+
+	string_type temp;
+	get_wellcome(temp);
+	std::cout << temp<<"\r\n";
+
+
+	while (!_exit && !host.exit())
+	{
+
+		while (is_postponed())
+		{
+			rx_msleep(50);
+		}
+
+		temp.clear();
+		get_prompt(temp);
+
+		std::cout << temp;
+
+		string_type line;
+		std::getline(std::cin, line);
+
+		if(std::cin.fail())
+		{
+            std::cin.clear();
+		}
+		if (!line.empty())
+		{
+			memory::buffer_ptr out_buffer(pointers::_create_new);
+			memory::buffer_ptr err_buffer(pointers::_create_new);
+
+			if (!do_command(line, out_buffer, err_buffer,*_security_context))
+			{
+				if (!err_buffer->empty())
+					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
+				if (!_exit && !host.exit())
+				{
+					std::cout << "\r\n";
+					std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
+					std::cout << "\r\n";
+				}
+				if (!out_buffer->empty())
+					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+			}
+			else
+			{
+
+				if (!out_buffer->empty())
+					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+
+				//std::cout << "\r\n";
+			}
+
+		}
+
+	}
+	_security_context->logout();
+}
+
+void interactive_console_client::virtual_bind ()
+{
+}
+
+void interactive_console_client::virtual_release ()
+{
+}
+
+security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
+{
+	return _security_context;
+}
+
+void interactive_console_client::exit_console ()
+{
+	_exit = true;
+}
+
+
+// Class host::interactive::interactive_security_context 
+
+interactive_security_context::interactive_security_context()
+{
+	_user_name = "interactive";
+	_full_name = _user_name + "@";
+	_full_name += _location;
+	_port = "internal";
+}
+
+
+interactive_security_context::~interactive_security_context()
+{
+}
+
+
+
+bool interactive_security_context::has_console () const
+{
+  return true;
+
+}
+
+bool interactive_security_context::is_system () const
+{
+  return true;
+
+}
+
+bool interactive_security_context::is_interactive () const
+{
+  return true;
 
 }
 

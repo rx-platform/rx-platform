@@ -66,7 +66,7 @@ class object_runtime;
 class variable_runtime;
 typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
 
-typedef callback::callback_functor_cotainer<locks::lockable,rx_value> value_callback_t;
+typedef callback::callback_functor_cotainer<locks::lockable,rx::values::rx_value> value_callback_t;
 class complex_runtime_item;
 typedef pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
 typedef pointers::reference<domain_runtime> domain_runtime_ptr;

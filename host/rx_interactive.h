@@ -33,12 +33,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_host
 #include "host/rx_host.h"
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 namespace host {
 namespace interactive {
@@ -61,7 +61,7 @@ namespace interactive {
 
 
 
-class interactive_security_context : public server::security::built_in_security_context  
+class interactive_security_context : public rx::security::built_in_security_context  
 {
 	DECLARE_REFERENCE_PTR(interactive_security_context);
 

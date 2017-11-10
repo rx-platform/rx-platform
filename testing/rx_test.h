@@ -31,14 +31,14 @@
 
 
 
-// rx_security
-#include "system/security/rx_security.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_security
+#include "lib/security/rx_security.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 using namespace rx;
 
@@ -58,7 +58,7 @@ namespace testing {
 
 
 class test_command : public terminal::commands::server_command, 
-                     	public server::secu
+                     	public rx::secu
 {
 	DECLARE_REFERENCE_PTR(test_command);
 	DECLARE_DERIVED_FROM_INTERFACE;
@@ -154,34 +154,6 @@ public:
 
 
 
-class basic_test_case_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(basic_test_case_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-This test creates dummy test case and is used for testing this mechanism\
-");
-
-  public:
-      basic_test_case_test();
-
-      virtual ~basic_test_case_test();
-
-
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class test_category 
 {
 	typedef std::map<string_type, test_case::smart_ptr> cases_type;
@@ -231,28 +203,6 @@ public:
 
 
 
-
-class test_test : public test_category  
-{
-
-  public:
-      test_test();
-
-      virtual ~test_test();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class testing_enviroment 
 {
 
@@ -281,6 +231,56 @@ public:
 
 
       registered_tests_type _registered_tests;
+
+
+};
+
+
+
+
+
+
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      virtual ~basic_test_case_test();
+
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class test_test : public test_category  
+{
+
+  public:
+      test_test();
+
+      virtual ~test_test();
+
+
+  protected:
+
+  private:
 
 
 };

@@ -30,6 +30,7 @@
 #define rx_ser_lib_h 1
 
 
+#include "lib/rx_lib.h"
 
 // rx_values
 #include "lib/rx_values.h"

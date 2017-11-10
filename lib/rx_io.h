@@ -30,7 +30,6 @@
 #define rx_io_h 1
 
 
-#include "os_itf/rx_ositf.h"
 
 // rx_ptr
 #include "lib/rx_ptr.h"

@@ -31,26 +31,28 @@
 
 
 
-// rx_mngt
-#include "system/server/rx_mngt.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_mngt
+#include "system/server/rx_mngt.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 namespace server {
 namespace prog {
 class server_program_holder;
 class program_context_base;
 } // namespace prog
+} // namespace server
 
+namespace rx {
 namespace security {
 class security_context;
 
 } // namespace security
-} // namespace server
+} // namespace rx
 
 
 using namespace rx;

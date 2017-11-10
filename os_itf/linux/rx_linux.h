@@ -30,11 +30,14 @@
 #define rx_linux_h 1
 
 
+#define GNU_SOURCE
+
 
 
 
 
 #include "rx_gnu_version.h"
+
 
 #define RX_COMPILER_NAME "GCC"
 #define RX_COMPILER_VERSION (__GNUC__)
@@ -138,16 +141,6 @@ typedef struct linux_epoll_struct_t
 typedef struct linux_epoll_struct_t* rx_kernel_dispather_t;
 
 
-typedef unsigned char byte;
-typedef char sbyte;
-
-typedef unsigned long long qword;
-typedef unsigned int dword;
-typedef unsigned short word;
-typedef long long sqword;
-typedef int sdword;
-typedef short sword;
-
 typedef pid_t rx_pid_t;
 
 
@@ -186,6 +179,8 @@ typedef HMAC_CTX* crypt_hash_t;
 
 
 
+
+#include "os_itf/rx_ositf.h"
 
 
 #endif

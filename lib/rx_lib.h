@@ -31,49 +31,6 @@
 
 
 
-#include "rx_lib_version.h"
-#include "version/rx_version.h"
-
-#define DEFAULT_NAMESPACE 1
-#define DEFAULT_OPC_NAMESPACE 0
-
-
-
-#define TIME_QUALITY_LEAP_SECONDS_KNOWN 0x80
-#define TIME_QUALITY_CLOCK_FALIURE 0x40
-#define TIME_QUALITY_NOT_SYNCHRONIZED 0x20
-
-#define TIME_QUALITY_CLASS_UNKNOWN 0x1f
-#define TIME_QUALITY_CLASS_T0 7
-#define TIME_QUALITY_CLASS_T1 10
-#define TIME_QUALITY_CLASS_T2 14
-#define TIME_QUALITY_CLASS_T3 16
-#define TIME_QUALITY_CLASS_T4 18
-#define TIME_QUALITY_CLASS_T5 20
-
-
-template<int> struct compile_time_error;
-template<> struct compile_time_error<true> {};
-#define STATIC_CHECK_MSG(expr,msg)  {compile_time_error< ((expr)!=0) > Error_##msg; (void)Error_##msg; }
-#define STATIC_CHECK(expr)  {compile_time_error< ((expr)!=0) > Error_StaticCheck; (void)Error_StaticCheck; }
-
-#include "os_itf/rx_ositf.h"
-#include "rx_std.h"
-#include "type_lists.h"
-#include "rx_ptr.h"
-typedef std::string string_type;
-typedef std::vector<byte> byte_string;
-typedef std::vector<bool> bit_string;
-typedef std::vector<string_type> string_vector;
-typedef std::vector<string_type> string_array;
-
-
-
-
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // main server library file
@@ -110,56 +67,6 @@ extern const char* g_lib_version;
 string_type& to_upper(string_type& str);
 
 string_type get_code_module(const string_type& full);
-
-
-
-#include "lib/rx_lib.h"
-
-#define DECLARE_CODE_INFO(subsytem,major, minor, build,comment) \
-public:\
-	static rx::pointers::code_behind_definition_t* get_code_behind()\
-		{\
-			char buff[0x100];\
-			sprintf(buff,"%d.%d.%d",major,minor,build);\
-			static rx::pointers::code_behind_definition_t temp = {\
-				smart_ptr::get_pointee_class_name() , subsytem , comment , buff \
-								}; \
-				return &temp;\
-		}\
-	void fill_code_info(std::ostream& info,const string_type& name)\
-	{\
-		char compile_buffer[0x100];\
-		create_module_compile_time_string(__DATE__, __TIME__,compile_buffer);\
-		string_type pera=g_complie_time;\
-		string_type temp="aaa";\
-		info << "CODE INFO" << "\r\n";\
-		info << "--------------------------------------------------------------------------------" << "\r\n";\
-		info << "name       : "<< name << "\r\n";\
-		info << "subsystem  : " << subsytem << "\r\n";\
-		info << "--------------------------------------------------------------------------------" << "\r\n";\
-		info << "file       : " << get_code_module(__FILE__) << "\r\n";\
-		info << "class name : ";\
-		info << smart_ptr::get_pointee_class_name(); \
-		info << "\r\n";\
-		info << "version    : "<< major << "." << minor << "." << build << "\r\n";\
-		info << "compiled   : " << compile_buffer << "\r\n";\
-		info << "comment\r\n";\
-		info << "/*\r\n";\
-		info << comment << "\r\n";\
-		info << "*/\r\n";\
-	}\
-	const char* get_help() const\
-	{\
-		return comment;\
-	}\
-private:\
-
-#define DECLARE_TEST_CODE_INFO(maj,min,build,comment) \
-DECLARE_CODE_INFO("test",maj,min,build,"class intendend for testing puprposes\r\n"#comment)\
-
-
-#define DECLARE_CONSOLE_CODE_INFO(maj,min,build,comment) \
-DECLARE_CODE_INFO("console",maj,min,build,"class intendend for console usage\r\n"#comment)\
 
 
 ///////////////////////////////////////////////////////////////

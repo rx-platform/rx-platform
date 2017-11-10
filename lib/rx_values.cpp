@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 
+#include "lib/rx_lib.h"
 
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"

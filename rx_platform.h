@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\win32_hosts\rx_win32_console.h
+*  rx_platform.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -26,50 +26,14 @@
 ****************************************************************************/
 
 
-#ifndef rx_win32_console_h
-#define rx_win32_console_h 1
+#ifndef rx_platform_h
+#define rx_platform_h 1
+
+
+#include "rx_library.h"
 
 
 
-// rx_interactive
-#include "host/rx_interactive.h"
-
-
-
-namespace host {
-
-namespace win32 {
-
-
-
-
-
-class win32_console_host : public interactive::interactive_console_host  
-{
-
-  public:
-      win32_console_host();
-
-      virtual ~win32_console_host();
-
-
-      bool shutdown (const string_type& msg);
-
-      sys_handle_t get_host_test_file (string_type& path);
-
-      bool start (const string_array& args);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace win32
-} // namespace host
 
 
 

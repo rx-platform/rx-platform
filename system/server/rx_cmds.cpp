@@ -32,7 +32,7 @@
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 
 #include "system/server/rx_server.h"
 #include "terminal/rx_telnet.h"
@@ -469,13 +469,3 @@ server_script_host::~server_script_host()
 } // namespace prog
 } // namespace server
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return _out;
-
-	return _err;
-
-#endif

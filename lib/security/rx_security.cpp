@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\security\rx_security.cpp
+*  lib\security\rx_security.cpp
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -30,7 +30,7 @@
 
 
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 
 namespace rx
 {
@@ -40,11 +40,11 @@ bool rx_pop_security_context();
 }
 
 
-namespace server {
+namespace rx {
 
 namespace security {
 
-// Class server::security::security_context 
+// Class rx::security::security_context 
 
 security_context::security_context()
       : _handle(0)
@@ -99,7 +99,7 @@ bool security_context::is_interactive () const
 }
 
 
-// Class server::security::security_manager 
+// Class rx::security::security_manager 
 
 security_manager::security_manager()
       : _last_id(0)
@@ -218,7 +218,7 @@ void pop_security()
 {
 	rx_pop_security_context();
 }
-// Class server::security::secured_object 
+// Class rx::security::secured_object 
 
 secured_object::secured_object()
 {
@@ -262,7 +262,7 @@ security_context_ptr secured_object::basic_check (bool& ret)
 }
 
 
-// Class server::security::security_auto_context 
+// Class rx::security::security_auto_context 
 
 security_auto_context::security_auto_context (security_context_ptr ctx)
 	: _ctx(ctx->get_handle())
@@ -280,7 +280,7 @@ security_auto_context::~security_auto_context()
 
 
 
-// Class server::security::built_in_security_context 
+// Class rx::security::built_in_security_context 
 
 built_in_security_context::built_in_security_context()
 {
@@ -294,7 +294,7 @@ built_in_security_context::~built_in_security_context()
 
 
 
-// Class server::security::unathorized_security_context 
+// Class rx::security::unathorized_security_context 
 
 unathorized_security_context::unathorized_security_context()
 {
@@ -328,5 +328,5 @@ bool unathorized_security_context::is_authenticated () const
 
 
 } // namespace security
-} // namespace server
+} // namespace rx
 

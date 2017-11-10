@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\security\rx_security.h
+*  lib\security\rx_security.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -50,17 +50,16 @@
 using namespace rx;
 
 
-namespace server {
+namespace rx {
 
 namespace security {
 class security_context;
-typedef pointers::interface_reference<security_context> security_context_ptr;
 
 
 
 
 
-class security_context : public rx::pointers::interface_object  
+class security_context : public pointers::interface_object  
 {
 	DECLARE_INTERFACE_PTR(security_context);
 
@@ -199,7 +198,7 @@ class security_manager
 
 
 
-class secured_object : public rx::pointers::interface_object  
+class secured_object : public pointers::interface_object  
 {
 
   public:
@@ -251,7 +250,7 @@ class security_auto_context
 
 
 class built_in_security_context : public security_context, 
-                                  	publ
+                                  	
 {
 	DECLARE_REFERENCE_PTR(built_in_security_context);
 
@@ -302,7 +301,7 @@ class unathorized_security_context : public security_context
 
 
 } // namespace security
-} // namespace server
+} // namespace rx
 
 
 

@@ -32,11 +32,19 @@
 
 
 
+#include "targetver.h"
+
+
+#define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_RAND_S
+
+#include <WinSock2.h>
+#include <windows.h>
+
+
 
 #include "rx_win32_version.h"
-
-//#pragma warning ( disable : 4786 )
-
 
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -47,8 +55,6 @@
 #define RX_COMPILER_VERSION (_MSC_VER/100)
 #define RX_COMPILER_MINOR (_MSC_VER%100)
 #define RX_COMPILER_BUILD (_MSC_FULL_VER%100000)
-
-#include "stdafx.h"
 
 #define _CRT_RAND_S
 
@@ -166,6 +172,9 @@ typedef DWORD rx_thread_data_t;
 
 
 
+
+
+#include "os_itf/rx_ositf.h"
 
 
 

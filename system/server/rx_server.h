@@ -30,13 +30,19 @@
 #define rx_server_h 1
 
 
-#include "system/rx_version.h"
+
+
+#include "version/rx_version.h"
+
+#include "os_itf/rx_ositf.h"
+#include "system/rx_platform_version.h"
+#include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
 // rx_host
 #include "host/rx_host.h"
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -77,7 +83,7 @@ struct configuration_data_t
 
 
 
-class rx_server : public security::secured_object  
+class rx_server : public rx::security::secured_object  
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;
 

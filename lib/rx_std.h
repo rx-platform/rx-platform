@@ -55,6 +55,45 @@
 
 
 
+#include "version/rx_version.h"
+#include "lib/rx_lib_version.h"
+
+#include "lib/type_lists.h"
+
+#define DEFAULT_NAMESPACE 1
+#define DEFAULT_OPC_NAMESPACE 0
+
+
+
+#define TIME_QUALITY_LEAP_SECONDS_KNOWN 0x80
+#define TIME_QUALITY_CLOCK_FALIURE 0x40
+#define TIME_QUALITY_NOT_SYNCHRONIZED 0x20
+
+#define TIME_QUALITY_CLASS_UNKNOWN 0x1f
+#define TIME_QUALITY_CLASS_T0 7
+#define TIME_QUALITY_CLASS_T1 10
+#define TIME_QUALITY_CLASS_T2 14
+#define TIME_QUALITY_CLASS_T3 16
+#define TIME_QUALITY_CLASS_T4 18
+#define TIME_QUALITY_CLASS_T5 20
+
+
+template<int> struct compile_time_error;
+template<> struct compile_time_error<true> {};
+#define STATIC_CHECK_MSG(expr,msg)  {compile_time_error< ((expr)!=0) > Error_##msg; (void)Error_##msg; }
+#define STATIC_CHECK(expr)  {compile_time_error< ((expr)!=0) > Error_StaticCheck; (void)Error_StaticCheck; }
+
+
+typedef std::string string_type;
+typedef std::vector<byte> byte_string;
+typedef std::vector<bool> bit_string;
+typedef std::vector<string_type> string_vector;
+typedef std::vector<string_type> string_array;
+
+
+
+
+
 
 
 #endif

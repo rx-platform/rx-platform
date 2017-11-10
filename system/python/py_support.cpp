@@ -29,6 +29,8 @@
 #include "stdafx.h"
 
 
+#ifndef NO_PYTHON_SUPPORT
+
 // py_support
 #include "system/python/py_support.h"
 
@@ -75,28 +77,22 @@ py_script& py_script::instance ()
 
 void py_script::deinitialize ()
 {
-#ifndef NO_PYTHON_SUPPORT
 	Py_Finalize();
-#endif
 }
 
 bool py_script::initialize ()
 {
 
-#ifndef NO_PYTHON_SUPPORT
 	Py_Initialize();
 	_initialized = Py_IsInitialized()!=0;
 	PyEval_InitThreads();
-#else
-	_initialized = true;
-#endif
+
 	return _initialized;
 }
 
 bool py_script::dump_script_information (std::ostream& out)
 {
 
-#ifndef NO_PYTHON_SUPPORT
 	if (_initialized)
 	{
 		out << Py_GetVersion() << "\r\n";
@@ -107,10 +103,9 @@ bool py_script::dump_script_information (std::ostream& out)
 		out << "Not initialized!\r\n";
 	}
 	return true;
-#else
-	out << "Not supported!\r\n";
-	return false;
-#endif
+
+//	out << "Not supported!\r\n";
+//	return false;
 }
 
 void py_script::do_testing_stuff ()
@@ -350,4 +345,8 @@ string_type py_item::as_string () const
 
 } // namespace python
 } // namespace server
+
+#else 
+
+#endif
 

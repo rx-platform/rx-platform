@@ -38,7 +38,6 @@ namespace server {
 
 namespace library {
 
-
 	/*
 struct code_behind_definition_type
 {

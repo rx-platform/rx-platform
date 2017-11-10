@@ -30,6 +30,7 @@
 #define py_support_h 1
 
 
+#ifndef NO_PYTHON_SUPPORT
 
 // rx_cmds
 #include "system/server/rx_cmds.h"
@@ -168,6 +169,7 @@ class py_item
 } // namespace python
 } // namespace server
 
+#endif
 
 
 #endif

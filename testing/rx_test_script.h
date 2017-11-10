@@ -50,8 +50,10 @@ namespace py_test {
 class dump_version_test : public test_case  
 {
 	DECLARE_REFERENCE_PTR(dump_version_test)
-	DECLARE_TEST_CODE_INFO( 0,1,0, "\
-loading a file->reading it line by line->executing.");
+	DECLARE_TEST_CODE_INFO( 1,0,0, "\
+Dumping a python version emended and exiting.\
+Done and checked can, be done everywhere.\
+");
 
   public:
       dump_version_test();

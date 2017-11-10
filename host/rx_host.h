@@ -31,7 +31,6 @@
 
 
 #include "system/meta/rx_objbase.h"
-#include "lib/rx_mem.h"
 /////////////////////////////////////////////////////////////
 // logging macros for host library
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)
@@ -41,11 +40,11 @@
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 
 
 
-namespace server {
+namespace rx {
 namespace security
 {
 typedef rx::pointers::reference<security_context> execute_context_ptr;
@@ -106,7 +105,7 @@ class rx_server_host
 
 
 
-class host_security_context : public server::security::built_in_security_context  
+class host_security_context : public rx::security::built_in_security_context  
 {
 	DECLARE_REFERENCE_PTR(host_security_context);
 

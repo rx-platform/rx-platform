@@ -45,7 +45,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_security
-#include "system/security/rx_security.h"
+#include "lib/security/rx_security.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 
@@ -64,7 +64,7 @@ namespace console {
 
 
 
-class telnet_security_context : public server::security::security_context, 
+class telnet_security_context : public rx::security::security_context, 
                                 	public
 {
 	DECLARE_REFERENCE_PTR(telnet_security_context);
@@ -641,12 +641,5 @@ pyhton command for interfacing python scripting");
 } // namespace terminal
 
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
 
 #endif

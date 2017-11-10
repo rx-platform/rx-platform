@@ -31,13 +31,11 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 using namespace std::placeholders;
 
 
-namespace rx {
+namespace server {
 
 namespace callback {
 typedef dword callback_handle_t;
@@ -110,8 +108,8 @@ class callback_functor_cotainer
 			ret <<= 1;
 			callback_data_t one(p, std::mem_fn((storage_function_type)func));
 			this->_my_lock.lock();
-			if (this->_callbacks == nullptr)
-				this->_callbacks = new callbacks_type;
+			if (this->_callbacks)
+				this->_callbacks = std::make_unique<callbacks_type>();
 			this->_callbacks->emplace(ret, one);
 			this->_my_lock.unlock();
 			return ret;
@@ -124,8 +122,8 @@ class callback_functor_cotainer
 			ret |= 1;
 			callback_data_t one(func);
 			this->_my_lock.lock();
-			if (this->_callbacks == nullptr)
-				this->_callbacks = new callbacks_type;
+			if (this->_callbacks)
+				this->_callbacks = std::make_unique<callbacks_type>();
 			this->_callbacks->emplace(ret, one);
 			this->_my_lock.unlock();
 			return ret;
@@ -137,8 +135,8 @@ class callback_functor_cotainer
 			ret <<= 1;
 			callback_data_t one(p, std::mem_fn((storage_function_type)func));
 			this->_my_lock.lock();
-			if (this->_callbacks == nullptr)
-				this->_callbacks = new callbacks_type;
+			if (this->_callbacks)
+				this->_callbacks = std::make_unique<callbacks_type>();
 			(func)((callbackT*)p, initial, 0);
 			this->_callbacks->emplace(ret, one);
 			this->_my_lock.unlock();
@@ -152,8 +150,8 @@ class callback_functor_cotainer
 			ret |= 1;
 			callback_data_t one(func);
 			this->_my_lock.lock();
-			if (this->_callbacks == nullptr)
-				this->_callbacks = new callbacks_type;
+			if (this->_callbacks)
+				this->_callbacks = std::make_unique<callbacks_type>();
 			(func)(initial, 0);
 			this->_callbacks->emplace(ret, one);
 			this->_my_lock.unlock();
@@ -164,25 +162,23 @@ class callback_functor_cotainer
   private:
 
 
-      callbacks_type* _callbacks;
-
-
       static std::atomic<callback_handle_t> g_new_handle;
 
       lockT _my_lock;
+
+      std::unique_ptr<callbacks_type> _callbacks;
 
 
 };
 
 
-// Parameterized Class rx::callback::callback_functor_cotainer 
+// Parameterized Class server::callback::callback_functor_cotainer 
 
 template <typename lockT, typename argT>
 std::atomic<callback_handle_t> callback_functor_cotainer<lockT,argT>::g_new_handle;
 
 template <typename lockT, typename argT>
 callback_functor_cotainer<lockT,argT>::callback_functor_cotainer()
-      : _callbacks(nullptr)
 {
 }
 
@@ -190,8 +186,6 @@ callback_functor_cotainer<lockT,argT>::callback_functor_cotainer()
 template <typename lockT, typename argT>
 callback_functor_cotainer<lockT,argT>::~callback_functor_cotainer()
 {
-	if (this->_callbacks != nullptr)
-		delete this->_callbacks;
 }
 
 
@@ -238,7 +232,7 @@ void callback_functor_cotainer<lockT,argT>::operator () (const argT& argument, d
 
 
 } // namespace callback
-} // namespace rx
+} // namespace server
 
 
 
