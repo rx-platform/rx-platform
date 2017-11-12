@@ -51,4 +51,4 @@ On Windows machines this is the main function example:
  	return host.console_main(argc, argv);
  }
 ```
-For more information about hte code see documentation repository wiki at [https://github.com/rx-platform/rx-docs/wiki](https://github.com/rx-platform/rx-docs/wiki)
+For more information about hte code see documentation repository wiki at [https://github.com/rx-platform/rx-docs/wiki/The-Code](https://github.com/rx-platform/rx-docs/wiki/The-Code)
