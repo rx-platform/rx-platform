@@ -1,5 +1,14 @@
+# RX Platform 
 
-# RX Platform [![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png) 
+[![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png) 
+
+
+## The Mission
+
+The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions. 
+
+
+### The Code...
 
 Start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
 
@@ -43,3 +52,4 @@ On Windows machines this is the main function example:
  	return host.console_main(argc, argv);
  }
 ```
+For more information about hte code see documentation repository wiki at https://github.com/rx-platform/rx-docs/wiki
