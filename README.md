@@ -1,7 +1,7 @@
-# RX Platform
-[![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png)
 
-So, to start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
+# RX Platform [![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png) 
+
+Start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
 
 On GNU/Linux machines this is the main function example: 
 
