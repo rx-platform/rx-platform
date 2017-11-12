@@ -6,40 +6,40 @@ Start with the main function. This function is actually left out from the reposi
 On GNU/Linux machines this is the main function example: 
 
 ```cpp
-	// this is a gnu/linux platform
-	#include "os_itf/linux/rx_linux.h"
+ // this is a gnu/linux platform
+ #include "os_itf/linux/rx_linux.h"
+ 
+ // a platform itself
+ #include "rx_platform.h"
 
-	// a platform itself
-	#include "rx_platform.h"
+ // the host
+ #include "host/gnu_hosts/rx_gnu_console.h"
 
-	// the host
-	#include "host/gnu_hosts/rx_gnu_console.h"
-
-	int main(int argc, char* argv[])
-	{
-		// create the host
-		host::gnu::gnu_console_host host;
-		// run console
-		return host.console_main(argc,argv);
-	}
+ int main(int argc, char* argv[])
+ {
+ 	// create the host
+ 	host::gnu::gnu_console_host host;
+ 	// run console
+ 	return host.console_main(argc,argv);
+ }
 ```
 
 On Windows machines this is the main function example: 
 ```cpp
-	// this is a windows platform 
-	#include "os_itf/windows/rx_win.h"
+ // this is a windows platform 
+ #include "os_itf/windows/rx_win.h"
 
-	// a platform itself
-	#include "rx_platform.h"
+ // a platform itself
+ #include "rx_platform.h"
 
-	// the host
-	#include "host/win32_hosts/rx_win32_console.h"
+ // the host
+ #include "host/win32_hosts/rx_win32_console.h"
 
-	int main(int argc, char* argv[])
-	{
-		// create the host
-		host::win32::win32_console_host host;
-		// run console
-		return host.console_main(argc, argv);
-	}
+ int main(int argc, char* argv[])
+ {
+ 	// create the host
+ 	host::win32::win32_console_host host;
+ 	// run console
+ 	return host.console_main(argc, argv);
+ }
 ```
