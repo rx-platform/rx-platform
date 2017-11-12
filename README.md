@@ -1,6 +1,6 @@
 # RX Platform 
 
-[![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png) 
+[![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png)
 
 
 ## The Mission
@@ -52,4 +52,4 @@ On Windows machines this is the main function example:
  	return host.console_main(argc, argv);
  }
 ```
-For more information about hte code see documentation repository wiki at https://github.com/rx-platform/rx-docs/wiki
+For more information about hte code see documentation repository wiki at [https://github.com/rx-platform/rx-docs/wiki](https://github.com/rx-platform/rx-docs/wiki)
