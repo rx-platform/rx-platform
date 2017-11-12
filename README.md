@@ -5,7 +5,7 @@ Start with the main function. This function is actually left out from the reposi
 
 On GNU/Linux machines this is the main function example: 
 
-
+```cpp
 	// this is a gnu/linux platform
 	#include "os_itf/linux/rx_linux.h"
 
@@ -22,10 +22,10 @@ On GNU/Linux machines this is the main function example:
 		// run console
 		return host.console_main(argc,argv);
 	}
-
+```
 
 On Windows machines this is the main function example: 
-
+```cpp
 	// this is a windows platform 
 	#include "os_itf/windows/rx_win.h"
 
@@ -42,4 +42,4 @@ On Windows machines this is the main function example:
 		// run console
 		return host.console_main(argc, argv);
 	}
-
+```
