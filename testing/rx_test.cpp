@@ -273,23 +273,23 @@ bool testing_enviroment::do_console_command (std::istream& in, std::ostream& out
 {
 	bool code = false;
 
-	string_type test_cat;
-	in >> test_cat;
-	if (test_cat == "code")
+	string_type temp_str;
+	in >> temp_str;
+	if (temp_str == "code")
 	{
 		code = true;
 		if (!in.eof())
-			in >> test_cat;
+			in >> temp_str;
 		else
-			test_cat.clear();
+			temp_str.clear();
 	}
 
-	const auto& it = _registered_tests.find(test_cat);
+	const auto& it = _registered_tests.find(temp_str);
 	if (it != _registered_tests.end())
 	{
 		return it->second->do_console_test(in, out, err, ctx, code);
 	}
-	else if (test_cat.empty())
+	else if (temp_str.empty())
 	{
 		out << "Registered  Test Categories\r\n=====================================\r\n" ANSI_COLOR_YELLOW;
 		for (const auto& one : _registered_tests)
@@ -302,7 +302,7 @@ bool testing_enviroment::do_console_command (std::istream& in, std::ostream& out
 	}
 	else
 	{
-		err << test_cat << "is unknown Test Category.\r\n";
+		err << temp_str << "is unknown Test Category.\r\n";
 		return false;
 	}
 }

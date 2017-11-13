@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -35,14 +35,14 @@
 
 #include "system/constructors/rx_construct.h"
 
-#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.1"
+#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
 
 namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host
 
 interactive_console_host::interactive_console_host()
       : _exit(false),
@@ -90,7 +90,7 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
-	
+
 }
 
 const string_type& interactive_console_host::get_host_info ()
@@ -105,7 +105,7 @@ const string_type& interactive_console_host::get_host_info ()
 
 void interactive_console_host::server_started_event ()
 {
-	printf("\r\nStarting RX Engine...\r\n==========================================\r\n");
+	printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
 }
 
 bool interactive_console_host::shutdown (const string_type& msg)
@@ -113,6 +113,7 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	security::security_context_ptr ctx = security::active_security();
 	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
 	std::cout << ANSI_COLOR_RESET "\r\n";
+	std::cout << "Msg:" << msg;
 	std::cout.flush();
 	_exit = true;
 
@@ -154,8 +155,8 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 	{
 		string_type file_name;
 		in >> file_name;
-		file_name = "D:\\RX\\Native\\Source/host/scripts/platform script one.rxs";
-		sys_handle_t file = rx_file(file_name.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		file_name = "platform script one.rxs";
+		sys_handle_t file = get_host_console_script_file(file_name);
 		if (file)
 		{
 			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
@@ -169,7 +170,7 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 				{
 					string_type line;
 					buffer->read_line(line);
-					out << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+					out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
 				}
 
 				out << "=====================================\r\nScript done.\r\n";
@@ -199,7 +200,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 	string_vector arguments(argc);
 	for (int i = 0; i < argc; i++)
 		arguments[i] = argv[i];
-	
+
 	bool ret = start(arguments);
 
 	return ret ? 0 : -1;
@@ -207,7 +208,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client 
+// Class host::interactive::interactive_console_client
 
 interactive_console_client::interactive_console_client()
       : _exit(false)
@@ -311,7 +312,7 @@ void interactive_console_client::exit_console ()
 }
 
 
-// Class host::interactive::interactive_security_context 
+// Class host::interactive::interactive_security_context
 
 interactive_security_context::interactive_security_context()
 {

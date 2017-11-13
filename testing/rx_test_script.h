@@ -105,7 +105,7 @@ namespace rxs {
 class read_and_run_file : public test_case  
 {
 	DECLARE_REFERENCE_PTR(read_and_run_file)
-	DECLARE_TEST_CODE_INFO(0,1,0, "\
+	DECLARE_TEST_CODE_INFO(0,2,0, "\
 loading a file->reading it line by line->executing.");
 
   public:

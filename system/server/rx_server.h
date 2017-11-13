@@ -39,10 +39,10 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
-// rx_host
-#include "host/rx_host.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_host
+#include "host/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -119,6 +119,12 @@ class rx_server : public rx::security::secured_object
       mngt::server_manager& get_manager ()
       {
         return _manager;
+      }
+
+
+      host::rx_server_host * get_host ()
+      {
+        return _host;
       }
 
 

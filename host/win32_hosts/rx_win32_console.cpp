@@ -92,10 +92,10 @@ bool win32_console_host::shutdown (const string_type& msg)
 	return false;
 }
 
-sys_handle_t win32_console_host::get_host_test_file (string_type& path)
+sys_handle_t win32_console_host::get_host_test_file (const string_type& path)
 {
 	string_type full_path;
-	rx::combine_paths(TEST_SCRIPTS_PATH, path, full_path);
+	rx::combine_paths(RX_TEST_SCRIPTS_PATH, path, full_path);
 	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	return file;
 }
@@ -140,6 +140,14 @@ bool win32_console_host::start (const string_array& args)
 
 	return true;
 
+}
+
+sys_handle_t win32_console_host::get_host_console_script_file (const string_type& path)
+{
+	string_type full_path;
+	rx::combine_paths(RX_CONSOLE_SCRIPTS_PATH, path, full_path);
+	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+	return file;
 }
 
 

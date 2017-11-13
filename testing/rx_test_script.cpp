@@ -135,8 +135,8 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 	}
 	else
 	{
-		file_name = "D:\\RX\\Native\\Source/host/scripts/platform script one.rxs";
-		sys_handle_t file = rx_file(file_name.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		file_name = "rx-script-1.rxs";
+		sys_handle_t file = rx_server::instance().get_host()->get_host_test_file(file_name);
 		if (file)
 		{
 			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
@@ -150,7 +150,7 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 				{
 					string_type line;
 					buffer->read_line(line);
-					out << "\r\n" << ANSI_COLOR_GREEN ">" ANSI_COLOR_RESET << line << "\r\n";
+					out << "\r\n" << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
 
 					prog::server_console_program temp_prog(line);
 

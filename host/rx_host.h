@@ -84,9 +84,11 @@ class rx_server_host
 
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
-      virtual sys_handle_t get_host_test_file (string_type& path);
+      virtual sys_handle_t get_host_test_file (const string_type& path);
 
       virtual bool start (const string_array& args) = 0;
+
+      virtual sys_handle_t get_host_console_script_file (const string_type& path);
 
 
   protected:

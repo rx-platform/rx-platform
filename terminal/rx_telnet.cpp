@@ -1239,7 +1239,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	char buff[0x100];
 	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]));
 	out << "CPU: " << buff 
-		<< ( rx_big_endian ? " [BE]:" : " [LE]" )
+		<< ( rx_big_endian ? " [BE]" : " [LE]" )
 		<< "\r\n";
 	/////////////////////////////////////////////////////////////////////////
 	// memory
