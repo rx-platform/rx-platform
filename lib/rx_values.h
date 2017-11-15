@@ -223,14 +223,14 @@ struct complex_value_struct
 union rx_value_union
 {
 	bool bool_value;
-	byte byte_value;
-	sbyte sbyte_value;
-	word word_value;
-	sword sword_value;
-	dword dword_value;
-	sdword sdword_value;
-	qword qword_value;
-	sqword sqword_value;
+	uint8_t uint8_value;
+	int8_t int8_value;
+	uint16_t uint16_value;
+	int16_t int16_value;
+	uint32_t uint32_value;
+	int32_t int32_value;
+	uint64_t uint64_value;
+	int64_t int64_value;
 	float float_value;
 	double double_value;
 	string_type* string_value;
@@ -257,23 +257,23 @@ class rx_value
 
       rx_value(const rx_value &right);
 
-      rx_value (bool val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (bool val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (sbyte val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (int8_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (byte val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (uint8_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (const bit_string& val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (const bit_string& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (const std::vector<sbyte>& val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (const std::vector<int8_t>& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
       rx_value (rx_value&& right);
 
-      rx_value (sdword val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (int32_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (dword val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (uint32_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
-      rx_value (const string_type& val, rx_time time = DEFAULT_TIME_VAL, dword quality = RX_GOOD_QUALITY, dword origin = RX_DEFUALT_ORIGIN);
+      rx_value (const string_type& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
 
       ~rx_value();
 
@@ -320,23 +320,23 @@ class rx_value
 
       bool deserialize_value (base_meta_reader& stream);
 
-      operator dword () const;
+      operator uint32_t () const;
 
       operator bool () const;
 
 
-      const byte get_type () const
+      const uint8_t get_type () const
       {
         return _type;
       }
 
 
-      const dword get_quality () const
+      const uint32_t get_quality () const
       {
         return _quality;
       }
 
-      void set_quality (dword value)
+      void set_quality (uint32_t value)
       {
         _quality = value;
       }
@@ -358,26 +358,26 @@ class rx_value
 
   private:
 
-      bool serialize_value (base_meta_writter& stream, byte type, const rx_value_union& value) const;
+      bool serialize_value (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
 
-      bool deserialize_value (base_meta_reader& stream, byte type, rx_value_union& value);
+      bool deserialize_value (base_meta_reader& stream, uint8_t type, rx_value_union& value);
 
 
 
-      void clear_union (byte type, rx_value_union& value);
+      void clear_union (uint8_t type, rx_value_union& value);
 
-      void copy_union (byte type, rx_value_union& to, const rx_value_union& from);
+      void copy_union (uint8_t type, rx_value_union& to, const rx_value_union& from);
 
 
       rx_value_union _value;
 
-      byte _type;
+      uint8_t _type;
 
-      dword _quality;
+      uint32_t _quality;
 
       rx_time _time;
 
-      dword _origin;
+      uint32_t _origin;
 
 
 };

@@ -54,7 +54,7 @@ server_rt::~server_rt()
 
 
 
-dword server_rt::initialize (rx_server_host* host, runtime_data_t& data)
+uint32_t server_rt::initialize (rx_server_host* host, runtime_data_t& data)
 {
 	if (data.io_pool_size > 0)
 	{
@@ -77,7 +77,7 @@ dword server_rt::initialize (rx_server_host* host, runtime_data_t& data)
 	return RX_OK;
 }
 
-dword server_rt::deinitialize ()
+uint32_t server_rt::deinitialize ()
 {
 	if (_io_pool)
 		_io_pool = server_dispatcher_object::smart_ptr::null_ptr;
@@ -95,14 +95,14 @@ dword server_rt::deinitialize ()
 	return RX_OK;
 }
 
-void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, dword domain, dword period, bool now)
+void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, uint32_t period, bool now)
 {
 	rx::threads::job_thread* executer = get_executer(domain);
 	if (_general_timer)
 		_general_timer->append_job(job,executer,period, now);
 }
 
-dword server_rt::start (rx_server_host* host, const runtime_data_t& data)
+uint32_t server_rt::start (rx_server_host* host, const runtime_data_t& data)
 {
 	if (_io_pool)
 		_io_pool->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);
@@ -124,7 +124,7 @@ dword server_rt::start (rx_server_host* host, const runtime_data_t& data)
 	return RX_OK;
 }
 
-dword server_rt::stop ()
+uint32_t server_rt::stop ()
 {
 	if (_dispatcher_timer)
 	{
@@ -180,7 +180,7 @@ namespace_item_attributes server_rt::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system | namespace_item_object);
 }
 
-void server_rt::append_job (rx::jobs::timer_job_ptr job, dword domain)
+void server_rt::append_job (rx::jobs::timer_job_ptr job, uint32_t domain)
 {
 	threads::job_thread* executer = get_executer(domain);
 	RX_ASSERT(executer);
@@ -188,7 +188,7 @@ void server_rt::append_job (rx::jobs::timer_job_ptr job, dword domain)
 		executer->append(job);
 }
 
-rx::threads::job_thread* server_rt::get_executer (dword domain)
+rx::threads::job_thread* server_rt::get_executer (uint32_t domain)
 {
 	switch (domain)
 	{
@@ -227,7 +227,7 @@ server_dispatcher_object::~server_dispatcher_object()
 
 void server_dispatcher_object::get_items (server_items_type& sub_items, const string_type& pattern) const
 {
-	//sub_items.emplace_back(values::simple_const_value_ns_item<dword>::smart_ptr(IO_POOL_NAME, ns::namespace_item_system_const_value, "-", get_created(), m_threads_count.get_value()));
+	//sub_items.emplace_back(values::simple_const_value_ns_item<uint32_t>::smart_ptr(IO_POOL_NAME, ns::namespace_item_system_const_value, "-", get_created(), m_threads_count.get_value()));
 }
 
 
@@ -253,7 +253,7 @@ void dispatcher_subscribers_job::process ()
 // Class server::runtime::domains_pool 
 
 domains_pool::domains_pool (size_t pool_size)
-      : _pool_size((dword)pool_size)
+      : _pool_size((uint32_t)pool_size)
 	, server_object(WORKER_POOL_NAME, WORKER_POOL_ID)
 {
 	register_const_value("count", _pool_size);
@@ -272,7 +272,7 @@ void domains_pool::run (int priority)
 		one->start(priority);
 }
 
-void domains_pool::end (dword timeout)
+void domains_pool::end (uint32_t timeout)
 {
 	for (auto one : _workers)
 		one->end();
@@ -285,7 +285,7 @@ void domains_pool::append (job_ptr pjob)
 void domains_pool::reserve ()
 {
 	_workers.reserve(_pool_size.value());
-	for (dword i = 0; i < _pool_size.value(); i++)
+	for (uint32_t i = 0; i < _pool_size.value(); i++)
 		_workers.emplace_back(new threads::physical_job_thread("Worker"));
 }
 
@@ -296,7 +296,7 @@ void domains_pool::clear ()
 	_workers.clear();
 }
 
-void domains_pool::append (rx::jobs::timer_job_ptr job, dword domain)
+void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
 {
 	job_thread* thr = get_executer(domain);
 	RX_ASSERT(thr);
@@ -304,15 +304,15 @@ void domains_pool::append (rx::jobs::timer_job_ptr job, dword domain)
 		thr->append(job);
 }
 
-rx::threads::job_thread* domains_pool::get_executer (dword domain)
+rx::threads::job_thread* domains_pool::get_executer (uint32_t domain)
 {
-	dword size = _pool_size.value();
+	uint32_t size = _pool_size.value();
 	RX_ASSERT(size);
 	if (size == 0)
 		return nullptr;
 	else
 	{
-		dword real_index = domain%size;
+		uint32_t real_index = domain%size;
 		return _workers[real_index];
 	}
 }

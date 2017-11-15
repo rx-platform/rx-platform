@@ -78,13 +78,13 @@ complex_runtime_item::~complex_runtime_item()
 
 
 
-dword complex_runtime_item::register_const_value (const string_type& name, const_value_item& val)
+uint32_t complex_runtime_item::register_const_value (const string_type& name, const_value_item& val)
 {
 	auto it = _names_cache.find(name);
 	if (it == _names_cache.end())
 	{
 		_const_values.emplace_back(&val);
-		dword idx = (dword)(_const_values.size() - 1);
+		uint32_t idx = (uint32_t)(_const_values.size() - 1);
 		_names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
 		return RX_OK;
 	}
@@ -139,7 +139,7 @@ rx_value complex_runtime_item::get_value (const string_type path) const
 
 }
 
-dword complex_runtime_item::set_hosting_object (object_runtime_ptr obj)
+uint32_t complex_runtime_item::set_hosting_object (object_runtime_ptr obj)
 {
 	RX_ASSERT(!_my_object);
 	if (_my_object)
@@ -158,7 +158,7 @@ void complex_runtime_item::object_state_changed (const rx_time& now)
 {
 	for (auto& one : _names_cache)
 	{
-		dword type = (one.second& RT_TYPE_MASK);
+		uint32_t type = (one.second& RT_TYPE_MASK);
 		switch (type)
 		{
 		case RT_CONST_IDX_MASK:
@@ -219,7 +219,7 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 				RX_ASSERT((it->second&RT_INDEX_MASK) < _const_values.size());
 				if (it->second&RT_CALLBACK_MASK)
 				{// we have callback mask so return it
-					dword idx = RT_CALLBACK_INDEX(it->second);
+					uint32_t idx = RT_CALLBACK_INDEX(it->second);
 					_const_values[(it->second&RT_INDEX_MASK)]->get_value(val, get_hosting_object()->get_modified_time(), get_hosting_object()->get_mode());
 					return _const_values_callbacks[idx];
 				}
@@ -227,7 +227,7 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 				{// create new callback
 					value_callback_t *ret = new value_callback_t;
 					_const_values_callbacks.emplace_back(ret);
-					it->second = ((it->second) | (((dword)_const_values_callbacks.size()) << 16));
+					it->second = ((it->second) | (((uint32_t)_const_values_callbacks.size()) << 16));
 					_const_values[(it->second&RT_INDEX_MASK)]->get_value(val, get_hosting_object()->get_modified_time(), get_hosting_object()->get_mode());
 					return ret;
 
@@ -239,13 +239,13 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 	return nullptr;
 }
 
-dword complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val)
+uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val)
 {
 	auto it = _names_cache.find(name);
 	if (it == _names_cache.end())
 	{
 		_sub_items.emplace_back(val);
-		dword idx = (dword)(_sub_items.size() - 1);
+		uint32_t idx = (uint32_t)(_sub_items.size() - 1);
 		_names_cache.emplace(name, idx | RT_COMPLEX_IDX_MASK);
 		val->set_hosting_object(_my_object);
 		return RX_OK;
@@ -261,7 +261,7 @@ rx_value complex_runtime_item::get_value ()
 	return ret;
 }
 
-bool complex_runtime_item::serialize_definition (base_meta_writter& stream, byte type, const rx_time& ts, const rx_mode_type& mode) const
+bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
 {
 	if (!stream.start_array("Items", _names_cache.size()))
 		return false;
@@ -303,7 +303,7 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, byte
 	return true;
 }
 
-bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, byte type)
+bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
 }
@@ -413,7 +413,7 @@ bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 	return out;
 }
 
-bool object_runtime::serialize_definition (base_meta_writter& stream, byte type) const
+bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!checkable_type::serialize_definition(stream, type))
 		return false;
@@ -424,7 +424,7 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, byte type)
 	return true;
 }
 
-bool object_runtime::deserialize_definition (base_meta_reader& stream, byte type)
+bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!checkable_type::deserialize_definition(stream, type))
 		return false;
@@ -435,7 +435,7 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, byte type
 	return true;
 }
 
-dword object_runtime::register_const_value (const string_type& name, const_value_item& val)
+uint32_t object_runtime::register_const_value (const string_type& name, const_value_item& val)
 {
 	return _complex_item->register_const_value(name, val);
 }
@@ -449,7 +449,7 @@ bool object_runtime::init_object ()
 
 // Class server::objects::value_item 
 
-const dword value_item::_type_id = RT_TYPE_ID_VALUE;
+const uint32_t value_item::_type_id = RT_TYPE_ID_VALUE;
 
 value_item::value_item()
 {
@@ -462,12 +462,12 @@ value_item::~value_item()
 
 
 
-bool value_item::serialize_definition (base_meta_writter& stream, byte type) const
+bool value_item::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	return true;
 }
 
-bool value_item::deserialize_definition (base_meta_reader& stream, byte type)
+bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
@@ -615,7 +615,7 @@ struct_runtime::~struct_runtime()
 
 // Class server::objects::const_value_item 
 
-const dword const_value_item::_type_id = RT_TYPE_ID_CONST_VALUE;
+const uint32_t const_value_item::_type_id = RT_TYPE_ID_CONST_VALUE;
 
 const_value_item::const_value_item()
 {
@@ -628,7 +628,7 @@ const_value_item::~const_value_item()
 
 
 
-bool const_value_item::serialize_definition (base_meta_writter& stream, byte type, const rx_time& ts, const rx_mode_type& mode) const
+bool const_value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
 {
 	rx_value val;
 	get_value(val, ts, mode);
@@ -637,7 +637,7 @@ bool const_value_item::serialize_definition (base_meta_writter& stream, byte typ
 	return true;
 }
 
-bool const_value_item::deserialize_definition (base_meta_reader& stream, byte type)
+bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }

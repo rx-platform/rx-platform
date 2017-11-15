@@ -40,19 +40,19 @@
 // rx_ns
 #include "system/server/rx_ns.h"
 
-namespace server {
-namespace prog {
-class server_program_holder;
-class program_context_base;
-} // namespace prog
-} // namespace server
-
 namespace rx {
 namespace security {
 class security_context;
-
 } // namespace security
 } // namespace rx
+
+namespace server {
+namespace prog {
+class program_context_base;
+class server_program_holder;
+
+} // namespace prog
+} // namespace server
 
 
 using namespace rx;
@@ -382,9 +382,11 @@ class console_client : public rx::pointers::virtual_reference_object
 
       void get_wellcome (string_type& wellcome);
 
-      virtual const string_type& get_console_name () = 0;
+      virtual const string_type& get_console_name ();
 
       virtual void exit_console () = 0;
+
+      const string_type& get_console_terminal ();
 
 
   private:

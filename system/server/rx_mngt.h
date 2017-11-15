@@ -98,7 +98,7 @@ struct managment_data_t
 		telnet_port = 0;
 		manager_internal_data = nullptr;
 	}
-	word telnet_port;
+	uint16_t telnet_port;
 	// internal stuff bellow do not change!!!
 	manager_initialization_context* manager_internal_data;
 };
@@ -117,13 +117,13 @@ class server_manager
       virtual ~server_manager();
 
 
-      dword initialize (host::rx_server_host* host, managment_data_t& data);
+      uint32_t initialize (host::rx_server_host* host, managment_data_t& data);
 
-      dword deinitialize ();
+      uint32_t deinitialize ();
 
-      dword start (host::rx_server_host* host, const managment_data_t& data);
+      uint32_t start (host::rx_server_host* host, const managment_data_t& data);
 
-      dword stop ();
+      uint32_t stop ();
 
       void get_directories (server_directories_type& dirs);
 
@@ -182,7 +182,7 @@ class server_manager
       objects::domain_runtime::smart_ptr _system_domain;
 
 
-      word _telnet_port;
+      uint16_t _telnet_port;
 
 
 };

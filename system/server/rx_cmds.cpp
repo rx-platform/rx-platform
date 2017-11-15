@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 
+#include "terminal/rx_terminal_version.h"
 
 // rx_cmds
 #include "system/server/rx_cmds.h"
@@ -404,10 +405,26 @@ void console_client::get_wellcome (string_type& wellcome)
 {
 	wellcome = g_console_welcome;
 	wellcome += get_console_name();
-	wellcome += "\r\n===========================================\r\n";
-	wellcome += "\r\n>";
-	wellcome += rx_server::instance().get_host_info();
+	wellcome += " Console\r\n===========================================\r\n";
 	wellcome += "\r\n";
+	string_array hosts;
+	rx_server::instance().get_host()->get_host_info(hosts);
+	for (auto& one : hosts)
+	{
+		wellcome += ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		wellcome += one;
+		wellcome += "\r\n";
+	}
+}
+
+const string_type& console_client::get_console_name ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
+	}
+	return ret;
 }
 
 bool console_client::is_postponed () const
@@ -416,6 +433,12 @@ bool console_client::is_postponed () const
 		return true;
 	else
 		return false;
+}
+
+const string_type& console_client::get_console_terminal ()
+{
+	static string_type term("perica");
+	return term;
 }
 
 

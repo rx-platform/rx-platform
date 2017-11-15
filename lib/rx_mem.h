@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -31,10 +31,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// dummy
+#include "dummy.h"
 
 #include <type_traits>
 
@@ -125,7 +125,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator
+class std_vector_allocator 
 {
 
   public:
@@ -300,7 +300,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator
+class backward_simple_allocator 
 {
 
   public:
@@ -325,7 +325,7 @@ class backward_simple_allocator
   private:
 
 
-      byte* _buffer;
+      uint8_t* _buffer;
 
       static ref_counting_type g_memory_consuption;
 
@@ -343,7 +343,7 @@ class backward_simple_allocator
 typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
-// Parameterized Class rx::memory::memory_buffer_base
+// Parameterized Class rx::memory::memory_buffer_base 
 
 template <class allocT>
 memory_buffer_base<allocT>::memory_buffer_base()
@@ -360,7 +360,7 @@ memory_buffer_base<allocT>::memory_buffer_base (const void* ptr, size_t size)
 {
 	_next_push = (int)size;
 	_allocator.allocate(size);
-	memcpy(_allocator.get_buffer<byte>(), ptr, size);
+	memcpy(_allocator.get_buffer<uint8_t>(), ptr, size);
 }
 
 
@@ -376,7 +376,7 @@ void memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
 {
 	while (_next_push + size>_allocator.get_buffer_size())
 		_allocator.reallocate(_next_push + size);
-	memcpy(&_allocator.get_buffer<byte>()[_next_push], ptr, size);
+	memcpy(&_allocator.get_buffer<uint8_t>()[_next_push], ptr, size);
 	_next_push += size;
 }
 
@@ -385,7 +385,7 @@ void memory_buffer_base<allocT>::read_data (void* ptr, size_t size)
 {
 	if (_current_read + size>_next_push)
 		throw std::exception("buffer end of file!");
-	memcpy(ptr, &_allocator.get_buffer<byte>()[_current_read], size);
+	memcpy(ptr, &_allocator.get_buffer<uint8_t>()[_current_read], size);
 	_current_read += size;
 }
 
@@ -461,7 +461,7 @@ void* memory_buffer_base<allocT>::get_data () const
 template <class allocT>
 bool memory_buffer_base<allocT>::fill_with_file_content (sys_handle_t file)
 {
-	qword sz = 0;
+	uint64_t sz = 0;
 	if (rx_file_get_size(file, &sz))
 	{
 		if (sz == 0)
@@ -470,8 +470,8 @@ bool memory_buffer_base<allocT>::fill_with_file_content (sys_handle_t file)
 		_current_read = 0;
 		_next_push = (int)sz;
 		_allocator.reallocate((size_t)sz);
-		dword readed = 0;
-		if (rx_file_read(file, _allocator.get_buffer<void>(), (dword)sz, &readed) && readed == sz)
+		uint32_t readed = 0;
+		if (rx_file_read(file, _allocator.get_buffer<void>(), (uint32_t)sz, &readed) && readed == sz)
 		{
 			return true;
 		}
@@ -480,7 +480,7 @@ bool memory_buffer_base<allocT>::fill_with_file_content (sys_handle_t file)
 }
 
 
-// Parameterized Class rx::memory::std_strbuff
+// Parameterized Class rx::memory::std_strbuff 
 
 template <class allocT>
 std_strbuff<allocT>::std_strbuff()
@@ -534,7 +534,7 @@ char* std_strbuff<allocT>::egptr () const
 }
 
 
-// Parameterized Class rx::memory::backward_memory_buffer_base
+// Parameterized Class rx::memory::backward_memory_buffer_base 
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)
@@ -559,7 +559,7 @@ void backward_memory_buffer_base<allocT>::push_data (const void* ptr, size_t siz
 {
 	while (_next_push + size>_allocator.get_buffer_size())
 		_allocator.reallocate(_next_push+size);
-	memcpy(&_allocator.get_buffer<byte>()[_allocator.get_buffer_size() - _next_push - size], ptr, size);
+	memcpy(&_allocator.get_buffer<uint8_t>()[_allocator.get_buffer_size() - _next_push - size], ptr, size);
 	_next_push += ((int)size);
 }
 
@@ -600,7 +600,7 @@ bool backward_memory_buffer_base<allocT>::empty () const
 template <class allocT>
 void* backward_memory_buffer_base<allocT>::get_data () const
 {
-	return &_allocator.get_buffer<byte>()[_allocator.size() - _next_push];
+	return &_allocator.get_buffer<uint8_t>()[_allocator.size() - _next_push];
 }
 
 

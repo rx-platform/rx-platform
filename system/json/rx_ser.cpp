@@ -213,7 +213,7 @@ bool json_reader::read_int (const char* name, int& val)
 	return false;
 }
 
-bool json_reader::read_uint (const char* name, dword& val)
+bool json_reader::read_uint (const char* name, uint32_t& val)
 {
 	int idx = 0;
 	Json::Value& object = get_current_value(idx);
@@ -422,7 +422,7 @@ bool json_reader::end_object ()
 	return true;
 }
 
-bool json_reader::read_byte (const char* name, byte& val)
+bool json_reader::read_byte (const char* name, uint8_t& val)
 {
 	int idx = 0;
 	Json::Value& object = get_current_value(idx);
@@ -433,7 +433,7 @@ bool json_reader::read_byte (const char* name, byte& val)
 			Json::Value& temp = object[name];
 			if (temp.isIntegral())
 			{
-				val = (byte)temp.asUInt();
+				val = (uint8_t)temp.asUInt();
 				return true;
 			}
 		}
@@ -445,7 +445,7 @@ bool json_reader::read_byte (const char* name, byte& val)
 			Json::Value& temp = object[idx];
 			if (temp.isIntegral())
 			{
-				val = (byte)temp.asUInt();
+				val = (uint8_t)temp.asUInt();
 				return true;
 			}
 		}
@@ -467,7 +467,7 @@ bool json_reader::read_value (const char* name, rx_value& val)
 	return true;
 }
 
-bool json_reader::read_int64 (const char* name, sqword& val)
+bool json_reader::read_int64 (const char* name, int64_t& val)
 {
 	int idx = 0;
 	Json::Value& object = get_current_value(idx);
@@ -498,7 +498,7 @@ bool json_reader::read_int64 (const char* name, sqword& val)
 	return false;
 }
 
-bool json_reader::read_uint64 (const string_type& name, qword& val)
+bool json_reader::read_uint64 (const string_type& name, uint64_t val)
 {
 	int idx = 0;
 	Json::Value& object = get_current_value(idx);
@@ -553,7 +553,7 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 					buff[1] = L'\0';
 				char* endptr = NULL;
 				unsigned long one = strtoul(buff, &endptr, 16);
-				temp_val.push_back((byte)one);
+				temp_val.push_back((uint8_t)one);
 			}
 			val = temp_val;
 		}
@@ -647,7 +647,7 @@ bool json_reader::safe_read_string (int idx, const string_type& name, string_typ
 	return false;
 }
 
-bool json_reader::read_version (const char* name, dword& val)
+bool json_reader::read_version (const char* name, uint32_t& val)
 {
 	string_type str;
 	if (!read_string(name, str))
@@ -657,7 +657,7 @@ bool json_reader::read_version (const char* name, dword& val)
 	return true;
 }
 
-bool json_reader::parse_version_string (dword& result, const string_type& version)
+bool json_reader::parse_version_string (uint32_t& result, const string_type& version)
 {
 	return false;
 }
@@ -771,7 +771,7 @@ bool json_writter::write_int (const char* name, int val)
 	return true;
 }
 
-bool json_writter::write_uint (const char* name, dword val)
+bool json_writter::write_uint (const char* name, uint32_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -912,12 +912,12 @@ bool json_writter::end_object ()
 	return true;
 }
 
-bool json_writter::write_byte (const char* name, byte val)
+bool json_writter::write_byte (const char* name, uint8_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
-		value.append((dword)val);
+		value.append((uint32_t)val);
 	else
 		value[name] = val;
 
@@ -938,7 +938,7 @@ bool json_writter::write_value (const char* name, const rx_value& val)
 	return true;
 }
 
-bool json_writter::write_int64 (const char* name, sqword val)
+bool json_writter::write_int64 (const char* name, int64_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -950,7 +950,7 @@ bool json_writter::write_int64 (const char* name, sqword val)
 	return true;
 }
 
-bool json_writter::write_uint64 (const char* name, qword val)
+bool json_writter::write_uint64 (const char* name, uint64_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -962,7 +962,7 @@ bool json_writter::write_uint64 (const char* name, qword val)
 	return true;
 }
 
-bool json_writter::write_bytes (const char* name, const byte* val, size_t size)
+bool json_writter::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
 	char buff[8];
 	string_type temp;
@@ -1004,7 +1004,7 @@ bool json_writter::get_string (string_type& result, bool decorated)
 	return true;
 }
 
-bool json_writter::write_version (const char* name, dword val)
+bool json_writter::write_version (const char* name, uint32_t val)
 {
 	string_type str;
 	if (!get_version_string(str, val))
@@ -1012,7 +1012,7 @@ bool json_writter::write_version (const char* name, dword val)
 	return write_string(name, str.c_str());
 }
 
-bool json_writter::get_version_string (string_type& result, dword version)
+bool json_writter::get_version_string (string_type& result, uint32_t version)
 {
 	int major = (version >> 24);
 	int minor = ((version >> 16) & 0xff);

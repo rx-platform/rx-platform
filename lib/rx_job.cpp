@@ -120,7 +120,7 @@ post_period_job::~post_period_job()
 
 
 
-dword post_period_job::tick (dword current_tick, bool& remove)
+uint32_t post_period_job::tick (uint32_t current_tick, bool& remove)
 {
 	if (((_next - current_tick) & 0x80000000) || (_next - current_tick) == 0)
 	{
@@ -150,7 +150,7 @@ periodic_job::~periodic_job()
 
 
 
-dword periodic_job::tick (dword current_tick, bool& remove)
+uint32_t periodic_job::tick (uint32_t current_tick, bool& remove)
 {
 	if (((_next - current_tick) & 0x80000000) || (_next - current_tick) == 0)
 	{

@@ -64,7 +64,6 @@ namespace rx {
 
 
 
-
 class base_meta_writter 
 {
 public:
@@ -94,7 +93,7 @@ public:
 
       virtual bool write_int (const char* name, int val) = 0;
 
-      virtual bool write_uint (const char* name, dword val) = 0;
+      virtual bool write_uint (const char* name, uint32_t val) = 0;
 
       virtual bool start_array (const char* name, size_t size) = 0;
 
@@ -108,25 +107,25 @@ public:
 
       virtual bool end_object () = 0;
 
-      virtual bool write_byte (const char* name, byte val) = 0;
+      virtual bool write_byte (const char* name, uint8_t val) = 0;
 
       virtual bool write_value (const char* name, const rx_value& val) = 0;
 
-      virtual bool write_int64 (const char* name, sqword val) = 0;
+      virtual bool write_int64 (const char* name, int64_t val) = 0;
 
-      virtual bool write_uint64 (const char* name, qword val) = 0;
+      virtual bool write_uint64 (const char* name, uint64_t val) = 0;
 
-      virtual bool write_bytes (const char* name, const byte* val, size_t size) = 0;
+      virtual bool write_bytes (const char* name, const uint8_t* val, size_t size) = 0;
 
-      virtual bool write_version (const char* name, dword val) = 0;
+      virtual bool write_version (const char* name, uint32_t val) = 0;
 
 
-      const dword get_version () const
+      const uint32_t get_version () const
       {
         return _version;
       }
 
-      void set_version (dword value)
+      void set_version (uint32_t value)
       {
         _version = value;
       }
@@ -142,7 +141,7 @@ public:
 
 
 
-      dword _version;
+      uint32_t _version;
 
 
 };
@@ -176,7 +175,7 @@ class base_meta_reader
 
       virtual bool read_int (const char* name, int& val) = 0;
 
-      virtual bool read_uint (const char* name, dword& val) = 0;
+      virtual bool read_uint (const char* name, uint32_t& val) = 0;
 
       virtual bool start_array (const char* name) = 0;
 
@@ -190,25 +189,25 @@ class base_meta_reader
 
       virtual bool end_object () = 0;
 
-      virtual bool read_byte (const char* name, byte& val) = 0;
+      virtual bool read_byte (const char* name, uint8_t& val) = 0;
 
       virtual bool read_value (const char* name, rx_value& val) = 0;
 
-      virtual bool read_int64 (const char* name, sqword& val) = 0;
+      virtual bool read_int64 (const char* name, int64_t& val) = 0;
 
-      virtual bool read_uint64 (const string_type& name, qword& val) = 0;
+      virtual bool read_uint64 (const string_type& name, uint64_t& val) = 0;
 
       virtual bool read_bytes (const char* name, byte_string& val) = 0;
 
-      virtual bool read_version (const char* name, dword& val) = 0;
+      virtual bool read_version (const char* name, uint32_t& val) = 0;
 
 
-      const dword get_version () const
+      const uint32_t get_version () const
       {
         return _version;
       }
 
-      void set_version (dword value)
+      void set_version (uint32_t value)
       {
         _version = value;
       }
@@ -224,7 +223,7 @@ class base_meta_reader
 
 
 
-      dword _version;
+      uint32_t _version;
 
 
 };

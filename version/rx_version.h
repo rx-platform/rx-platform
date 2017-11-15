@@ -34,10 +34,11 @@
 
 
 
-#define ASSIGN_MODULE_VERSION(val,arg)  \
+#define ASSIGN_MODULE_VERSION(val,arg,arg1,arg2,arg3)  \
 char temp_str[0x100];\
-create_module_version_string(arg,__DATE__,__TIME__,temp_str);\
+create_module_version_string(arg,arg1,arg2,arg3,__DATE__,__TIME__,temp_str);\
 val=temp_str;\
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,7 +94,7 @@ DECLARE_CODE_INFO("console",maj,min,build,"class intendend for console usage\r\n
 
 // versions helper
 void create_module_compile_time_string(const char* date, const char* time, char* buffer);
-void create_module_version_string(const char* prefix, const char* date, const char* time, char* buffer);
+void create_module_version_string(const char* prefix, int major, int minor, int build, const char* date, const char* time, char* buffer);
 
 
 #ifdef __cplusplus

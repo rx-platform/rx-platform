@@ -54,10 +54,8 @@ rx_server::rx_server()
 
 	_pid = rx_pid;
 
-	_rx_version =  " Ver ";
-	sprintf(buff,"%s Ver %d.%d.%d", RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 	{
-		ASSIGN_MODULE_VERSION(_rx_version, buff);
+		ASSIGN_MODULE_VERSION(_rx_version, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 	}
 	_rx_name = rx_get_server_name();
 	_lib_version = g_lib_version;
@@ -95,13 +93,12 @@ void rx_server::cleanup ()
 	g_instance = nullptr;
 }
 
-dword rx_server::initialize (host::rx_server_host* host, configuration_data_t& data)
+uint32_t rx_server::initialize (host::rx_server_host* host, configuration_data_t& data)
 {
 	python::py_script* python = &python::py_script::instance();
 	_scripts.emplace(python->get_definition().name, python);
 	
 	_host = host;
-	_host_info = host->get_host_info();
 
 	if (_runtime.initialize(host, data.runtime_data))
 	{
@@ -123,7 +120,7 @@ dword rx_server::initialize (host::rx_server_host* host, configuration_data_t& d
 	return RX_ERROR;
 }
 
-dword rx_server::deinitialize ()
+uint32_t rx_server::deinitialize ()
 {
 	
 	for (auto one : _scripts)
@@ -134,7 +131,7 @@ dword rx_server::deinitialize ()
 	return RX_OK;
 }
 
-dword rx_server::start (host::rx_server_host* host, const configuration_data_t& data)
+uint32_t rx_server::start (host::rx_server_host* host, const configuration_data_t& data)
 {
 	if (_runtime.start(host, data.runtime_data))
 	{
@@ -152,7 +149,7 @@ dword rx_server::start (host::rx_server_host* host, const configuration_data_t& 
 	return RX_ERROR;
 }
 
-dword rx_server::stop ()
+uint32_t rx_server::stop ()
 {
 	_manager.stop();
 	_runtime.stop();

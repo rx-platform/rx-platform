@@ -47,7 +47,7 @@
 
 
 
-dword rx_last_eror()
+uint32_t rx_last_eror()
 {
 	return GetLastError();
 }
@@ -58,7 +58,7 @@ void rx_generate_new_uuid(uuid_t* u)
 {
 	UuidCreate(u);
 }
-dword rx_uuid_to_string(const uuid_t* u, char* str)
+uint32_t rx_uuid_to_string(const uuid_t* u, char* str)
 {
 	RPC_CSTR lbuff = NULL;
 	if (RPC_S_OK == UuidToStringA(u, &lbuff))
@@ -71,7 +71,7 @@ dword rx_uuid_to_string(const uuid_t* u, char* str)
 	else
 		return RX_ERROR;
 }
-dword rx_string_to_uuid(const char* str, uuid_t* u)
+uint32_t rx_string_to_uuid(const char* str, uuid_t* u)
 {
 	char buff[0x40];
 	sprintf_s(buff, sizeof(buff), "%s", str);
@@ -140,15 +140,15 @@ typedef DWORD(__stdcall *
 	);
 
 
-qword g_res;
-qword g_start;
+uint64_t g_res;
+uint64_t g_start;
 
 int rx_os_get_system_time(struct rx_time_struct_t* st)
 {
 	FILETIME ft;
 
 	GetSystemTimeAsFileTime(&ft);
-	st->t_value = (((qword)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
+	st->t_value = (((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
 	return RX_OK;
 }
 
@@ -162,7 +162,7 @@ int rx_os_to_local_time(struct rx_time_struct_t* st)
 
 	FileTimeToLocalFileTime(&mine, &local);
 
-	st->t_value = (((qword)local.dwHighDateTime) << 32) + local.dwLowDateTime;
+	st->t_value = (((uint64_t)local.dwHighDateTime) << 32) + local.dwLowDateTime;
 	return RX_OK;
 }
 
@@ -176,7 +176,7 @@ int rx_os_to_utc_time(struct rx_time_struct_t* st)
 
 	LocalFileTimeToFileTime(&mine, &utc);
 
-	st->t_value = (((qword)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
+	st->t_value = (((uint64_t)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
 	return RX_OK;
 }
 
@@ -217,12 +217,12 @@ int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_
 	if (!SystemTimeToFileTime(&sys, &ft))
 		return RX_ERROR;
 
-	st->t_value = (((qword)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
+	st->t_value = (((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
 
 	return RX_OK;
 }
 
-dword rx_border_rand(dword min, dword max)
+uint32_t rx_border_rand(uint32_t min, uint32_t max)
 {
 	if (max > min)
 	{
@@ -260,35 +260,35 @@ void* rx_allocate_thread_memory(size_t size)
 
 
 
-dword rx_atomic_add_fetch_32(volatile dword* val, int add)
+uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
 {
-	return (dword)InterlockedAdd((LONG*)val, add);
+	return (uint32_t)InterlockedAdd((LONG*)val, add);
 }
 
-dword rx_atomic_inc_fetch_32(volatile dword* val)
+uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val)
 {
-	return (dword)InterlockedIncrement((LONG*)val);
+	return (uint32_t)InterlockedIncrement((LONG*)val);
 }
-dword rx_atomic_dec_fetch_32(volatile dword* val)
+uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val)
 {
-	return (dword)InterlockedDecrement((LONG*)val);
+	return (uint32_t)InterlockedDecrement((LONG*)val);
 }
-dword rx_atomic_fetch_32(volatile dword* val)
+uint32_t rx_atomic_fetch_32(volatile uint32_t* val)
 {
-	return (dword)InterlockedAdd((LONG*)val, 0);
+	return (uint32_t)InterlockedAdd((LONG*)val, 0);
 }
 
-qword rx_atomic_inc_fetch_64(volatile qword* val)
+uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val)
 {
-	return (qword)InterlockedIncrement64((LONG64*)val);
+	return (uint64_t)InterlockedIncrement64((LONG64*)val);
 }
-qword rx_atomic_dec_fetch_64(volatile qword* val)
+uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val)
 {
-	return (qword)InterlockedDecrement64((LONG64*)val);
+	return (uint64_t)InterlockedDecrement64((LONG64*)val);
 }
-qword rx_atomic_fetch_64(volatile qword* val)
+uint64_t rx_atomic_fetch_64(volatile uint64_t* val)
 {
-	return (qword)InterlockedAdd64((LONG64*)val, 0);
+	return (uint64_t)InterlockedAdd64((LONG64*)val, 0);
 }
 
 
@@ -311,9 +311,7 @@ rx_pid_t rx_pid;
 
 void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* server_name)
 {
-	char temp[0x20];
-	sprintf(temp, "%s Ver %d.%d.%d", RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER);
-	create_module_version_string(temp, __DATE__, __TIME__, ver_buffer);
+	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
 	rx_server_name = server_name;
@@ -321,7 +319,7 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 	rx_pid = pid;
 	// determine big endian or little endian
 	union {
-		dword i;
+		uint32_t i;
 		char c[4];
 	} bint = { 0x01020304 };
 	rx_big_endian = (bint.c[0] == 1 ? 1 : 0);
@@ -557,7 +555,7 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
 
 	return RX_OK;
 }
-int rx_read_pipe_server(struct pipe_server_t* pipes, byte* data, size_t size)
+int rx_read_pipe_server(struct pipe_server_t* pipes, uint8_t* data, size_t size)
 {
 	DWORD read = 0;
 
@@ -568,7 +566,7 @@ int rx_read_pipe_server(struct pipe_server_t* pipes, byte* data, size_t size)
 	}
 	return RX_OK;
 }
-int rx_read_pipe_client(struct pipe_client_t* pipes, byte* data, size_t size)
+int rx_read_pipe_client(struct pipe_client_t* pipes, uint8_t* data, size_t size)
 {
 	DWORD read = 0;
 
@@ -581,7 +579,7 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, byte* data, size_t size)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////}
 // IP 4 addresses
-int rx_add_ip_address(dword addr, dword mask, int itf, ip_addr_ctx_t* ctx)
+int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx)
 {
 	ULONG NTEContext = 0;
 	ULONG NTEInstance = 0;
@@ -604,7 +602,7 @@ int rx_remove_ip_address(ip_addr_ctx_t ctx)
 	}
 	return 0;
 }
-int rx_is_valid_ip_address(dword addr, dword mask)
+int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
 {
 	BYTE tablebuff[4096];
 
@@ -613,11 +611,11 @@ int rx_is_valid_ip_address(dword addr, dword mask)
 	MIB_IPADDRTABLE* data = (MIB_IPADDRTABLE*)tablebuff;
 	ULONG size = sizeof(tablebuff);
 
-	dword err = GetIpAddrTable(data, &size, FALSE);
+	uint32_t err = GetIpAddrTable(data, &size, FALSE);
 
 	if (SUCCEEDED(err))
 	{
-		for (dword i = 0; i<data->dwNumEntries; i++)
+		for (uint32_t i = 0; i<data->dwNumEntries; i++)
 		{
 			if (addr == data->table[i].dwAddr &&
 				mask == data->table[i].dwMask &&
@@ -699,7 +697,7 @@ void rx_collect_system_info(char* buffer, size_t buffer_size)
 	RTL_OSVERSIONINFOEXW os;
 	os.dwOSVersionInfoSize = sizeof(os);
 	ZeroMemory(&os, sizeof(os));
-	dword err = 0;
+	uint32_t err = 0;
 	if (!GetOsVersionFromSystemFile(&os))
 		err = GetLastError();
 
@@ -752,12 +750,12 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size)
 	char name_buff[0x100];
 	name_buff[0] = L'\0';
 
-	for (dword i = 0; i < sys.dwNumberOfProcessors; i++)
+	for (uint32_t i = 0; i < sys.dwNumberOfProcessors; i++)
 	{
 		sprintf(temp_buff, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\%d", i);
 
 		HKEY hkey = NULL;
-		DWORD reg_count = (dword)sizeof(name_buff);
+		DWORD reg_count = (uint32_t)sizeof(name_buff);
 		if (ERROR_SUCCESS == RegGetValueA(HKEY_LOCAL_MACHINE, temp_buff, "ProcessorNameString", RRF_RT_REG_SZ, NULL, name_buff, &reg_count))
 		{
 
@@ -766,7 +764,7 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size)
 	}
 	sprintf(buffer, "%s ; Total Cores:%d", name_buff, sys.dwNumberOfProcessors);
 }
-void rx_collect_memory_info(qword* total, qword* free)
+void rx_collect_memory_info(uint64_t* total, uint64_t* free)
 {
 	MEMORYSTATUSEX statex;
 
@@ -837,7 +835,7 @@ void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // handles apstractions ( wait and the rest of the stuff
-dword rx_handle_wait(sys_handle_t what, dword timeout)
+uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 {
 	DWORD ret = WaitForSingleObject(what, timeout);
 	if (ret == WAIT_OBJECT_0)
@@ -848,7 +846,7 @@ dword rx_handle_wait(sys_handle_t what, dword timeout)
 		return RX_WAIT_ERROR;
 
 }
-dword rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, dword timeout)
+uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout)
 {
 	DWORD ret = WaitForMultipleObjects((DWORD)count, what, FALSE, timeout);
 	if (ret >= WAIT_OBJECT_0 && ret<(WAIT_OBJECT_0 + count))
@@ -871,7 +869,7 @@ int rx_mutex_destroy(sys_handle_t hndl)
 {
 	return CloseHandle(hndl);
 }
-int rx_mutex_aquire(sys_handle_t hndl, dword timeout)
+int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout)
 {
 	return WaitForSingleObject(hndl, timeout);
 }
@@ -957,7 +955,7 @@ unsigned _stdcall _inner_handler(void* arg)
 	return RX_ERROR;
 }
 
-sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, dword* thread_id)
+sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id)
 {
 	struct _thread_start_arg_t* inner_arg;
 	int wpriority;
@@ -1015,28 +1013,28 @@ int rx_thread_close(sys_handle_t what)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // basic apstractions
-void rx_msleep(dword timeout)
+void rx_msleep(uint32_t timeout)
 {
 	Sleep(timeout);
 }
-void rx_usleep(qword timeout)
+void rx_usleep(uint64_t timeout)
 {
 
 }
-dword rx_get_tick_count()
+uint32_t rx_get_tick_count()
 {
 	LARGE_INTEGER ret;
 	QueryPerformanceCounter(&ret);
-	qword now = ret.QuadPart;
+	uint64_t now = ret.QuadPart;
 	DWORD tick = (DWORD)(now * 1000L / g_res);
 	return tick;
 }
-qword rx_get_us_ticks()
+uint64_t rx_get_us_ticks()
 {
 
 	LARGE_INTEGER ret;
 	QueryPerformanceCounter(&ret);
-	qword now = ret.QuadPart;
+	uint64_t now = ret.QuadPart;
 	return (now * 1000000L / g_res);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1094,14 +1092,14 @@ void rx_fill_directory_enrty(WIN32_FIND_DATAA* find_data, struct rx_file_directo
 	strcpy_s(entry->file_name, MAX_PATH, find_data->cFileName);
 	entry->is_directory = ((find_data->dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY);
 	entry->size = find_data->nFileSizeLow;
-	entry->time.t_value = (((qword)find_data->ftLastWriteTime.dwHighDateTime) << 32) + find_data->ftLastWriteTime.dwLowDateTime;
+	entry->time.t_value = (((uint64_t)find_data->ftLastWriteTime.dwHighDateTime) << 32) + find_data->ftLastWriteTime.dwLowDateTime;
 }
 
 find_file_handle_t rx_open_find_file_list(const char* path, struct rx_file_directory_entry_t* entry)
 {
 	char buff[MAX_PATH];
 	struct find_file_struct_t* ret = 0;
-	dword attrs = INVALID_FILE_ATTRIBUTES;
+	uint32_t attrs = INVALID_FILE_ATTRIBUTES;
 	BOOL directory = FALSE;
 
 	if (path == NULL || path[0] == '\0')
@@ -1190,7 +1188,7 @@ int rx_create_directory(const char* dir, int fail_on_exsists)
 {
 	if (!CreateDirectoryA(dir, NULL))
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 		if (err == ERROR_ALREADY_EXISTS && !fail_on_exsists)
 		{
 			return RX_OK;
@@ -1239,16 +1237,16 @@ sys_handle_t rx_file(const char* path, int access, int creation)
 	else
 		return ret;
 }
-int rx_file_read(sys_handle_t hndl, void* buffer, dword size, dword* readed)
+int rx_file_read(sys_handle_t hndl, void* buffer, uint32_t size, uint32_t* readed)
 {
-	dword dummy = 0;
+	uint32_t dummy = 0;
 	if (readed == 0)
 		readed = &dummy;
 	return ReadFile(hndl, buffer, size, readed, NULL);
 }
-int rx_file_write(sys_handle_t hndl, const void* buffer, dword size, dword* written)
+int rx_file_write(sys_handle_t hndl, const void* buffer, uint32_t size, uint32_t* written)
 {
-	dword dummy = 0;
+	uint32_t dummy = 0;
 	if (written == 0)
 		written = &dummy;
 	if (!WriteFile(hndl, buffer, size, written, NULL))
@@ -1280,7 +1278,7 @@ int rx_file_exsist(const char* path)
 }
 
 
-int rx_file_get_size(sys_handle_t hndl, qword* size)
+int rx_file_get_size(sys_handle_t hndl, uint64_t* size)
 {
 	LARGE_INTEGER li;
 	if (GetFileSizeEx(hndl, &li))
@@ -1297,7 +1295,7 @@ int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm)
 	ZeroMemory(&fi, sizeof(fi));
 	if (GetFileInformationByHandle(hndl, &fi))
 	{
-		tm->t_value = (((qword)fi.ftLastWriteTime.dwHighDateTime) << 32) + fi.ftLastWriteTime.dwLowDateTime;
+		tm->t_value = (((uint64_t)fi.ftLastWriteTime.dwHighDateTime) << 32) + fi.ftLastWriteTime.dwLowDateTime;
 		return RX_OK;
 	}
 	else
@@ -1315,12 +1313,12 @@ rx_kernel_dispather_t rx_create_kernel_dispathcer(int max)
 {
 	return CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, max);
 }
-dword rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp)
+uint32_t rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp)
 {
 	return CloseHandle(disp);
 }
 
-dword rx_dispatch_events(rx_kernel_dispather_t disp)
+uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 {
 	BYTE* temp;
 	DWORD nBytes=0;
@@ -1385,7 +1383,7 @@ dword rx_dispatch_events(rx_kernel_dispather_t disp)
 	}
 	else
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 		if (pOvl)
 		{
 			data = (struct rx_io_register_data_t*)WorkIndex;
@@ -1399,28 +1397,28 @@ dword rx_dispatch_events(rx_kernel_dispather_t disp)
 	return ret;
 }
 
-dword rx_dispatcher_signal_end(rx_kernel_dispather_t disp)
+uint32_t rx_dispatcher_signal_end(rx_kernel_dispather_t disp)
 {
 	BOOL ret = PostQueuedCompletionStatus(disp, (DWORD)(-1), 0, NULL);
 	if (!ret)
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 	}
 	return ret;
 }
-dword rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg)
+uint32_t rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg)
 {
 	
 	BOOL ret = PostQueuedCompletionStatus(disp,(DWORD)(-1), (ULONG_PTR)f, (LPOVERLAPPED)arg);
 	if (!ret)
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 	}
 	return ret;
 }
 
 
-dword rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
+uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
 {
 	struct windows_overlapped_t* internal_data = (struct windows_overlapped_t*)data->internal;
 	internal_data->m_acceptex = NULL;
@@ -1435,7 +1433,7 @@ int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_d
 	return 0;// nothing here on windows closing handle is enougth
 }
 
-dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
+uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1447,13 +1445,13 @@ dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 	BOOL ret = ReadFile(what->handle, what->read_buffer, (DWORD)what->read_buffer_size, &read, povl);
 	if (!ret)
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 		if (err != ERROR_IO_PENDING)
 			return RX_ERROR;
 	}
 	return RX_ASYNC;
 }
-dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1464,21 +1462,21 @@ dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size
 	BOOL ret = WriteFile(what->handle, data, (DWORD)count, &written, (LPOVERLAPPED)povl);
 	if (!ret)
 	{
-		dword err = GetLastError();
+		uint32_t err = GetLastError();
 		if (err != ERROR_IO_PENDING)
 			return RX_ERROR;
 	}
 	return RX_ASYNC;
 }
 
-dword rx_socket_accept(struct rx_io_register_data_t* what)
+uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 {
 
 	int buff = 1024 * 1024;
 	int optlen = 4;
 	BOOL nodly = TRUE;
 	int err;
-	dword error;
+	uint32_t error;
 	DWORD recived = 0;
 	struct windows_overlapped_t* internal_data = (struct windows_overlapped_t*)what->internal;
 	LPOVERLAPPED povl = (LPOVERLAPPED)&internal_data->m_accept;
@@ -1520,9 +1518,9 @@ dword rx_socket_accept(struct rx_io_register_data_t* what)
 
 
 
-dword rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
 {
-	dword err;
+	uint32_t err;
 	DWORD sent = 0;
 	struct windows_overlapped_t* internal_data = (struct windows_overlapped_t*)what->internal;
 	LPOVERLAPPED povl = (LPOVERLAPPED)&internal_data->m_connect;
@@ -1593,7 +1591,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	return (sys_handle_t)sock;
 }
 
-dword rx_socket_listen(sys_handle_t handle)
+uint32_t rx_socket_listen(sys_handle_t handle)
 {
 	if (listen((SOCKET)handle, SOMAXCONN) == SOCKET_ERROR)
 	{

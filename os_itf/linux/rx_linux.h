@@ -167,8 +167,8 @@ typedef pthread_key_t rx_thread_data_t;
 
 typedef struct _crypt_key_t
 {
-    byte* data;
-    dword size;
+    uint8_t* data;
+    uint32_t size;
 } *crypt_key_t;
 
 typedef HMAC_CTX* crypt_hash_t;

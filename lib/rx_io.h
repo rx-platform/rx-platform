@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -70,7 +70,7 @@ class dispatcher_subscriber : public pointers::reference_object
 
       static void propagate_timer ();
 
-      virtual void timer_tick (dword tick);
+      virtual void timer_tick (uint32_t tick);
 
 
       const rx_thread_handle_t get_destination_context () const
@@ -99,25 +99,25 @@ class dispatcher_subscriber : public pointers::reference_object
 
   private:
 
-      virtual int internal_read_callback (size_t count, dword status);
+      virtual int internal_read_callback (size_t count, uint32_t status);
 
-      virtual int internal_write_callback (dword status);
+      virtual int internal_write_callback (uint32_t status);
 
-      virtual int internal_shutdown_callback (dword status);
+      virtual int internal_shutdown_callback (uint32_t status);
 
-      int _internal_read_callback (size_t count, dword status);
+      int _internal_read_callback (size_t count, uint32_t status);
 
-      int _internal_write_callback (dword status);
+      int _internal_write_callback (uint32_t status);
 
-      int _internal_shutdown_callback (dword status);
+      int _internal_shutdown_callback (uint32_t status);
 
-      virtual int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status);
+      virtual int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
 
-      int _internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status);
+      int _internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
 
-      virtual int internal_connect_callback (dword status);
+      virtual int internal_connect_callback (uint32_t status);
 
-      int _internal_connect_callback (dword status);
+      int _internal_connect_callback (uint32_t status);
 
 
 
@@ -130,11 +130,11 @@ class dispatcher_subscriber : public pointers::reference_object
 
       rx_thread_handle_t _destination_context;
 
-	  friend int dispatcher_read_callback(void* data, dword status, size_t size);
-	  friend int dispatcher_write_callback(void* data, dword status);
-	  friend int dispatcher_connect_callback(void* data, dword status);
-	  friend int dispatcher_shutdown_callback(void* data, dword status);
-	  friend int dispatcher_accept_callback(void* data, dword status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
+	  friend int dispatcher_read_callback(void* data, uint32_t status, size_t size);
+	  friend int dispatcher_write_callback(void* data, uint32_t status);
+	  friend int dispatcher_connect_callback(void* data, uint32_t status);
+	  friend int dispatcher_shutdown_callback(void* data, uint32_t status);
+	  friend int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
 };
 
 
@@ -160,7 +160,7 @@ protected:
       virtual ~full_duplex_comm();
 
 
-      void timer_tick (dword tick);
+      void timer_tick (uint32_t tick);
 
       virtual bool on_startup (rx_thread_handle_t destination);
 
@@ -175,7 +175,7 @@ protected:
       bool start_loops ();
 
 
-      void set_receive_timeout (dword value)
+      void set_receive_timeout (uint32_t value)
       {
         _receive_timeout = value;
       }
@@ -204,23 +204,23 @@ protected:
 
   private:
 
-      int internal_read_callback (size_t count, dword status);
+      int internal_read_callback (size_t count, uint32_t status);
 
-      int internal_write_callback (dword status);
+      int internal_write_callback (uint32_t status);
 
-      int internal_shutdown_callback (dword status);
+      int internal_shutdown_callback (uint32_t status);
 
       bool write_loop ();
 
 
 
-      dword _send_timeout;
+      uint32_t _send_timeout;
 
-      dword _receive_timeout;
+      uint32_t _receive_timeout;
 
-      dword _send_tick;
+      uint32_t _send_tick;
 
-      dword _receive_tick;
+      uint32_t _receive_tick;
 
       queue_type _sending_queue;
 
@@ -253,11 +253,11 @@ class tcp_socket : public full_duplex_comm<buffT>
   private:
 
 
-      byte* _buffer;
+      uint8_t* _buffer;
 
       string_type _peer_name;
 
-	  friend int dispatcher_connect_callback(void* data, dword status);
+	  friend int dispatcher_connect_callback(void* data, uint32_t status);
 };
 
 
@@ -281,7 +281,7 @@ protected:
 
       bool start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
 
-      bool start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port);
+      bool start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port);
 
       void stop ();
 
@@ -293,18 +293,18 @@ protected:
 
   private:
 
-      int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status);
+      int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
 
       bool accept_new ();
 
-      int internal_shutdown_callback (dword status);
+      int internal_shutdown_callback (uint32_t status);
 
 
 
-      byte _buffer[ACCEPT_BUFFER_SIZE];
+      uint8_t _buffer[ACCEPT_BUFFER_SIZE];
 
-	  friend int dispatcher_accept_callback(void* data, dword status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
-	  friend int listen_dispatcher_shutdown_callback(void* data, dword status);
+	  friend int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
+	  friend int listen_dispatcher_shutdown_callback(void* data, uint32_t status);
 };
 
 
@@ -339,22 +339,22 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
 
-      bool bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port = 0);
+      bool bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port = 0);
 
       bool connect_to (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr* addr, size_t addrsize);
 
-      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, word port);
+      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, uint16_t port);
 
-      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, word port);
+      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, uint16_t port);
 
-      void timer_tick (dword tick);
+      void timer_tick (uint32_t tick);
 
       void close ();
 
       virtual bool connect_complete ();
 
 
-      void set_connect_timeout (dword value)
+      void set_connect_timeout (uint32_t value)
       {
         _connect_timeout = value;
       }
@@ -365,15 +365,15 @@ class tcp_client_socket : public tcp_socket<buffT>
 
   private:
 
-      int internal_connect_callback (dword status);
+      int internal_connect_callback (uint32_t status);
 
 
 
-      dword _connect_timeout;
+      uint32_t _connect_timeout;
 
       bool _connecting;
 
-      dword _connect_tick;
+      uint32_t _connect_tick;
 
 
 };
@@ -386,7 +386,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm
+// Parameterized Class rx::io::full_duplex_comm 
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -421,7 +421,7 @@ full_duplex_comm<buffT>::~full_duplex_comm()
 
 
 template <class buffT>
-int full_duplex_comm<buffT>::internal_read_callback (size_t count, dword status)
+int full_duplex_comm<buffT>::internal_read_callback (size_t count, uint32_t status)
 {
     bool receiving;
 	bool ret = false;
@@ -447,7 +447,7 @@ int full_duplex_comm<buffT>::internal_read_callback (size_t count, dword status)
 }
 
 template <class buffT>
-int full_duplex_comm<buffT>::internal_write_callback (dword status)
+int full_duplex_comm<buffT>::internal_write_callback (uint32_t status)
 {
 
 	buffer_ptr current;
@@ -469,7 +469,7 @@ int full_duplex_comm<buffT>::internal_write_callback (dword status)
 }
 
 template <class buffT>
-int full_duplex_comm<buffT>::internal_shutdown_callback (dword status)
+int full_duplex_comm<buffT>::internal_shutdown_callback (uint32_t status)
 {
 
 	if (_shutdown_called)
@@ -495,16 +495,16 @@ int full_duplex_comm<buffT>::internal_shutdown_callback (dword status)
 }
 
 template <class buffT>
-void full_duplex_comm<buffT>::timer_tick (dword tick)
+void full_duplex_comm<buffT>::timer_tick (uint32_t tick)
 {
 
 	_read_lock.lock();
-	dword rec_diff = tick - _receive_tick;
+	uint32_t rec_diff = tick - _receive_tick;
 	bool receiving = _receiving;
 	_read_lock.unlock();
 
 	_write_lock.lock();
-	dword send_diff = tick - _send_tick;
+	uint32_t send_diff = tick - _send_tick;
 	bool sending = _sending;
 	_write_lock.unlock();
 
@@ -538,7 +538,7 @@ template <class buffT>
 bool full_duplex_comm<buffT>::write_loop ()
 {
 
-	dword result = RX_OK;
+	uint32_t result = RX_OK;
 	bool ret = true;
 	bool shutdown = false;
 
@@ -616,7 +616,7 @@ bool full_duplex_comm<buffT>::read_loop ()
 {
 
 
-	dword result = RX_OK;
+	uint32_t result = RX_OK;
 	bool ret = true;
 	size_t bytes = 0;
 
@@ -710,14 +710,14 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket
+// Parameterized Class rx::io::tcp_socket 
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
 {
 
   // allocate paged memory to be faster
-	_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
+	_buffer = (uint8_t*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
 	this->_dispatcher_data.read_buffer = _buffer;
 	this->_dispatcher_data.read_buffer_size = TCP_BUFFER_SIZE;
 	this->_dispatcher_data.data = this;
@@ -728,7 +728,7 @@ tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_
 {
 
   // allocate paged memory to be faster
-	_buffer = (byte*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
+	_buffer = (uint8_t*)rx_allocate_os_memory(TCP_BUFFER_SIZE);
 	_peer_name = inet_ntoa(addr->sin_addr);
 	if (_peer_name.empty())
 		_peer_name = "<unknown>";
@@ -752,7 +752,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket
+// Parameterized Class rx::io::tcp_listen_socket 
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket()
@@ -774,7 +774,7 @@ tcp_listen_socket<buffT>::~tcp_listen_socket()
 
 
 template <class buffT>
-int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
+int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
     typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
 	target_ptr created = make_client(handle, addr, local_addr, _disptacher,get_destination_context());
@@ -814,7 +814,7 @@ bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispat
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port)
+bool tcp_listen_socket<buffT>::start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -834,7 +834,7 @@ template <class buffT>
 bool tcp_listen_socket<buffT>::accept_new ()
 {
 	bind();
-	dword ret = rx_socket_accept(&_dispatcher_data);
+	uint32_t ret = rx_socket_accept(&_dispatcher_data);
 	if (ret == RX_ERROR)
 	{
 		release();
@@ -845,13 +845,13 @@ bool tcp_listen_socket<buffT>::accept_new ()
 }
 
 template <class buffT>
-int tcp_listen_socket<buffT>::internal_shutdown_callback (dword status)
+int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 {
 	return 1;
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket
+// Parameterized Class rx::io::tcp_client_socket 
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -884,7 +884,7 @@ bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr 
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, word port)
+bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -917,7 +917,7 @@ bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr d
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, word port)
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, uint16_t port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -928,7 +928,7 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::sma
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, word port)
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, uint16_t port)
 {
     unsigned long num_addr=inet_addr(address.c_str());
     struct sockaddr_in temp_addr;
@@ -940,7 +940,7 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::sma
 }
 
 template <class buffT>
-int tcp_client_socket<buffT>::internal_connect_callback (dword status)
+int tcp_client_socket<buffT>::internal_connect_callback (uint32_t status)
 {
 	this->_write_lock.lock();
 	_connecting = false;
@@ -955,7 +955,7 @@ int tcp_client_socket<buffT>::internal_connect_callback (dword status)
 }
 
 template <class buffT>
-void tcp_client_socket<buffT>::timer_tick (dword tick)
+void tcp_client_socket<buffT>::timer_tick (uint32_t tick)
 {
 	full_duplex_comm<buffT>::timer_tick(tick);
 
@@ -963,7 +963,7 @@ void tcp_client_socket<buffT>::timer_tick (dword tick)
 		return;// don't have to lock here because we have double lock bellow
 
 	this->_write_lock.lock();
-	dword conn_diff = tick - this->_connect_tick;
+	uint32_t conn_diff = tick - this->_connect_tick;
 	bool connecting = this->_connecting;
 
 	this->_write_lock.unlock();

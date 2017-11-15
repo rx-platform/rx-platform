@@ -31,12 +31,12 @@
 
 
 
+// rx_security
+#include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 
@@ -144,7 +144,7 @@ public:
 
       string_type _name;
 
-      qword _start_tick;
+      uint64_t _start_tick;
 
 
 };

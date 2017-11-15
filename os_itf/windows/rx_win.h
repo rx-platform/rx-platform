@@ -110,16 +110,6 @@ typedef struct find_file_struct_t
 typedef struct find_file_struct_t* find_file_handle_t;
 
 
-typedef unsigned __int8 byte;
-typedef __int8 sbyte;
-
-typedef unsigned __int64 qword;
-typedef unsigned __int32 dword;
-typedef unsigned __int16 word;
-typedef __int64 sqword;
-typedef __int32 sdword;
-typedef __int16 sword;
-
 typedef DWORD rx_pid_t;
 
 #define memzero(S, N) ZeroMemory(S,N) 

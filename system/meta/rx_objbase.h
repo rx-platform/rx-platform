@@ -61,7 +61,7 @@ namespace server {
 
 namespace objects {
 extern const char* g_const_simple_class_name;
-typedef dword runtime_item_id_t;
+typedef uint32_t runtime_item_id_t;
 class object_runtime;
 class variable_runtime;
 typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
@@ -92,9 +92,9 @@ class value_item
       virtual ~value_item();
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   protected:
@@ -102,7 +102,7 @@ class value_item
   private:
 
 
-      static const dword _type_id;
+      static const uint32_t _type_id;
 
 
 };
@@ -123,9 +123,9 @@ class const_value_item
 
       virtual void get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const = 0;
 
-      bool serialize_definition (base_meta_writter& stream, byte type, const rx_time& ts, const rx_mode_type& mode) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   protected:
@@ -133,7 +133,7 @@ class const_value_item
   private:
 
 
-      static const dword _type_id;
+      static const uint32_t _type_id;
 
 
 };
@@ -214,7 +214,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	typedef std::vector<const_value_item*> const_values_type;
 	typedef std::vector<value_callback_t*> const_values_callbacks_type;
 
-	typedef std::map<string_type, dword > names_cahce_type;
+	typedef std::map<string_type, uint32_t > names_cahce_type;
 
 
 	template<class otherT>
@@ -226,19 +226,19 @@ class complex_runtime_item : public rx::pointers::reference_object
       virtual ~complex_runtime_item();
 
 
-      dword register_const_value (const string_type& name, const_value_item& val);
+      uint32_t register_const_value (const string_type& name, const_value_item& val);
 
       rx_value get_value (const string_type path) const;
 
       virtual void object_state_changed (const rx_time& now);
 
-      dword register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val);
+      uint32_t register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val);
 
       virtual rx_value get_value ();
 
-      virtual bool serialize_definition (base_meta_writter& stream, byte type, const rx_time& ts, const rx_mode_type& mode) const;
+      virtual bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
 
-      virtual bool deserialize_definition (base_meta_reader& stream, byte type);
+      virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 	  template<typename callbackT>
 	  callback::callback_handle_t register_callback(const string_type& path, void* p, void(callbackT::*func)(const rx_value&, callback::callback_state_t))
@@ -268,7 +268,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 
   private:
 
-      dword set_hosting_object (object_runtime_ptr obj);
+      uint32_t set_hosting_object (object_runtime_ptr obj);
 
 
 
@@ -328,7 +328,7 @@ class object_runtime : public object_runtime_t
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
-      dword register_const_value (const string_type& name, const_value_item& val);
+      uint32_t register_const_value (const string_type& name, const_value_item& val);
 
 
       complex_runtime_item::smart_ptr get_complex_item ()
@@ -372,9 +372,9 @@ class object_runtime : public object_runtime_t
       object_runtime();
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       bool init_object ();
 

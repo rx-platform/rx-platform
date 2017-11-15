@@ -145,7 +145,7 @@ class interactive_console_host : public rx_server_host
       virtual ~interactive_console_host();
 
 
-      const string_type& get_host_info ();
+      void get_host_info (string_array& hosts);
 
       void server_started_event ();
 

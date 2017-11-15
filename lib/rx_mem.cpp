@@ -124,10 +124,10 @@ void backward_simple_allocator::deallocate ()
 
 void backward_simple_allocator::reallocate (size_t new_size)
 {
-	byte* old_ptr = _buffer;
+	uint8_t* old_ptr = _buffer;
 	size_t old_size = _size;
 	_size = new_size;
-	_buffer = new byte[_size];
+	_buffer = new uint8_t[_size];
 	memmove(&_buffer[_size - old_size - 1], old_ptr, old_size);
 	if (old_ptr)
 		delete[] old_ptr;

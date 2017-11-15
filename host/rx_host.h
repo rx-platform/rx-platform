@@ -70,7 +70,7 @@ class rx_server_host
       virtual ~rx_server_host();
 
 
-      virtual const string_type& get_host_info () = 0;
+      virtual void get_host_info (string_array& hosts);
 
       virtual void server_started_event ();
 
@@ -91,6 +91,13 @@ class rx_server_host
       virtual sys_handle_t get_host_console_script_file (const string_type& path);
 
 
+      rx_server_host * get_parent ()
+      {
+        return _parent;
+      }
+
+
+
   protected:
 
   private:
@@ -98,6 +105,9 @@ class rx_server_host
 
       rx_server_host & operator=(const rx_server_host &right);
 
+
+
+      rx_server_host *_parent;
 
 
 };

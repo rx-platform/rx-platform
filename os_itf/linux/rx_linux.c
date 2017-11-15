@@ -94,10 +94,7 @@ extern "C" {
     rx_pid_t rx_pid;
 	void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls,const char* server_name)
 	{
-
-		char temp[0x20];
-		sprintf(temp, "%s Ver %d.%d.%d", RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER);
-		create_module_version_string(temp, __DATE__, __TIME__, ver_buffer);
+		create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 		g_ositf_version = ver_buffer;
 
 
@@ -106,7 +103,7 @@ extern "C" {
 		rx_pid=pid;
 		// determine big endian or little endian
 		union {
-			dword i;
+			uint32_t i;
 			char c[4];
 		} bint = { 0x01020304 };
 		rx_big_endian = (bint.c[0] == 1 ? 1 : 0);
@@ -155,7 +152,7 @@ extern "C" {
 	}
 ///////////////////////////////////////////////////////////////////
     // errors support pipes
-    dword rx_get_last_socket_eror()
+    uint32_t rx_get_last_socket_eror()
     {
         return errno;
     }
@@ -257,7 +254,7 @@ extern "C" {
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// IP addresses
-	int rx_add_ip_address(dword addr, dword mask, int itf, ip_addr_ctx_t* ctx)
+	int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx)
 	{
         return RX_ERROR;
 	}
@@ -266,7 +263,7 @@ extern "C" {
         return RX_ERROR;
 	}
 
-	int rx_is_valid_ip_address(dword addr, dword mask)
+	int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
 	{
         return 0;
 	}
@@ -277,17 +274,17 @@ extern "C" {
 	void linux_uuid_to_uuid(const uuid_t* uuid, rx_uuid_t* u)
 	{
 		memcpy(u->Data4, &(*uuid)[8], 8);
-		u->Data1 = ntohl(*((dword*)&(*uuid)[0]));
-		u->Data2 = ntohs(*((word*)&(*uuid)[4]));
-		u->Data3 = ntohs(*((word*)&(*uuid)[6]));
+		u->Data1 = ntohl(*((uint32_t*)&(*uuid)[0]));
+		u->Data2 = ntohs(*((uint16_t*)&(*uuid)[4]));
+		u->Data3 = ntohs(*((uint16_t*)&(*uuid)[6]));
 	}
 
 	void uuid_to_linux_uuid(const rx_uuid_t* u, uuid_t* uuid)
 	{
 		memcpy(&(*uuid)[8], u->Data4, 8);
-		*((dword*)&(*uuid)[0]) = htonl(u->Data1);
-		*((word*)&(*uuid)[4]) = ntohs(u->Data2);
-		*((word*)&(*uuid)[6]) = ntohs(u->Data3);
+		*((uint32_t*)&(*uuid)[0]) = htonl(u->Data1);
+		*((uint16_t*)&(*uuid)[4]) = ntohs(u->Data2);
+		*((uint16_t*)&(*uuid)[6]) = ntohs(u->Data3);
 	}
 
 	void rx_generate_new_uuid(rx_uuid_t* u)
@@ -296,14 +293,14 @@ extern "C" {
 		uuid_generate(uuid);
 		linux_uuid_to_uuid(&uuid, u);
 	}
-	dword rx_uuid_to_string(const rx_uuid_t* u, char* str)
+	uint32_t rx_uuid_to_string(const rx_uuid_t* u, char* str)
 	{
 		uuid_t uuid;
 		uuid_to_linux_uuid(u, &uuid);
 		uuid_unparse(uuid, str);
 		return RX_OK;
 	}
-	dword rx_string_to_uuid(const char* str, rx_uuid_t* u)
+	uint32_t rx_string_to_uuid(const char* str, rx_uuid_t* u)
 	{
 		uuid_t uuid;
 		uuid_parse(str, uuid);
@@ -313,20 +310,20 @@ extern "C" {
 
 #define TIME_CONVERSION_CONST  116444736000000000ull
 
-    qword timeval_to_rx_time(const struct timespec* tv)
+    uint64_t timeval_to_rx_time(const struct timespec* tv)
     {
         if (tv->tv_sec == 0 && tv->tv_nsec == 0)
             return 0;
         else
         {
-            qword temp = ((qword)tv->tv_nsec) / 100 + ((qword)tv->tv_sec) * 10000000;
+            uint64_t temp = ((uint64_t)tv->tv_nsec) / 100 + ((uint64_t)tv->tv_sec) * 10000000;
             temp += TIME_CONVERSION_CONST;
             return temp;
         }
 
     }
 
-    void rx_time_to_timeval(qword rx_time,struct timespec* tv)
+    void rx_time_to_timeval(uint64_t rx_time,struct timespec* tv)
     {
         if (rx_time==0)
         {
@@ -336,7 +333,7 @@ extern "C" {
         else
         {
 
-            qword temp = rx_time-TIME_CONVERSION_CONST;
+            uint64_t temp = rx_time-TIME_CONVERSION_CONST;
             tv->tv_sec=temp/10000000;
             tv->tv_nsec=temp%10000000;
             tv->tv_nsec=tv->tv_nsec*100;
@@ -403,10 +400,10 @@ extern "C" {
     }
 
 
-	byte pipe_dummy_buffer[0x100];
+	uint8_t pipe_dummy_buffer[0x100];
 
 
-	dword rx_border_rand(dword min, dword max)
+	uint32_t rx_border_rand(uint32_t min, uint32_t max)
 	{
 		return RX_ERROR;
 	}
@@ -511,7 +508,7 @@ extern "C" {
             free(cores);
         }
 	}
-	void rx_collect_memory_info(qword* total, qword* free)
+	void rx_collect_memory_info(uint64_t* total, uint64_t* free)
 	{
         struct sysinfo info;
         sysinfo(&info);
@@ -521,7 +518,7 @@ extern "C" {
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	dword rx_handle_wait(sys_handle_t what, dword timeout)
+	uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 	{
         struct pollfd pfds;
         int ret;
@@ -543,7 +540,7 @@ extern "C" {
             return RX_WAIT_ERROR;
 
 	}
-	dword rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,dword timeout)
+	uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t timeout)
 	{
 		struct pollfd pfds[0x10];
 		int ret;
@@ -596,7 +593,7 @@ extern "C" {
 		close(hndl);
 		return RX_ERROR;
 	}
-	int rx_mutex_aquire(sys_handle_t hndl, dword timeout)
+	int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout)
 	{
         rx_handle_wait(hndl,timeout);
 		return RX_ERROR;
@@ -721,7 +718,7 @@ extern "C" {
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, dword* thread_id)
+	sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32_t* thread_id)
 	{
 		struct sched_param sp;
 		struct linux_thread_chunk* chunk = (struct linux_thread_chunk*)malloc(sizeof(struct linux_thread_chunk));
@@ -782,7 +779,7 @@ extern "C" {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// basic apstractions
-	void rx_msleep(dword timeout)
+	void rx_msleep(uint32_t timeout)
 	{
 		if (timeout)
 		{
@@ -794,7 +791,7 @@ extern "C" {
 		else//sleep 0 just give over the procesor
 			sched_yield();
 	}
-	void rx_us_sleep(qword timeout)
+	void rx_us_sleep(uint64_t timeout)
 	{
 		if (timeout)
 		{
@@ -806,19 +803,19 @@ extern "C" {
 		else//sleep 0 just give over the procesor
 			sched_yield();
 	}
-	dword rx_get_tick_count()
+	uint32_t rx_get_tick_count()
 	{
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		qword ret = ts.tv_sec * 1000;
+		uint64_t ret = ts.tv_sec * 1000;
 		ret = ret + ts.tv_nsec / 1000000ul;
-		return (dword)ret;
+		return (uint32_t)ret;
 	}
-	qword rx_get_us_ticks()
+	uint64_t rx_get_us_ticks()
 	{
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		qword ret = ts.tv_sec * 1000000ul;
+		uint64_t ret = ts.tv_sec * 1000000ul;
 		ret = ret + ts.tv_nsec / 1000ul;
 		return ret;
 	}
@@ -884,13 +881,13 @@ extern "C" {
 		else
 			return ret;
 	}
-	int rx_file_read(sys_handle_t hndl, void* buffer, dword size, dword* readed)
+	int rx_file_read(sys_handle_t hndl, void* buffer, uint32_t size, uint32_t* readed)
 	{
 		int ret = read(hndl, buffer, size);
 		if (ret >= 0)
 		{
 			if (readed)
-				*readed = (dword)ret;
+				*readed = (uint32_t)ret;
 			return RX_OK;
 		}
 		else
@@ -898,13 +895,13 @@ extern "C" {
 			return RX_ERROR;
 		}
 	}
-	int rx_file_write(sys_handle_t hndl, const void* buffer, dword size, dword* written)
+	int rx_file_write(sys_handle_t hndl, const void* buffer, uint32_t size, uint32_t* written)
 	{
 		int ret = write(hndl, buffer, size);
 		if (ret >= 0)
 		{
 			if (written)
-				*written = (dword)ret;
+				*written = (uint32_t)ret;
 			return RX_OK;
 		}
 		else
@@ -943,7 +940,7 @@ extern "C" {
         return access(path,0x7fffffff)==0;
 	}
 
-	int rx_file_get_size(sys_handle_t hndl, qword* size)
+	int rx_file_get_size(sys_handle_t hndl, uint64_t* size)
 	{
 		struct stat data;
 		int ret = fstat(hndl, &data);
@@ -982,7 +979,7 @@ extern "C" {
 	{
 	int is_directory;
 	char file_name[MAX_PATH];
-	dword size;
+	uint32_t size;
 	rx_time_struct time;
 	} rx_file_directory_entry;*/
 
@@ -1162,7 +1159,7 @@ extern "C" {
         }
         return NULL;
 	}
-	dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
+	uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 	{
 		struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 		internal->read_type = EPOLL_READ_TYPE;
@@ -1194,7 +1191,7 @@ extern "C" {
 
 		return RX_OK;
 	}
-	dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+	uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 	{
 		struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 		internal->write_buffer = data;
@@ -1239,7 +1236,7 @@ extern "C" {
 			if (written<count)
 			{// din't write all do it again
 
-				byte* temp = (byte*)data;
+				uint8_t* temp = (uint8_t*)data;
 				temp += written;
 				return rx_socket_write(what, temp, count - written);
 			}
@@ -1253,7 +1250,7 @@ extern "C" {
 	}
 
 
-    dword rx_socket_accept(struct rx_io_register_data_t* what)
+    uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
     {
         struct sockaddr* addr=(struct sockaddr*)what->read_buffer;
         socklen_t addrsize=sizeof(struct sockaddr_in);
@@ -1290,7 +1287,7 @@ extern "C" {
 
         return RX_OK;
     }
-    dword rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+    uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
     {
         int ret;
         struct linux_epoll_subscriber_t* internal=(struct linux_epoll_subscriber_t*)what->internal;
@@ -1319,7 +1316,7 @@ extern "C" {
         return RX_OK;
     }
 
-    dword rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
+    uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
     {
         struct epoll_event event;
         int ret;
@@ -1370,7 +1367,7 @@ extern "C" {
         else
             return -1;
     }
-    dword rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp)
+    uint32_t rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp)
     {
         close(disp->pipe[0]);
         close(disp->pipe[1]);
@@ -1378,12 +1375,12 @@ extern "C" {
         free(disp);
         return RX_ERROR;
     }
-    dword rx_dispatcher_signal_end(rx_kernel_dispather_t disp)
+    uint32_t rx_dispatcher_signal_end(rx_kernel_dispather_t disp)
     {
         return rx_dispatch_function(disp,NULL,NULL);
     }
 
-	dword rx_dispatch_events(rx_kernel_dispather_t disp)
+	uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 	{
 		int ndfs;
 		struct epoll_event one;
@@ -1522,7 +1519,7 @@ extern "C" {
                                             size_t written = (size_t)rt;
                                             if (written<type_data->left_to_write)
                                             {// din't write all do it again
-                                                byte* temp = (byte*)type_data->write_buffer;
+                                                uint8_t* temp = (uint8_t*)type_data->write_buffer;
                                                 temp += written;
                                                 type_data->write_buffer = temp;
                                                 type_data->left_to_write = type_data->left_to_write - written;
@@ -1598,7 +1595,7 @@ extern "C" {
 		return 1;// do the loop again
 	}
 
-    dword rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg)
+    uint32_t rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg)
     {
         struct dispatch_function_data_t data;
         data.arg=arg;
@@ -1639,7 +1636,7 @@ extern "C" {
             close(ret);
         return RX_ERROR;
     }
-    dword rx_socket_listen(sys_handle_t handle)
+    uint32_t rx_socket_listen(sys_handle_t handle)
     {
         return (0==listen(handle,SOMAXCONN));
     }
@@ -1651,34 +1648,34 @@ extern "C" {
 
 
 
-	dword rx_atomic_add_fetch_32(volatile dword* val, int add)
+	uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
 	{
-		return (dword)__atomic_add_fetch((volatile int*)val, add, __ATOMIC_SEQ_CST);
+		return (uint32_t)__atomic_add_fetch((volatile int*)val, add, __ATOMIC_SEQ_CST);
 	}
-	dword rx_atomic_inc_fetch_32(volatile dword* val)
+	uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val)
 	{
-		return (dword)__atomic_add_fetch((volatile int*)val, 1, __ATOMIC_SEQ_CST);
+		return (uint32_t)__atomic_add_fetch((volatile int*)val, 1, __ATOMIC_SEQ_CST);
 	}
-	dword rx_atomic_dec_fetch_32(volatile dword* val)
+	uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val)
 	{
-		return (dword)__atomic_add_fetch((volatile int*)val, -1, __ATOMIC_SEQ_CST);
+		return (uint32_t)__atomic_add_fetch((volatile int*)val, -1, __ATOMIC_SEQ_CST);
 	}
-	dword rx_atomic_fetch_32(volatile dword* val)
+	uint32_t rx_atomic_fetch_32(volatile uint32_t* val)
 	{
-		return (dword)__atomic_add_fetch((volatile int*)val, 0, __ATOMIC_SEQ_CST);
+		return (uint32_t)__atomic_add_fetch((volatile int*)val, 0, __ATOMIC_SEQ_CST);
 	}
 
-	qword rx_atomic_inc_fetch_64(volatile qword* val)
+	uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val)
 	{
-		return (qword)__atomic_add_fetch((volatile sqword*)val, 1ll, __ATOMIC_SEQ_CST);
+		return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, 1ll, __ATOMIC_SEQ_CST);
 	}
-	qword rx_atomic_dec_fetch_64(volatile qword* val)
+	uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val)
 	{
-		return (qword)__atomic_add_fetch((volatile sqword*)val, -1ll, __ATOMIC_SEQ_CST);
+		return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, -1ll, __ATOMIC_SEQ_CST);
 	}
-	qword rx_atomic_fetch_64(volatile qword* val)
+	uint64_t rx_atomic_fetch_64(volatile uint64_t* val)
 	{
-		return (qword)__atomic_add_fetch((volatile sqword*)val, 0ll, __ATOMIC_SEQ_CST);
+		return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, 0ll, __ATOMIC_SEQ_CST);
 	}
 
 

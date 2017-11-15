@@ -33,13 +33,10 @@
 
 
 // general stuff
-#include <ios>
-#include <iostream>
 #include <stdio.h>
 #include <atomic>
 #include <assert.h>
 #include <functional>
-#include <sstream>
 #include <type_traits>
 #include <algorithm>
 #include <limits>
@@ -51,7 +48,13 @@
 #include <queue>
 #include <list>
 #include <stack>
+//streams
+#include <ios>
+#include <iostream>
 #include <sstream>
+
+
+using namespace std::placeholders;
 
 
 
@@ -85,7 +88,7 @@ template<> struct compile_time_error<true> {};
 
 
 typedef std::string string_type;
-typedef std::vector<byte> byte_string;
+typedef std::vector<uint8_t> byte_string;
 typedef std::vector<bool> bit_string;
 typedef std::vector<string_type> string_vector;
 typedef std::vector<string_type> string_array;

@@ -117,7 +117,7 @@ waitable & waitable::operator=(const waitable &right)
 
 
 
-dword waitable::wait_handle (dword timeout)
+uint32_t waitable::wait_handle (uint32_t timeout)
 {
 	return rx_handle_wait(_handle, timeout);
 }

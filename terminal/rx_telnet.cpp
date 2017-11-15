@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -107,7 +107,7 @@ const char* get_IAC_name(char code)
 		return "NEW_ENVIRON";
 	default:
 		{
-			snprintf(buffer, 0x20,"%d",(int)(byte)code);
+			snprintf(buffer, 0x20,"%d",(int)(uint8_t)code);
 			return buffer;
 		}
 	}
@@ -128,7 +128,7 @@ const char* get_IAC_what(char code)
 		return "WILL";
 	default:
 		{
-			snprintf(buffer, 0x20, "%d", (int)(byte)code);
+			snprintf(buffer, 0x20, "%d", (int)(uint8_t)code);
 			return buffer;
 		}
 	}
@@ -143,9 +143,6 @@ IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 #define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
 #define TELENET_RECIVE_TIMEOUT 600000
 
-
-#define BASIC_TERMINAL_DATA "\
-Terminal Server Ver: 0.7.0"
 
 struct table_cell_struct
 {
@@ -315,7 +312,7 @@ void dump_table(const table_type& table, std::ostream& out,bool column_names)
 }
 
 
-// Class terminal::console::server_telnet_socket 
+// Class terminal::console::server_telnet_socket
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -337,7 +334,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 }
 
 
-// Class terminal::console::telnet_client 
+// Class terminal::console::telnet_client
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : _security_context(*addr,*local_addr),
@@ -700,12 +697,8 @@ void telnet_client::send_string_response (const string_type& line, bool with_pro
 
 const string_type& telnet_client::get_console_name ()
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret,BASIC_TERMINAL_DATA);
-	}
-	return ret;
+	static string_type temp("Telnet");
+	return temp;
 }
 
 void telnet_client::exit_console ()
@@ -739,7 +732,7 @@ void telnet_client::release_buffer (buffer_ptr what)
 }
 
 
-// Class terminal::console::telnet_security_context 
+// Class terminal::console::telnet_security_context
 
 telnet_security_context::telnet_security_context()
 {
@@ -896,7 +889,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::directory_command 
+// Class terminal::console::console_commands::directory_command
 
 directory_command::directory_command (const string_type& console_name)
   : server_command(console_name)
@@ -982,7 +975,7 @@ bool directory_command::do_console_command (std::istream& in, std::ostream& out,
 }
 
 
-// Class terminal::console::console_commands::dir_command 
+// Class terminal::console::console_commands::dir_command
 
 dir_command::dir_command()
   : directory_command("dir")
@@ -996,7 +989,7 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command 
+// Class terminal::console::console_commands::ls_command
 
 ls_command::ls_command()
   : directory_command("ls")
@@ -1047,7 +1040,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::cd_command 
+// Class terminal::console::console_commands::cd_command
 
 cd_command::cd_command()
   : server_command("cd")
@@ -1077,7 +1070,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::info_command 
+// Class terminal::console::console_commands::info_command
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -1158,7 +1151,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command 
+// Class terminal::console::console_commands::code_command
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1206,7 +1199,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command 
+// Class terminal::console::console_commands::rx_name_command
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1230,24 +1223,37 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	out << "OS/HW Interface: " << rx_server::instance().get_hal_version() << "\r\n";
 	out << "Compiler: " << rx_server::instance().get_comp_version() << "\r\n";
 
-	out << "Host: " << rx_server::instance().get_host_info() << "\r\n";
+	out << "Hosts:";
+	string_array hosts;
+	rx_server::instance().get_host()->get_host_info(hosts);
+	bool first = true;
+	for (auto& one : hosts)
+	{
+		if (first)
+			first = false;
+		else
+			out << "      ";
+		out <<  ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << one;
+		out << "\r\n";
+	}
 	out << "OS: " << rx_server::instance().get_os_info() << " [PID:" << rx_server::instance().get_pid() << "]\r\n";
 
-	
+
 	/////////////////////////////////////////////////////////////////////////
 	// Processor
 	char buff[0x100];
 	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]));
-	out << "CPU: " << buff 
+	out << "CPU: " << buff
 		<< ( rx_big_endian ? " [BE]" : " [LE]" )
 		<< "\r\n";
 	/////////////////////////////////////////////////////////////////////////
 	// memory
-	qword total = 0;
-	qword free = 0;
-	rx_collect_memory_info(&total, &free);	
-	out << "Memory: Total " 
-		<< (int)(total / 1048576ull) 
+	uint64_t total = 0;
+	uint64_t free = 0;
+	rx_collect_memory_info(&total, &free);
+	out << "Memory: Total "
+		<< (int)(total / 1048576ull)
 		<< "MB / Free "
 		<< (int)(free / 1048576ull)  << "MB \r\n";
 	/////////////////////////////////////////////////////////////////////////
@@ -1257,7 +1263,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command 
+// Class terminal::console::console_commands::cls_command
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1278,7 +1284,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class terminal::console::console_commands::shutdown_command 
+// Class terminal::console::console_commands::shutdown_command
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1301,7 +1307,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class terminal::console::console_commands::log_command 
+// Class terminal::console::console_commands::log_command
 
 log_command::log_command()
 	: server_command("log")
@@ -1352,10 +1358,10 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	{
 		snprintf(buffer, sizeof(buffer), "Console log test pass %d...", (int)i);
 		rx::locks::event ev(false);
-		qword first_tick = rx_get_us_ticks();
+		uint64_t first_tick = rx_get_us_ticks();
 		RX_LOG_TEST(buffer, &ev);
 		ev.wait_handle();
-		qword second_tick = rx_get_us_ticks();
+		uint64_t second_tick = rx_get_us_ticks();
 		double ms = (double)(second_tick - first_tick) / 1000.0;
 		snprintf(buffer, sizeof(buffer), "Console log test %d passed. Delay time: %g ms...", (int)i, ms);
 		CONSOLE_LOG_INFO("log",100,buffer);
@@ -1407,7 +1413,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command 
+// Class terminal::console::console_commands::sec_command
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1493,7 +1499,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command 
+// Class terminal::console::console_commands::time_command
 
 time_command::time_command()
 	: server_command("time")
@@ -1515,7 +1521,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command 
+// Class terminal::console::console_commands::sleep_command
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1531,7 +1537,7 @@ sleep_command::~sleep_command()
 
 bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	dword period = 0;
+	uint32_t period = 0;
 	in >> period;
 
 	if (period == 0)
@@ -1543,7 +1549,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command 
+// Class terminal::console::console_commands::def_command
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1598,7 +1604,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command 
+// Class terminal::console::console_commands::directory_aware_command
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1612,7 +1618,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command 
+// Class terminal::console::console_commands::phyton_command
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1641,7 +1647,7 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 		python::py_script::instance().dump_script_information(out);
 		out << "\r\n";
 	}
-	else 
+	else
 	{
 		err << "Unknown command type!!!!\r\n";
 		return false;

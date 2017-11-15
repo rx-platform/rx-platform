@@ -231,7 +231,7 @@ secured_object::~secured_object()
 
 
 
-bool secured_object::dword_check_premissions (dword mask, dword extended_mask)
+bool secured_object::dword_check_premissions (uint32_t mask, uint32_t extended_mask)
 {
 	bool ret = false;
 	security_context_ptr ctx = basic_check(ret);

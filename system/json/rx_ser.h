@@ -80,7 +80,7 @@ class json_reader : public rx::base_meta_reader
 
       bool read_int (const char* name, int& val);
 
-      bool read_uint (const char* name, dword& val);
+      bool read_uint (const char* name, uint32_t& val);
 
       bool start_array (const char* name);
 
@@ -94,19 +94,19 @@ class json_reader : public rx::base_meta_reader
 
       bool end_object ();
 
-      bool read_byte (const char* name, byte& val);
+      bool read_byte (const char* name, uint8_t& val);
 
       bool read_value (const char* name, rx_value& val);
 
-      bool read_int64 (const char* name, sqword& val);
+      bool read_int64 (const char* name, int64_t& val);
 
-      bool read_uint64 (const string_type& name, qword& val);
+      bool read_uint64 (const string_type& name, uint64_t val);
 
       bool read_bytes (const char* name, byte_string& val);
 
       bool parse_data (const string_type& data);
 
-      bool read_version (const char* name, dword& val);
+      bool read_version (const char* name, uint32_t& val);
 
 
   protected:
@@ -119,7 +119,7 @@ class json_reader : public rx::base_meta_reader
 
       bool safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object);
 
-      bool parse_version_string (dword& result, const string_type& version);
+      bool parse_version_string (uint32_t& result, const string_type& version);
 
 
 
@@ -167,7 +167,7 @@ class json_writter : public rx::base_meta_writter
 
       bool write_int (const char* name, int val);
 
-      bool write_uint (const char* name, dword val);
+      bool write_uint (const char* name, uint32_t val);
 
       bool start_array (const char* name, size_t size);
 
@@ -181,19 +181,19 @@ class json_writter : public rx::base_meta_writter
 
       bool end_object ();
 
-      bool write_byte (const char* name, byte val);
+      bool write_byte (const char* name, uint8_t val);
 
       bool write_value (const char* name, const rx_value& val);
 
-      bool write_int64 (const char* name, sqword val);
+      bool write_int64 (const char* name, int64_t val);
 
-      bool write_uint64 (const char* name, qword val);
+      bool write_uint64 (const char* name, uint64_t val);
 
-      bool write_bytes (const char* name, const byte* val, size_t size);
+      bool write_bytes (const char* name, const uint8_t* val, size_t size);
 
       bool get_string (string_type& result, bool decorated);
 
-      bool write_version (const char* name, dword val);
+      bool write_version (const char* name, uint32_t val);
 
 
   protected:
@@ -202,7 +202,7 @@ class json_writter : public rx::base_meta_writter
 
       Json::Value& get_current_value (bool& is_array);
 
-      bool get_version_string (string_type& result, dword version);
+      bool get_version_string (string_type& result, uint32_t version);
 
 
 

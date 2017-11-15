@@ -50,13 +50,13 @@ void get_full_path(const std::string& base, std::string& path);
 class svr_except : public std::exception
 {
 public:
-	svr_except(const char* what, dword code) throw() : m_what(what), m_code(code) { }
+	svr_except(const char* what, uint32_t code) throw() : m_what(what), m_code(code) { }
 	const char *what() const throw() { return m_what.c_str(); }
-	dword code() throw() { return m_code; }
+	uint32_t code() throw() { return m_code; }
 
 private:
 	std::string m_what;
-	dword m_code;
+	uint32_t m_code;
 
 };
 
@@ -75,23 +75,23 @@ string_type get_code_module(const string_type& full);
 
 struct asn_generalized_time
 {
-	word year;
-	word month;
-	word day;
+	uint16_t year;
+	uint16_t month;
+	uint16_t day;
 
-	word hour;
-	word minute;
-	word second;
+	uint16_t hour;
+	uint16_t minute;
+	uint16_t second;
 
-	dword fraction;
+	uint32_t fraction;
 };
 
 
 struct asn_binary_time
 {
 	bool full;
-	dword mstime;
-	word days;
+	uint32_t mstime;
+	uint16_t days;
 };
 
 class rx_uuid
@@ -132,7 +132,7 @@ typedef rx_uuid rx_id;
 
 union rx_node_id_union
 {
-	dword int_value;
+	uint32_t int_value;
 	string_type* string_value;
 	byte_string* bstring_value;
 	rx_uuid_t uuid_value;
@@ -157,11 +157,11 @@ public:
 
 	rx_node_id(const rx_node_id &right);
 
-	rx_node_id(const dword& id, const word& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(const uint32_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(const char* id, const word& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(const char* id, const uint16_t& namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(const rx_uuid_t& id, const word& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(const rx_uuid_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
 
 	rx_node_id(rx_node_id&& right);
 
@@ -192,12 +192,12 @@ public:
 
 	bool get_uuid(rx_uuid_t& id) const;
 
-	bool get_numeric(dword& id) const;
+	bool get_numeric(uint32_t& id) const;
 
 	bool get_string(string_type& id) const;
 
-	const word get_namespace() const;
-	void set_namespace(word value);
+	const uint16_t get_namespace() const;
+	void set_namespace(uint16_t value);
 
 	const rx_node_id_type get_node_type() const;
 	void set_node_type(rx_node_id_type value);
@@ -206,7 +206,7 @@ public:
 private:
 	bool is_simple() const;
 	void clear_content();
-	word m_namespace;
+	uint16_t m_namespace;
 	rx_node_id_type m_node_type;
 	rx_node_id_union m_value;
 
@@ -227,7 +227,7 @@ struct rx_mode_type
 	{
 		raw_format = 0;
 	}
-	dword raw_format;
+	uint32_t raw_format;
 	bool is_on() const
 	{
 		return (raw_format&RX_MODE_MASK_OFF) == 0;
@@ -256,7 +256,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format | (RX_MODE_MASK_TEST);
 			return (old_stuff != raw_format);
 		}
@@ -267,7 +267,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format & (!RX_MODE_MASK_TEST);
 			return (old_stuff != raw_format);
 		}
@@ -277,7 +277,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format | (RX_MODE_MASK_SIMULATE);
 			return (old_stuff != raw_format);
 		}
@@ -287,7 +287,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format & (~RX_MODE_MASK_SIMULATE);
 			return (old_stuff != raw_format);
 		}
@@ -295,14 +295,14 @@ struct rx_mode_type
 	}
 	bool set_unassigned()
 	{
-		dword old_stuff = raw_format;
+		uint32_t old_stuff = raw_format;
 		raw_format = raw_format | (RX_MODE_MASK_UNASSIGNED);
 		return (old_stuff != raw_format);
 	}
 
 	bool reset_unassigned()
 	{
-		dword old_stuff = raw_format;
+		uint32_t old_stuff = raw_format;
 		raw_format = raw_format & (~RX_MODE_MASK_UNASSIGNED);
 		return (old_stuff != raw_format);
 	}
@@ -316,7 +316,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format | (RX_MODE_MASK_BLOCKED);
 			return (old_stuff != raw_format);
 		}
@@ -326,7 +326,7 @@ struct rx_mode_type
 	{
 		if (!is_off())
 		{
-			dword old_stuff = raw_format;
+			uint32_t old_stuff = raw_format;
 			raw_format = raw_format & (~RX_MODE_MASK_BLOCKED);
 			return (old_stuff != raw_format);
 		}
@@ -334,13 +334,13 @@ struct rx_mode_type
 	}
 	bool turn_on()
 	{
-		dword old_stuff = raw_format;
+		uint32_t old_stuff = raw_format;
 		raw_format = 0;
 		return (old_stuff != raw_format);
 	}
 	bool turn_off()
 	{
-		dword old_stuff = raw_format;
+		uint32_t old_stuff = raw_format;
 		raw_format = RX_MODE_MASK_OFF;
 		return (old_stuff != raw_format);
 	}
@@ -356,9 +356,9 @@ public:
 	rx_time(const asn_binary_time& bt);
 	rx_time(const asn_generalized_time& bt);
 	rx_time(const rx_time_struct& ft);
-	rx_time(const qword interval);
+	rx_time(const uint64_t interval);
 	rx_time& operator=(const rx_time_struct& right);
-	rx_time& operator=(const qword interval);
+	rx_time& operator=(const uint64_t interval);
 
 
 	void to_asn_generalized_time(asn_generalized_time& tv) const;
@@ -368,11 +368,11 @@ public:
 	void get_time_string(char* buff, size_t len) const;
 	std::string get_IEC_string() const;
 	static rx_time_struct from_IEC_string(const char* str);
-	static rx_time_struct from_SNTP_time(dword seconds, dword fraction);
-	void to_SNTP_time(dword& seconds, dword& fraction);
+	static rx_time_struct from_SNTP_time(uint32_t seconds, uint32_t fraction);
+	void to_SNTP_time(uint32_t& seconds, uint32_t& fraction);
 
-	static dword current_time_quality();
-	static void set_current_time_offset(sqword offset);
+	static uint32_t current_time_quality();
+	static void set_current_time_offset(int64_t offset);
 	static void set_synchronized(bool value);
 	static rx_time now();
 	static rx_time null_time();
@@ -380,9 +380,9 @@ public:
 	bool is_valid_time() const;
 
 	rx_time operator+(const rx_time_struct& right) const;
-	rx_time operator+(const qword right) const;
+	rx_time operator+(const uint64_t right) const;
 	rx_time operator-(const rx_time_struct& right) const;
-	rx_time operator-(const qword right) const;
+	rx_time operator-(const uint64_t right) const;
 
 	bool operator==(const rx_time_struct& right) const;
 	bool operator!=(const rx_time_struct& right) const;
@@ -392,8 +392,8 @@ public:
 	bool operator<=(const rx_time_struct& right) const;
 
 
-	void set_as_span(dword days);
-	dword get_as_span() const;
+	void set_as_span(uint32_t days);
+	uint32_t get_as_span() const;
 
 	rx_time& to_local();
 	rx_time& to_UTC();
@@ -403,9 +403,9 @@ public:
 	rx_time& to_UTC_full();
 	*/
 
-	dword get_miliseconds() const;
-	sqword get_longlong_miliseconds() const;
-	sqword get_useconds() const;
+	uint32_t get_miliseconds() const;
+	int64_t get_longlong_miliseconds() const;
+	int64_t get_useconds() const;
 
 	bool is_null() const;
 };
@@ -414,13 +414,13 @@ public:
 struct time_stamp
 {
 	rx_time_struct rx_time;
-	dword quality;
+	uint32_t quality;
 	static time_stamp now();
 };
 
 // security related basics for stuff
-typedef qword rx_security_handle_t;
-typedef qword rx_thread_handle_t;
+typedef uint64_t rx_security_handle_t;
+typedef uint64_t rx_thread_handle_t;
 
 #define RX_THREAD_NULL 0ull
 

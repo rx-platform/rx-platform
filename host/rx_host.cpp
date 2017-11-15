@@ -41,10 +41,12 @@ namespace host {
 // Class host::rx_server_host 
 
 rx_server_host::rx_server_host()
+      : _parent(nullptr)
 {
 }
 
 rx_server_host::rx_server_host(const rx_server_host &right)
+      : _parent(nullptr)
 {
 	RX_ASSERT(false);
 }
@@ -62,6 +64,10 @@ rx_server_host & rx_server_host::operator=(const rx_server_host &right)
 }
 
 
+
+void rx_server_host::get_host_info (string_array& hosts)
+{
+}
 
 void rx_server_host::server_started_event ()
 {

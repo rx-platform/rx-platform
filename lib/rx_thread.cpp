@@ -157,7 +157,7 @@ physical_job_thread::~physical_job_thread()
 
 
 
-dword physical_job_thread::handler ()
+uint32_t physical_job_thread::handler ()
 {
 	std::vector<job_ptr> queued;
 	bool exit = false;
@@ -197,7 +197,7 @@ void physical_job_thread::run (int priority)
 	start(priority);
 }
 
-void physical_job_thread::end (dword timeout)
+void physical_job_thread::end (uint32_t timeout)
 {
 	stop(timeout);
 }
@@ -212,7 +212,7 @@ void physical_job_thread::append (job_ptr pjob)
 		_has_job.set();
 }
 
-bool physical_job_thread::wait (std::vector<job_ptr>& queued, dword timeout)
+bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 {
 	if (RX_WAIT_0 != _has_job.wait_handle(timeout))
 		return false;
@@ -230,7 +230,7 @@ bool physical_job_thread::wait (std::vector<job_ptr>& queued, dword timeout)
 
 }
 
-void physical_job_thread::stop (dword timeout)
+void physical_job_thread::stop (uint32_t timeout)
 {
 	append(job_ptr::null_ptr);
 	if (_current)
@@ -284,7 +284,7 @@ void dispatcher_pool::run (int priority)
 		one->start(priority);
 }
 
-void dispatcher_pool::end (dword timeout)
+void dispatcher_pool::end (uint32_t timeout)
 {
 	size_t count = _threads.size();
 	for (size_t i = 0; i < count; i++)
@@ -324,7 +324,7 @@ dispatcher_thread::~dispatcher_thread()
 
 
 
-dword dispatcher_thread::handler ()
+uint32_t dispatcher_thread::handler ()
 {
 	while (true)
 	{
@@ -350,24 +350,24 @@ timer::~timer()
 
 
 
-dword timer::handler ()
+uint32_t timer::handler ()
 {
 
 	for (;;)
 	{
 		lock();
 
-		dword max = 0 - 1;
+		uint32_t max = 0 - 1;
 
 		auto it = _jobs.begin();
 		while (it != _jobs.end())
 		{
 			bool remove = false;
 			timer_job_ptr one = *it;
-			dword tick = rx_get_tick_count();
+			uint32_t tick = rx_get_tick_count();
 			if (!one->is_canceled())
 			{
-				dword temp = one->tick(tick,remove);
+				uint32_t temp = one->tick(tick,remove);
 				if (!remove)
 				{
 					if (temp < max)
@@ -412,7 +412,7 @@ void timer::wake_up ()
 	_wake_up.set();
 }
 
-void timer::append_job (timer_job_ptr job, job_thread* executer, dword period, bool now)
+void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period, bool now)
 {
 
 	job->lock();

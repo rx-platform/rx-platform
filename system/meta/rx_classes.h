@@ -72,9 +72,9 @@ using namespace rx::values;
 public:\
 	static bool g_type_registred;\
 	static void init_meta_type();\
-	dword get_type () const\
+	uint32_t get_type () const\
 		{ return type_id; }\
-	static dword type_id;\
+	static uint32_t type_id;\
 	static const char* type_name;\
 	static const char* command_str;\
 private:\
@@ -84,9 +84,9 @@ private:\
 
 #define DECLARE_META_OBJECT \
 public:\
-	dword get_type () const\
+	uint32_t get_type () const\
 				{ return type_id; }\
-	static dword type_id;\
+	static uint32_t type_id;\
 private:\
 
 
@@ -250,9 +250,9 @@ class checkable_type : public base_meta_type<metaT>
       virtual ~checkable_type();
 
 
-      bool serialize_node (base_meta_writter& stream, byte type, const rx_value_union& value) const;
+      bool serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
 
-      bool deserialize_node (base_meta_reader& stream, byte type, rx_value_union& value);
+      bool deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value);
 
       bool check_in (base_meta_reader& stream);
 
@@ -276,9 +276,9 @@ class checkable_type : public base_meta_type<metaT>
 
   protected:
 
-      virtual bool serialize_definition (base_meta_writter& stream, byte type) const;
+      virtual bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      virtual bool deserialize_definition (base_meta_reader& stream, byte type);
+      virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   private:
@@ -311,9 +311,9 @@ class const_value
       const_value & operator=(const const_value &right);
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       virtual void get_value (values::rx_value& val) const = 0;
 
@@ -353,9 +353,9 @@ class internal_value
       internal_value & operator=(const internal_value &right);
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       virtual void get_value (values::rx_value& val) const = 0;
 
@@ -439,9 +439,9 @@ class base_complex_type : public checkable_type<metaT>,
       base_complex_type();
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       bool check_name (const string_type& name);
 
@@ -491,9 +491,9 @@ class base_mapped_class : public base_complex_type<metaT>
       base_mapped_class();
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   private:
@@ -524,9 +524,9 @@ class base_object_class : public base_mapped_class<metaT>
       base_object_class();
 
 
-      bool serialize_definition (base_meta_writter& stream, byte type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, byte type);
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   private:
@@ -789,9 +789,9 @@ class complex_class_attribute
       virtual ~complex_class_attribute();
 
 
-      virtual bool serialize_definition (base_meta_writter& stream, byte type) const;
+      virtual bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
 
-      virtual bool deserialize_definition (base_meta_reader& stream, byte type);
+      virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
       const string_type& get_name () const
@@ -1218,7 +1218,7 @@ checkable_type<metaT>::~checkable_type()
 
 
 template <class metaT>
-bool checkable_type<metaT>::serialize_node (base_meta_writter& stream, byte type, const rx_value_union& value) const
+bool checkable_type<metaT>::serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const
 {
   if (!stream.write_header(type))
 		return false;
@@ -1233,7 +1233,7 @@ bool checkable_type<metaT>::serialize_node (base_meta_writter& stream, byte type
 }
 
 template <class metaT>
-bool checkable_type<metaT>::deserialize_node (base_meta_reader& stream, byte type, rx_value_union& value)
+bool checkable_type<metaT>::deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value)
 {
   return false;
 }
@@ -1260,7 +1260,7 @@ bool checkable_type<metaT>::check_out (base_meta_writter& stream) const
 }
 
 template <class metaT>
-bool checkable_type<metaT>::serialize_definition (base_meta_writter& stream, byte type) const
+bool checkable_type<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!base_meta_type<metaT>::serialize(stream))
 		return false;
@@ -1274,7 +1274,7 @@ bool checkable_type<metaT>::serialize_definition (base_meta_writter& stream, byt
 }
 
 template <class metaT>
-bool checkable_type<metaT>::deserialize_definition (base_meta_reader& stream, byte type)
+bool checkable_type<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!base_meta_type<metaT>::deserialize(stream))
 		return false;
@@ -1317,7 +1317,7 @@ base_mapped_class<metaT>::~base_mapped_class()
 
 
 template <class metaT>
-bool base_mapped_class<metaT>::serialize_definition (base_meta_writter& stream, byte type) const
+bool base_mapped_class<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!base_complex_type<metaT>::serialize_definition(stream, type))
 		return false;
@@ -1340,7 +1340,7 @@ bool base_mapped_class<metaT>::serialize_definition (base_meta_writter& stream, 
 }
 
 template <class metaT>
-bool base_mapped_class<metaT>::deserialize_definition (base_meta_reader& stream, byte type)
+bool base_mapped_class<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!base_complex_type<metaT>::deserialize_definition(stream, type))
 		return false;
@@ -1385,7 +1385,7 @@ base_object_class<metaT>::~base_object_class()
 
 
 template <class metaT>
-bool base_object_class<metaT>::serialize_definition (base_meta_writter& stream, byte type) const
+bool base_object_class<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!base_mapped_class<metaT>::serialize_definition(stream, type))
 		return false;
@@ -1394,7 +1394,7 @@ bool base_object_class<metaT>::serialize_definition (base_meta_writter& stream, 
 }
 
 template <class metaT>
-bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream, byte type)
+bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!base_mapped_class<metaT>::deserialize_definition(stream, type))
 		return false;

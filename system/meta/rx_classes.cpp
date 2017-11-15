@@ -123,7 +123,7 @@ const_value & const_value::operator=(const const_value &right)
 
 
 
-bool const_value::serialize_definition (base_meta_writter& stream, byte type) const
+bool const_value::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	stream.write_string("Name", _name.c_str());
 	rx_value val;
@@ -133,7 +133,7 @@ bool const_value::serialize_definition (base_meta_writter& stream, byte type) co
 	return true;
 }
 
-bool const_value::deserialize_definition (base_meta_reader& stream, byte type)
+bool const_value::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
@@ -165,7 +165,7 @@ internal_value & internal_value::operator=(const internal_value &right)
 
 
 
-bool internal_value::serialize_definition (base_meta_writter& stream, byte type) const
+bool internal_value::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	rx_value val;
 	get_value(val);
@@ -174,7 +174,7 @@ bool internal_value::serialize_definition (base_meta_writter& stream, byte type)
 	return true;
 }
 
-bool internal_value::deserialize_definition (base_meta_reader& stream, byte type)
+bool internal_value::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
@@ -245,7 +245,7 @@ base_complex_type<metaT>::~base_complex_type()
 
 
 template <class metaT>
-bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, byte type) const
+bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!checkable_type<metaT>::serialize_definition(stream, type))
 		return false;
@@ -316,7 +316,7 @@ bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, 
 }
 
 template <class metaT>
-bool base_complex_type<metaT>::deserialize_definition (base_meta_reader& stream, byte type)
+bool base_complex_type<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!checkable_type<metaT>::deserialize_definition(stream, type))
 		return false;
@@ -544,7 +544,7 @@ complex_class_attribute::~complex_class_attribute()
 
 
 
-bool complex_class_attribute::serialize_definition (base_meta_writter& stream, byte type) const
+bool complex_class_attribute::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
 	if (!stream.write_string("Name", _name.c_str()))
 		return false;
@@ -553,7 +553,7 @@ bool complex_class_attribute::serialize_definition (base_meta_writter& stream, b
 	return true;
 }
 
-bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, byte type)
+bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.read_string("Name", _name))
 		return false;

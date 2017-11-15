@@ -113,7 +113,7 @@ void static_callback(const int& arg, callback::callback_state_t state)
 
 typedef decltype(std::mem_fn(&dummy::dummy_method)) element_type;
 
-void callback_func(const rx_value&, dword state)
+void callback_func(const rx_value&, uint32_t state)
 {
 	printf("Callback occured!!!");
 }
@@ -132,7 +132,7 @@ void test_callbacks()
 
 	size_t sz = sizeof(var);
 
-	byte* test = new byte[sz];
+	uint8_t* test = new uint8_t[sz];
 
 	memcpy(test, test, sz);
 
@@ -233,7 +233,7 @@ public:
 	}
 
 protected:
-	virtual dword handler()
+	virtual uint32_t handler()
 	{
 		printf("Usao\r\n");
 		rx_msleep(1500);
@@ -314,7 +314,7 @@ void test_thread()
     printf("OS:%s\r\n",buff);
     rx_collect_processor_info(buff,0x100);
     printf("CPU:%s\r\n",buff);
-    qword total,free;
+    uint64_t total,free;
     rx_collect_memory_info(&total,&free);
     printf("MEM: Total %dMB / Free %dMB\r\n",(int)(total/(1024*1024)),(int)(free/(1024*1024)));
 
@@ -353,8 +353,8 @@ void test_thread()
 
 void test_values()
 {
-	rx::values::simple_const_value<dword> perica(6);
-	//dword zike = perica + 5;
+	rx::values::simple_const_value<uint32_t> perica(6);
+	//uint32_t zike = perica + 5;
 }
 void test_classes()
 {

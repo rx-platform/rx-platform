@@ -107,7 +107,7 @@ struct log_event_data
 	log_event_type event_type;
 	string_type library;
 	string_type source;
-	word level;
+	uint16_t level;
 	string_type code;
 	string_type message;
 	rx_time when;
@@ -138,7 +138,7 @@ class log_subscriber : public pointers::interface_object
       virtual ~log_subscriber();
 
 
-      virtual void log_event (log_event_type event_type, const string_type& library, const string_type& source, word level, const string_type& code, const string_type& message, rx_time when) = 0;
+      virtual void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when) = 0;
 
 
   protected:
@@ -165,7 +165,7 @@ class stream_log_subscriber : public log_subscriber,
       virtual ~stream_log_subscriber();
 
 
-      void log_event (log_event_type event_type, const string_type& library, const string_type& source, word level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
 
 
   protected:
@@ -196,7 +196,7 @@ class cache_log_subscriber : public log_subscriber,
       virtual ~cache_log_subscriber();
 
 
-      void log_event (log_event_type event_type, const string_type& library, const string_type& source, word level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
 
       bool read_log (const log_query_type& query, log_events_type& result);
 
@@ -230,9 +230,9 @@ class log_object : public locks::lockable
 
       static log_object& instance ();
 
-      void log_event_fast (log_event_type event_type, const char* library, const string_type& source, word level, const char* code, locks::event* sync_event, const char* message);
+      void log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message);
 
-      void log_event (log_event_type event_type, const char* library, const string_type& source, word level, const char* code, locks::event* sync_event, const char* message, ... );
+      void log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message, ... );
 
       void register_subscriber (log_subscriber::smart_ptr who);
 
@@ -257,7 +257,7 @@ class log_object : public locks::lockable
       log_object & operator=(const log_object &right);
 
 
-      void sync_log_event (log_event_type event_type, const char* library, const char* source, int level, const char* code, const char* message, locks::event* sync_event, rx_time when);
+      void sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, locks::event* sync_event, rx_time when);
 
 
 
@@ -284,7 +284,7 @@ class log_event_job : public jobs::job
 	DECLARE_REFERENCE_PTR(log_event_job);
 
   public:
-      log_event_job (log_event_type event_type, const char* library, const string_type& source, word level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when = rx_time::now());
+      log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when = rx_time::now());
 
       virtual ~log_event_job();
 

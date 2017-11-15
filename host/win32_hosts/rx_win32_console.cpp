@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 
+#include "rx_win32_console_version.h"
 
 // rx_win32_console
 #include "host/win32_hosts/rx_win32_console.h"
@@ -148,6 +149,17 @@ sys_handle_t win32_console_host::get_host_console_script_file (const string_type
 	rx::combine_paths(RX_CONSOLE_SCRIPTS_PATH, path, full_path);
 	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	return file;
+}
+
+void win32_console_host::get_host_info (string_array& hosts)
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_WIN32_HOST_NAME, RX_WIN32_HOST_MAJOR_VERSION, RX_WIN32_HOST_MINOR_VERSION, RX_WIN32_HOST_BUILD_NUMBER);
+	}
+	hosts.emplace_back(ret);
+	interactive::interactive_console_host::get_host_info(hosts);
 }
 
 

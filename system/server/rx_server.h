@@ -93,13 +93,13 @@ class rx_server : public rx::security::secured_object
 
       void cleanup ();
 
-      dword initialize (host::rx_server_host* host, configuration_data_t& data);
+      uint32_t initialize (host::rx_server_host* host, configuration_data_t& data);
 
-      dword deinitialize ();
+      uint32_t deinitialize ();
 
-      dword start (host::rx_server_host* host, const configuration_data_t& data);
+      uint32_t start (host::rx_server_host* host, const configuration_data_t& data);
 
-      dword stop ();
+      uint32_t stop ();
 
       server_directory_ptr get_root_directory ();
 
@@ -150,12 +150,6 @@ class rx_server : public rx::security::secured_object
       const string_type& get_lib_version () const
       {
         return _lib_version;
-      }
-
-
-      const string_type& get_host_info () const
-      {
-        return _host_info;
       }
 
 
@@ -218,8 +212,6 @@ class rx_server : public rx::security::secured_object
       string_type _rx_version;
 
       string_type _lib_version;
-
-      string_type _host_info;
 
       string_type _rx_name;
 

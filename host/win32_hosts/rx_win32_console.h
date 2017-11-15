@@ -61,6 +61,8 @@ class win32_console_host : public interactive::interactive_console_host
 
       sys_handle_t get_host_console_script_file (const string_type& path);
 
+      void get_host_info (string_array& hosts);
+
 
   protected:
 

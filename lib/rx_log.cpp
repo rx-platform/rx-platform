@@ -119,14 +119,14 @@ log_object& log_object::instance ()
 	return *g_object;
 }
 
-void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, word level, const char* code, locks::event* sync_event, const char* message)
+void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message)
 {
 	// just fire the job and let worker take care of it!
 	log_event_job::smart_ptr my_job(event_type, library, source, level, code, message,sync_event);
 	_worker.append(my_job);
 }
 
-void log_object::log_event (log_event_type event_type, const char* library, const string_type& source, word level, const char* code, locks::event* sync_event, const char* message, ... )
+void log_object::log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message, ... )
 {
 	char buff[STACK_LOG_SIZE];
 	va_list args;
@@ -142,7 +142,7 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 	va_end(args);
 }
 
-void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, int level, const char* code, const char* message, locks::event* sync_event, rx_time when)
+void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, locks::event* sync_event, rx_time when)
 {
 	std::vector<log_subscriber::smart_ptr> temp_array;
 	temp_array.reserve(0x10);
@@ -213,10 +213,10 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 		{
 			snprintf(buffer, sizeof(buffer), "Initial log test pass %d...", (int)i);
 			rx::locks::event ev(false);
-			qword first_tick = rx_get_us_ticks();
+			uint64_t first_tick = rx_get_us_ticks();
 			RX_LOG_TEST(buffer, &ev);
 			ev.wait_handle();
-			qword second_tick = rx_get_us_ticks();
+			uint64_t second_tick = rx_get_us_ticks();
 			double ms = (double)(second_tick - first_tick) / 1000.0;
 			snprintf(buffer, sizeof(buffer), "Initial log test %d passed. Delay time: %g ms...", (int)i, ms);
 			LOG_SELF_INFO(buffer);
@@ -270,7 +270,7 @@ log_subscriber::~log_subscriber()
 
 // Class rx::log::log_event_job 
 
-log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, word level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when)
+log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when)
       : _sync_event(sync_event),
         _event_type(event_type),
         _library(library),
@@ -309,7 +309,7 @@ stream_log_subscriber::~stream_log_subscriber()
 
 
 
-void stream_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, word level, const string_type& code, const string_type& message, rx_time when)
+void stream_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 
 	log_event_data one = { event_type,library,source,level,code,message,when };
@@ -333,7 +333,7 @@ cache_log_subscriber::~cache_log_subscriber()
 
 
 
-void cache_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, word level, const string_type& code, const string_type& message, rx_time when)
+void cache_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 	log_event_data one = { event_type,library,source,level,code,message,when };
 	locks::auto_lock dummy(&_cache_lock);

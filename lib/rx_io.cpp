@@ -37,14 +37,14 @@
 namespace rx {
 
 namespace io {
-int dispatcher_accept_callback(void* data, dword status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size)
+int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_accept_callback(handle, (sockaddr_in*)addr, (sockaddr_in*)local_addr, status);
 	whose->release();
 	return ret;
 }
-int dispatcher_shutdown_callback(void* data, dword status)
+int dispatcher_shutdown_callback(void* data, uint32_t status)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_shutdown_callback(status);
@@ -52,21 +52,21 @@ int dispatcher_shutdown_callback(void* data, dword status)
 	return ret;
 }
 
-int dispatcher_read_callback(void* data, dword status, size_t size)
+int dispatcher_read_callback(void* data, uint32_t status, size_t size)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_read_callback(size, status);
 	whose->release();
 	return ret;
 }
-int dispatcher_write_callback(void* data, dword status)
+int dispatcher_write_callback(void* data, uint32_t status)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_write_callback(status);
 	whose->release();
 	return ret;
 }
-int dispatcher_connect_callback(void* data, dword status)
+int dispatcher_connect_callback(void* data, uint32_t status)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_connect_callback(status);
@@ -102,7 +102,7 @@ dispatcher_subscriber::~dispatcher_subscriber()
 
 bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool::smart_ptr& dispatcher)
 {
-	dword ret = rx_dispatcher_register(dispatcher->_dispatcher, &_dispatcher_data);
+	uint32_t ret = rx_dispatcher_register(dispatcher->_dispatcher, &_dispatcher_data);
 	if (ret)
 	{
 		_disptacher = dispatcher;
@@ -138,7 +138,7 @@ void dispatcher_subscriber::unregister_timed ()
 
 void dispatcher_subscriber::propagate_timer ()
 {
-	dword tick = rx_get_tick_count();
+	uint32_t tick = rx_get_tick_count();
 	_time_aware_subscribers_lock.lock();
 	std::vector<dispatcher_subscriber::smart_ptr> helper;
 	helper.reserve(_time_aware_subscribers.size());
@@ -151,56 +151,56 @@ void dispatcher_subscriber::propagate_timer ()
 		one->timer_tick(tick);
 }
 
-void dispatcher_subscriber::timer_tick (dword tick)
+void dispatcher_subscriber::timer_tick (uint32_t tick)
 {
 }
 
-int dispatcher_subscriber::internal_read_callback (size_t count, dword status)
-{
-	return 0;
-}
-
-int dispatcher_subscriber::internal_write_callback (dword status)
+int dispatcher_subscriber::internal_read_callback (size_t count, uint32_t status)
 {
 	return 0;
 }
 
-int dispatcher_subscriber::internal_shutdown_callback (dword status)
+int dispatcher_subscriber::internal_write_callback (uint32_t status)
 {
 	return 0;
 }
 
-int dispatcher_subscriber::_internal_read_callback (size_t count, dword status)
+int dispatcher_subscriber::internal_shutdown_callback (uint32_t status)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::_internal_read_callback (size_t count, uint32_t status)
 {
 	return internal_read_callback(count, status);
 }
 
-int dispatcher_subscriber::_internal_write_callback (dword status)
+int dispatcher_subscriber::_internal_write_callback (uint32_t status)
 {
 	return internal_write_callback(status);
 }
 
-int dispatcher_subscriber::_internal_shutdown_callback (dword status)
+int dispatcher_subscriber::_internal_shutdown_callback (uint32_t status)
 {
 	return internal_shutdown_callback(status);
 }
 
-int dispatcher_subscriber::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
+int dispatcher_subscriber::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
 	return 0;
 }
 
-int dispatcher_subscriber::_internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, dword status)
+int dispatcher_subscriber::_internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
 	return internal_accept_callback(handle, addr, local_addr, status);
 }
 
-int dispatcher_subscriber::internal_connect_callback (dword status)
+int dispatcher_subscriber::internal_connect_callback (uint32_t status)
 {
 	return 0;
 }
 
-int dispatcher_subscriber::_internal_connect_callback (dword status)
+int dispatcher_subscriber::_internal_connect_callback (uint32_t status)
 {
 	return internal_connect_callback(status);
 }

@@ -92,7 +92,7 @@ and general usage thread pool resources\r\n\
       rx::threads::dispatcher_pool::smart_ptr _pool;
 
 
-      objects::server_const_value_item<dword> _threads_count;
+      objects::server_const_value_item<uint32_t> _threads_count;
 
 
 };
@@ -149,7 +149,7 @@ thread pool resources\r\n\
 
       void run (int priority = RX_PRIORITY_NORMAL);
 
-      void end (dword timeout = RX_INFINITE);
+      void end (uint32_t timeout = RX_INFINITE);
 
       void append (job_ptr pjob);
 
@@ -157,9 +157,9 @@ thread pool resources\r\n\
 
       void clear ();
 
-      void append (rx::jobs::timer_job_ptr job, dword domain);
+      void append (rx::jobs::timer_job_ptr job, uint32_t domain);
 
-      rx::threads::job_thread* get_executer (dword domain);
+      rx::threads::job_thread* get_executer (uint32_t domain);
 
 
   protected:
@@ -170,7 +170,7 @@ thread pool resources\r\n\
       workers_type _workers;
 
 
-      objects::server_const_value_item<dword> _pool_size;
+      objects::server_const_value_item<uint32_t> _pool_size;
 
 
 };
@@ -192,7 +192,7 @@ struct runtime_data_t
 	int workers_pool_size;
 	int slow_pool_size;
 	bool has_callculation_timer;
-	dword io_timer_period;
+	uint32_t io_timer_period;
 };
 
 
@@ -218,15 +218,15 @@ callcualation ( normal priority)");
       virtual ~server_rt();
 
 
-      dword initialize (rx_server_host* host, runtime_data_t& data);
+      uint32_t initialize (rx_server_host* host, runtime_data_t& data);
 
-      dword deinitialize ();
+      uint32_t deinitialize ();
 
-      void append_timer_job (rx::jobs::timer_job_ptr job, dword domain, dword period, bool now = false);
+      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, uint32_t period, bool now = false);
 
-      dword start (rx_server_host* host, const runtime_data_t& data);
+      uint32_t start (rx_server_host* host, const runtime_data_t& data);
 
-      dword stop ();
+      uint32_t stop ();
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -234,7 +234,7 @@ callcualation ( normal priority)");
 
       namespace_item_attributes get_attributes () const;
 
-      void append_job (rx::jobs::timer_job_ptr job, dword domain);
+      void append_job (rx::jobs::timer_job_ptr job, uint32_t domain);
 
 
       server_dispatcher_object::smart_ptr get_io_pool ()
@@ -264,7 +264,7 @@ callcualation ( normal priority)");
 
       void virtual_release ();
 
-      rx::threads::job_thread* get_executer (dword domain);
+      rx::threads::job_thread* get_executer (uint32_t domain);
 
 
   private:

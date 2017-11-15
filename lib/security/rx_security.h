@@ -150,7 +150,7 @@ void pop_security();
 
 class security_manager 
 {
-	typedef std::map<qword, security_context::smart_ptr> active_contexts_type;
+	typedef std::map<uint64_t, security_context::smart_ptr> active_contexts_type;
 
 	friend security_context_ptr active_security();
 	friend void push_security(security_context_ptr ctx);
@@ -188,7 +188,7 @@ class security_manager
 
       locks::lockable _active_lock;
 
-      qword _last_id;
+      uint64_t _last_id;
 
 
 };
@@ -209,7 +209,7 @@ class secured_object : public pointers::interface_object
 
   protected:
 
-      virtual bool dword_check_premissions (dword mask, dword extended_mask);
+      virtual bool dword_check_premissions (uint32_t mask, uint32_t extended_mask);
 
       security_context_ptr basic_check (bool& ret);
 

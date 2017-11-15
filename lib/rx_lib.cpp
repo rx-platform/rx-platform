@@ -222,7 +222,7 @@ rx_node_id::rx_node_id(const rx_node_id &right)
 	}
 }
 
-rx_node_id::rx_node_id(const dword& id, const word& namesp)
+rx_node_id::rx_node_id(const uint32_t& id, const uint16_t& namesp)
 	: m_namespace(0),
 	m_node_type(numeric_rx_node_id)
 {
@@ -230,14 +230,14 @@ rx_node_id::rx_node_id(const dword& id, const word& namesp)
 	m_namespace = namesp;
 }
 
-rx_node_id::rx_node_id(const char* id, const word& namesp)
+rx_node_id::rx_node_id(const char* id, const uint16_t& namesp)
 {
 	m_value.string_value = new string_type(id);
 	m_node_type = string_rx_node_id;
 	m_namespace = namesp;
 }
 
-rx_node_id::rx_node_id(const rx_uuid_t& id, const word& namesp)
+rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
 {
 	m_value.uuid_value = id;
 	m_node_type = guid_rx_node_id;
@@ -516,7 +516,7 @@ bool rx_node_id::get_uuid(rx_uuid_t& id) const
 		return false;
 }
 
-bool rx_node_id::get_numeric(dword& id) const
+bool rx_node_id::get_numeric(uint32_t& id) const
 {
 	if (m_node_type == numeric_rx_node_id)
 	{
@@ -539,12 +539,12 @@ bool rx_node_id::get_string(string_type& id) const
 		return false;
 }
 
-const word rx_node_id::get_namespace() const
+const uint16_t rx_node_id::get_namespace() const
 {
 	return m_namespace;
 }
 
-void rx_node_id::set_namespace(word value)
+void rx_node_id::set_namespace(uint16_t value)
 {
 	m_namespace = value;
 }
@@ -573,11 +573,9 @@ namespace
 		char version_buffer[0x100];
 		dummy_starter()
 		{
-			char buff[0x100];
 			create_module_compile_time_string(__DATE__, __TIME__, compile_buffer);
 			g_complie_time = compile_buffer;
-			sprintf(buff, "%d.%d.%d", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER);
-			create_module_version_string(buff, __DATE__, __TIME__, version_buffer);
+			create_module_version_string("", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER,__DATE__, __TIME__, version_buffer);
 			g_lib_version = version_buffer;
 		}
 	};
@@ -626,8 +624,8 @@ string_type get_code_module(const string_type& full)
 namespace
 {
 rx_time g_null_time = { 0 };
-std::atomic<sqword> g_current_offset(0);
-std::atomic<dword> g_current_time_quality(DEFAULT_TIME_QUALITY);
+std::atomic<int64_t> g_current_offset(0);
+std::atomic<uint32_t> g_current_time_quality(DEFAULT_TIME_QUALITY);
 }
 rx_time::rx_time()
 {
@@ -640,7 +638,7 @@ rx_time::rx_time(const timeval& tv)
 		t_value = 0;
 	else
 	{
-		qword temp = ((qword)tv.tv_usec) * 10 + ((qword)tv.tv_sec) * 10000000;
+		uint64_t temp = ((uint64_t)tv.tv_usec) * 10 + ((uint64_t)tv.tv_sec) * 10000000;
 		temp += server_time_struct_DIFF_TIMEVAL;
 		t_value = temp;
 	}
@@ -654,7 +652,7 @@ void rx_time::to_timeval(timeval& tv) const
 	}
 	else
 	{
-		qword temp = t_value;
+		uint64_t temp = t_value;
 		temp -= server_time_struct_DIFF_TIMEVAL;
 		temp /= 10;
 		tv.tv_sec = (long)(temp / 1000000UL);
@@ -697,13 +695,13 @@ rx_time::rx_time(const asn_binary_time& bt)
 		{// 6 bytes
 			now = rx_time(MS_START_1984);
 			now = now + bt.mstime;
-			sqword tempdays = ((sqword)bt.days) * 1000 * 60 * 60 * 24;
+			int64_t tempdays = ((int64_t)bt.days) * 1000 * 60 * 60 * 24;
 			now = now + tempdays;
 		}
 		else
 		{// 4 bytes
 			now = rx_time::now();
-			sqword temp = now.get_longlong_miliseconds() % MS_IN_DAY;
+			int64_t temp = now.get_longlong_miliseconds() % MS_IN_DAY;
 			now = now - temp;
 			now = now + bt.mstime;
 		}
@@ -720,31 +718,31 @@ void rx_time::to_asn_binary_time(asn_binary_time& bt) const
 	}
 	else
 	{
-		sqword mine = get_longlong_miliseconds();
+		int64_t mine = get_longlong_miliseconds();
 		mine = mine - MS_START_1984;
-		sqword mine_ms = mine%MS_IN_DAY;
-		sqword mine_days = mine / MS_IN_DAY;
+		int64_t mine_ms = mine%MS_IN_DAY;
+		int64_t mine_days = mine / MS_IN_DAY;
 		bt.full = true;
-		bt.days = (word)mine_days;
-		bt.mstime = (dword)mine_ms;
+		bt.days = (uint16_t)mine_days;
+		bt.mstime = (uint32_t)mine_ms;
 	}
 }
 rx_time::rx_time(const rx_time_struct& ft)
 {
 	memcpy(this, &ft, sizeof(rx_time_struct));
 }
-rx_time::rx_time(const qword interval)
+rx_time::rx_time(const uint64_t interval)
 {
-	t_value = interval*(qword)10000;
+	t_value = interval*(uint64_t)10000;
 }
 rx_time& rx_time::operator=(const rx_time_struct& right)
 {
 	memcpy(this, &right, sizeof(rx_time_struct));
 	return *this;
 }
-rx_time& rx_time::operator=(const qword interval)
+rx_time& rx_time::operator=(const uint64_t interval)
 {
-	t_value = interval*(qword)10000;
+	t_value = interval*(uint64_t)10000;
 	return *this;
 }
 bool  rx_time::is_valid_time(const rx_time_struct& arg)
@@ -763,7 +761,7 @@ rx_time rx_time::now()
 {
 	rx_time_struct ret;
 	rx_os_get_system_time(&ret);
-	sqword offset = g_current_offset;
+	int64_t offset = g_current_offset;
 	if (offset)
 	{
 		ret.t_value = ret.t_value + offset;
@@ -771,18 +769,18 @@ rx_time rx_time::now()
 	rx_time rxret(ret);
 	return ret;
 }
-dword rx_time::current_time_quality()
+uint32_t rx_time::current_time_quality()
 {
 	return g_current_time_quality;
 }
-void rx_time::set_current_time_offset(sqword offset)
+void rx_time::set_current_time_offset(int64_t offset)
 {
-	sqword temp = offset * 10ll;
+	int64_t temp = offset * 10ll;
 	g_current_offset.fetch_add(temp);
 }
 void rx_time::set_synchronized(bool value)
 {
-	dword temp = value ? SYNCHRONIZED_TIME_QUALITY : DEFAULT_TIME_QUALITY;
+	uint32_t temp = value ? SYNCHRONIZED_TIME_QUALITY : DEFAULT_TIME_QUALITY;
 	g_current_time_quality.store(temp);
 }
 rx_time rx_time::operator+(const rx_time_struct& right) const
@@ -792,7 +790,7 @@ rx_time rx_time::operator+(const rx_time_struct& right) const
 
 	return res;
 }
-rx_time rx_time::operator+(const qword right) const
+rx_time rx_time::operator+(const uint64_t right) const
 {
 
 	rx_time res;
@@ -811,7 +809,7 @@ rx_time rx_time::operator-(const rx_time_struct& right) const
 
 
 }
-rx_time rx_time::operator-(const qword right) const
+rx_time rx_time::operator-(const uint64_t right) const
 {
 	rx_time res;
 	res.t_value = t_value - right * 10000;
@@ -870,7 +868,7 @@ if(FileTimeToSystemTime(&mine,&sys))
 {
 SystemTimeToTzSpecificLocalTime(NULL,&sys,&loc);
 SystemTimeToFileTime(&loc, &local);
-t_value = (((qword)local.dwHighDateTime) << 32) + local.dwLowDateTime;
+t_value = (((uint64_t)local.dwHighDateTime) << 32) + local.dwLowDateTime;
 }
 return *this;
 }
@@ -885,26 +883,26 @@ if(FileTimeToSystemTime(&mine,&loc))
 {
 TzSpecificLocalTimeToSystemTime(NULL,&loc,&sys);
 SystemTimeToFileTime(&sys, &utc);
-t_value = (((qword)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
+t_value = (((uint64_t)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
 }
 return *this;
 }
 */
 
-dword rx_time::get_miliseconds() const
+uint32_t rx_time::get_miliseconds() const
 {
-	return (dword)(t_value / 10000);
+	return (uint32_t)(t_value / 10000);
 }
 
 bool rx_time::is_null() const
 {
 	return t_value == 0;
 }
-sqword rx_time::get_longlong_miliseconds() const
+int64_t rx_time::get_longlong_miliseconds() const
 {
 	return (t_value / 10000);
 }
-sqword rx_time::get_useconds() const
+int64_t rx_time::get_useconds() const
 {
 	return (t_value / 10);
 }
@@ -926,30 +924,30 @@ std::string rx_time::get_string() const
 
 void rx_time::get_time_string(char* buff, size_t len) const
 {
-	qword abs = t_value / 10;
+	uint64_t abs = t_value / 10;
 
-	qword usec = abs % 1000;
+	uint64_t usec = abs % 1000;
 	abs = abs / 1000;
 
-	qword msec = abs % 1000;
+	uint64_t msec = abs % 1000;
 	abs = abs / 1000;
 
-	qword sec = abs % 60;
+	uint64_t sec = abs % 60;
 	abs = abs / 60;
 
-	qword min = abs % 60;
+	uint64_t min = abs % 60;
 	abs = abs / 60;
 
-	qword hour = abs % 24;
+	uint64_t hour = abs % 24;
 
 	_snprintf_s(buff, len, len, "%02d:%02d:%02d.%03d %03d",
 		(int)hour, (int)min, (int)sec, (int)msec, (int)usec);
 
 }
-rx_time_struct rx_time::from_SNTP_time(dword seconds, dword fraction)
+rx_time_struct rx_time::from_SNTP_time(uint32_t seconds, uint32_t fraction)
 {
-	qword temp = ((qword)seconds) * 10000000ull;
-	temp = temp + (((qword)fraction) * 10000000ull / 0x100000000ull);
+	uint64_t temp = ((uint64_t)seconds) * 10000000ull;
+	temp = temp + (((uint64_t)fraction) * 10000000ull / 0x100000000ull);
 
 
 	temp = temp + 0x014f373bfde04000ull;
@@ -958,20 +956,20 @@ rx_time_struct rx_time::from_SNTP_time(dword seconds, dword fraction)
 	ret.t_value = temp;
 	return ret;
 }
-void rx_time::to_SNTP_time(dword& seconds, dword& fraction)
+void rx_time::to_SNTP_time(uint32_t& seconds, uint32_t& fraction)
 {
-	sqword temp = t_value;
+	int64_t temp = t_value;
 	temp = temp - 0x014f373bfde04000ull;
 
 	if (temp > 0)
 	{
-		seconds = (dword)(temp / 10000000);
+		seconds = (uint32_t)(temp / 10000000);
 		temp = temp % 10000000;
 		temp = temp * 0x100000000ull;
 		temp = temp / 10000000;
 
-		//fraction = (dword)(temp%1000000);
-		fraction = (dword)temp;
+		//fraction = (uint32_t)(temp%1000000);
+		fraction = (uint32_t)temp;
 	}
 	else
 	{
@@ -1057,19 +1055,19 @@ string_type rx_time::get_IEC_string() const
 
 }
 
-void rx_time::set_as_span(dword days)
+void rx_time::set_as_span(uint32_t days)
 {
 
-	qword temp = ((qword)days) * 10000 * 1000 * 3600 * 24;
+	uint64_t temp = ((uint64_t)days) * 10000 * 1000 * 3600 * 24;
 
 	t_value = temp;
 
 }
-dword rx_time::get_as_span() const
+uint32_t rx_time::get_as_span() const
 {
-	qword temp = t_value;
+	uint64_t temp = t_value;
 
-	return ((dword)(temp / ((qword)10000 * (qword)1000 * (qword)3600 * (qword)24)));
+	return ((uint32_t)(temp / ((uint64_t)10000 * (uint64_t)1000 * (uint64_t)3600 * (uint64_t)24)));
 
 }
 time_stamp time_stamp::now()
@@ -1085,19 +1083,19 @@ time_stamp time_stamp::now()
 class rx_thread_data_object
 {
 private:
-	std::map<int, std::stack<qword>* > m_objects;
+	std::map<int, std::stack<uint64_t>* > m_objects;
 	rx_thread_data_object()
 	{
 	}
 public:
 	static rx_thread_data_object& instance();
 
-	bool push_object(int handle, qword obj)
+	bool push_object(int handle, uint64_t obj)
 	{
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end())
 		{
-			std::stack<qword>* temp = new std::stack<qword>;
+			std::stack<uint64_t>* temp = new std::stack<uint64_t>;
 			m_objects.emplace(handle, temp);
 			temp->push(obj);
 			return true;
@@ -1118,7 +1116,7 @@ public:
 		}
 		return false;
 	}
-	qword get_object(int handle)
+	uint64_t get_object(int handle)
 	{
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end() || it->second->empty())

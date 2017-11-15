@@ -57,7 +57,7 @@ rx_value::rx_value(const rx_value &right)
 	copy_union(_type, _value, right._value);
 }
 
-rx_value::rx_value (bool val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (bool val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_BOOL_TYPE;
 	_value.bool_value = val;
@@ -66,25 +66,25 @@ rx_value::rx_value (bool val, rx_time time, dword quality, dword origin)
 	_quality = quality;
 }
 
-rx_value::rx_value (sbyte val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (int8_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_SBYTE_TYPE;
-	_value.sbyte_value = val;
+	_value.int8_value = val;
 	_origin = origin;
 	_time = time;
 	_quality = quality;
 }
 
-rx_value::rx_value (byte val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (uint8_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_BYTE_TYPE;
-	_value.byte_value = val;
+	_value.uint8_value = val;
 	_origin = origin;
 	_time = time;
 	_quality = quality;
 }
 
-rx_value::rx_value (const bit_string& val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (const bit_string& val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
@@ -98,14 +98,14 @@ rx_value::rx_value (const bit_string& val, rx_time time, dword quality, dword or
 	_quality = quality;
 }
 
-rx_value::rx_value (const std::vector<sbyte>& val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (const std::vector<int8_t>& val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
 	_value.array_value = new std::vector<rx_value_union>(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		_value.array_value->at(i).sbyte_value = val[i];
+		_value.array_value->at(i).int8_value = val[i];
 	}
 	_origin = origin;
 	_time = time;
@@ -118,25 +118,25 @@ rx_value::rx_value (rx_value&& right)
 	right._type = RX_NULL_TYPE;
 }
 
-rx_value::rx_value (sdword val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (int32_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_SDWORD_TYPE;
-	_value.sdword_value = val;
+	_value.int32_value = val;
 	_origin = origin;
 	_time = time;
 	_quality = quality;
 }
 
-rx_value::rx_value (dword val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (uint32_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_DWORD_TYPE;
-	_value.dword_value = val;
+	_value.uint32_value = val;
 	_origin = origin;
 	_time = time;
 	_quality = quality;
 }
 
-rx_value::rx_value (const string_type& val, rx_time time, dword quality, dword origin)
+rx_value::rx_value (const string_type& val, rx_time time, uint32_t quality, uint32_t origin)
 {
 	_type = RX_STRING_TYPE;
 	_value.string_value = new string_type(val);
@@ -194,7 +194,7 @@ void rx_value::get_string (string_type& val)
 		case RX_SWORD_TYPE:
 		case RX_SDWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (dword)_value.byte_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (int32_t)_value.int32_value);
 				val = buffer;
 			}
 			break;
@@ -202,7 +202,7 @@ void rx_value::get_string (string_type& val)
 		case RX_WORD_TYPE:
 		case RX_DWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (dword)_value.byte_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (uint32_t)_value.uint32_value);
 				val = buffer;
 
 			}
@@ -285,7 +285,7 @@ bool rx_value::is_substituted () const
 	return ((_origin & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
 }
 
-void rx_value::clear_union (byte type, rx_value_union& value)
+void rx_value::clear_union (uint8_t type, rx_value_union& value)
 {
 	if (IS_ARRAY_VALUE(type))
 	{// array stuff
@@ -315,7 +315,7 @@ void rx_value::clear_union (byte type, rx_value_union& value)
 	}
 }
 
-void rx_value::copy_union (byte type, rx_value_union& to, const rx_value_union& from)
+void rx_value::copy_union (uint8_t type, rx_value_union& to, const rx_value_union& from)
 {
 	memcpy(&to, &from, sizeof(rx_value_union));
 	if (IS_ARRAY_VALUE(type))
@@ -354,17 +354,17 @@ bool rx_value::is_array () const
 
 bool rx_value::operator > (const rx_value& right)
 {
-	return _value.sdword_value < right._value.sdword_value;
+	return _value.int32_value < right._value.int32_value;
 }
 
 bool rx_value::operator < (const rx_value& right)
 {
-	return _value.sdword_value > right._value.sdword_value;
+	return _value.int32_value > right._value.int32_value;
 }
 
 rx_value::operator int () const
 {
-	return _value.sdword_value;
+	return _value.int32_value;
 }
 
 void rx_value::set_substituted ()
@@ -458,7 +458,7 @@ void rx_value::get_type_string (string_type& val)
 		break;
 	case RX_BSTRING_TYPE:
 		{
-			val = "byte string";
+			val = "uint8_t string";
 		}
 		break;
 	case RX_COMPLEX_TYPE:
@@ -510,13 +510,13 @@ bool rx_value::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-bool rx_value::serialize_value (base_meta_writter& stream, byte type, const rx_value_union& value) const
+bool rx_value::serialize_value (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const
 {
 	if (IS_ARRAY_VALUE(type))
 	{
-		if (!stream.start_array("Array", (dword)value.array_value->size()))
+		if (!stream.start_array("Array", (uint32_t)value.array_value->size()))
 			return false;
-		byte simple_type = (type&RX_SIMPLE_VALUE_MASK);
+		uint8_t simple_type = (type&RX_SIMPLE_VALUE_MASK);
 		for (const auto& one : *value.array_value)
 		{
 			if (!serialize_value(stream, simple_type, one))
@@ -540,28 +540,28 @@ bool rx_value::serialize_value (base_meta_writter& stream, byte type, const rx_v
 			return stream.write_bool("Value", value.bool_value);
 
 		case RX_SBYTE_TYPE:
-			return stream.write_byte("Value", value.sbyte_value);
+			return stream.write_byte("Value", value.int8_value);
 
 		case RX_BYTE_TYPE:
-			return stream.write_byte("Value", value.byte_value);
+			return stream.write_byte("Value", value.uint8_value);
 
 		case RX_SWORD_TYPE:
-			return stream.write_int("Value", (int)value.sword_value);
+			return stream.write_int("Value", (int)value.int16_value);
 
 		case RX_WORD_TYPE:
-			return stream.write_uint("Value", (dword)value.word_value);
+			return stream.write_uint("Value", (uint32_t)value.uint16_value);
 
 		case RX_SDWORD_TYPE:
-			return stream.write_int("Value", (dword)value.sdword_value);
+			return stream.write_int("Value", (uint32_t)value.int32_value);
 
 		case RX_DWORD_TYPE:
-			return stream.write_uint("Value", value.dword_value);
+			return stream.write_uint("Value", value.uint32_value);
 
 		case RX_SQWORD_TYPE:
-			return stream.write_double("Value", (double)value.sqword_value);
+			return stream.write_double("Value", (double)value.int64_value);
 
 		case RX_QWORD_TYPE:
-			return stream.write_double("Value", (double)value.qword_value);
+			return stream.write_double("Value", (double)value.uint64_value);
 
 		case RX_FLOAT_TYPE:
 			return stream.write_double("Value", (double)value.float_value);
@@ -603,14 +603,14 @@ bool rx_value::serialize_value (base_meta_writter& stream, byte type, const rx_v
 	}
 }
 
-bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_union& value)
+bool rx_value::deserialize_value (base_meta_reader& stream, uint8_t type, rx_value_union& value)
 {
 	if (IS_ARRAY_VALUE(type))
 	{// array stuff
 		if (!stream.start_array("Array"))
 			return false;
 
-		byte simple_type = (type&RX_SIMPLE_VALUE_MASK);
+		uint8_t simple_type = (type&RX_SIMPLE_VALUE_MASK);
 
 		bool succeeded = true;
 
@@ -652,10 +652,10 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 
 		case RX_SBYTE_TYPE:
 			{
-				byte temp;
+				uint8_t temp;
 				if (stream.read_byte("Value", temp))
 				{
-					value.sbyte_value = (char)temp;
+					value.int8_value = (char)temp;
 					return true;
 				}
 				else
@@ -663,14 +663,14 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 			}
 			break;
 		case RX_BYTE_TYPE:
-			return stream.read_byte("Value", value.byte_value);
+			return stream.read_byte("Value", value.uint8_value);
 
 		case RX_SWORD_TYPE:
 			{
 				int temp;
 				if (stream.read_int("Value", temp))
 				{
-					value.sword_value = (sword)temp;
+					value.int16_value = (int16_t)temp;
 					return true;
 				}
 				else
@@ -679,10 +679,10 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 			break;
 		case RX_WORD_TYPE:
 			{
-				dword temp;
+				uint32_t temp;
 				if (stream.read_uint("Value", temp))
 				{
-					value.word_value = (word)temp;
+					value.uint16_value = (uint16_t)temp;
 					return true;
 				}
 				else
@@ -690,17 +690,17 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 			}
 			break;
 		case RX_SDWORD_TYPE:
-			return stream.read_int("Value", value.sdword_value);
+			return stream.read_int("Value", value.int32_value);
 
 		case RX_DWORD_TYPE:
-			return stream.read_uint("Value", value.dword_value);
+			return stream.read_uint("Value", value.uint32_value);
 
 		case RX_SQWORD_TYPE:
 			{
 				double temp;
 				if (stream.read_double("Value", temp))
 				{
-					value.sqword_value = (sqword)temp;
+					value.int64_value = (int64_t)temp;
 					return true;
 				}
 				else
@@ -712,7 +712,7 @@ bool rx_value::deserialize_value (base_meta_reader& stream, byte type, rx_value_
 				double temp;
 				if (stream.read_double("Value", temp))
 				{
-					value.qword_value = (qword)temp;
+					value.uint64_value = (uint64_t)temp;
 					return true;
 				}
 				else
@@ -830,9 +830,9 @@ bool rx_value::deserialize_value (base_meta_reader& stream)
 	return deserialize_value(stream, _type, _value);
 }
 
-rx_value::operator dword () const
+rx_value::operator uint32_t () const
 {
-	return _value.dword_value;
+	return _value.uint32_value;
 }
 
 rx_value::operator bool () const

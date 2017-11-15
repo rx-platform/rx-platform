@@ -6,28 +6,29 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
 #include "stdafx.h"
 
+#include "rx_gnu_console_version.h"
 
 // rx_gnu_console
 #include "host/gnu_hosts/rx_gnu_console.h"
@@ -53,7 +54,7 @@ namespace host {
 
 namespace gnu {
 
-// Class host::gnu::gnu_console_host
+// Class host::gnu::gnu_console_host 
 
 gnu_console_host::gnu_console_host()
 {
@@ -137,6 +138,17 @@ sys_handle_t gnu_console_host::get_host_console_script_file (const string_type& 
     rx::combine_paths(RX_CONSOLE_SCRIPTS_PATHS,path,full_path);
     sys_handle_t file=rx_file(full_path.c_str(),RX_FILE_OPEN_READ,RX_FILE_OPEN_EXISTING);
     return file;
+}
+
+void gnu_console_host::get_host_info (string_array& hosts)
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_GNU_HOST_NAME, RX_GNU_HOST_MAJOR_VERSION, RX_GNU_HOST_MINOR_VERSION, RX_GNU_HOST_BUILD_NUMBER);
+	}
+	hosts.emplace_back(ret);
+	interactive::interactive_console_host::get_host_info(hosts);
 }
 
 

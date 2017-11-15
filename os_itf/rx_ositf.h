@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -30,6 +30,8 @@
 #define rx_ositf_h 1
 
 
+// including C style standard integer types
+#include <stdint.h>
 
 
 
@@ -48,8 +50,8 @@ extern "C" {
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	// error handling here
 
-	dword rx_last_eror();
-	void fill_error_string(dword err_code);
+	uint32_t rx_last_eror();
+	void fill_error_string(uint32_t err_code);
 	///////////////////////////////////////////////////////////////////
 	// anynoimus pipes
 
@@ -80,14 +82,14 @@ extern "C" {
 	int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t size);
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// IP addresses
-	int rx_add_ip_address(dword addr, dword mask, int itf, ip_addr_ctx_t* ctx);
+	int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
 	int rx_remove_ip_address(ip_addr_ctx_t ctx);
-	int rx_is_valid_ip_address(dword addr, dword mask);
+	int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
 
 
 	void rx_generate_new_uuid(rx_uuid_t* u);
-	dword rx_uuid_to_string(const rx_uuid_t* u, char* str);
-	dword rx_string_to_uuid(const char* str, rx_uuid_t* u);
+	uint32_t rx_uuid_to_string(const rx_uuid_t* u, char* str);
+	uint32_t rx_string_to_uuid(const char* str, rx_uuid_t* u);
 
 	extern int rx_big_endian;
 	extern rx_thread_data_t rx_tls;
@@ -95,7 +97,7 @@ extern "C" {
 	const char* rx_get_server_name();
 	void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* server_name);
 	void rx_deinitialize_os();
-	dword rx_border_rand(dword min, dword max);
+	uint32_t rx_border_rand(uint32_t min, uint32_t max);
 
 	size_t rx_os_page_size();
 	void* rx_allocate_os_memory(size_t size);
@@ -103,15 +105,15 @@ extern "C" {
 
 
 
-	dword rx_atomic_inc_fetch_32(volatile dword* val);
-	dword rx_atomic_dec_fetch_32(volatile dword* val);
-	dword rx_atomic_fetch_32(volatile dword* val);
+	uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val);
+	uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val);
+	uint32_t rx_atomic_fetch_32(volatile uint32_t* val);
 
-	dword rx_atomic_add_fetch_32(volatile dword* val, int add);
+	uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add);
 
-	qword rx_atomic_inc_fetch_64(volatile qword* val);
-	qword rx_atomic_dec_fetch_64(volatile qword* val);
-	qword rx_atomic_fetch_64(volatile qword* val);
+	uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val);
+	uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val);
+	uint64_t rx_atomic_fetch_64(volatile uint64_t* val);
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,26 +121,26 @@ extern "C" {
 
 	void rx_collect_system_info(char* buffer, size_t buffer_size);
 	void rx_collect_processor_info(char* buffer, size_t buffer_size);
-	void rx_collect_memory_info(qword* total, qword* free);
+	void rx_collect_memory_info(uint64_t* total, uint64_t* free);
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	//time related functions
 	typedef struct rx_time_struct_t
 	{
-		qword t_value;
+		uint64_t t_value;
 	} rx_time_struct;
 
 	typedef struct rx_full_time_t
 	{
-		dword year;
-		dword month;
-		dword day;
-		dword w_day;
-		dword hour;
-		dword minute;
-		dword second;
-		dword milliseconds;
+		uint32_t year;
+		uint32_t month;
+		uint32_t day;
+		uint32_t w_day;
+		uint32_t hour;
+		uint32_t minute;
+		uint32_t second;
+		uint32_t milliseconds;
 
 	} rx_full_time;
 
@@ -157,7 +159,7 @@ extern "C" {
 	{
 		int is_directory;
 		char file_name[MAX_PATH];
-		dword size;
+		uint32_t size;
 		rx_time_struct time;
 	} rx_file_directory_entry;
 
@@ -175,8 +177,8 @@ extern "C" {
 #define RX_WAIT_TIMEOUT 0x102
 #define RX_WAIT_ERROR 0xffffffff
 
-	dword rx_handle_wait(sys_handle_t what, dword timeout);
-	dword rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, dword timeout);
+	uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout);
+	uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -184,7 +186,7 @@ extern "C" {
 	// mutex apstractions ( wait and the rest of the stuff
 	sys_handle_t rx_mutex_create(int initialy_owned);
 	int rx_mutex_destroy(sys_handle_t hndl);
-	int rx_mutex_aquire(sys_handle_t hndl, dword timeout);
+	int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout);
 	int rx_mutex_release(sys_handle_t hndl);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -215,9 +217,9 @@ extern "C" {
 
 
 	sys_handle_t rx_file(const char* path, int access, int creation);
-	int rx_file_read(sys_handle_t hndl, void* buffer, dword size, dword* readed);
-	int rx_file_write(sys_handle_t hndl, const void* buffer, dword size, dword* written);
-	int rx_file_get_size(sys_handle_t hndl, qword* size);
+	int rx_file_read(sys_handle_t hndl, void* buffer, uint32_t size, uint32_t* readed);
+	int rx_file_write(sys_handle_t hndl, const void* buffer, uint32_t size, uint32_t* written);
+	int rx_file_get_size(sys_handle_t hndl, uint64_t* size);
 	int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm);
 	int rx_file_close(sys_handle_t hndl);
 	int rx_file_delete(const char* path);
@@ -230,11 +232,11 @@ extern "C" {
 
 	typedef void(*rx_callback)(void*);
 
-	typedef int(*rx_io_read_callback)(void*, dword status, size_t);
-	typedef int(*rx_io_write_callback)(void*, dword status);
-	typedef int(*rx_io_connect_callback)(void*, dword status);
-	typedef int(*rx_io_accept_callback)(void*, dword status, sys_handle_t, struct sockaddr*, struct sockaddr*, size_t);
-	typedef int(*rx_io_shutdown_callback)(void*, dword status);
+	typedef int(*rx_io_read_callback)(void*, uint32_t status, size_t);
+	typedef int(*rx_io_write_callback)(void*, uint32_t status);
+	typedef int(*rx_io_connect_callback)(void*, uint32_t status);
+	typedef int(*rx_io_accept_callback)(void*, uint32_t status, sys_handle_t, struct sockaddr*, struct sockaddr*, size_t);
+	typedef int(*rx_io_shutdown_callback)(void*, uint32_t status);
 
 
 	typedef struct rx_io_register_data_t
@@ -248,33 +250,33 @@ extern "C" {
 		void* data;
 		void* read_buffer;
 		size_t read_buffer_size;
-		byte internal[INTERNAL_IO_EVENT_SIZE];
+		uint8_t internal[INTERNAL_IO_EVENT_SIZE];
 	} rx_io_register_data;
 
 
 
 	rx_kernel_dispather_t rx_create_kernel_dispathcer(int max);
-	dword rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp);
-	dword rx_dispatcher_signal_end(rx_kernel_dispather_t disp);
+	uint32_t rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp);
+	uint32_t rx_dispatcher_signal_end(rx_kernel_dispather_t disp);
 
-	dword rx_dispatch_events(rx_kernel_dispather_t disp);
+	uint32_t rx_dispatch_events(rx_kernel_dispather_t disp);
 
-	dword rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg);
+	uint32_t rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* arg);
 
 
-	dword rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data);
+	uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data);
 	int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data);
 
-	dword rx_socket_read(struct rx_io_register_data_t* what, size_t* readed);
-	dword rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count);
+	uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed);
+	uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count);
 
 
-	dword rx_socket_accept(struct rx_io_register_data_t* what);
-	dword rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize);
+	uint32_t rx_socket_accept(struct rx_io_register_data_t* what);
+	uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// socket apstractions
 	sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr);
-	dword rx_socket_listen(sys_handle_t handle);
+	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,17 +319,17 @@ extern "C" {
 #define RX_PRIORITY_ABOVE_NORMAL 1
 #define RX_PRIORITY_HIGH 2
 #define RX_PRIORITY_REALTIME 3
-	sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, dword* thread_id);
+	sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id);
 	int rx_thread_join(sys_handle_t what);
 	int rx_thread_close(sys_handle_t what);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// basic apstractions
-	void rx_msleep(dword timeout);
-	void rx_us_sleep(qword timeout);
-	dword rx_get_tick_count();
-	qword rx_get_us_ticks();
+	void rx_msleep(uint32_t timeout);
+	void rx_us_sleep(uint64_t timeout);
+	uint32_t rx_get_tick_count();
+	uint64_t rx_get_us_ticks();
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 

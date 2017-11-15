@@ -37,7 +37,7 @@
 
 
 namespace rx {
-typedef dword ref_counting_type;
+typedef uint32_t ref_counting_type;
 
 
 namespace pointers {

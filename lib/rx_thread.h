@@ -76,7 +76,7 @@ class thread : public locks::waitable
 
   protected:
 
-      virtual dword handler () = 0;
+      virtual uint32_t handler () = 0;
 
 
   private:
@@ -87,7 +87,7 @@ class thread : public locks::waitable
 
       string_type _name;
 
-      dword _thread_id;
+      uint32_t _thread_id;
 
 
 };
@@ -110,7 +110,7 @@ class job_aware_thread : public pointers::interface_object
 
       virtual void run (int priority = RX_PRIORITY_NORMAL) = 0;
 
-      virtual void end (dword timeout = RX_INFINITE) = 0;
+      virtual void end (uint32_t timeout = RX_INFINITE) = 0;
 
 
   protected:
@@ -171,18 +171,18 @@ class physical_job_thread : public thread,
 
       void run (int priority = RX_PRIORITY_NORMAL);
 
-      void end (dword timeout = RX_INFINITE);
+      void end (uint32_t timeout = RX_INFINITE);
 
       void append (job_ptr pjob);
 
 
   protected:
 
-      dword handler ();
+      uint32_t handler ();
 
-      bool wait (std::vector<job_ptr>& queued, dword timeout = RX_INFINITE);
+      bool wait (std::vector<job_ptr>& queued, uint32_t timeout = RX_INFINITE);
 
-      void stop (dword timeout = RX_INFINITE);
+      void stop (uint32_t timeout = RX_INFINITE);
 
       void virtual_bind ();
 
@@ -218,7 +218,7 @@ class dispatcher_thread : public thread
 
   protected:
 
-      dword handler ();
+      uint32_t handler ();
 
 
   private:
@@ -250,7 +250,7 @@ class dispatcher_pool : public job_thread,
 
       void run (int priority = RX_PRIORITY_NORMAL);
 
-      void end (dword timeout = RX_INFINITE);
+      void end (uint32_t timeout = RX_INFINITE);
 
       void append (job_ptr pjob);
 
@@ -297,12 +297,12 @@ class timer : public thread,
 
       void stop ();
 
-      void append_job (timer_job_ptr job, job_thread* executer, dword period, bool now = false);
+      void append_job (timer_job_ptr job, job_thread* executer, uint32_t period, bool now = false);
 
 
   protected:
 
-      dword handler ();
+      uint32_t handler ();
 
 
   private:

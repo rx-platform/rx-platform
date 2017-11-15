@@ -6,43 +6,44 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
 #include "stdafx.h"
 
 #include <iostream>
+#include "rx_host_version.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
 
 #include "system/constructors/rx_construct.h"
 
-#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
+//#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
 
 namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
       : _exit(false),
@@ -93,14 +94,15 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 
 }
 
-const string_type& interactive_console_host::get_host_info ()
+void interactive_console_host::get_host_info (string_array& hosts)
 {
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, INTERACTIVE_HOST_INFO);
+		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
 	}
-	return ret;
+	hosts.emplace_back(ret);
+	rx_server_host::get_host_info(hosts);
 }
 
 void interactive_console_host::server_started_event ()
@@ -208,7 +210,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client
+// Class host::interactive::interactive_console_client 
 
 interactive_console_client::interactive_console_client()
       : _exit(false)
@@ -226,8 +228,8 @@ interactive_console_client::~interactive_console_client()
 
 const string_type& interactive_console_client::get_console_name ()
 {
-	static string_type ret("Process Interactive Console");
-	return ret;
+	static string_type temp("Interactive");
+	return temp;
 }
 
 void interactive_console_client::run_interactive (const interactive_console_host& host)
@@ -312,7 +314,7 @@ void interactive_console_client::exit_console ()
 }
 
 
-// Class host::interactive::interactive_security_context
+// Class host::interactive::interactive_security_context 
 
 interactive_security_context::interactive_security_context()
 {

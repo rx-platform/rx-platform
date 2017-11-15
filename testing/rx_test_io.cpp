@@ -116,7 +116,7 @@ test_client_basics::~test_client_basics()
 bool test_client_basics::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
 	string_type addr;
-	word port=0;
+	uint16_t port=0;
 	if (!in.eof())
 	{
 		in >> addr;

@@ -102,9 +102,9 @@ void create_module_compile_time_string(const char* date, const char* time,char* 
         year, month,
         day, hour, minute, minute);
 }
-
-void create_module_version_string(const char* prefix, const char* date, const char* time, char* buffer)
+void create_module_version_string(const char* prefix, int major, int minor, int build, const char* date, const char* time, char* buffer)
 {
+
 
 	int year = 0;
 	int month = 0;
@@ -150,7 +150,8 @@ void create_module_version_string(const char* prefix, const char* date, const ch
 	else if (strcmp(str, "Dec") == 0)
 		month = 12;
 
-	sprintf(buffer, "%s.%d%04d", prefix,
+	sprintf(buffer, "%s Ver %d.%d.%d.%d%04d", prefix,
+		major,minor,build,
 		(year), month * 100 + day);
 
 

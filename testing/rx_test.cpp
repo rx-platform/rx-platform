@@ -201,7 +201,7 @@ void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err
 {
 	out << "===================================\r\n";
 	TEST_LOG_INFO(_name, 500, "Test Case Ended");
-	qword ellapsed = rx_get_us_ticks() - _start_tick;
+	uint64_t ellapsed = rx_get_us_ticks() - _start_tick;
 	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
 }
 
