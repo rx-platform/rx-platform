@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  testing\rx_test_io.h
+*  testing\rx_test_basic.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -26,13 +26,11 @@
 ****************************************************************************/
 
 
-#ifndef rx_test_io_h
-#define rx_test_io_h 1
+#ifndef rx_test_basic_h
+#define rx_test_basic_h 1
 
 
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
 
@@ -40,54 +38,24 @@
 
 namespace testing {
 
-namespace io_test {
+namespace basic_tests {
 
-namespace ip_test {
-
-
+namespace function_test {
 
 
-class tcp_test_client : public rx::io::tcp_client_socket_std_buffer  
+
+
+
+class platform_callback_test : public test_case  
 {
-	DECLARE_REFERENCE_PTR(tcp_test_client);
+	DECLARE_REFERENCE_PTR(platform_callback_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+basic testing of callback capabilities.");
 
   public:
-      tcp_test_client();
+      platform_callback_test();
 
-      virtual ~tcp_test_client();
-
-
-      bool connect_complete ();
-
-
-  protected:
-
-      bool readed (const void* data, size_t count, rx_thread_handle_t destination);
-
-      void release_buffer (buffer_ptr what);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class test_client_basics : public test_case  
-{
-	DECLARE_REFERENCE_PTR(test_client_basics)
-	DECLARE_TEST_CODE_INFO(0,1,0, "\
-loading a file->reading it line by line->executing.");
-
-  public:
-      test_client_basics();
-
-      virtual ~test_client_basics();
+      virtual ~platform_callback_test();
 
 
       bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
@@ -106,13 +74,13 @@ loading a file->reading it line by line->executing.");
 
 
 
-class tcp_test : public test_category  
+class function_test_category : public test_category  
 {
 
   public:
-      tcp_test();
+      function_test_category();
 
-      virtual ~tcp_test();
+      virtual ~function_test_category();
 
 
   protected:
@@ -123,8 +91,8 @@ class tcp_test : public test_category
 };
 
 
-} // namespace ip_test
-} // namespace io_test
+} // namespace function_test
+} // namespace basic_tests
 } // namespace testing
 
 

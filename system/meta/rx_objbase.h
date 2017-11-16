@@ -66,7 +66,7 @@ class object_runtime;
 class variable_runtime;
 typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
 
-typedef callback::callback_functor_cotainer<locks::lockable,rx::values::rx_value> value_callback_t;
+typedef callback::callback_functor_container<locks::lockable,rx::values::rx_value> value_callback_t;
 class complex_runtime_item;
 typedef pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
 typedef pointers::reference<domain_runtime> domain_runtime_ptr;
@@ -240,6 +240,16 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+	  callback::callback_handle_t register_callback(const string_type& path, void* p, server::objects::value_callback_t::callback_function_t func)
+	  {
+		  rx_value val;
+		  value_callback_t* call_obj = get_callback(path, val);
+		  if (call_obj)
+			  return call_obj->register_callback(func);
+		  else
+			  return 0;
+	  }
+	  /*
 	  template<typename callbackT>
 	  callback::callback_handle_t register_callback(const string_type& path, void* p, void(callbackT::*func)(const rx_value&, callback::callback_state_t))
 	  {
@@ -258,7 +268,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 			  return call_obj->register_callback(func,val);
 		  else
 			  return 0;
-	  }
+	  }*/
   protected:
 
       object_runtime_ptr& get_hosting_object ();

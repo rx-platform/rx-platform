@@ -32,10 +32,12 @@
 // rx_test
 #include "testing/rx_test.h"
 
-#include "rx_test_io.h"
 #include "lib/security/rx_security.h"
-#include "rx_test_script.h"
 #include "system/server/rx_server.h"
+
+#include "rx_test_io.h"
+#include "rx_test_script.h"
+#include "rx_test_basic.h"
 
 
 namespace testing {
@@ -249,6 +251,7 @@ testing_enviroment::testing_enviroment()
 	register_code_test(std::make_unique<script_test::py_test::python_test>());
 	register_code_test(std::make_unique<test_test>());
 	register_code_test(std::make_unique<script_test::rxs::rx_script_category>());
+	register_code_test(std::make_unique<basic_tests::function_test::function_test_category>());
 }
 
 

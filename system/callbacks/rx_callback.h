@@ -46,117 +46,42 @@ typedef uint32_t callback_state_t;
 
 
 template <typename lockT, typename argT>
-class callback_functor_cotainer 
+class callback_functor_container 
 {
-	class dummy_class
-	{
-	public:
-		void dummy_method(const argT&, callback_state_t state)
-		{
-			RX_ASSERT(false);
-		}
-	};
+public:
+	typedef std::function<void(const argT&, callback_state_t)> callback_function_t;
+private:
+	typedef std::map<callback_handle_t, callback_function_t > callbacks_type;
 
-	void dummy_function(const argT&, callback_state_t state)
-	{
-
-	}
-
-	typedef void(dummy_class::*storage_function_type)(const argT&,callback_state_t state);
-	typedef void(*globale_function_type)(const argT&, callback_state_t state);
-
-	typedef decltype(std::mem_fn(&dummy_class::dummy_method)) member_function_type;
-
-	union data_union
-	{
-		dummy_class* object;
-		globale_function_type gf;
-	};
-
-	struct callback_data_t
-	{
-		callback_data_t(void* obj, member_function_type mf)
-			: f((member_function_type)mf)
-		{
-			callback_data.object=(dummy_class*)obj;
-		}
-		callback_data_t(globale_function_type func)
-			: f(std::mem_fn(&dummy_class::dummy_method))
-		{
-			callback_data.gf = func;
-		}
-		member_function_type f;
-		data_union callback_data;
-	};
-
-	typedef std::map<callback_handle_t, callback_data_t > callbacks_type;
 
   public:
-      callback_functor_cotainer();
+      callback_functor_container();
 
-      virtual ~callback_functor_cotainer();
+      ~callback_functor_container();
 
 
       uint32_t unregister_callback (callback_handle_t handle);
 
       void operator () (const argT& argument, uint32_t state);
 
-		template<typename callbackT>
-		callback_handle_t register_callback(void* p, void(callbackT::*func)(const argT&, callback_state_t))
-		{
-			callback_handle_t ret = g_new_handle++;
-			ret <<= 1;
-			callback_data_t one(p, std::mem_fn((storage_function_type)func));
-			this->_my_lock.lock();
-			if (this->_callbacks)
-				this->_callbacks = std::make_unique<callbacks_type>();
-			this->_callbacks->emplace(ret, one);
-			this->_my_lock.unlock();
-			return ret;
+	  callback_handle_t register_callback(callback_function_t func)
+	  {
+		  callback_handle_t ret = g_new_handle++;
 
-		}
-		callback_handle_t register_callback(void(func)(const argT&, callback_state_t))
-		{
-			callback_handle_t ret = g_new_handle++;
-			ret <<= 1;
-			ret |= 1;
-			callback_data_t one(func);
-			this->_my_lock.lock();
-			if (this->_callbacks)
-				this->_callbacks = std::make_unique<callbacks_type>();
-			this->_callbacks->emplace(ret, one);
-			this->_my_lock.unlock();
-			return ret;
-		}
-		template<typename callbackT>
-		callback_handle_t register_callback(void* p, void(callbackT::*func)(const argT&, callback_state_t),const argT& initial)
-		{
-			callback_handle_t ret = g_new_handle++;
-			ret <<= 1;
-			callback_data_t one(p, std::mem_fn((storage_function_type)func));
-			this->_my_lock.lock();
-			if (this->_callbacks)
-				this->_callbacks = std::make_unique<callbacks_type>();
-			(func)((callbackT*)p, initial, 0);
-			this->_callbacks->emplace(ret, one);
-			this->_my_lock.unlock();
-			return ret;
-
-		}
-		callback_handle_t register_callback(globale_function_type func, const argT& initial)
-		{
-			callback_handle_t ret = g_new_handle++;
-			ret <<= 1;
-			ret |= 1;
-			callback_data_t one(func);
-			this->_my_lock.lock();
-			if (this->_callbacks)
-				this->_callbacks = std::make_unique<callbacks_type>();
-			(func)(initial, 0);
-			this->_callbacks->emplace(ret, one);
-			this->_my_lock.unlock();
-			return ret;
-		}
+		  this->_my_lock.lock();
+		  this->_callbacks.emplace(ret, func);
+		  this->_my_lock.unlock();
+		  return ret;
+	  }
+	  template<typename callbackT>
+	  callback::callback_handle_t register_callback(void* p, void(callbackT::*func)(const argT&, callback::callback_state_t))
+	  {
+		  return register_callback(std::bind(func, (callbackT*)p, _1, _2));
+	  }
+	  callback::callback_handle_t register_callback(void(func)(const argT&, callback::callback_state_t))
+	  {
+		  return register_callback(callback_function_t(func));
+	  }
   protected:
 
   private:
@@ -166,65 +91,55 @@ class callback_functor_cotainer
 
       lockT _my_lock;
 
-      std::unique_ptr<callbacks_type> _callbacks;
+      callbacks_type _callbacks;
 
 
 };
 
 
-// Parameterized Class server::callback::callback_functor_cotainer 
+// Parameterized Class server::callback::callback_functor_container 
 
 template <typename lockT, typename argT>
-std::atomic<callback_handle_t> callback_functor_cotainer<lockT,argT>::g_new_handle;
+std::atomic<callback_handle_t> callback_functor_container<lockT,argT>::g_new_handle;
 
 template <typename lockT, typename argT>
-callback_functor_cotainer<lockT,argT>::callback_functor_cotainer()
+callback_functor_container<lockT,argT>::callback_functor_container()
 {
 }
 
 
 template <typename lockT, typename argT>
-callback_functor_cotainer<lockT,argT>::~callback_functor_cotainer()
+callback_functor_container<lockT,argT>::~callback_functor_container()
 {
 }
 
 
 
 template <typename lockT, typename argT>
-uint32_t callback_functor_cotainer<lockT,argT>::unregister_callback (callback_handle_t handle)
+uint32_t callback_functor_container<lockT,argT>::unregister_callback (callback_handle_t handle)
 {
 	uint32_t ret = RX_ERROR;
 	this->_my_lock.lock();
-	if (this->_callbacks != nullptr)
+	auto it = _callbacks.find(handle);
+	if (it != _callbacks.end())
 	{
-		auto it = _callbacks->find(handle);
-		if (it != _callbacks->end())
-		{
-			_callbacks->erase(it);
-			ret = RX_OK;
-		}
-		this->_my_lock.unlock();
+		_callbacks.erase(it);
+		ret = RX_OK;
 	}
+	this->_my_lock.unlock();
+
 	return ret;
 }
 
 template <typename lockT, typename argT>
-void callback_functor_cotainer<lockT,argT>::operator () (const argT& argument, uint32_t state)
+void callback_functor_container<lockT,argT>::operator () (const argT& argument, uint32_t state)
 {
 	this->_my_lock.lock();
-	if (this->_callbacks != nullptr && !_callbacks->empty())
+	if (!_callbacks.empty())
 	{
-		for (auto& it : *_callbacks)
+		for (auto it : _callbacks)
 		{
-			if (it.first & 0x1)
-			{// global function
-				(it.second.callback_data.gf)(argument, state);
-			}
-			else
-			{// member function
-				if (it.second.callback_data.object)
-					(it.second.f)(it.second.callback_data.object, argument, state);
-			}
+			it.second(argument, state);
 		}
 	}
 	this->_my_lock.unlock();
