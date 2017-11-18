@@ -165,7 +165,7 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 					ret = true;
 				}
 
-				out << "=====================================\r\nScript done.\r\n";
+				out << CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
 			}
 			else
 			{

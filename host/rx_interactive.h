@@ -36,7 +36,7 @@
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_host
-#include "host/rx_host.h"
+#include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 
@@ -91,26 +91,27 @@ class interactive_security_context : public rx::security::built_in_security_cont
 
 
 
-
 class interactive_console_client : public server::prog::console_client  
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(interactive_console_client);
 
 
   public:
-      interactive_console_client();
+      interactive_console_client (interactive_console_host* host);
 
       virtual ~interactive_console_client();
 
 
-      void run_interactive (const interactive_console_host& host);
+      const string_type& get_console_name ();
+
+      void run_interactive ();
 
       security::security_context::smart_ptr get_current_security_context ();
 
+      bool get_next_line (string_type& line);
+
 
   protected:
-
-      const string_type& get_console_name ();
 
       void virtual_bind ();
 
@@ -124,6 +125,8 @@ class interactive_console_client : public server::prog::console_client
 
       interactive_security_context::smart_ptr _security_context;
 
+      interactive_console_host *_host;
+
 
       bool _exit;
 
@@ -136,7 +139,7 @@ class interactive_console_client : public server::prog::console_client
 
 
 
-class interactive_console_host : public rx_server_host  
+class interactive_console_host : public server::hosting::rx_server_host  
 {
 
   public:
@@ -160,6 +163,8 @@ class interactive_console_host : public rx_server_host
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
       int console_main (int argc, char* argv[]);
+
+      virtual bool get_next_line (string_type& line) = 0;
 
 
   protected:

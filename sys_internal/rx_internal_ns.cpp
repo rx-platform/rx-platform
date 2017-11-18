@@ -60,7 +60,7 @@ root_server_directory::~root_server_directory()
 
 
 
-void root_server_directory::initialize (host::rx_server_host* host, namespace_data_t& data)
+void root_server_directory::initialize (server::hosting::rx_server_host* host, namespace_data_t& data)
 {
 	
 	server_directories_type dirs;

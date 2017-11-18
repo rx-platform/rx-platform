@@ -1,6 +1,6 @@
 #pragma once
 
-
+// directories stuff
 #define RX_NS_WORLD_NAME "world"
 #define RX_NS_SYS_NAME "_sys"
 #define RX_NS_TEST_NAME "_test"
@@ -12,6 +12,7 @@
 #define RX_NS_HOST_NAME "host"
 
 
+// objects stuff
 #define RX_NS_SYSTEM_APP_NAME "system_app"
 #define RX_NS_SYSTEM_APP_ID 1000
 #define RX_NS_SERVER_RT_NAME "runtime"
@@ -35,3 +36,8 @@
 #define RX_NS_SYSTEM_UNASS_ID 1006
 #define RX_NS_SYSTEM_UNASS_APP_NAME "unassigned_app"
 #define RX_NS_SYSTEM_UNASS_APP_ID 1006
+
+
+
+// Console related stuff
+#define CONSOLE_HEADER_LINE "============================================="

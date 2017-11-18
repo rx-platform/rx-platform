@@ -29,7 +29,7 @@
 #include "stdafx.h"
 
 #include <iostream>
-#include "rx_host_version.h"
+#include "rx_interactive_version.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -61,7 +61,7 @@ interactive_console_host::~interactive_console_host()
 void interactive_console_host::console_loop (server::configuration_data_t& config)
 {
 
-	host_security_context::smart_ptr sec_ctx(pointers::_create_new);
+	server::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	sec_ctx->login();
 
 	security::security_auto_context dummy(sec_ctx);
@@ -81,9 +81,9 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 
 		if (RX_OK == server::rx_server::instance().start(this, config))
 		{
-			interactive_console_client interactive;
+			interactive_console_client interactive(this);
 
-			interactive.run_interactive(*this);
+			interactive.run_interactive();
 
 			server::rx_server::instance().stop();
 		}
@@ -212,9 +212,10 @@ int interactive_console_host::console_main (int argc, char* argv[])
 
 // Class host::interactive::interactive_console_client 
 
-interactive_console_client::interactive_console_client()
-      : _exit(false)
-  , _security_context(pointers::_create_new)
+interactive_console_client::interactive_console_client (interactive_console_host* host)
+      : _host(host),
+        _exit(false)
+	, _security_context(pointers::_create_new)
 {
 	_security_context->login();
 }
@@ -232,7 +233,7 @@ const string_type& interactive_console_client::get_console_name ()
 	return temp;
 }
 
-void interactive_console_client::run_interactive (const interactive_console_host& host)
+void interactive_console_client::run_interactive ()
 {
 
 	security::security_auto_context dummy(_security_context);
@@ -241,8 +242,7 @@ void interactive_console_client::run_interactive (const interactive_console_host
 	get_wellcome(temp);
 	std::cout << temp<<"\r\n";
 
-
-	while (!_exit && !host.exit())
+	while (!_exit && !_host->exit())
 	{
 
 		while (is_postponed())
@@ -256,7 +256,8 @@ void interactive_console_client::run_interactive (const interactive_console_host
 		std::cout << temp;
 
 		string_type line;
-		std::getline(std::cin, line);
+		
+		get_next_line(line);
 
 		if(std::cin.fail())
 		{
@@ -271,7 +272,7 @@ void interactive_console_client::run_interactive (const interactive_console_host
 			{
 				if (!err_buffer->empty())
 					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
-				if (!_exit && !host.exit())
+				if (!_exit && !_host->exit())
 				{
 					std::cout << "\r\n";
 					std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
@@ -311,6 +312,11 @@ security::security_context::smart_ptr interactive_console_client::get_current_se
 void interactive_console_client::exit_console ()
 {
 	_exit = true;
+}
+
+bool interactive_console_client::get_next_line (string_type& line)
+{
+	return _host->get_next_line(line);
 }
 
 

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_host.h
+*  system\hosting\rx_host.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -52,7 +52,34 @@ typedef rx::pointers::reference<security_context> execute_context_ptr;
 }
 
 
-namespace host {
+namespace server {
+
+namespace hosting {
+
+
+
+
+
+class host_security_context : public rx::security::built_in_security_context  
+{
+	DECLARE_REFERENCE_PTR(host_security_context);
+
+  public:
+      host_security_context();
+
+      virtual ~host_security_context();
+
+
+      bool is_system () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
 
 
 
@@ -113,32 +140,8 @@ class rx_server_host
 };
 
 
-
-
-
-
-class host_security_context : public rx::security::built_in_security_context  
-{
-	DECLARE_REFERENCE_PTR(host_security_context);
-
-  public:
-      host_security_context();
-
-      virtual ~host_security_context();
-
-
-      bool is_system () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace host
+} // namespace hosting
+} // namespace server
 
 
 

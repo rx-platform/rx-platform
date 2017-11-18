@@ -117,11 +117,11 @@ class server_manager
       virtual ~server_manager();
 
 
-      uint32_t initialize (host::rx_server_host* host, managment_data_t& data);
+      uint32_t initialize (hosting::rx_server_host* host, managment_data_t& data);
 
       uint32_t deinitialize ();
 
-      uint32_t start (host::rx_server_host* host, const managment_data_t& data);
+      uint32_t start (hosting::rx_server_host* host, const managment_data_t& data);
 
       uint32_t stop ();
 

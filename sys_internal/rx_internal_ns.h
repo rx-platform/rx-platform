@@ -34,7 +34,7 @@
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
-#include "host/rx_host.h"
+#include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 
@@ -65,7 +65,7 @@ contains root server folders\
       virtual ~root_server_directory();
 
 
-      static void initialize (host::rx_server_host* host, namespace_data_t& data);
+      static void initialize (server::hosting::rx_server_host* host, namespace_data_t& data);
 
       static void deinitialize ();
 

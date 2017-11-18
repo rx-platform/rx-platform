@@ -370,11 +370,26 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 		std::ostream err(out_buffer.unsafe_ptr());
 		return terminal::commands::server_command_manager::instance()->get_help(out, err);
 	}
+	else if (line == "term")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(out_buffer.unsafe_ptr());
+
+		out << "Terminal Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << get_console_name() << " Console\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << get_console_terminal() << "\r\n";
+		return true;
+	}
 	else
 	{
 		prog::server_console_program temp_prog(line);
 		
-		prog::program_context_base_ptr ctx = temp_prog.create_program_context(prog::server_program_holder_ptr::null_ptr, prog::program_context_base_ptr::null_ptr,_current_directory,out_buffer,err_buffer);
+		prog::program_context_base_ptr ctx = temp_prog.create_program_context(
+			prog::server_program_holder_ptr::null_ptr, 
+			prog::program_context_base_ptr::null_ptr,
+			_current_directory,
+			out_buffer,
+			err_buffer);
 		ctx->set_current_directory(_current_directory);
 		bool ret = temp_prog.process_program(ctx, rx_time::now(), false);
 		if (ret)
@@ -404,27 +419,10 @@ void console_client::get_prompt (string_type& prompt)
 void console_client::get_wellcome (string_type& wellcome)
 {
 	wellcome = g_console_welcome;
+	wellcome += ANSI_COLOR_GREEN ">>>> Running ";
 	wellcome += get_console_name();
-	wellcome += " Console\r\n===========================================\r\n";
-	wellcome += "\r\n";
-	string_array hosts;
-	rx_server::instance().get_host()->get_host_info(hosts);
-	for (auto& one : hosts)
-	{
-		wellcome += ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		wellcome += one;
-		wellcome += "\r\n";
-	}
-}
-
-const string_type& console_client::get_console_name ()
-{
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
-	}
-	return ret;
+	wellcome += " Console...\r\n";
+	wellcome += CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
 }
 
 bool console_client::is_postponed () const
@@ -437,8 +435,12 @@ bool console_client::is_postponed () const
 
 const string_type& console_client::get_console_terminal ()
 {
-	static string_type term("perica");
-	return term;
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
+	}
+	return ret;
 }
 
 

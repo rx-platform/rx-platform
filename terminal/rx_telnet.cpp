@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -36,6 +36,7 @@
 
 #include "system/server/rx_server.h"
 #include "system/python/py_support.h"
+#include "system/server/rx_cmds.h"
 
 
 namespace terminal {
@@ -312,7 +313,7 @@ void dump_table(const table_type& table, std::ostream& out,bool column_names)
 }
 
 
-// Class terminal::console::server_telnet_socket
+// Class terminal::console::server_telnet_socket 
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -334,7 +335,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 }
 
 
-// Class terminal::console::telnet_client
+// Class terminal::console::telnet_client 
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : _security_context(*addr,*local_addr),
@@ -595,8 +596,10 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 	else
 	{
         //printf("received %d\r\n",(int)buff[0]);
-
-		if (buff[0] == 8 || buff[0]==0x7f) // backspace ( delete on linux )
+		if (buff[0] == 8 || buff[0] == 0x7f) // backspace ( delete on linux )
+		{
+		}
+		else if (buff[0] == 8 || buff[0]==0x7f) // backspace ( delete on linux )
 		{
 			// backspace pressed
 			if (_receiving_string.size() > 0)
@@ -608,10 +611,6 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				echo_buff[2] = 8;
 				size_of_echo_buff = 3;
 			}
-			/*else
-			{
-			return recive();
-			}*/
 		}
 		// enter pressed
 		else if (buff[0] == 13)
@@ -731,8 +730,13 @@ void telnet_client::release_buffer (buffer_ptr what)
 	_buffers.push(what);
 }
 
+bool telnet_client::get_next_line (string_type& line)
+{
+	return true;
+}
 
-// Class terminal::console::telnet_security_context
+
+// Class terminal::console::telnet_security_context 
 
 telnet_security_context::telnet_security_context()
 {
@@ -889,7 +893,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::directory_command
+// Class terminal::console::console_commands::directory_command 
 
 directory_command::directory_command (const string_type& console_name)
   : server_command(console_name)
@@ -975,7 +979,7 @@ bool directory_command::do_console_command (std::istream& in, std::ostream& out,
 }
 
 
-// Class terminal::console::console_commands::dir_command
+// Class terminal::console::console_commands::dir_command 
 
 dir_command::dir_command()
   : directory_command("dir")
@@ -989,7 +993,7 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command
+// Class terminal::console::console_commands::ls_command 
 
 ls_command::ls_command()
   : directory_command("ls")
@@ -1040,7 +1044,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::cd_command
+// Class terminal::console::console_commands::cd_command 
 
 cd_command::cd_command()
   : server_command("cd")
@@ -1070,7 +1074,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::info_command
+// Class terminal::console::console_commands::info_command 
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -1151,7 +1155,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command
+// Class terminal::console::console_commands::code_command 
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1199,7 +1203,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command
+// Class terminal::console::console_commands::rx_name_command 
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1216,7 +1220,7 @@ rx_name_command::~rx_name_command()
 bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
 	out << "System Information\r\n";
-	out << "========================================\r\n";
+	out << CONSOLE_HEADER_LINE "\r\n";
 	out << "Engine Name: " << rx_server::instance().get_rx_name() << "\r\n";
 	out << "Engine Version: " << rx_server::instance().get_rx_version() << "\r\n";
 	out << "Library Version: " << rx_server::instance().get_lib_version() << "\r\n";
@@ -1263,7 +1267,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command
+// Class terminal::console::console_commands::cls_command 
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1284,7 +1288,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class terminal::console::console_commands::shutdown_command
+// Class terminal::console::console_commands::shutdown_command 
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1307,7 +1311,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class terminal::console::console_commands::log_command
+// Class terminal::console::console_commands::log_command 
 
 log_command::log_command()
 	: server_command("log")
@@ -1413,7 +1417,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command
+// Class terminal::console::console_commands::sec_command 
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1499,7 +1503,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command
+// Class terminal::console::console_commands::time_command 
 
 time_command::time_command()
 	: server_command("time")
@@ -1521,7 +1525,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command
+// Class terminal::console::console_commands::sleep_command 
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1549,7 +1553,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command
+// Class terminal::console::console_commands::def_command 
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1604,7 +1608,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command
+// Class terminal::console::console_commands::directory_aware_command 
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1618,7 +1622,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command
+// Class terminal::console::console_commands::phyton_command 
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1660,11 +1664,3 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 } // namespace console
 } // namespace terminal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	: server_command("test")
-
-#endif

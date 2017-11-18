@@ -42,7 +42,7 @@
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_host
-#include "host/rx_host.h"
+#include "system/hosting/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -93,11 +93,11 @@ class rx_server : public rx::security::secured_object
 
       void cleanup ();
 
-      uint32_t initialize (host::rx_server_host* host, configuration_data_t& data);
+      uint32_t initialize (hosting::rx_server_host* host, configuration_data_t& data);
 
       uint32_t deinitialize ();
 
-      uint32_t start (host::rx_server_host* host, const configuration_data_t& data);
+      uint32_t start (hosting::rx_server_host* host, const configuration_data_t& data);
 
       uint32_t stop ();
 
@@ -122,7 +122,7 @@ class rx_server : public rx::security::secured_object
       }
 
 
-      host::rx_server_host * get_host ()
+      hosting::rx_server_host * get_host ()
       {
         return _host;
       }
@@ -198,7 +198,7 @@ class rx_server : public rx::security::secured_object
 
       mngt::server_manager _manager;
 
-      host::rx_server_host *_host;
+      hosting::rx_server_host *_host;
 
       scripts_type _scripts;
 

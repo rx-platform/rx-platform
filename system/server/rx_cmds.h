@@ -40,6 +40,12 @@
 // rx_ns
 #include "system/server/rx_ns.h"
 
+namespace server {
+namespace prog {
+class program_context_base;
+} // namespace prog
+} // namespace server
+
 namespace rx {
 namespace security {
 class security_context;
@@ -48,7 +54,6 @@ class security_context;
 
 namespace server {
 namespace prog {
-class program_context_base;
 class server_program_holder;
 
 } // namespace prog
@@ -364,6 +369,7 @@ class server_console_program : public server_program_base
 
 class console_client : public rx::pointers::virtual_reference_object  
 {
+	DECLARE_VIRTUAL_REFERENCE_PTR(console_client);
 
   public:
       console_client();
@@ -371,7 +377,13 @@ class console_client : public rx::pointers::virtual_reference_object
       virtual ~console_client();
 
 
+      virtual const string_type& get_console_name () = 0;
+
       bool is_postponed () const;
+
+      const string_type& get_console_terminal ();
+
+      virtual bool get_next_line (string_type& line) = 0;
 
 
   protected:
@@ -382,11 +394,7 @@ class console_client : public rx::pointers::virtual_reference_object
 
       void get_wellcome (string_type& wellcome);
 
-      virtual const string_type& get_console_name ();
-
       virtual void exit_console () = 0;
-
-      const string_type& get_console_terminal ();
 
 
   private:

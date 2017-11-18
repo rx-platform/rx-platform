@@ -30,6 +30,7 @@
 #define rx_telnet_h 1
 
 
+
 /////////////////////////////////////////////////////////////
 // logging macros for console library
 #define CONSOLE_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Console",src,lvl,msg)
@@ -38,8 +39,6 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_io
@@ -48,6 +47,8 @@
 #include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 
 
@@ -117,10 +118,12 @@ class telnet_client : public server::prog::console_client,
 
       void on_shutdown (rx_thread_handle_t destination);
 
+      const string_type& get_console_name ();
+
+      bool get_next_line (string_type& line);
+
 
   protected:
-
-      const string_type& get_console_name ();
 
       void exit_console ();
 

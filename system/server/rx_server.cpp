@@ -93,7 +93,7 @@ void rx_server::cleanup ()
 	g_instance = nullptr;
 }
 
-uint32_t rx_server::initialize (host::rx_server_host* host, configuration_data_t& data)
+uint32_t rx_server::initialize (hosting::rx_server_host* host, configuration_data_t& data)
 {
 	python::py_script* python = &python::py_script::instance();
 	_scripts.emplace(python->get_definition().name, python);
@@ -131,7 +131,7 @@ uint32_t rx_server::deinitialize ()
 	return RX_OK;
 }
 
-uint32_t rx_server::start (host::rx_server_host* host, const configuration_data_t& data)
+uint32_t rx_server::start (hosting::rx_server_host* host, const configuration_data_t& data)
 {
 	if (_runtime.start(host, data.runtime_data))
 	{

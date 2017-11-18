@@ -54,7 +54,7 @@ server_rt::~server_rt()
 
 
 
-uint32_t server_rt::initialize (rx_server_host* host, runtime_data_t& data)
+uint32_t server_rt::initialize (hosting::rx_server_host* host, runtime_data_t& data)
 {
 	if (data.io_pool_size > 0)
 	{
@@ -102,7 +102,7 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, 
 		_general_timer->append_job(job,executer,period, now);
 }
 
-uint32_t server_rt::start (rx_server_host* host, const runtime_data_t& data)
+uint32_t server_rt::start (hosting::rx_server_host* host, const runtime_data_t& data)
 {
 	if (_io_pool)
 		_io_pool->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);

@@ -201,7 +201,7 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 
 void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	out << "===================================\r\n";
+	out << CONSOLE_HEADER_LINE "\r\n";
 	TEST_LOG_INFO(_name, 500, "Test Case Ended");
 	uint64_t ellapsed = rx_get_us_ticks() - _start_tick;
 	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";

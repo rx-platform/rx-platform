@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\gnu_hosts\rx_gnu_console.h
+*  gnu_hosts\rx_gnu_console.h
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -36,15 +36,13 @@
 
 
 
-namespace host {
-
 namespace gnu {
 
 
 
 
 
-class gnu_console_host : public interactive::interactive_console_host  
+class gnu_console_host : public host::interactive::interactive_console_host  
 {
 
   public:
@@ -63,6 +61,8 @@ class gnu_console_host : public interactive::interactive_console_host
 
       void get_host_info (string_array& hosts);
 
+      bool get_next_line (string_type& line);
+
 
   protected:
 
@@ -73,7 +73,6 @@ class gnu_console_host : public interactive::interactive_console_host
 
 
 } // namespace gnu
-} // namespace host
 
 
 

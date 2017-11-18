@@ -40,8 +40,7 @@
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 
-#include "host/rx_host.h"
-using namespace host;
+#include "system/hosting/rx_host.h"
 using server::ns::namespace_item_attributes;
 
 #define RX_DOMAIN_SLOW 0xfffd
@@ -218,13 +217,13 @@ callcualation ( normal priority)");
       virtual ~server_rt();
 
 
-      uint32_t initialize (rx_server_host* host, runtime_data_t& data);
+      uint32_t initialize (hosting::rx_server_host* host, runtime_data_t& data);
 
       uint32_t deinitialize ();
 
       void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, uint32_t period, bool now = false);
 
-      uint32_t start (rx_server_host* host, const runtime_data_t& data);
+      uint32_t start (hosting::rx_server_host* host, const runtime_data_t& data);
 
       uint32_t stop ();
 

@@ -72,7 +72,7 @@ void server_manager::virtual_release ()
 {
 }
 
-uint32_t server_manager::initialize (host::rx_server_host* host, managment_data_t& data)
+uint32_t server_manager::initialize (hosting::rx_server_host* host, managment_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	_telnet_port = data.telnet_port;
@@ -89,7 +89,7 @@ uint32_t server_manager::deinitialize ()
 	return RX_OK;
 }
 
-uint32_t server_manager::start (host::rx_server_host* host, const managment_data_t& data)
+uint32_t server_manager::start (hosting::rx_server_host* host, const managment_data_t& data)
 {
 	if (_telnet_port)
 	{

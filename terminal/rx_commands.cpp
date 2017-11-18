@@ -119,7 +119,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(console::console_commands::time_command::smart_ptr(pointers::_create_new));
 	register_command(console::console_commands::sleep_command::smart_ptr(pointers::_create_new));
 	register_command(console::console_commands::def_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::phyton_command::smart_ptr(pointers::_create_new)); 
+	register_command(console::console_commands::phyton_command::smart_ptr(pointers::_create_new));
 	register_command(testing::test_command::smart_ptr(pointers::_create_new));
 }
 
@@ -166,7 +166,7 @@ bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
 {
 	
 	out << "Printing help, well the beginig of making help :)\r\n";
-	out << "====================================================\r\n";
+	out << CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a list of commands:\r\n";
 
 	for (const auto& one : _registred_commands)

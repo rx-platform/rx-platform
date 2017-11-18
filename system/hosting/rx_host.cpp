@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_host.cpp
+*  system\hosting\rx_host.cpp
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
@@ -32,13 +32,39 @@
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_host
-#include "host/rx_host.h"
+#include "system/hosting/rx_host.h"
 
 
 
-namespace host {
+namespace server {
 
-// Class host::rx_server_host 
+namespace hosting {
+
+// Class server::hosting::host_security_context 
+
+host_security_context::host_security_context()
+{
+	_user_name = "host";
+	_full_name = _user_name + "@";
+	_full_name += _location;
+	_port = "internal";
+}
+
+
+host_security_context::~host_security_context()
+{
+}
+
+
+
+bool host_security_context::is_system () const
+{
+  return true;
+
+}
+
+
+// Class server::hosting::rx_server_host 
 
 rx_server_host::rx_server_host()
       : _parent(nullptr)
@@ -97,29 +123,6 @@ sys_handle_t rx_server_host::get_host_console_script_file (const string_type& pa
 }
 
 
-// Class host::host_security_context 
-
-host_security_context::host_security_context()
-{
-	_user_name = "host";
-	_full_name = _user_name + "@";
-	_full_name += _location;
-	_port = "internal";
-}
-
-
-host_security_context::~host_security_context()
-{
-}
-
-
-
-bool host_security_context::is_system () const
-{
-  return true;
-
-}
-
-
-} // namespace host
+} // namespace hosting
+} // namespace server
 
