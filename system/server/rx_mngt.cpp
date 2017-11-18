@@ -54,7 +54,7 @@ namespace mngt {
 server_manager::server_manager()
       : _telnet_port(0)
 {
-	_commands_manager = server_command_manager::smart_ptr(pointers::_create_new);
+	_commands_manager = rx_create_reference<server_command_manager>();
 }
 
 
@@ -77,10 +77,10 @@ uint32_t server_manager::initialize (hosting::rx_server_host* host, managment_da
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	_telnet_port = data.telnet_port;
 	_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
-	_unassigned_domain = sys_internal::sys_objects::unssigned_domain::smart_ptr(pointers::_create_new);
-	_unassigned_app = sys_internal::sys_objects::unassigned_application::smart_ptr(pointers::_create_new);
-	_system_app = sys_internal::sys_objects::system_application::smart_ptr(pointers::_create_new);
-	_system_domain = sys_internal::sys_objects::system_domain::smart_ptr(pointers::_create_new);
+	_unassigned_domain = rx_create_reference<sys_internal::sys_objects::unssigned_domain>();
+	_unassigned_app = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
+	_system_app = rx_create_reference<sys_internal::sys_objects::system_application>();
+	_system_domain = rx_create_reference<sys_internal::sys_objects::system_domain>();
 	return RX_OK;
 }
 
@@ -93,7 +93,7 @@ uint32_t server_manager::start (hosting::rx_server_host* host, const managment_d
 {
 	if (_telnet_port)
 	{
-		_telnet_listener = terminal::console::server_telnet_socket::smart_ptr(pointers::_create_new);
+		_telnet_listener = rx_create_reference<terminal::console::server_telnet_socket>();
 		_telnet_listener->start_tcpip_4(rx_server::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())

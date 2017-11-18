@@ -345,7 +345,7 @@ bool basic_test_case_test::do_console_test (std::istream& in, std::ostream& out,
 test_test::test_test()
 	: test_category("test")
 {
-	register_test_case(basic_test_case_test::smart_ptr(pointers::_create_new));
+	register_test_case(rx_create_reference<basic_test_case_test>());
 }
 
 

@@ -105,22 +105,22 @@ void server_command_manager::register_internal_commands ()
 {
 
 	// console commands
-	register_command(echo_server_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::dir_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::ls_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::cd_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::info_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::code_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::rx_name_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::cls_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::shutdown_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::log_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::sec_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::time_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::sleep_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::def_command::smart_ptr(pointers::_create_new));
-	register_command(console::console_commands::phyton_command::smart_ptr(pointers::_create_new));
-	register_command(testing::test_command::smart_ptr(pointers::_create_new));
+	register_command(rx_create_reference<echo_server_command>());
+	register_command(rx_create_reference<console::console_commands::dir_command>());
+	register_command(rx_create_reference<console::console_commands::ls_command>());
+	register_command(rx_create_reference<console::console_commands::cd_command>());
+	register_command(rx_create_reference<console::console_commands::info_command>());
+	register_command(rx_create_reference<console::console_commands::code_command>());
+	register_command(rx_create_reference<console::console_commands::rx_name_command>());
+	register_command(rx_create_reference<console::console_commands::cls_command>());
+	register_command(rx_create_reference<console::console_commands::shutdown_command>());
+	register_command(rx_create_reference<console::console_commands::log_command>());
+	register_command(rx_create_reference<console::console_commands::sec_command>());
+	register_command(rx_create_reference<console::console_commands::time_command>());
+	register_command(rx_create_reference<console::console_commands::sleep_command>());
+	register_command(rx_create_reference<console::console_commands::def_command>());
+	register_command(rx_create_reference<console::console_commands::phyton_command>());
+	register_command(rx_create_reference<testing::test_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)

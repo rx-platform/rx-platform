@@ -37,6 +37,8 @@
 
 
 namespace rx {
+// reference counting type defined here
+// important stuff regarding resources
 typedef uint32_t ref_counting_type;
 
 
@@ -129,6 +131,18 @@ public:
 	typedef ptrT* pointer_type;
 	typedef ptrT pointee_type;
 
+
+	// nothing special here
+	basic_smart_ptr() = default;
+	// it's not virtual!!!
+	~basic_smart_ptr() = default;
+	// reference based objet no copying
+	basic_smart_ptr(const basic_smart_ptr &right) = delete;
+	basic_smart_ptr & operator=(const basic_smart_ptr &right) = delete;
+	// use 'memmove' to move object around
+	basic_smart_ptr(basic_smart_ptr &&right) = default;
+	basic_smart_ptr & operator=(basic_smart_ptr &&right) = default;
+
   public:
 
       const ptrT* operator -> () const
@@ -151,13 +165,6 @@ public:
 		  return *_ptr;
       }
 
-
-
-	  basic_smart_ptr()
-	  {
-
-	  }
-	  
 
 	  static const char* get_pointee_class_name()
 	  {
@@ -386,6 +393,7 @@ reference<ptrT> reference<ptrT>::null_ptr;
 
 
 
+
 class reference_object 
 {
 	DECLARE_REFERENCE_PTR(reference_object);
@@ -427,36 +435,6 @@ class reference_object
       std::atomic<ref_counting_type> _ref_count;
 
       static std::atomic<ref_counting_type> g_objects_count;
-
-
-};
-
-
-
-
-
-
-class virtual_reference_object 
-{
-
-  public:
-      virtual_reference_object();
-
-      virtual ~virtual_reference_object();
-
-
-  protected:
-
-      virtual void virtual_bind () = 0;
-
-      virtual void virtual_release () = 0;
-
-
-  private:
-      virtual_reference_object(const virtual_reference_object &right);
-
-      virtual_reference_object & operator=(const virtual_reference_object &right);
-
 
 
 };
@@ -601,15 +579,55 @@ virtual_reference<ptrT> virtual_reference<ptrT>::null_ptr;
 
 
 
-class slim_reference 
+
+class virtual_reference_object 
 {
-	DECLARE_REFERENCE_PTR(slim_reference);
 
   public:
-      slim_reference();
+      virtual_reference_object();
 
-      ~slim_reference();
+      virtual ~virtual_reference_object();
 
+
+  protected:
+
+      virtual void virtual_bind () = 0;
+
+      virtual void virtual_release () = 0;
+
+
+  private:
+      virtual_reference_object(const virtual_reference_object &right);
+
+      virtual_reference_object & operator=(const virtual_reference_object &right);
+
+
+
+};
+
+
+
+
+
+
+
+struct struct_reference 
+{
+	DECLARE_REFERENCE_PTR(struct_reference);
+
+public:
+	// nothing special here
+	struct_reference() = default;
+	// it's not virtual!!!
+	~struct_reference() = default;
+	// reference based objet no copying
+	struct_reference(const struct_reference &right) = delete;
+	reference_object & operator=(const struct_reference &right) = delete;
+	// use 'memmove' to move object around
+	struct_reference(struct_reference &&right) = default;
+	struct_reference & operator=(struct_reference &&right) = default;
+
+  public:
 
   protected:
 
@@ -749,9 +767,6 @@ public:
 
   public:
 
-      void pera ();
-
-
   protected:
 
   private:
@@ -762,6 +777,7 @@ public:
 
 template<class ptrT>
 interface_reference<ptrT> interface_reference<ptrT>::null_ptr;
+
 
 
 
@@ -792,7 +808,7 @@ class interface_object
 
 };
 
-
+// this is an expreiment!!!
 template<typename T>
 class reference_pointer
 {
@@ -808,7 +824,18 @@ private:
 
 // Parameterized Class rx::pointers::basic_smart_ptr 
 
-
+//helper functions for creating concrete classes
+// for standard references
+template<class T, typename... Args>
+reference<T> create_reference(Args... args)
+{
+	return reference<T>(args...);
+}
+template<class T>
+reference<T> create_reference()
+{
+	return reference<T>(_create_new);
+}
 } // namespace pointers
 } // namespace rx
 

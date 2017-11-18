@@ -66,7 +66,8 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 
 	security::security_auto_context dummy(sec_ctx);
 
-	config.managment_data.telnet_port = 12345;
+	if(!config.managment_data.telnet_port)// set to the last default if not set
+		config.managment_data.telnet_port = 12345;
 	config.runtime_data.genereal_pool_size = 2;
 	config.runtime_data.io_pool_size = 4;
 	config.runtime_data.workers_pool_size = 2;

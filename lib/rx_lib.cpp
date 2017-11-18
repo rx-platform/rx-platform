@@ -52,11 +52,11 @@ bool create_directory(const std::string& dir, bool fail_on_exsists)
 {
 	return rx_create_directory(dir.c_str(), fail_on_exsists ? 1 : 0) != 0;
 }
-bool delete_all_files(const std::string& dir, const std::string& pattern)
+bool rx_delete_all_files(const std::string& dir, const std::string& pattern)
 {
 	bool succeeded = true;
 	std::vector<std::string> files;
-	list_files(dir, pattern, files);
+	rx_list_files(dir, pattern, files);
 	for (auto& one : files)
 	{
 		if (!rx_file_delete(one.c_str()))
@@ -65,10 +65,10 @@ bool delete_all_files(const std::string& dir, const std::string& pattern)
 	return succeeded;
 }
 
-void list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files)
+void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files)
 {
 	std::string search;
-	combine_paths(dir, pattern, search);
+	rx_combine_paths(dir, pattern, search);
 	rx_file_directory_entry_t one;
 
 	find_file_handle_t hndl = rx_open_find_file_list(search.c_str(), &one);
@@ -80,14 +80,14 @@ void list_files(const std::string& dir, const std::string& pattern, std::vector<
 				continue; // continue for directory
 
 			std::string file;
-			combine_paths(dir, one.file_name, file);
+			rx_combine_paths(dir, one.file_name, file);
 			files.push_back(file);
 		} while (rx_get_next_file(hndl, &one));
 		rx_find_file_close(hndl);
 	}
 }
 
-void combine_paths(const std::string& path1, const std::string& path2, std::string& path)
+void rx_combine_paths(const std::string& path1, const std::string& path2, std::string& path)
 {
 	path = path1;
 	if (!path1.empty())

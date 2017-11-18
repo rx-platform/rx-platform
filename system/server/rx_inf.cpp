@@ -69,9 +69,9 @@ uint32_t server_rt::initialize (hosting::rx_server_host* host, runtime_data_t& d
 		_workers = domains_pool::smart_ptr(data.workers_pool_size);
 		_workers->reserve();
 	}
-	_general_timer = rx::threads::timer::smart_ptr(rx::pointers::_create_new);
+	_general_timer = rx_create_reference<rx::threads::timer>();
 	if (data.has_callculation_timer)
-		_callculation_timer = rx::threads::timer::smart_ptr(rx::pointers::_create_new);
+		_callculation_timer = rx_create_reference<rx::threads::timer>();
 
 
 	return RX_OK;
@@ -115,7 +115,7 @@ uint32_t server_rt::start (hosting::rx_server_host* host, const runtime_data_t& 
 	if (_callculation_timer)
 		_callculation_timer->start(RX_PRIORITY_NORMAL);
 
-	_dispatcher_timer = dispatcher_subscribers_job::smart_ptr(pointers::_create_new);
+	_dispatcher_timer = rx_create_reference<dispatcher_subscribers_job>();
 	if (_callculation_timer)
 		_callculation_timer->append_job(_dispatcher_timer, &*_general_pool->get_pool(), data.io_timer_period);
 	if (_general_timer)

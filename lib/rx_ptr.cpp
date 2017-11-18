@@ -118,26 +118,15 @@ virtual_reference_object & virtual_reference_object::operator=(const virtual_ref
 // Parameterized Class rx::pointers::virtual_reference 
 
 
-// Class rx::pointers::slim_reference 
-
-slim_reference::slim_reference()
-      : _ref_count(1)
-{
-}
+// Class rx::pointers::struct_reference 
 
 
-slim_reference::~slim_reference()
-{
-}
-
-
-
-void slim_reference::bind ()
+void struct_reference::bind ()
 {
 	_ref_count++;
 }
 
-void slim_reference::release ()
+void struct_reference::release ()
 {
 	if (0 == --_ref_count)
 		delete this;
@@ -145,12 +134,6 @@ void slim_reference::release ()
 
 
 // Parameterized Class rx::pointers::interface_reference 
-
-
-template <class ptrT>
-void interface_reference<ptrT>::pera ()
-{
-}
 
 
 // Class rx::pointers::interface_object 

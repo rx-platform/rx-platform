@@ -37,20 +37,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 namespace rx
 {
-void list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files);
-void combine_paths(const std::string& path1, const std::string& path2, std::string& path);
+void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files);
+void rx_combine_paths(const std::string& path1, const std::string& path2, std::string& path);
 
 bool create_directory(const std::string& dir, bool fail_on_exsists);
-bool delete_all_files(const std::string& dir, const std::string& pattern);
+bool rx_delete_all_files(const std::string& dir, const std::string& pattern);
 
 bool file_exist(const std::string& path, const std::string& file);
 bool file_exist(const std::string& file);
-void get_full_path(const std::string& base, std::string& path);
+void rx_get_full_path(const std::string& base, std::string& path);
 
-class svr_except : public std::exception
+class rx_except : public std::exception
 {
 public:
-	svr_except(const char* what, uint32_t code) throw() : m_what(what), m_code(code) { }
+	rx_except(const char* what, uint32_t code) throw() : m_what(what), m_code(code) { }
 	const char *what() const throw() { return m_what.c_str(); }
 	uint32_t code() throw() { return m_code; }
 
@@ -423,7 +423,6 @@ typedef uint64_t rx_security_handle_t;
 typedef uint64_t rx_thread_handle_t;
 
 #define RX_THREAD_NULL 0ull
-
 
 
 }// namespace rx

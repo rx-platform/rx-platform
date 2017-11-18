@@ -102,9 +102,36 @@ protected:
 	}
 };
 
+using namespace rx::pointers;
+
+class A : public reference_object
+{
+};
+
+void accept_reference(reference<reference_object> ref);
+// this function is not aware of class A
+void send_object(reference<reference_object> ref)
+{
+	accept_reference(ref);
+}
+
+
+// this function implementation knows definition of class A
+void accept_reference(reference<reference_object> ref)
+{
+	reference<A> received = ref.cast_to<reference<A> >();
+}
+
+// this function is knows definition of class A
+void some_function1()
+{
+	send_object(create_reference<A>());
+}
 
 int test_smart_ptr()
 {
+
+
 	string_type str = rx::rx_time::now().get_string();
 
 	printf("Time=%s \r\n", str.c_str());
@@ -113,7 +140,7 @@ int test_smart_ptr()
 
 	virtual_test::smart_ptr vref = ref;
 
-	vref = smart_test::smart_ptr(pointers::_create_new);
+	vref = rx_create_reference<smart_test>();
 
 	return 0;
 }

@@ -58,7 +58,7 @@ void do_python_test(std::ostream& out, const string_type& command)
 python_test::python_test()
 	: test_category("python")
 {
-	register_test_case(dump_version_test::smart_ptr(pointers::_create_new));
+	register_test_case(rx_create_reference<dump_version_test>());
 }
 
 
@@ -99,7 +99,7 @@ rx_script_category::rx_script_category()
 	: test_category("rx-script")
 {
 
-	register_test_case(read_and_run_file::smart_ptr(pointers::_create_new));
+	register_test_case(rx_create_reference<read_and_run_file>());
 }
 
 

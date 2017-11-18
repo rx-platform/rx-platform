@@ -105,7 +105,7 @@ uint32_t rx_server::initialize (hosting::rx_server_host* host, configuration_dat
 		if (_manager.initialize(host, data.managment_data))
 		{
 			sys_internal::internal_ns::root_server_directory::initialize(host,data.namespace_data);
-			_root = sys_internal::internal_ns::root_server_directory::smart_ptr(pointers::_create_new);
+			_root = rx_create_reference<sys_internal::internal_ns::root_server_directory>();
 
 			for (auto one : _scripts)
 				one.second->initialize();

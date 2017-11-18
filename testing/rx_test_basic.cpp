@@ -45,7 +45,7 @@ namespace function_test {
 function_test_category::function_test_category()
 	: test_category("function-objects")
 {
-	register_test_case(platform_callback_test::smart_ptr(pointers::_create_new));
+	register_test_case(rx_create_reference<platform_callback_test>());
 }
 
 

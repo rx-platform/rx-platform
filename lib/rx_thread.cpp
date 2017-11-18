@@ -106,7 +106,7 @@ void thread::start (int priority)
 	{// error occured
 		char buff[0x100];
 		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "Error while creating %s thread. Error code: %x", _name.c_str(), errno);
-		throw svr_except(buff, errno);
+		throw rx_except(buff, errno);
 	}
 
 }
