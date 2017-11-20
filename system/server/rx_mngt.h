@@ -32,8 +32,6 @@
 
 #include "lib/rx_lib.h"
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
@@ -42,6 +40,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_io
+#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 
@@ -134,25 +134,25 @@ class server_manager
       }
 
 
-      objects::domain_runtime::smart_ptr get_unassigned_domain ()
+      rx_reference<objects::domain_runtime> get_unassigned_domain ()
       {
         return _unassigned_domain;
       }
 
 
-      objects::application_runtime::smart_ptr get_unassigned_app ()
+      rx_reference<objects::application_runtime> get_unassigned_app ()
       {
         return _unassigned_app;
       }
 
 
-      objects::application_runtime::smart_ptr get_system_app ()
+      rx_reference<objects::application_runtime> get_system_app ()
       {
         return _system_app;
       }
 
 
-      objects::domain_runtime::smart_ptr get_system_domain ()
+      rx_reference<objects::domain_runtime> get_system_domain ()
       {
         return _system_domain;
       }
@@ -169,17 +169,17 @@ class server_manager
   private:
 
 
-      rx::io::tcp_listent_std_buffer::smart_ptr _telnet_listener;
+      rx_reference<rx::io::tcp_listent_std_buffer> _telnet_listener;
 
       server_item_ptr _commands_manager;
 
-      objects::domain_runtime::smart_ptr _unassigned_domain;
+      rx_reference<objects::domain_runtime> _unassigned_domain;
 
-      objects::application_runtime::smart_ptr _unassigned_app;
+      rx_reference<objects::application_runtime> _unassigned_app;
 
-      objects::application_runtime::smart_ptr _system_app;
+      rx_reference<objects::application_runtime> _system_app;
 
-      objects::domain_runtime::smart_ptr _system_domain;
+      rx_reference<objects::domain_runtime> _system_domain;
 
 
       uint16_t _telnet_port;

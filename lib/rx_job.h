@@ -31,12 +31,12 @@
 
 
 
+// rx_thread
+#include "lib/rx_thread.h"
 // rx_lock
 #include "lib/rx_lock.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
 
 
@@ -219,7 +219,7 @@ class labmda_job : public job
 
 
 
-class periodic_job : public timer_job  
+class periodic_job : public timer_job, public pointers::reference_pointer<periodic_job>  
 {
 	DECLARE_REFERENCE_PTR(periodic_job);
 

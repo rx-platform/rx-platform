@@ -31,14 +31,16 @@
 
 
 
+// rx_commands
+#include "terminal/rx_commands.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_commands
-#include "terminal/rx_commands.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 using namespace rx;
 
@@ -52,6 +54,7 @@ using namespace rx;
 
 
 namespace testing {
+typedef uint_fast8_t test_status_t;
 
 
 
@@ -77,6 +80,14 @@ test cases are devided into several categories. you can use test command to expl
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
+      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
+      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
 
   protected:
 
@@ -84,6 +95,60 @@ test cases are devided into several categories. you can use test command to expl
 
 
 };
+
+
+struct test_context_data
+{
+	rx_time time_stamp;
+	string_type user;
+};
+
+
+
+
+class test_program_context : public server::prog::program_context_base  
+{
+	DECLARE_REFERENCE_PTR(test_program_context);
+
+  public:
+      test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
+
+      virtual ~test_program_context();
+
+
+      void set_failed ();
+
+      void set_passed ();
+
+
+      const test_status_t get_status () const
+      {
+        return _status;
+      }
+
+
+      const test_context_data& get_data () const
+      {
+        return _data;
+      }
+
+
+
+  protected:
+
+  private:
+
+      void fill_data ();
+
+
+
+      test_status_t _status;
+
+      test_context_data _data;
+
+
+};
+
 
 
 
@@ -107,11 +172,11 @@ public:
       virtual ~test_case();
 
 
-      virtual bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx) = 0;
+      virtual bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx) = 0;
 
-      bool test_start (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
-      void test_end (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      void test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -124,6 +189,12 @@ public:
       const string_type& get_item_name () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      test_status_t get_status (test_context_data* data = nullptr);
+
+      test_context_data get_data (test_context_data* data = nullptr) const;
+
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
 
       const string_type& get_name () const
@@ -146,6 +217,12 @@ public:
 
       uint64_t _start_tick;
 
+      test_status_t _status;
+
+      test_context_data _data;
+
+      locks::slim_lock _status_lock;
+
 
 };
 
@@ -166,9 +243,11 @@ public:
       virtual ~test_category();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx, bool code);
+      void collect_test_cases (std::vector<test_case::smart_ptr>& cases);
 
-      void collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases);
+      void get_cases (string_array& cases);
+
+      test_case::smart_ptr get_test_case (const string_type& test_name);
 
 
       const string_type& get_category () const
@@ -207,7 +286,7 @@ class testing_enviroment
 {
 
 public:
-	typedef std::map<string_type, test_category::smart_ptr> registered_tests_type;
+	typedef std::map<string_type, test_category::smart_ptr> categories_type;
 
   public:
       virtual ~testing_enviroment();
@@ -215,9 +294,15 @@ public:
 
       static testing_enviroment& instance ();
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      void collect_test_cases (const string_type& category, std::vector<test_case::smart_ptr>& cases);
 
-      void collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases);
+      void get_categories (string_array& categories);
+
+      void get_cases (const string_type& category, string_array& cases);
+
+      test_case::smart_ptr get_test_case (const string_type& test_name);
+
+      test_program_context::smart_ptr create_test_context (server::prog::console_program_context::smart_ptr console_ctx);
 
 
   protected:
@@ -230,7 +315,7 @@ public:
 
 
 
-      registered_tests_type _registered_tests;
+      categories_type _categories;
 
 
 };
@@ -253,7 +338,7 @@ This test creates dummy test case and is used for testing this mechanism\
       virtual ~basic_test_case_test();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
   protected:

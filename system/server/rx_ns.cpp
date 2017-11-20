@@ -65,6 +65,7 @@ void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 		str[2] = 'd';
 	if (attr&namespace_item_execute)
 		str[3] = 'x';
+	//////////////////////////
 	if (attr&namespace_item_system)
 		str[5] = 's';
 	if (attr&namespace_item_command)
@@ -107,6 +108,12 @@ void fill_quality_string(values::rx_value val, string_type& str)
 // Class server::ns::rx_server_item 
 
 rx_server_item::rx_server_item()
+	: _console_name(RX_NULL_ITEM_NAME)
+{
+}
+
+rx_server_item::rx_server_item (const string_type& console_name)
+	: _console_name(console_name)
 {
 }
 
@@ -118,6 +125,10 @@ rx_server_item::~rx_server_item()
 
 
 void rx_server_item::code_info_to_string (string_type& info)
+{
+}
+
+void rx_server_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 }
 
@@ -404,7 +415,7 @@ void rx_server_directory::set_parent (server_directory_ptr parent)
 
 void rx_server_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
-	class_name = "_Directory";
+	class_name = get_class_name();
 	has_own_code_info = true;
 }
 

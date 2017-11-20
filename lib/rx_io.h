@@ -31,12 +31,12 @@
 
 
 
+// rx_thread
+#include "lib/rx_thread.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
 namespace rx {
 namespace io {
@@ -91,7 +91,7 @@ class dispatcher_subscriber : public pointers::reference_object
       void unregister_timed ();
 
 
-      threads::dispatcher_pool::smart_ptr _disptacher;
+      rx_reference<threads::dispatcher_pool> _disptacher;
 
 
       rx_io_register_data _dispatcher_data;

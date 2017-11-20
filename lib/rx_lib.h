@@ -37,6 +37,30 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 namespace rx
 {
+
+
+
+struct rx_table_cell_struct
+{
+	rx_table_cell_struct(const string_type& vvalue)
+		: value(vvalue)
+	{
+	}
+	rx_table_cell_struct(const string_type& vvalue, const string_type& vprefix, const string_type& vpostfix)
+		: prefix(vprefix), value(vvalue), postfix(vpostfix)
+	{
+	}
+	string_type prefix;
+	string_type value;
+	string_type postfix;
+};
+
+typedef std::vector<rx_table_cell_struct> rx_row_type;
+typedef std::vector<rx_row_type> rx_table_type;
+
+void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width);
+void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names);
+
 void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files);
 void rx_combine_paths(const std::string& path1, const std::string& path2, std::string& path);
 

@@ -31,12 +31,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using namespace server::prog;
 using namespace server; 

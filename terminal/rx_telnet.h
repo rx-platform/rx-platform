@@ -39,16 +39,16 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_io
-#include "lib/rx_io.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 
@@ -142,7 +142,7 @@ class telnet_client : public server::prog::console_client,
 
 
 
-      telnet_security_context::smart_ptr _security_context;
+      rx_reference<telnet_security_context> _security_context;
 
 
       locks::slim_lock _buffers_lock;

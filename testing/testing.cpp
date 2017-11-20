@@ -136,7 +136,7 @@ int test_smart_ptr()
 
 	printf("Time=%s \r\n", str.c_str());
 
-	smart_test::smart_ptr ref(pointers::_create_new);
+	rx_reference<smart_test> ref(pointers::_create_new);
 
 	virtual_test::smart_ptr vref = ref;
 

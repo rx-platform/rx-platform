@@ -44,7 +44,7 @@ typedef uint32_t ref_counting_type;
 
 namespace pointers {
 
-class _create_new_type
+struct _create_new_type
 {
 };
 
@@ -326,7 +326,7 @@ public:
 		this->_ptr = right._ptr;
 		right._ptr = nullptr;
 	}
-	// assigment operator
+	// assignment  operator
 	reference<ptrT>& operator=(const reference<ptrT>& right)
 	{
 		if (this != &right)
@@ -389,6 +389,19 @@ public:
 template<class ptrT>
 reference<ptrT> reference<ptrT>::null_ptr;
 
+// this is an expreiment!!!
+template<typename T>
+class reference_pointer
+{
+public:
+	typedef rx::pointers::reference<T> smart_ptr;
+	template<class Tother>
+	friend class rx::pointers::reference;
+private:
+	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
+	const smart_ptr smart_this() const { return smart_ptr::create_from_pointer(this); }
+};
+
 
 
 
@@ -396,6 +409,7 @@ reference<ptrT> reference<ptrT>::null_ptr;
 
 class reference_object 
 {
+
 	DECLARE_REFERENCE_PTR(reference_object);
 
 
@@ -416,6 +430,12 @@ class reference_object
 
 
       static size_t get_objects_count ();
+
+      virtual string_type get_class_name () const
+      {
+        return "*unknown*";
+
+      }
 
 
   protected:
@@ -509,7 +529,7 @@ public:
 		this->_ptr = right._ptr;
 		right._ptr = nullptr;
 	}
-	// assigment operator
+	// assignment operator
 	virtual_reference<ptrT>& operator=(const virtual_reference<ptrT>& right)
 	{
 		if (this != &right)
@@ -587,6 +607,13 @@ class virtual_reference_object
       virtual_reference_object();
 
       virtual ~virtual_reference_object();
+
+
+      virtual string_type get_class_name () const
+      {
+        return "*unknown*";
+
+      }
 
 
   protected:
@@ -712,7 +739,7 @@ public:
 		this->_ptr = right._ptr;
 		right._ptr = nullptr;
 	}
-	// assigment operator
+	// assignment operator
 	interface_reference<ptrT>& operator=(const interface_reference<ptrT>& right)
 	{
 		if (this != &right)
@@ -792,6 +819,13 @@ class interface_object
       virtual ~interface_object();
 
 
+      virtual string_type get_class_name () const
+      {
+        return "*unknown*";
+
+      }
+
+
   protected:
 
       virtual void interface_bind () = 0;
@@ -806,19 +840,6 @@ class interface_object
 
 
 
-};
-
-// this is an expreiment!!!
-template<typename T>
-class reference_pointer
-{
-public:
-	typedef rx::pointers::reference<T> smart_ptr;
-	template<class Tother>
-	friend class rx::pointers::reference;
-private:
-	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
-	const smart_ptr smart_this() const { return smart_ptr::create_from_pointer(this); }
 };
 
 
@@ -839,6 +860,36 @@ reference<T> create_reference()
 } // namespace pointers
 } // namespace rx
 
+namespace rx
+{
+
+//convinient alias templates
+template<class Tptr>
+using rx_reference = pointers::reference<Tptr>;
+
+
+//convinient alias templates
+template<class Tptr>
+using rx_interface = pointers::interface_reference<Tptr>;
+
+//convinient alias templates
+template<class Tptr>
+using rx_virtual = pointers::virtual_reference<Tptr>;
+
+// for standard references
+template<class T, typename... Args>
+pointers::reference<T> rx_create_reference(Args... args)
+{
+	return pointers::reference<T>(args...);
+}
+template<class T>
+pointers::reference<T> rx_create_reference()
+{
+	return pointers::reference<T>(pointers::_create_new);
+}
+
+
+}
 
 
 #endif

@@ -77,14 +77,14 @@
  LOG_CODE_POSTFIX
 //////////////////////////////////////////////////////////////////////////////
 
-// rx_lock
-#include "lib/rx_lock.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_lock
+#include "lib/rx_lock.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -267,7 +267,7 @@ class log_object : public locks::lockable
 
       threads::physical_job_thread _worker;
 
-      cache_log_subscriber::smart_ptr _cache;
+      rx_reference<cache_log_subscriber> _cache;
 
 
     friend class log_event_job;

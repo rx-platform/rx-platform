@@ -11,6 +11,8 @@
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
+#define RX_NULL_ITEM_NAME "<nullptr>"
+
 
 // objects stuff
 #define RX_NS_SYSTEM_APP_NAME "system_app"
@@ -40,4 +42,15 @@
 
 
 // Console related stuff
-#define CONSOLE_HEADER_LINE "============================================="
+#define RX_CONSOLE_HEADER_LINE "============================================="
+
+
+//Testing related stuff
+#define RX_TEST_STATUS_UNKNOWN 0
+#define RX_TEST_STATUS_OK 1
+#define RX_TEST_STATUS_FAILED 2
+
+
+#define RX_TEST_STATUS_UNKNOWN_NAME RX_NULL_ITEM_NAME
+#define RX_TEST_STATUS_OK_NAME "Passed"
+#define RX_TEST_STATUS_FAILED_NAME "*FAILED*"

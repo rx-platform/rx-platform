@@ -31,14 +31,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace server {
 namespace objects {
@@ -288,7 +288,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       sub_items_type _sub_items;
 
-      object_runtime_ptr _my_object;
+      rx_virtual<object_runtime> _my_object;
 
 
       names_cahce_type _names_cache;
@@ -341,7 +341,7 @@ class object_runtime : public object_runtime_t
       uint32_t register_const_value (const string_type& name, const_value_item& val);
 
 
-      complex_runtime_item::smart_ptr get_complex_item ()
+      rx_reference<complex_runtime_item> get_complex_item ()
       {
         return _complex_item;
       }
@@ -389,15 +389,15 @@ class object_runtime : public object_runtime_t
       bool init_object ();
 
 
-      application_runtime_ptr _my_application;
+      rx_reference<application_runtime> _my_application;
 
-      domain_runtime_ptr _my_domain;
+      rx_reference<domain_runtime> _my_domain;
 
 
   private:
 
 
-      complex_runtime_item::smart_ptr _complex_item;
+      rx_reference<complex_runtime_item> _complex_item;
 
 
       rx_time _created_time;

@@ -39,8 +39,6 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_mngt
@@ -51,6 +49,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 
 #include "lib/rx_log.h"
@@ -194,7 +194,7 @@ class rx_server : public rx::security::secured_object
 
       runtime::server_rt _runtime;
 
-      ns::rx_server_directory::smart_ptr _root;
+      rx_reference<ns::rx_server_directory> _root;
 
       mngt::server_manager _manager;
 

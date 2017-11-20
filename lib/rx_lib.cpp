@@ -48,6 +48,155 @@ namespace rx
 
 
 
+void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width)
+{
+	if (row.empty())
+		return;
+
+	const size_t col_diff = 2;
+
+	size_t count = row.size();
+
+	std::vector<size_t> widths(count);
+	for (size_t i = 0; i < count; i++)
+	{
+		widths[i] = row[i].value.size();
+	}
+	// first try to get how manny columns do we need
+	size_t columns = count + 1;
+	std::vector<size_t> column_widths;
+	size_t total_width = 1000000000ull;// i guess will be enought
+
+	while (total_width>console_width)
+	{
+		columns--;
+		column_widths.assign(columns, 0);
+		size_t idx = 0;
+		while (idx < count)
+		{
+			for (size_t i = 0; i < columns; i++)
+			{
+				size_t one_idx = idx + i;
+
+				if (one_idx >= count)
+					break;
+				if (column_widths[i] < widths[one_idx])
+				{
+					column_widths[i] = widths[one_idx];
+				}
+			}
+			idx += columns;
+		}
+		total_width = 0;
+		for (size_t i = 0; i < columns; i++)
+			total_width += (column_widths[i] + col_diff);
+	}
+
+	bool first = true;
+	size_t idx = 0;
+	while (idx < count)
+	{
+		if (first)
+			first = false;
+		else
+			out << "\r\n";
+
+		for (size_t i = 0; i < columns; i++)
+		{
+			size_t one_idx = idx + i;
+			if (one_idx >= count)
+				break;
+
+			string_type rest(column_widths[i] + col_diff - row[one_idx].value.size(), ' ');
+
+			if (!row[one_idx].prefix.empty())
+				out << row[one_idx].prefix;
+			out << row[one_idx].value;
+			if (!row[one_idx].postfix.empty())
+				out << row[one_idx].postfix;
+			out << rest;
+		}
+		idx += columns;
+	}
+
+	out << "\r\n";
+}
+
+void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names)
+{
+	if (table.empty())
+		return;
+
+	const size_t col_diff = 2;
+
+	size_t columns_number = 0;
+	for (const auto& row : table)
+	{
+		if (columns_number == 0)
+			columns_number = row.size();
+		else
+		{
+			if (!row.empty())
+			{// we allow emty rows
+				if (columns_number != row.size())
+				{
+					out << "Error in table format\r\n";
+					RX_ASSERT(false);
+					return;
+				}
+			}
+		}
+	}
+
+	// o.k. we checked now so let's callculate columns width
+	std::vector<size_t> widths(columns_number);
+	for (const auto& row : table)
+	{
+		if (!row.empty())
+		{
+			for (size_t i = 0; i < columns_number; i++)
+			{
+				if (row[i].value.size() > widths[i])
+					widths[i] = row[i].value.size();
+			}
+		}
+	}
+	// now we have all widths
+	bool first = true;
+	for (const auto& row : table)
+	{
+		if (first)
+			first = false;
+		else
+			out << "\r\n";
+		if (!row.empty())
+		{
+			for (size_t i = 0; i < columns_number; i++)
+			{
+				string_type rest(widths[i] + col_diff - row[i].value.size(), ' ');
+				if (!row[i].prefix.empty())
+					out << row[i].prefix;
+				out << row[i].value;
+				if (!row[i].postfix.empty())
+					out << row[i].postfix;
+				out << rest;
+			}
+		}
+		if (column_names)
+		{
+			out << "\r\n";
+			size_t total_width = 0;
+			for (size_t i = 0; i < columns_number; i++)
+				total_width += (widths[i] + col_diff);
+			string_type rest(total_width, '=');
+			out << rest;
+			column_names = false;
+		}
+	}
+
+	out << "\r\n";
+}
+
 bool create_directory(const std::string& dir, bool fail_on_exsists)
 {
 	return rx_create_directory(dir.c_str(), fail_on_exsists ? 1 : 0) != 0;

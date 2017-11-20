@@ -145,172 +145,6 @@ IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 #define TELENET_RECIVE_TIMEOUT 600000
 
 
-struct table_cell_struct
-{
-	table_cell_struct(const string_type& vvalue)
-		: value(vvalue)
-	{
-	}
-	table_cell_struct(const string_type& vvalue, const string_type& vprefix, const string_type& vpostfix)
-		: prefix(vprefix) , value(vvalue), postfix(vpostfix)
-	{
-	}
-	string_type prefix;
-	string_type value;
-	string_type postfix;
-};
-
-typedef std::vector<table_cell_struct> row_type;
-typedef std::vector<row_type> table_type;
-
-void dump_large_row(row_type row, std::ostream& out,size_t console_width)
-{
-	if (row.empty())
-		return;
-
-	const size_t col_diff = 2;
-
-	size_t count = row.size();
-
-	std::vector<size_t> widths(count);
-	for (size_t i = 0; i < count; i++)
-	{
-		widths[i] = row[i].value.size();
-	}
-	// first try to get how manny columns do we need
-	size_t columns = count+1;
-	std::vector<size_t> column_widths;
-	size_t total_width = 1000000000ull;// i guess will be enought
-
-	while (total_width>console_width)
-	{
-		columns--;
-		column_widths.assign(columns, 0);
-		size_t idx = 0;
-		while (idx < count)
-		{
-			for (size_t i = 0; i < columns; i++)
-			{
-				size_t one_idx = idx + i;
-
-				if (one_idx >= count)
-					break;
-				if (column_widths[i] < widths[one_idx])
-				{
-					column_widths[i] = widths[one_idx];
-				}
-			}
-			idx += columns;
-		}
-		total_width = 0;
-		for (size_t i = 0; i < columns; i++)
-			total_width += (column_widths[i] + col_diff);
-	}
-
-	bool first = true;
-	size_t idx = 0;
-	while (idx < count)
-	{
-		if (first)
-			first = false;
-		else
-			out << "\r\n";
-
-		for (size_t i = 0; i < columns; i++)
-		{
-			size_t one_idx = idx + i;
-			if (one_idx >= count)
-				break;
-
-			string_type rest(column_widths[i] + col_diff - row[one_idx].value.size(), ' ');
-
-			if (!row[one_idx].prefix.empty())
-				out << row[one_idx].prefix;
-			out << row[one_idx].value;
-			if (!row[one_idx].postfix.empty())
-				out << row[one_idx].postfix;
-			out << rest;
-		}
-		idx += columns;
-	}
-
-	out << "\r\n";
-}
-
-void dump_table(const table_type& table, std::ostream& out,bool column_names)
-{
-	if (table.empty())
-		return;
-
-	const size_t col_diff = 2;
-
-	size_t columns_number = 0;
-	for (const auto& row : table)
-	{
-		if (columns_number == 0)
-			columns_number = row.size();
-		else
-		{
-			if (!row.empty())
-			{// we allow emty rows
-				if (columns_number != row.size())
-				{
-					out << "Error in table format\r\n";
-					RX_ASSERT(false);
-					return;
-				}
-			}
-		}
-	}
-
-	// o.k. we checked now so let's callculate columns width
-	std::vector<size_t> widths(columns_number);
-	for (const auto& row : table)
-	{
-		if (!row.empty())
-		{
-			for (size_t i = 0; i < columns_number; i++)
-			{
-				if (row[i].value.size() > widths[i])
-					widths[i] = row[i].value.size();
-			}
-		}
-	}
-	// now we have all widths
-	bool first = true;
-	for (const auto& row : table)
-	{
-		if (first)
-			first = false;
-		else
-			out << "\r\n";
-		if (!row.empty())
-		{
-			for (size_t i = 0; i < columns_number; i++)
-			{
-				string_type rest(widths[i] + col_diff - row[i].value.size(), ' ');
-				if (!row[i].prefix.empty())
-					out << row[i].prefix;
-				out << row[i].value;
-				if (!row[i].postfix.empty())
-					out << row[i].postfix;
-				out << rest;
-			}
-		}
-		if (column_names)
-		{
-			out << "\r\n";
-			size_t total_width = 0;
-			for (size_t i = 0; i < columns_number; i++)
-				total_width += (widths[i] + col_diff);
-			string_type rest(total_width, '=');
-			out << rest;
-			column_names = false;
-		}
-	}
-
-	out << "\r\n";
-}
 
 
 // Class terminal::console::server_telnet_socket 
@@ -596,10 +430,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 	else
 	{
         //printf("received %d\r\n",(int)buff[0]);
-		if (buff[0] == 8 || buff[0] == 0x7f) // backspace ( delete on linux )
-		{
-		}
-		else if (buff[0] == 8 || buff[0]==0x7f) // backspace ( delete on linux )
+		if (buff[0] == 8 || buff[0]==0x7f) // backspace ( delete on linux )
 		{
 			// backspace pressed
 			if (_receiving_string.size() > 0)
@@ -791,6 +622,7 @@ bool dump_info(std::ostream& out, rx_server_item::smart_ptr& item)
 	bool has_code = false;
 	string_type console;
 	item->get_class_info(cls_name, console, has_code);
+	cls_name=item->get_class_name();
 
 
 	string_type pera = g_complie_time;
@@ -813,7 +645,7 @@ bool dump_info(std::ostream& out, rx_server_item::smart_ptr& item)
 	return true;
 }
 
-bool dump_items_on_console(row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_item::smart_ptr one)
+bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_item::smart_ptr one)
 {
 	if ((one->get_attributes()&namespace_item_browsable) != 0)
 		row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
@@ -848,7 +680,7 @@ bool dump_items_on_console(row_type& row, bool list_attributes, bool list_qualit
 }
 
 
-bool dump_dirs_on_console(row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_directory::smart_ptr one, const string_type& name)
+bool dump_dirs_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_directory::smart_ptr one, const string_type& name)
 {
 
 	row.emplace_back(name,ANSI_COLOR_CYAN ANSI_COLOR_BOLD,ANSI_COLOR_RESET);
@@ -915,7 +747,7 @@ bool directory_command::list_directory (std::ostream& out, std::ostream& err, co
 
 	size_t count = dirs.size() + items.size();
 
-	table_type table(count + 1);
+	rx_table_type table(count + 1);
 
 
 	table[0].emplace_back("Name");
@@ -940,7 +772,7 @@ bool directory_command::list_directory (std::ostream& out, std::ostream& err, co
 		idx++;
 	}
 
-	dump_table(table, out, true);
+	rx_dump_table(table, out, true);
 
 	return true;
 }
@@ -1019,7 +851,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 
 		size_t count = dirs.size() + items.size();
 
-		row_type row;
+		rx_row_type row;
 		row.reserve(count);
 
 		for (auto& one : dirs)
@@ -1034,7 +866,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 				row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 
 		}
-		dump_large_row(row, out, 60);
+		rx_dump_large_row(row, out, 60);
 		return true;
 	}
 	else
@@ -1220,7 +1052,7 @@ rx_name_command::~rx_name_command()
 bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
 	out << "System Information\r\n";
-	out << CONSOLE_HEADER_LINE "\r\n";
+	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "Engine Name: " << rx_server::instance().get_rx_name() << "\r\n";
 	out << "Engine Version: " << rx_server::instance().get_rx_version() << "\r\n";
 	out << "Library Version: " << rx_server::instance().get_lib_version() << "\r\n";
@@ -1453,7 +1285,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 	out << "Dumping active users:\r\n\r\n";
 
 	size_t count = ctxs.size();
-	table_type table(count+1);
+	rx_table_type table(count+1);
 
 	table[0].emplace_back("Id");
 	table[0].emplace_back("User Name");
@@ -1497,7 +1329,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 			table[i + 1].emplace_back(RX_CONSOLE_UNCHECKED);
 		table[i + 1].emplace_back(ctxs[i]->get_port());
 	}
-	dump_table(table, out,true);
+	rx_dump_table(table, out,true);
 
 	return true;
 }

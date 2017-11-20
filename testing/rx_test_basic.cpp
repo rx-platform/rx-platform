@@ -158,7 +158,6 @@ void test_callbacks(std::ostream& out)
 
 }
 
-
 // Class testing::basic_tests::function_test::platform_callback_test 
 
 platform_callback_test::platform_callback_test()
@@ -173,9 +172,10 @@ platform_callback_test::~platform_callback_test()
 
 
 
-bool platform_callback_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	test_callbacks(out);
+	ctx->set_passed();
 	return true;
 }
 

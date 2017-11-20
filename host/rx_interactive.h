@@ -33,12 +33,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 namespace host {
 namespace interactive {
@@ -123,7 +123,7 @@ class interactive_console_client : public server::prog::console_client
   private:
 
 
-      interactive_security_context::smart_ptr _security_context;
+      rx_reference<interactive_security_context> _security_context;
 
       interactive_console_host *_host;
 

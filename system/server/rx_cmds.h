@@ -31,20 +31,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-
-namespace server {
-namespace prog {
-class program_context_base;
-} // namespace prog
-} // namespace server
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 namespace rx {
 namespace security {
@@ -54,6 +48,7 @@ class security_context;
 
 namespace server {
 namespace prog {
+class program_context_base;
 class server_program_holder;
 
 } // namespace prog
@@ -81,13 +76,41 @@ typedef pointers::reference<program_context_base> program_context_base_ptr;
 
 
 
+class program_executer_base : public rx::pointers::virtual_reference_object  
+{
+	DECLARE_VIRTUAL_REFERENCE_PTR(program_executer_base);
+
+  public:
+      program_executer_base();
+
+      virtual ~program_executer_base();
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<server_program_holder> _holder;
+
+
+    friend class server_program_holder;
+};
+
+
+
+
+
+
 
 class program_context_base : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(program_context_base);
+public:
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
-      program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory);
+      program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
 
       virtual ~program_context_base();
 
@@ -95,7 +118,7 @@ class program_context_base : public rx::pointers::reference_object
       bool is_postponed () const;
 
 
-      const server_program_holder_ptr get_holder () const
+      const rx_reference<server_program_holder> get_holder () const
       {
         return _holder;
       }
@@ -113,18 +136,34 @@ class program_context_base : public rx::pointers::reference_object
       }
 
 
+      const buffer_ptr get_out () const
+      {
+        return _out;
+      }
+
+
+      const buffer_ptr get_err () const
+      {
+        return _err;
+      }
+
+
 
   protected:
 
   private:
 
 
-      program_context_base::smart_ptr _root;
+      rx_reference<program_context_base> _root;
 
-      server_program_holder_ptr _holder;
+      rx_reference<server_program_holder> _holder;
 
 
       server_directory_ptr _current_directory;
+
+      buffer_ptr _out;
+
+      buffer_ptr _err;
 
 
 };
@@ -160,32 +199,6 @@ class server_program_base : public rx::pointers::reference_object
 
 
 
-class program_executer_base : public rx::pointers::virtual_reference_object  
-{
-	DECLARE_VIRTUAL_REFERENCE_PTR(program_executer_base);
-
-  public:
-      program_executer_base();
-
-      virtual ~program_executer_base();
-
-
-  protected:
-
-  private:
-
-
-      server_program_holder_ptr _holder;
-
-
-    friend class server_program_holder;
-};
-
-
-
-
-
-
 
 class server_program_holder : public rx::pointers::reference_object  
 {
@@ -203,161 +216,13 @@ class server_program_holder : public rx::pointers::reference_object
   private:
 
 
-      server_program_base::smart_ptr _main_program;
+      rx_reference<server_program_base> _main_program;
 
       sub_programs_type _sub_programs;
 
-      program_executer_base::smart_ptr _executer;
+      rx_virtual<program_executer_base> _executer;
 
-      program_context_base_ptr _main_context;
-
-
-};
-
-
-
-
-
-
-
-class console_program_context : public program_context_base  
-{
-	DECLARE_REFERENCE_PTR(console_program_context);
-public:
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-
-  public:
-      console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
-
-      virtual ~console_program_context();
-
-
-      size_t next_line ();
-
-      std::ostream& get_stdout ();
-
-      std::ostream& get_stderr ();
-
-      console_program_context::smart_ptr create_console_sub_context ();
-
-
-      const size_t get_current_line () const
-      {
-        return _current_line;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      size_t _current_line;
-
-      buffer_ptr _out;
-
-      buffer_ptr _err;
-
-      std::ostream _out_std;
-
-      std::ostream _err_std;
-
-
-};
-
-
-
-
-
-
-
-class server_command_base : public ns::rx_server_item  
-{
-	DECLARE_VIRTUAL_REFERENCE_PTR(server_command_base);
-
-  public:
-      server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes);
-
-      virtual ~server_command_base();
-
-
-      virtual const string_type& get_console_name (std::istream& in, std::ostream& out, std::ostream& err);
-
-      virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx) = 0;
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      string_type get_type_name () const;
-
-      void get_value (values::rx_value& val) const;
-
-      void item_lock ();
-
-      void item_unlock ();
-
-      void item_lock () const;
-
-      void item_unlock () const;
-
-      namespace_item_attributes get_attributes () const;
-
-      const string_type& get_item_name () const;
-
-
-      const string_type& get_console_name () const
-      {
-        return _console_name;
-      }
-
-
-	  virtual const char* get_help() const = 0;
-  protected:
-
-      rx_time _time_stamp;
-
-
-  private:
-
-
-      string_type _console_name;
-
-
-};
-
-
-
-
-
-
-
-class server_console_program : public server_program_base  
-{
-	DECLARE_REFERENCE_PTR(server_console_program);
-	
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-
-  public:
-      server_console_program (std::istream& in);
-
-      server_console_program (const string_vector& lines);
-
-      server_console_program (const string_type& line);
-
-      virtual ~server_console_program();
-
-
-      bool process_program (prog::program_context_ptr context, const rx_time& now, bool debug);
-
-      prog::program_context_ptr create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
-
-
-  protected:
-
-  private:
-
-
-      string_vector _lines;
+      rx_reference<program_context_base> _main_context;
 
 
 };
@@ -403,7 +268,7 @@ class console_client : public rx::pointers::virtual_reference_object
 
 
 
-      program_context_base::smart_ptr _current;
+      rx_reference<program_context_base> _current;
 
 
       string_type _line;
@@ -490,6 +355,136 @@ class server_script_host
 
 
       script_def_t _definition;
+
+
+};
+
+
+
+
+
+
+
+class console_program_context : public program_context_base  
+{
+	DECLARE_REFERENCE_PTR(console_program_context);
+
+  public:
+      console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
+
+      virtual ~console_program_context();
+
+
+      size_t next_line ();
+
+      std::ostream& get_stdout ();
+
+      std::ostream& get_stderr ();
+
+      console_program_context::smart_ptr create_console_sub_context ();
+
+
+      const size_t get_current_line () const
+      {
+        return _current_line;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      size_t _current_line;
+
+      std::ostream _out_std;
+
+      std::ostream _err_std;
+
+
+};
+
+
+
+
+
+
+
+class server_command_base : public ns::rx_server_item  
+{
+	DECLARE_VIRTUAL_REFERENCE_PTR(server_command_base);
+
+  public:
+      server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes);
+
+      virtual ~server_command_base();
+
+
+      virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx) = 0;
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      string_type get_type_name () const;
+
+      void get_value (values::rx_value& val) const;
+
+      void item_lock ();
+
+      void item_unlock ();
+
+      void item_lock () const;
+
+      void item_unlock () const;
+
+      namespace_item_attributes get_attributes () const;
+
+      const string_type& get_item_name () const;
+
+	  virtual const char* get_help() const = 0;
+  protected:
+
+      rx_time _time_stamp;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class server_console_program : public server_program_base  
+{
+	DECLARE_REFERENCE_PTR(server_console_program);
+	
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
+  public:
+      server_console_program (std::istream& in);
+
+      server_console_program (const string_vector& lines);
+
+      server_console_program (const string_type& line);
+
+      virtual ~server_console_program();
+
+
+      bool process_program (prog::program_context_ptr context, const rx_time& now, bool debug);
+
+      prog::program_context_ptr create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
+
+
+  protected:
+
+  private:
+
+
+      string_vector _lines;
 
 
 };

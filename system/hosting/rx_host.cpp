@@ -40,30 +40,6 @@ namespace server {
 
 namespace hosting {
 
-// Class server::hosting::host_security_context 
-
-host_security_context::host_security_context()
-{
-	_user_name = "host";
-	_full_name = _user_name + "@";
-	_full_name += _location;
-	_port = "internal";
-}
-
-
-host_security_context::~host_security_context()
-{
-}
-
-
-
-bool host_security_context::is_system () const
-{
-  return true;
-
-}
-
-
 // Class server::hosting::rx_server_host 
 
 rx_server_host::rx_server_host()
@@ -120,6 +96,30 @@ sys_handle_t rx_server_host::get_host_test_file (const string_type& path)
 sys_handle_t rx_server_host::get_host_console_script_file (const string_type& path)
 {
 	return 0;
+}
+
+
+// Class server::hosting::host_security_context 
+
+host_security_context::host_security_context()
+{
+	_user_name = "host";
+	_full_name = _user_name + "@";
+	_full_name += _location;
+	_port = "internal";
+}
+
+
+host_security_context::~host_security_context()
+{
+}
+
+
+
+bool host_security_context::is_system () const
+{
+  return true;
+
 }
 
 

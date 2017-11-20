@@ -31,14 +31,14 @@
 
 
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 namespace server {
 namespace objects {

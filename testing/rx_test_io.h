@@ -31,10 +31,10 @@
 
 
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 
@@ -90,7 +90,7 @@ loading a file->reading it line by line->executing.");
       virtual ~test_client_basics();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
   protected:

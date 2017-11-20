@@ -47,6 +47,10 @@ extern "C" {
 
 #define DECLARE_CODE_INFO(subsytem,major, minor, build,comment) \
 public:\
+	string_type get_class_name () const\
+	{\
+		return string_type(get_code_behind()->class_name);\
+	}\
 	static rx::pointers::code_behind_definition_t* get_code_behind()\
 		{\
 			char buff[0x100];\
@@ -58,9 +62,14 @@ public:\
 		}\
 	void fill_code_info(std::ostream& info,const string_type& name)\
 	{\
-		char compile_buffer[0x100];\
-		create_module_compile_time_string(__DATE__, __TIME__,compile_buffer);\
-		string_type pera=g_complie_time;\
+		static string_type compile_time;\
+		if(compile_time.empty())\
+		{\
+			char compile_buffer[0x100];\
+			create_module_compile_time_string(__DATE__, __TIME__,compile_buffer);\
+			compile_time=compile_buffer;\
+		}\
+		string_type lib_version=g_lib_version;\
 		string_type temp="aaa";\
 		info << "CODE INFO" << "\r\n";\
 		info << "--------------------------------------------------------------------------------" << "\r\n";\
@@ -72,11 +81,12 @@ public:\
 		info << smart_ptr::get_pointee_class_name(); \
 		info << "\r\n";\
 		info << "version    : "<< major << "." << minor << "." << build << "\r\n";\
-		info << "compiled   : " << compile_buffer << "\r\n";\
+		info << "compiled   : " << compile_time << "\r\n";\
 		info << "comment\r\n";\
 		info << "/*\r\n";\
 		info << comment << "\r\n";\
 		info << "*/\r\n";\
+		info << "lib-version: " << lib_version << "\r\n";\
 	}\
 	const char* get_help() const\
 	{\

@@ -194,7 +194,7 @@ class physical_job_thread : public thread,
 
       queue_type _queue;
 
-      jobs::job_ptr _current;
+      rx_reference<jobs::job> _current;
 
 
       locks::event _has_job;

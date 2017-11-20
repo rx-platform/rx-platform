@@ -113,7 +113,7 @@ test_client_basics::~test_client_basics()
 
 
 
-bool test_client_basics::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	string_type addr;
 	uint16_t port=0;
@@ -152,6 +152,7 @@ bool test_client_basics::do_console_test (std::istream& in, std::ostream& out, s
 	{
 		out << "Test usage:\r\n" ANSI_COLOR_YELLOW " test tcpip " << get_name() << " <tcp/ip address> <port>" ANSI_COLOR_RESET "\r\n";
 	}
+	ctx->set_passed();
 	return true;
 }
 

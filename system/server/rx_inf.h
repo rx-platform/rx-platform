@@ -31,14 +31,14 @@
 
 
 
-// rx_values
-#include "lib/rx_values.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
+// rx_values
+#include "lib/rx_values.h"
 
 #include "system/hosting/rx_host.h"
 using server::ns::namespace_item_attributes;
@@ -73,7 +73,7 @@ and general usage thread pool resources\r\n\
       virtual ~server_dispatcher_object();
 
 
-      rx::threads::dispatcher_pool::smart_ptr get_pool ()
+      rx_reference<rx::threads::dispatcher_pool> get_pool ()
       {
         return _pool;
       }
@@ -88,7 +88,7 @@ and general usage thread pool resources\r\n\
   private:
 
 
-      rx::threads::dispatcher_pool::smart_ptr _pool;
+      rx_reference<rx::threads::dispatcher_pool> _pool;
 
 
       objects::server_const_value_item<uint32_t> _threads_count;
@@ -206,7 +206,7 @@ i/o pool, general pool,\
 and thread pool for applications.\r\n\
 also contains 2 timers:\r\n\
 general ( high priority )\r\n\
-callcualation ( normal priority)");
+callculation ( normal priority)");
 
 	DECLARE_REFERENCE_PTR(server_rt);
 	typedef std::vector<rx::threads::physical_job_thread::smart_ptr> workers_type;
@@ -236,19 +236,19 @@ callcualation ( normal priority)");
       void append_job (rx::jobs::timer_job_ptr job, uint32_t domain);
 
 
-      server_dispatcher_object::smart_ptr get_io_pool ()
+      rx_reference<server_dispatcher_object> get_io_pool ()
       {
         return _io_pool;
       }
 
 
-      const server_dispatcher_object::smart_ptr get_general_pool () const
+      const rx_reference<server_dispatcher_object> get_general_pool () const
       {
         return _general_pool;
       }
 
 
-      const domains_pool::smart_ptr get_workers () const
+      const rx_reference<domains_pool> get_workers () const
       {
         return _workers;
       }
@@ -269,17 +269,17 @@ callcualation ( normal priority)");
   private:
 
 
-      rx::threads::timer::smart_ptr _general_timer;
+      rx_reference<rx::threads::timer> _general_timer;
 
-      rx::threads::timer::smart_ptr _callculation_timer;
+      rx_reference<rx::threads::timer> _callculation_timer;
 
-      server_dispatcher_object::smart_ptr _io_pool;
+      rx_reference<server_dispatcher_object> _io_pool;
 
-      server_dispatcher_object::smart_ptr _general_pool;
+      rx_reference<server_dispatcher_object> _general_pool;
 
-      dispatcher_subscribers_job::smart_ptr _dispatcher_timer;
+      rx_reference<dispatcher_subscribers_job> _dispatcher_timer;
 
-      domains_pool::smart_ptr _workers;
+      rx_reference<domains_pool> _workers;
 
 
 };

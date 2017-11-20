@@ -58,7 +58,7 @@ basic testing of callback capabilities.");
       virtual ~platform_callback_test();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
   protected:

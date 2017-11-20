@@ -82,9 +82,10 @@ dump_version_test::~dump_version_test()
 
 
 
-bool dump_version_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool dump_version_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	dump_python_information(out);
+	ctx->set_passed();
 	return true;
 }
 
@@ -123,7 +124,7 @@ read_and_run_file::~read_and_run_file()
 
 
 
-bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	bool ret = false;
 	string_type file_name;
@@ -154,7 +155,12 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 
 					prog::server_console_program temp_prog(line);
 
-					prog::program_context_base_ptr ctx_script = ctx->create_console_sub_context();
+					prog::program_context_base_ptr ctx_script = temp_prog.create_program_context(
+						prog::server_program_holder_ptr::null_ptr,
+						prog::program_context_base_ptr::null_ptr,
+						ctx->get_current_directory(),
+						ctx->get_out(),
+						ctx->get_err());
 
 					bool ret = temp_prog.process_program(ctx_script, rx_time::now(), false);
 					if (!ret)
@@ -165,13 +171,14 @@ bool read_and_run_file::do_console_test (std::istream& in, std::ostream& out, st
 					ret = true;
 				}
 
-				out << CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
+				out << RX_CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
 			}
 			else
 			{
 				err << "error reading file contet\r\n";
 			}
 			rx_file_close(file);
+			ctx->set_passed();
 			return ret;
 		}
 		return true;

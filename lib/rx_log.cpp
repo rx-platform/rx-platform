@@ -122,7 +122,7 @@ log_object& log_object::instance ()
 void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message)
 {
 	// just fire the job and let worker take care of it!
-	log_event_job::smart_ptr my_job(event_type, library, source, level, code, message,sync_event);
+	rx_reference<log_event_job> my_job(event_type, library, source, level, code, message,sync_event);
 	_worker.append(my_job);
 }
 
@@ -188,7 +188,7 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 {
 	if (log_cache_size)
 	{
-		_cache = cache_log_subscriber::smart_ptr(log_cache_size);
+		_cache = rx_create_reference<cache_log_subscriber>(log_cache_size);
 		register_subscriber(_cache);
 	}
 	const char* line = "Log started!";

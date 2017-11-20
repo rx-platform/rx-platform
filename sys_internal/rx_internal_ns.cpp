@@ -95,7 +95,22 @@ void root_server_directory::initialize (server::hosting::rx_server_host* host, n
 
 	dirs.clear();
 	items.clear();
-	testing::testing_enviroment::instance().collect_test_cases(items);
+
+	server_directories_type dummy_empty;
+	string_array categories;
+	testing::testing_enviroment::instance().get_categories(categories);
+	for (const auto& one : categories)
+	{
+		items.clear();
+		std::vector<testing::test_case::smart_ptr> cases;
+		testing::testing_enviroment::instance().collect_test_cases(one, cases);
+		for (auto tcase : cases)
+		{
+			items.push_back(tcase);
+		}
+		dirs.push_back(namespace_directory::smart_ptr(one, dummy_empty, items));
+	}
+	items.clear();
 	namespace_directory::smart_ptr test(RX_NS_TEST_NAME, dirs, items);
 
 	dirs.clear();
@@ -165,7 +180,7 @@ void root_server_directory::deinitialize ()
 
 namespace_item_attributes root_server_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 bool root_server_directory::generate_json (std::ostream& def, std::ostream& err)
@@ -190,7 +205,7 @@ namespace_directory::~namespace_directory()
 
 namespace_item_attributes namespace_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 bool namespace_directory::generate_json (std::ostream& def, std::ostream& err)
@@ -215,7 +230,7 @@ unassigned_directory::~unassigned_directory()
 
 namespace_item_attributes unassigned_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 bool unassigned_directory::generate_json (std::ostream& def, std::ostream& err)
@@ -240,7 +255,7 @@ world_directory::~world_directory()
 
 namespace_item_attributes world_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
 }
 
 bool world_directory::generate_json (std::ostream& def, std::ostream& err)

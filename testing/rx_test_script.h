@@ -61,7 +61,7 @@ Done and checked can, be done everywhere.\
       virtual ~dump_version_test();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
   protected:
@@ -114,7 +114,7 @@ loading a file->reading it line by line->executing.");
       virtual ~read_and_run_file();
 
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
   protected:

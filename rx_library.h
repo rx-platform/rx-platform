@@ -39,34 +39,23 @@
 // C++ standard library and some mcro definitions
 #include "lib/rx_std.h"
 
+// log related stuff
+#include "lib/rx_log.h"
+
+//library it self
+#include "lib/rx_lib.h"
+
 // smart pointers
 #include "lib/rx_ptr.h"
 
 // memory buffers
 #include "lib/rx_mem.h"
 
-// log related stuff
-#include "lib/rx_log.h"
 
 
 
 
 using namespace rx;
-
-
-
-// for standard references
-template<class T, typename... Args>
-pointers::reference<T> rx_create_reference(Args... args)
-{
-	return pointers::reference<T>(args...);
-}
-template<class T>
-pointers::reference<T> rx_create_reference()
-{
-	return pointers::reference<T>(pointers::_create_new);
-}
-
 
 
 #endif

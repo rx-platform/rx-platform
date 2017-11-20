@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 
 namespace server {
 namespace ns {
@@ -185,7 +185,7 @@ class rx_server_directory : public rx::pointers::reference_object
   private:
 
 
-      rx_server_directory::smart_ptr _parent;
+      rx_reference<rx_server_directory> _parent;
 
       sub_directories_type _sub_directories;
 
@@ -215,6 +215,8 @@ class rx_server_item : public rx::pointers::virtual_reference_object
   public:
       rx_server_item();
 
+      rx_server_item (const string_type& console_name);
+
       virtual ~rx_server_item();
 
 
@@ -222,7 +224,7 @@ class rx_server_item : public rx::pointers::virtual_reference_object
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
-      virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info) = 0;
+      virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       virtual string_type get_type_name () const = 0;
 
@@ -253,15 +255,24 @@ class rx_server_item : public rx::pointers::virtual_reference_object
       virtual bool deserialize (base_meta_reader& stream);
 
 
+      const string_type& get_console_name () const
+      {
+        return _console_name;
+      }
+
+
+
   protected:
 
   private:
 
 
-      rx_server_directory::smart_ptr _parent;
+      rx_reference<rx_server_directory> _parent;
 
 
       locks::lockable _item_lock;
+
+      string_type _console_name;
 
 
 };

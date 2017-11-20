@@ -60,31 +60,6 @@ namespace hosting {
 
 
 
-class host_security_context : public rx::security::built_in_security_context  
-{
-	DECLARE_REFERENCE_PTR(host_security_context);
-
-  public:
-      host_security_context();
-
-      virtual ~host_security_context();
-
-
-      bool is_system () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class rx_server_host 
 {
@@ -135,6 +110,31 @@ class rx_server_host
 
 
       rx_server_host *_parent;
+
+
+};
+
+
+
+
+
+
+class host_security_context : public rx::security::built_in_security_context  
+{
+	DECLARE_REFERENCE_PTR(host_security_context);
+
+  public:
+      host_security_context();
+
+      virtual ~host_security_context();
+
+
+      bool is_system () const;
+
+
+  protected:
+
+  private:
 
 
 };

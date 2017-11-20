@@ -63,8 +63,162 @@ bool test_command::do_console_command (std::istream& in, std::ostream& out, std:
 		err << "Access Denied!";
 		return false;
 	}
+	string_type temp_str;
+	in >> temp_str;
 
-	return testing_enviroment::instance().do_console_command(in, out, err, ctx);
+	if (temp_str == "status" || temp_str == "stat")
+	{
+		return do_status_command(in, out, err, ctx);
+	}
+	else if (temp_str == "run")
+	{
+		return do_run_command(in, out, err, ctx);
+	}
+	else if (temp_str == "code")
+	{
+		return do_info_command(in, out, err, ctx);
+	}
+	else if (temp_str == "list")
+	{
+		return do_list_command(in, out, err, ctx);
+	}
+	err << temp_str << " is unknown Test Command.\r\n";
+	return false;
+}
+
+bool test_command::do_info_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	string_type temp_str;
+
+	in >> temp_str;
+
+	test_case::smart_ptr test = testing_enviroment::instance().get_test_case(temp_str);
+
+	if (test)
+	{
+		test->fill_code_info(out, temp_str);
+		return true;
+	}
+
+	err << temp_str << " is unknown Test Case.\r\n";
+
+	return false;
+}
+
+bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+
+	string_type temp_str;
+	in >> temp_str;
+	if (temp_str=="-a" || temp_str=="--all")
+	{
+		bool ret = true;
+		std::vector<test_case::smart_ptr> cases;
+		testing_enviroment::instance().collect_test_cases("", cases);
+		for (auto one : cases)
+		{
+			out << "Test Case " << one->get_name() << RX_CONSOLE_HEADER_LINE "\r\n";
+			ret = one->do_console_test(in, out, err, ctx);
+			out << RX_CONSOLE_HEADER_LINE "\r\n";
+			if (!ret)
+				break;
+
+		}
+		return ret;
+	}
+	test_case::smart_ptr test = testing_enviroment::instance().get_test_case(temp_str);
+
+	if(test)
+	{
+		return test->do_console_test(in, out, err, ctx);
+	}
+	err << temp_str << " is unknown Test Case.\r\n";
+
+	return false;
+}
+
+bool test_command::do_status_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	string_type filter;
+	in >> filter;
+	std::vector<test_case::smart_ptr> cases;
+	testing_enviroment::instance().collect_test_cases(filter,cases);
+
+	rx_table_type table;
+
+	rx_row_type header;
+	header.emplace_back("Name");
+	header.emplace_back("Status");
+	header.emplace_back("Time");
+	header.emplace_back("User");
+	
+	table.emplace_back(header);
+
+	for (auto& one : cases)
+	{
+		rx_row_type row;
+		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+
+		test_context_data data = one->get_data();
+		test_status_t result = one->get_status();
+		switch (result)
+		{
+		case RX_TEST_STATUS_OK:
+			row.emplace_back(RX_TEST_STATUS_OK_NAME, ANSI_COLOR_BOLD ANSI_COLOR_GREEN, ANSI_COLOR_RESET);
+			break;
+		case RX_TEST_STATUS_FAILED:
+			row.emplace_back(RX_TEST_STATUS_FAILED_NAME, ANSI_COLOR_BOLD ANSI_COLOR_RED, ANSI_COLOR_RESET);
+			break;
+		case RX_TEST_STATUS_UNKNOWN:
+			row.emplace_back(RX_TEST_STATUS_UNKNOWN_NAME, ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			break;
+		default:
+			row.emplace_back("Internal Error!!!", ANSI_COLOR_BOLD ANSI_COLOR_RED, ANSI_COLOR_RESET);
+			RX_ASSERT(false);
+		}
+		if (data.time_stamp.is_valid_time())
+			row.emplace_back(data.time_stamp.get_string());
+		else
+			row.emplace_back("-");
+		row.emplace_back(data.user);
+		table.emplace_back(row);
+	}
+	rx_dump_table(table, out, true);
+	return true;
+}
+
+bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	string_type temp_str;
+	in >> temp_str;
+	if (temp_str.empty())
+	{
+		string_array categories;
+		testing_enviroment::instance().get_categories(categories);
+		out << "Registered  Test Categories\r\n=====================================\r\n" ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
+		for (const auto& one : categories)
+		{
+			out << one;
+			out << "\r\n";
+		}
+		out << ANSI_COLOR_RESET;
+		return true;
+	}
+	else
+	{
+		string_array cases;
+		testing_enviroment::instance().get_cases(temp_str,cases);
+
+		out << "Registered Test Cases for ";
+		out << temp_str << " :\r\n=====================================\r\n" ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
+		for (const auto& one : cases)
+		{
+			out << one;
+			out << "\r\n";
+		}
+		out << ANSI_COLOR_RESET;
+		return true;
+	}
 }
 
 
@@ -93,75 +247,47 @@ test_category & test_category::operator=(const test_category &right)
 
 
 
-bool test_category::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx, bool code)
-{
-	string_type case_name;
-	in >> case_name;
-
-	auto it = _cases.find(case_name);
-	if (it != _cases.end())
-	{
-		if (code)
-		{
-			it->second->fill_code_info(out,case_name);
-			return true;
-		}
-		else
-		{
-			if (it->second->test_start(in, out, err, ctx))
-			{
-				bool ret = it->second->do_console_test(in, out, err, ctx);
-				it->second->test_end(in, out, err, ctx);
-				return ret;
-			}
-			else
-			{
-				err << case_name << "error starting test case.\r\n";
-				return false;
-			}
-		}
-	}
-	else if(case_name.empty())
-	{
-		out << "Registered Test Cases for ";
-		out << _category<< " :\r\n=====================================\r\n" ANSI_COLOR_YELLOW;
-		for (const auto& one : _cases)
-		{
-			out << one.first;
-			out << "\r\n";
-		}
-		out << ANSI_COLOR_RESET;
-		return true;
-	}
-	else
-	{
-		err << case_name << "is unknown test case.\r\n";
-		return false;
-	}
-}
-
 void test_category::register_test_case (test_case::smart_ptr test)
 {
 	_cases.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
 }
 
-void test_category::collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases)
+void test_category::collect_test_cases (std::vector<test_case::smart_ptr>& cases)
 {
 	for (auto& one : _cases)
 		cases.emplace_back(one.second);
+}
+
+void test_category::get_cases (string_array& cases)
+{
+	cases.reserve(_cases.size());
+	for (auto one : _cases)
+		cases.emplace_back(one.first);
+}
+
+test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
+{
+	const auto& it = _cases.find(test_name);
+	if (it != _cases.end())
+	{
+		return it->second;
+	}
+	return test_case::smart_ptr::null_ptr;
 }
 
 
 // Class testing::test_case 
 
 test_case::test_case(const test_case &right)
-      : _start_tick(0)
+      : _start_tick(0),
+        _status(RX_TEST_STATUS_UNKNOWN)
 {
 	RX_ASSERT(false);
 }
 
 test_case::test_case (const string_type& name)
-      : _start_tick(0)
+      : _start_tick(0),
+        _status(RX_TEST_STATUS_UNKNOWN)
 	, _name(name)
 {
 }
@@ -180,7 +306,7 @@ test_case & test_case::operator=(const test_case &right)
 
 
 
-bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	bool ret = false;
 	string_type start_message("Test Case started by :");
@@ -190,19 +316,47 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 	start_message += active->get_full_name();
 	out << active->get_user_name();
 	out << ANSI_COLOR_RESET "\r\n";
-	TEST_LOG_INFO(start_message.c_str(), 500,"Test Case Started");
 	if (active->is_interactive())
 	{
 		ret = true;
 		_start_tick = rx_get_us_ticks();
+		TEST_LOG_INFO(start_message.c_str(), 500, "Test Case Started");
+	}
+	else
+	{
+		err << "Access Denied!!!\r\n";
 	}
 	return ret;
 }
 
-void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	out << CONSOLE_HEADER_LINE "\r\n";
+	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	TEST_LOG_INFO(_name, 500, "Test Case Ended");
+	out << "Result:";
+
+	_status_lock.lock();
+	_data = ctx->get_data();
+	_data.time_stamp = rx_time::now();
+	_data.user = security::active_security()->get_full_name();
+	test_status_t result = _status = ctx->get_status();
+	_status_lock.unlock();
+	switch (result)
+	{
+	case RX_TEST_STATUS_OK:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
+		break;
+	case RX_TEST_STATUS_FAILED:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
+		break;
+	case RX_TEST_STATUS_UNKNOWN:
+		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
+		break;
+	default:
+		RX_ASSERT(false);
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
+	}
+	out << ANSI_COLOR_RESET "\r\n";
 	uint64_t ellapsed = rx_get_us_ticks() - _start_tick;
 	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
 }
@@ -242,6 +396,34 @@ bool test_case::generate_json (std::ostream& def, std::ostream& err) const
 	return true;
 }
 
+test_status_t test_case::get_status (test_context_data* data)
+{
+	if (data)
+		*data = _data;
+	return _status;
+}
+
+test_context_data test_case::get_data (test_context_data* data) const
+{
+	return _data;
+}
+
+bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+{
+	rx_reference<test_program_context> test_ctx = testing_enviroment::instance().create_test_context(ctx);
+	if (test_start(in, out, err, test_ctx))
+	{
+		bool ret = run_test(in, out, err, test_ctx);
+		test_end(in, out, err, test_ctx);
+		return ret;
+	}
+	else
+	{
+		err << "Error starting test case:" << _name << "\r\n";
+		return false;
+	}
+}
+
 
 // Class testing::testing_enviroment 
 
@@ -263,7 +445,7 @@ testing_enviroment::~testing_enviroment()
 
 void testing_enviroment::register_code_test (test_category::smart_ptr test)
 {
-	_registered_tests.emplace(test->get_category(), std::forward<test_category::smart_ptr>(test));
+	_categories.emplace(test->get_category(), std::forward<test_category::smart_ptr>(test));
 }
 
 testing_enviroment& testing_enviroment::instance ()
@@ -272,48 +454,95 @@ testing_enviroment& testing_enviroment::instance ()
 	return g_obj;
 }
 
-bool testing_enviroment::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+void testing_enviroment::collect_test_cases (const string_type& category, std::vector<test_case::smart_ptr>& cases)
 {
-	bool code = false;
-
-	string_type temp_str;
-	in >> temp_str;
-	if (temp_str == "code")
+	if (category.empty())
 	{
-		code = true;
-		if (!in.eof())
-			in >> temp_str;
-		else
-			temp_str.clear();
-	}
-
-	const auto& it = _registered_tests.find(temp_str);
-	if (it != _registered_tests.end())
-	{
-		return it->second->do_console_test(in, out, err, ctx, code);
-	}
-	else if (temp_str.empty())
-	{
-		out << "Registered  Test Categories\r\n=====================================\r\n" ANSI_COLOR_YELLOW;
-		for (const auto& one : _registered_tests)
-		{
-			out << one.first;
-			out << "\r\n";
-		}
-		out << ANSI_COLOR_RESET;
-		return true;
+		for (auto& one : _categories)
+			one.second->collect_test_cases(cases);
 	}
 	else
 	{
-		err << temp_str << "is unknown Test Category.\r\n";
-		return false;
+		const auto& it = _categories.find(category);
+		if (it != _categories.end())
+			it->second->collect_test_cases(cases);
 	}
 }
 
-void testing_enviroment::collect_test_cases (std::vector<rx_server_item::smart_ptr>& cases)
+void testing_enviroment::get_categories (string_array& categories)
 {
-	for (auto& one : _registered_tests)
-		one.second->collect_test_cases(cases);
+	for(auto& one : _categories)
+	{
+		categories.push_back(one.first);
+	}
+}
+
+void testing_enviroment::get_cases (const string_type& category, string_array& cases)
+{
+	const auto& it = _categories.find(category);
+	if (it != _categories.end())
+		return it->second->get_cases(cases);
+}
+
+test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_name)
+{
+	size_t idx = test_name.find_first_of("./");
+	if (idx != string_type::npos)
+	{
+		string_type category(test_name.substr(0, idx));
+		string_type name = test_name.substr(idx + 1);
+		const auto& it = _categories.find(category);
+		if (it != _categories.end())
+		{
+			return it->second->get_test_case(name);
+		}
+	}
+	return test_case::smart_ptr::null_ptr;
+}
+
+test_program_context::smart_ptr testing_enviroment::create_test_context (server::prog::console_program_context::smart_ptr console_ctx)
+{
+	return rx_create_reference<test_program_context>(
+		prog::server_program_holder_ptr::null_ptr,
+		prog::program_context_base_ptr::null_ptr,
+		console_ctx->get_current_directory(),
+		console_ctx->get_out(),
+		console_ctx->get_err()
+		);
+}
+
+
+// Class testing::test_program_context 
+
+test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
+      : _status(RX_TEST_STATUS_UNKNOWN)
+	, server::prog::program_context_base(holder, root_context, current_directory, out, err)
+{
+}
+
+
+test_program_context::~test_program_context()
+{
+}
+
+
+
+void test_program_context::set_failed ()
+{
+	_status = RX_TEST_STATUS_FAILED;
+	fill_data();
+}
+
+void test_program_context::set_passed ()
+{
+	_status = RX_TEST_STATUS_OK;
+	fill_data();
+}
+
+void test_program_context::fill_data ()
+{
+	_data.time_stamp = rx_time::now();
+	_data.user = security::active_security()->get_full_name();
 }
 
 
@@ -331,11 +560,23 @@ basic_test_case_test::~basic_test_case_test()
 
 
 
-bool basic_test_case_test::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 
-	out << "Testing Test Category apstract....\r\n==========================\r\n";
+	bool pass = true;
+	if (!in.eof())
+	{
+		in >> pass;
+	}
+
+	out << "Testing Test Category apstract....\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
+
+	if (pass)
+		ctx->set_passed();
+	else
+		ctx->set_failed();
+
 	return true;
 }
 
