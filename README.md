@@ -1,5 +1,5 @@
 
-[![N|Solid](https://rx-platform.github.io/images/processor-64-dis.png)](https://rx-platform.github.io/images/processor-64-dis.png)
+![perica](https://rx-platform.github.io/images/processor-64-dis.png)
 
 
 ## The Mission
