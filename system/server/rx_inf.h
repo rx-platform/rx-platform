@@ -31,14 +31,14 @@
 
 
 
-// rx_job
-#include "lib/rx_job.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_job
+#include "lib/rx_job.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 #include "system/hosting/rx_host.h"
 using server::ns::namespace_item_attributes;
@@ -68,7 +68,7 @@ and general usage thread pool resources\r\n\
 ");
 
   public:
-      server_dispatcher_object (int count, const string_type& name, const rx_node_id& id);
+      server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id);
 
       virtual ~server_dispatcher_object();
 
@@ -158,7 +158,7 @@ thread pool resources\r\n\
 
       void append (rx::jobs::timer_job_ptr job, uint32_t domain);
 
-      rx::threads::job_thread* get_executer (uint32_t domain);
+      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
 
   protected:
@@ -221,7 +221,7 @@ callculation ( normal priority)");
 
       uint32_t deinitialize ();
 
-      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, uint32_t period, bool now = false);
+      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
       uint32_t start (hosting::rx_server_host* host, const runtime_data_t& data);
 
@@ -233,7 +233,17 @@ callculation ( normal priority)");
 
       namespace_item_attributes get_attributes () const;
 
-      void append_job (rx::jobs::timer_job_ptr job, uint32_t domain);
+      void append_job (rx::jobs::job_ptr job);
+
+      void append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
+
+      void append_io_job (rx::jobs::job_ptr job);
+
+      void append_general_job (rx::jobs::job_ptr job);
+
+      void append_slow_job (rx::jobs::job_ptr job);
+
+      void append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
 
       rx_reference<server_dispatcher_object> get_io_pool ()
@@ -242,7 +252,7 @@ callculation ( normal priority)");
       }
 
 
-      const rx_reference<server_dispatcher_object> get_general_pool () const
+      rx_reference<server_dispatcher_object> get_general_pool ()
       {
         return _general_pool;
       }
@@ -263,7 +273,7 @@ callculation ( normal priority)");
 
       void virtual_release ();
 
-      rx::threads::job_thread* get_executer (uint32_t domain);
+      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
 
   private:

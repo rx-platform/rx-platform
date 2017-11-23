@@ -58,20 +58,20 @@ uint32_t server_rt::initialize (hosting::rx_server_host* host, runtime_data_t& d
 {
 	if (data.io_pool_size > 0)
 	{
-		_io_pool = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, IO_POOL_ID);
+		_io_pool = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, IO_POOL_ID, RX_DOMAIN_IO);
 	}
 	if (data.genereal_pool_size > 0)
 	{
-		_general_pool = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, GENERAL_POOL_ID);
+		_general_pool = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, GENERAL_POOL_ID, RX_DOMAIN_GENERAL);
 	}
 	if (data.workers_pool_size > 0)
 	{
 		_workers = domains_pool::smart_ptr(data.workers_pool_size);
 		_workers->reserve();
 	}
-	_general_timer = rx_create_reference<rx::threads::timer>();
+	_general_timer = rx_create_reference<rx::threads::timer>("Timer", 0);
 	if (data.has_callculation_timer)
-		_callculation_timer = rx_create_reference<rx::threads::timer>();
+		_callculation_timer = rx_create_reference<rx::threads::timer>("Calc",0);
 
 
 	return RX_OK;
@@ -95,9 +95,9 @@ uint32_t server_rt::deinitialize ()
 	return RX_OK;
 }
 
-void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t domain, uint32_t period, bool now)
+void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
-	rx::threads::job_thread* executer = get_executer(domain);
+	rx::threads::job_thread* executer = get_executer(rx_thread_context());
 	if (_general_timer)
 		_general_timer->append_job(job,executer,period, now);
 }
@@ -180,15 +180,15 @@ namespace_item_attributes server_rt::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system | namespace_item_object);
 }
 
-void server_rt::append_job (rx::jobs::timer_job_ptr job, uint32_t domain)
+void server_rt::append_job (rx::jobs::job_ptr job)
 {
-	threads::job_thread* executer = get_executer(domain);
+	threads::job_thread* executer = get_executer(rx_thread_context());
 	RX_ASSERT(executer);
 	if (executer)
 		executer->append(job);
 }
 
-rx::threads::job_thread* server_rt::get_executer (uint32_t domain)
+rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 {
 	switch (domain)
 	{
@@ -209,11 +209,47 @@ rx::threads::job_thread* server_rt::get_executer (uint32_t domain)
 	}
 }
 
+void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+{
+	threads::job_thread* executer = get_executer(rx_thread_context());
+	if(_callculation_timer)
+		_general_timer->append_job(job, executer, period, now);
+	if (_general_timer)
+		_general_timer->append_job(job, executer, period, now);
+}
+
+void server_rt::append_io_job (rx::jobs::job_ptr job)
+{
+	_io_pool->get_pool()->append(job);
+}
+
+void server_rt::append_general_job (rx::jobs::job_ptr job)
+{
+	if (_general_pool)
+		return _general_pool->get_pool()->append(job);
+	else
+		return _io_pool->get_pool()->append(job);
+}
+
+void server_rt::append_slow_job (rx::jobs::job_ptr job)
+{
+	if (_general_pool)
+		return _general_pool->get_pool()->append(job);
+	else
+		return _io_pool->get_pool()->append(job);
+}
+
+void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+{
+	if (_general_timer)
+		_general_timer->append_job(job, _io_pool->get_pool().unsafe_ptr(), period, now);
+}
+
 
 // Class server::runtime::server_dispatcher_object 
 
-server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, const rx_node_id& id)
-  : _pool(count, name), server_object(name,id), _threads_count(count)
+server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
+  : _pool(count, name,rx_thread_id), server_object(name,id), _threads_count(count)
 {
 	register_const_value("count", _threads_count);
 }
@@ -285,8 +321,8 @@ void domains_pool::append (job_ptr pjob)
 void domains_pool::reserve ()
 {
 	_workers.reserve(_pool_size.value());
-	for (uint32_t i = 0; i < _pool_size.value(); i++)
-		_workers.emplace_back(new threads::physical_job_thread("Worker"));
+	for (intptr_t i = 0; i < _pool_size.value(); i++)
+		_workers.emplace_back(new threads::physical_job_thread("Worker",i));
 }
 
 void domains_pool::clear ()
@@ -304,7 +340,7 @@ void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
 		thr->append(job);
 }
 
-rx::threads::job_thread* domains_pool::get_executer (uint32_t domain)
+rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 {
 	uint32_t size = _pool_size.value();
 	RX_ASSERT(size);

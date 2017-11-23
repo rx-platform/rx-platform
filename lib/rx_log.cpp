@@ -86,10 +86,12 @@ void log_event_data::dump_to_stream(std::ostream& stream) const
 log_object *log_object::g_object = nullptr;
 
 log_object::log_object()
+	: _worker("Log", 0)
 {
 }
 
 log_object::log_object(const log_object &right)
+	: _worker("Log", 0)
 {
 	RX_ASSERT(false);
 }

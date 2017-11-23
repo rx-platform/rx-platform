@@ -1232,21 +1232,22 @@ time_stamp time_stamp::now()
 class rx_thread_data_object
 {
 private:
-	std::map<int, std::stack<uint64_t>* > m_objects;
+	std::map<int,std::unique_ptr<std::stack<intptr_t> > > m_objects;
 	rx_thread_data_object()
 	{
 	}
 public:
 	static rx_thread_data_object& instance();
 
-	bool push_object(int handle, uint64_t obj)
+	bool push_object(int handle, intptr_t obj)
 	{
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end())
 		{
-			std::stack<uint64_t>* temp = new std::stack<uint64_t>;
-			m_objects.emplace(handle, temp);
+			typedef typename std::unique_ptr<std::stack<intptr_t> > stcak_ptr_t;
+			stcak_ptr_t temp = std::make_unique<std::stack<intptr_t> >();
 			temp->push(obj);
+			m_objects.emplace(handle, std::forward<stcak_ptr_t>(temp));
 			return true;
 		}
 		else
@@ -1265,7 +1266,7 @@ public:
 		}
 		return false;
 	}
-	uint64_t get_object(int handle)
+	intptr_t get_object(int handle)
 	{
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end() || it->second->empty())
@@ -1313,15 +1314,15 @@ bool rx_pop_security_context()
 
 rx_thread_handle_t rx_thread_context()
 {
-	return rx_thread_data_object::instance().get_object(SECURITY_TLS_DATA);
+	return rx_thread_data_object::instance().get_object(THREADING_TLS_DATA);
 }
 bool rx_push_thread_context(rx_thread_handle_t obj)
 {
-	return rx_thread_data_object::instance().push_object(SECURITY_TLS_DATA, obj);
+	return rx_thread_data_object::instance().push_object(THREADING_TLS_DATA, obj);
 }
 bool rx_pop_thread_context()
 {
-	return rx_thread_data_object::instance().pop_object(SECURITY_TLS_DATA);
+	return rx_thread_data_object::instance().pop_object(THREADING_TLS_DATA);
 }
 
 }//namespace rx

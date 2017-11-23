@@ -34,6 +34,7 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
+#include "lib/security/rx_security.h"
 
 
 namespace rx {
@@ -66,14 +67,9 @@ void execute_job(void* arg)
 
 // Class rx::threads::thread 
 
-thread::thread()
-      : _thread_id(0)
-{
-	_name = "<unnamed>";
-}
-
-thread::thread (const string_type& name)
-      : _thread_id(0)
+thread::thread (const string_type& name, rx_thread_handle_t rx_thread_id)
+      : _thread_id(0),
+        _rx_thread_id(rx_thread_id)
 {
 	_name = name;
 }
@@ -90,6 +86,8 @@ thread::~thread()
 void thread::_inner_handler (void* arg)
 {
 	thread *p = static_cast<thread *>(arg);
+
+	rx_push_thread_context(p->_rx_thread_id);
 
 	p->handler();
 
@@ -140,13 +138,9 @@ job_aware_thread::~job_aware_thread()
 
 // Class rx::threads::physical_job_thread 
 
-physical_job_thread::physical_job_thread()
+physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
       : _has_job(false)
-{
-}
-
-physical_job_thread::physical_job_thread (const string_type& name)
-      : _has_job(false)
+	, thread(name,rx_thread_id)
 {
 }
 
@@ -260,12 +254,12 @@ void physical_job_thread::virtual_release ()
 
 // Class rx::threads::dispatcher_pool 
 
-dispatcher_pool::dispatcher_pool (int count, const string_type& name)
+dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
       : _name(name)
 {
 	_dispatcher = rx_create_kernel_dispathcer(count);
 	for (int i = 0; i < count; i++)
-		_threads.emplace_back(new dispatcher_thread(name,_dispatcher));
+		_threads.emplace_back(new dispatcher_thread(name,rx_thread_id,_dispatcher));
 }
 
 
@@ -312,8 +306,9 @@ void dispatcher_pool::virtual_release ()
 
 // Class rx::threads::dispatcher_thread 
 
-dispatcher_thread::dispatcher_thread (const string_type& name, rx_kernel_dispather_t dispatcher)
-  : thread(name), _dispatcher(dispatcher)
+dispatcher_thread::dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher)
+  : thread(name,rx_thread_id)
+	, _dispatcher(dispatcher)
 {
 }
 
@@ -337,9 +332,10 @@ uint32_t dispatcher_thread::handler ()
 
 // Class rx::threads::timer 
 
-timer::timer()
+timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : _wake_up(false),
         _should_exit(false)
+	, thread(name, rx_thread_id)
 {
 }
 

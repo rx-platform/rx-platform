@@ -64,9 +64,7 @@ class thread : public locks::waitable
 {
 
   public:
-      thread();
-
-      thread (const string_type& name);
+      thread (const string_type& name, rx_thread_handle_t rx_thread_id);
 
       virtual ~thread();
 
@@ -88,6 +86,8 @@ class thread : public locks::waitable
       string_type _name;
 
       uint32_t _thread_id;
+
+      rx_thread_handle_t _rx_thread_id;
 
 
 };
@@ -162,9 +162,7 @@ class physical_job_thread : public thread,
 	typedef std::queue<job_ptr> queue_type;
 
   public:
-      physical_job_thread();
-
-      physical_job_thread (const string_type& name);
+      physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id);
 
       virtual ~physical_job_thread();
 
@@ -211,7 +209,7 @@ class dispatcher_thread : public thread
 {
 
   public:
-      dispatcher_thread (const string_type& name, rx_kernel_dispather_t dispatcher);
+      dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher);
 
       virtual ~dispatcher_thread();
 
@@ -243,7 +241,7 @@ class dispatcher_pool : public job_thread,
 	typedef std::vector<dispatcher_thread*> threads_type;
 
   public:
-      dispatcher_pool (int count, const string_type& name);
+      dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id);
 
       virtual ~dispatcher_pool();
 
@@ -290,7 +288,7 @@ class timer : public thread,
 	typedef std::set<jobs::timer_job_ptr> jobs_type;
 
   public:
-      timer();
+      timer (const string_type& name, rx_thread_handle_t rx_thread_id);
 
       virtual ~timer();
 

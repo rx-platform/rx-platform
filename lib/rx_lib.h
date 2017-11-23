@@ -443,8 +443,12 @@ struct time_stamp
 };
 
 // security related basics for stuff
-typedef uint64_t rx_security_handle_t;
-typedef uint64_t rx_thread_handle_t;
+typedef intptr_t rx_security_handle_t;
+typedef intptr_t rx_thread_handle_t;
+
+
+rx_thread_handle_t rx_thread_context();
+bool rx_push_thread_context(rx_thread_handle_t obj);
 
 #define RX_THREAD_NULL 0ull
 

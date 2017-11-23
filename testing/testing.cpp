@@ -38,8 +38,8 @@ namespace obsolite
 
 	void test_timers()
 	{
-		rx::threads::dispatcher_pool pool(2, "ime");
-		rx::threads::timer tm;
+		rx::threads::dispatcher_pool pool(2, "ime",55);
+		rx::threads::timer tm("tm",70);
 
 		pool.run();
 		tm.start();
@@ -148,7 +148,8 @@ int test_smart_ptr()
 class my_thread : public rx::threads::thread
 {
 public:
-	my_thread()
+	my_thread() 
+		: rx::threads::thread("Test",66)
 	{
 
 	}
@@ -241,7 +242,7 @@ void test_thread()
 
 	//my_listener lisent;
 	my_thread thread;
-	rx::threads::dispatcher_pool::smart_ptr jthread(2,"test pool");
+	rx::threads::dispatcher_pool::smart_ptr jthread(2,"test pool",78);
 	//rx::thr_fx::physical_job_thread jthread;
 	jthread->run();
 	thread.start();
