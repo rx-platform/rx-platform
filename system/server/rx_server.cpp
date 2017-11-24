@@ -163,9 +163,9 @@ server_directory_ptr rx_server::get_root_directory ()
 
 bool rx_server::shutdown (const string_type& msg, std::ostream& err)
 {
-	if (!dword_check_premissions(0, 0))
+	if (!_security_guard->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
 	{
-		err << "Access Denied!";
+		err << RX_ACCESS_DENIED;
 		return false;
 	}
 	_host->shutdown(msg);
@@ -185,9 +185,17 @@ bool rx_server::read_log (const log::log_query_type& query, log::log_events_type
 	return log::log_object::instance().read_cache(query, result);
 }
 
-bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	return _host->do_host_command(line, out_buffer, err_buffer, ctx);
+	if (!_security_guard->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	{
+		return _host->do_host_command(line, out_buffer, err_buffer, ctx);
+	}
+	else
+	{
+		err_buffer->push_line(RX_ACCESS_DENIED "\r\n");
+		return false;
+	}
 }
 
 

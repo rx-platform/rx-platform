@@ -150,10 +150,10 @@ acctualiy first command class good for testing.)");
       virtual ~echo_server_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 

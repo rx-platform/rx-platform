@@ -58,11 +58,6 @@ test_command::~test_command()
 
 bool test_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	if (!dword_check_premissions(0, 0))
-	{
-		err << "Access Denied!";
-		return false;
-	}
 	string_type temp_str;
 	in >> temp_str;
 

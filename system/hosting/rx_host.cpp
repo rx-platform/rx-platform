@@ -79,7 +79,7 @@ void rx_server_host::server_stopping_event ()
 {
 }
 
-bool rx_server_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+bool rx_server_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 
 	std::ostream out(out_buffer.unsafe_ptr());

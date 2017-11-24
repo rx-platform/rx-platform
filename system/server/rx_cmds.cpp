@@ -30,10 +30,10 @@
 
 #include "terminal/rx_terminal_version.h"
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 #include "system/server/rx_server.h"
 #include "terminal/rx_telnet.h"
@@ -76,10 +76,35 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 " ANSI_COLOR_RESET;
 
 
+// Class server::prog::program_context_base 
+
+program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
+      : _root(root_context),
+        _holder(holder),
+        _current_directory(current_directory),
+        _out(out),
+        _err(err)
+{
+}
+
+
+program_context_base::~program_context_base()
+{
+}
+
+
+
+bool program_context_base::is_postponed () const
+{
+	return false;
+}
+
+
 // Class server::prog::server_command_base 
 
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
-	: rx_server_item(console_name)
+      : _console_name(console_name),
+        _security_guard(pointers::_create_new)
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
 }
@@ -138,6 +163,24 @@ const string_type& server_command_base::get_item_name () const
 	return get_console_name();
 }
 
+bool server_command_base::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx)
+{
+	if (_security_guard->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	{
+		return do_console_command(in, out, err, ctx);
+	}
+	else
+	{
+		err << RX_ACCESS_DENIED;
+		return false;
+	}
+}
+
+bool server_command_base::check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
+{
+	return _security_guard->check_premissions(mask, extended_mask);
+}
+
 
 // Class server::prog::server_program_base 
 
@@ -177,6 +220,48 @@ server_program_holder::~server_program_holder()
 {
 }
 
+
+
+// Class server::prog::console_program_context 
+
+console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
+      : _current_line(0),
+        _out_std(out.unsafe_ptr()),
+        _err_std(err.unsafe_ptr())
+  , prog::program_context_base(holder, root_context,current_directory,out,err)
+
+{
+}
+
+
+console_program_context::~console_program_context()
+{
+}
+
+
+
+size_t console_program_context::next_line ()
+{
+	_current_line++;
+	return _current_line;
+}
+
+std::ostream& console_program_context::get_stdout ()
+{
+	return _out_std;
+}
+
+std::ostream& console_program_context::get_stderr ()
+{
+	return _err_std;
+}
+
+console_program_context::smart_ptr console_program_context::create_console_sub_context ()
+{
+	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
+		, get_current_directory(), get_out(), get_err());
+	return ctx_ret;
+}
 
 
 // Class server::prog::server_console_program 
@@ -230,7 +315,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 			server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(name);
 			if (command)
 			{
-				if (!command->do_console_command(in, out, err,ctx))
+				if (!command->console_execute(in, out, err,ctx))
 					return false;
 			}
 			else
@@ -270,7 +355,7 @@ console_client::~console_client()
 
 
 
-bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	RX_ASSERT(!_current);
 	if (line.size() > 0 && line[0] == '@')
@@ -309,6 +394,8 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 	else
 	{
 		prog::server_console_program temp_prog(line);
+
+		security::security_auto_context dummy(ctx);
 		
 		prog::program_context_base_ptr ctx = temp_prog.create_program_context(
 			prog::server_program_holder_ptr::null_ptr, 
@@ -415,72 +502,6 @@ server_script_host::~server_script_host()
 {
 }
 
-
-
-// Class server::prog::console_program_context 
-
-console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
-      : _current_line(0),
-        _out_std(out.unsafe_ptr()),
-        _err_std(err.unsafe_ptr())
-  , prog::program_context_base(holder, root_context,current_directory,out,err)
-
-{
-}
-
-
-console_program_context::~console_program_context()
-{
-}
-
-
-
-size_t console_program_context::next_line ()
-{
-	_current_line++;
-	return _current_line;
-}
-
-std::ostream& console_program_context::get_stdout ()
-{
-	return _out_std;
-}
-
-std::ostream& console_program_context::get_stderr ()
-{
-	return _err_std;
-}
-
-console_program_context::smart_ptr console_program_context::create_console_sub_context ()
-{
-	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
-		, get_current_directory(), get_out(), get_err());
-	return ctx_ret;
-}
-
-
-// Class server::prog::program_context_base 
-
-program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
-      : _root(root_context),
-        _holder(holder),
-        _current_directory(current_directory),
-        _out(out),
-        _err(err)
-{
-}
-
-
-program_context_base::~program_context_base()
-{
-}
-
-
-
-bool program_context_base::is_postponed () const
-{
-	return false;
-}
 
 
 } // namespace prog

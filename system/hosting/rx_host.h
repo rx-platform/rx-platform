@@ -84,7 +84,7 @@ class rx_server_host
 
       virtual void get_host_classes (std::vector<server::meta::object_class_ptr>& items) = 0;
 
-      virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
+      virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       virtual sys_handle_t get_host_test_file (const string_type& path);
 

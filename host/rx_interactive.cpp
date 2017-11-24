@@ -68,9 +68,12 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 
 	if(!config.managment_data.telnet_port)// set to the last default if not set
 		config.managment_data.telnet_port = 12345;
-	config.runtime_data.genereal_pool_size = 2;
-	config.runtime_data.io_pool_size = 2;
-	config.runtime_data.workers_pool_size = 2;
+	if(config.runtime_data.genereal_pool_size<0)
+		config.runtime_data.genereal_pool_size = 2;
+	if (config.runtime_data.io_pool_size <=0)// has to have at least one
+		config.runtime_data.io_pool_size = 1;
+	if (config.runtime_data.workers_pool_size<0)
+		config.runtime_data.workers_pool_size = 2;
 
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
@@ -269,7 +272,7 @@ void interactive_console_client::run_interactive ()
 			memory::buffer_ptr out_buffer(pointers::_create_new);
 			memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			if (!do_command(line, out_buffer, err_buffer,*_security_context))
+			if (!do_command(line, out_buffer, err_buffer,_security_context))
 			{
 				if (!err_buffer->empty())
 					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());

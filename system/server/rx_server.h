@@ -49,8 +49,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_security
-#include "lib/security/rx_security.h"
 
 
 #include "lib/rx_log.h"
@@ -83,7 +81,7 @@ struct configuration_data_t
 
 
 
-class rx_server : public rx::security::secured_object  
+class rx_server 
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;
 
@@ -107,7 +105,7 @@ class rx_server : public rx::security::secured_object
 
       bool read_log (const log::log_query_type& query, log::log_events_type& result);
 
-      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
+      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
       runtime::server_rt& get_runtime ()
@@ -220,6 +218,8 @@ class rx_server : public rx::security::secured_object
       string_type _hal_version;
 
       rx_pid_t _pid;
+
+      security::security_guard_ptr _security_guard;
 
 
 };

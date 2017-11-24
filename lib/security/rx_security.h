@@ -194,24 +194,38 @@ class security_manager
 };
 
 
-
-
-
-
-class secured_object : public pointers::interface_object  
+enum security_mask_t : std::uint_fast32_t
 {
+	rx_security_execute_access	= 0x01,
+	rx_security_read_access		= 0x02,
+	rx_security_write_access	= 0x04,
+	rx_security_delete_access	= 0x08
+};
+
+enum extended_security_mask_t : std::uint_fast32_t
+{
+	rx_security_ext_null = 0
+};
+
+
+
+
+class security_guard : public pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(security_guard);
 
   public:
-      secured_object();
+      security_guard();
 
-      virtual ~secured_object();
+      virtual ~security_guard();
+
+
+      bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask);
 
 
   protected:
 
-      virtual bool dword_check_premissions (uint32_t mask, uint32_t extended_mask);
-
-      security_context_ptr basic_check (bool& ret);
+      virtual bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx);
 
 
   private:
@@ -219,6 +233,7 @@ class secured_object : public pointers::interface_object
 
 };
 
+typedef security_guard::smart_ptr security_guard_ptr;
 
 
 
@@ -292,6 +307,31 @@ class unathorized_security_context : public security_context
       void interface_bind ();
 
       void interface_release ();
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class loose_security_guard : public security_guard  
+{
+	DECLARE_REFERENCE_PTR(security_guard);
+
+  public:
+      loose_security_guard();
+
+      virtual ~loose_security_guard();
+
+
+  protected:
+
+      bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx);
 
 
   private:

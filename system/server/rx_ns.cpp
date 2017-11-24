@@ -108,12 +108,6 @@ void fill_quality_string(values::rx_value val, string_type& str)
 // Class server::ns::rx_server_item 
 
 rx_server_item::rx_server_item()
-	: _console_name(RX_NULL_ITEM_NAME)
-{
-}
-
-rx_server_item::rx_server_item (const string_type& console_name)
-	: _console_name(console_name)
 {
 }
 
@@ -494,4 +488,5 @@ bool rx_server_directory::add_sub_directory (server_directory_ptr who)
 
 } // namespace ns
 } // namespace server
+
 

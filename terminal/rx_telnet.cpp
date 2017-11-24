@@ -311,7 +311,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 
 
-			bool ret = do_command(temp, out_buffer, err_buffer,*_security_context);
+			bool ret = do_command(temp, out_buffer, err_buffer,_security_context);
 
 			if (ret)
 			{// success, out buffer is active

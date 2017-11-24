@@ -80,7 +80,7 @@ struct namespace_data_t
 	}
 };
 
-enum namespace_item_attributes
+enum namespace_item_attributes : std::uint_fast32_t
 {
 	namespace_item_read_access = 1,
 	namespace_item_write_access = 2,
@@ -215,8 +215,6 @@ class rx_server_item : public rx::pointers::virtual_reference_object
   public:
       rx_server_item();
 
-      rx_server_item (const string_type& console_name);
-
       virtual ~rx_server_item();
 
 
@@ -255,13 +253,6 @@ class rx_server_item : public rx::pointers::virtual_reference_object
       virtual bool deserialize (base_meta_reader& stream);
 
 
-      const string_type& get_console_name () const
-      {
-        return _console_name;
-      }
-
-
-
   protected:
 
   private:
@@ -271,8 +262,6 @@ class rx_server_item : public rx::pointers::virtual_reference_object
 
 
       locks::lockable _item_lock;
-
-      string_type _console_name;
 
 
 };

@@ -37,8 +37,6 @@
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -60,8 +58,7 @@ typedef uint_fast8_t test_status_t;
 
 
 
-class test_command : public terminal::commands::server_command, 
-                     	public rx::secu
+class test_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(test_command);
 	DECLARE_DERIVED_FROM_INTERFACE;

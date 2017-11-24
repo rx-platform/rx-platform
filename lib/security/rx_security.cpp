@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace rx {
 
 namespace security {
 
-// Class rx::security::security_context 
+// Class rx::security::security_context
 
 security_context::security_context()
       : _handle(0)
@@ -99,7 +99,7 @@ bool security_context::is_interactive () const
 }
 
 
-// Class rx::security::security_manager 
+// Class rx::security::security_manager
 
 security_manager::security_manager()
       : _last_id(0)
@@ -218,51 +218,45 @@ void pop_security()
 {
 	rx_pop_security_context();
 }
-// Class rx::security::secured_object 
+// Class rx::security::security_guard
 
-secured_object::secured_object()
+security_guard::security_guard()
 {
 }
 
 
-secured_object::~secured_object()
+security_guard::~security_guard()
 {
 }
 
 
 
-bool secured_object::dword_check_premissions (uint32_t mask, uint32_t extended_mask)
+bool security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask)
 {
 	bool ret = false;
-	security_context_ptr ctx = basic_check(ret);
-	if(!ctx)
-		return ret;
+	security_context_ptr ctx = active_security();
+	if (ctx)
+	{
+		ret = check_premissions(mask, extended_mask, ctx);
+	}
+	if (!ret)
+	{
+		SECURITY_LOG_TRACE("Guard",800,"Access denied!!");
+	}
+	return ret;
+}
+
+bool security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx)
+{
+	if (!ctx->is_system())
+	{
+		return false;
+	}
 	return true;
 }
 
-security_context_ptr secured_object::basic_check (bool& ret)
-{
-	security_context_ptr ctx = active_security();
-	if (!ctx)
-	{
-		ret = false;
-		return ctx;
-	}
-	if (!ctx->is_authenticated())
-	{
-		ret = false;
-		return security_context_ptr::null_ptr;
-	}
-	if (ctx->is_system())
-	{
-		ret = true;
-		return security_context_ptr::null_ptr;
-	}
-	return ctx;
-}
 
-
-// Class rx::security::security_auto_context 
+// Class rx::security::security_auto_context
 
 security_auto_context::security_auto_context (security_context_ptr ctx)
 	: _ctx(ctx->get_handle())
@@ -280,7 +274,7 @@ security_auto_context::~security_auto_context()
 
 
 
-// Class rx::security::built_in_security_context 
+// Class rx::security::built_in_security_context
 
 built_in_security_context::built_in_security_context()
 {
@@ -294,7 +288,7 @@ built_in_security_context::~built_in_security_context()
 
 
 
-// Class rx::security::unathorized_security_context 
+// Class rx::security::unathorized_security_context
 
 unathorized_security_context::unathorized_security_context()
 {
@@ -324,6 +318,29 @@ bool unathorized_security_context::is_authenticated () const
 {
   return false;
 
+}
+
+
+// Class rx::security::loose_security_guard
+
+loose_security_guard::loose_security_guard()
+{
+}
+
+
+loose_security_guard::~loose_security_guard()
+{
+}
+
+
+
+bool loose_security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx)
+{
+	if (!ctx->is_authenticated())
+	{
+		return false;
+	}
+	return true;
 }
 
 

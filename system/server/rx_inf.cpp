@@ -117,9 +117,9 @@ uint32_t server_rt::start (hosting::rx_server_host* host, const runtime_data_t& 
 
 	_dispatcher_timer = rx_create_reference<dispatcher_subscribers_job>();
 	if (_callculation_timer)
-		_callculation_timer->append_job(_dispatcher_timer, &*_general_pool->get_pool(), data.io_timer_period);
+		_callculation_timer->append_job(_dispatcher_timer, _general_pool->get_pool().unsafe_ptr(), data.io_timer_period);
 	if (_general_timer)
-		_general_timer->append_job(_dispatcher_timer, &*_general_pool->get_pool(), data.io_timer_period);
+		_general_timer->append_job(_dispatcher_timer, _general_pool->get_pool().unsafe_ptr(), data.io_timer_period);
 
 	return RX_OK;
 }

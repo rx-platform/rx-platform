@@ -208,10 +208,11 @@ list current directory on console ( dir, ls ");
 
       bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory);
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
 
   protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
 
   private:
 
@@ -282,10 +283,10 @@ changes current active directory");
       virtual ~cd_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -311,10 +312,10 @@ displays details of software and system information");
       virtual ~rx_name_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -340,10 +341,10 @@ clears the console screen");
       virtual ~cls_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -368,10 +369,10 @@ all about shutdown of a server");
       virtual ~shutdown_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -397,14 +398,14 @@ all about doing stuff with log");
       virtual ~log_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
       bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
       bool do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -430,12 +431,12 @@ all about doing stuff with security");
       virtual ~sec_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
       bool do_active_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -461,10 +462,10 @@ time related stuff ( start time, current time... )");
       virtual ~time_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -490,10 +491,10 @@ sleeps for the amaount of time specified in miliseconds");
       virtual ~sleep_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -539,12 +540,13 @@ displays details of selected item");
       virtual ~info_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
       bool dump_dir_info (std::ostream& out, server_directory_ptr directory);
 
 
   protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
 
   private:
 
@@ -570,10 +572,10 @@ uses fill_server_info function");
       virtual ~code_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 
@@ -598,12 +600,13 @@ command that dumps specified object into a Json stream and write it on a console
       virtual ~def_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
-
       bool dump_object_definition (std::ostream& out, std::ostream& err, server_item_ptr item);
 
 
   protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+
 
   private:
 
@@ -628,10 +631,10 @@ pyhton command for interfacing python scripting");
       virtual ~phyton_command();
 
 
+  protected:
+
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
 
-
-  protected:
 
   private:
 

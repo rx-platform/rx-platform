@@ -39,7 +39,8 @@
 #define RX_NS_SYSTEM_UNASS_APP_NAME "unassigned_app"
 #define RX_NS_SYSTEM_UNASS_APP_ID 1006
 
-
+//Main messages
+#define RX_ACCESS_DENIED "*ACCESS DENIED*"
 
 // Console related stuff
 #define RX_CONSOLE_HEADER_LINE "============================================="
