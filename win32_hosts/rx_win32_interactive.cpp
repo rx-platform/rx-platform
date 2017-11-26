@@ -36,15 +36,19 @@
 
 namespace
 {
-	BOOL ctrl_handler(DWORD fdwCtrlType)
+	extern "C" BOOL ctrl_handler(DWORD fdwCtrlType)
 	{
+		printf("************Usao %d\r\n", fdwCtrlType);
 		switch (fdwCtrlType)
 		{
 			// Handle the CTRL-C signal. 
 		case CTRL_C_EVENT:
-			printf("\r\n");
+			std::cout << "^C\r\n";
 			return TRUE;
 			// CTRL-CLOSE: confirm that the user wants to exit. 
+		case CTRL_BREAK_EVENT:
+			std::cout << "^C\r\n";
+			return TRUE;
 		case CTRL_CLOSE_EVENT:
 			printf("\r\n");
 			return TRUE;
@@ -86,6 +90,7 @@ bool win32_console_host::shutdown (const string_type& msg)
 		ir[1] = ir[0];
 		ir[1].Event.KeyEvent.bKeyDown = FALSE;
 		WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), ir, 1, &dwTmp);
+
 		return true;
 	}
 	return false;
@@ -101,7 +106,7 @@ sys_handle_t win32_console_host::get_host_test_file (const string_type& path)
 
 bool win32_console_host::start (const string_array& args)
 {
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrl_handler, TRUE);
+	SetConsoleCtrlHandler(ctrl_handler, TRUE);
 
 	rx_thread_data_t tls = rx_alloc_thread_data();
 
@@ -113,13 +118,19 @@ bool win32_console_host::start (const string_array& args)
 
 	rx::log::log_object::instance().start(std::cout, true);
 
-	HANDLE std_out;
+	HANDLE std_out,std_in;
 	DWORD mode;
 
 	std_out = GetStdHandle(STD_OUTPUT_HANDLE);
 	GetConsoleMode(std_out, &mode);
 	mode |= 0x4;// virtual terminal output
 	SetConsoleMode(std_out, mode);
+
+
+	std_in = GetStdHandle(STD_INPUT_HANDLE);
+	GetConsoleMode(std_in, &mode);
+	//mode &= (~ENABLE_PROCESSED_INPUT);// virtual terminal output
+	SetConsoleMode(std_in, mode);
 
 	
 	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
@@ -162,7 +173,8 @@ void win32_console_host::get_host_info (string_array& hosts)
 
 bool win32_console_host::get_next_line (string_type& line)
 {
-	std::getline(std::cin, line);
+	//std::cin >> line;
+	getline(std::cin, line);
 	return true;
 }
 

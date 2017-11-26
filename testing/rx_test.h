@@ -108,7 +108,7 @@ class test_program_context : public server::prog::program_context_base
 	DECLARE_REFERENCE_PTR(test_program_context);
 
   public:
-      test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
+      test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program);
 
       virtual ~test_program_context();
 

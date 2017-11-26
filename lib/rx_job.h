@@ -180,25 +180,25 @@ class post_period_job : public timer_job
 
 
 template <typename argT>
-class labmda_job : public job  
+class lambda_job : public job  
 {
-	DECLARE_REFERENCE_PTR(labmda_job);
+	DECLARE_REFERENCE_PTR(lambda_job);
 
   public:
-      labmda_job (std::function<void(argT)> f, argT args)
+      lambda_job (std::function<void(argT)> f, argT arg)
             : _f(f),
-              _args(args)
+              _arg(arg)
       {
       }
 
-      virtual ~labmda_job()
+      virtual ~lambda_job()
       {
       }
 
 
       void process ()
       {
-		  (_f)(_args);
+		  (_f)(_arg);
       }
 
 
@@ -209,7 +209,7 @@ class labmda_job : public job
 
       std::function<void(argT)> _f;
 
-      argT _args;
+      argT _arg;
 
 
 };
@@ -240,7 +240,47 @@ class periodic_job : public timer_job
 };
 
 
-// Parameterized Class rx::jobs::labmda_job 
+
+
+
+
+template <typename argT>
+class lambda_timer_job : public post_period_job  
+{
+	DECLARE_REFERENCE_PTR(lambda_timer_job);
+
+  public:
+      lambda_timer_job (std::function<void(argT)> f, argT arg)
+            : _f(f),
+              _arg(arg)
+      {
+      }
+
+      virtual ~lambda_timer_job()
+      {
+      }
+
+
+      void process ()
+      {
+		  (_f)(_arg);
+      }
+
+
+  protected:
+
+  private:
+
+
+      std::function<void(argT)> _f;
+
+      argT _arg;
+
+
+};
+
+
+// Parameterized Class rx::jobs::lambda_job 
 
 
 } // namespace jobs

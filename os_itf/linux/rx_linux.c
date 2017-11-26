@@ -1357,7 +1357,7 @@ extern "C" {
                 // here we take all operations that are not yet callbacked
                 //  subsract 1000 to ensure that no one is fired after this code
                 int ops=__atomic_fetch_sub(&type_data->pending_operations, 10000, __ATOMIC_SEQ_CST);
-                printf("####Still pending: %d\r\n",ops);
+                //printf("####Still pending: %d\r\n",ops);
                 close(type_data->write_handle);
                 return ops;
             }

@@ -295,7 +295,7 @@ public:
 	template<class otherT>
 	friend class interface_reference;
 	// copy constructor
-	reference(const reference<ptrT>& right)
+	explicit reference(const reference<ptrT>& right)
 	{
 		if (this != &right)
 		{
@@ -341,6 +341,30 @@ public:
 	}
 	template<class derT>
 	reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
+	{
+		if (this->_ptr)
+			this->_ptr->release();
+		this->_ptr = right._ptr;
+		if (this->_ptr)
+			this->_ptr->bind();
+		return *this;
+	}
+
+	// move assignment  operator
+	reference<ptrT>& operator=(reference<ptrT>&& right)
+	{
+		if (this != &right)
+		{
+			if (this->_ptr)
+				this->_ptr->release();
+			this->_ptr = right._ptr;
+			if (this->_ptr)
+				this->_ptr->bind();
+		}
+		return *this;
+	}
+	template<class derT>
+	reference<ptrT>& operator=(basic_smart_ptr<derT>&& right)
 	{
 		if (this->_ptr)
 			this->_ptr->release();

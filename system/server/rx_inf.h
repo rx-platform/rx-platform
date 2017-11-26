@@ -211,6 +211,8 @@ callculation ( normal priority)");
 	DECLARE_REFERENCE_PTR(server_rt);
 	typedef std::vector<rx::threads::physical_job_thread::smart_ptr> workers_type;
 
+	friend void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
+
   public:
       server_rt();
 
@@ -234,6 +236,8 @@ callculation ( normal priority)");
       namespace_item_attributes get_attributes () const;
 
       void append_job (rx::jobs::job_ptr job);
+
+      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
       void append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
@@ -272,8 +276,6 @@ callculation ( normal priority)");
       void virtual_bind ();
 
       void virtual_release ();
-
-      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
 
   private:

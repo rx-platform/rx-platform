@@ -169,6 +169,9 @@ uint32_t periodic_job::tick (uint32_t current_tick, bool& remove)
 }
 
 
+// Parameterized Class rx::jobs::lambda_timer_job 
+
+
 } // namespace jobs
 } // namespace rx
 

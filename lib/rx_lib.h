@@ -446,6 +446,7 @@ struct time_stamp
 typedef intptr_t rx_security_handle_t;
 typedef intptr_t rx_thread_handle_t;
 
+void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
 rx_thread_handle_t rx_thread_context();
 bool rx_push_thread_context(rx_thread_handle_t obj);

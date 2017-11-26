@@ -62,26 +62,17 @@ private:
 
       uint32_t unregister_callback (callback_handle_t handle);
 
-      void operator () (const argT& argument, uint32_t state);
+      void operator () (const argT& argument, callback_state_t state);
 
-	  callback_handle_t register_callback(callback_function_t func)
-	  {
-		  callback_handle_t ret = g_new_handle++;
+	  callback_functor_container(const callback_functor_container&) = delete;
+	  callback_functor_container(callback_functor_container&&) = delete;
+	  bool operator=(const callback_functor_container&) = delete;
+	  bool operator=(callback_functor_container&&) = delete;
 
-		  this->_my_lock.lock();
-		  this->_callbacks.emplace(ret, func);
-		  this->_my_lock.unlock();
-		  return ret;
-	  }
+	  callback_handle_t register_callback(callback_function_t func);
 	  template<typename callbackT>
-	  callback::callback_handle_t register_callback(void* p, void(callbackT::*func)(const argT&, callback::callback_state_t))
-	  {
-		  return register_callback(std::bind(func, (callbackT*)p, _1, _2));
-	  }
-	  callback::callback_handle_t register_callback(void(func)(const argT&, callback::callback_state_t))
-	  {
-		  return register_callback(callback_function_t(func));
-	  }
+	  callback::callback_handle_t register_callback(void* p, void(callbackT::*func)(const argT&, callback::callback_state_t));
+	  callback::callback_handle_t register_callback(void(func)(const argT&, callback::callback_state_t));
   protected:
 
   private:
@@ -132,7 +123,7 @@ uint32_t callback_functor_container<lockT,argT>::unregister_callback (callback_h
 }
 
 template <typename lockT, typename argT>
-void callback_functor_container<lockT,argT>::operator () (const argT& argument, uint32_t state)
+void callback_functor_container<lockT,argT>::operator () (const argT& argument, callback_state_t state)
 {
 	this->_my_lock.lock();
 	if (!_callbacks.empty())
@@ -145,6 +136,29 @@ void callback_functor_container<lockT,argT>::operator () (const argT& argument, 
 	this->_my_lock.unlock();
 }
 
+template <typename lockT, typename argT>
+callback_handle_t callback_functor_container<lockT, argT>::register_callback(callback_function_t func)
+{
+	callback_handle_t ret = g_new_handle++;
+
+	this->_my_lock.lock();
+	this->_callbacks.emplace(ret, func);
+	this->_my_lock.unlock();
+	return ret;
+}
+
+template <typename lockT, typename argT>
+template<typename callbackT>
+callback::callback_handle_t callback_functor_container<lockT, argT>::register_callback(void* p, void(callbackT::*func)(const argT&, callback::callback_state_t))
+{
+	return register_callback(std::bind(func, (callbackT*)p, _1, _2));
+}
+
+template <typename lockT, typename argT>
+callback::callback_handle_t callback_functor_container<lockT, argT>::register_callback(void(func)(const argT&, callback::callback_state_t))
+{
+	return register_callback(callback_function_t(func));
+}
 
 } // namespace callback
 } // namespace server

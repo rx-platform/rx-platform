@@ -160,7 +160,8 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 						prog::program_context_base_ptr::null_ptr,
 						ctx->get_current_directory(),
 						ctx->get_out(),
-						ctx->get_err());
+						ctx->get_err(),
+						prog::console_client::smart_ptr::null_ptr);
 
 					bool ret = temp_prog.process_program(ctx_script, rx_time::now(), false);
 					if (!ret)

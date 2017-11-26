@@ -176,7 +176,7 @@ public:
 	}
 };
 
-void testing(int a)
+void testing(int i)
 {
 	printf("jbt_uaso sam!!!!\r\n");
 		rx_msleep(2000);
@@ -253,7 +253,7 @@ void test_thread()
 
 	std::function<void(int)> fptr(testing);
 
-	rx::jobs::labmda_job<int>::smart_ptr job(testing, 1);
+	rx::jobs::lambda_job<int>::smart_ptr job(testing,55);
 
 	jthread->append(job);
 	jthread->append(job);

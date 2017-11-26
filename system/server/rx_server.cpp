@@ -46,11 +46,14 @@ rx_server* rx_server::g_instance = nullptr;
 rx_server::rx_server()
       : _host(nullptr),
         _started(rx_time::now()),
-        _pid(0)
+        _pid(0),
+        _shutting_down(false)
+	, _security_guard(pointers::_create_new)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
 	_os_info = buff;
+
 
 	_pid = rx_pid;
 
@@ -161,13 +164,13 @@ server_directory_ptr rx_server::get_root_directory ()
 	return _root;
 }
 
-bool rx_server::shutdown (const string_type& msg, std::ostream& err)
+bool rx_server::shutdown (const string_type& msg)
 {
 	if (!_security_guard->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
 	{
-		err << RX_ACCESS_DENIED;
 		return false;
 	}
+	_shutting_down = true;
 	_host->shutdown(msg);
 	return true;
 }
@@ -197,7 +200,6 @@ bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out
 		return false;
 	}
 }
-
 
 } // namespace server
 

@@ -78,12 +78,14 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 
 // Class server::prog::program_context_base 
 
-program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
+program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
       : _root(root_context),
         _holder(holder),
+        _program(program),
         _current_directory(current_directory),
         _out(out),
-        _err(err)
+        _err(err),
+        _postponed(false)
 {
 }
 
@@ -96,7 +98,29 @@ program_context_base::~program_context_base()
 
 bool program_context_base::is_postponed () const
 {
-	return false;
+	return _postponed;
+}
+
+bool program_context_base::postpone (std::function<void(program_context_base::smart_ptr)> f, uint32_t interval)
+{
+	_postponed = true;
+	if(interval)
+		server::rx_server::instance().get_runtime().append_timer_job(jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(f, smart_this()),interval);
+	else
+		server::rx_server::instance().get_runtime().append_job(jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(f,smart_this()));
+	return true;
+}
+
+bool program_context_base::return_control (bool done)
+{
+	_postponed = false;
+	bool ret = _program->process_program(smart_this(), rx_time::now(), false);
+	send_results();
+	return ret;
+}
+
+void program_context_base::send_results ()
+{
 }
 
 
@@ -176,7 +200,7 @@ bool server_command_base::console_execute (std::istream& in, std::ostream& out, 
 	}
 }
 
-bool server_command_base::check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
+bool server_command_base::dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
 {
 	return _security_guard->check_premissions(mask, extended_mask);
 }
@@ -224,11 +248,12 @@ server_program_holder::~server_program_holder()
 
 // Class server::prog::console_program_context 
 
-console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
-      : _current_line(0),
+console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program, rx_virtual<console_client> client)
+      : _client(client),
+        _current_line(0),
         _out_std(out.unsafe_ptr()),
         _err_std(err.unsafe_ptr())
-  , prog::program_context_base(holder, root_context,current_directory,out,err)
+  , prog::program_context_base(holder, root_context,current_directory,out,err, program)
 
 {
 }
@@ -259,8 +284,14 @@ std::ostream& console_program_context::get_stderr ()
 console_program_context::smart_ptr console_program_context::create_console_sub_context ()
 {
 	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
-		, get_current_directory(), get_out(), get_err());
+		, get_current_directory(), get_out(), get_err(),get_program(),_client);
 	return ctx_ret;
+}
+
+void console_program_context::send_results ()
+{
+	if (_client)
+		_client->process_event(true, get_out(), get_err(),true);
 }
 
 
@@ -304,7 +335,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 	std::ostream& out(ctx->get_stdout());
 	std::ostream& err(ctx->get_stderr());
 
-	while (current_line < total_lines)
+	while (current_line < total_lines && !ctx->is_postponed())
 	{
 		label.clear();
 		std::istringstream in(_lines[current_line]);
@@ -331,15 +362,16 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 	return true;
 }
 
-prog::program_context_ptr server_console_program::create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
+prog::program_context_ptr server_console_program::create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_virtual<console_client> client)
 {
-	return console_program_context::smart_ptr(holder, root_context, current_directory,out,err);
+	return console_program_context::smart_ptr(holder, root_context, current_directory,out,err,smart_this(),client);
 }
 
 
 // Class server::prog::console_client 
 
-console_client::console_client()
+console_client::console_client (rx_thread_handle_t executer)
+      : _executer(executer)
 {
 #ifdef _DEBUG
 	_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
@@ -357,67 +389,17 @@ console_client::~console_client()
 
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	RX_ASSERT(!_current);
-	if (line.size() > 0 && line[0] == '@')
-	{// this is console command
-		return server::rx_server::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
-	}
-	if (line == "exit")
-	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		out << "bye...\r\n";
-		exit_console();
-		return true;
-	}
-	else if (line == "hello")
-	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		out << "Hello to you too!!!";
-		return true;
-	}
-	else if (line == "help")
-	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(out_buffer.unsafe_ptr());
-		return terminal::commands::server_command_manager::instance()->get_help(out, err);
-	}
-	else if (line == "term")
-	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(out_buffer.unsafe_ptr());
-
-		out << "Terminal Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << get_console_name() << " Console\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << get_console_terminal() << "\r\n";
-		return true;
-	}
-	else
-	{
-		prog::server_console_program temp_prog(line);
-
-		security::security_auto_context dummy(ctx);
-		
-		prog::program_context_base_ptr ctx = temp_prog.create_program_context(
-			prog::server_program_holder_ptr::null_ptr, 
-			prog::program_context_base_ptr::null_ptr,
-			_current_directory,
-			out_buffer,
-			err_buffer);
-		ctx->set_current_directory(_current_directory);
-		bool ret = temp_prog.process_program(ctx, rx_time::now(), false);
-		if (ret)
+	smart_ptr sthis = smart_this();
+	string_type mline(line);
+	rx_post_function<smart_ptr>(
+		[mline,out_buffer, err_buffer, ctx](smart_ptr me)
 		{
-			if (ctx->is_postponed())
-			{
-				_current = ctx;
-			}
-			else
-			{
-				_current_directory = ctx->get_current_directory();
-			}
+			me->synchronized_do_command(mline, out_buffer, err_buffer, ctx);
 		}
-		return ret;
-	}
+		, smart_this()
+		,_executer
+	);
+	return true;
 }
 
 void console_client::get_prompt (string_type& prompt)
@@ -456,6 +438,97 @@ const string_type& console_client::get_console_terminal ()
 	return ret;
 }
 
+void console_client::synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	bool ret = false;
+	RX_ASSERT(!_current);
+	if (line.size() > 0 && line[0] == '@')
+	{// this is console command
+		ret = server::rx_server::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
+	}
+	else if (line == "exit")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "bye...\r\n";
+		exit_console();
+		ret = true;
+	}
+	else if (line == "hello")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "Hello to you too!!!";
+		ret = true;
+	}
+	else if (line == "help")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(out_buffer.unsafe_ptr());
+		ret = terminal::commands::server_command_manager::instance()->get_help(out, err);
+	}
+	else if (line == "term")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(out_buffer.unsafe_ptr());
+
+		out << "Terminal Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << get_console_name() << " Console\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << get_console_terminal() << "\r\n";
+		ret = true;
+	}
+	else if (line == "host")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(out_buffer.unsafe_ptr());
+		
+		auto host = rx_server::instance().get_host();
+
+		out << "Hosts Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		string_array hosts;
+		rx_server::instance().get_host()->get_host_info(hosts);
+		for(const auto& one : hosts)
+		{
+			out << one << "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		}
+		out << get_console_terminal() << "\r\n";
+		ret = true;
+	}
+	else
+	{
+		prog::server_console_program::smart_ptr temp_prog(line);
+
+		security::security_auto_context dummy(ctx);
+
+		prog::program_context_base_ptr ctx = temp_prog->create_program_context(
+			prog::server_program_holder_ptr::null_ptr,
+			prog::program_context_base_ptr::null_ptr,
+			_current_directory,
+			out_buffer,
+			err_buffer,
+			smart_this());
+		ctx->set_current_directory(_current_directory);
+		ret = temp_prog->process_program(ctx, rx_time::now(), false);
+		if (ret)
+		{
+			if (ctx->is_postponed())
+			{
+				_current = ctx;
+			}
+			else
+			{
+				_current_directory = ctx->get_current_directory();
+			}
+		}
+	}
+	if(!_current)
+		process_result(ret, out_buffer, err_buffer);
+}
+
+void console_client::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
+{
+	_current = program_context_ptr::null_ptr;
+	process_result(result, out_buffer, err_buffer);
+}
+
 
 // Class server::prog::server_script_program 
 
@@ -487,7 +560,7 @@ bool server_script_program::process_program (prog::program_context_ptr context, 
 
 prog::program_context_ptr server_script_program::create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
 {
-	return console_program_context::smart_ptr(holder, root_context, current_directory, out, err);
+	return console_program_context::smart_ptr(holder, root_context, current_directory, out, err,smart_this(),prog::console_client::smart_ptr::null_ptr);
 }
 
 

@@ -220,6 +220,7 @@ interactive_console_client::interactive_console_client (interactive_console_host
       : _host(host),
         _exit(false)
 	, _security_context(pointers::_create_new)
+	, console_client(0)
 {
 	_security_context->login();
 }
@@ -246,22 +247,18 @@ void interactive_console_client::run_interactive ()
 	get_wellcome(temp);
 	std::cout << temp<<"\r\n";
 
+	temp.clear();
+	get_prompt(temp);
+	std::cout << temp;
+
 	while (!_exit && !_host->exit())
 	{
-
-		while (is_postponed())
-		{
-			rx_msleep(50);
-		}
-
-		temp.clear();
-		get_prompt(temp);
-
-		std::cout << temp;
-
 		string_type line;
-		
+
 		get_next_line(line);
+
+		if (is_postponed())
+			continue;
 
 		if(std::cin.fail())
 		{
@@ -272,28 +269,13 @@ void interactive_console_client::run_interactive ()
 			memory::buffer_ptr out_buffer(pointers::_create_new);
 			memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			if (!do_command(line, out_buffer, err_buffer,_security_context))
-			{
-				if (!err_buffer->empty())
-					std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
-				if (!_exit && !_host->exit())
-				{
-					std::cout << "\r\n";
-					std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
-					std::cout << "\r\n";
-				}
-				if (!out_buffer->empty())
-					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
-			}
-			else
-			{
-
-				if (!out_buffer->empty())
-					std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
-
-				//std::cout << "\r\n";
-			}
-
+			bool ret = do_command(line, out_buffer, err_buffer, _security_context);
+		}
+		else if(!server::rx_server::instance().is_shutting_down())
+		{
+			temp.clear();
+			get_prompt(temp);
+			std::cout << temp;
 		}
 
 	}
@@ -315,12 +297,42 @@ security::security_context::smart_ptr interactive_console_client::get_current_se
 
 void interactive_console_client::exit_console ()
 {
-	_exit = true;
+	server::rx_server::instance().shutdown("Interactive Shutdown");
 }
 
 bool interactive_console_client::get_next_line (string_type& line)
 {
 	return _host->get_next_line(line);
+}
+
+void interactive_console_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
+{
+	if (!result)
+	{
+		if (!err_buffer->empty())
+			std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
+		if (!_exit && !_host->exit())
+		{
+			std::cout << "\r\n";
+			std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
+			std::cout << "\r\n";
+		}
+		if (!out_buffer->empty())
+			std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+	}
+	else
+	{
+
+		if (!out_buffer->empty())
+			std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+	}
+
+	if (!rx_server::instance().is_shutting_down())
+	{
+		string_type temp;
+		get_prompt(temp);
+		std::cout << temp;
+	}
 }
 
 

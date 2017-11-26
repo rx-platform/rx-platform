@@ -746,7 +746,7 @@ tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_
 template <class buffT>
 tcp_socket<buffT>::~tcp_socket()
 {
-	printf("###### tcp sockwet destroyed\r\n");
+	//printf("###### tcp sockwet destroyed\r\n");
 	rx_deallocate_os_memory(_buffer, TCP_BUFFER_SIZE);
 }
 
@@ -768,7 +768,7 @@ tcp_listen_socket<buffT>::tcp_listen_socket()
 template <class buffT>
 tcp_listen_socket<buffT>::~tcp_listen_socket()
 {
-	printf("###### tcp listener destroyed\r\n");
+	//printf("###### tcp listener destroyed\r\n");
 }
 
 

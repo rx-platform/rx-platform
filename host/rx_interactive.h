@@ -119,6 +119,8 @@ class interactive_console_client : public server::prog::console_client
 
       void exit_console ();
 
+      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+
 
   private:
 

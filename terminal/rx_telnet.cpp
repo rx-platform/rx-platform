@@ -178,6 +178,7 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
         _verified(false),
         _exit(false)
   , io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
+  , console_client(0)
 {
 }
 
@@ -313,50 +314,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 			bool ret = do_command(temp, out_buffer, err_buffer,_security_context);
 
-			if (ret)
-			{// success, out buffer is active
-
-				if (is_postponed())
-				{// async stuff, nothing to do
-					locks::auto_slim_lock dummy(&_buffers_lock);
-					_buffers.push(err_buffer);
-					_buffers.push(out_buffer);
-					return true;
-				}
-				else
-				{
-					if (_exit)
-					{
-						send(out_buffer);
-						send(buffer_ptr::null_ptr);// exit the loop
-
-					}
-					else
-					{
-						string_type prompt;
-						get_prompt(prompt);
-						out << prompt;
-
-
-						send(out_buffer);
-						send(err_buffer);
-					}
-				}
-			}
-			else
-			{// error
-				if (err_buffer->empty())
-				{// exit command, close socket
-					return false;
-				}
-				err << "\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n";
-				string_type prompt;
-				get_prompt(prompt);
-				err << prompt;
-
-				send(out_buffer);
-				send(err_buffer);
-			}
+			
 		}
 
 		return true;
@@ -564,6 +522,61 @@ void telnet_client::release_buffer (buffer_ptr what)
 bool telnet_client::get_next_line (string_type& line)
 {
 	return true;
+}
+
+void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
+{
+	bool ret = true;
+
+	std::ostream out(out_buffer.unsafe_ptr());
+	std::ostream err(err_buffer.unsafe_ptr());
+
+	if (result)
+	{// success, out buffer is active
+
+		if (is_postponed())
+		{// async stuff, nothing to do
+			locks::auto_slim_lock dummy(&_buffers_lock);
+			_buffers.push(err_buffer);
+			_buffers.push(out_buffer);
+		}
+		else
+		{
+			if (_exit)
+			{
+				send(out_buffer);
+				send(buffer_ptr::null_ptr);// exit the loop
+
+			}
+			else
+			{
+				string_type prompt;
+				get_prompt(prompt);
+				out << prompt;
+
+
+				send(out_buffer);
+				send(err_buffer);
+			}
+		}
+	}
+	else
+	{// error
+		if (err_buffer->empty())
+		{// exit command, close socket
+			ret = false;
+		}
+		else
+		{
+			err << "\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n";
+			string_type prompt;
+			get_prompt(prompt);
+			err << prompt;
+
+			send(out_buffer);
+			send(err_buffer);
+		}
+	}
 }
 
 
@@ -1136,9 +1149,12 @@ shutdown_command::~shutdown_command()
 
 bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	string_type msg;
-	in >> msg;
-	rx_server::instance().shutdown(msg,err);
+	std::istreambuf_iterator<char> begin(in), end;
+	std::string msg(begin, end);
+	if (msg.empty())
+		msg = RX_NULL_ITEM_NAME;
+	if(!rx_server::instance().shutdown(msg))
+		err << RX_ACCESS_DENIED;
 	return false;
 }
 
@@ -1380,6 +1396,15 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 	{
 		err << "Invalid period specified!";
 		return false;
+	}
+	else
+	{
+		ctx->postpone(
+		[](server::prog::program_context_base_ptr context)
+		{
+			context->return_control();
+		}
+		, period);
 	}
 	return true;
 }
