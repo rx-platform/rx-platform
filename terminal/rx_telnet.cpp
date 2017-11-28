@@ -1389,22 +1389,32 @@ sleep_command::~sleep_command()
 
 bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
 {
-	uint32_t period = 0;
-	in >> period;
+	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
+	if (!data)
+	{// we just entered to command
+		uint32_t period = 0;
+		in >> period;
 
-	if (period == 0)
-	{
-		err << "Invalid period specified!";
-		return false;
+		if (period == 0)
+		{
+			err << "Invalid period specified!";
+			return false;
+		}
+		else
+		{
+			data = rx_create_reference<sleep_data_t>();
+			data->started = rx_get_us_ticks();
+			ctx->set_instruction_data(data);
+			ctx->postpone(period);
+		}
 	}
 	else
-	{
-		ctx->postpone(
-		[](server::prog::program_context_base_ptr context)
-		{
-			context->return_control();
-		}
-		, period);
+	{// timer expired or canceled
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		double lasted_ms = lasted / 1000.0;
+		out << "Sleep lasted ";
+		rx_dump_ticks_to_stream(out, lasted);
+		out << ".\r\n";
 	}
 	return true;
 }

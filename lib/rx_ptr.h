@@ -668,15 +668,20 @@ struct struct_reference
 
 public:
 	// nothing special here
-	struct_reference() = default;
+	struct_reference() 
+		: _ref_count(1)
+	{
+	}
 	// it's not virtual!!!
-	~struct_reference() = default;
+	~struct_reference()
+	{
+	}
 	// reference based objet no copying
 	struct_reference(const struct_reference &right) = delete;
 	reference_object & operator=(const struct_reference &right) = delete;
-	// use 'memmove' to move object around
-	struct_reference(struct_reference &&right) = default;
-	struct_reference & operator=(struct_reference &&right) = default;
+	// dont use 'memmove' to move object around
+	struct_reference(struct_reference &&right) = delete;
+	struct_reference & operator=(struct_reference &&right) = delete;
 
   public:
 
@@ -891,6 +896,8 @@ namespace rx
 template<class Tptr>
 using rx_reference = pointers::reference<Tptr>;
 
+//convinient alias
+typedef pointers::struct_reference::smart_ptr rx_struct_ptr;
 
 //convinient alias templates
 template<class Tptr>

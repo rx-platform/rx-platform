@@ -1325,6 +1325,13 @@ bool rx_pop_thread_context()
 	return rx_thread_data_object::instance().pop_object(THREADING_TLS_DATA);
 }
 
+
+void rx_dump_ticks_to_stream(std::ostream& out,rx_timer_ticks_t ticks)
+{
+	out << std::fixed << std::setprecision(3) << ((double)ticks / 1000.0) << "ms";
+}
+
+
 }//namespace rx
 
 

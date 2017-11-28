@@ -120,7 +120,7 @@ post_period_job::~post_period_job()
 
 
 
-uint32_t post_period_job::tick (uint32_t current_tick, bool& remove)
+rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
 	if (((_next - current_tick) & 0x80000000) || (_next - current_tick) == 0)
 	{
@@ -150,19 +150,21 @@ periodic_job::~periodic_job()
 
 
 
-uint32_t periodic_job::tick (uint32_t current_tick, bool& remove)
+rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
-	if (((_next - current_tick) & 0x80000000) || (_next - current_tick) == 0)
+	rx_timer_ticks_t diff = _next - current_tick;
+	if (std::bitset<sizeof(rx_timer_ticks_t) * 8>(diff).test(sizeof(rx_timer_ticks_t) * 8 - 1) || diff == 0)
 	{
-		//if (m_next>count)
-		//   return m_next-count;// not jet so send how mutch more to timer
-
 		// should be done
 		_executer->append(smart_this());// add job to right thread
 
-		_next = current_tick + _period;// new time
+		do
+		{
+			_next = _next + _period;// new time
 
-		return _period;// return for how long
+		} while (_next <= current_tick);
+
+		return current_tick- _next;// return for how long
 	}
 	else
 		return _next - current_tick;// not jet so send how mutch more to timer

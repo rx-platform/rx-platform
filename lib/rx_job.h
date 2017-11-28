@@ -125,7 +125,7 @@ class timer_job : public job,
       virtual ~timer_job();
 
 
-      virtual uint32_t tick (uint32_t current_tick, bool& remove) = 0;
+      virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove) = 0;
 
       void set_executer (threads::job_thread* executer);
 
@@ -135,9 +135,9 @@ class timer_job : public job,
       threads::job_thread *_executer;
 
 
-      uint32_t _next;
+      rx_timer_ticks_t _next;
 
-      uint32_t _period;
+      rx_timer_ticks_t _period;
 
 
   private:
@@ -164,7 +164,7 @@ class post_period_job : public timer_job
       virtual ~post_period_job();
 
 
-      uint32_t tick (uint32_t current_tick, bool& remove);
+      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
 
 
   protected:
@@ -229,7 +229,7 @@ class periodic_job : public timer_job
       virtual ~periodic_job();
 
 
-      uint32_t tick (uint32_t current_tick, bool& remove);
+      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
 
 
   protected:
@@ -263,6 +263,7 @@ class lambda_timer_job : public post_period_job
 
       void process ()
       {
+		  cancel();
 		  (_f)(_arg);
       }
 

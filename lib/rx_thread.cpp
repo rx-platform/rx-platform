@@ -353,21 +353,21 @@ uint32_t timer::handler ()
 	{
 		lock();
 
-		uint32_t max = 0 - 1;
+		uint64_t min = 0ull - 1ull;
 
 		auto it = _jobs.begin();
 		while (it != _jobs.end())
 		{
 			bool remove = false;
 			timer_job_ptr one = *it;
-			uint32_t tick = rx_get_tick_count();
+			rx_timer_ticks_t tick = rx_get_us_ticks();
 			if (!one->is_canceled())
 			{
-				uint32_t temp = one->tick(tick,remove);
+				rx_timer_ticks_t temp = one->tick(tick,remove);
 				if (!remove)
 				{
-					if (temp < max)
-						max = temp;
+					if (temp < min)
+						min = temp;
 					it++;
 				}
 			}
@@ -387,7 +387,7 @@ uint32_t timer::handler ()
 
 		unlock();
 
-		_wake_up.wait_handle(max);
+		_wake_up.wait_handle_us(min);
 
 		if (_should_exit)
 			break;
@@ -414,8 +414,8 @@ void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period
 	job->lock();
 	job->_my_timer = this;
 	job->_executer = executer;
-	job->_period = period;
-	job->_next = (now ? rx_get_tick_count() : rx_get_tick_count() + period);
+	job->_period = period*1000;
+	job->_next = (now ? rx_get_us_ticks() : rx_get_us_ticks() + job->_period);
 	job->unlock();
 
 	

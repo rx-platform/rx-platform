@@ -122,6 +122,11 @@ uint32_t waitable::wait_handle (uint32_t timeout)
 	return rx_handle_wait(_handle, timeout);
 }
 
+uint32_t waitable::wait_handle_us (uint64_t timeout)
+{
+	return rx_handle_wait_us(_handle, timeout);
+}
+
 
 // Class rx::locks::event 
 

@@ -540,6 +540,28 @@ extern "C" {
             return RX_WAIT_ERROR;
 
 	}
+	uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
+	{
+        struct pollfd pfds;
+        int ret;
+		eventfd_t buff = 0;
+
+		pfds.fd=what;
+		pfds.events=POLLIN;
+		pfds.revents=0;
+		ret = poll(&pfds,1,(int)(timeout/1000ull));
+		if(ret==0)
+            return RX_WAIT_TIMEOUT;
+		else if(ret==1)
+		{
+            //do the read to release it
+            read(what, &buff, sizeof(buff));
+            return RX_WAIT_0;
+        }
+		else
+            return RX_WAIT_ERROR;
+
+	}
 	uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t timeout)
 	{
 		struct pollfd pfds[0x10];

@@ -83,6 +83,7 @@ class program_context_base : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(program_context_base);
 public:
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+	typedef std::map<size_t, rx_struct_ptr > instructions_data_type;
 
   public:
       program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program);
@@ -92,9 +93,9 @@ public:
 
       bool is_postponed () const;
 
-      bool postpone (std::function<void(program_context_base::smart_ptr)> f, uint32_t interval);
+      bool postpone (uint32_t interval);
 
-      bool return_control (bool done = true);
+      void set_instruction_data (rx_struct_ptr data);
 
 
       const rx_reference<server_program_holder> get_holder () const
@@ -133,13 +134,31 @@ public:
       }
 
 
+	  template<typename T>
+	  pointers::reference<T> get_instruction_data()
+	  {
+		  auto it = _instructions_data.find(get_possition());
+		  if (it != _instructions_data.end())
+		  {
+			  return it->second.cast_to<pointers::reference<T> >();
+		  }
+		  else
+		  {
+			  return pointers::reference<T>::null_ptr;
+		  }
+	  }
 
   protected:
 
       virtual void send_results ();
 
+      virtual size_t get_possition () const = 0;
+
 
   private:
+
+      bool return_control (bool done = true);
+
 
 
       rx_reference<program_context_base> _root;
@@ -156,6 +175,8 @@ public:
       buffer_ptr _err;
 
       bool _postponed;
+
+      instructions_data_type _instructions_data;
 
 
 };
@@ -347,6 +368,8 @@ class console_program_context : public program_context_base
   protected:
 
       void send_results ();
+
+      size_t get_possition () const;
 
 
   private:

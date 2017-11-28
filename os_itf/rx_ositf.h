@@ -178,6 +178,7 @@ extern "C" {
 #define RX_WAIT_ERROR 0xffffffff
 
 	uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout);
+	uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout);
 	uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -330,6 +331,8 @@ extern "C" {
 	void rx_us_sleep(uint64_t timeout);
 	uint32_t rx_get_tick_count();
 	uint64_t rx_get_us_ticks();
+
+	typedef uint64_t rx_timer_ticks_t;
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 

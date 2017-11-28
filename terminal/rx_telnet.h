@@ -39,8 +39,6 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
@@ -49,6 +47,8 @@
 #include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 
 
@@ -475,6 +475,10 @@ time related stuff ( start time, current time... )");
 };
 
 
+struct sleep_data_t : public pointers::struct_reference
+{
+	uint64_t started;
+};
 
 
 

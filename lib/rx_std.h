@@ -53,6 +53,9 @@
 #include <iostream>
 #include <sstream>
 
+#include <bitset>
+#include <iomanip>
+
 
 using namespace std::placeholders;
 

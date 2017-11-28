@@ -101,13 +101,27 @@ bool program_context_base::is_postponed () const
 	return _postponed;
 }
 
-bool program_context_base::postpone (std::function<void(program_context_base::smart_ptr)> f, uint32_t interval)
+bool program_context_base::postpone (uint32_t interval)
 {
 	_postponed = true;
-	if(interval)
-		server::rx_server::instance().get_runtime().append_timer_job(jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(f, smart_this()),interval);
+	if (interval)
+	{
+		server::rx_server::instance().get_runtime().append_timer_job(
+			jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(
+				[](server::prog::program_context_base_ptr context) mutable
+				{
+					context->return_control();
+				},
+				smart_this()), interval);
+	}
 	else
-		server::rx_server::instance().get_runtime().append_job(jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(f,smart_this()));
+		server::rx_server::instance().get_runtime().append_job(
+			jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(
+				[](server::prog::program_context_base_ptr context) mutable
+				{
+					context->return_control();
+				},
+				smart_this()));
 	return true;
 }
 
@@ -115,12 +129,22 @@ bool program_context_base::return_control (bool done)
 {
 	_postponed = false;
 	bool ret = _program->process_program(smart_this(), rx_time::now(), false);
-	send_results();
+	if (!_postponed)
+	{
+		send_results();
+	}
 	return ret;
 }
 
 void program_context_base::send_results ()
 {
+}
+
+void program_context_base::set_instruction_data (rx_struct_ptr data)
+{
+
+	_instructions_data.emplace(get_possition(), data);
+
 }
 
 
@@ -294,6 +318,11 @@ void console_program_context::send_results ()
 		_client->process_event(true, get_out(), get_err(),true);
 }
 
+size_t console_program_context::get_possition () const
+{
+	return _current_line;
+}
+
 
 // Class server::prog::server_console_program 
 
@@ -356,8 +385,8 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 				return false;
 			}
 		}
-
-		current_line = ctx->next_line();
+		if(!ctx->is_postponed())
+			current_line = ctx->next_line();
 	}
 	return true;
 }
@@ -389,7 +418,6 @@ console_client::~console_client()
 
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	smart_ptr sthis = smart_this();
 	string_type mline(line);
 	rx_post_function<smart_ptr>(
 		[mline,out_buffer, err_buffer, ctx](smart_ptr me)
@@ -470,7 +498,7 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(out_buffer.unsafe_ptr());
 
-		out << "Terminal Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
 		out << get_console_name() << " Console\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
 		out << get_console_terminal() << "\r\n";
 		ret = true;
@@ -482,14 +510,13 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		
 		auto host = rx_server::instance().get_host();
 
-		out << "Hosts Information:\r\n==================================\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+		out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		string_array hosts;
 		rx_server::instance().get_host()->get_host_info(hosts);
 		for(const auto& one : hosts)
 		{
-			out << one << "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
+			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n" ;
 		}
-		out << get_console_terminal() << "\r\n";
 		ret = true;
 	}
 	else

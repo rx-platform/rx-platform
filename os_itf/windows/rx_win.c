@@ -846,6 +846,17 @@ uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 		return RX_WAIT_ERROR;
 
 }
+uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
+{
+	DWORD ret = WaitForSingleObject(what, (DWORD)(timeout/1000));
+	if (ret == WAIT_OBJECT_0)
+		return RX_WAIT_0;
+	else if (ret == WAIT_TIMEOUT)
+		return RX_WAIT_TIMEOUT;
+	else
+		return RX_WAIT_ERROR;
+
+}
 uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout)
 {
 	DWORD ret = WaitForMultipleObjects((DWORD)count, what, FALSE, timeout);
@@ -1019,7 +1030,7 @@ void rx_msleep(uint32_t timeout)
 }
 void rx_usleep(uint64_t timeout)
 {
-
+	Sleep((DWORD)(timeout/1000));
 }
 uint32_t rx_get_tick_count()
 {

@@ -31,14 +31,14 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using namespace rx;
 
@@ -132,6 +132,9 @@ class test_program_context : public server::prog::program_context_base
 
 
   protected:
+
+      size_t get_possition () const;
+
 
   private:
 

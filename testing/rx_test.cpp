@@ -541,6 +541,11 @@ void test_program_context::fill_data ()
 	_data.user = security::active_security()->get_full_name();
 }
 
+size_t test_program_context::get_possition () const
+{
+	return 0;
+}
+
 
 // Class testing::basic_test_case_test 
 

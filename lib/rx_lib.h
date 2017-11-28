@@ -442,6 +442,9 @@ struct time_stamp
 	static time_stamp now();
 };
 
+void rx_dump_ticks_to_stream(std::ostream& out, rx_timer_ticks_t ticks);
+
+
 // security related basics for stuff
 typedef intptr_t rx_security_handle_t;
 typedef intptr_t rx_thread_handle_t;

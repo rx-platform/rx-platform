@@ -33,10 +33,9 @@
 // rx_win32_interactive
 #include "win32_hosts/rx_win32_interactive.h"
 
-
 namespace
 {
-	extern "C" BOOL ctrl_handler(DWORD fdwCtrlType)
+	BOOL WINAPI ctrl_handler(DWORD fdwCtrlType)
 	{
 		printf("************Usao %d\r\n", fdwCtrlType);
 		switch (fdwCtrlType)
@@ -56,7 +55,7 @@ namespace
 			return FALSE;
 		}
 	}
-}// anonymous
+}
 
 
 namespace win32 {
