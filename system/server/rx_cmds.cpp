@@ -38,7 +38,7 @@
 #include "system/server/rx_server.h"
 #include "terminal/rx_telnet.h"
 #include "terminal/rx_commands.h"
-using namespace server;
+using namespace rx_platform;
 using namespace terminal::commands;
 
 
@@ -46,7 +46,7 @@ using namespace terminal::commands;
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace prog {
 
@@ -76,7 +76,7 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 " ANSI_COLOR_RESET;
 
 
-// Class server::prog::program_context_base 
+// Class rx_platform::prog::program_context_base 
 
 program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
       : _root(root_context),
@@ -106,18 +106,18 @@ bool program_context_base::postpone (uint32_t interval)
 	_postponed = true;
 	if (interval)
 	{
-		server::rx_server::instance().get_runtime().append_timer_job(
+		rx_platform::rx_gate::instance().get_runtime().append_timer_job(
 			jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(
-				[](server::prog::program_context_base_ptr context) mutable
+				[](rx_platform::prog::program_context_base_ptr context) mutable
 				{
 					context->return_control();
 				},
 				smart_this()), interval);
 	}
 	else
-		server::rx_server::instance().get_runtime().append_job(
+		rx_platform::rx_gate::instance().get_runtime().append_job(
 			jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(
-				[](server::prog::program_context_base_ptr context) mutable
+				[](rx_platform::prog::program_context_base_ptr context) mutable
 				{
 					context->return_control();
 				},
@@ -148,7 +148,7 @@ void program_context_base::set_instruction_data (rx_struct_ptr data)
 }
 
 
-// Class server::prog::server_command_base 
+// Class rx_platform::prog::server_command_base 
 
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
       : _console_name(console_name),
@@ -230,7 +230,7 @@ bool server_command_base::dword_check_premissions (security::security_mask_t mas
 }
 
 
-// Class server::prog::server_program_base 
+// Class rx_platform::prog::server_program_base 
 
 server_program_base::server_program_base()
 {
@@ -243,7 +243,7 @@ server_program_base::~server_program_base()
 
 
 
-// Class server::prog::program_executer_base 
+// Class rx_platform::prog::program_executer_base 
 
 program_executer_base::program_executer_base()
 {
@@ -256,7 +256,7 @@ program_executer_base::~program_executer_base()
 
 
 
-// Class server::prog::server_program_holder 
+// Class rx_platform::prog::server_program_holder 
 
 server_program_holder::server_program_holder (program_executer_ptr executer)
       : _executer(executer)
@@ -270,7 +270,7 @@ server_program_holder::~server_program_holder()
 
 
 
-// Class server::prog::console_program_context 
+// Class rx_platform::prog::console_program_context 
 
 console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program, rx_virtual<console_client> client)
       : _client(client),
@@ -324,7 +324,7 @@ size_t console_program_context::get_possition () const
 }
 
 
-// Class server::prog::server_console_program 
+// Class rx_platform::prog::server_console_program 
 
 server_console_program::server_console_program (std::istream& in)
 {
@@ -397,15 +397,15 @@ prog::program_context_ptr server_console_program::create_program_context (prog::
 }
 
 
-// Class server::prog::console_client 
+// Class rx_platform::prog::console_client 
 
 console_client::console_client (rx_thread_handle_t executer)
       : _executer(executer)
 {
 #ifdef _DEBUG
-	_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
+	_current_directory = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
 #else
-	_current_directory = server::rx_server::instance().get_root_directory()->get_sub_directory("world");
+	_current_directory = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif
 }
 
@@ -472,7 +472,7 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 	RX_ASSERT(!_current);
 	if (line.size() > 0 && line[0] == '@')
 	{// this is console command
-		ret = server::rx_server::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
+		ret = rx_platform::rx_gate::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
 	}
 	else if (line == "exit")
 	{
@@ -507,12 +507,10 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(out_buffer.unsafe_ptr());
-		
-		auto host = rx_server::instance().get_host();
 
 		out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		string_array hosts;
-		rx_server::instance().get_host()->get_host_info(hosts);
+		rx_gate::instance().get_host()->get_host_info(hosts);
 		for(const auto& one : hosts)
 		{
 			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n" ;
@@ -557,7 +555,7 @@ void console_client::process_event (bool result, memory::buffer_ptr out_buffer, 
 }
 
 
-// Class server::prog::server_script_program 
+// Class rx_platform::prog::server_script_program 
 
 server_script_program::server_script_program (std::istream& in)
 {
@@ -591,7 +589,7 @@ prog::program_context_ptr server_script_program::create_program_context (prog::s
 }
 
 
-// Class server::prog::server_script_host 
+// Class rx_platform::prog::server_script_host 
 
 server_script_host::server_script_host (const script_def_t& definition)
 {
@@ -605,5 +603,5 @@ server_script_host::~server_script_host()
 
 
 } // namespace prog
-} // namespace server
+} // namespace rx_platform
 

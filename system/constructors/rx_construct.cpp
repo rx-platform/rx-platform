@@ -34,10 +34,10 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace constructors {
 
 } // namespace constructors
-} // namespace server
+} // namespace rx_platform
 

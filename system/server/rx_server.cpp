@@ -37,13 +37,13 @@
 #include "system/python/py_support.h"
 
 
-namespace server {
+namespace rx_platform {
 
-// Class server::rx_server 
+// Class rx_platform::rx_gate 
 
-rx_server* rx_server::g_instance = nullptr;
+rx_gate* rx_gate::g_instance = nullptr;
 
-rx_server::rx_server()
+rx_gate::rx_gate()
       : _host(nullptr),
         _started(rx_time::now()),
         _pid(0),
@@ -76,27 +76,27 @@ rx_server::rx_server()
 }
 
 
-rx_server::~rx_server()
+rx_gate::~rx_gate()
 {
 }
 
 
 
-rx_server& rx_server::instance ()
+rx_gate& rx_gate::instance ()
 {
 	if (g_instance == nullptr)
-		g_instance = new rx_server();
+		g_instance = new rx_gate();
 	return *g_instance;
 }
 
-void rx_server::cleanup ()
+void rx_gate::cleanup ()
 {
 	RX_ASSERT(g_instance);
 	delete g_instance;
 	g_instance = nullptr;
 }
 
-uint32_t rx_server::initialize (hosting::rx_server_host* host, configuration_data_t& data)
+uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	python::py_script* python = &python::py_script::instance();
 	_scripts.emplace(python->get_definition().name, python);
@@ -123,7 +123,7 @@ uint32_t rx_server::initialize (hosting::rx_server_host* host, configuration_dat
 	return RX_ERROR;
 }
 
-uint32_t rx_server::deinitialize ()
+uint32_t rx_gate::deinitialize ()
 {
 	
 	for (auto one : _scripts)
@@ -134,7 +134,7 @@ uint32_t rx_server::deinitialize ()
 	return RX_OK;
 }
 
-uint32_t rx_server::start (hosting::rx_server_host* host, const configuration_data_t& data)
+uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	if (_runtime.start(host, data.runtime_data))
 	{
@@ -152,19 +152,19 @@ uint32_t rx_server::start (hosting::rx_server_host* host, const configuration_da
 	return RX_ERROR;
 }
 
-uint32_t rx_server::stop ()
+uint32_t rx_gate::stop ()
 {
 	_manager.stop();
 	_runtime.stop();
 	return RX_OK;
 }
 
-server_directory_ptr rx_server::get_root_directory ()
+server_directory_ptr rx_gate::get_root_directory ()
 {
 	return _root;
 }
 
-bool rx_server::shutdown (const string_type& msg)
+bool rx_gate::shutdown (const string_type& msg)
 {
 	if (!_security_guard->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
 	{
@@ -175,20 +175,20 @@ bool rx_server::shutdown (const string_type& msg)
 	return true;
 }
 
-void rx_server::interface_bind ()
+void rx_gate::interface_bind ()
 {
 }
 
-void rx_server::interface_release ()
+void rx_gate::interface_release ()
 {
 }
 
-bool rx_server::read_log (const log::log_query_type& query, log::log_events_type& result)
+bool rx_gate::read_log (const log::log_query_type& query, log::log_events_type& result)
 {
 	return log::log_object::instance().read_cache(query, result);
 }
 
-bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	if (!_security_guard->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
 	{
@@ -201,5 +201,6 @@ bool rx_server::do_host_command (const string_type& line, memory::buffer_ptr out
 	}
 }
 
-} // namespace server
+
+} // namespace rx_platform
 

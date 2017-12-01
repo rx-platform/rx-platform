@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace rx {
 
 namespace security {
 
-// Class rx::security::security_context
+// Class rx::security::security_context 
 
 security_context::security_context()
       : _handle(0)
@@ -99,7 +99,7 @@ bool security_context::is_interactive () const
 }
 
 
-// Class rx::security::security_manager
+// Class rx::security::security_manager 
 
 security_manager::security_manager()
       : _last_id(0)
@@ -218,7 +218,7 @@ void pop_security()
 {
 	rx_pop_security_context();
 }
-// Class rx::security::security_guard
+// Class rx::security::security_guard 
 
 security_guard::security_guard()
 {
@@ -256,7 +256,7 @@ bool security_guard::check_premissions (security_mask_t mask, extended_security_
 }
 
 
-// Class rx::security::security_auto_context
+// Class rx::security::security_auto_context 
 
 security_auto_context::security_auto_context (security_context_ptr ctx)
 	: _ctx(ctx->get_handle())
@@ -274,7 +274,7 @@ security_auto_context::~security_auto_context()
 
 
 
-// Class rx::security::built_in_security_context
+// Class rx::security::built_in_security_context 
 
 built_in_security_context::built_in_security_context()
 {
@@ -288,7 +288,7 @@ built_in_security_context::~built_in_security_context()
 
 
 
-// Class rx::security::unathorized_security_context
+// Class rx::security::unathorized_security_context 
 
 unathorized_security_context::unathorized_security_context()
 {
@@ -321,7 +321,7 @@ bool unathorized_security_context::is_authenticated () const
 }
 
 
-// Class rx::security::loose_security_guard
+// Class rx::security::loose_security_guard 
 
 loose_security_guard::loose_security_guard()
 {

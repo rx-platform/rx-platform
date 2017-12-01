@@ -40,34 +40,33 @@
 // rx_values
 #include "lib/rx_values.h"
 
-namespace server {
+namespace rx_platform {
 namespace objects {
+class object_runtime;
 class application_runtime;
 class domain_runtime;
-class object_runtime;
 
 } // namespace objects
-} // namespace server
+} // namespace rx_platform
 
 
 #include "system/callbacks/rx_callback.h"
 using namespace rx;
-using namespace server::ns;
+using namespace rx_platform::ns;
 using rx::values::rx_value;
 using rx::values::simple_const_value;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace objects {
 extern const char* g_const_simple_class_name;
 typedef uint32_t runtime_item_id_t;
-class object_runtime;
 class variable_runtime;
-typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
 
 typedef callback::callback_functor_container<locks::lockable,rx::values::rx_value> value_callback_t;
 class complex_runtime_item;
+typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
 typedef pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
 typedef pointers::reference<domain_runtime> domain_runtime_ptr;
 typedef pointers::reference<application_runtime> application_runtime_ptr;
@@ -240,7 +239,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-	  callback::callback_handle_t register_callback(const string_type& path, void* p, server::objects::value_callback_t::callback_function_t func)
+	  callback::callback_handle_t register_callback(const string_type& path, void* p, rx_platform::objects::value_callback_t::callback_function_t func)
 	  {
 		  rx_value val;
 		  value_callback_t* call_obj = get_callback(path, val);
@@ -710,7 +709,7 @@ user object class. basic implementation of a user object");
 };
 
 
-// Parameterized Class server::objects::server_const_value_item 
+// Parameterized Class rx_platform::objects::server_const_value_item 
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
@@ -812,7 +811,7 @@ string_type server_const_value_item<valT>::get_type_name () const
 
 
 } // namespace objects
-} // namespace server
+} // namespace rx_platform
 
 
 

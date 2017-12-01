@@ -75,15 +75,15 @@ test cases are devided into several categories. you can use test command to expl
       virtual ~test_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
-      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
-      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
-      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
-      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
 
   protected:
@@ -103,7 +103,7 @@ struct test_context_data
 
 
 
-class test_program_context : public server::prog::program_context_base  
+class test_program_context : public rx_platform::prog::program_context_base  
 {
 	DECLARE_REFERENCE_PTR(test_program_context);
 
@@ -156,7 +156,7 @@ class test_program_context : public server::prog::program_context_base
 
 
 class test_case : public rx::pointers::reference_object, 
-                  	public server::n
+                  	public rx_platform::ns:
 {
 	DECLARE_REFERENCE_PTR(test_case);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
@@ -194,7 +194,7 @@ public:
 
       test_context_data get_data (test_context_data* data = nullptr) const;
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
 
       const string_type& get_name () const
@@ -302,7 +302,7 @@ public:
 
       test_case::smart_ptr get_test_case (const string_type& test_name);
 
-      test_program_context::smart_ptr create_test_context (server::prog::console_program_context::smart_ptr console_ctx);
+      test_program_context::smart_ptr create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx);
 
 
   protected:

@@ -42,11 +42,11 @@ typedef Json::FastWriter json_writer_type;
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace serialization {
 
-// Class server::serialization::json_reader 
+// Class rx_platform::serialization::json_reader 
 
 json_reader::json_reader()
 {
@@ -663,7 +663,7 @@ bool json_reader::parse_version_string (uint32_t& result, const string_type& ver
 }
 
 
-// Class server::serialization::json_writter 
+// Class rx_platform::serialization::json_writter 
 
 json_writter::json_writter (int version)
 	: base_meta_writter(version)
@@ -1025,5 +1025,5 @@ bool json_writter::get_version_string (string_type& result, uint32_t version)
 
 
 } // namespace serialization
-} // namespace server
+} // namespace rx_platform
 

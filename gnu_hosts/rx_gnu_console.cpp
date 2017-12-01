@@ -28,6 +28,10 @@
 
 #include "stdafx.h"
 
+
+//#include <readline/readline.h>
+//#include <readline/history.h>
+
 #include "rx_gnu_console_version.h"
 
 // rx_gnu_console
@@ -41,9 +45,12 @@ namespace
 
 pthread_t main_pid;
 
+std::atomic<uint_fast8_t> g_console_canceled(0);
+
 void sig_handler(int s)
 {
-    printf("\r\n");
+	if(s==SIGINT)
+		g_console_canceled.store(1);
 }
 
 
@@ -69,9 +76,6 @@ bool gnu_console_host::shutdown (const string_type& msg)
 {
     if(host::interactive::interactive_console_host::shutdown(msg))
     {
-        int ret=pthread_kill(main_pid,SIGINT);
-        if(ret<0)
-            perror("kill");
         return true;
     }
     return false;
@@ -108,13 +112,15 @@ bool gnu_console_host::start (const string_array& args)
 
     int ret = sigaction(SIGINT,&act,&old);
     if(ret!=0)
-        perror("sigaction");
-
+        perror("sigaction1");
+    ret = sigaction(SIGHUP,&act,&old);
+    if(ret!=0)
+        perror("sigaction2");
 
 	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 
 
-	server::configuration_data_t config;
+	rx_platform::configuration_data_t config;
 
 	// execute main loop of the console host
 	console_loop(config);
@@ -152,8 +158,24 @@ void gnu_console_host::get_host_info (string_array& hosts)
 bool gnu_console_host::get_next_line (string_type& line)
 {
   //std::cin>>line;
-  getline(std::cin,line);
+  //char* ret=getline(nullptr);
+  //line=ret;
+  //free(ret);
+  std::getline(std::cin,line);
   return true;
+}
+
+bool gnu_console_host::is_canceling () const
+{
+	return g_console_canceled.exchange(0) != 0;
+}
+
+bool gnu_console_host::break_host (const string_type& msg)
+{
+    int ret=pthread_kill(main_pid,SIGHUP);
+    if(ret<0)
+        perror("kill");
+    return true;
 }
 
 

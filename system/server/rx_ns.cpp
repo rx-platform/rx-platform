@@ -35,10 +35,10 @@
 #include "rx_server.h"
 
 
-//IMPLEMENT_CODE_BEHIND_CLASS(server::ns::rx_server_directory, IEC61850 Engine, IEC61850 Ed 2 Goose Control Block - Stack Based, 1.0.0.0);
+//IMPLEMENT_CODE_BEHIND_CLASS(rx_platform::ns::rx_server_directory, IEC61850 Engine, IEC61850 Ed 2 Goose Control Block - Stack Based, 1.0.0.0);
 
 
-namespace server {
+namespace rx_platform {
 
 namespace ns {
 /*
@@ -105,58 +105,58 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class server::ns::rx_server_item 
+// Class rx_platform::ns::rx_platform_item 
 
-rx_server_item::rx_server_item()
+rx_platform_item::rx_platform_item()
 {
 }
 
 
-rx_server_item::~rx_server_item()
+rx_platform_item::~rx_platform_item()
 {
 }
 
 
 
-void rx_server_item::code_info_to_string (string_type& info)
+void rx_platform_item::code_info_to_string (string_type& info)
 {
 }
 
-void rx_server_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 }
 
-void rx_server_item::item_lock ()
+void rx_platform_item::item_lock ()
 {
 	_item_lock.lock();
 }
 
-void rx_server_item::item_unlock ()
+void rx_platform_item::item_unlock ()
 {
 	_item_lock.unlock();
 }
 
-void rx_server_item::item_lock () const
+void rx_platform_item::item_lock () const
 {
 }
 
-void rx_server_item::item_unlock () const
+void rx_platform_item::item_unlock () const
 {
 }
 
-server_directory_ptr rx_server_item::get_parent () const
+server_directory_ptr rx_platform_item::get_parent () const
 {
 	return _parent;
 }
 
-void rx_server_item::set_parent (server_directory_ptr parent)
+void rx_platform_item::set_parent (server_directory_ptr parent)
 {
 	item_lock();
 	_parent = parent;
 	item_unlock();
 }
 
-string_type rx_server_item::get_path () const
+string_type rx_platform_item::get_path () const
 {
 	server_directory_ptr parent;
 	item_lock();
@@ -172,7 +172,7 @@ string_type rx_server_item::get_path () const
 	return full;
 }
 
-bool rx_server_item::serialize (base_meta_writter& stream) const
+bool rx_platform_item::serialize (base_meta_writter& stream) const
 {
 	if (!stream.write_header(STREAMING_TYPE_DIRECTORY))
 		return false;
@@ -181,7 +181,7 @@ bool rx_server_item::serialize (base_meta_writter& stream) const
 	return true;
 }
 
-bool rx_server_item::deserialize (base_meta_reader& stream)
+bool rx_platform_item::deserialize (base_meta_reader& stream)
 {
 	int header_type;
 	if (!stream.read_header(header_type))
@@ -192,7 +192,7 @@ bool rx_server_item::deserialize (base_meta_reader& stream)
 }
 
 
-// Class server::ns::rx_server_directory 
+// Class rx_platform::ns::rx_server_directory 
 
 rx_server_directory::rx_server_directory()
       : _created(rx_time::now())
@@ -290,7 +290,7 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 	}
 	else if (path == "/")
 	{// go one up
-		return rx_server::instance().get_root_directory();
+		return rx_gate::instance().get_root_directory();
 	}
 	else
 	{
@@ -303,7 +303,7 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 		{
 			end = string_type::npos;
 			start = 1;
-			origin = rx_server::instance().get_root_directory();
+			origin = rx_gate::instance().get_root_directory();
 		}
 		else if (path[0] == '.')
 		{
@@ -422,7 +422,7 @@ const string_type& rx_server_directory::get_type_name () const
 
 }
 
-server_item_ptr rx_server_directory::get_sub_item (const string_type& path) const
+platform_item_ptr rx_server_directory::get_sub_item (const string_type& path) const
 {
 	size_t idx = path.rfind('/');
 	if (idx == string_type::npos)
@@ -432,7 +432,7 @@ server_item_ptr rx_server_directory::get_sub_item (const string_type& path) cons
 		if (it != _sub_items.end())
 			return it->second;
 		else
-			return server_item_ptr::null_ptr;
+			return platform_item_ptr::null_ptr;
 	}
 	else
 	{// dir + item
@@ -445,7 +445,7 @@ server_item_ptr rx_server_directory::get_sub_item (const string_type& path) cons
 		}
 		else
 		{
-			return server_item_ptr::null_ptr;
+			return platform_item_ptr::null_ptr;
 		}
 	}
 }
@@ -487,6 +487,5 @@ bool rx_server_directory::add_sub_directory (server_directory_ptr who)
 
 
 } // namespace ns
-} // namespace server
-
+} // namespace rx_platform
 

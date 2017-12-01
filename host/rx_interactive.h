@@ -49,7 +49,7 @@ class interactive_console_host;
 
 
 using namespace rx;
-using namespace server;
+using namespace rx_platform;
 
 
 
@@ -91,7 +91,7 @@ class interactive_security_context : public rx::security::built_in_security_cont
 
 
 
-class interactive_console_client : public server::prog::console_client  
+class interactive_console_client : public rx_platform::prog::console_client  
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(interactive_console_client);
 
@@ -141,7 +141,7 @@ class interactive_console_client : public server::prog::console_client
 
 
 
-class interactive_console_host : public server::hosting::rx_server_host  
+class interactive_console_host : public rx_platform::hosting::rx_platform_host  
 {
 
   public:
@@ -158,9 +158,9 @@ class interactive_console_host : public server::hosting::rx_server_host
 
       bool exit () const;
 
-      void get_host_objects (std::vector<server::objects::object_runtime_ptr>& items);
+      void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items);
 
-      void get_host_classes (std::vector<server::meta::object_class_ptr>& items);
+      void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
@@ -168,10 +168,12 @@ class interactive_console_host : public server::hosting::rx_server_host
 
       virtual bool get_next_line (string_type& line) = 0;
 
+      virtual bool is_canceling () const = 0;
+
 
   protected:
 
-      void console_loop (server::configuration_data_t& config);
+      void console_loop (configuration_data_t& config);
 
 
   private:
@@ -179,7 +181,7 @@ class interactive_console_host : public server::hosting::rx_server_host
 
       bool _exit;
 
-      server::objects::server_const_value_item<bool> _testBool;
+      objects::server_const_value_item<bool> _testBool;
 
 
 };

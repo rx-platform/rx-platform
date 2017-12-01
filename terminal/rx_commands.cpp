@@ -45,7 +45,7 @@ namespace commands {
 // Class terminal::commands::server_command 
 
 server_command::server_command (const string_type& console_name)
- : server::prog::server_command_base(console_name,ns::namespace_item_system)
+ : rx_platform::prog::server_command_base(console_name,ns::namespace_item_system)
 {
 }
 
@@ -139,7 +139,7 @@ server_command_base_ptr server_command_manager::get_command_by_name (const strin
 
 server_command_manager::smart_ptr server_command_manager::instance ()
 {
-	return rx_server::instance().get_manager().get_commands_manager().cast_to<server_command_manager::smart_ptr>();
+	return rx_gate::instance().get_manager().get_commands_manager().cast_to<server_command_manager::smart_ptr>();
 }
 
 namespace_item_attributes server_command_manager::get_attributes () const
@@ -197,7 +197,7 @@ echo_server_command::~echo_server_command()
 
 
 
-bool echo_server_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool echo_server_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	// just copy from one steam to another
 	if (!in.eof())

@@ -34,7 +34,7 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace python {
 
@@ -59,7 +59,7 @@ class py_helpers
 
 
 } // namespace python
-} // namespace server
+} // namespace rx_platform
 
 
 

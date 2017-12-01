@@ -60,7 +60,7 @@ root_server_directory::~root_server_directory()
 
 
 
-void root_server_directory::initialize (server::hosting::rx_server_host* host, namespace_data_t& data)
+void root_server_directory::initialize (hosting::rx_platform_host* host, namespace_data_t& data)
 {
 	
 	server_directories_type dirs;
@@ -79,8 +79,8 @@ void root_server_directory::initialize (server::hosting::rx_server_host* host, n
 
 	dirs.clear();
 	items.clear();	
-	items.push_back(rx_server::instance().get_manager().get_unassigned_app());
-	items.push_back(rx_server::instance().get_manager().get_unassigned_domain());
+	items.push_back(rx_gate::instance().get_manager().get_unassigned_app());
+	items.push_back(rx_gate::instance().get_manager().get_unassigned_domain());
 	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
 	_root_directories.push_back(unassigned);
 
@@ -116,15 +116,15 @@ void root_server_directory::initialize (server::hosting::rx_server_host* host, n
 	dirs.clear();
 	items.clear();
 	sub_items.clear();// just in case
-	sub_items.push_back(rx_server::instance().get_manager().get_system_app());
-	sub_items.push_back(rx_server::instance().get_manager().get_system_domain());
-	sub_items.push_back(server::rx_server::instance().get_runtime().get_item_ptr());
+	sub_items.push_back(rx_gate::instance().get_manager().get_system_app());
+	sub_items.push_back(rx_gate::instance().get_manager().get_system_domain());
+	sub_items.push_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
 	 //io_pool(IO_POOL_NAME, IO_POOL_ID, true);
-	sub_items.push_back(server::rx_server::instance().get_runtime().get_io_pool());
-	ns::rx_server_item::smart_ptr general_pool = server::rx_server::instance().get_runtime().get_general_pool();
+	sub_items.push_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool());
+	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool();
 	if(general_pool)
 		sub_items.push_back(general_pool);
-	ns::rx_server_item::smart_ptr workers = server::rx_server::instance().get_runtime().get_workers();
+	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers();
 	if(workers)
 		sub_items.push_back(workers);	
 	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);

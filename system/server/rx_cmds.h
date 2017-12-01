@@ -46,21 +46,21 @@ class security_context;
 } // namespace security
 } // namespace rx
 
-namespace server {
+namespace rx_platform {
 namespace prog {
 class server_program_holder;
 class server_program_base;
 class program_context_base;
 
 } // namespace prog
-} // namespace server
+} // namespace rx_platform
 
 
 using namespace rx;
-using namespace server::ns;
+using namespace rx_platform::ns;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace prog {
 class program_executer_base;
@@ -147,7 +147,6 @@ public:
 			  return pointers::reference<T>::null_ptr;
 		  }
 	  }
-
   protected:
 
       virtual void send_results ();
@@ -393,7 +392,7 @@ class console_program_context : public program_context_base
 
 
 
-class server_command_base : public ns::rx_server_item  
+class server_command_base : public ns::rx_platform_item  
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(server_command_base);
 
@@ -573,7 +572,7 @@ class server_script_host
 
 
 } // namespace prog
-} // namespace server
+} // namespace rx_platform
 
 
 

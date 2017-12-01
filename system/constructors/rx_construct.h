@@ -36,7 +36,7 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace constructors {
 
@@ -77,7 +77,7 @@ class object_constructor_base
 typedef object_constructor_base< objects::object_runtime_ptr , objects::user_object::smart_ptr  > user_object_constructor;
 
 
-// Parameterized Class server::constructors::object_constructor_base 
+// Parameterized Class rx_platform::constructors::object_constructor_base 
 
 template <typename RType, typename DType>
 object_constructor_base<RType,DType>::object_constructor_base()
@@ -111,7 +111,7 @@ DType object_constructor_base<RType,DType>::create_runtime ()
 
 
 } // namespace constructors
-} // namespace server
+} // namespace rx_platform
 
 
 

@@ -39,7 +39,7 @@
 namespace rx {
 // reference counting type defined here
 // important stuff regarding resources
-typedef uint32_t ref_counting_type;
+typedef uint_fast16_t ref_counting_type;
 
 
 namespace pointers {
@@ -679,7 +679,7 @@ public:
 	// reference based objet no copying
 	struct_reference(const struct_reference &right) = delete;
 	reference_object & operator=(const struct_reference &right) = delete;
-	// dont use 'memmove' to move object around
+	// dont use '&&' to move object around
 	struct_reference(struct_reference &&right) = delete;
 	struct_reference & operator=(struct_reference &&right) = delete;
 

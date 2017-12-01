@@ -38,9 +38,9 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-using namespace server::prog;
-using namespace server; 
-using namespace server::ns;
+using namespace rx_platform::prog;
+using namespace rx_platform; 
+using namespace rx_platform::ns;
 using namespace rx;
 
 
@@ -57,7 +57,7 @@ namespace commands {
 
 
 
-class server_command : public server::prog::server_command_base, 
+class server_command : public rx_platform::prog::server_command_base, 
                        	public rx::poin
 {
 	DECLARE_REFERENCE_PTR(server_command);
@@ -90,7 +90,7 @@ class server_command : public server::prog::server_command_base,
 
 
 
-class server_command_manager : public server::objects::server_object  
+class server_command_manager : public rx_platform::objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
@@ -152,7 +152,7 @@ acctualiy first command class good for testing.)");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
 
 
   private:

@@ -35,21 +35,20 @@
 
 namespace
 {
-	BOOL WINAPI ctrl_handler(DWORD fdwCtrlType)
+	std::atomic<uint_fast8_t> g_console_canceled = 0;
+	BOOL ctrl_handler(DWORD fdwCtrlType)
 	{
-		printf("************Usao %d\r\n", fdwCtrlType);
 		switch (fdwCtrlType)
 		{
 			// Handle the CTRL-C signal. 
 		case CTRL_C_EVENT:
-			std::cout << "^C\r\n";
+			g_console_canceled.store(1, std::memory_order_relaxed);
 			return TRUE;
 			// CTRL-CLOSE: confirm that the user wants to exit. 
 		case CTRL_BREAK_EVENT:
-			std::cout << "^C\r\n";
+			g_console_canceled.store(1, std::memory_order_relaxed);
 			return TRUE;
 		case CTRL_CLOSE_EVENT:
-			printf("\r\n");
 			return TRUE;
 		default:
 			return FALSE;
@@ -76,20 +75,7 @@ win32_console_host::~win32_console_host()
 bool win32_console_host::shutdown (const string_type& msg)
 {
 	if (host::interactive::interactive_console_host::shutdown(msg))
-	{
-		DWORD dwTmp;
-		INPUT_RECORD ir[2];
-		ir[0].EventType = KEY_EVENT;
-		ir[0].Event.KeyEvent.bKeyDown = TRUE;
-		ir[0].Event.KeyEvent.dwControlKeyState = 0;
-		ir[0].Event.KeyEvent.uChar.UnicodeChar = VK_RETURN;
-		ir[0].Event.KeyEvent.wRepeatCount = 0;
-		ir[0].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
-		ir[0].Event.KeyEvent.wVirtualScanCode = MapVirtualKey(VK_RETURN, MAPVK_VK_TO_VSC);
-		ir[1] = ir[0];
-		ir[1].Event.KeyEvent.bKeyDown = FALSE;
-		WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), ir, 1, &dwTmp);
-
+	{		
 		return true;
 	}
 	return false;
@@ -105,7 +91,8 @@ sys_handle_t win32_console_host::get_host_test_file (const string_type& path)
 
 bool win32_console_host::start (const string_array& args)
 {
-	SetConsoleCtrlHandler(ctrl_handler, TRUE);
+	BOOL ret = SetConsoleCtrlHandler(NULL,FALSE);
+	ret = SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrl_handler, TRUE);
 
 	rx_thread_data_t tls = rx_alloc_thread_data();
 
@@ -128,14 +115,17 @@ bool win32_console_host::start (const string_array& args)
 
 	std_in = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(std_in, &mode);
-	//mode &= (~ENABLE_PROCESSED_INPUT);// virtual terminal output
+	std::bitset<sizeof(mode) * 8> bts(mode);
+	bts.reset(0);
+	bts.set(1);
+	DWORD new_mode = bts.to_ulong();
 	SetConsoleMode(std_in, mode);
 
 	
 	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 
 
-	server::configuration_data_t config;
+	rx_platform::configuration_data_t config;
 
 	// execute main loop of the console host
 	console_loop(config);
@@ -175,6 +165,16 @@ bool win32_console_host::get_next_line (string_type& line)
 	//std::cin >> line;
 	getline(std::cin, line);
 	return true;
+}
+
+bool win32_console_host::is_canceling () const
+{
+	return g_console_canceled.exchange(0) != 0;
+}
+
+bool win32_console_host::break_host (const string_type& msg)
+{
+	return GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0) != FALSE;
 }
 
 

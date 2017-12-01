@@ -56,7 +56,7 @@ test_command::~test_command()
 
 
 
-bool test_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type temp_str;
 	in >> temp_str;
@@ -81,7 +81,7 @@ bool test_command::do_console_command (std::istream& in, std::ostream& out, std:
 	return false;
 }
 
-bool test_command::do_info_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_command::do_info_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type temp_str;
 
@@ -100,7 +100,7 @@ bool test_command::do_info_command (std::istream& in, std::ostream& out, std::os
 	return false;
 }
 
-bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 
 	string_type temp_str;
@@ -132,7 +132,7 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 	return false;
 }
 
-bool test_command::do_status_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_command::do_status_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type filter;
 	in >> filter;
@@ -182,7 +182,7 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type temp_str;
 	in >> temp_str;
@@ -403,7 +403,7 @@ test_context_data test_case::get_data (test_context_data* data) const
 	return _data;
 }
 
-bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	rx_reference<test_program_context> test_ctx = testing_enviroment::instance().create_test_context(ctx);
 	if (test_start(in, out, err, test_ctx))
@@ -495,7 +495,7 @@ test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_
 	return test_case::smart_ptr::null_ptr;
 }
 
-test_program_context::smart_ptr testing_enviroment::create_test_context (server::prog::console_program_context::smart_ptr console_ctx)
+test_program_context::smart_ptr testing_enviroment::create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx)
 {
 	return rx_create_reference<test_program_context>(
 		prog::server_program_holder_ptr::null_ptr,
@@ -512,7 +512,7 @@ test_program_context::smart_ptr testing_enviroment::create_test_context (server:
 
 test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
       : _status(RX_TEST_STATUS_UNKNOWN)
-	, server::prog::program_context_base(holder, root_context, current_directory, out, err,program)
+	, rx_platform::prog::program_context_base(holder, root_context, current_directory, out, err,program)
 {
 }
 

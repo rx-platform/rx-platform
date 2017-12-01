@@ -35,7 +35,7 @@
 using namespace std::placeholders;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace callback {
 typedef uint32_t callback_handle_t;
@@ -88,7 +88,7 @@ private:
 };
 
 
-// Parameterized Class server::callback::callback_functor_container 
+// Parameterized Class rx_platform::callback::callback_functor_container 
 
 template <typename lockT, typename argT>
 std::atomic<callback_handle_t> callback_functor_container<lockT,argT>::g_new_handle;
@@ -159,9 +159,8 @@ callback::callback_handle_t callback_functor_container<lockT, argT>::register_ca
 {
 	return register_callback(callback_function_t(func));
 }
-
 } // namespace callback
-} // namespace server
+} // namespace rx_platform
 
 
 

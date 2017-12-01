@@ -38,12 +38,12 @@
 #include "system/json/rx_ser.h"
 
 
-namespace server {
+namespace rx_platform {
 
 namespace objects {
 const char* g_const_simple_class_name = "CONST_SIMPLE";
 
-// Class server::objects::server_object 
+// Class rx_platform::objects::server_object 
 
 server_object::server_object (const string_type& name, const rx_node_id& id)
 	: object_runtime(name,id,true)
@@ -64,7 +64,7 @@ namespace_item_attributes server_object::get_attributes () const
 }
 
 
-// Class server::objects::complex_runtime_item 
+// Class rx_platform::objects::complex_runtime_item 
 
 complex_runtime_item::complex_runtime_item (object_runtime_ptr my_object)
       : _my_object(my_object)
@@ -309,7 +309,7 @@ bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uin
 }
 
 
-// Class server::objects::object_runtime 
+// Class rx_platform::objects::object_runtime 
 
 string_type object_runtime::type_name = "OBJECT";
 
@@ -394,7 +394,7 @@ const string_type& object_runtime::get_item_name () const
 bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 {
 
-	server::serialization::json_writter writter;
+	rx_platform::serialization::json_writter writter;
 
 	writter.write_header(STREAMING_TYPE_OBJECT);
 
@@ -447,7 +447,7 @@ bool object_runtime::init_object ()
 }
 
 
-// Class server::objects::value_item 
+// Class rx_platform::objects::value_item 
 
 const uint32_t value_item::_type_id = RT_TYPE_ID_VALUE;
 
@@ -473,7 +473,7 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class server::objects::variable_runtime 
+// Class rx_platform::objects::variable_runtime 
 
 variable_runtime::variable_runtime (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
@@ -487,7 +487,7 @@ variable_runtime::~variable_runtime()
 
 
 
-// Class server::objects::filter_runtime 
+// Class rx_platform::objects::filter_runtime 
 
 filter_runtime::filter_runtime (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
@@ -501,7 +501,7 @@ filter_runtime::~filter_runtime()
 
 
 
-// Class server::objects::source 
+// Class rx_platform::objects::source 
 
 source::source (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
@@ -515,7 +515,7 @@ source::~source()
 
 
 
-// Class server::objects::mapper 
+// Class rx_platform::objects::mapper 
 
 mapper::mapper (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
@@ -529,7 +529,7 @@ mapper::~mapper()
 
 
 
-// Class server::objects::domain_runtime 
+// Class rx_platform::objects::domain_runtime 
 
 string_type domain_runtime::type_name = "DOMAIN";
 
@@ -563,7 +563,7 @@ namespace_item_attributes domain_runtime::get_attributes () const
 }
 
 
-// Class server::objects::application_runtime 
+// Class rx_platform::objects::application_runtime 
 
 string_type application_runtime::type_name = "APPLICATION";
 
@@ -599,7 +599,7 @@ namespace_item_attributes application_runtime::get_attributes () const
 }
 
 
-// Class server::objects::struct_runtime 
+// Class rx_platform::objects::struct_runtime 
 
 struct_runtime::struct_runtime (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
@@ -613,7 +613,7 @@ struct_runtime::~struct_runtime()
 
 
 
-// Class server::objects::const_value_item 
+// Class rx_platform::objects::const_value_item 
 
 const uint32_t const_value_item::_type_id = RT_TYPE_ID_CONST_VALUE;
 
@@ -643,7 +643,7 @@ bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class server::objects::port_runtime 
+// Class rx_platform::objects::port_runtime 
 
 string_type port_runtime::type_name = "PORT";
 
@@ -675,7 +675,7 @@ namespace_item_attributes port_runtime::get_attributes () const
 }
 
 
-// Class server::objects::user_object 
+// Class rx_platform::objects::user_object 
 
 user_object::user_object()
 {
@@ -701,5 +701,5 @@ namespace_item_attributes user_object::get_attributes () const
 
 
 } // namespace objects
-} // namespace server
+} // namespace rx_platform
 

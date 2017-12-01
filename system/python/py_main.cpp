@@ -34,11 +34,11 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace python {
 
-// Class server::python::py_helpers 
+// Class rx_platform::python::py_helpers 
 
 
 void py_helpers::deinitialize ()
@@ -47,5 +47,5 @@ void py_helpers::deinitialize ()
 
 
 } // namespace python
-} // namespace server
+} // namespace rx_platform
 

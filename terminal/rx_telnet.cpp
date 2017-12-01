@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -147,7 +147,7 @@ IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 
 
 
-// Class terminal::console::server_telnet_socket 
+// Class terminal::console::server_telnet_socket
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -169,7 +169,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 }
 
 
-// Class terminal::console::telnet_client 
+// Class terminal::console::telnet_client
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : _security_context(*addr,*local_addr),
@@ -314,7 +314,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 			bool ret = do_command(temp, out_buffer, err_buffer,_security_context);
 
-			
+
 		}
 
 		return true;
@@ -526,8 +526,6 @@ bool telnet_client::get_next_line (string_type& line)
 
 void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
 {
-	bool ret = true;
-
 	std::ostream out(out_buffer.unsafe_ptr());
 	std::ostream err(err_buffer.unsafe_ptr());
 
@@ -564,7 +562,6 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 	{// error
 		if (err_buffer->empty())
 		{// exit command, close socket
-			ret = false;
 		}
 		else
 		{
@@ -580,7 +577,7 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 }
 
 
-// Class terminal::console::telnet_security_context 
+// Class terminal::console::telnet_security_context
 
 telnet_security_context::telnet_security_context()
 {
@@ -621,7 +618,7 @@ namespace console_commands {
 namespace
 {
 
-bool dump_info(std::ostream& out, rx_server_item::smart_ptr& item)
+bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 {
 	string_type quality_stirng;
 	values::rx_value val;
@@ -658,7 +655,7 @@ bool dump_info(std::ostream& out, rx_server_item::smart_ptr& item)
 	return true;
 }
 
-bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_item::smart_ptr one)
+bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_platform_item::smart_ptr one)
 {
 	if ((one->get_attributes()&namespace_item_browsable) != 0)
 		row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
@@ -738,7 +735,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::directory_command 
+// Class terminal::console::console_commands::directory_command
 
 directory_command::directory_command (const string_type& console_name)
   : server_command(console_name)
@@ -790,7 +787,7 @@ bool directory_command::list_directory (std::ostream& out, std::ostream& err, co
 	return true;
 }
 
-bool directory_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool directory_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type filter;
 	bool list_attributes = false;
@@ -824,7 +821,7 @@ bool directory_command::do_console_command (std::istream& in, std::ostream& out,
 }
 
 
-// Class terminal::console::console_commands::dir_command 
+// Class terminal::console::console_commands::dir_command
 
 dir_command::dir_command()
   : directory_command("dir")
@@ -838,7 +835,7 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command 
+// Class terminal::console::console_commands::ls_command
 
 ls_command::ls_command()
   : directory_command("ls")
@@ -852,7 +849,7 @@ ls_command::~ls_command()
 
 
 
-bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	if (in.eof())
 	{// dump here
@@ -889,7 +886,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::cd_command 
+// Class terminal::console::console_commands::cd_command
 
 cd_command::cd_command()
   : server_command("cd")
@@ -903,7 +900,7 @@ cd_command::~cd_command()
 
 
 
-bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
     string_type path;
 	in >> path;
@@ -919,7 +916,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::info_command 
+// Class terminal::console::console_commands::info_command
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -933,7 +930,7 @@ info_command::~info_command()
 
 
 
-bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -947,7 +944,7 @@ bool info_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 		else
 		{
-			server_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
+			platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
 			if (item)
 			{
 				dump_info(out, item);
@@ -1000,7 +997,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command 
+// Class terminal::console::console_commands::code_command
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1014,7 +1011,7 @@ code_command::~code_command()
 
 
 
-bool code_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool code_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -1028,7 +1025,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 		else
 		{
-			server_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
+			platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
 			if (item)
 			{
 				item->fill_code_info(out,whose);
@@ -1048,7 +1045,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command 
+// Class terminal::console::console_commands::rx_name_command
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1062,32 +1059,16 @@ rx_name_command::~rx_name_command()
 
 
 
-bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	out << "System Information\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "Engine Name: " << rx_server::instance().get_rx_name() << "\r\n";
-	out << "Engine Version: " << rx_server::instance().get_rx_version() << "\r\n";
-	out << "Library Version: " << rx_server::instance().get_lib_version() << "\r\n";
-	out << "OS/HW Interface: " << rx_server::instance().get_hal_version() << "\r\n";
-	out << "Compiler: " << rx_server::instance().get_comp_version() << "\r\n";
-
-	out << "Hosts:";
-	string_array hosts;
-	rx_server::instance().get_host()->get_host_info(hosts);
-	bool first = true;
-	for (auto& one : hosts)
-	{
-		if (first)
-			first = false;
-		else
-			out << "      ";
-		out <<  ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << one;
-		out << "\r\n";
-	}
-	out << "OS: " << rx_server::instance().get_os_info() << " [PID:" << rx_server::instance().get_pid() << "]\r\n";
-
+	out << "Engine Name: " << rx_gate::instance().get_rx_name() << "\r\n";
+	out << "Engine Version: " << rx_gate::instance().get_rx_version() << "\r\n";
+	out << "Library Version: " << rx_gate::instance().get_lib_version() << "\r\n";
+	out << "OS/HW Interface: " << rx_gate::instance().get_hal_version() << "\r\n";
+	out << "Compiler: " << rx_gate::instance().get_comp_version() << "\r\n";
+	out << "OS: " << rx_gate::instance().get_os_info() << " [PID:" << rx_gate::instance().get_pid() << "]\r\n";
 
 	/////////////////////////////////////////////////////////////////////////
 	// Processor
@@ -1112,7 +1093,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command 
+// Class terminal::console::console_commands::cls_command
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1126,14 +1107,14 @@ cls_command::~cls_command()
 
 
 
-bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	out << ANSI_CLS ANSI_CUR_HOME;
 	return true;
 }
 
 
-// Class terminal::console::console_commands::shutdown_command 
+// Class terminal::console::console_commands::shutdown_command
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1147,19 +1128,19 @@ shutdown_command::~shutdown_command()
 
 
 
-bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	std::istreambuf_iterator<char> begin(in), end;
 	std::string msg(begin, end);
 	if (msg.empty())
 		msg = RX_NULL_ITEM_NAME;
-	if(!rx_server::instance().shutdown(msg))
+	if(!rx_gate::instance().shutdown(msg))
 		err << RX_ACCESS_DENIED;
 	return false;
 }
 
 
-// Class terminal::console::console_commands::log_command 
+// Class terminal::console::console_commands::log_command
 
 log_command::log_command()
 	: server_command("log")
@@ -1173,7 +1154,7 @@ log_command::~log_command()
 
 
 
-bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -1192,7 +1173,7 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 
 	char buffer[0x100];
@@ -1249,11 +1230,11 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	return true;
 }
 
-bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	log::log_query_type query;
 	log::log_events_type result;
-	auto ret = rx_server::instance().read_log(query, result);
+	auto ret = rx_gate::instance().read_log(query, result);
 	if (ret)
 	{
 		for (auto one : result)
@@ -1265,7 +1246,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command 
+// Class terminal::console::console_commands::sec_command
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1279,7 +1260,7 @@ sec_command::~sec_command()
 
 
 
-bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -1294,7 +1275,7 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	std::vector<security::security_context_ptr> ctxs;
 	security::security_manager::instance().get_active_contexts(ctxs);
@@ -1351,7 +1332,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command 
+// Class terminal::console::console_commands::time_command
 
 time_command::time_command()
 	: server_command("time")
@@ -1365,15 +1346,15 @@ time_command::~time_command()
 
 
 
-bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
-	out << "Start Time\t: " << rx_server::instance().get_started().get_string() << " UTC\r\n";
+	out << "Start Time\t: " << rx_gate::instance().get_started().get_string() << " UTC\r\n";
 	out << "Current Time\t: " << rx_time::now().get_string() << " UTC\r\n";
 	return true;
 }
 
 
-// Class terminal::console::console_commands::sleep_command 
+// Class terminal::console::console_commands::sleep_command
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1387,7 +1368,7 @@ sleep_command::~sleep_command()
 
 
 
-bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
 	if (!data)
@@ -1411,7 +1392,6 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 	else
 	{// timer expired or canceled
 		uint64_t lasted = rx_get_us_ticks() - data->started;
-		double lasted_ms = lasted / 1000.0;
 		out << "Sleep lasted ";
 		rx_dump_ticks_to_stream(out, lasted);
 		out << ".\r\n";
@@ -1420,7 +1400,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command 
+// Class terminal::console::console_commands::def_command
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1434,14 +1414,14 @@ def_command::~def_command()
 
 
 
-bool def_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool def_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
 		in >> whose;
 	if (!whose.empty())
 	{
-		server_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
+		platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
 		if (item)
 		{
 			dump_object_definition(out,err, item);
@@ -1460,7 +1440,7 @@ bool def_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, server_item_ptr item)
+bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, platform_item_ptr item)
 {
 	bool ret = false;
 	if (item)
@@ -1475,7 +1455,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command 
+// Class terminal::console::console_commands::directory_aware_command
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1489,7 +1469,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command 
+// Class terminal::console::console_commands::phyton_command
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1503,7 +1483,7 @@ phyton_command::~phyton_command()
 
 
 
-bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, server::prog::console_program_context::smart_ptr ctx)
+bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;

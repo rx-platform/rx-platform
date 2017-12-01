@@ -36,30 +36,30 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace hosting {
 
-// Class server::hosting::rx_server_host 
+// Class rx_platform::hosting::rx_platform_host 
 
-rx_server_host::rx_server_host()
+rx_platform_host::rx_platform_host()
       : _parent(nullptr)
 {
 }
 
-rx_server_host::rx_server_host(const rx_server_host &right)
+rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : _parent(nullptr)
 {
 	RX_ASSERT(false);
 }
 
 
-rx_server_host::~rx_server_host()
+rx_platform_host::~rx_platform_host()
 {
 }
 
 
-rx_server_host & rx_server_host::operator=(const rx_server_host &right)
+rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
 {
 	RX_ASSERT(false);
 	return *this;
@@ -67,19 +67,19 @@ rx_server_host & rx_server_host::operator=(const rx_server_host &right)
 
 
 
-void rx_server_host::get_host_info (string_array& hosts)
+void rx_platform_host::get_host_info (string_array& hosts)
 {
 }
 
-void rx_server_host::server_started_event ()
+void rx_platform_host::server_started_event ()
 {
 }
 
-void rx_server_host::server_stopping_event ()
+void rx_platform_host::server_stopping_event ()
 {
 }
 
-bool rx_server_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 
 	std::ostream out(out_buffer.unsafe_ptr());
@@ -88,18 +88,18 @@ bool rx_server_host::do_host_command (const string_type& line, memory::buffer_pt
 	return true;
 }
 
-sys_handle_t rx_server_host::get_host_test_file (const string_type& path)
+sys_handle_t rx_platform_host::get_host_test_file (const string_type& path)
 {
 	return 0;
 }
 
-sys_handle_t rx_server_host::get_host_console_script_file (const string_type& path)
+sys_handle_t rx_platform_host::get_host_console_script_file (const string_type& path)
 {
 	return 0;
 }
 
 
-// Class server::hosting::host_security_context 
+// Class rx_platform::hosting::host_security_context 
 
 host_security_context::host_security_context()
 {
@@ -124,5 +124,5 @@ bool host_security_context::is_system () const
 
 
 } // namespace hosting
-} // namespace server
+} // namespace rx_platform
 

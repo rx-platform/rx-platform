@@ -46,7 +46,7 @@
 #include "lib/rx_io.h"
 
 
-namespace server {
+namespace rx_platform {
 
 namespace mngt {
 
@@ -117,18 +117,18 @@ class server_manager
       virtual ~server_manager();
 
 
-      uint32_t initialize (hosting::rx_server_host* host, managment_data_t& data);
+      uint32_t initialize (hosting::rx_platform_host* host, managment_data_t& data);
 
       uint32_t deinitialize ();
 
-      uint32_t start (hosting::rx_server_host* host, const managment_data_t& data);
+      uint32_t start (hosting::rx_platform_host* host, const managment_data_t& data);
 
       uint32_t stop ();
 
       void get_directories (server_directories_type& dirs);
 
 
-      server_item_ptr get_commands_manager ()
+      platform_item_ptr get_commands_manager ()
       {
         return _commands_manager;
       }
@@ -171,7 +171,7 @@ class server_manager
 
       rx_reference<rx::io::tcp_listent_std_buffer> _telnet_listener;
 
-      server_item_ptr _commands_manager;
+      platform_item_ptr _commands_manager;
 
       rx_reference<objects::domain_runtime> _unassigned_domain;
 
@@ -189,7 +189,7 @@ class server_manager
 
 
 } // namespace mngt
-} // namespace server
+} // namespace rx_platform
 
 
 

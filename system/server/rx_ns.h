@@ -39,21 +39,21 @@
 // rx_values
 #include "lib/rx_values.h"
 
-namespace server {
+namespace rx_platform {
 namespace ns {
-class rx_server_item;
+class rx_platform_item;
 
 } // namespace ns
-} // namespace server
+} // namespace rx_platform
 
 
 
 using namespace rx;
 using namespace rx::values;
-using namespace server;
+using namespace rx_platform;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace ns
 {
@@ -65,9 +65,9 @@ namespace prog
 class server_command_base;
 }
 typedef rx::pointers::virtual_reference<prog::server_command_base> server_command_base_ptr;
-typedef rx::pointers::virtual_reference<ns::rx_server_item> server_item_ptr;
+typedef rx::pointers::virtual_reference<ns::rx_platform_item> platform_item_ptr;
 typedef rx::pointers::reference<ns::rx_server_directory> server_directory_ptr;
-typedef std::vector<server_item_ptr> server_items_type;
+typedef std::vector<platform_item_ptr> server_items_type;
 typedef std::vector<server_directory_ptr> server_directories_type;
 
 
@@ -117,7 +117,7 @@ class rx_server_directory : public rx::pointers::reference_object
 {
 	DECLARE_REFERENCE_PTR(rx_server_directory);
 	typedef std::map<string_type, rx_server_directory::smart_ptr>  sub_directories_type;
-	typedef std::map<string_type, server_item_ptr> sub_items_type;
+	typedef std::map<string_type, platform_item_ptr> sub_items_type;
 
 
   public:
@@ -154,7 +154,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       virtual const string_type& get_type_name () const;
 
-      virtual server_item_ptr get_sub_item (const string_type& path) const;
+      virtual platform_item_ptr get_sub_item (const string_type& path) const;
 
       void structure_lock () const;
 
@@ -207,15 +207,15 @@ class rx_server_directory : public rx::pointers::reference_object
 
 
 
-class rx_server_item : public rx::pointers::virtual_reference_object  
+class rx_platform_item : public rx::pointers::virtual_reference_object  
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(rx_server_item);
+	DECLARE_VIRTUAL_REFERENCE_PTR(rx_platform_item);
 		
 
   public:
-      rx_server_item();
+      rx_platform_item();
 
-      virtual ~rx_server_item();
+      virtual ~rx_platform_item();
 
 
       virtual void code_info_to_string (string_type& info);
@@ -268,7 +268,7 @@ class rx_server_item : public rx::pointers::virtual_reference_object
 
 
 } // namespace ns
-} // namespace server
+} // namespace rx_platform
 
 
 

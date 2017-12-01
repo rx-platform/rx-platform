@@ -37,7 +37,7 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace python {
 
@@ -167,7 +167,7 @@ class py_item
 
 
 } // namespace python
-} // namespace server
+} // namespace rx_platform
 
 #endif
 

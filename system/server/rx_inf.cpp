@@ -36,11 +36,11 @@
 #include "lib/rx_io.h"
 
 
-namespace server {
+namespace rx_platform {
 
 namespace runtime {
 
-// Class server::runtime::server_rt 
+// Class rx_platform::runtime::server_rt 
 
 server_rt::server_rt()
 	: server_object(RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID)
@@ -54,7 +54,7 @@ server_rt::~server_rt()
 
 
 
-uint32_t server_rt::initialize (hosting::rx_server_host* host, runtime_data_t& data)
+uint32_t server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data)
 {
 	if (data.io_pool_size > 0)
 	{
@@ -102,7 +102,7 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, 
 		_general_timer->append_job(job,executer,period, now);
 }
 
-uint32_t server_rt::start (hosting::rx_server_host* host, const runtime_data_t& data)
+uint32_t server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data)
 {
 	if (_io_pool)
 		_io_pool->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);
@@ -246,7 +246,7 @@ void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t perio
 }
 
 
-// Class server::runtime::server_dispatcher_object 
+// Class rx_platform::runtime::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
   : _pool(count, name,rx_thread_id), server_object(name,id), _threads_count(count)
@@ -267,7 +267,7 @@ void server_dispatcher_object::get_items (server_items_type& sub_items, const st
 }
 
 
-// Class server::runtime::dispatcher_subscribers_job 
+// Class rx_platform::runtime::dispatcher_subscribers_job 
 
 dispatcher_subscribers_job::dispatcher_subscribers_job()
 {
@@ -286,7 +286,7 @@ void dispatcher_subscribers_job::process ()
 }
 
 
-// Class server::runtime::domains_pool 
+// Class rx_platform::runtime::domains_pool 
 
 domains_pool::domains_pool (size_t pool_size)
       : _pool_size((uint32_t)pool_size)
@@ -355,5 +355,5 @@ rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 
 
 } // namespace runtime
-} // namespace server
+} // namespace rx_platform
 

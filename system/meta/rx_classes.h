@@ -40,7 +40,7 @@
 // rx_values
 #include "lib/rx_values.h"
 
-namespace server {
+namespace rx_platform {
 namespace objects {
 class complex_runtime_item;
 } // namespace objects
@@ -51,16 +51,16 @@ class variable_attribute;
 class struct_attribute;
 
 } // namespace meta
-} // namespace server
+} // namespace rx_platform
 
 
-using namespace server::ns;
 #include "system/server/rx_ns.h"
 #include "system/json/rx_ser.h"
 #include "system/callbacks/rx_callback.h"
 
 using namespace rx;
 using namespace rx::values;
+using namespace rx_platform::ns;
 
 #define RT_TYPE_ID_CONST_VALUE 1
 #define RT_TYPE_ID_VALUE 2
@@ -90,7 +90,7 @@ public:\
 private:\
 
 
-namespace server {
+namespace rx_platform {
 
 namespace meta
 {
@@ -133,9 +133,10 @@ class server_const_value_item;
 }//namespace server
 
 using namespace rx;
+using namespace rx::pointers;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace meta {
 // had to do forward declaration because of back template pattern
@@ -146,16 +147,12 @@ class command_class;
 
 
 
-typedef pointers::reference<struct_class> struct_class_ptr;
-typedef pointers::reference<variable_class> variable_class_ptr;
-typedef pointers::reference<object_class> object_class_ptr;
-typedef pointers::reference<mapper_class> mapper_class_ptr;
 
 
 
 
 template <class metaT>
-class base_meta_type : public ns::rx_server_item  
+class base_meta_type : public ns::rx_platform_item  
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(base_meta_type);
 
@@ -542,6 +539,8 @@ class base_object_class : public base_mapped_class<metaT>
 typedef base_mapped_class< struct_class  > struct_class_t;
 
 
+class struct_class;
+typedef base_mapped_class< struct_class  > struct_class_t;
 
 
 
@@ -613,6 +612,7 @@ basic implementation of object class");
 
 };
 
+typedef pointers::reference<object_class> object_class_ptr;
 
 
 
@@ -644,6 +644,7 @@ class mapper_class : public mapper_class_t
 
 };
 
+typedef pointers::reference<mapper_class> mapper_class_ptr;
 
 
 
@@ -1021,6 +1022,7 @@ class variable_class : public variable_class_t
 
 };
 
+typedef pointers::reference<rx_platform::meta::variable_class> variable_class_ptr;
 
 
 
@@ -1146,7 +1148,7 @@ class internal_value_item : public internal_value
 };
 
 
-// Parameterized Class server::meta::base_meta_type 
+// Parameterized Class rx_platform::meta::base_meta_type 
 
 template <class metaT>
 base_meta_type<metaT>::base_meta_type()
@@ -1195,7 +1197,7 @@ string_type base_meta_type<metaT>::get_type_name () const
 }
 
 
-// Parameterized Class server::meta::checkable_type 
+// Parameterized Class rx_platform::meta::checkable_type 
 
 template <class metaT>
 checkable_type<metaT>::checkable_type()
@@ -1295,7 +1297,7 @@ bool checkable_type<metaT>::generate_json (std::ostream& def, std::ostream& err)
 }
 
 
-// Parameterized Class server::meta::base_mapped_class 
+// Parameterized Class rx_platform::meta::base_mapped_class 
 
 template <class metaT>
 base_mapped_class<metaT>::base_mapped_class()
@@ -1363,7 +1365,7 @@ bool base_mapped_class<metaT>::register_mapper (const mapper_attribute& item)
 }
 
 
-// Parameterized Class server::meta::base_object_class 
+// Parameterized Class rx_platform::meta::base_object_class 
 
 template <class metaT>
 base_object_class<metaT>::base_object_class()
@@ -1403,7 +1405,7 @@ bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream,
 }
 
 
-// Parameterized Class server::meta::class_const_value 
+// Parameterized Class rx_platform::meta::class_const_value 
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value)
@@ -1433,7 +1435,7 @@ void class_const_value<valT>::get_value (values::rx_value& val) const
 }
 
 
-// Parameterized Class server::meta::base_variable_class 
+// Parameterized Class rx_platform::meta::base_variable_class 
 
 template <class metaT>
 base_variable_class<metaT>::base_variable_class()
@@ -1497,7 +1499,7 @@ bool base_variable_class<metaT>::register_event (const event_attribute& item)
 }
 
 
-// Parameterized Class server::meta::internal_value_item 
+// Parameterized Class rx_platform::meta::internal_value_item 
 
 template <typename valT>
 internal_value_item<valT>::internal_value_item (const valT& value)
@@ -1524,9 +1526,9 @@ void internal_value_item<valT>::get_value (values::rx_value& val)
 
 
 } // namespace meta
-} // namespace server
+} // namespace rx_platform
 
-namespace server {
+namespace rx_platform {
 namespace meta {
 
 template <class metaT>
@@ -1549,7 +1551,7 @@ bool base_complex_type<metaT>::register_const_value(const string_type& name, con
 }
 
 } // namespace meta
-} // namespace server
+} // namespace server rx_platform
 
 
 #endif

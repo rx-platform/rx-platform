@@ -37,7 +37,7 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace serialization {
 using namespace rx::values;
@@ -219,7 +219,7 @@ class json_writter : public rx::base_meta_writter
 
 
 } // namespace serialization
-} // namespace server
+} // namespace rx_platform
 
 
 

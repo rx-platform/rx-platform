@@ -41,7 +41,7 @@
 #include "lib/rx_thread.h"
 
 #include "system/hosting/rx_host.h"
-using server::ns::namespace_item_attributes;
+using rx_platform::ns::namespace_item_attributes;
 
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
@@ -49,7 +49,7 @@ using server::ns::namespace_item_attributes;
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace runtime {
 
@@ -219,13 +219,13 @@ callculation ( normal priority)");
       virtual ~server_rt();
 
 
-      uint32_t initialize (hosting::rx_server_host* host, runtime_data_t& data);
+      uint32_t initialize (hosting::rx_platform_host* host, runtime_data_t& data);
 
       uint32_t deinitialize ();
 
       void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
-      uint32_t start (hosting::rx_server_host* host, const runtime_data_t& data);
+      uint32_t start (hosting::rx_platform_host* host, const runtime_data_t& data);
 
       uint32_t stop ();
 
@@ -268,7 +268,7 @@ callculation ( normal priority)");
       }
 
 
-	  server_item_ptr get_item_ptr() { return server_item_ptr::create_from_pointer(this); }
+	  platform_item_ptr get_item_ptr() { return platform_item_ptr::create_from_pointer(this); }
   protected:
 
       void get_items (server_items_type& sub_items, const string_type& pattern) const;
@@ -298,7 +298,7 @@ callculation ( normal priority)");
 
 
 } // namespace runtime
-} // namespace server
+} // namespace rx_platform
 
 
 

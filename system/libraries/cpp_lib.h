@@ -34,7 +34,7 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace library {
 
@@ -152,7 +152,7 @@ class cpp_classes_manager
 
 
 } // namespace library
-} // namespace server
+} // namespace rx_platform
 
 
 

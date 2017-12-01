@@ -36,11 +36,11 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace python {
 
-// Class server::python::py_script 
+// Class rx_platform::python::py_script 
 
 py_script::py_script()
       : _initialized(false)
@@ -123,7 +123,7 @@ bool py_script::deinit_thread ()
 }
 
 
-// Class server::python::py_item 
+// Class rx_platform::python::py_item 
 
 py_item::py_item()
 	: _obj(nullptr)
@@ -344,7 +344,7 @@ string_type py_item::as_string () const
 
 
 } // namespace python
-} // namespace server
+} // namespace rx_platform
 
 #else 
 

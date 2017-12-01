@@ -31,14 +31,14 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
-using namespace server::ns;
+using namespace rx_platform::ns;
 
 
 namespace sys_internal {
@@ -50,7 +50,7 @@ namespace internal_ns {
 
 
 
-class root_server_directory : public server::ns::rx_server_directory  
+class root_server_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(root_server_directory);
 
@@ -65,7 +65,7 @@ contains root server folders\
       virtual ~root_server_directory();
 
 
-      static void initialize (server::hosting::rx_server_host* host, namespace_data_t& data);
+      static void initialize (hosting::rx_platform_host* host, namespace_data_t& data);
 
       static void deinitialize ();
 
@@ -91,7 +91,7 @@ contains root server folders\
 
 
 
-class namespace_directory : public server::ns::rx_server_directory  
+class namespace_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(namespace_directory);
 
@@ -124,7 +124,7 @@ used to create system defined folders...\
 
 
 
-class unassigned_directory : public server::ns::rx_server_directory  
+class unassigned_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(unassigned_directory);
 
@@ -157,7 +157,7 @@ All objects here are with unassgned state and hawing a bad quality\
 
 
 
-class world_directory : public server::ns::rx_server_directory  
+class world_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(world_directory);
 
@@ -190,7 +190,7 @@ used to create user defined folders...\
 
 
 
-class system_server_item : public server::ns::rx_server_item  
+class system_server_item : public rx_platform::ns::rx_platform_item  
 {
 
   public:

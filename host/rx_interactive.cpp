@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host
 
 interactive_console_host::interactive_console_host()
       : _exit(false),
@@ -58,10 +58,10 @@ interactive_console_host::~interactive_console_host()
 
 
 
-void interactive_console_host::console_loop (server::configuration_data_t& config)
+void interactive_console_host::console_loop (configuration_data_t& config)
 {
 
-	server::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
+	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	sec_ctx->login();
 
 	security::security_auto_context dummy(sec_ctx);
@@ -78,20 +78,20 @@ void interactive_console_host::console_loop (server::configuration_data_t& confi
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 
-	if (RX_OK == server::rx_server::instance().initialize(this, config))
+	if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
 	{
 
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 
-		if (RX_OK == server::rx_server::instance().start(this, config))
+		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
 		{
 			interactive_console_client interactive(this);
 
 			interactive.run_interactive();
 
-			server::rx_server::instance().stop();
+			rx_platform::rx_gate::instance().stop();
 		}
-		server::rx_server::instance().deinitialize();
+		rx_platform::rx_gate::instance().deinitialize();
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
@@ -106,7 +106,7 @@ void interactive_console_host::get_host_info (string_array& hosts)
 		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
 	}
 	hosts.emplace_back(ret);
-	rx_server_host::get_host_info(hosts);
+	rx_platform_host::get_host_info(hosts);
 }
 
 void interactive_console_host::server_started_event ()
@@ -122,7 +122,7 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	std::cout << "Msg:" << msg;
 	std::cout.flush();
 	_exit = true;
-
+	rx_gate::instance().get_host()->break_host("");
 	return true;
 }
 
@@ -131,18 +131,18 @@ bool interactive_console_host::exit () const
 	return _exit;
 }
 
-void interactive_console_host::get_host_objects (std::vector<server::objects::object_runtime_ptr>& items)
+void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
 {
 	constructors::user_object_constructor constructor;
-//	server::objects::user_object::smart_ptr test(pointers::_create_new);
-	server::objects::user_object::smart_ptr test("test_object", 55);
+//	rx_platform::objects::user_object::smart_ptr test(pointers::_create_new);
+	rx_platform::objects::user_object::smart_ptr test("test_object", 55);
 	test->register_const_value("testBool", _testBool);
 	items.push_back(test);
 }
 
-void interactive_console_host::get_host_classes (std::vector<server::meta::object_class_ptr>& items)
+void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
 {
-	server::meta::object_class_ptr test("test_class", 55, true);
+	rx_platform::meta::object_class_ptr test("test_class", 55, true);
 	test->register_const_value("testBool", false);
 	items.push_back(test);
 }
@@ -214,7 +214,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client 
+// Class host::interactive::interactive_console_client
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : _host(host),
@@ -251,19 +251,29 @@ void interactive_console_client::run_interactive ()
 	get_prompt(temp);
 	std::cout << temp;
 
+	string_type line;
+
 	while (!_exit && !_host->exit())
 	{
-		string_type line;
-
 		get_next_line(line);
+
+		if (is_postponed())
+		{
+			printf("Cancel fired!!!");
+		}
+
+		if (std::cin.fail())
+		{
+
+			std::cin.clear();
+
+			continue;
+		}
 
 		if (is_postponed())
 			continue;
 
-		if(std::cin.fail())
-		{
-            std::cin.clear();
-		}
+
 		if (!line.empty())
 		{
 			memory::buffer_ptr out_buffer(pointers::_create_new);
@@ -271,7 +281,7 @@ void interactive_console_client::run_interactive ()
 
 			bool ret = do_command(line, out_buffer, err_buffer, _security_context);
 		}
-		else if(!server::rx_server::instance().is_shutting_down())
+		else if(!rx_platform::rx_gate::instance().is_shutting_down())
 		{
 			temp.clear();
 			get_prompt(temp);
@@ -297,7 +307,7 @@ security::security_context::smart_ptr interactive_console_client::get_current_se
 
 void interactive_console_client::exit_console ()
 {
-	server::rx_server::instance().shutdown("Interactive Shutdown");
+	rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
 }
 
 bool interactive_console_client::get_next_line (string_type& line)
@@ -327,16 +337,17 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 			std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
 	}
 
-	if (!rx_server::instance().is_shutting_down())
+	if (!rx_gate::instance().is_shutting_down())
 	{
 		string_type temp;
 		get_prompt(temp);
 		std::cout << temp;
 	}
+	rx_gate::instance().get_host()->break_host("");
 }
 
 
-// Class host::interactive::interactive_security_context 
+// Class host::interactive::interactive_security_context
 
 interactive_security_context::interactive_security_context()
 {

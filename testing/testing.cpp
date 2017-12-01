@@ -280,7 +280,7 @@ void test_values()
 }
 void test_classes()
 {
-	server::meta::object_class_ptr obj("test_class", 55, true);
+	rx_platform::meta::object_class_ptr obj("test_class", 55, true);
 }
 
 

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -69,7 +69,7 @@
 using namespace rx;
 
 
-namespace server {
+namespace rx_platform {
 
 struct configuration_data_t
 {
@@ -81,21 +81,21 @@ struct configuration_data_t
 
 
 
-class rx_server
+class rx_gate 
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;
 
   public:
 
-      static rx_server& instance ();
+      static rx_gate& instance ();
 
       void cleanup ();
 
-      uint32_t initialize (hosting::rx_server_host* host, configuration_data_t& data);
+      uint32_t initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
       uint32_t deinitialize ();
 
-      uint32_t start (hosting::rx_server_host* host, const configuration_data_t& data);
+      uint32_t start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       uint32_t stop ();
 
@@ -120,7 +120,7 @@ class rx_server
       }
 
 
-      hosting::rx_server_host * get_host ()
+      hosting::rx_platform_host * get_host ()
       {
         return _host;
       }
@@ -190,9 +190,9 @@ class rx_server
 
 
   private:
-      rx_server();
+      rx_gate();
 
-      virtual ~rx_server();
+      virtual ~rx_gate();
 
 
 
@@ -202,12 +202,12 @@ class rx_server
 
       mngt::server_manager _manager;
 
-      hosting::rx_server_host *_host;
+      hosting::rx_platform_host *_host;
 
       scripts_type _scripts;
 
 
-      static rx_server* g_instance;
+      static rx_gate* g_instance;
 
       rx_time _started;
 
@@ -236,10 +236,10 @@ template<typename argT>
 void rx_post_function(std::function<void(argT)> f, argT arg, rx_thread_handle_t whome)
 {
     typedef jobs::lambda_job<argT> lambda_t;
-	rx_server::instance().get_runtime().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
+	rx_gate::instance().get_runtime().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
 }
 
-} // namespace server
+} // namespace rx_platform
 
 
 

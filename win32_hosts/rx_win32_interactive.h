@@ -63,6 +63,10 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       bool get_next_line (string_type& line);
 
+      bool is_canceling () const;
+
+      bool break_host (const string_type& msg);
+
 
   protected:
 

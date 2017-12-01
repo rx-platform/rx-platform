@@ -52,7 +52,7 @@ typedef rx::pointers::reference<security_context> execute_context_ptr;
 }
 
 
-namespace server {
+namespace rx_platform {
 
 namespace hosting {
 
@@ -61,15 +61,15 @@ namespace hosting {
 
 
 
-class rx_server_host 
+class rx_platform_host 
 {
 
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
-      rx_server_host();
+      rx_platform_host();
 
-      virtual ~rx_server_host();
+      virtual ~rx_platform_host();
 
 
       virtual void get_host_info (string_array& hosts);
@@ -80,9 +80,9 @@ class rx_server_host
 
       virtual bool shutdown (const string_type& msg) = 0;
 
-      virtual void get_host_objects (std::vector<server::objects::object_runtime_ptr>& items) = 0;
+      virtual void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items) = 0;
 
-      virtual void get_host_classes (std::vector<server::meta::object_class_ptr>& items) = 0;
+      virtual void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items) = 0;
 
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
@@ -92,8 +92,10 @@ class rx_server_host
 
       virtual sys_handle_t get_host_console_script_file (const string_type& path);
 
+      virtual bool break_host (const string_type& msg) = 0;
 
-      rx_server_host * get_parent ()
+
+      rx_platform_host * get_parent ()
       {
         return _parent;
       }
@@ -103,13 +105,13 @@ class rx_server_host
   protected:
 
   private:
-      rx_server_host(const rx_server_host &right);
+      rx_platform_host(const rx_platform_host &right);
 
-      rx_server_host & operator=(const rx_server_host &right);
+      rx_platform_host & operator=(const rx_platform_host &right);
 
 
 
-      rx_server_host *_parent;
+      rx_platform_host *_parent;
 
 
 };
@@ -141,7 +143,7 @@ class host_security_context : public rx::security::built_in_security_context
 
 
 } // namespace hosting
-} // namespace server
+} // namespace rx_platform
 
 
 

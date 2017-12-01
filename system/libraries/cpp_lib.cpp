@@ -34,11 +34,11 @@
 
 
 
-namespace server {
+namespace rx_platform {
 
 namespace library {
 
-// Class server::library::cpp_classes_manager 
+// Class rx_platform::library::cpp_classes_manager 
 
 cpp_classes_manager::cpp_classes_manager()
 {
@@ -76,5 +76,5 @@ bool cpp_classes_manager::check_class (rx::pointers::code_behind_definition_t* c
 
 
 } // namespace library
-} // namespace server
+} // namespace rx_platform
 

@@ -40,16 +40,16 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
 
-using namespace server;
+using namespace rx_platform;
 using namespace terminal::commands;
 using namespace rx;
 
 
-namespace server {
+namespace rx_platform {
 
 namespace mngt {
 
-// Class server::mngt::server_manager 
+// Class rx_platform::mngt::server_manager 
 
 server_manager::server_manager()
       : _telnet_port(0)
@@ -72,7 +72,7 @@ void server_manager::virtual_release ()
 {
 }
 
-uint32_t server_manager::initialize (hosting::rx_server_host* host, managment_data_t& data)
+uint32_t server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	_telnet_port = data.telnet_port;
@@ -89,12 +89,12 @@ uint32_t server_manager::deinitialize ()
 	return RX_OK;
 }
 
-uint32_t server_manager::start (hosting::rx_server_host* host, const managment_data_t& data)
+uint32_t server_manager::start (hosting::rx_platform_host* host, const managment_data_t& data)
 {
 	if (_telnet_port)
 	{
 		_telnet_listener = rx_create_reference<terminal::console::server_telnet_socket>();
-		_telnet_listener->start_tcpip_4(rx_server::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
+		_telnet_listener->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{
@@ -118,7 +118,7 @@ void server_manager::get_directories (server_directories_type& dirs)
 }
 
 
-// Class server::mngt::manager_initialization_context 
+// Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()
 {
@@ -150,5 +150,5 @@ void manager_initialization_context::register_command (server_command_base_ptr c
 
 
 } // namespace mngt
-} // namespace server
+} // namespace rx_platform
 
