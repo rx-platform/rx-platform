@@ -196,7 +196,7 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 	}
 	else
 	{
-		err_buffer->push_line(RX_ACCESS_DENIED "\r\n");
+		err_buffer->push_line(ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET "\r\n");
 		return false;
 	}
 }

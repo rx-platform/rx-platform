@@ -85,7 +85,8 @@ program_context_base::program_context_base (server_program_holder_ptr holder, pr
         _current_directory(current_directory),
         _out(out),
         _err(err),
-        _postponed(false)
+        _postponed(false),
+        _canceled(false)
 {
 }
 
@@ -110,7 +111,8 @@ bool program_context_base::postpone (uint32_t interval)
 			jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(
 				[](rx_platform::prog::program_context_base_ptr context) mutable
 				{
-					context->return_control();
+					if(!context->is_canceled())
+						context->return_control();
 				},
 				smart_this()), interval);
 	}
@@ -119,7 +121,8 @@ bool program_context_base::postpone (uint32_t interval)
 			jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(
 				[](rx_platform::prog::program_context_base_ptr context) mutable
 				{
-					context->return_control();
+					if (!context->is_canceled())
+						context->return_control();
 				},
 				smart_this()));
 	return true;
@@ -131,20 +134,34 @@ bool program_context_base::return_control (bool done)
 	bool ret = _program->process_program(smart_this(), rx_time::now(), false);
 	if (!_postponed)
 	{
-		send_results();
+		send_results(ret);
 	}
 	return ret;
 }
 
-void program_context_base::send_results ()
+void program_context_base::send_results (bool result)
 {
 }
 
 void program_context_base::set_instruction_data (rx_struct_ptr data)
 {
-
 	_instructions_data.emplace(get_possition(), data);
+}
 
+bool program_context_base::is_canceled ()
+{
+	return _canceled.exchange(false, std::memory_order_relaxed);
+}
+
+void program_context_base::cancel_execution ()
+{
+	_canceled.store(true, std::memory_order_relaxed);
+	return_control(false);
+}
+
+bool program_context_base::should_run_again ()
+{
+	return !is_postponed();
 }
 
 
@@ -219,7 +236,7 @@ bool server_command_base::console_execute (std::istream& in, std::ostream& out, 
 	}
 	else
 	{
-		err << RX_ACCESS_DENIED;
+		err << ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET;
 		return false;
 	}
 }
@@ -312,10 +329,10 @@ console_program_context::smart_ptr console_program_context::create_console_sub_c
 	return ctx_ret;
 }
 
-void console_program_context::send_results ()
+void console_program_context::send_results (bool result)
 {
 	if (_client)
-		_client->process_event(true, get_out(), get_err(),true);
+		_client->process_event(result, get_out(), get_err(),true);
 }
 
 size_t console_program_context::get_possition () const
@@ -364,8 +381,8 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 	std::ostream& out(ctx->get_stdout());
 	std::ostream& err(ctx->get_stderr());
 
-	while (current_line < total_lines && !ctx->is_postponed())
-	{
+	while (current_line < total_lines && ctx->should_run_again())
+	{		
 		label.clear();
 		std::istringstream in(_lines[current_line]);
 		string_type name;
@@ -385,8 +402,16 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 				return false;
 			}
 		}
+		if (ctx->is_canceled())
+		{
+			err << "Pending cancel for the current command:\r\n";
+			err << _lines[current_line];
+			return false;
+		}
 		if(!ctx->is_postponed())
 			current_line = ctx->next_line();
+
+		
 	}
 	return true;
 }
@@ -418,11 +443,11 @@ console_client::~console_client()
 
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	string_type mline(line);
+	string_type captured_line(line);
 	rx_post_function<smart_ptr>(
-		[mline,out_buffer, err_buffer, ctx](smart_ptr me)
+		[captured_line,out_buffer, err_buffer, ctx](smart_ptr sended_this)
 		{
-			me->synchronized_do_command(mline, out_buffer, err_buffer, ctx);
+			sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
 		,_executer
@@ -550,8 +575,39 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 
 void console_client::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	_current = program_context_ptr::null_ptr;
-	process_result(result, out_buffer, err_buffer);
+	if (_current)
+	{
+		_current = program_context_ptr::null_ptr;
+		process_result(result, out_buffer, err_buffer);
+	}
+}
+
+bool console_client::cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	rx_post_function<smart_ptr>(
+		[out_buffer, err_buffer, ctx](smart_ptr sended_this)
+		{
+			sended_this->synchronized_cancel_command(out_buffer, err_buffer, ctx);
+		}
+		, smart_this()
+		, _executer
+		);
+	return true;
+}
+
+void console_client::synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	if (_current)
+	{// we are in a command
+		_current->cancel_execution();
+		_current = program_context_ptr::null_ptr;
+	}
+	else
+	{// nothing to cancel!!!
+		std::ostream err(err_buffer.unsafe_ptr());
+		err << "\r\nThere is nothing to cancel...";
+		process_result(false, out_buffer, err_buffer);
+	}
 }
 
 

@@ -40,20 +40,20 @@
 // rx_mem
 #include "lib/rx_mem.h"
 
-namespace rx {
-namespace security {
-class security_context;
-} // namespace security
-} // namespace rx
-
 namespace rx_platform {
 namespace prog {
 class server_program_holder;
 class server_program_base;
 class program_context_base;
-
 } // namespace prog
 } // namespace rx_platform
+
+namespace rx {
+namespace security {
+class security_context;
+
+} // namespace security
+} // namespace rx
 
 
 using namespace rx;
@@ -84,6 +84,7 @@ class program_context_base : public rx::pointers::reference_object
 public:
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 	typedef std::map<size_t, rx_struct_ptr > instructions_data_type;
+	typedef int pending_jobs_type;
 
   public:
       program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program);
@@ -96,6 +97,12 @@ public:
       bool postpone (uint32_t interval);
 
       void set_instruction_data (rx_struct_ptr data);
+
+      bool is_canceled ();
+
+      void cancel_execution ();
+
+      bool should_run_again ();
 
 
       const rx_reference<server_program_holder> get_holder () const
@@ -149,7 +156,7 @@ public:
 	  }
   protected:
 
-      virtual void send_results ();
+      virtual void send_results (bool result);
 
       virtual size_t get_possition () const = 0;
 
@@ -176,6 +183,10 @@ public:
       bool _postponed;
 
       instructions_data_type _instructions_data;
+
+      std::atomic_bool _canceled;
+
+      pending_jobs_type _pending_jobs;
 
 
 };
@@ -310,10 +321,14 @@ class console_client : public rx::pointers::virtual_reference_object
 
       virtual void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer) = 0;
 
+      bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
 
   private:
 
       void synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
       server_directory_ptr _current_directory;
@@ -366,7 +381,7 @@ class console_program_context : public program_context_base
 
   protected:
 
-      void send_results ();
+      void send_results (bool result);
 
       size_t get_possition () const;
 

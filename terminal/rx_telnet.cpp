@@ -283,15 +283,10 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			if (buff[0] == 3)
 			{// Ctrl+C
 			 // canacel current stuff
-
-				string_type prompt;
-				get_prompt(prompt);
-
-				out << "^C\r\n";
-				out << prompt;
-
-				send(out_buffer);
+				cancel_command(out_buffer, err_buffer, _security_context);
+				
 				send(err_buffer);
+				send(out_buffer);
 
 				return true;
 			}
@@ -301,12 +296,10 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				string_type prompt;
 				get_prompt(prompt);
 				out << prompt;
-
-
-				send(out_buffer);
-
+				
 				send(err_buffer);
-
+				send(out_buffer);
+				
 				return true;
 			}
 
@@ -416,19 +409,16 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			if (is_postponed())
 			{// cancel current
 
+				security::security_auto_context dummy(_security_context);
+				
 				buffer_ptr out_buffer = get_free_buffer();
-				std::ostream out(out_buffer.unsafe_ptr());
 				buffer_ptr err_buffer = get_free_buffer();
-				std::ostream err(err_buffer.unsafe_ptr());
 
-				string_type prompt;
-				get_prompt(prompt);
 
-				out << "^C\r\n";
-				out << prompt;
-
-				send(out_buffer);
+				cancel_command(out_buffer, err_buffer, _security_context);
+				
 				send(err_buffer);
+				send(out_buffer);
 			}
 		}
 		else if (buff[0] >= 0x20)// no special characters
@@ -544,7 +534,6 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 			{
 				send(out_buffer);
 				send(buffer_ptr::null_ptr);// exit the loop
-
 			}
 			else
 			{
@@ -552,26 +541,26 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 				get_prompt(prompt);
 				out << prompt;
 
-
-				send(out_buffer);
 				send(err_buffer);
+				send(out_buffer);
 			}
 		}
 	}
 	else
 	{// error
-		if (err_buffer->empty())
+		if (_exit || err_buffer->empty())
 		{// exit command, close socket
+			send(buffer_ptr::null_ptr);
 		}
 		else
 		{
 			err << "\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n";
 			string_type prompt;
 			get_prompt(prompt);
-			err << prompt;
+			out << prompt;
 
-			send(out_buffer);
 			send(err_buffer);
+			send(out_buffer);
 		}
 	}
 }
@@ -1135,7 +1124,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 	if (msg.empty())
 		msg = RX_NULL_ITEM_NAME;
 	if(!rx_gate::instance().shutdown(msg))
-		err << RX_ACCESS_DENIED;
+		err << ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET;
 	return false;
 }
 
@@ -1370,6 +1359,7 @@ sleep_command::~sleep_command()
 
 bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
+	
 	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
 	if (!data)
 	{// we just entered to command
@@ -1392,9 +1382,18 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 	else
 	{// timer expired or canceled
 		uint64_t lasted = rx_get_us_ticks() - data->started;
-		out << "Sleep lasted ";
-		rx_dump_ticks_to_stream(out, lasted);
-		out << ".\r\n";
+		if (ctx->is_canceled())
+		{
+			out << "Sleep was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Sleep lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
 	}
 	return true;
 }

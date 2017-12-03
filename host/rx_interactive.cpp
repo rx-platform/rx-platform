@@ -257,16 +257,24 @@ void interactive_console_client::run_interactive ()
 	{
 		get_next_line(line);
 
-		if (is_postponed())
+		/*if (is_postponed())
 		{
-			printf("Cancel fired!!!");
-		}
+			memory::buffer_ptr out_buffer(pointers::_create_new);
+			memory::buffer_ptr err_buffer(pointers::_create_new);
+
+			bool ret = cancel_command(out_buffer, err_buffer, _security_context);
+		}*/
 
 		if (std::cin.fail())
 		{
-
 			std::cin.clear();
+			if (_host->is_canceling())
+			{
+				memory::buffer_ptr out_buffer(pointers::_create_new);
+				memory::buffer_ptr err_buffer(pointers::_create_new);
 
+				cancel_command(out_buffer, err_buffer, _security_context);
+			}
 			continue;
 		}
 
