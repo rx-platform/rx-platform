@@ -33,12 +33,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace host {
 namespace interactive {

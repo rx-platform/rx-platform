@@ -55,7 +55,7 @@ namespace_item_point = 0x200
 */
 void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 {
-	str.assign(14, '-');
+	str.assign(15, '-');
 	str[4] = ' ';
 	if (attr&namespace_item_read_access)
 		str[0] = 'r';
@@ -63,7 +63,7 @@ void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 		str[1] = 'w';
 	if (attr&namespace_item_delete_access)
 		str[2] = 'd';
-	if (attr&namespace_item_execute)
+	if (attr&namespace_item_execute_access)
 		str[3] = 'x';
 	//////////////////////////
 	if (attr&namespace_item_system)
@@ -82,8 +82,10 @@ void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 		str[11] = 'a';
 	if (attr&namespace_item_domain)
 		str[12] = 'd';
+	if (attr&namespace_item_program)
+		str[13] = 'p';
 	if (attr&namespace_item_test_case)
-		str[13] = 't';
+		str[14] = 't';
 }
 
 void fill_quality_string(values::rx_value val, string_type& str)
@@ -138,15 +140,21 @@ void rx_platform_item::item_unlock ()
 
 void rx_platform_item::item_lock () const
 {
+	const_cast<rx_platform_item*>(this)->_item_lock.lock();
 }
 
 void rx_platform_item::item_unlock () const
 {
+	const_cast<rx_platform_item*>(this)->_item_lock.unlock();
 }
 
 server_directory_ptr rx_platform_item::get_parent () const
 {
-	return _parent;
+	server_directory_ptr ret;
+	item_lock();
+	ret = _parent;
+	item_unlock();
+	return ret;
 }
 
 void rx_platform_item::set_parent (server_directory_ptr parent)

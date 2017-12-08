@@ -31,14 +31,14 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 namespace rx_platform {
 namespace objects {
@@ -107,11 +107,10 @@ class mapper_class;
 class application_class;
 class domain_class;
 class struct_class;
-class program_class;
 class port_class;
 
-typedef TYPELIST_10(object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class, program_class) regular_scada_types;
-typedef TYPELIST_11(reference_type, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class, program_class) full_scada_types;
+typedef TYPELIST_9(object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_scada_types;
+typedef TYPELIST_10(reference_type, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_scada_types;
 
 class const_value_item;
 class value_item;
@@ -506,36 +505,6 @@ class base_mapped_class : public base_complex_type<metaT>
 
 
 
-template <class metaT>
-class base_object_class : public base_mapped_class<metaT>  
-{
-	DECLARE_REFERENCE_PTR(base_object_class);
-
-  public:
-      base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
-
-      virtual ~base_object_class();
-
-
-  protected:
-      base_object_class();
-
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
 typedef base_mapped_class< struct_class  > struct_class_t;
 
 
@@ -571,53 +540,6 @@ class struct_class : public struct_class_t
 
 
 
-typedef base_object_class< object_class  > object_class_t;
-
-
-
-
-
-
-class object_class : public object_class_t  
-{
-	DECLARE_REFERENCE_PTR(object_class);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-basic object class.\r\n\
-basic implementation of object class");
-
-  public:
-      object_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~object_class();
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      void get_value (values::rx_value& val) const;
-
-      const string_type& get_item_name () const;
-
-      namespace_item_attributes get_attributes () const;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      object_class();
-
-
-
-};
-
-typedef pointers::reference<object_class> object_class_ptr;
-
-
-
-
-
 typedef base_complex_type< mapper_class  > mapper_class_t;
 
 
@@ -645,106 +567,6 @@ class mapper_class : public mapper_class_t
 };
 
 typedef pointers::reference<mapper_class> mapper_class_ptr;
-
-
-
-
-
-typedef base_object_class< domain_class  > domain_class_t;
-
-
-
-
-
-
-class domain_class : public domain_class_t  
-{
-
-  public:
-      domain_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~domain_class();
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      domain_class();
-
-
-
-};
-
-
-
-
-
-
-typedef base_object_class< application_class  > application_class_t;
-
-
-
-
-
-
-class application_class : public application_class_t  
-{
-	DECLARE_REFERENCE_PTR(application_class);
-
-  public:
-      application_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~application_class();
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      application_class();
-
-
-
-};
-
-
-
-
-
-
-typedef base_object_class< port_class  > port_class_t;
-
-
-
-
-
-
-class port_class : public port_class_t  
-{
-
-  public:
-      port_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~port_class();
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      port_class();
-
-
-
-};
-
 
 
 
@@ -1028,7 +850,7 @@ typedef pointers::reference<rx_platform::meta::variable_class> variable_class_pt
 
 
 
-typedef base_complex_type< source_class  > source_class_t;
+typedef base_complex_type< rx_platform::meta::source_class  > source_class_t;
 
 
 
@@ -1297,6 +1119,194 @@ bool checkable_type<metaT>::generate_json (std::ostream& def, std::ostream& err)
 }
 
 
+// Parameterized Class rx_platform::meta::base_complex_type 
+
+template <class metaT>
+base_complex_type<metaT>::base_complex_type()
+{
+}
+
+template <class metaT>
+base_complex_type<metaT>::base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
+	: checkable_type<metaT>(name, id, parent, system)
+	, _sealed(sealed)
+	, _abstract(abstract)
+{
+}
+
+
+template <class metaT>
+base_complex_type<metaT>::~base_complex_type()
+{
+	for (auto one : _internal_values)
+		delete one;
+}
+
+
+
+template <class metaT>
+bool base_complex_type<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	if (!checkable_type<metaT>::serialize_definition(stream, type))
+		return false;
+
+	if (!stream.write_bool("Sealed", _sealed))
+		return false;
+
+	if (!stream.write_bool("Abstract", _abstract))
+		return false;
+
+	if (!stream.start_array("Const", _const_values.size()))
+		return false;
+	for (const auto& one : _const_values)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one->serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.start_array("Vals", _internal_values.size()))
+		return false;
+	for (const auto& one : _internal_values)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one->serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.start_array("Structs", _structs.size()))
+		return false;
+	for (const auto& one : _structs)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.start_array("Vars", _variables.size()))
+		return false;
+	for (const auto& one : _variables)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	return true;
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!checkable_type<metaT>::deserialize_definition(stream, type))
+		return false;
+
+	if (!stream.read_bool("Sealed", _sealed))
+		return false;
+
+	return true;
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::generate_json (std::ostream& def, std::ostream& err) const
+{
+	rx_platform::serialization::json_writter writter;
+
+	writter.write_header(STREAMING_TYPE_CLASS);
+
+	this->serialize_definition(writter, STREAMING_TYPE_CLASS);
+
+	writter.write_footer();
+
+	string_type result;
+	bool out = writter.get_string(result, true);
+
+	if (out)
+		def << result;
+	else
+		def << "Error in JSON deserialization.";
+
+	return true;
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::register_internal_value (internal_value* item)
+{
+	if (check_name(item->get_name()))
+	{
+		_internal_values.emplace_back(item);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::register_struct (const struct_attribute& item)
+{
+	if (check_name(item.get_name()))
+	{
+		_structs.emplace_back(item);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::register_variable (const variable_attribute& item)
+{
+	if (check_name(item.get_name()))
+	{
+		_variables.emplace_back(item);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class metaT>
+bool base_complex_type<metaT>::check_name (const string_type& name)
+{
+	auto it = _names_cache.find(name);
+	if (it == _names_cache.end())
+	{
+		_names_cache.emplace(name);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
 // Parameterized Class rx_platform::meta::base_mapped_class 
 
 template <class metaT>
@@ -1362,46 +1372,6 @@ bool base_mapped_class<metaT>::register_mapper (const mapper_attribute& item)
 	{
 		return false;
 	}
-}
-
-
-// Parameterized Class rx_platform::meta::base_object_class 
-
-template <class metaT>
-base_object_class<metaT>::base_object_class()
-{
-}
-
-template <class metaT>
-base_object_class<metaT>::base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: base_mapped_class<metaT>(name,id,parent,system, sealed, abstract)
-{
-}
-
-
-template <class metaT>
-base_object_class<metaT>::~base_object_class()
-{
-}
-
-
-
-template <class metaT>
-bool base_object_class<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	if (!base_mapped_class<metaT>::serialize_definition(stream, type))
-		return false;
-
-	return true;
-}
-
-template <class metaT>
-bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!base_mapped_class<metaT>::deserialize_definition(stream, type))
-		return false;
-
-	return true;
 }
 
 

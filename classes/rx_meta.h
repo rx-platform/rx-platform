@@ -60,6 +60,58 @@ class internal_classes_manager
 };
 
 
+
+
+
+
+class relations_hash_data 
+{
+	relations_hash_data(const relations_hash_data&) = delete;
+	relations_hash_data(relations_hash_data&&) = delete;
+	void operator=(const relations_hash_data&) = delete;
+	void operator=(relations_hash_data&&) = delete;
+
+	typedef std::set<rx_node_id> relation_elements_type;
+	// this here is pointer type so we don't have copying of whole set justy pointer
+	typedef std::map<rx_node_id, std::unique_ptr<relation_elements_type> > relation_map_type;
+
+
+  public:
+      relations_hash_data();
+
+      virtual ~relations_hash_data();
+
+
+      void add_to_hash_data (const rx_node_id& new_id, const rx_node_id& first_backward);
+
+      void remove_from_hash_data (const rx_node_id& id);
+
+      void change_hash_data (const rx_node_id& id, const rx_node_id& first_backward_old, const rx_node_id& first_backward_new);
+
+      bool is_backward_from (const rx_node_id& id, const rx_node_id& parent);
+
+      void get_full_forward (const rx_node_id& id, std::vector< rx_node_id>& result);
+
+      void get_full_backward (const rx_node_id& id, std::vector< rx_node_id>& result);
+
+
+  protected:
+
+  private:
+
+
+      relation_map_type _forward_hash;
+
+      relation_map_type _backward_hash;
+
+      relation_map_type _first_forward_hash;
+
+      relation_map_type _first_backward_hash;
+
+
+};
+
+
 } // namespace model
 
 

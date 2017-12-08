@@ -31,6 +31,7 @@
 
 
 #include "rx_library.h"
+#include "system/meta/rx_obj_classes.h"
 
 
 

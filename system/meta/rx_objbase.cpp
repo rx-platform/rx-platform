@@ -420,6 +420,18 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 
 	if (!_complex_item->serialize_definition(stream, type,_modified_time,_mode))
 		return false;
+	
+	if (!stream.start_array("Programs", _programs.size()))
+		return false;
+
+	for (const auto& one : _programs)
+	{
+		if (!one->save_program(stream, type))
+			return false;
+	}
+
+	if (!stream.end_array())
+		return false;
 
 	return true;
 }
@@ -431,6 +443,17 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 
 	if (!_complex_item->deserialize_definition(stream, type))
 		return false;
+
+	if (!stream.start_array("Programs"))
+		return false;
+
+	while (!stream.array_end())
+	{
+		logic::ladder_program::smart_ptr one(pointers::_create_new);
+		if (!one->load_program(stream, type))
+			return false;
+		_programs.push_back(one);
+	}
 
 	return true;
 }
@@ -559,7 +582,7 @@ string_type domain_runtime::get_type_name () const
 
 namespace_item_attributes domain_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_script | namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -696,7 +719,7 @@ user_object::~user_object()
 
 namespace_item_attributes user_object::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute | namespace_item_object);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access | namespace_item_object);
 }
 
 

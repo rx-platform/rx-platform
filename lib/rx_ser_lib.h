@@ -47,14 +47,14 @@ using namespace rx::values;
 
 //////////////////////////////////////////////////
 // streaming constants from header
-#define STREAMING_TYPE_CLASS 0x1
-#define STREAMING_TYPE_CLASSES 0x2
-#define STREAMING_TYPE_OBJECT 0x3
-#define STREAMING_TYPE_OBJECTS 0x4
-#define STREAMING_TYPE_CHECKOUT 0x5
-#define STREAMING_TYPE_DETAILS 0x6
-#define STREAMING_TYPE_MESSAGE 0x7
-#define STREAMING_TYPE_DIRECTORY 0x8
+#define STREAMING_TYPE_CLASS		0x01
+#define STREAMING_TYPE_CLASSES		0x02
+#define STREAMING_TYPE_OBJECT		0x03
+#define STREAMING_TYPE_OBJECTS		0x04
+#define STREAMING_TYPE_CHECKOUT		0x05
+#define STREAMING_TYPE_DETAILS		0x06
+#define STREAMING_TYPE_MESSAGE		0x07
+#define STREAMING_TYPE_DIRECTORY	0x08
 
 
 namespace rx {

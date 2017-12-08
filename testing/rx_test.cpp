@@ -378,7 +378,7 @@ void test_case::get_value (values::rx_value& val) const
 
 namespace_item_attributes test_case::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
 }
 
 const string_type& test_case::get_item_name () const

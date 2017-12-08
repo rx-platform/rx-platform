@@ -31,6 +31,7 @@
 
 
 #include "system/meta/rx_objbase.h"
+#include "system/meta/rx_obj_classes.h"
 /////////////////////////////////////////////////////////////
 // logging macros for host library
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)

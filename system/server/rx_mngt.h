@@ -32,6 +32,8 @@
 
 #include "lib/rx_lib.h"
 
+// rx_io
+#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
@@ -40,8 +42,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_io
-#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 
@@ -126,6 +126,8 @@ class server_manager
       uint32_t stop ();
 
       void get_directories (server_directories_type& dirs);
+
+      meta::object_class_ptr get_object_class (const rx_node_id& id);
 
 
       platform_item_ptr get_commands_manager ()

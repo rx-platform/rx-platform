@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
       : _exit(false),
@@ -134,8 +134,7 @@ bool interactive_console_host::exit () const
 void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
 {
 	constructors::user_object_constructor constructor;
-//	rx_platform::objects::user_object::smart_ptr test(pointers::_create_new);
-	rx_platform::objects::user_object::smart_ptr test("test_object", 55);
+	rx_platform::objects::object_runtime_ptr test = constructor.create_object("test_object", 59, 55);
 	test->register_const_value("testBool", _testBool);
 	items.push_back(test);
 }
@@ -214,7 +213,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client
+// Class host::interactive::interactive_console_client 
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : _host(host),
@@ -355,7 +354,7 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 }
 
 
-// Class host::interactive::interactive_security_context
+// Class host::interactive::interactive_security_context 
 
 interactive_security_context::interactive_security_context()
 {

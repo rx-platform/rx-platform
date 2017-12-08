@@ -39,17 +39,20 @@
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 
 namespace rx_platform {
 namespace objects {
-class object_runtime;
 class application_runtime;
 class domain_runtime;
+class object_runtime;
 
 } // namespace objects
 } // namespace rx_platform
 
 
+#include "system/meta/rx_obj_classes.h"
 #include "system/callbacks/rx_callback.h"
 using namespace rx;
 using namespace rx_platform::ns;
@@ -310,6 +313,7 @@ class object_runtime : public object_runtime_t
 	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
 	typedef std::map<string_type, size_t> items_cache_type;
 	typedef complex_runtime_item_ptr items_type;
+	typedef std::vector<logic::program_runtime_ptr> programs_type;
 
   public:
       object_runtime (const string_type& name, const rx_node_id& id, bool system = false);
@@ -397,6 +401,8 @@ class object_runtime : public object_runtime_t
 
 
       rx_reference<complex_runtime_item> _complex_item;
+
+      programs_type _programs;
 
 
       rx_time _created_time;

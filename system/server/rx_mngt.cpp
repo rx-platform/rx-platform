@@ -39,6 +39,7 @@
 #include "terminal/rx_telnet.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
+#include "classes/rx_meta.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -115,6 +116,12 @@ uint32_t server_manager::stop ()
 
 void server_manager::get_directories (server_directories_type& dirs)
 {
+}
+
+meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
+{
+	model::relations_hash_data data;
+	return meta::object_class_ptr::null_ptr;
 }
 
 
