@@ -32,6 +32,7 @@
 // rx_meta
 #include "classes/rx_meta.h"
 
+using namespace rx;
 
 
 namespace model {
@@ -39,6 +40,7 @@ namespace model {
 // Class model::internal_classes_manager 
 
 internal_classes_manager::internal_classes_manager()
+	: _worker("config",0)
 {
 }
 
@@ -53,6 +55,28 @@ internal_classes_manager& internal_classes_manager::instance ()
 {
 	static internal_classes_manager g_instance;
 	return g_instance;//ROOT of CLASSES!!!! $$$ Importanat Object Here!!!
+}
+
+uint32_t internal_classes_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
+{
+	return RX_OK;
+}
+
+uint32_t internal_classes_manager::deinitialize ()
+{
+	return RX_OK;
+}
+
+uint32_t internal_classes_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
+{
+	_worker.start(RX_PRIORITY_IDLE);
+	return RX_OK;
+}
+
+uint32_t internal_classes_manager::stop ()
+{
+	_worker.end();
+	return RX_OK;
 }
 
 
@@ -71,12 +95,11 @@ relations_hash_data::~relations_hash_data()
 
 void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& first_backward)
 {
-	bool first = true;
-	/*
 	std::vector<rx_node_id> super_array;
 	auto itf = _backward_hash.find(first_backward);
 	if (itf != _backward_hash.end())
 	{
+		// reserve the memory, you might need it
 		super_array.reserve(itf->second->size() + 1);
 		super_array.push_back(first_backward);
 		for (auto ite : (*itf->second))
@@ -84,7 +107,8 @@ void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_n
 	}
 	else
 		super_array.push_back(first_backward);
-
+	// now populate the caches
+	bool first = true;
 	for (auto one : super_array)
 	{
 		if (first)
@@ -94,8 +118,8 @@ void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_n
 			auto it_elem = _first_backward_hash.find(new_id);
 			if (it_elem == _first_backward_hash.end())
 			{
-				auto it = _first_backward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
-				it.first->second->insert(one);
+				auto result = _first_backward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+				result.first->second->insert(one);
 			}
 			else
 				it_elem->second->insert(one);
@@ -104,42 +128,73 @@ void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_n
 			it_elem = _first_forward_hash.find(one);
 			if (it_elem == _first_forward_hash.end())
 			{
-				auto it = _first_forward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
-				it.first->second->insert(new_id);
-				temp = new relation_elements_type;
-				m_first_forward_hash.insert(relation_map_type::value_type(*it, temp));
+				auto result = _first_forward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+				result.first->second->insert(new_id);
 			}
 			else
-				temp = it_elem->second;
-			temp->insert(new_id);
+				it_elem->second->insert(new_id);
 		}
 		// backward update
-		relation_elements_type* temp;
-		relation_map_iterator it_elem = m_backward_hash.find(new_id);
-		if (it_elem == m_backward_hash.end())
+		auto it_elem = _backward_hash.find(new_id);
+		if (it_elem == _backward_hash.end())
 		{
-			temp = new relation_elements_type;
-			m_backward_hash.insert(relation_map_type::value_type(new_id, temp));
+			auto result = _backward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+			result.first->second->insert(one);
 		}
 		else
-			temp = it_elem->second;
-		temp->insert(*it);
+			it_elem->second->insert(one);
 
 		// forward update
-		it_elem = m_forward_hash.find(*it);
-		if (it_elem == m_forward_hash.end())
+		it_elem = _forward_hash.find(one);
+		if (it_elem == _forward_hash.end())
 		{
-			temp = new relation_elements_type;
-			m_forward_hash.insert(relation_map_type::value_type(*it, temp));
+			auto result = _forward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+			result.first->second->insert(new_id);
 		}
 		else
-			temp = it_elem->second;
-		temp->insert(new_id);
-	}*/
+			it_elem->second->insert(new_id);
+	}
 }
 
 void relations_hash_data::remove_from_hash_data (const rx_node_id& id)
 {
+	auto it_elem = _backward_hash.find(id);
+	if (it_elem != _backward_hash.end())
+	{
+		for (auto ite : (*it_elem->second))
+		{
+			auto it_super = _forward_hash.find(ite);
+			if (it_super != _forward_hash.end())
+				it_super->second->erase(id);
+		}
+		it_elem->second->clear();
+		_backward_hash.erase(it_elem);
+	}
+#ifdef _DEBUG
+	else
+	{// this shouldn't happen!!!
+		RX_ASSERT(false);
+	}
+#endif
+	// first instance hash data
+	it_elem = _first_backward_hash.find(id);
+	if (it_elem != _first_backward_hash.end())
+	{
+		for (auto ite : (*it_elem->second))
+		{
+			auto it_super = _first_forward_hash.find(ite);
+			if (it_super != _first_forward_hash.end())
+				it_super->second->erase(id);
+		}
+		it_elem->second->clear();
+		_first_backward_hash.erase(it_elem);
+	}
+#ifdef _DEBUG
+	else
+	{// this shouldn't happen!!!
+		RX_ASSERT(false);
+	}
+#endif
 }
 
 void relations_hash_data::change_hash_data (const rx_node_id& id, const rx_node_id& first_backward_old, const rx_node_id& first_backward_new)

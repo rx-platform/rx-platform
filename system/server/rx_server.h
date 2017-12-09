@@ -76,6 +76,7 @@ struct configuration_data_t
 	runtime::runtime_data_t runtime_data;
 	mngt::managment_data_t managment_data;
 	ns::namespace_data_t namespace_data;
+	meta::meta_data_t meta_data;
 };
 
 

@@ -141,8 +141,15 @@ namespace meta {
 // had to do forward declaration because of back template pattern
 class command_class;
 
-// typedefs
-
+struct meta_data_t
+{
+	meta_data_t()
+	{
+		memzero(this, sizeof(meta_data_t));
+		wd_timer_period = 1000;
+	}
+	uint32_t wd_timer_period;
+};
 
 
 

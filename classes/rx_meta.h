@@ -31,7 +31,13 @@
 
 
 
+// rx_thread
+#include "lib/rx_thread.h"
+// rx_construct
+#include "system/constructors/rx_construct.h"
 
+#include "system/meta/rx_classes.h"
+using namespace rx_platform::meta;
 
 
 namespace model {
@@ -49,12 +55,33 @@ class internal_classes_manager
 
       static internal_classes_manager& instance ();
 
+      uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
+
+      uint32_t deinitialize ();
+
+      uint32_t start (hosting::rx_platform_host* host, const meta_data_t& data);
+
+      uint32_t stop ();
+
+	  template<class T>
+	  struct get_arg_data
+	  {
+		  T data;
+	  };
+	  //template<class T>
+	  //void get_class(std::function<void(T))
+	  //{
+		 // //_worker.append();
+	  //}
 
   protected:
 
   private:
       internal_classes_manager();
 
+
+
+      rx::threads::physical_job_thread _worker;
 
 
 };
@@ -71,6 +98,7 @@ class relations_hash_data
 	void operator=(const relations_hash_data&) = delete;
 	void operator=(relations_hash_data&&) = delete;
 
+	// these are mostly static data, so we keep it ordered to find quickly
 	typedef std::set<rx_node_id> relation_elements_type;
 	// this here is pointer type so we don't have copying of whole set justy pointer
 	typedef std::map<rx_node_id, std::unique_ptr<relation_elements_type> > relation_map_type;
@@ -110,6 +138,65 @@ class relations_hash_data
 
 
 };
+
+
+
+
+
+
+template <class typeT>
+class type_hash 
+{
+	type_hash(const type_hash&) = delete;
+	type_hash(type_hash&&) = delete;
+	void operator=(const type_hash&) = delete;
+	void operator=(type_hash&&) = delete;
+
+	typedef typename typeT::RType::smart_ptr RType;
+	typedef typename typeT::smart_ptr Tptr;
+	typedef typename constructors::object_constructor_base<RType,RType> constructorType;
+
+	typedef typename std::map<rx_node_id, RType> registered_objects_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_classes_type;
+	typedef typename std::map<rx_node_id, constructorType* > object_constructors_type;
+
+  public:
+      type_hash();
+
+      virtual ~type_hash();
+
+
+  protected:
+
+  private:
+
+
+      object_constructors_type _object_constructors;
+
+      relations_hash_data _hash;
+
+
+      registered_objects_type _registered_objects;
+
+      registered_classes_type _registered_classes;
+
+
+};
+
+
+// Parameterized Class model::type_hash 
+
+template <class typeT>
+type_hash<typeT>::type_hash()
+{
+}
+
+
+template <class typeT>
+type_hash<typeT>::~type_hash()
+{
+}
+
 
 
 } // namespace model
