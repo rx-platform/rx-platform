@@ -39,6 +39,10 @@
 
 
 namespace rx_platform {
+namespace objects
+{
+	class object_runtime;
+}
 
 namespace meta {
 
@@ -94,6 +98,8 @@ class object_class : public object_class_t
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 basic object class.\r\n\
 basic implementation of object class");
+public:
+	typedef objects::object_runtime RType;
 
   public:
       object_class (const string_type& name, const rx_node_id& id, bool system = false);

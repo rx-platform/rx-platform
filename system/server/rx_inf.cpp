@@ -249,9 +249,10 @@ void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t perio
 // Class rx_platform::runtime::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
-  : _pool(count, name,rx_thread_id), server_object(name,id), _threads_count(count)
+      : _threads_count(count)
+  , _pool(count, name,rx_thread_id), server_object(name,id)
 {
-	register_const_value("count", _threads_count);
+	register_const_value("count", count);
 }
 
 
@@ -288,11 +289,11 @@ void dispatcher_subscribers_job::process ()
 
 // Class rx_platform::runtime::domains_pool 
 
-domains_pool::domains_pool (size_t pool_size)
-      : _pool_size((uint32_t)pool_size)
+domains_pool::domains_pool (uint32_t pool_size)
+      : _pool_size(pool_size)
 	, server_object(WORKER_POOL_NAME, WORKER_POOL_ID)
 {
-	register_const_value("count", _pool_size);
+	register_const_value("count", (uint32_t)pool_size);
 }
 
 
@@ -320,8 +321,8 @@ void domains_pool::append (job_ptr pjob)
 
 void domains_pool::reserve ()
 {
-	_workers.reserve(_pool_size.value());
-	for (intptr_t i = 0; i < _pool_size.value(); i++)
+	_workers.reserve(_pool_size);
+	for (uint32_t i = 0; i < _pool_size; i++)
 		_workers.emplace_back(new threads::physical_job_thread("Worker",i));
 }
 
@@ -342,7 +343,7 @@ void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
 
 rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 {
-	uint32_t size = _pool_size.value();
+	uint32_t size = _pool_size;
 	RX_ASSERT(size);
 	if (size == 0)
 		return nullptr;

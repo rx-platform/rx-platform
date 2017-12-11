@@ -67,35 +67,25 @@ using namespace rx_platform::ns;
 #define RT_TYPE_ID_FULL_VALUE 4
 
 
+#define RX_TYPE_UNKNOWN		0x0
+#define RX_TYPE_OBJ			0x01
+#define RX_TYPE_VARIABLE	0x02
+#define RX_TYPE_REF			0x04
+#define RX_TYPE_SOURCE		0x08
+#define RX_TYPE_EVENT		0x10
+#define RX_TYPE_FILTER		0x20
+#define RX_TYPE_MAPPER		0x40
+#define RX_TYPE_APPLICATION 0x80
+#define RX_TYPE_DOMAIN		0x100
+#define RX_TYPE_STRUCT		0x200
+#define RX_TYPE_PROGRAM		0x400
 
-#define DECLARE_META_TYPE \
-public:\
-	static bool g_type_registred;\
-	static void init_meta_type();\
-	uint32_t get_type () const\
-		{ return type_id; }\
-	static uint32_t type_id;\
-	static const char* type_name;\
-	static const char* command_str;\
-private:\
-
-
-
-
-#define DECLARE_META_OBJECT \
-public:\
-	uint32_t get_type () const\
-				{ return type_id; }\
-	static uint32_t type_id;\
-private:\
-
+#define RX_TYPE_INSTANCE	0x80000000
 
 namespace rx_platform {
 
 namespace meta
 {
-void init_compiled_meta_types();
-
 
 class object_class;
 class variable_class;
@@ -108,9 +98,6 @@ class application_class;
 class domain_class;
 class struct_class;
 class port_class;
-
-typedef TYPELIST_9(object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_scada_types;
-typedef TYPELIST_10(reference_type, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_scada_types;
 
 class const_value_item;
 class value_item;
@@ -422,6 +409,13 @@ class base_complex_type : public checkable_type<metaT>,
       bool register_struct (const struct_attribute& item);
 
       bool register_variable (const variable_attribute& item);
+
+
+      const const_values_type& get_const_values () const
+      {
+        return _const_values;
+      }
+
 
 
       const bool is_sealed () const
@@ -857,7 +851,7 @@ typedef pointers::reference<rx_platform::meta::variable_class> variable_class_pt
 
 
 
-typedef base_complex_type< rx_platform::meta::source_class  > source_class_t;
+typedef base_complex_type< source_class  > source_class_t;
 
 
 

@@ -78,19 +78,6 @@ complex_runtime_item::~complex_runtime_item()
 
 
 
-uint32_t complex_runtime_item::register_const_value (const string_type& name, const_value_item& val)
-{
-	auto it = _names_cache.find(name);
-	if (it == _names_cache.end())
-	{
-		_const_values.emplace_back(&val);
-		uint32_t idx = (uint32_t)(_const_values.size() - 1);
-		_names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
-		return RX_OK;
-	}
-	return RX_ERROR;
-}
-
 rx_value complex_runtime_item::get_value (const string_type path) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
@@ -458,11 +445,6 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 	return true;
 }
 
-uint32_t object_runtime::register_const_value (const string_type& name, const_value_item& val)
-{
-	return _complex_item->register_const_value(name, val);
-}
-
 bool object_runtime::init_object ()
 {
 	_complex_item = complex_runtime_item_ptr(smart_this());
@@ -726,3 +708,21 @@ namespace_item_attributes user_object::get_attributes () const
 } // namespace objects
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	auto it = _names_cache.find(name);
+	if (it == _names_cache.end())
+	{
+		_const_values.emplace_back(&val);
+		uint32_t idx = (uint32_t)(_const_values.size() - 1);
+		_names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
+		return RX_OK;
+	}
+	return RX_ERROR;
+
+	return _complex_item->register_const_value(name, val);
+
+#endif

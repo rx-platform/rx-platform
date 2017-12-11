@@ -37,6 +37,8 @@
 #include "system/constructors/rx_construct.h"
 
 #include "system/meta/rx_classes.h"
+#include "system/meta/rx_obj_classes.h"
+#include "system/meta/rx_objbase.h"
 using namespace rx_platform::meta;
 
 
@@ -44,47 +46,34 @@ namespace model {
 
 
 
-
-
-class internal_classes_manager 
-{
-
-  public:
-      virtual ~internal_classes_manager();
-
-
-      static internal_classes_manager& instance ();
-
-      uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
-
-      uint32_t deinitialize ();
-
-      uint32_t start (hosting::rx_platform_host* host, const meta_data_t& data);
-
-      uint32_t stop ();
-
-	  template<class T>
-	  struct get_arg_data
-	  {
-		  T data;
-	  };
-	  //template<class T>
-	  //void get_class(std::function<void(T))
-	  //{
-		 // //_worker.append();
-	  //}
-
-  protected:
-
-  private:
-      internal_classes_manager();
+#define DECLARE_META_TYPE \
+public:\
+	static bool g_type_registred;\
+	static void init_meta_type();\
+	uint32_t get_type () const\
+		{ return type_id; }\
+	static uint32_t type_id;\
+	static const char* type_name;\
+	static const char* command_str;\
+private:\
 
 
 
-      rx::threads::physical_job_thread _worker;
+
+#define DECLARE_META_OBJECT \
+public:\
+	uint32_t get_type () const\
+				{ return type_id; }\
+	static uint32_t type_id;\
+private:\
 
 
-};
+void init_compiled_meta_types();
+
+typedef TYPELIST_9(object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_rx_types;
+typedef TYPELIST_10(reference_type, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
+
+
 
 
 
@@ -166,6 +155,11 @@ class type_hash
       virtual ~type_hash();
 
 
+      typename type_hash<typeT>::Tptr get_class_definition (const rx_node_id& id);
+
+      bool register_class (typename type_hash<typeT>::Tptr what);
+
+
   protected:
 
   private:
@@ -184,6 +178,130 @@ class type_hash
 };
 
 
+
+
+struct names_hash_element
+{
+	rx_node_id id;
+	uint32_t type;
+	bool is_object() const
+	{
+		return (type&RX_TYPE_INSTANCE) == RX_TYPE_INSTANCE;
+	}
+	bool is_ref_type() const
+	{
+		return type == RX_TYPE_REF;
+	}
+};
+struct ids_hash_element
+{
+	string_type name;
+	uint32_t type;
+	bool is_object() const
+	{
+		return (type&RX_TYPE_INSTANCE) == RX_TYPE_INSTANCE;
+	}
+	bool is_ref_type() const
+	{
+		return type == RX_TYPE_REF;
+	}
+};
+
+
+
+
+
+class internal_classes_manager 
+{
+	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
+	typedef std::map<string_type, names_hash_element> names_hash_type;
+
+	//friend class worker_registration_object;
+
+	template<class T>
+	struct type_cache_holder
+	{
+	public:
+		type_hash<T>* m_value;
+		type_cache_holder()
+			: m_value(NULL)
+		{
+		}
+		~type_cache_holder()
+		{
+		}
+	};
+
+	class type_cache_list_container
+		: public tl::gen_scatter_hierarchy<regular_rx_types, type_cache_holder>
+	{
+	public:
+		template<class T>
+		type_hash<T>& get_internal(internal_classes_manager* manager, tl::type2type<T>)
+		{
+			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).m_value;
+			if (ret == nullptr)
+			{
+				ret = new type_hash<T>();
+				//ret->set_manager(manager);
+				//manager->_cache_types.insert(cache_types_type::value_type(T::type_id, ret));
+				(static_cast<type_cache_holder<T>&>(*this)).m_value = ret;
+			}
+			return *ret;
+		}
+	};
+	type_cache_list_container _types_container;
+	/*typedef std::map<uint32_t, inheritance_cache_base*> cache_types_type;
+	typedef std::map<uint32_t, inheritance_cache_base*>::iterator cache_types_iterator;
+	typedef std::map<uint32_t, inheritance_cache_base*>::const_iterator const_cache_types_iterator;
+	cache_types_type _cache_types;*/
+
+	friend class type_cache_list_container;
+
+public:
+	template<class T>
+	type_hash<T>& get_type_cache()
+	{
+		return _types_container.get_internal<T>(this, tl::type2type<T>());
+	}
+
+  public:
+      virtual ~internal_classes_manager();
+
+
+      static internal_classes_manager& instance ();
+
+      uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
+
+      uint32_t deinitialize ();
+
+      uint32_t start (hosting::rx_platform_host* host, const meta_data_t& data);
+
+      uint32_t stop ();
+
+	  template<class T>
+	  struct get_arg_data
+	  {
+		  T data;
+	  };
+	  //template<class T>
+	  //void get_class(std::function<void(T))
+	  //{
+		 // //_worker.append();
+	  //}
+  protected:
+
+  private:
+      internal_classes_manager();
+
+
+
+      rx::threads::physical_job_thread _worker;
+
+
+};
+
+
 // Parameterized Class model::type_hash 
 
 template <class typeT>
@@ -197,6 +315,36 @@ type_hash<typeT>::~type_hash()
 {
 }
 
+
+
+template <class typeT>
+typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx_node_id& id)
+{
+	auto it = _registered_classes.find(id);
+	if (it != _registered_classes.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return Tptr::null_ptr;
+	}
+}
+
+template <class typeT>
+bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
+{
+	auto it = _registered_classes.find(what->get_id());
+	if (it == _registered_classes.end())
+	{
+		_registered_classes.emplace(what->get_id(), what);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 } // namespace model

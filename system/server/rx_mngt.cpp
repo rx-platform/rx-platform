@@ -120,8 +120,10 @@ void server_manager::get_directories (server_directories_type& dirs)
 
 meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
 {
-	model::relations_hash_data data;
-	return meta::object_class_ptr::null_ptr;
+	auto& cache = model::internal_classes_manager::instance().get_type_cache<meta::object_class>();
+	auto def = cache.get_class_definition(id);
+	//model::relations_hash_data data;
+	return def;
 }
 
 

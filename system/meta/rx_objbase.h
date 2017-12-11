@@ -31,16 +31,16 @@
 
 
 
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_classes
+#include "system/meta/rx_classes.h"
 
 namespace rx_platform {
 namespace objects {
@@ -69,7 +69,7 @@ class variable_runtime;
 
 typedef callback::callback_functor_container<locks::lockable,rx::values::rx_value> value_callback_t;
 class complex_runtime_item;
-typedef pointers::virtual_reference<object_runtime> object_runtime_ptr;
+typedef pointers::reference<object_runtime> object_runtime_ptr;
 typedef pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
 typedef pointers::reference<domain_runtime> domain_runtime_ptr;
 typedef pointers::reference<application_runtime> application_runtime_ptr;
@@ -78,7 +78,7 @@ typedef pointers::reference<application_runtime> application_runtime_ptr;
 
 
 
-typedef meta::checkable_type< object_runtime  > object_runtime_t;
+typedef meta::checkable_type< rx_platform::objects::object_runtime  > object_runtime_t;
 
 
 
@@ -213,7 +213,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(complex_runtime_item);
 	typedef std::vector<complex_runtime_item::smart_ptr> sub_items_type;
 	typedef std::vector<value_item*> values_type;
-	typedef std::vector<const_value_item*> const_values_type;
+	typedef std::vector<std::unique_ptr<const_value_item> > const_values_type;
 	typedef std::vector<value_callback_t*> const_values_callbacks_type;
 
 	typedef std::map<string_type, uint32_t > names_cahce_type;
@@ -228,8 +228,6 @@ class complex_runtime_item : public rx::pointers::reference_object
       virtual ~complex_runtime_item();
 
 
-      uint32_t register_const_value (const string_type& name, const_value_item& val);
-
       rx_value get_value (const string_type path) const;
 
       virtual void object_state_changed (const rx_time& now);
@@ -242,6 +240,19 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+	  template<typename T>
+	  uint32_t register_const_value(const string_type& name, const T& val)
+	  {
+		  auto it = _names_cache.find(name);
+		  if (it == _names_cache.end())
+		  {
+			  _const_values.emplace_back(std::make_unique<server_const_value_item<T> >(val));
+			  uint32_t idx = (uint32_t)(_const_values.size() - 1);
+			  _names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
+			  return RX_OK;
+		  }
+		  return RX_ERROR;
+	  }
 	  callback::callback_handle_t register_callback(const string_type& path, void* p, rx_platform::objects::value_callback_t::callback_function_t func)
 	  {
 		  rx_value val;
@@ -290,7 +301,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       sub_items_type _sub_items;
 
-      rx_virtual<object_runtime> _my_object;
+      rx_reference<object_runtime> _my_object;
 
 
       names_cahce_type _names_cache;
@@ -306,9 +317,15 @@ class complex_runtime_item : public rx::pointers::reference_object
 
 
 
-class object_runtime : public object_runtime_t  
+class object_runtime : public object_runtime_t, 
+                       	public rx::poin
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(object_runtime);
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+object class. basic implementation of an object");
+
+	DECLARE_REFERENCE_PTR(object_runtime);
+
+	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
 	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
 	typedef std::map<string_type, size_t> items_cache_type;
@@ -340,8 +357,6 @@ class object_runtime : public object_runtime_t
       const string_type& get_item_name () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      uint32_t register_const_value (const string_type& name, const_value_item& val);
 
 
       rx_reference<complex_runtime_item> get_complex_item ()
@@ -381,6 +396,12 @@ class object_runtime : public object_runtime_t
 	  {
 		//  return _items->unregister_callaback(path);
 	  }
+
+	  template<typename T>
+	  uint32_t register_const_value(const string_type& name, const T& val)
+	  {
+		  return _complex_item->register_const_value<T>(name,val);
+	  }
   protected:
       object_runtime();
 
@@ -419,14 +440,12 @@ class object_runtime : public object_runtime_t
 
 
 
-class server_object : public object_runtime, 
-                      	public rx::point
+class server_object : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system object class. basic implementation of a system object");
 
 	DECLARE_REFERENCE_PTR(server_object);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
   public:
       server_object (const string_type& name, const rx_node_id& id);
@@ -547,8 +566,7 @@ class variable_runtime : public complex_runtime_item
 
 
 
-class domain_runtime : public object_runtime, 
-                       	public rx::poin
+class domain_runtime : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system domain class. basic implementation of a domain");
@@ -687,14 +705,12 @@ system application class. contains system default application");
 
 
 
-class user_object : public object_runtime, 
-                    	public rx::pointer
+class user_object : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,1,0, "\
 user object class. basic implementation of a user object");
 
 	DECLARE_REFERENCE_PTR(user_object);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
   public:
       user_object();

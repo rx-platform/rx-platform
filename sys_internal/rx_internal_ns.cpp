@@ -36,6 +36,7 @@
 #include "terminal/rx_commands.h"
 #include "system/server/rx_inf.h"
 #include "testing/rx_test.h"
+#include "classes/rx_meta.h"
 
 
 namespace sys_internal {
@@ -142,6 +143,8 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	std::vector<objects::object_runtime_ptr> host_objects;
 
 	host->get_host_classes(host_classes);
+	for (auto one : host_classes)
+		model::internal_classes_manager::instance().get_type_cache<object_class>().register_class(one);
 	host->get_host_objects(host_objects);
 
 	for (auto one : host_classes)

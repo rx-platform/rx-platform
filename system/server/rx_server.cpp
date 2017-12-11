@@ -35,6 +35,7 @@
 
 #include "sys_internal/rx_internal_ns.h"
 #include "system/python/py_support.h"
+#include "classes/rx_meta.h"
 
 
 namespace rx_platform {
@@ -112,6 +113,8 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 
 			for (auto one : _scripts)
 				one.second->initialize();
+
+			model::internal_classes_manager::instance().initialize(host, data.meta_data);
 			
 			return RX_OK;
 		}
@@ -129,6 +132,8 @@ uint32_t rx_gate::deinitialize ()
 	for (auto one : _scripts)
 		one.second->deinitialize();
 
+	model::internal_classes_manager::instance().deinitialize();
+
 	_manager.deinitialize();
 	_runtime.deinitialize();
 	return RX_OK;
@@ -140,6 +145,8 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 	{
 		if (_manager.start(host, data.managment_data))
 		{
+			model::internal_classes_manager::instance().start(host, data.meta_data);
+
 			host->server_started_event();
 
 			return RX_OK;
@@ -154,6 +161,7 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 
 uint32_t rx_gate::stop ()
 {
+	model::internal_classes_manager::instance().stop();
 	_manager.stop();
 	_runtime.stop();
 	return RX_OK;

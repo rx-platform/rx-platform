@@ -31,14 +31,14 @@
 
 
 
-// rx_objbase
-#include "system/meta/rx_objbase.h"
 // rx_values
 #include "lib/rx_values.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_objbase
+#include "system/meta/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
@@ -91,7 +91,7 @@ and general usage thread pool resources\r\n\
       rx_reference<rx::threads::dispatcher_pool> _pool;
 
 
-      objects::server_const_value_item<uint32_t> _threads_count;
+      int _threads_count;
 
 
 };
@@ -141,7 +141,7 @@ thread pool resources\r\n\
 	typedef std::vector<threads::physical_job_thread*> workers_type;
 
   public:
-      domains_pool (size_t pool_size);
+      domains_pool (uint32_t pool_size);
 
       virtual ~domains_pool();
 
@@ -169,7 +169,7 @@ thread pool resources\r\n\
       workers_type _workers;
 
 
-      objects::server_const_value_item<uint32_t> _pool_size;
+      uint32_t _pool_size;
 
 
 };
