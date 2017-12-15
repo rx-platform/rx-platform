@@ -419,6 +419,11 @@ bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostre
 	}
 }
 
+bool test_case::is_browsable () const
+{
+	return false;
+}
+
 
 // Class testing::testing_enviroment 
 

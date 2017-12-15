@@ -894,13 +894,21 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
     string_type path;
 	in >> path;
 
+	platform_item_ptr item;
+
     server_directory_ptr where=ctx->get_current_directory()->get_sub_directory(path);
 	if (!where)
 	{
-		err << "Directory not found!\r\n";
-		return false;
+		where = ctx->get_current_directory();
+		item = ctx->get_current_directory()->get_sub_item(path);
+		if (!item)
+		{
+			err << "Directory not found!\r\n";
+			return false;
+		}
 	}
 	ctx->set_current_directory(where);
+	ctx->set_current_object(item);
 	return true;
 }
 

@@ -78,6 +78,11 @@ bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 	return true;
 }
 
+bool server_command::is_browsable () const
+{
+	return false;
+}
+
 
 // Class terminal::commands::server_command_manager 
 

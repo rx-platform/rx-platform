@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -58,7 +58,7 @@ namespace rx_platform {
 namespace ns
 {
 class rx_server_directory;
-class rx_server_item;
+class rx_platform_item;
 }
 namespace prog
 {
@@ -211,7 +211,8 @@ class rx_server_directory : public rx::pointers::reference_object
 class rx_platform_item : public rx::pointers::virtual_reference_object  
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(rx_platform_item);
-		
+	
+	typedef std::map<string_type, platform_item_ptr> sub_items_type;
 
   public:
       rx_platform_item();
@@ -253,6 +254,12 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
       virtual bool deserialize (base_meta_reader& stream);
 
+      platform_item_ptr get_sub_item (const string_type& path) const;
+
+      virtual bool is_browsable () const = 0;
+
+      virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
+
 
   protected:
 
@@ -260,6 +267,8 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
 
       rx_reference<rx_server_directory> _parent;
+
+      sub_items_type _sub_items;
 
 
       locks::lockable _item_lock;

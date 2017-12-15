@@ -451,6 +451,11 @@ bool object_runtime::init_object ()
 	return true;
 }
 
+bool object_runtime::is_browsable () const
+{
+	return true;
+}
+
 
 // Class rx_platform::objects::value_item 
 
@@ -708,21 +713,3 @@ namespace_item_attributes user_object::get_attributes () const
 } // namespace objects
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	auto it = _names_cache.find(name);
-	if (it == _names_cache.end())
-	{
-		_const_values.emplace_back(&val);
-		uint32_t idx = (uint32_t)(_const_values.size() - 1);
-		_names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
-		return RX_OK;
-	}
-	return RX_ERROR;
-
-	return _complex_item->register_const_value(name, val);
-
-#endif

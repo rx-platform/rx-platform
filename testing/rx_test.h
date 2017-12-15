@@ -31,14 +31,14 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 using namespace rx;
 
@@ -195,6 +195,8 @@ public:
       test_context_data get_data (test_context_data* data = nullptr) const;
 
       bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+
+      bool is_browsable () const;
 
 
       const string_type& get_name () const

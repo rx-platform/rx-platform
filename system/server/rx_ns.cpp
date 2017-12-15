@@ -199,6 +199,38 @@ bool rx_platform_item::deserialize (base_meta_reader& stream)
 	return true;
 }
 
+platform_item_ptr rx_platform_item::get_sub_item (const string_type& path) const
+{
+	size_t idx = path.rfind(RX_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{// plain item
+		//locks::const_auto_slim_lock dummy(&(const_cast<rx_platform_item*>(this)->_item_lock));
+		auto it = _sub_items.find(path);
+		if (it != _sub_items.end())
+			return it->second;
+		else
+			return platform_item_ptr::null_ptr;
+	}
+	else
+	{// dir + item
+		string_type dir_path = path.substr(0, idx);
+		string_type item_name = path.substr(idx + 1);
+		platform_item_ptr next = get_sub_item(dir_path);
+		if (next)
+		{
+			return next->get_sub_item(item_name);
+		}
+		else
+		{
+			return platform_item_ptr::null_ptr;
+		}
+	}
+}
+
+void rx_platform_item::get_content (server_items_type& sub_items, const string_type& pattern) const
+{
+}
+
 
 // Class rx_platform::ns::rx_server_directory 
 
@@ -432,7 +464,7 @@ const string_type& rx_server_directory::get_type_name () const
 
 platform_item_ptr rx_server_directory::get_sub_item (const string_type& path) const
 {
-	size_t idx = path.rfind('/');
+	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
 	{// plain item
 		locks::const_auto_slim_lock dummy(&_structure_lock);

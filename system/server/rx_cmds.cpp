@@ -461,6 +461,13 @@ void console_client::get_prompt (string_type& prompt)
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;
 	prompt += _current_directory->get_path();
+	if (_current_object)
+	{
+		prompt += RX_DIR_DELIMETER;
+		prompt += ANSI_COLOR_YELLOW;
+		prompt += _current_object->get_item_name();
+		prompt += ANSI_COLOR_RESET;
+	}
 	prompt += ">";
 }
 
@@ -566,6 +573,8 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 			else
 			{
 				_current_directory = ctx->get_current_directory();
+				_current_item = ctx->get_current_item();
+				_current_object = ctx->get_current_object();
 			}
 		}
 	}

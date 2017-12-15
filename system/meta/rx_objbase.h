@@ -358,6 +358,8 @@ object class. basic implementation of an object");
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
+      bool is_browsable () const;
+
 
       rx_reference<complex_runtime_item> get_complex_item ()
       {
@@ -816,19 +818,20 @@ void server_const_value_item<valT>::get_value (values::rx_value& val, const rx_t
 	else if (mode.is_test())
 		val.set_test();
 	else
-	val.set_quality(RX_GOOD_QUALITY);
+		val.set_quality(RX_GOOD_QUALITY);
 }
 
 template <typename valT>
 void server_const_value_item<valT>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
+	class_name = "_ConstVal";
 	has_own_code_info = true;
 }
 
 template <typename valT>
 string_type server_const_value_item<valT>::get_type_name () const
 {
-	return "SIMPLE VAL";
+	return "const val";
 }
 
 

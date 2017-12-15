@@ -31,12 +31,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 using namespace rx_platform::prog;
 using namespace rx_platform; 
@@ -71,6 +71,8 @@ class server_command : public rx_platform::prog::server_command_base,
       namespace_item_attributes get_attributes () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      bool is_browsable () const;
 
 
   protected:

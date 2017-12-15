@@ -250,6 +250,8 @@ class checkable_type : public base_meta_type<metaT>
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
+      bool is_browsable () const;
+
 
       const string_type& get_name () const
       {
@@ -1116,6 +1118,12 @@ template <class metaT>
 bool checkable_type<metaT>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	err << "Function not implemented for this type.";
+	return false;
+}
+
+template <class metaT>
+bool checkable_type<metaT>::is_browsable () const
+{
 	return false;
 }
 
