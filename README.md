@@ -7,7 +7,10 @@
 The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions. 
 
 
-### The Code...
+## [RX Platform](https://github.com/rx-platform/rx-docs/wiki)
+
+
+## The Code...
 
 Start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
 
