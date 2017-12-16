@@ -32,34 +32,56 @@
 // rx_obj_classes
 #include "system/meta/rx_obj_classes.h"
 
+#include "rx_configuration.h"
 
 
 namespace rx_platform {
 
 namespace meta {
 
-// Class rx_platform::meta::port_class 
+// Parameterized Class rx_platform::meta::base_object_class 
 
-string_type port_class::type_name = "PORT CLASS";
-
-port_class::port_class()
+template <class metaT, bool _browsable>
+base_object_class<metaT,_browsable>::base_object_class()
 {
 }
 
-port_class::port_class (const string_type& name, const rx_node_id& id, bool system)
+template <class metaT, bool _browsable>
+base_object_class<metaT,_browsable>::base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
+	: base_mapped_class<metaT, _browsable>(name, id, parent, system, sealed, abstract)
 {
 }
 
 
-port_class::~port_class()
+template <class metaT, bool _browsable>
+base_object_class<metaT,_browsable>::~base_object_class()
 {
 }
 
+
+
+template <class metaT, bool _browsable>
+bool base_object_class<metaT,_browsable>::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	if (!base_mapped_class<metaT, _browsable>::serialize_definition(stream, type))
+		return false;
+
+	return true;
+}
+
+template <class metaT, bool _browsable>
+bool base_object_class<metaT,_browsable>::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!base_mapped_class<metaT, _browsable>::deserialize_definition(stream, type))
+		return false;
+
+	return true;
+}
 
 
 // Class rx_platform::meta::object_class 
 
-string_type object_class::type_name = "OBJECT CLASS";
+string_type object_class::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
 
 object_class::object_class()
 {
@@ -92,13 +114,13 @@ const string_type& object_class::get_item_name () const
 
 namespace_item_attributes object_class::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | namespace_item_attributes::namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
 }
 
 
 // Class rx_platform::meta::domain_class 
 
-string_type domain_class::type_name = "DOMAIN CLASS";
+string_type domain_class::type_name = RX_CPP_DOMAIN_CLASS_TYPE_NAME;
 
 domain_class::domain_class()
 {
@@ -117,7 +139,7 @@ domain_class::~domain_class()
 
 // Class rx_platform::meta::application_class 
 
-string_type application_class::type_name = "DOMAIN CLASS";
+string_type application_class::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
 
 application_class::application_class()
 {
@@ -134,6 +156,28 @@ application_class::~application_class()
 
 
 
+// Class rx_platform::meta::port_class 
+
+string_type port_class::type_name = RX_CPP_PORT_CLASS_TYPE_NAME;
+
+port_class::port_class()
+{
+}
+
+port_class::port_class (const string_type& name, const rx_node_id& id, bool system)
+{
+}
+
+
+port_class::~port_class()
+{
+}
+
+
+template class rx_platform::meta::base_object_class<rx_platform::meta::object_class, false>;
+template class rx_platform::meta::base_object_class<rx_platform::meta::domain_class, false>;
+template class rx_platform::meta::base_object_class<rx_platform::meta::application_class, false>;
+template class rx_platform::meta::base_object_class<rx_platform::meta::port_class, false>;
 } // namespace meta
 } // namespace rx_platform
 

@@ -33,10 +33,10 @@
 
 // rx_classes
 #include "system/meta/rx_classes.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// soft_plc
+#include "soft_logic/soft_plc.h"
 
 namespace rx_platform {
 namespace logic {
@@ -57,7 +57,7 @@ namespace logic {
 
 
 
-typedef meta::checkable_type< rx_platform::logic::program_runtime  > program_runtime_t;
+typedef meta::checkable_type< rx_platform::logic::program_runtime , false  > program_runtime_t;
 
 
 

@@ -75,12 +75,12 @@ reference_object & reference_object::operator=(const reference_object &right)
 
 void reference_object::bind ()
 {
-	_ref_count++;
+	_ref_count.fetch_add(1, std::memory_order_relaxed);
 }
 
 void reference_object::release ()
 {
-	if (0 == --_ref_count)
+	if (1 == _ref_count.fetch_sub(1, std::memory_order_acq_rel))
 		delete this;
 }
 

@@ -140,8 +140,8 @@ void interactive_console_host::get_host_objects (std::vector<rx_platform::object
 
 void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
 {
-	rx_platform::meta::object_class_ptr test("test_class", 55, true);
-	test->register_const_value("testBool", false);
+	rx_platform::meta::object_class_ptr test("test_class", 55, false);
+	test->register_const_value("testBool", true);
 	items.push_back(test);
 }
 

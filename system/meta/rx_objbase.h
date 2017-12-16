@@ -31,8 +31,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
 // rx_logic
@@ -41,6 +39,8 @@
 #include "system/callbacks/rx_callback.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace objects {
@@ -78,7 +78,7 @@ typedef pointers::reference<application_runtime> application_runtime_ptr;
 
 
 
-typedef meta::checkable_type< rx_platform::objects::object_runtime  > object_runtime_t;
+typedef meta::checkable_type< object_runtime , true  > object_runtime_t;
 
 
 
@@ -219,7 +219,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	typedef std::map<string_type, uint32_t > names_cahce_type;
 
 
-	template<class otherT>
+	template<class creatorT,bool _browsable>
 	friend class meta::checkable_type;
 
   public:
@@ -331,6 +331,10 @@ object class. basic implementation of an object");
 	typedef std::map<string_type, size_t> items_cache_type;
 	typedef complex_runtime_item_ptr items_type;
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
+
+public:
+	typedef rx_platform::meta::object_class definition_t;
+	typedef objects::variable_runtime RType;
 
   public:
       object_runtime (const string_type& name, const rx_node_id& id, bool system = false);

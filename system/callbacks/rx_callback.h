@@ -139,7 +139,7 @@ void callback_functor_container<lockT,argT>::operator () (const argT& argument, 
 template <typename lockT, typename argT>
 callback_handle_t callback_functor_container<lockT, argT>::register_callback(callback_function_t func)
 {
-	callback_handle_t ret = g_new_handle++;
+	callback_handle_t ret = g_new_handle.fetch_add(1,std::memory_order_release);
 
 	this->_my_lock.lock();
 	this->_callbacks.emplace(ret, func);

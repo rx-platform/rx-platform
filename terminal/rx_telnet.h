@@ -39,22 +39,23 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
+// rx_io
+#include "lib/rx_io.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_io
-#include "lib/rx_io.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 
 
 
 #include <lib/rx_mem.h>
 using namespace rx;
 using namespace rx_platform;
+using namespace rx_platform::ns;
 
 
 namespace terminal {
@@ -192,28 +193,31 @@ class server_telnet_socket : public rx::io::tcp_listent_std_buffer
 
 
 namespace console_commands {
+typedef rx_platform::prog::console_program_context::smart_ptr console_program_contex_ptr;
 
 
 
 
 
-class directory_command : public commands::server_command  
+class namespace_command : public commands::server_command  
 {
 	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 list current directory on console ( dir, ls ");
 
   public:
-      directory_command (const string_type& console_name);
+      namespace_command (const string_type& console_name);
 
-      virtual ~directory_command();
+      virtual ~namespace_command();
 
 
       bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory);
 
+      bool list_object (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, platform_item_ptr object);
+
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -226,7 +230,7 @@ list current directory on console ( dir, ls ");
 
 
 
-class dir_command : public directory_command  
+class dir_command : public namespace_command  
 {
 	DECLARE_REFERENCE_PTR(dir_command);
 
@@ -248,7 +252,7 @@ class dir_command : public directory_command
 
 
 
-class ls_command : public directory_command  
+class ls_command : public namespace_command  
 {
 	DECLARE_REFERENCE_PTR(ls_command);
 
@@ -258,7 +262,7 @@ class ls_command : public directory_command
       virtual ~ls_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   protected:
@@ -287,7 +291,7 @@ changes current active directory");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -316,7 +320,7 @@ displays details of software and system information");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -345,7 +349,7 @@ clears the console screen");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -373,7 +377,7 @@ all about shutdown of a server");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -402,11 +406,11 @@ all about doing stuff with log");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
-      bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
-      bool do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -435,9 +439,9 @@ all about doing stuff with security");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
-      bool do_active_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -466,7 +470,7 @@ time related stuff ( start time, current time... )");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -499,7 +503,7 @@ sleeps for the amaount of time specified in miliseconds");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -551,7 +555,7 @@ displays details of selected item");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -580,7 +584,7 @@ uses fill_server_info function");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -611,7 +615,7 @@ command that dumps specified object into a Json stream and write it on a console
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
@@ -639,7 +643,7 @@ pyhton command for interfacing python scripting");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:

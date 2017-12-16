@@ -457,17 +457,18 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 
 void console_client::get_prompt (string_type& prompt)
 {
-	prompt = ANSI_COLOR_GREEN;
-	prompt += security::active_security()->get_full_name();
-	prompt += ":" ANSI_COLOR_RESET;
+	prompt = "\r\n";
 	prompt += _current_directory->get_path();
 	if (_current_object)
 	{
 		prompt += RX_DIR_DELIMETER;
-		prompt += ANSI_COLOR_YELLOW;
+		prompt += ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
 		prompt += _current_object->get_item_name();
 		prompt += ANSI_COLOR_RESET;
 	}
+	prompt += "\r\n" ANSI_COLOR_GREEN;
+	prompt += security::active_security()->get_full_name();
+	prompt += ":" ANSI_COLOR_RESET;
 	prompt += ">";
 }
 
@@ -563,6 +564,8 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 			err_buffer,
 			smart_this());
 		ctx->set_current_directory(_current_directory);
+		ctx->set_current_object(_current_object);
+		ctx->set_current_item(_current_item);
 		ret = temp_prog->process_program(ctx, rx_time::now(), false);
 		if (ret)
 		{

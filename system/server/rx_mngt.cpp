@@ -126,6 +126,14 @@ meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
 	return def;
 }
 
+template<class clsT>
+typename clsT::smart_ptr server_manager::get_class(const rx_node_id& id)
+{
+	auto& cache = model::internal_classes_manager::instance().get_type_cache<clsT>();
+	auto def = cache.get_class_definition(id);
+	return def;
+}
+template object_class_ptr server_manager::get_class<object_class>(const rx_node_id& id);
 
 // Class rx_platform::mngt::manager_initialization_context 
 

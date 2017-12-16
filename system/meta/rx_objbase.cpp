@@ -298,7 +298,7 @@ bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uin
 
 // Class rx_platform::objects::object_runtime 
 
-string_type object_runtime::type_name = "OBJECT";
+string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
       : _created_time(rx_time::now()),
@@ -541,7 +541,7 @@ mapper::~mapper()
 
 // Class rx_platform::objects::domain_runtime 
 
-string_type domain_runtime::type_name = "DOMAIN";
+string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
 
 domain_runtime::domain_runtime()
 {
@@ -575,7 +575,7 @@ namespace_item_attributes domain_runtime::get_attributes () const
 
 // Class rx_platform::objects::application_runtime 
 
-string_type application_runtime::type_name = "APPLICATION";
+string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
 
 application_runtime::application_runtime()
 {
@@ -655,7 +655,7 @@ bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t
 
 // Class rx_platform::objects::port_runtime 
 
-string_type port_runtime::type_name = "PORT";
+string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
 
 port_runtime::port_runtime()
 {

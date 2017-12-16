@@ -32,55 +32,16 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
+#include "rx_configuration.h"
 
 
 namespace rx_platform {
 
 namespace logic {
 
-// Class rx_platform::logic::ladder_program 
-
-ladder_program::ladder_program()
-{
-}
-
-ladder_program::ladder_program (const string_type& name, const rx_node_id& id, bool system)
-{
-}
-
-
-ladder_program::~ladder_program()
-{
-}
-
-
-
-bool ladder_program::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	if (!program_runtime::serialize_definition(stream, type))
-		return false;
-
-	return true;
-}
-
-bool ladder_program::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!program_runtime::deserialize_definition(stream, type))
-		return false;
-
-	return true;
-}
-
-string_type ladder_program::get_type_name () const
-{
-  return type_name;
-
-}
-
-
 // Class rx_platform::logic::program_runtime 
 
-string_type program_runtime::type_name = "PROGRAM";
+string_type program_runtime::type_name = RX_CPP_PROGRAM_TYPE_NAME;
 
 program_runtime::program_runtime()
       : _created_time(rx_time::now()),
@@ -146,6 +107,46 @@ void program_runtime::get_value (values::rx_value& val) const
 const string_type& program_runtime::get_item_name () const
 {
 	return get_name();
+}
+
+
+// Class rx_platform::logic::ladder_program 
+
+ladder_program::ladder_program()
+{
+}
+
+ladder_program::ladder_program (const string_type& name, const rx_node_id& id, bool system)
+{
+}
+
+
+ladder_program::~ladder_program()
+{
+}
+
+
+
+bool ladder_program::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	if (!program_runtime::serialize_definition(stream, type))
+		return false;
+
+	return true;
+}
+
+bool ladder_program::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!program_runtime::deserialize_definition(stream, type))
+		return false;
+
+	return true;
+}
+
+string_type ladder_program::get_type_name () const
+{
+  return type_name;
+
 }
 
 

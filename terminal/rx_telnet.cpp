@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -147,7 +147,7 @@ IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 
 
 
-// Class terminal::console::server_telnet_socket
+// Class terminal::console::server_telnet_socket 
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -169,7 +169,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 }
 
 
-// Class terminal::console::telnet_client
+// Class terminal::console::telnet_client 
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : _security_context(*addr,*local_addr),
@@ -566,7 +566,7 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 }
 
 
-// Class terminal::console::telnet_security_context
+// Class terminal::console::telnet_security_context 
 
 telnet_security_context::telnet_security_context()
 {
@@ -724,21 +724,21 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::directory_command
+// Class terminal::console::console_commands::namespace_command 
 
-directory_command::directory_command (const string_type& console_name)
+namespace_command::namespace_command (const string_type& console_name)
   : server_command(console_name)
 {
 }
 
 
-directory_command::~directory_command()
+namespace_command::~namespace_command()
 {
 }
 
 
 
-bool directory_command::list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory)
+bool namespace_command::list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory)
 {
 	server_directories_type dirs;
 	server_items_type items;
@@ -776,7 +776,7 @@ bool directory_command::list_directory (std::ostream& out, std::ostream& err, co
 	return true;
 }
 
-bool directory_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool namespace_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type filter;
 	bool list_attributes = false;
@@ -805,15 +805,51 @@ bool directory_command::do_console_command (std::istream& in, std::ostream& out,
 		}
 	}
 
+	if (ctx->get_current_object())
+	{
+		list_object(out, err, filter, list_attributes, list_qualities, list_timestamps, list_created, list_type, ctx->get_current_object());
+	}
     server_directory_ptr temp(ctx->get_current_directory());
 	return list_directory(out, err, filter, list_attributes, list_qualities, list_timestamps, list_created, list_type, temp);
 }
 
+bool namespace_command::list_object (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, platform_item_ptr object)
+{
+	server_items_type items;
+	object->get_content(items,filter);
 
-// Class terminal::console::console_commands::dir_command
+	size_t count = items.size();
+
+	rx_table_type table(count + 1);
+
+
+	table[0].emplace_back("Name");
+	if (list_type)
+		table[0].emplace_back("Type");
+	if (list_attributes)
+		table[0].emplace_back("Attributes");
+	if (list_qualities)
+		table[0].emplace_back("Quality");
+	if (list_timestamps)
+		table[0].emplace_back("Time Stamp");
+
+	size_t idx = 1;
+	for (auto& one : items)
+	{
+		dump_items_on_console(table[idx], list_attributes, list_qualities, list_timestamps, list_created, list_type, one);
+		idx++;
+	}
+
+	rx_dump_table(table, out, true);
+
+	return true;
+}
+
+
+// Class terminal::console::console_commands::dir_command 
 
 dir_command::dir_command()
-  : directory_command("dir")
+  : namespace_command("dir")
 {
 }
 
@@ -824,10 +860,10 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command
+// Class terminal::console::console_commands::ls_command 
 
 ls_command::ls_command()
-  : directory_command("ls")
+  : namespace_command("ls")
 {
 }
 
@@ -838,7 +874,7 @@ ls_command::~ls_command()
 
 
 
-bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	if (in.eof())
 	{// dump here
@@ -870,12 +906,12 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	}
 	else
 	{
-		return directory_command::do_console_command(in, out, err, ctx);
+		return namespace_command::do_console_command(in, out, err, ctx);
 	}
 }
 
 
-// Class terminal::console::console_commands::cd_command
+// Class terminal::console::console_commands::cd_command 
 
 cd_command::cd_command()
   : server_command("cd")
@@ -889,7 +925,7 @@ cd_command::~cd_command()
 
 
 
-bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
     string_type path;
 	in >> path;
@@ -909,11 +945,12 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	}
 	ctx->set_current_directory(where);
 	ctx->set_current_object(item);
+	ctx->set_current_item(item);
 	return true;
 }
 
 
-// Class terminal::console::console_commands::info_command
+// Class terminal::console::console_commands::info_command 
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -927,7 +964,7 @@ info_command::~info_command()
 
 
 
-bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -994,7 +1031,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command
+// Class terminal::console::console_commands::code_command 
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1008,7 +1045,7 @@ code_command::~code_command()
 
 
 
-bool code_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool code_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -1042,7 +1079,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command
+// Class terminal::console::console_commands::rx_name_command 
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1056,7 +1093,7 @@ rx_name_command::~rx_name_command()
 
 
 
-bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	out << "System Information\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
@@ -1090,7 +1127,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command
+// Class terminal::console::console_commands::cls_command 
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1104,14 +1141,14 @@ cls_command::~cls_command()
 
 
 
-bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	out << ANSI_CLS ANSI_CUR_HOME;
 	return true;
 }
 
 
-// Class terminal::console::console_commands::shutdown_command
+// Class terminal::console::console_commands::shutdown_command 
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1125,7 +1162,7 @@ shutdown_command::~shutdown_command()
 
 
 
-bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	std::istreambuf_iterator<char> begin(in), end;
 	std::string msg(begin, end);
@@ -1137,7 +1174,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class terminal::console::console_commands::log_command
+// Class terminal::console::console_commands::log_command 
 
 log_command::log_command()
 	: server_command("log")
@@ -1151,7 +1188,7 @@ log_command::~log_command()
 
 
 
-bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -1170,7 +1207,7 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 
 	char buffer[0x100];
@@ -1227,7 +1264,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	return true;
 }
 
-bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	log::log_query_type query;
 	log::log_events_type result;
@@ -1243,7 +1280,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command
+// Class terminal::console::console_commands::sec_command 
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1257,7 +1294,7 @@ sec_command::~sec_command()
 
 
 
-bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -1272,7 +1309,7 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	std::vector<security::security_context_ptr> ctxs;
 	security::security_manager::instance().get_active_contexts(ctxs);
@@ -1329,7 +1366,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command
+// Class terminal::console::console_commands::time_command 
 
 time_command::time_command()
 	: server_command("time")
@@ -1343,7 +1380,7 @@ time_command::~time_command()
 
 
 
-bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	out << "Start Time\t: " << rx_gate::instance().get_started().get_string() << " UTC\r\n";
 	out << "Current Time\t: " << rx_time::now().get_string() << " UTC\r\n";
@@ -1351,7 +1388,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command
+// Class terminal::console::console_commands::sleep_command 
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1365,7 +1402,7 @@ sleep_command::~sleep_command()
 
 
 
-bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	
 	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
@@ -1407,7 +1444,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command
+// Class terminal::console::console_commands::def_command 
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1421,7 +1458,7 @@ def_command::~def_command()
 
 
 
-bool def_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool def_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -1462,7 +1499,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command
+// Class terminal::console::console_commands::directory_aware_command 
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1476,7 +1513,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command
+// Class terminal::console::console_commands::phyton_command 
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1490,7 +1527,7 @@ phyton_command::~phyton_command()
 
 
 
-bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;

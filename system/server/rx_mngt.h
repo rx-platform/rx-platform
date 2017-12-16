@@ -111,6 +111,11 @@ class server_manager
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(server_manager);
 
+
+public:
+	template<class clsT>
+	typename clsT::smart_ptr get_class(const rx_node_id& id);
+
   public:
       server_manager();
 

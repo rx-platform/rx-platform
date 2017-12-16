@@ -50,8 +50,8 @@ namespace meta {
 
 
 
-template <class metaT>
-class base_object_class : public base_mapped_class<metaT>  
+template <class metaT, bool _browsable = false>
+class base_object_class : public base_mapped_class<metaT, _browsable>  
 {
 	DECLARE_REFERENCE_PTR(base_object_class);
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
@@ -85,7 +85,7 @@ class base_object_class : public base_mapped_class<metaT>
 
 
 
-typedef base_object_class< object_class  > object_class_t;
+typedef base_object_class< rx_platform::meta::object_class  > object_class_t;
 
 
 
@@ -102,6 +102,8 @@ public:
 	typedef objects::object_runtime RType;
 
   public:
+      object_class();
+
       object_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~object_class();
@@ -122,8 +124,6 @@ public:
   protected:
 
   private:
-      object_class();
-
 
 
 };
@@ -134,7 +134,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef base_object_class< domain_class  > domain_class_t;
+typedef base_object_class< rx_platform::meta::domain_class  > domain_class_t;
 
 
 
@@ -144,6 +144,8 @@ typedef base_object_class< domain_class  > domain_class_t;
 class domain_class : public domain_class_t  
 {
 	DECLARE_REFERENCE_PTR(domain_class);
+public:
+	typedef objects::domain_runtime RType;
 
   public:
       domain_class (const string_type& name, const rx_node_id& id, bool system = false);
@@ -168,7 +170,7 @@ class domain_class : public domain_class_t
 
 
 
-typedef base_object_class< application_class  > application_class_t;
+typedef base_object_class< rx_platform::meta::application_class  > application_class_t;
 
 
 
@@ -178,6 +180,8 @@ typedef base_object_class< application_class  > application_class_t;
 class application_class : public application_class_t  
 {
 	DECLARE_REFERENCE_PTR(application_class);
+public:
+	typedef objects::application_runtime RType;
 
   public:
       application_class (const string_type& name, const rx_node_id& id, bool system = false);
@@ -202,7 +206,7 @@ class application_class : public application_class_t
 
 
 
-typedef base_object_class< port_class  > port_class_t;
+typedef base_object_class< rx_platform::meta::port_class  > port_class_t;
 
 
 
@@ -211,6 +215,9 @@ typedef base_object_class< port_class  > port_class_t;
 
 class port_class : public port_class_t  
 {
+	DECLARE_REFERENCE_PTR(port_class);
+public:
+	typedef objects::port_runtime RType;
 
   public:
       port_class (const string_type& name, const rx_node_id& id, bool system = false);
@@ -229,46 +236,6 @@ class port_class : public port_class_t
 
 
 };
-
-
-// Parameterized Class rx_platform::meta::base_object_class 
-
-template <class metaT>
-base_object_class<metaT>::base_object_class()
-{
-}
-
-template <class metaT>
-base_object_class<metaT>::base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: base_mapped_class<metaT>(name, id, parent, system, sealed, abstract)
-{
-}
-
-
-template <class metaT>
-base_object_class<metaT>::~base_object_class()
-{
-}
-
-
-
-template <class metaT>
-bool base_object_class<metaT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	if (!base_mapped_class<metaT>::serialize_definition(stream, type))
-		return false;
-
-	return true;
-}
-
-template <class metaT>
-bool base_object_class<metaT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!base_mapped_class<metaT>::deserialize_definition(stream, type))
-		return false;
-
-	return true;
-}
 
 
 } // namespace meta

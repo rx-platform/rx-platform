@@ -39,6 +39,32 @@
 #define RX_NS_SYSTEM_UNASS_APP_NAME "unassigned_app"
 #define RX_NS_SYSTEM_UNASS_APP_ID 1006
 
+// cpp classes stuff
+#define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
+#define RX_CPP_OBJECT_TYPE_NAME "object"
+#define RX_CPP_DOMAIN_CLASS_TYPE_NAME "domain_type"
+#define RX_CPP_DOMAIN_TYPE_NAME "domain"
+#define RX_CPP_APPLICATION_CLASS_TYPE_NAME "application_type"
+#define RX_CPP_APPLICATION_TYPE_NAME "application"
+#define RX_CPP_PORT_CLASS_TYPE_NAME "port_type"
+#define RX_CPP_PORT_TYPE_NAME "port"
+
+#define RX_CPP_COMMAND_TYPE_NAME "command"
+#define RX_CPP_PROGRAM_TYPE_NAME "program"
+
+#define RX_CPP_VARIABLE_CLASS_TYPE_NAME "variable_type"
+#define RX_CPP_VARIABLE_TYPE_NAME "variable"
+#define RX_CPP_STRUCT_CLASS_TYPE_NAME "struct_type"
+#define RX_CPP_STRUCT_TYPE_NAME "struct"
+#define RX_CPP_MAPPER_CLASS_TYPE_NAME "mapper_type"
+#define RX_CPP_MAPPER_TYPE_NAME "mapper"
+#define RX_CPP_SOURCE_CLASS_TYPE_NAME "source_type"
+#define RX_CPP_SOURCE_TYPE_NAME "source"
+#define RX_CPP_FILTER_CLASS_TYPE_NAME "filter_type"
+#define RX_CPP_FILTER_TYPE_NAME "filter"
+#define RX_CPP_EVENT_CLASS_TYPE_NAME "event_type"
+#define RX_CPP_EVENT_TYPE_NAME "event"
+
 //Main messages
 #define RX_ACCESS_DENIED "*ACCESS DENIED*"
 

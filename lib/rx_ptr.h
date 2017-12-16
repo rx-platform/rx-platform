@@ -495,9 +495,9 @@ class virtual_reference : public basic_smart_ptr<ptrT>
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// class that implements virtual_bind/virtual_release smart ptr, this class uses second level abstract funcion calls that eventualy maps to pin/unpin
 
+public:
 	typedef ptrT* pointer_type;
 	typedef ptrT pointee_type;
-public:
 	static virtual_reference<ptrT> null_ptr;
 
 	static virtual_reference create_from_pointer(ptrT* ptr)

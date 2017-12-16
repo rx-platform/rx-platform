@@ -82,6 +82,7 @@ struct namespace_data_t
 
 enum namespace_item_attributes : std::uint_fast32_t
 {
+	namespace_item_null = 0,
 	namespace_item_read_access = 1,
 	namespace_item_write_access = 2,
 	namespace_item_delete_access = 4,
