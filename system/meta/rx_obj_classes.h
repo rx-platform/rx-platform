@@ -63,6 +63,9 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
       virtual ~base_object_class();
 
 
+      void construct (runtime_ptr_t what);
+
+
   protected:
       base_object_class();
 
@@ -85,7 +88,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_object_class< rx_platform::meta::object_class  > object_class_t;
+typedef base_object_class< object_class  > object_class_t;
 
 
 
@@ -134,7 +137,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef base_object_class< rx_platform::meta::domain_class  > domain_class_t;
+typedef base_object_class< domain_class  > domain_class_t;
 
 
 
@@ -170,7 +173,7 @@ public:
 
 
 
-typedef base_object_class< rx_platform::meta::application_class  > application_class_t;
+typedef base_object_class< application_class  > application_class_t;
 
 
 
@@ -206,7 +209,7 @@ public:
 
 
 
-typedef base_object_class< rx_platform::meta::port_class  > port_class_t;
+typedef base_object_class< port_class  > port_class_t;
 
 
 

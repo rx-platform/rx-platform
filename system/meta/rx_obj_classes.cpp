@@ -33,6 +33,7 @@
 #include "system/meta/rx_obj_classes.h"
 
 #include "rx_configuration.h"
+#include "system/meta/rx_objbase.h"
 
 
 namespace rx_platform {
@@ -76,6 +77,16 @@ bool base_object_class<metaT,_browsable>::deserialize_definition (base_meta_read
 		return false;
 
 	return true;
+}
+
+template <class metaT, bool _browsable>
+void base_object_class<metaT,_browsable>::construct (runtime_ptr_t what)
+{
+	base_mapped_class<metaT, _browsable>::construct(what);
+	typedef typename metaT::RType rtype_t;
+	typedef typename rtype_t::smart_ptr rptr_t;
+	rptr_t runtime = what.cast_to<rptr_t>();
+	runtime->_programs = _programs;
 }
 
 

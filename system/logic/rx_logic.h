@@ -70,8 +70,8 @@ class program_runtime : public program_runtime_t,
 	DECLARE_REFERENCE_PTR(program_runtime);
 
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
-	
-
+public:
+	typedef program_runtime RType;
 
   public:
       program_runtime (const string_type& name, const rx_node_id& id, bool system = false);

@@ -90,6 +90,14 @@ string_type base_meta_type<metaT,_browsable>::get_type_name () const
 	return metaT::type_name;
 }
 
+template <class metaT, bool _browsable>
+void base_meta_type<metaT,_browsable>::construct (runtime_ptr_t what)
+{
+	typedef typename metaT::RType rtype_t;
+	typedef typename rtype_t::smart_ptr rptr_t;
+	rptr_t runtime = what.cast_to<rptr_t>();
+}
+
 
 // Class rx_platform::meta::command_class 
 
@@ -171,6 +179,15 @@ bool base_mapped_class<metaT,_browsable>::register_mapper (const mapper_attribut
 	{
 		return false;
 	}
+}
+
+template <class metaT, bool _browsable>
+void base_mapped_class<metaT,_browsable>::construct (runtime_ptr_t what)
+{
+	base_complex_type<metaT, _browsable>::construct(what);
+	typedef typename metaT::RType rtype_t;
+	typedef typename rtype_t::smart_ptr rptr_t;
+	rptr_t runtime = what.cast_to<rptr_t>();
 }
 
 
@@ -318,14 +335,20 @@ bool checkable_type<metaT,_browsable>::is_browsable () const
 	return false;
 }
 
+template <class metaT, bool _browsable>
+void checkable_type<metaT,_browsable>::construct (runtime_ptr_t what)
+{
+	base_meta_type<metaT, _browsable>::construct(what);
+	typedef typename metaT::RType rtype_t;
+	typedef typename rtype_t::smart_ptr rptr_t;
+	rptr_t runtime = what.cast_to<rptr_t>();
+	runtime->_parent = _parent;
+}
+
 
 // Class rx_platform::meta::const_value 
 
 const_value::const_value()
-{
-}
-
-const_value::const_value(const const_value &right)
 {
 }
 
@@ -337,13 +360,6 @@ const_value::const_value (const string_type& name)
 
 const_value::~const_value()
 {
-}
-
-
-const_value & const_value::operator=(const const_value &right)
-{
-	RX_ASSERT(false);
-	return *this;
 }
 
 
@@ -364,34 +380,29 @@ bool const_value::deserialize_definition (base_meta_reader& stream, uint8_t type
 }
 
 
-// Class rx_platform::meta::internal_value 
+// Class rx_platform::meta::simple_value_def 
 
-internal_value::internal_value()
+simple_value_def::simple_value_def()
       : _read_only(true)
 {
 }
 
-internal_value::internal_value(const internal_value &right)
+simple_value_def::simple_value_def (const string_type& name)
       : _read_only(true)
+	, _name(name)
 {
 }
 
 
-internal_value::~internal_value()
+simple_value_def::~simple_value_def()
 {
 }
 
 
-internal_value & internal_value::operator=(const internal_value &right)
+
+bool simple_value_def::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-bool internal_value::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
+	stream.write_string("Name", _name.c_str());
 	rx_value val;
 	get_value(val);
 	if (!val.serialize_value(stream))
@@ -399,7 +410,7 @@ bool internal_value::serialize_definition (base_meta_writter& stream, uint8_t ty
 	return true;
 }
 
-bool internal_value::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
@@ -488,8 +499,6 @@ base_complex_type<metaT,_browsable>::base_complex_type (const string_type& name,
 template <class metaT, bool _browsable>
 base_complex_type<metaT,_browsable>::~base_complex_type()
 {
-	for (auto one : _internal_values)
-		delete one;
 }
 
 
@@ -520,9 +529,9 @@ bool base_complex_type<metaT,_browsable>::serialize_definition (base_meta_writte
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Vals", _internal_values.size()))
+	if (!stream.start_array("Vals", _simple_values.size()))
 		return false;
-	for (const auto& one : _internal_values)
+	for (const auto& one : _simple_values)
 	{
 		if (!stream.start_object("Item"))
 			return false;
@@ -600,20 +609,6 @@ bool base_complex_type<metaT,_browsable>::generate_json (std::ostream& def, std:
 }
 
 template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::register_internal_value (internal_value* item)
-{
-	if (check_name(item->get_name()))
-	{
-		_internal_values.emplace_back(item);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-template <class metaT, bool _browsable>
 bool base_complex_type<metaT,_browsable>::register_struct (const struct_attribute& item)
 {
 	if (check_name(item.get_name()))
@@ -659,10 +654,24 @@ bool base_complex_type<metaT,_browsable>::check_name (const string_type& name)
 template <class metaT, bool _browsable>
 void base_complex_type<metaT,_browsable>::construct (runtime_ptr_t what)
 {
-	typedef typename metaT::RType rtype;
-	typedef typename rtype::smart_ptr rptr;
+	checkable_type<metaT, _browsable>::construct(what);
+	typedef typename metaT::RType rtype_t;
+	typedef typename rtype_t::smart_ptr rptr_t;
+	rptr_t runtime = what.cast_to<rptr_t>();
+	// const values
+	for (auto& one : _const_values)
+	{
+		rx_value temp;
+		one->get_value(temp);
+		runtime->register_const_value(one->get_name(), temp);
+	}
 
-	rptr mine = what.cast_to<rptr>();
+	for (auto& one : _simple_values)
+	{
+		rx_value temp;
+		one->get_value(temp);
+		runtime->register_value(one->get_name(), temp);
+	}
 }
 
 
@@ -859,4 +868,6 @@ template class rx_platform::meta::base_variable_class<rx_platform::meta::variabl
 RX_TEMPLATE_INST(rx_platform::meta::variable_class, false);
 } // namespace meta
 } // namespace rx_platform
+
+
 

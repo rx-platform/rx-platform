@@ -275,6 +275,19 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint
 			break;
 		case RT_VALUE_IDX_MASK:
 			{// simple value
+				if (!stream.start_object("Item"))
+					return false;
+				if (!stream.write_string("Name", one.first.c_str()))
+					return false;
+				if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
+					return false;
+				if (!stream.start_object("Val"))
+					return false;
+				_values[one.second&RT_INDEX_MASK]->serialize_definition(stream, type, mode);
+				if (!stream.end_object())//Val
+					return false;
+				if (!stream.end_object())//Item
+					return false;
 			}
 			break;
 		case RT_COMPLEX_IDX_MASK:
@@ -472,8 +485,12 @@ value_item::~value_item()
 
 
 
-bool value_item::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_mode_type& mode) const
 {
+	rx_value val;
+	get_value(val, rx_time::now(), mode);
+	if (!val.serialize_value(stream))
+		return false;
 	return true;
 }
 

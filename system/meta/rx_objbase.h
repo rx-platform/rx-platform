@@ -31,8 +31,6 @@
 
 
 
-// rx_values
-#include "lib/rx_values.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
@@ -41,6 +39,8 @@
 #include "system/meta/rx_classes.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
@@ -94,9 +94,11 @@ class value_item
       virtual ~value_item();
 
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_mode_type& mode) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      virtual void get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const = 0;
 
 
   protected:
@@ -161,9 +163,54 @@ class server_const_value_item : public const_value_item
 
       const simple_const_value<valT>& value () const;
 
-      void bind ();
+      bool has_own_time () const;
 
-      void release ();
+      namespace_item_attributes get_attributes () const;
+
+      void item_lock ();
+
+      void item_unlock ();
+
+      void item_lock () const;
+
+      void item_unlock () const;
+
+      void get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const;
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      simple_const_value<valT> _storage;
+
+
+};
+
+
+
+
+
+
+template <typename valT>
+class server_internal_value : public value_item  
+{
+	typedef server_const_value_item<valT> item_type;
+
+  public:
+      server_internal_value (const valT& value);
+
+      ~server_internal_value();
+
+
+      simple_const_value<valT>& value ();
+
+      const simple_const_value<valT>& value () const;
 
       bool has_own_time () const;
 
@@ -191,8 +238,6 @@ class server_const_value_item : public const_value_item
 
       simple_const_value<valT> _storage;
 
-      std::atomic<ref_counting_type> _ref_count;
-
 
 };
 
@@ -208,11 +253,12 @@ class server_const_value_item : public const_value_item
 
 
 
+
 class complex_runtime_item : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(complex_runtime_item);
 	typedef std::vector<complex_runtime_item::smart_ptr> sub_items_type;
-	typedef std::vector<value_item*> values_type;
+	typedef std::vector<std::unique_ptr<value_item> > values_type;
 	typedef std::vector<std::unique_ptr<const_value_item> > const_values_type;
 	typedef std::vector<value_callback_t*> const_values_callbacks_type;
 
@@ -240,6 +286,13 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+
+      const rx_node_id& get_parent () const
+      {
+        return _parent;
+      }
+
+
 	  template<typename T>
 	  uint32_t register_const_value(const string_type& name, const T& val)
 	  {
@@ -252,6 +305,46 @@ class complex_runtime_item : public rx::pointers::reference_object
 			  return RX_OK;
 		  }
 		  return RX_ERROR;
+	  }
+
+	  uint32_t register_const_value(const string_type& name, const rx_value& val)
+	  {
+		  switch (val.get_type())
+		  {
+		  case RX_BOOL_TYPE:
+			  return register_const_value<bool>(name, val);
+		  case RX_SDWORD_TYPE:
+			  return register_const_value<int>(name, val);
+
+		  }
+		  return RX_OK;
+	  }
+
+	  template<typename T>
+	  uint32_t register_value(const string_type& name, const T& val)
+	  {
+		  auto it = _names_cache.find(name);
+		  if (it == _names_cache.end())
+		  {
+			  _values.emplace_back(std::make_unique<server_internal_value<T> >(val));
+			  uint32_t idx = (uint32_t)(_values.size() - 1);
+			  _names_cache.emplace(name, idx | RT_VALUE_IDX_MASK);
+			  return RX_OK;
+		  }
+		  return RX_ERROR;
+	  }
+
+	  uint32_t register_value(const string_type& name, const rx_value& val)
+	  {
+		  switch (val.get_type())
+		  {
+		  case RX_BOOL_TYPE:
+			  return register_value<bool>(name, val);
+		  case RX_SDWORD_TYPE:
+			  return register_value<int>(name, val);
+
+		  }
+		  return RX_OK;
 	  }
 	  callback::callback_handle_t register_callback(const string_type& path, void* p, rx_platform::objects::value_callback_t::callback_function_t func)
 	  {
@@ -308,6 +401,8 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       const_values_callbacks_type _const_values_callbacks;
 
+      rx_node_id _parent;
+
 
 };
 
@@ -331,6 +426,9 @@ object class. basic implementation of an object");
 	typedef std::map<string_type, size_t> items_cache_type;
 	typedef complex_runtime_item_ptr items_type;
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
+
+	template <class metaT, bool _browsable>
+	friend class meta::base_object_class;
 
 public:
 	typedef rx_platform::meta::object_class definition_t;
@@ -407,6 +505,11 @@ public:
 	  uint32_t register_const_value(const string_type& name, const T& val)
 	  {
 		  return _complex_item->register_const_value<T>(name,val);
+	  }
+	  template<typename T>
+	  uint32_t register_value(const string_type& name, const T& val)
+	  {
+		  return _complex_item->register_value<T>(name, val);
 	  }
   protected:
       object_runtime();
@@ -741,8 +844,7 @@ user object class. basic implementation of a user object");
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
-      : _ref_count(1)
-	, _storage(value)
+	: _storage(value)
 {
 }
 
@@ -764,19 +866,6 @@ template <typename valT>
 const simple_const_value<valT>& server_const_value_item<valT>::value () const
 {
 	return (_storage);
-}
-
-template <typename valT>
-void server_const_value_item<valT>::bind ()
-{
-	_ref_count++;
-}
-
-template <typename valT>
-void server_const_value_item<valT>::release ()
-{
-	if (0 == --_ref_count)
-		delete this;
 }
 
 template <typename valT>
@@ -836,6 +925,94 @@ template <typename valT>
 string_type server_const_value_item<valT>::get_type_name () const
 {
 	return "const val";
+}
+
+
+// Parameterized Class rx_platform::objects::server_internal_value 
+
+template <typename valT>
+server_internal_value<valT>::server_internal_value (const valT& value)
+	: _storage(value)
+{
+}
+
+
+template <typename valT>
+server_internal_value<valT>::~server_internal_value()
+{
+}
+
+
+
+template <typename valT>
+simple_const_value<valT>& server_internal_value<valT>::value ()
+{
+	return (_storage);
+}
+
+template <typename valT>
+const simple_const_value<valT>& server_internal_value<valT>::value () const
+{
+	return (_storage);
+}
+
+template <typename valT>
+bool server_internal_value<valT>::has_own_time () const
+{
+  return false;
+
+}
+
+template <typename valT>
+namespace_item_attributes server_internal_value<valT>::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_read_access| namespace_item_write_access);
+}
+
+template <typename valT>
+void server_internal_value<valT>::item_lock ()
+{
+}
+
+template <typename valT>
+void server_internal_value<valT>::item_unlock ()
+{
+}
+
+template <typename valT>
+void server_internal_value<valT>::item_lock () const
+{
+}
+
+template <typename valT>
+void server_internal_value<valT>::item_unlock () const
+{
+}
+
+template <typename valT>
+void server_internal_value<valT>::get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const
+{
+	value().get_value(val);
+	val.set_time(ts);
+	if (mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else if (mode.is_test())
+		val.set_test();
+	else
+		val.set_quality(RX_GOOD_QUALITY);
+}
+
+template <typename valT>
+void server_internal_value<valT>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+	class_name = "_Value";
+	has_own_code_info = true;
+}
+
+template <typename valT>
+string_type server_internal_value<valT>::get_type_name () const
+{
+	return "value";
 }
 
 

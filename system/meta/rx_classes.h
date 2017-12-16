@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,14 +31,14 @@
 
 
 
-// rx_values
-#include "lib/rx_values.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
@@ -104,6 +104,9 @@ class value_item;
 
 typedef TYPELIST_2(const_value_item, value_item) runtime_types;
 
+
+typedef rx_reference<pointers::reference_object> runtime_ptr_t;
+
 }
 
 namespace objects
@@ -163,6 +166,8 @@ class base_meta_type : public ns::rx_platform_item
       virtual bool deserialize (base_meta_reader& stream);
 
       string_type get_type_name () const;
+
+      void construct (runtime_ptr_t what);
 
 
       const rx_node_id& get_id () const
@@ -235,6 +240,9 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(checkable_type);
 
+	template <class T1, bool T2>
+	friend class checkable_type;
+
   public:
       checkable_type();
 
@@ -254,6 +262,8 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
       bool is_browsable () const;
+
+      void construct (runtime_ptr_t what);
 
 
       const string_type& get_name () const
@@ -291,19 +301,19 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
 
 
-class const_value 
+class const_value
 {
+	const_value(const const_value &right) = delete;
+	const_value(const_value &&right) = delete;
+	const_value & operator=(const const_value &right) = delete;
+	const_value & operator=(const_value &&right) = delete;
 
   public:
       const_value();
 
-      const_value(const const_value &right);
-
       const_value (const string_type& name);
 
       virtual ~const_value();
-
-      const_value & operator=(const const_value &right);
 
 
       bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
@@ -335,17 +345,19 @@ class const_value
 
 
 
-class internal_value 
+class simple_value_def
 {
+	simple_value_def(const simple_value_def &right) = delete;
+	simple_value_def(simple_value_def &&right) = delete;
+	simple_value_def & operator=(const simple_value_def &right) = delete;
+	simple_value_def & operator=(simple_value_def &&right) = delete;
 
   public:
-      internal_value();
+      simple_value_def();
 
-      internal_value(const internal_value &right);
+      simple_value_def (const string_type& name);
 
-      virtual ~internal_value();
-
-      internal_value & operator=(const internal_value &right);
+      virtual ~simple_value_def();
 
 
       bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
@@ -393,12 +405,11 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
 	typedef std::vector<std::unique_ptr<const_value> > const_values_type;
-	typedef std::vector<internal_value*> internal_values_type;
+	typedef std::vector<std::unique_ptr<simple_value_def> > simple_values_type;
 	typedef std::vector<variable_attribute> variables_type;
 	typedef std::vector<struct_attribute> structs_type;
 
-	typedef rx_reference<pointers::reference_object> runtime_ptr_t;
-	
+
 	typedef std::set<string_type> names_cahce_type;
 
 
@@ -409,8 +420,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      bool register_internal_value (internal_value* item);
 
       bool register_struct (const struct_attribute& item);
 
@@ -440,6 +449,8 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
 		template <typename constT>
 		bool register_const_value(const string_type& name, const constT& value);
+		template <typename valT>
+		bool register_simple_value(const string_type& name, const valT& value);
   protected:
       base_complex_type();
 
@@ -456,7 +467,7 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
       const_values_type _const_values;
 
-      internal_values_type _internal_values;
+      simple_values_type _simple_values;
 
       structs_type _structs;
 
@@ -490,6 +501,8 @@ class base_mapped_class : public base_complex_type<metaT, _browsable>
 
 
       bool register_mapper (const mapper_attribute& item);
+
+      void construct (runtime_ptr_t what);
 
 
   protected:
@@ -612,7 +625,7 @@ class class_const_value : public const_value
 
 
 
-class complex_class_attribute 
+class complex_class_attribute
 {
 
   public:
@@ -957,18 +970,18 @@ class event_class : public event_class_t
 
 
 template <typename valT>
-class internal_value_item : public internal_value  
+class simple_value_item : public simple_value_def  
 {
 
   public:
-      internal_value_item (const valT& value);
+      simple_value_item (const valT& value);
 
-      internal_value_item (const valT& value, const string_type& name);
+      simple_value_item (const valT& value, const string_type& name);
 
-      virtual ~internal_value_item();
+      virtual ~simple_value_item();
 
 
-      void get_value (values::rx_value& val);
+      void get_value (values::rx_value& val) const;
 
 
   protected:
@@ -982,7 +995,7 @@ class internal_value_item : public internal_value
 };
 
 
-// Parameterized Class rx_platform::meta::class_const_value 
+// Parameterized Class rx_platform::meta::class_const_value
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value)
@@ -1012,29 +1025,33 @@ void class_const_value<valT>::get_value (values::rx_value& val) const
 }
 
 
-// Parameterized Class rx_platform::meta::internal_value_item 
+// Parameterized Class rx_platform::meta::simple_value_item
 
 template <typename valT>
-internal_value_item<valT>::internal_value_item (const valT& value)
+simple_value_item<valT>::simple_value_item (const valT& value)
+	: _storage(value)
 {
 }
 
 template <typename valT>
-internal_value_item<valT>::internal_value_item (const valT& value, const string_type& name)
+simple_value_item<valT>::simple_value_item (const valT& value, const string_type& name)
+	: _storage(value)
+	, simple_value_def(name)
 {
 }
 
 
 template <typename valT>
-internal_value_item<valT>::~internal_value_item()
+simple_value_item<valT>::~simple_value_item()
 {
 }
 
 
 
 template <typename valT>
-void internal_value_item<valT>::get_value (values::rx_value& val)
+void simple_value_item<valT>::get_value (values::rx_value& val) const
 {
+	_storage.get_value(val);
 }
 
 
@@ -1055,6 +1072,26 @@ bool base_complex_type<metaT, _browsable>::register_const_value(const string_typ
 		//if (check_name(name))
 	{
 		_const_values.emplace_back(std::make_unique<const_t>(value, name));
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+template <class metaT, bool _browsable>
+template <typename valT>
+bool base_complex_type<metaT, _browsable>::register_simple_value(const string_type& name, const valT& value)
+{
+	typedef simple_value_item<valT> val_t;
+
+	auto it = _names_cache.find(name);
+	if (it == _names_cache.end())
+		//if (check_name(name))
+	{
+		_simple_values.emplace_back(std::make_unique<val_t>(value, name));
 		return true;
 	}
 	else

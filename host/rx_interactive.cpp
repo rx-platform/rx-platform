@@ -142,6 +142,7 @@ void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::
 {
 	rx_platform::meta::object_class_ptr test("test_class", 55, false);
 	test->register_const_value("testBool", true);
+	test->register_simple_value("testVal", 158);
 	items.push_back(test);
 }
 
