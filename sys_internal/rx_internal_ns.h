@@ -31,12 +31,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 using namespace rx_platform::ns;
 
@@ -79,9 +79,9 @@ contains root server folders\
   private:
 
 
-      static server_directories_type _root_directories;
+      static server_directories_type root_directories_;
 
-      static server_items_type _root_items;
+      static server_items_type root_items_;
 
 
 };

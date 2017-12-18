@@ -58,7 +58,7 @@ class cryptography_key : public pointers::reference_object
 
   protected:
 
-      crypt_key_t _hkey;
+      crypt_key_t hkey_;
 
 
   private:
@@ -85,7 +85,7 @@ class cryptography_hash : public pointers::reference_object
 
   protected:
 
-      crypt_hash_t _hhash;
+      crypt_hash_t hhash_;
 
 
   private:

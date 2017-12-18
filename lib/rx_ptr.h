@@ -147,22 +147,22 @@ public:
 
       const ptrT* operator -> () const
       {
-		  return _ptr;
+		  return ptr_;
       }
 
       ptrT* operator -> ()
       {
-		  return _ptr;
+		  return ptr_;
       }
 
       ptrT& operator * ()
       {
-		  return *_ptr;
+		  return *ptr_;
       }
 
       const ptrT& operator * () const
       {
-		  return *_ptr;
+		  return *ptr_;
       }
 
 
@@ -202,34 +202,34 @@ public:
 	  template<class otherT>
 	  bool operator<(const basic_smart_ptr<otherT>& right) const
 	  {
-		  return _ptr < right._ptr;
+		  return ptr_ < right.ptr_;
 	  }
 	  template<class otherT, class otherFullT>
 	  bool operator>(const basic_smart_ptr<otherT>& right) const
 	  {
-		  return _ptr > right._ptr;
+		  return ptr_ > right.ptr_;
 	  }
 	  template<class otherT, class otherFullT>
 	  bool operator==(const basic_smart_ptr<otherT>& right) const
 	  {
-		  return _ptr == right._ptr;
+		  return ptr_ == right.ptr_;
 	  }
 	  template<class otherT, class otherFullT>
 	  bool operator!=(const basic_smart_ptr<otherT>& right) const
 	  {
-		  return _ptr != right._ptr;
+		  return ptr_ != right.ptr_;
 	  }
 
 	  ptrT* unsafe_ptr()
 	  {
-		  return _ptr;
+		  return ptr_;
 	  }
   protected:
 
   private:
 
 
-      ptrT* _ptr;
+      ptrT* ptr_;
 
 
 };
@@ -250,9 +250,9 @@ public:
 	static reference create_from_pointer(ptrT* ptr)
 	{
 		reference ret;
-		ret._ptr = ptr;
-		if (ret._ptr)
-			ret._ptr->bind();
+		ret.ptr_ = ptr;
+		if (ret.ptr_)
+			ret.ptr_->bind();
 		return ret;
 	}
 private:
@@ -264,15 +264,15 @@ private:
 	template<typename... Args>
 	void __constructor_workaround(Args... args)
 	{
-		this->_ptr = new ptrT(args...);
+		this->ptr_ = new ptrT(args...);
 	}
 	void __constructor_workaround()
 	{
-		this->_ptr = nullptr;
+		this->ptr_ = nullptr;
 	}
 	void __constructor_workaround(_create_new_type)
 	{
-		this->_ptr = new ptrT;
+		this->ptr_ = new ptrT;
 	}
 	void __constructor_workaround(ptrT* pt)
 	{
@@ -299,54 +299,54 @@ public:
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->bind();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->bind();
 		}
 	}
 	template<class derT>
 	reference(const basic_smart_ptr<derT>& right)
 	{
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->bind();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->bind();
 	}
 	//move constructor
 	reference(reference<ptrT>&& right)
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			right._ptr = nullptr;
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
 		}
 	}
 	template<class derT>
 	reference(basic_smart_ptr<derT>&& right)
 	{
-		this->_ptr = right._ptr;
-		right._ptr = nullptr;
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	// assignment  operator
 	reference<ptrT>& operator=(const reference<ptrT>& right)
 	{
 		if (this != &right)
 		{
-			if (this->_ptr)
-				this->_ptr->release();
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->bind();
+			if (this->ptr_)
+				this->ptr_->release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->bind();
 		}
 		return *this;
 	}
 	template<class derT>
 	reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
 	{
-		if (this->_ptr)
-			this->_ptr->release();
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->bind();
+		if (this->ptr_)
+			this->ptr_->release();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->bind();
 		return *this;
 	}
 
@@ -355,34 +355,34 @@ public:
 	{
 		if (this != &right)
 		{
-			if (this->_ptr)
-				this->_ptr->release();
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->bind();
+			if (this->ptr_)
+				this->ptr_->release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->bind();
 		}
 		return *this;
 	}
 	template<class derT>
 	reference<ptrT>& operator=(basic_smart_ptr<derT>&& right)
 	{
-		if (this->_ptr)
-			this->_ptr->release();
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->bind();
+		if (this->ptr_)
+			this->ptr_->release();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->bind();
 		return *this;
 	}
 	// bool conversion
 	operator bool() const
 	{
-		return (this->_ptr != nullptr);
+		return (this->ptr_ != nullptr);
 	}
 
 	~reference()
 	{
-		if (this->_ptr)
-			this->_ptr->release();
+		if (this->ptr_)
+			this->ptr_->release();
 	}
 
 	// cast operations
@@ -392,7 +392,7 @@ private:
 	otherT _internal_cast_to(tl::type2type<otherT>)
 	{
 		otherT ret;
-		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->_ptr));
+		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->ptr_));
 	}
 public:
 	template<class otherT>
@@ -476,7 +476,7 @@ class reference_object
 
 
 
-      std::atomic<ref_counting_type> _ref_count;
+      std::atomic<ref_counting_type> ref_count_;
 
       static std::atomic<ref_counting_type> g_objects_count;
 
@@ -503,15 +503,15 @@ public:
 	static virtual_reference create_from_pointer(ptrT* ptr)
 	{
 		virtual_reference ret;
-		ret._ptr = ptr;
-		if (ret._ptr)
-			ret._ptr->virtual_bind();
+		ret.ptr_ = ptr;
+		if (ret.ptr_)
+			ret.ptr_->virtual_bind();
 		return ret;
 	}
 
 	explicit virtual_reference()
 	{
-		this->_ptr = nullptr;
+		this->ptr_ = nullptr;
 	}
 	explicit virtual_reference(ptrT* pt)
 		: virtual_reference<ptrT>(pt)
@@ -526,67 +526,67 @@ public:
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->virtual_bind();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->virtual_bind();
 		}
 	}
 	template<class derT>
 	virtual_reference(const basic_smart_ptr<derT>& right)
 	{
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->virtual_bind();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->virtual_bind();
 	}
 	//move constructor
 	virtual_reference(virtual_reference<ptrT>&& right)
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			right._ptr = nullptr;
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
 		}
 	}
 	template<class derT>
 	virtual_reference(basic_smart_ptr<derT>&& right)
 	{
-		this->_ptr = right._ptr;
-		right._ptr = nullptr;
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	// assignment operator
 	virtual_reference<ptrT>& operator=(const virtual_reference<ptrT>& right)
 	{
 		if (this != &right)
 		{
-			if (this->_ptr)
-				this->_ptr->virtual_release();
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->virtual_bind();
+			if (this->ptr_)
+				this->ptr_->virtual_release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->virtual_bind();
 		}
 		return *this;
 	}
 	template<class derT>
 	virtual_reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
 	{
-		if (this->_ptr)
-			this->_ptr->virtual_release();
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->virtual_bind();
+		if (this->ptr_)
+			this->ptr_->virtual_release();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->virtual_bind();
 		return *this;
 	}
 	// bool conversion
 	operator bool() const
 	{
-		return (this->_ptr != nullptr);
+		return (this->ptr_ != nullptr);
 	}
 	// operator access overridnig
 
 	~virtual_reference()
 	{
-		if (this->_ptr)
-			this->_ptr->virtual_release();
+		if (this->ptr_)
+			this->ptr_->virtual_release();
 	}
 
 
@@ -597,7 +597,7 @@ private:
 	otherT _internal_cast_to(tl::type2type<otherT>)
 	{
 		otherT ret;
-		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->_ptr));
+		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->ptr_));
 	}
 public:
 	template<class otherT>
@@ -669,7 +669,7 @@ struct struct_reference
 public:
 	// nothing special here
 	struct_reference() 
-		: _ref_count(1)
+		: ref_count_(1)
 	{
 	}
 	// it's not virtual!!!
@@ -695,7 +695,7 @@ public:
   private:
 
 
-      std::atomic<ref_counting_type> _ref_count;
+      std::atomic<ref_counting_type> ref_count_;
 
 
 };
@@ -718,15 +718,15 @@ public:
 	static interface_reference create_from_pointer(ptrT* ptr)
 	{
 		interface_reference ret;
-		ret._ptr = ptr;
-		if (ret._ptr)
-			ret._ptr->interface_bind();
+		ret.ptr_ = ptr;
+		if (ret.ptr_)
+			ret.ptr_->interface_bind();
 		return ret;
 	}
 
 	explicit interface_reference()
 	{
-		this->_ptr = nullptr;
+		this->ptr_ = nullptr;
 	}
 	explicit interface_reference(ptrT* pt)
 		: interface_reference<ptrT>(pt)
@@ -741,67 +741,67 @@ public:
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->interface_bind();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->interface_bind();
 		}
 	}
 	template<class derT>
 	interface_reference(const basic_smart_ptr<derT>& right)
 	{
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->interface_bind();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->interface_bind();
 	}
 	//move constructor
 	interface_reference(interface_reference<ptrT>&& right)
 	{
 		if (this != &right)
 		{
-			this->_ptr = right._ptr;
-			right._ptr = nullptr;
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
 		}
 	}
 	template<class derT>
 	interface_reference(basic_smart_ptr<derT>&& right)
 	{
-		this->_ptr = right._ptr;
-		right._ptr = nullptr;
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	// assignment operator
 	interface_reference<ptrT>& operator=(const interface_reference<ptrT>& right)
 	{
 		if (this != &right)
 		{
-			if (this->_ptr)
-				this->_ptr->interface_release();
-			this->_ptr = right._ptr;
-			if (this->_ptr)
-				this->_ptr->interface_bind();
+			if (this->ptr_)
+				this->ptr_->interface_release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->interface_bind();
 		}
 		return *this;
 	}
 	template<class derT>
 	interface_reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
 	{
-		if (this->_ptr)
-			this->_ptr->interface_release();
-		this->_ptr = right._ptr;
-		if (this->_ptr)
-			this->_ptr->interface_bind();
+		if (this->ptr_)
+			this->ptr_->interface_release();
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->interface_bind();
 		return *this;
 	}
 	// bool conversion
 	operator bool() const
 	{
-		return (this->_ptr != nullptr);
+		return (this->ptr_ != nullptr);
 	}
 	// operator access overridnig
 
 	~interface_reference()
 	{
-		if (this->_ptr)
-			this->_ptr->interface_release();
+		if (this->ptr_)
+			this->ptr_->interface_release();
 	}
 
 
@@ -812,7 +812,7 @@ private:
 	otherT _internal_cast_to(tl::type2type<otherT>)
 	{
 		otherT ret;
-		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->_ptr));
+		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->ptr_));
 	}
 public:
 	template<class otherT>

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,11 +43,11 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
-      : _exit(false),
-        _testBool(true)
+      : exit_(false),
+        testBool_(true)
 {
 }
 
@@ -121,14 +121,14 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	std::cout << ANSI_COLOR_RESET "\r\n";
 	std::cout << "Msg:" << msg << "\r\n";
 	std::cout.flush();
-	_exit = true;
+	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
 	return true;
 }
 
 bool interactive_console_host::exit () const
 {
-	return _exit;
+	return exit_;
 }
 
 void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
@@ -213,15 +213,15 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client
+// Class host::interactive::interactive_console_client 
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
-      : _host(host),
-        _exit(false)
-	, _security_context(pointers::_create_new)
+      : host_(host),
+        exit_(false)
+	, security_context_(pointers::_create_new)
 	, console_client(0)
 {
-	_security_context->login();
+	security_context_->login();
 }
 
 
@@ -240,7 +240,7 @@ const string_type& interactive_console_client::get_console_name ()
 void interactive_console_client::run_interactive ()
 {
 
-	security::security_auto_context dummy(_security_context);
+	security::security_auto_context dummy(security_context_);
 
 	string_type temp;
 	get_wellcome(temp);
@@ -252,7 +252,7 @@ void interactive_console_client::run_interactive ()
 
 	string_type line;
 
-	while (!_exit && !_host->exit())
+	while (!exit_ && !host_->exit())
 	{
 		get_next_line(line);
 
@@ -261,18 +261,18 @@ void interactive_console_client::run_interactive ()
 			memory::buffer_ptr out_buffer(pointers::_create_new);
 			memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			bool ret = cancel_command(out_buffer, err_buffer, _security_context);
+			bool ret = cancel_command(out_buffer, err_buffer, security_context_);
 		}*/
 
 		if (std::cin.fail())
 		{
 			std::cin.clear();
-			if (_host->is_canceling())
+			if (host_->is_canceling())
 			{
 				memory::buffer_ptr out_buffer(pointers::_create_new);
 				memory::buffer_ptr err_buffer(pointers::_create_new);
 
-				cancel_command(out_buffer, err_buffer, _security_context);
+				cancel_command(out_buffer, err_buffer, security_context_);
 			}
 			if (rx_gate::instance().is_shutting_down())
 				break;
@@ -289,7 +289,7 @@ void interactive_console_client::run_interactive ()
 			memory::buffer_ptr out_buffer(pointers::_create_new);
 			memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			do_command(line, out_buffer, err_buffer, _security_context);
+			do_command(line, out_buffer, err_buffer, security_context_);
 		}
 		else if(!rx_platform::rx_gate::instance().is_shutting_down())
 		{
@@ -299,7 +299,7 @@ void interactive_console_client::run_interactive ()
 		}
 
 	}
-	_security_context->logout();
+	security_context_->logout();
 }
 
 void interactive_console_client::virtual_bind ()
@@ -312,7 +312,7 @@ void interactive_console_client::virtual_release ()
 
 security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
 {
-	return _security_context;
+	return security_context_;
 }
 
 void interactive_console_client::exit_console ()
@@ -322,7 +322,7 @@ void interactive_console_client::exit_console ()
 
 bool interactive_console_client::get_next_line (string_type& line)
 {
-	return _host->get_next_line(line);
+	return host_->get_next_line(line);
 }
 
 void interactive_console_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
@@ -331,7 +331,7 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 	{
 		if (!err_buffer->empty())
 			std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
-		if (!_exit && !_host->exit())
+		if (!exit_ && !host_->exit())
 		{
 			std::cout << "\r\n";
 			std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
@@ -357,14 +357,14 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 }
 
 
-// Class host::interactive::interactive_security_context
+// Class host::interactive::interactive_security_context 
 
 interactive_security_context::interactive_security_context()
 {
-	_user_name = "interactive";
-	_full_name = _user_name + "@";
-	_full_name += _location;
-	_port = "internal";
+	user_name_ = "interactive";
+	full_name_ = user_name_ + "@";
+	full_name_ += location_;
+	port_ = "internal";
 }
 
 

@@ -42,25 +42,25 @@ namespace locks {
 
 slim_lock::slim_lock()
 {
-	rx_slim_lock_create(&_slim_lock);
+	rx_slim_lock_create(&slim_lock_);
 }
 
 
 slim_lock::~slim_lock()
 {
-	rx_slim_lock_destroy(&_slim_lock);
+	rx_slim_lock_destroy(&slim_lock_);
 }
 
 
 
 void slim_lock::lock ()
 {
-	rx_slim_lock_aquire(&_slim_lock);
+	rx_slim_lock_aquire(&slim_lock_);
 }
 
 void slim_lock::unlock ()
 {
-	rx_slim_lock_release(&_slim_lock);
+	rx_slim_lock_release(&slim_lock_);
 }
 
 
@@ -68,37 +68,37 @@ void slim_lock::unlock ()
 
 lockable::lockable()
 {
-	rx_slim_lock_create(&_slim_lock);
+	rx_slim_lock_create(&slim_lock_);
 }
 
 
 lockable::~lockable()
 {
-	rx_slim_lock_destroy(&_slim_lock);
+	rx_slim_lock_destroy(&slim_lock_);
 }
 
 
 
 void lockable::lock ()
 {
-	rx_slim_lock_aquire(&_slim_lock);
+	rx_slim_lock_aquire(&slim_lock_);
 }
 
 void lockable::unlock ()
 {
-	rx_slim_lock_release(&_slim_lock);
+	rx_slim_lock_release(&slim_lock_);
 }
 
 
 // Class rx::locks::waitable 
 
 waitable::waitable()
-      : _handle(0)
+      : handle_(0)
 {
 }
 
 waitable::waitable(const waitable &right)
-      : _handle(0)
+      : handle_(0)
 {
 	RX_ASSERT(false);
 }
@@ -119,12 +119,12 @@ waitable & waitable::operator=(const waitable &right)
 
 uint32_t waitable::wait_handle (uint32_t timeout)
 {
-	return rx_handle_wait(_handle, timeout);
+	return rx_handle_wait(handle_, timeout);
 }
 
 uint32_t waitable::wait_handle_us (uint64_t timeout)
 {
-	return rx_handle_wait_us(_handle, timeout);
+	return rx_handle_wait_us(handle_, timeout);
 }
 
 
@@ -132,21 +132,21 @@ uint32_t waitable::wait_handle_us (uint64_t timeout)
 
 event::event (bool initial)
 {
-	_handle = rx_event_create(initial);
+	handle_ = rx_event_create(initial);
 }
 
 
 event::~event()
 {
-	if (_handle)
-		rx_event_destroy(_handle);
+	if (handle_)
+		rx_event_destroy(handle_);
 }
 
 
 
 void event::set ()
 {
-	rx_event_set(_handle);
+	rx_event_set(handle_);
 }
 
 

@@ -80,9 +80,9 @@ private:
 
       static std::atomic<callback_handle_t> g_new_handle;
 
-      lockT _my_lock;
+      lockT my_lock_;
 
-      callbacks_type _callbacks;
+      callbacks_type callbacks_;
 
 
 };
@@ -110,14 +110,14 @@ template <typename lockT, typename argT>
 uint32_t callback_functor_container<lockT,argT>::unregister_callback (callback_handle_t handle)
 {
 	uint32_t ret = RX_ERROR;
-	this->_my_lock.lock();
-	auto it = _callbacks.find(handle);
-	if (it != _callbacks.end())
+	this->my_lock_.lock();
+	auto it = callbacks_.find(handle);
+	if (it != callbacks_.end())
 	{
-		_callbacks.erase(it);
+		callbacks_.erase(it);
 		ret = RX_OK;
 	}
-	this->_my_lock.unlock();
+	this->my_lock_.unlock();
 
 	return ret;
 }
@@ -125,15 +125,15 @@ uint32_t callback_functor_container<lockT,argT>::unregister_callback (callback_h
 template <typename lockT, typename argT>
 void callback_functor_container<lockT,argT>::operator () (const argT& argument, callback_state_t state)
 {
-	this->_my_lock.lock();
-	if (!_callbacks.empty())
+	this->my_lock_.lock();
+	if (!callbacks_.empty())
 	{
-		for (auto it : _callbacks)
+		for (auto it : callbacks_)
 		{
 			it.second(argument, state);
 		}
 	}
-	this->_my_lock.unlock();
+	this->my_lock_.unlock();
 }
 
 template <typename lockT, typename argT>
@@ -141,9 +141,9 @@ callback_handle_t callback_functor_container<lockT, argT>::register_callback(cal
 {
 	callback_handle_t ret = g_new_handle.fetch_add(1,std::memory_order_release);
 
-	this->_my_lock.lock();
-	this->_callbacks.emplace(ret, func);
-	this->_my_lock.unlock();
+	this->my_lock_.lock();
+	this->callbacks_.emplace(ret, func);
+	this->my_lock_.unlock();
 	return ret;
 }
 

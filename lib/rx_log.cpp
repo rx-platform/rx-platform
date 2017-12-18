@@ -86,12 +86,12 @@ void log_event_data::dump_to_stream(std::ostream& stream) const
 log_object *log_object::g_object = nullptr;
 
 log_object::log_object()
-	: _worker("Log", 0)
+	: worker_("Log", 0)
 {
 }
 
 log_object::log_object(const log_object &right)
-	: _worker("Log", 0)
+	: worker_("Log", 0)
 {
 	RX_ASSERT(false);
 }
@@ -125,7 +125,7 @@ void log_object::log_event_fast (log_event_type event_type, const char* library,
 {
 	// just fire the job and let worker take care of it!
 	rx_reference<log_event_job> my_job(event_type, library, source, level, code, message,sync_event);
-	_worker.append(my_job);
+	worker_.append(my_job);
 }
 
 void log_object::log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message, ... )
@@ -149,7 +149,7 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 	std::vector<log_subscriber::smart_ptr> temp_array;
 	temp_array.reserve(0x10);
 	lock();
-	for (auto one : _subscribers)
+	for (auto one : subscribers_)
 		temp_array.emplace_back(one);
 	unlock();
 	for (auto one : temp_array)
@@ -161,26 +161,26 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 void log_object::register_subscriber (log_subscriber::smart_ptr who)
 {
 	locks::auto_lock dummy(this);
-	_subscribers.insert(who);
+	subscribers_.insert(who);
 }
 
 void log_object::unregister_subscriber (log_subscriber::smart_ptr who)
 {
 	locks::auto_lock dummy(this);
-	_subscribers.erase(who);
+	subscribers_.erase(who);
 }
 
 void log_object::deinitialize ()
 {
-	_worker.end();
+	worker_.end();
 	const char* line = "Log Stopped!";
 	LOG_CODE_PREFIX
 	sync_log_event(rx::log::info_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
-	if (_cache)
+	if (cache_)
 	{
-		unregister_subscriber(_cache);
+		unregister_subscriber(cache_);
 	}
 	delete g_object;
 	g_object = nullptr;
@@ -190,8 +190,8 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 {
 	if (log_cache_size)
 	{
-		_cache = rx_create_reference<cache_log_subscriber>(log_cache_size);
-		register_subscriber(_cache);
+		cache_ = rx_create_reference<cache_log_subscriber>(log_cache_size);
+		register_subscriber(cache_);
 	}
 	const char* line = "Log started!";
 	LOG_CODE_PREFIX
@@ -199,7 +199,7 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 	LOG_CODE_POSTFIX
 	out << line << "\r\n";
 
-	_worker.start(priority);
+	worker_.start(priority);
 
 	if (test)
 	{
@@ -253,7 +253,7 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 
 bool log_object::read_cache (const log_query_type& query, log_events_type& result)
 {
-	return _cache->read_log(query, result);
+	return cache_->read_log(query, result);
 }
 
 
@@ -273,14 +273,14 @@ log_subscriber::~log_subscriber()
 // Class rx::log::log_event_job 
 
 log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when)
-      : _sync_event(sync_event),
-        _event_type(event_type),
-        _library(library),
-        _source(source),
-        _code(code),
-        _level(level),
-        _message(message),
-        _when(when)
+      : sync_event_(sync_event),
+        event_type_(event_type),
+        library_(library),
+        source_(source),
+        code_(code),
+        level_(level),
+        message_(message),
+        when_(when)
 {
 }
 
@@ -293,14 +293,14 @@ log_event_job::~log_event_job()
 
 void log_event_job::process ()
 {
-	log_object::instance().sync_log_event(_event_type, _library.c_str(), _source.c_str(), _level, _code.c_str(), _message.c_str(),_sync_event, _when);
+	log_object::instance().sync_log_event(event_type_, library_.c_str(), source_.c_str(), level_, code_.c_str(), message_.c_str(),sync_event_, when_);
 }
 
 
 // Class rx::log::stream_log_subscriber 
 
 stream_log_subscriber::stream_log_subscriber (std::ostream* stream)
-      : _stream(*stream)
+      : stream_(*stream)
 {
 }
 
@@ -316,15 +316,15 @@ void stream_log_subscriber::log_event (log_event_type event_type, const string_t
 
 	log_event_data one = { event_type,library,source,level,code,message,when };
 
-	one.dump_to_stream(_stream);
+	one.dump_to_stream(stream_);
 }
 
 
 // Class rx::log::cache_log_subscriber 
 
 cache_log_subscriber::cache_log_subscriber (size_t max_size)
-      : _max_size(max_size),
-        _current_size(0)
+      : max_size_(max_size),
+        current_size_(0)
 {
 }
 
@@ -338,22 +338,22 @@ cache_log_subscriber::~cache_log_subscriber()
 void cache_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 	log_event_data one = { event_type,library,source,level,code,message,when };
-	locks::auto_lock dummy(&_cache_lock);
-	_events_cache.emplace(when, one);
+	locks::auto_lock dummy(&cache_lock_);
+	events_cache_.emplace(when, one);
 }
 
 bool cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
 {
-	locks::auto_lock dummy(&_cache_lock);
-	auto start_it = _events_cache.begin();
-	auto end_it = _events_cache.end();
+	locks::auto_lock dummy(&cache_lock_);
+	auto start_it = events_cache_.begin();
+	auto end_it = events_cache_.end();
 	if (!query.start_time.is_null())
 	{// we have start time
-		start_it = _events_cache.lower_bound(query.start_time);
+		start_it = events_cache_.lower_bound(query.start_time);
 	}
 	if (!query.stop_time.is_null())
 	{// we have start time
-		end_it = _events_cache.upper_bound(query.start_time);
+		end_it = events_cache_.upper_bound(query.start_time);
 	}
 	for (events_cache_type::const_iterator it=start_it; it!=end_it; it++)
 	{

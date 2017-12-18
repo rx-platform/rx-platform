@@ -32,8 +32,6 @@
 
 #include "lib/rx_lib.h"
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
@@ -42,6 +40,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_io
+#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 
@@ -70,7 +70,7 @@ class manager_initialization_context
 
       const to_register_type& get_to_register () const
       {
-        return _to_register;
+        return to_register_;
       }
 
 
@@ -84,7 +84,7 @@ class manager_initialization_context
 
 
 
-      to_register_type _to_register;
+      to_register_type to_register_;
 
 
 };
@@ -137,31 +137,31 @@ public:
 
       platform_item_ptr get_commands_manager ()
       {
-        return _commands_manager;
+        return commands_manager_;
       }
 
 
       rx_reference<objects::domain_runtime> get_unassigned_domain ()
       {
-        return _unassigned_domain;
+        return unassigned_domain_;
       }
 
 
       rx_reference<objects::application_runtime> get_unassigned_app ()
       {
-        return _unassigned_app;
+        return unassigned_app_;
       }
 
 
       rx_reference<objects::application_runtime> get_system_app ()
       {
-        return _system_app;
+        return system_app_;
       }
 
 
       rx_reference<objects::domain_runtime> get_system_domain ()
       {
-        return _system_domain;
+        return system_domain_;
       }
 
 
@@ -176,20 +176,20 @@ public:
   private:
 
 
-      rx_reference<rx::io::tcp_listent_std_buffer> _telnet_listener;
+      rx_reference<rx::io::tcp_listent_std_buffer> telnet_listener_;
 
-      platform_item_ptr _commands_manager;
+      platform_item_ptr commands_manager_;
 
-      rx_reference<objects::domain_runtime> _unassigned_domain;
+      rx_reference<objects::domain_runtime> unassigned_domain_;
 
-      rx_reference<objects::application_runtime> _unassigned_app;
+      rx_reference<objects::application_runtime> unassigned_app_;
 
-      rx_reference<objects::application_runtime> _system_app;
+      rx_reference<objects::application_runtime> system_app_;
 
-      rx_reference<objects::domain_runtime> _system_domain;
+      rx_reference<objects::domain_runtime> system_domain_;
 
 
-      uint16_t _telnet_port;
+      uint16_t telnet_port_;
 
 
 };

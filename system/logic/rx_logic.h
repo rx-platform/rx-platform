@@ -57,7 +57,7 @@ namespace logic {
 
 
 
-typedef meta::checkable_type< rx_platform::logic::program_runtime , false  > program_runtime_t;
+typedef meta::checkable_type< program_runtime , false  > program_runtime_t;
 
 
 
@@ -94,13 +94,13 @@ public:
 
       const rx_time get_created_time () const
       {
-        return _created_time;
+        return created_time_;
       }
 
 
       const rx_time get_modified_time () const
       {
-        return _modified_time;
+        return modified_time_;
       }
 
 
@@ -120,12 +120,12 @@ public:
   private:
 
 
-      sl_runtime::sl_program_holder _my_program;
+      sl_runtime::sl_program_holder my_program_;
 
 
-      rx_time _created_time;
+      rx_time created_time_;
 
-      rx_time _modified_time;
+      rx_time modified_time_;
 
 
 };

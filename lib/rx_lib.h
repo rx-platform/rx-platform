@@ -230,9 +230,9 @@ public:
 private:
 	bool is_simple() const;
 	void clear_content();
-	uint16_t m_namespace;
-	rx_node_id_type m_node_type;
-	rx_node_id_union m_value;
+	uint16_t namespace_;
+	rx_node_id_type node_type_;
+	rx_node_id_union value_;
 
 };
 ///////////////////////////////////////////////////////////////

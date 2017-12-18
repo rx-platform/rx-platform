@@ -31,14 +31,14 @@
 
 
 
+// rx_objbase
+#include "system/meta/rx_objbase.h"
 // rx_values
 #include "lib/rx_values.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_objbase
-#include "system/meta/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
@@ -75,7 +75,7 @@ and general usage thread pool resources\r\n\
 
       rx_reference<rx::threads::dispatcher_pool> get_pool ()
       {
-        return _pool;
+        return pool_;
       }
 
 
@@ -88,10 +88,10 @@ and general usage thread pool resources\r\n\
   private:
 
 
-      rx_reference<rx::threads::dispatcher_pool> _pool;
+      rx_reference<rx::threads::dispatcher_pool> pool_;
 
 
-      int _threads_count;
+      int threads_count_;
 
 
 };
@@ -166,10 +166,10 @@ thread pool resources\r\n\
   private:
 
 
-      workers_type _workers;
+      workers_type workers_;
 
 
-      uint32_t _pool_size;
+      uint32_t pool_size_;
 
 
 };
@@ -252,19 +252,19 @@ callculation ( normal priority)");
 
       rx_reference<server_dispatcher_object> get_io_pool ()
       {
-        return _io_pool;
+        return io_pool_;
       }
 
 
       rx_reference<server_dispatcher_object> get_general_pool ()
       {
-        return _general_pool;
+        return general_pool_;
       }
 
 
       const rx_reference<domains_pool> get_workers () const
       {
-        return _workers;
+        return workers_;
       }
 
 
@@ -281,17 +281,17 @@ callculation ( normal priority)");
   private:
 
 
-      rx_reference<rx::threads::timer> _general_timer;
+      rx_reference<rx::threads::timer> general_timer_;
 
-      rx_reference<rx::threads::timer> _callculation_timer;
+      rx_reference<rx::threads::timer> callculation_timer_;
 
-      rx_reference<server_dispatcher_object> _io_pool;
+      rx_reference<server_dispatcher_object> io_pool_;
 
-      rx_reference<server_dispatcher_object> _general_pool;
+      rx_reference<server_dispatcher_object> general_pool_;
 
-      rx_reference<dispatcher_subscribers_job> _dispatcher_timer;
+      rx_reference<dispatcher_subscribers_job> dispatcher_timer_;
 
-      rx_reference<domains_pool> _workers;
+      rx_reference<domains_pool> workers_;
 
 
 };

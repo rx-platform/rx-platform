@@ -98,7 +98,7 @@ class rx_platform_host
 
       rx_platform_host * get_parent ()
       {
-        return _parent;
+        return parent_;
       }
 
 
@@ -112,7 +112,7 @@ class rx_platform_host
 
 
 
-      rx_platform_host *_parent;
+      rx_platform_host *parent_;
 
 
 };

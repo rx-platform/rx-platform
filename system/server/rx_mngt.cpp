@@ -53,9 +53,9 @@ namespace mngt {
 // Class rx_platform::mngt::server_manager 
 
 server_manager::server_manager()
-      : _telnet_port(0)
+      : telnet_port_(0)
 {
-	_commands_manager = rx_create_reference<server_command_manager>();
+	commands_manager_ = rx_create_reference<server_command_manager>();
 }
 
 
@@ -76,12 +76,12 @@ void server_manager::virtual_release ()
 uint32_t server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
-	_telnet_port = data.telnet_port;
-	_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
-	_unassigned_domain = rx_create_reference<sys_internal::sys_objects::unssigned_domain>();
-	_unassigned_app = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
-	_system_app = rx_create_reference<sys_internal::sys_objects::system_application>();
-	_system_domain = rx_create_reference<sys_internal::sys_objects::system_domain>();
+	telnet_port_ = data.telnet_port;
+	commands_manager_.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
+	unassigned_domain_ = rx_create_reference<sys_internal::sys_objects::unssigned_domain>();
+	unassigned_app_ = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
+	system_app_ = rx_create_reference<sys_internal::sys_objects::system_application>();
+	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
 	return RX_OK;
 }
 
@@ -92,24 +92,24 @@ uint32_t server_manager::deinitialize ()
 
 uint32_t server_manager::start (hosting::rx_platform_host* host, const managment_data_t& data)
 {
-	if (_telnet_port)
+	if (telnet_port_)
 	{
-		_telnet_listener = rx_create_reference<terminal::console::server_telnet_socket>();
-		_telnet_listener->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), _telnet_port);
+		telnet_listener_ = rx_create_reference<terminal::console::server_telnet_socket>();
+		telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{
-		_commands_manager.cast_to<server_command_manager::smart_ptr>()->register_command(one);
+		commands_manager_.cast_to<server_command_manager::smart_ptr>()->register_command(one);
 	}
 	return RX_OK;
 }
 
 uint32_t server_manager::stop ()
 {
-	if (_telnet_listener)
+	if (telnet_listener_)
 	{
-		_telnet_listener->stop();
-		_telnet_listener = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
+		telnet_listener_->stop();
+		telnet_listener_ = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
 	}
 	return RX_OK;
 }
@@ -134,7 +134,6 @@ typename clsT::smart_ptr server_manager::get_class(const rx_node_id& id)
 	return def;
 }
 template object_class_ptr server_manager::get_class<object_class>(const rx_node_id& id);
-
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()
@@ -162,7 +161,7 @@ manager_initialization_context & manager_initialization_context::operator=(const
 
 void manager_initialization_context::register_command (server_command_base_ptr cmd)
 {
-	_to_register.emplace_back(cmd);
+	to_register_.emplace_back(cmd);
 }
 
 

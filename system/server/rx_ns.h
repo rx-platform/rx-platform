@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -177,7 +177,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       const rx_time get_created () const
       {
-        return _created;
+        return created_;
       }
 
 
@@ -187,18 +187,18 @@ class rx_server_directory : public rx::pointers::reference_object
   private:
 
 
-      rx_reference<rx_server_directory> _parent;
+      rx_reference<rx_server_directory> parent_;
 
-      sub_directories_type _sub_directories;
+      sub_directories_type sub_directories_;
 
-      sub_items_type _sub_items;
+      sub_items_type sub_items_;
 
 
-      string_type _name;
+      string_type name_;
 
-      rx_time _created;
+      rx_time created_;
 
-      rx::locks::slim_lock _structure_lock;
+      rx::locks::slim_lock structure_lock_;
 
 
 };
@@ -267,12 +267,12 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
   private:
 
 
-      rx_reference<rx_server_directory> _parent;
+      rx_reference<rx_server_directory> parent_;
 
-      sub_items_type _sub_items;
+      sub_items_type sub_items_;
 
 
-      locks::lockable _item_lock;
+      locks::lockable item_lock_;
 
 
 };

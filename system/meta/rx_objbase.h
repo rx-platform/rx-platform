@@ -106,7 +106,7 @@ class value_item
   private:
 
 
-      static const uint32_t _type_id;
+      static const uint32_t type_id_;
 
 
 };
@@ -137,7 +137,7 @@ class const_value_item
   private:
 
 
-      static const uint32_t _type_id;
+      static const uint32_t type_id_;
 
 
 };
@@ -187,7 +187,7 @@ class server_const_value_item : public const_value_item
   private:
 
 
-      simple_const_value<valT> _storage;
+      simple_const_value<valT> storage_;
 
 
 };
@@ -236,7 +236,7 @@ class server_internal_value : public value_item
   private:
 
 
-      simple_const_value<valT> _storage;
+      simple_const_value<valT> storage_;
 
 
 };
@@ -265,7 +265,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	typedef std::map<string_type, uint32_t > names_cahce_type;
 
 
-	template<class creatorT,bool _browsable>
+	template<class metaT,bool _browsable>
 	friend class meta::checkable_type;
 
   public:
@@ -289,19 +289,19 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       const rx_node_id& get_parent () const
       {
-        return _parent;
+        return parent_;
       }
 
 
 	  template<typename T>
 	  uint32_t register_const_value(const string_type& name, const T& val)
 	  {
-		  auto it = _names_cache.find(name);
-		  if (it == _names_cache.end())
+		  auto it = names_cache_.find(name);
+		  if (it == names_cache_.end())
 		  {
-			  _const_values.emplace_back(std::make_unique<server_const_value_item<T> >(val));
-			  uint32_t idx = (uint32_t)(_const_values.size() - 1);
-			  _names_cache.emplace(name, idx | RT_CONST_IDX_MASK);
+			  const_values_.emplace_back(std::make_unique<server_const_value_item<T> >(val));
+			  uint32_t idx = (uint32_t)(const_values_.size() - 1);
+			  names_cache_.emplace(name, idx | RT_CONST_IDX_MASK);
 			  return RX_OK;
 		  }
 		  return RX_ERROR;
@@ -323,12 +323,12 @@ class complex_runtime_item : public rx::pointers::reference_object
 	  template<typename T>
 	  uint32_t register_value(const string_type& name, const T& val)
 	  {
-		  auto it = _names_cache.find(name);
-		  if (it == _names_cache.end())
+		  auto it = names_cache_.find(name);
+		  if (it == names_cache_.end())
 		  {
-			  _values.emplace_back(std::make_unique<server_internal_value<T> >(val));
-			  uint32_t idx = (uint32_t)(_values.size() - 1);
-			  _names_cache.emplace(name, idx | RT_VALUE_IDX_MASK);
+			  values_.emplace_back(std::make_unique<server_internal_value<T> >(val));
+			  uint32_t idx = (uint32_t)(values_.size() - 1);
+			  names_cache_.emplace(name, idx | RT_VALUE_IDX_MASK);
 			  return RX_OK;
 		  }
 		  return RX_ERROR;
@@ -388,20 +388,20 @@ class complex_runtime_item : public rx::pointers::reference_object
 
 
 
-      values_type _values;
+      values_type values_;
 
-      const_values_type _const_values;
+      const_values_type const_values_;
 
-      sub_items_type _sub_items;
+      sub_items_type sub_items_;
 
-      rx_reference<object_runtime> _my_object;
+      rx_reference<object_runtime> my_object_;
 
 
-      names_cahce_type _names_cache;
+      names_cahce_type names_cache_;
 
-      const_values_callbacks_type _const_values_callbacks;
+      const_values_callbacks_type const_values_callbacks_;
 
-      rx_node_id _parent;
+      rx_node_id parent_;
 
 
 };
@@ -465,26 +465,26 @@ public:
 
       rx_reference<complex_runtime_item> get_complex_item ()
       {
-        return _complex_item;
+        return complex_item_;
       }
 
 
 
       const rx_time get_created_time () const
       {
-        return _created_time;
+        return created_time_;
       }
 
 
       const rx_mode_type& get_mode () const
       {
-        return _mode;
+        return mode_;
       }
 
 
       const rx_time get_modified_time () const
       {
-        return _modified_time;
+        return modified_time_;
       }
 
 
@@ -494,7 +494,7 @@ public:
 	  template<typename... Args>
 	  callback::callback_handle_t register_callback(const string_type& path,Args... args)
 	  {
-		  return _complex_item->register_callback(path, args...);
+		  return complex_item_->register_callback(path, args...);
 	  }
 	  void unregister_callback(const string_type& path, callback::callback_handle_t)
 	  {
@@ -504,12 +504,12 @@ public:
 	  template<typename T>
 	  uint32_t register_const_value(const string_type& name, const T& val)
 	  {
-		  return _complex_item->register_const_value<T>(name,val);
+		  return complex_item_->register_const_value<T>(name,val);
 	  }
 	  template<typename T>
 	  uint32_t register_value(const string_type& name, const T& val)
 	  {
-		  return _complex_item->register_value<T>(name, val);
+		  return complex_item_->register_value<T>(name, val);
 	  }
   protected:
       object_runtime();
@@ -522,24 +522,24 @@ public:
       bool init_object ();
 
 
-      rx_reference<application_runtime> _my_application;
+      rx_reference<application_runtime> my_application_;
 
-      rx_reference<domain_runtime> _my_domain;
+      rx_reference<domain_runtime> my_domain_;
 
 
   private:
 
 
-      rx_reference<complex_runtime_item> _complex_item;
+      rx_reference<complex_runtime_item> complex_item_;
 
-      programs_type _programs;
+      programs_type programs_;
 
 
-      rx_time _created_time;
+      rx_time created_time_;
 
-      rx_mode_type _mode;
+      rx_mode_type mode_;
 
-      rx_time _modified_time;
+      rx_time modified_time_;
 
 
 };
@@ -661,11 +661,11 @@ class variable_runtime : public complex_runtime_item
   private:
 
 
-      filters_type _filters;
+      filters_type filters_;
 
-      sources_type _input_sources;
+      sources_type input_sources_;
 
-      sources_type _output_sources;
+      sources_type output_sources_;
 
 
 };
@@ -705,7 +705,7 @@ system domain class. basic implementation of a domain");
   private:
 
 
-      objects_type _objects;
+      objects_type objects_;
 
 
 };
@@ -802,9 +802,9 @@ system application class. contains system default application");
 
 
 
-      domains_type _domains;
+      domains_type domains_;
 
-      ports_type _ports;
+      ports_type ports_;
 
 
 };
@@ -844,7 +844,7 @@ user object class. basic implementation of a user object");
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
-	: _storage(value)
+	: storage_(value)
 {
 }
 
@@ -859,13 +859,13 @@ server_const_value_item<valT>::~server_const_value_item()
 template <typename valT>
 simple_const_value<valT>& server_const_value_item<valT>::value ()
 {
-	return (_storage);
+	return (storage_);
 }
 
 template <typename valT>
 const simple_const_value<valT>& server_const_value_item<valT>::value () const
 {
-	return (_storage);
+	return (storage_);
 }
 
 template <typename valT>
@@ -924,7 +924,7 @@ void server_const_value_item<valT>::get_class_info (string_type& class_name, str
 template <typename valT>
 string_type server_const_value_item<valT>::get_type_name () const
 {
-	return "const val";
+	return "const_val";
 }
 
 
@@ -932,7 +932,7 @@ string_type server_const_value_item<valT>::get_type_name () const
 
 template <typename valT>
 server_internal_value<valT>::server_internal_value (const valT& value)
-	: _storage(value)
+	: storage_(value)
 {
 }
 
@@ -947,13 +947,13 @@ server_internal_value<valT>::~server_internal_value()
 template <typename valT>
 simple_const_value<valT>& server_internal_value<valT>::value ()
 {
-	return (_storage);
+	return (storage_);
 }
 
 template <typename valT>
 const simple_const_value<valT>& server_internal_value<valT>::value () const
 {
-	return (_storage);
+	return (storage_);
 }
 
 template <typename valT>

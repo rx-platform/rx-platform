@@ -77,14 +77,14 @@
  LOG_CODE_POSTFIX
 //////////////////////////////////////////////////////////////////////////////
 
-// rx_job
-#include "lib/rx_job.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_lock
 #include "lib/rx_lock.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_job
+#include "lib/rx_job.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 
 
@@ -173,7 +173,7 @@ class stream_log_subscriber : public log_subscriber,
   private:
 
 
-      std::ostream& _stream;
+      std::ostream& stream_;
 
 
 };
@@ -206,13 +206,13 @@ class cache_log_subscriber : public log_subscriber,
   private:
 
 
-      size_t _max_size;
+      size_t max_size_;
 
-      events_cache_type _events_cache;
+      events_cache_type events_cache_;
 
-      size_t _current_size;
+      size_t current_size_;
 
-      locks::lockable _cache_lock;
+      locks::lockable cache_lock_;
 
 
 };
@@ -263,11 +263,11 @@ class log_object : public locks::lockable
 
       static log_object *g_object;
 
-      subscribers_type _subscribers;
+      subscribers_type subscribers_;
 
-      threads::physical_job_thread _worker;
+      threads::physical_job_thread worker_;
 
-      rx_reference<cache_log_subscriber> _cache;
+      rx_reference<cache_log_subscriber> cache_;
 
 
     friend class log_event_job;
@@ -297,22 +297,22 @@ class log_event_job : public jobs::job
   private:
 
 
-      locks::event *_sync_event;
+      locks::event *sync_event_;
 
 
-      log_event_type _event_type;
+      log_event_type event_type_;
 
-      string_type _library;
+      string_type library_;
 
-      string_type _source;
+      string_type source_;
 
-      string_type _code;
+      string_type code_;
 
-      int _level;
+      int level_;
 
-      string_type _message;
+      string_type message_;
 
-      rx_time _when;
+      rx_time when_;
 
 
 };

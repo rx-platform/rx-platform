@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -42,7 +42,7 @@ namespace sl_runtime {
 #define CHANELS_NUMBER		32
 #define SPACE_PER_MODULE	(CHANELS_NUMBER*SPACE_PER_CHANEL)
 
-// Class sl_runtime::sl_program
+// Class sl_runtime::sl_program 
 
 sl_program::sl_program()
 {
@@ -86,24 +86,24 @@ void sl_program::load (FILE* file, dword version)
 }
 
 
-// Class sl_runtime::sl_module_base
+// Class sl_runtime::sl_module_base 
 
 sl_module_base::sl_module_base(const sl_module_base &right)
-      : _order(0)
+      : order_(0)
 {
 	RX_ASSERT(false);
 }
 
 sl_module_base::sl_module_base (int order)
-      : _order(0)
+      : order_(0)
 {
-	  _order=order;
+	  order_=order;
 }
 
 
 sl_module_base::~sl_module_base()
 {
-	for(chanels_iterator it=_chanels.begin(); it!=_chanels.end(); it++)
+	for(chanels_iterator it=chanels_.begin(); it!=chanels_.end(); it++)
 		delete (*it);
 }
 
@@ -118,24 +118,24 @@ sl_module_base & sl_module_base::operator=(const sl_module_base &right)
 
 void sl_module_base::process_inputs (program_context* context, const rx_time& now)
 {
-	for(chanels_iterator it=_chanels.begin(); it!=_chanels.end(); it++)
+	for(chanels_iterator it=chanels_.begin(); it!=chanels_.end(); it++)
 	{
 		if((*it))
-			(*it)->process_inputs(context,_order,now);
+			(*it)->process_inputs(context,order_,now);
 	}
 }
 
 void sl_module_base::process_outputs (program_context* context, const rx_time& now)
 {
-	for(chanels_iterator it=_chanels.begin(); it!=_chanels.end(); it++)
+	for(chanels_iterator it=chanels_.begin(); it!=chanels_.end(); it++)
 	{
 		if((*it))
-			(*it)->process_outputs(context,_order,now);
+			(*it)->process_outputs(context,order_,now);
 	}
 }
 
 
-// Class sl_runtime::sl_scheme
+// Class sl_runtime::sl_scheme 
 
 sl_scheme::sl_scheme(const sl_scheme &right)
 {
@@ -144,20 +144,20 @@ sl_scheme::sl_scheme(const sl_scheme &right)
 
 sl_scheme::sl_scheme (int width, int height)
 {
-	  _width=width;
-	  _height=height;
+	  width_=width;
+	  height_=height;
 	  init_runtime();
 }
 
 
 sl_scheme::~sl_scheme()
 {
-	for(int i=0; i<_width; i++)
+	for(int i=0; i<width_; i++)
 	{
-		for(int j=0; j<_height; j++)
+		for(int j=0; j<height_; j++)
 		{
-			if(_runtime_schema[i][j].instruction!=NULL)
-				delete _runtime_schema[i][j].instruction;
+			if(runtime_schema_[i][j].instruction!=NULL)
+				delete runtime_schema_[i][j].instruction;
 		}
 	}
 }
@@ -174,57 +174,57 @@ sl_scheme & sl_scheme::operator=(const sl_scheme &right)
 void sl_scheme::process_schema (ladder_program_context* context, const rx_time& now)
 {
 	// initialize schema to initial state
-	for(int i=0; i<_width; i++)
+	for(int i=0; i<width_; i++)
 	{
-		for(int j=0; j<_height; j++)
+		for(int j=0; j<height_; j++)
 		{
-			_runtime_schema[i][j].active_element=false;
-			_runtime_schema[i][j].active_horizontal_end=false;
-			_runtime_schema[i][j].active_horizontal_start=(i==0);
-			_runtime_schema[i][j].active_vertical=false;
+			runtime_schema_[i][j].active_element=false;
+			runtime_schema_[i][j].active_horizontal_end=false;
+			runtime_schema_[i][j].active_horizontal_start=(i==0);
+			runtime_schema_[i][j].active_vertical=false;
 		}
 	}
 	// now go and iterate throught
 	int i=0;
-	while(i<_width)
+	while(i<width_)
 	{
 		int j=0;
-		while(j<_height)
+		while(j<height_)
 		{
-			if(_runtime_schema[i][j].instruction)
+			if(runtime_schema_[i][j].instruction)
 			{
-				sl_instruction_base* inst=_runtime_schema[i][j].instruction;
+				sl_instruction_base* inst=runtime_schema_[i][j].instruction;
 				// instruction processing
-				laddder_io_program_data io_data(_runtime_schema,j,i,inst->get_inputs(),inst->get_outputs());
+				laddder_io_program_data io_data(runtime_schema_,j,i,inst->get_inputs(),inst->get_outputs());
 				inst->process_instruction(io_data,context,now);
 				j+=inst->get_ladder_size();
 			}
 			else
 			{
 				// contact processing
-				if(_runtime_schema[i][j].horizontal)
-					_runtime_schema[i][j].active_horizontal_end=_runtime_schema[i][j].active_horizontal_start;
+				if(runtime_schema_[i][j].horizontal)
+					runtime_schema_[i][j].active_horizontal_end=runtime_schema_[i][j].active_horizontal_start;
 				j++;
 			}
 		}
 
 		// vertical processing nad horizontal pass
-		if(i<(_width-1))// no vertical processing for last line
+		if(i<(width_-1))// no vertical processing for last line
 		{
 			j=0;
 			int first_index=-1;
-			while(j<_height)
+			while(j<height_)
 			{
-				if(_runtime_schema[i][j].vertical && first_index==-1)
+				if(runtime_schema_[i][j].vertical && first_index==-1)
 				{// found start
 					first_index=j;
 				}
-				else if(!_runtime_schema[i][j].vertical && first_index!=-1)
+				else if(!runtime_schema_[i][j].vertical && first_index!=-1)
 				{// this is stop
 					bool on=false;
 					for(int k=first_index; k<j+1; k++)
 					{
-						if(_runtime_schema[i][k].active_horizontal_end)
+						if(runtime_schema_[i][k].active_horizontal_end)
 						{
 							on=true;
 							break;
@@ -235,14 +235,14 @@ void sl_scheme::process_schema (ladder_program_context* context, const rx_time& 
 						for(int k=first_index; k<j+1;	k++)
 						{
 							if(k<j)
-								_runtime_schema[i][k].active_vertical=true;
-							_runtime_schema[i+1][k].active_horizontal_start=true;
+								runtime_schema_[i][k].active_vertical=true;
+							runtime_schema_[i+1][k].active_horizontal_start=true;
 						}
 					}
 					first_index=-1;
 				}
-				if(_runtime_schema[i][j].active_horizontal_end && _runtime_schema[i+1][j].horizontal)
-					_runtime_schema[i+1][j].active_horizontal_start=true;
+				if(runtime_schema_[i][j].active_horizontal_end && runtime_schema_[i+1][j].horizontal)
+					runtime_schema_[i+1][j].active_horizontal_start=true;
 				j++;
 			}
 			if(first_index!=-1)
@@ -250,7 +250,7 @@ void sl_scheme::process_schema (ladder_program_context* context, const rx_time& 
 				bool on=false;
 				for(int k=first_index; k<j; k++)
 				{
-					if(_runtime_schema[i][k].active_horizontal_end)
+					if(runtime_schema_[i][k].active_horizontal_end)
 					{
 						on=true;
 						break;
@@ -260,8 +260,8 @@ void sl_scheme::process_schema (ladder_program_context* context, const rx_time& 
 				{
 					for(int k=first_index; k<j;	k++)
 					{
-						_runtime_schema[i][k].active_vertical=true;
-						_runtime_schema[i+1][k].active_horizontal_start=true;
+						runtime_schema_[i][k].active_vertical=true;
+						runtime_schema_[i+1][k].active_horizontal_start=true;
 					}
 				}
 			}
@@ -277,11 +277,11 @@ void sl_scheme::load (FILE* file, dword version)
 
 void sl_scheme::init_runtime ()
 {
-	for(int i=0; i<_width; i++)
+	for(int i=0; i<width_; i++)
 	{
 		col_type col;
-		_runtime_schema.push_back(col);
-		for(int j=0; j<_height; j++)
+		runtime_schema_.push_back(col);
+		for(int j=0; j<height_; j++)
 		{
 			schema_elem elem;
 			elem.active_element=false;
@@ -291,35 +291,35 @@ void sl_scheme::init_runtime ()
 			elem.horizontal=false;
 			elem.instruction=NULL;
 			elem.vertical=false;
-			_runtime_schema[i].push_back(elem);
+			runtime_schema_[i].push_back(elem);
 		}
 	}
 }
 
 void sl_scheme::get_debug_data (std::vector<bool>& data)
 {
-	data.reserve(_width*_height*4);
-	for(int i=0; i<_width; i++)
+	data.reserve(width_*height_*4);
+	for(int i=0; i<width_; i++)
 	{
-		for(int j=0; j<_height; j++)
+		for(int j=0; j<height_; j++)
 		{
-			data.push_back(_runtime_schema[i][j].active_element);
-			data.push_back(_runtime_schema[i][j].active_horizontal_start);
-			data.push_back(_runtime_schema[i][j].active_horizontal_end);
-			data.push_back(_runtime_schema[i][j].active_vertical);
+			data.push_back(runtime_schema_[i][j].active_element);
+			data.push_back(runtime_schema_[i][j].active_horizontal_start);
+			data.push_back(runtime_schema_[i][j].active_horizontal_end);
+			data.push_back(runtime_schema_[i][j].active_vertical);
 		}
 	}
 }
 
 void sl_scheme::initialize (sl_program_holder* holder, initialize_context* ctx, program_context* current_context)
 {
-	for(int i=0; i<_width; i++)
+	for(int i=0; i<width_; i++)
 	{
-		for(int j=0; j<_height; j++)
+		for(int j=0; j<height_; j++)
 		{
-			if(_runtime_schema[i][j].instruction!=NULL)
+			if(runtime_schema_[i][j].instruction!=NULL)
 			{
-				_runtime_schema[i][j].instruction->initialize(holder,ctx,current_context);
+				runtime_schema_[i][j].instruction->initialize(holder,ctx,current_context);
 			}
 		}
 	}
@@ -327,13 +327,13 @@ void sl_scheme::initialize (sl_program_holder* holder, initialize_context* ctx, 
 
 void sl_scheme::deinitialize (sl_program_holder* holder, deinitialize_context* ctx, program_context* current_context)
 {
-	for(int i=0; i<_width; i++)
+	for(int i=0; i<width_; i++)
 	{
-		for(int j=0; j<_height; j++)
+		for(int j=0; j<height_; j++)
 		{
-			if(_runtime_schema[i][j].instruction!=NULL)
+			if(runtime_schema_[i][j].instruction!=NULL)
 			{
-				_runtime_schema[i][j].instruction->deinitialize(holder,ctx,current_context);
+				runtime_schema_[i][j].instruction->deinitialize(holder,ctx,current_context);
 			}
 		}
 	}
@@ -341,21 +341,21 @@ void sl_scheme::deinitialize (sl_program_holder* holder, deinitialize_context* c
 
 void sl_scheme::set_vertical (int x, int y)
 {
-	_runtime_schema[x][y].vertical=true;
+	runtime_schema_[x][y].vertical=true;
 }
 
 void sl_scheme::set_horizontal (int x, int y)
 {
-	_runtime_schema[x][y].horizontal=true;
+	runtime_schema_[x][y].horizontal=true;
 }
 
 void sl_scheme::set_instruction (int x, int y, sl_instruction_base* inst)
 {
-	_runtime_schema[x][y].instruction=inst;
+	runtime_schema_[x][y].instruction=inst;
 }
 
 
-// Class sl_runtime::sl_ladder_program
+// Class sl_runtime::sl_ladder_program 
 
 sl_ladder_program::sl_ladder_program()
 {
@@ -364,7 +364,7 @@ sl_ladder_program::sl_ladder_program()
 
 sl_ladder_program::~sl_ladder_program()
 {
-	for(schemas_iterator it=_schemas.begin(); it!=_schemas.end(); it++)
+	for(schemas_iterator it=schemas_.begin(); it!=schemas_.end(); it++)
 		delete (*it);
 }
 
@@ -377,7 +377,7 @@ void sl_ladder_program::process_program (program_context* context, const rx_time
 	ladder_context->get_debug_segment(segment);
 	bool done_dbg=false;
 	int current_segment=0;
-	for(schemas_iterator it=_schemas.begin(); it!=_schemas.end(); it++)
+	for(schemas_iterator it=schemas_.begin(); it!=schemas_.end(); it++)
 	{
 		current_segment++;
 		(*it)->process_schema(ladder_context,now);
@@ -409,7 +409,7 @@ void sl_ladder_program::load (FILE* file, dword version)
 void sl_ladder_program::initialize (sl_program_holder* holder, initialize_context* ctx, program_context* current_context)
 {
 	sl_program::initialize(holder,ctx,current_context);
-	for(schemas_iterator it=_schemas.begin(); it!=_schemas.end(); it++)
+	for(schemas_iterator it=schemas_.begin(); it!=schemas_.end(); it++)
 	{
 		(*it)->initialize(holder,ctx,current_context);
 	}
@@ -418,7 +418,7 @@ void sl_ladder_program::initialize (sl_program_holder* holder, initialize_contex
 void sl_ladder_program::deinitialize (sl_program_holder* holder, deinitialize_context* ctx, program_context* current_context)
 {
 	sl_program::deinitialize(holder,ctx,current_context);
-	for(schemas_iterator it=_schemas.begin(); it!=_schemas.end(); it++)
+	for(schemas_iterator it=schemas_.begin(); it!=schemas_.end(); it++)
 	{
 		(*it)->deinitialize(holder,ctx,current_context);
 	}
@@ -426,30 +426,30 @@ void sl_ladder_program::deinitialize (sl_program_holder* holder, deinitialize_co
 
 void sl_ladder_program::add_schema (sl_scheme* sch)
 {
-	_schemas.push_back(sch);
+	schemas_.push_back(sch);
 }
 
 
-// Class sl_runtime::program_context
+// Class sl_runtime::program_context 
 
 program_context::program_context(const program_context &right)
-      : _watch_base(NULL),
-        _dbg_segment(NULL),
-        _wnd_id(-1),
-        _temp_wnd_id(-1),
-        _debug_segment(-1)
+      : watch_base_(NULL),
+        dbg_segment_(NULL),
+        wnd_id_(-1),
+        temp_wnd_id_(-1),
+        debug_segment_(-1)
 {
 	RX_ASSERT(false);
 }
 
 program_context::program_context (program_context* parent, sl_program_holder* holder)
-      : _watch_base(NULL),
-        _dbg_segment(NULL),
-        _wnd_id(-1),
-        _temp_wnd_id(-1),
-        _debug_segment(-1)
-  ,_parent(parent)
-  , _holder(holder)
+      : watch_base_(NULL),
+        dbg_segment_(NULL),
+        wnd_id_(-1),
+        temp_wnd_id_(-1),
+        debug_segment_(-1)
+  ,parent_(parent)
+  , holder_(holder)
 {
 }
 
@@ -469,10 +469,10 @@ program_context & program_context::operator=(const program_context &right)
 
 void program_context::initialize (initialize_context* ctx)
 {
-	if(_parent==NULL)
+	if(parent_==NULL)
 	{
-		_watch_base=ctx->create_watch_debugger(this);
-		_dbg_segment=ctx->create_segment_debugger(this);
+		watch_base_=ctx->create_watch_debugger(this);
+		dbg_segment_=ctx->create_segment_debugger(this);
 	}
 }
 
@@ -506,7 +506,7 @@ bool program_context::get_negative_transact (adr_type type, dword reg, byte bit)
 
 void program_context::init_scan ()
 {
-	  _addresses.init_scan();
+	  addresses_.init_scan();
 }
 
 dword program_context::get_register (adr_type type, dword reg)
@@ -523,34 +523,34 @@ void program_context::set_register (adr_type type, dword reg, dword val)
 
 void program_context::set_watch_window (int wnd_id, const std::vector<watch_addr_type>& data)
 {
-	_wnd_id=wnd_id;
-	_watches.clear();
-	_watches.insert(_watches.begin(),data.begin(),data.end());
+	wnd_id_=wnd_id;
+	watches_.clear();
+	watches_.insert(watches_.begin(),data.begin(),data.end());
 }
 
 void program_context::process_watches (const rx_time& now)
 {
-	if(_parent!=NULL)
-		_parent->process_watches(now,this);
+	if(parent_!=NULL)
+		parent_->process_watches(now,this);
 	else
 		process_watches(now,this);
 }
 
 address_space* program_context::get_address_space (adr_type type)
 {
-	if(_parent!=NULL && (IS_MAIN(type) || type==system_registers))
+	if(parent_!=NULL && (IS_MAIN(type) || type==system_registers))
 	{// parent context
-		return &_parent->_addresses;
+		return &parent_->addresses_;
 	}
 	else
 	{// local context
-		return &_addresses;
+		return &addresses_;
 	}
 }
 
 sl_program_holder* program_context::get_program_holder ()
 {
-	return _holder;
+	return holder_;
 }
 
 void program_context::create_debug_data (sl_program_holder* holder)
@@ -559,15 +559,15 @@ void program_context::create_debug_data (sl_program_holder* holder)
 
 bool program_context::set_debug_segment (int segment, const rx_uuid& guid)
 {
-	if(guid==_guid)
+	if(guid==guid_)
 	{// this is ours
-		_holder->set_debug_context(this);
-		_debug_segment=segment;
+		holder_->set_debug_context(this);
+		debug_segment_=segment;
 		return true;// done it
 	}
 	else
 	{// sub program find it
-		program_context* context=_holder->get_subcontext(guid);
+		program_context* context=holder_->get_subcontext(guid);
 		if(context==NULL)
 			return false;// sub program not found
 		context->set_debug_segment(segment,guid);
@@ -577,35 +577,35 @@ bool program_context::set_debug_segment (int segment, const rx_uuid& guid)
 
 void program_context::get_debug_segment (int& segment)
 {
-	segment=_debug_segment;
+	segment=debug_segment_;
 }
 
 void program_context::set_debug_data (const std::vector<bool>& data, const rx_time& now, int segment)
 {
-	if(_parent==NULL)
+	if(parent_==NULL)
 	{// glavni program
 		set_debug_data(data,now,segment,get_guid());
 	}
 	else// posalji glavnom contextu
-		_parent->set_debug_data(data,now,segment,get_guid());
+		parent_->set_debug_data(data,now,segment,get_guid());
 }
 
 void program_context::set_debug_data (const std::vector<bool>& data, const rx_time& now, int segment, const rx_uuid& guid)
 {
-	if(_dbg_segment)
-		_dbg_segment->set_debug_data(guid,data,now,segment);
+	if(dbg_segment_)
+		dbg_segment_->set_debug_data(guid,data,now,segment);
 }
 
 void program_context::process_watches (const rx_time& now, program_context* read_from)
 {
 	std::vector<uint32_t> data;
-	data.reserve(_watches.size());
-	for(watches_iterator it=_watches.begin(); it!=_watches.end(); it++)
+	data.reserve(watches_.size());
+	for(watches_iterator it=watches_.begin(); it!=watches_.end(); it++)
 	{
 		data.push_back(read_from->get_register(it->type,it->address));
 	}
-	if(_watch_base)
-		_watch_base->set_debug_data(_wnd_id,data,now);
+	if(watch_base_)
+		watch_base_->set_debug_data(wnd_id_,data,now);
 }
 
 float program_context::get_float (adr_type type, dword reg)
@@ -633,7 +633,7 @@ bool program_context::get_out_register_written (dword reg)
 }
 
 
-// Class sl_runtime::ladder_program_context
+// Class sl_runtime::ladder_program_context 
 
 ladder_program_context::ladder_program_context (program_context* parent, sl_program_holder* holder)
   : program_context(parent,holder)
@@ -659,7 +659,7 @@ void ladder_program_context::deinitialize (deinitialize_context* ctx)
 }
 
 
-// Class sl_runtime::sl_programs_collection
+// Class sl_runtime::sl_programs_collection 
 
 sl_programs_collection::sl_programs_collection()
 {
@@ -686,17 +686,17 @@ sl_programs_collection & sl_programs_collection::operator=(const sl_programs_col
 
 void sl_programs_collection::deinitialize (deinitialize_context* ctx)
 {
-	for(programs_iterator it=_programs.begin(); it!=_programs.end(); it++)
+	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
 	{
 		(*it)->deinitialize(ctx);
 		delete (*it);
 	}
-	_programs.clear();
+	programs_.clear();
 }
 
 void sl_programs_collection::start_programs ()
 {
-	for(programs_iterator it=_programs.begin(); it!=_programs.end(); it++)
+	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
 	{
 		(*it)->start_program(get_executer(*it));
 	}
@@ -704,7 +704,7 @@ void sl_programs_collection::start_programs ()
 
 void sl_programs_collection::stop_programs ()
 {
-	for(programs_iterator it=_programs.begin(); it!=_programs.end(); it++)
+	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
 	{
 		(*it)->stop_program();
 	}
@@ -712,7 +712,7 @@ void sl_programs_collection::stop_programs ()
 
 void sl_programs_collection::add_program (sl_program_holder* prog)
 {
-	_programs.push_back(prog);
+	programs_.push_back(prog);
 }
 
 program_executer* sl_programs_collection::get_executer (sl_program_holder* holder)
@@ -721,7 +721,7 @@ program_executer* sl_programs_collection::get_executer (sl_program_holder* holde
 }
 
 
-// Class sl_runtime::sl_di_module
+// Class sl_runtime::sl_di_module 
 
 sl_di_module::sl_di_module (int order)
   : sl_module_base(order)
@@ -740,23 +740,23 @@ void sl_di_module::create_chanels (module_chanels_factory* builder)
 	for(int i=0; i<CHANELS_NUMBER; i++)
 	{
 		sl_di_chanel* ch=builder->create_di_chanel(i);
-		_chanels.push_back(ch);
+		chanels_.push_back(ch);
 	}
 }
 
 
-// Class sl_runtime::sl_chanel_base
+// Class sl_runtime::sl_chanel_base 
 
 sl_chanel_base::sl_chanel_base(const sl_chanel_base &right)
-      : _order(0)
+      : order_(0)
 {
 	RX_ASSERT(false);
 }
 
 sl_chanel_base::sl_chanel_base (int order)
-      : _order(0)
+      : order_(0)
 {
-	_order=order;
+	order_=order;
 }
 
 
@@ -783,7 +783,7 @@ void sl_chanel_base::process_outputs (program_context* context, int module, cons
 
 void sl_chanel_base::set_input_bit (int num, int module, bool val, program_context* context)
 {
-	uint32_t address=(num+_order+module*SPACE_PER_MODULE);
+	uint32_t address=(num+order_+module*SPACE_PER_MODULE);
 	uint8_t bit=(uint8_t)(address%32);
 	address=address/32;
 	context->set_bit(input_bits,address,bit,val);
@@ -791,7 +791,7 @@ void sl_chanel_base::set_input_bit (int num, int module, bool val, program_conte
 
 bool sl_chanel_base::get_output_bit (int num, int module, program_context* context)
 {
-	uint32_t address=(num+_order+module*SPACE_PER_MODULE);
+	uint32_t address=(num+order_+module*SPACE_PER_MODULE);
 	uint8_t bit=(uint8_t)(address%32);
 	address=address/32;
 	return context->get_bit(output_bits,address,bit);
@@ -799,31 +799,31 @@ bool sl_chanel_base::get_output_bit (int num, int module, program_context* conte
 
 uint32_t sl_chanel_base::get_output_register (int num, int module, program_context* context)
 {
-	uint32_t address=(num+_order+module*CHANELS_NUMBER);
+	uint32_t address=(num+order_+module*CHANELS_NUMBER);
 	return context->get_register(output_registers,address);
 }
 
 void sl_chanel_base::set_input_register (int num, int module, uint32_t val, program_context* context)
 {
-	uint32_t address=(num+_order+module*CHANELS_NUMBER);
+	uint32_t address=(num+order_+module*CHANELS_NUMBER);
 	context->set_register(input_registers,address,val);
 }
 
 float sl_chanel_base::get_output_float (int num, int module, program_context* context)
 {
-	uint32_t address=(num+_order+module*CHANELS_NUMBER);
+	uint32_t address=(num+order_+module*CHANELS_NUMBER);
 	return context->get_float(output_registers,address);
 }
 
 void sl_chanel_base::set_input_float (int num, int module, float val, program_context* context)
 {
-	uint32_t address=(num+_order+module*CHANELS_NUMBER);
+	uint32_t address=(num+order_+module*CHANELS_NUMBER);
 	context->set_float(input_registers,address,val);
 }
 
 bool sl_chanel_base::get_out_bit_written (int num, int module, program_context* context)
 {
-	uint32_t address=(num+_order+module*SPACE_PER_MODULE);
+	uint32_t address=(num+order_+module*SPACE_PER_MODULE);
 	uint8_t bit=(uint8_t)(address%32);
 	address=address/32;
 	return context->get_out_bit_written(address,bit);
@@ -831,12 +831,12 @@ bool sl_chanel_base::get_out_bit_written (int num, int module, program_context* 
 
 bool sl_chanel_base::get_out_register_written (int num, int module, program_context* context)
 {
-	uint32_t address=(num+_order+module*CHANELS_NUMBER);
+	uint32_t address=(num+order_+module*CHANELS_NUMBER);
 	return context->get_out_register_written(address);
 }
 
 
-// Class sl_runtime::sl_di_chanel
+// Class sl_runtime::sl_di_chanel 
 
 sl_di_chanel::sl_di_chanel (int order)
   : sl_chanel_base(order)
@@ -861,10 +861,10 @@ void sl_di_chanel::set_input_status (bool status, int module, program_context* c
 }
 
 
-// Class sl_runtime::program_executer
+// Class sl_runtime::program_executer 
 
 program_executer::program_executer (sl_program_holder* program)
-      : _program(program)
+      : program_(program)
 {
 }
 
@@ -877,11 +877,11 @@ program_executer::~program_executer()
 
 void program_executer::program_scan ()
 {
-	_program->program_scan();
+	program_->program_scan();
 }
 
 
-// Class sl_runtime::address_space
+// Class sl_runtime::address_space 
 
 address_space::address_space()
 {
@@ -894,9 +894,9 @@ address_space::address_space()
 			mask=mask<<1;
 	}
 	address_range_type range;
-	_prev_values[input_bits]=range;
-	_prev_values[output_bits]=range;
-	_prev_values[memory_bits]=range;
+	prev_values_[input_bits]=range;
+	prev_values_[output_bits]=range;
+	prev_values_[memory_bits]=range;
 }
 
 address_space::address_space(const address_space &right)
@@ -920,12 +920,12 @@ address_space & address_space::operator=(const address_space &right)
 
 bool address_space::get_bit (adr_type type, dword reg, byte bit)
 {
-	return (((_values[type][reg])&and_masks[bit])!=0);
+	return (((values_[type][reg])&and_masks[bit])!=0);
 }
 
 void address_space::set_bit (adr_type type, dword reg, byte bit, bool val)
 {
-	uint32_t tmp=_values[type][reg];
+	uint32_t tmp=values_[type][reg];
 	if(val)
 	{
 		tmp=tmp|and_masks[bit];
@@ -935,19 +935,19 @@ void address_space::set_bit (adr_type type, dword reg, byte bit, bool val)
 		tmp=tmp&or_masks[bit];
 	}
 	// transactions stuff  here
-	_values[type][reg]=tmp;
+	values_[type][reg]=tmp;
 	if(type==output_bits)
 	{
-		uint32_t ch_tmp=_changed_values[type][reg];
-		_changed_values[type][reg]=ch_tmp|and_masks[bit];
+		uint32_t ch_tmp=changed_values_[type][reg];
+		changed_values_[type][reg]=ch_tmp|and_masks[bit];
 	}
 }
 
 bool address_space::get_positive_transact (adr_type type, dword reg, byte bit)
 {
-	uint32_t tmp=_values[type][reg];
-	address_space_iterator it_prev=_prev_values.find(type);
-	if(it_prev!=_prev_values.end())
+	uint32_t tmp=values_[type][reg];
+	address_space_iterator it_prev=prev_values_.find(type);
+	if(it_prev!=prev_values_.end())
 	{
 		address_range_iterator it_adr_prev=it_prev->second.find(reg);
 		if(it_adr_prev!=it_prev->second.end())
@@ -960,9 +960,9 @@ bool address_space::get_positive_transact (adr_type type, dword reg, byte bit)
 
 bool address_space::get_negative_transact (adr_type type, dword reg, byte bit)
 {
-	uint32_t tmp=_values[type][reg];
-	address_space_iterator it_prev=_prev_values.find(type);
-	if(it_prev!=_prev_values.end())
+	uint32_t tmp=values_[type][reg];
+	address_space_iterator it_prev=prev_values_.find(type);
+	if(it_prev!=prev_values_.end())
 	{
 		address_range_iterator it_adr_prev=it_prev->second.find(reg);
 		if(it_adr_prev!=it_prev->second.end())
@@ -985,9 +985,9 @@ void address_space::init_scan ()
 
 void address_space::init_prevs (adr_type type)
 {
-	address_space_iterator it_prev=_prev_values.find(type);
-	address_space_iterator it_curr=_values.find(type);
-	if(it_curr!=_values.end())
+	address_space_iterator it_prev=prev_values_.find(type);
+	address_space_iterator it_curr=values_.find(type);
+	if(it_curr!=values_.end())
 	{
 		for(address_range_iterator it_adr=it_curr->second.begin(); it_adr!=it_curr->second.end(); it_adr++)
 		{
@@ -1002,39 +1002,39 @@ void address_space::init_prevs (adr_type type)
 
 dword address_space::get_register (adr_type type, dword reg)
 {
-	return _values[type][reg];
+	return values_[type][reg];
 }
 
 void address_space::set_register (adr_type type, dword reg, dword val)
 {
-	_values[type][reg]=val;
+	values_[type][reg]=val;
 	if(type==output_bits || type==output_registers)
 	{
-		_changed_values[type][reg]=(uint32_t)(-1);
+		changed_values_[type][reg]=(uint32_t)(-1);
 	}
 }
 
 float address_space::get_float (adr_type type, dword reg)
 {
-	uint32_t dval=_values[type][reg];
+	uint32_t dval=values_[type][reg];
 	return *((float*)&dval);
 }
 
 void address_space::set_float (adr_type type, dword reg, float val)
 {
 	uint32_t dval=*((uint32_t*)&val);
-	_values[type][reg]=dval;
+	values_[type][reg]=dval;
 	if(type==output_bits || type==output_registers)
 	{
-		_changed_values[type][reg]=(uint32_t)(-1);
+		changed_values_[type][reg]=(uint32_t)(-1);
 	}
 }
 
 bool address_space::get_out_bit_written (dword reg, byte bit)
 {
 	adr_type type=output_bits;
-	address_space_iterator it_prev=_changed_values.find(type);
-	if(it_prev!=_changed_values.end())
+	address_space_iterator it_prev=changed_values_.find(type);
+	if(it_prev!=changed_values_.end())
 	{
 		address_range_iterator it_adr_prev=it_prev->second.find(reg);
 		if(it_adr_prev!=it_prev->second.end())
@@ -1048,8 +1048,8 @@ bool address_space::get_out_bit_written (dword reg, byte bit)
 bool address_space::get_out_register_written (dword reg)
 {
 	adr_type type=output_registers;
-	address_space_iterator it_prev=_changed_values.find(type);
-	if(it_prev!=_changed_values.end())
+	address_space_iterator it_prev=changed_values_.find(type);
+	if(it_prev!=changed_values_.end())
 	{
 		address_range_iterator it_adr_prev=it_prev->second.find(reg);
 		if(it_adr_prev!=it_prev->second.end())
@@ -1062,7 +1062,7 @@ bool address_space::get_out_register_written (dword reg)
 
 void address_space::init_changes (adr_type type)
 {
-	for(address_space_iterator ita=_changed_values.begin(); ita!=_changed_values.end(); ita++)
+	for(address_space_iterator ita=changed_values_.begin(); ita!=changed_values_.end(); ita++)
 	{
 		for(address_range_iterator it=ita->second.begin(); it!=ita->second.end(); it++)
 			it->second=0;
@@ -1070,7 +1070,7 @@ void address_space::init_changes (adr_type type)
 }
 
 
-// Class sl_runtime::sl_instruction_base
+// Class sl_runtime::sl_instruction_base 
 
 sl_instruction_base::sl_instruction_base()
 {
@@ -1104,7 +1104,7 @@ void sl_instruction_base::deinitialize (sl_program_holder* holder, deinitialize_
 }
 
 
-// Class sl_runtime::sl_do_module
+// Class sl_runtime::sl_do_module 
 
 sl_do_module::sl_do_module (int order)
   : sl_module_base(order)
@@ -1123,12 +1123,12 @@ void sl_do_module::create_chanels (module_chanels_factory* builder)
 	for(int i=0; i<CHANELS_NUMBER; i++)
 	{
 		sl_do_chanel* ch=builder->create_do_chanel(i);
-		_chanels.push_back(ch);
+		chanels_.push_back(ch);
 	}
 }
 
 
-// Class sl_runtime::sl_do_chanel
+// Class sl_runtime::sl_do_chanel 
 
 sl_do_chanel::sl_do_chanel (int order)
   : sl_chanel_base(order)
@@ -1163,25 +1163,25 @@ bool sl_do_chanel::get_out_bit_written (int module, program_context* context)
 }
 
 
-// Class sl_runtime::sl_program_holder
+// Class sl_runtime::sl_program_holder 
 
 sl_program_holder::sl_program_holder()
-      : _executer(NULL),
-        _main(NULL),
-        _rate(500),
-        _name("NewProgram"),
-        _debug_context(NULL),
-        _first_scan(true)
+      : executer_(NULL),
+        main_(NULL),
+        rate_(500),
+        name_("NewProgram"),
+        debug_context_(NULL),
+        first_scan_(true)
 {
 }
 
 sl_program_holder::sl_program_holder(const sl_program_holder &right)
-      : _executer(NULL),
-        _main(NULL),
-        _rate(500),
-        _name("NewProgram"),
-        _debug_context(NULL),
-        _first_scan(true)
+      : executer_(NULL),
+        main_(NULL),
+        rate_(500),
+        name_("NewProgram"),
+        debug_context_(NULL),
+        first_scan_(true)
 {
 	RX_ASSERT(false);
 }
@@ -1189,13 +1189,13 @@ sl_program_holder::sl_program_holder(const sl_program_holder &right)
 
 sl_program_holder::~sl_program_holder()
 {
-	for(modules_iterator it=_modules.begin(); it!=_modules.end(); it++)
+	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
 		delete (*it);
-	delete _main;
-	delete _main_context;
-	for(subprograms_iterator it=_subprograms.begin(); it!=_subprograms.end(); it++)
+	delete main_;
+	delete main_context_;
+	for(subprograms_iterator it=subprograms_.begin(); it!=subprograms_.end(); it++)
 		delete it->second;
-	for(subcontexts_iterator it=_subcontexts.begin(); it!=_subcontexts.end(); it++)
+	for(subcontexts_iterator it=subcontexts_.begin(); it!=subcontexts_.end(); it++)
 		delete it->second.context;
 }
 
@@ -1210,53 +1210,53 @@ sl_program_holder & sl_program_holder::operator=(const sl_program_holder &right)
 
 void sl_program_holder::initialize (initialize_context* ctx)
 {
-	_main_context->initialize(ctx);
-	_main->initialize(this,ctx,_main_context);
-	for(custom_steps_iterator it=_custom_steps.begin(); it!=_custom_steps.end(); it++)
+	main_context_->initialize(ctx);
+	main_->initialize(this,ctx,main_context_);
+	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
 		(*it)->initialize(this,ctx);
 }
 
 void sl_program_holder::deinitialize (deinitialize_context* ctx)
 {
-	_main->deinitialize(this,ctx,_main_context);
-	_main_context->deinitialize(ctx);
+	main_->deinitialize(this,ctx,main_context_);
+	main_context_->deinitialize(ctx);
 
-	for(custom_steps_iterator it=_custom_steps.begin(); it!=_custom_steps.end(); it++)
+	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
 		(*it)->deinitialize();
-	_custom_steps.clear();
+	custom_steps_.clear();
 }
 
 void sl_program_holder::program_scan ()
 {
 	rx::rx_time now(rx::rx_time::now());
-	_main_context->init_scan();
+	main_context_->init_scan();
 
 	// custom steps before process
-	for(custom_steps_iterator it=_custom_steps.begin(); it!=_custom_steps.end(); it++)
-		(*it)->process_step_before(_main_context,now);
+	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
+		(*it)->process_step_before(main_context_,now);
 
 	//////////////////////////////////////////////////////
 	// processing program
-	process_inputs(_main_context,now);
-	process_program(_main_context,now,_debug_context==_main_context);
-	process_outputs(_main_context,now);
+	process_inputs(main_context_,now);
+	process_program(main_context_,now,debug_context_==main_context_);
+	process_outputs(main_context_,now);
 
 	// custom steps after process
-	for(custom_steps_iterator it=_custom_steps.begin(); it!=_custom_steps.end(); it++)
-		(*it)->process_step_after(_main_context,now);
+	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
+		(*it)->process_step_after(main_context_,now);
 
 	// first scan handling
-	if(_first_scan)
+	if(first_scan_)
 	{
-		_first_scan=false;
-		_main_context->set_bit(system_registers,0,0,false);
+		first_scan_=false;
+		main_context_->set_bit(system_registers,0,0,false);
 	}
 
 }
 
 void sl_program_holder::process_inputs (program_context* context, const rx_time& now)
 {
-	for(modules_iterator it=_modules.begin(); it!=_modules.end(); it++)
+	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
 	{
 		(*it)->process_inputs(context,now);
 	}
@@ -1264,7 +1264,7 @@ void sl_program_holder::process_inputs (program_context* context, const rx_time&
 
 void sl_program_holder::process_outputs (program_context* context, const rx_time& now)
 {
-	for(modules_iterator it=_modules.begin(); it!=_modules.end(); it++)
+	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
 	{
 		(*it)->process_outputs(context,now);
 	}
@@ -1272,14 +1272,14 @@ void sl_program_holder::process_outputs (program_context* context, const rx_time
 
 void sl_program_holder::process_program (program_context* context, const rx_time& now, bool debug)
 {
-	_main->process_program(context,now,debug);
+	main_->process_program(context,now,debug);
 }
 
 void sl_program_holder::load (FILE* file, dword version)
 {
 	// main program
 /*
-	_main->load(file,version);
+	main_->load(file,version);
 
 	// rest of the sub programs
 	int sub_count=0;
@@ -1299,39 +1299,39 @@ void sl_program_holder::load (FILE* file, dword version)
 		string_type name;
 		READ_STRING(name);
 		one->load(file,version);
-		_subprograms[name]=one;
+		subprograms_[name]=one;
 	}*/
 }
 
 void sl_program_holder::start_program (program_executer* executer)
 {
-	_executer=executer;
-	_debug_context=_main_context;
-	_main_context->set_bit(system_registers,0,0,true);
-	_executer->start_program(_rate);
+	executer_=executer;
+	debug_context_=main_context_;
+	main_context_->set_bit(system_registers,0,0,true);
+	executer_->start_program(rate_);
 }
 
 void sl_program_holder::stop_program ()
 {
-	if(_executer!=NULL)
+	if(executer_!=NULL)
 	{
-		_executer->stop_program();
-		_executer->delete_executer();
-		_executer=NULL;
+		executer_->stop_program();
+		executer_->delete_executer();
+		executer_=NULL;
 	}
 }
 
 bool sl_program_holder::register_subcontext (instructions_runtime::subprogram_instruction* inst, const string_type& name, initialize_context* ctx, program_context* current_context)
 {
-	subprograms_iterator it=_subprograms.find(name);
-	if(it!=_subprograms.end())
+	subprograms_iterator it=subprograms_.find(name);
+	if(it!=subprograms_.end())
 	{
 		subcontext_data temp;
 		temp.program=it->second;
 		temp.context=it->second->create_program_context(current_context,this);
 		temp.context->set_guid(inst->get_guid());
-		_subcontexts[inst]=temp;
-		_sub_hash[inst->get_guid()]=temp;
+		subcontexts_[inst]=temp;
+		sub_hash_[inst->get_guid()]=temp;
 
 		temp.context->initialize(ctx);
 		temp.program->initialize(this,ctx,temp.context);
@@ -1343,8 +1343,8 @@ bool sl_program_holder::register_subcontext (instructions_runtime::subprogram_in
 
 program_context* sl_program_holder::get_subcontext (sl_instruction_base* inst)
 {
-	subcontexts_iterator it=_subcontexts.find(inst);
-	if(it!=_subcontexts.end())
+	subcontexts_iterator it=subcontexts_.find(inst);
+	if(it!=subcontexts_.end())
 		return it->second.context;
 	else
 		return NULL;
@@ -1352,10 +1352,10 @@ program_context* sl_program_holder::get_subcontext (sl_instruction_base* inst)
 
 bool sl_program_holder::execute_sub (sl_instruction_base* inst, const rx_time& now)
 {
-	subcontexts_iterator it=_subcontexts.find(inst);
-	if(it!=_subcontexts.end())
+	subcontexts_iterator it=subcontexts_.find(inst);
+	if(it!=subcontexts_.end())
 	{
-		it->second.program->process_program(it->second.context,now,_debug_context==it->second.context);
+		it->second.program->process_program(it->second.context,now,debug_context_==it->second.context);
 		return true;
 	}
 	RX_ASSERT(false);
@@ -1364,8 +1364,8 @@ bool sl_program_holder::execute_sub (sl_instruction_base* inst, const rx_time& n
 
 program_context* sl_program_holder::get_subcontext (const rx_uuid& guid)
 {
-	subcontexts_hash_iterator it=_sub_hash.find(guid);
-	if(it!=_sub_hash.end())
+	subcontexts_hash_iterator it=sub_hash_.find(guid);
+	if(it!=sub_hash_.end())
 		return it->second.context;
 	else
 		return NULL;
@@ -1373,39 +1373,39 @@ program_context* sl_program_holder::get_subcontext (const rx_uuid& guid)
 
 void sl_program_holder::set_debug_context (program_context* context)
 {
-	  _debug_context=context;
+	  debug_context_=context;
 }
 
 void sl_program_holder::set_main_program (sl_program* main)
 {
-	_main=main;
-	_main_context=_main->create_program_context(NULL,this);
+	main_=main;
+	main_context_=main_->create_program_context(NULL,this);
 }
 
 void sl_program_holder::add_sub_program (const string_type& name, sl_program* prog)
 {
-	_subprograms[name]=prog;
+	subprograms_[name]=prog;
 }
 
 void sl_program_holder::add_custom_step (custom_program_step* step)
 {
-	  _custom_steps.push_back(step);
+	  custom_steps_.push_back(step);
 }
 
 void sl_program_holder::add_module (sl_module_base* module)
 {
-	  _modules.push_back(module);
+	  modules_.push_back(module);
 }
 
 program_context* sl_program_holder::get_main_context ()
 {
-	return _main_context;
+	return main_context_;
 }
 
 void sl_program_holder::deinitialize_sub (sl_instruction_base* inst, deinitialize_context* ctx)
 {
-	subcontexts_iterator it=_subcontexts.find(inst);
-	if(it!=_subcontexts.end())
+	subcontexts_iterator it=subcontexts_.find(inst);
+	if(it!=subcontexts_.end())
 	{
 		it->second.program->deinitialize(this,ctx,it->second.context);
 		it->second.context->deinitialize(ctx);
@@ -1413,7 +1413,7 @@ void sl_program_holder::deinitialize_sub (sl_instruction_base* inst, deinitializ
 }
 
 
-// Class sl_runtime::argument_value
+// Class sl_runtime::argument_value 
 
 argument_value::argument_value()
 {
@@ -1421,27 +1421,27 @@ argument_value::argument_value()
 
 argument_value::argument_value(const argument_value &right)
 {
-	_addr=right._addr;
-	_type=right._type;
-	_value=right._value;
+	addr_=right.addr_;
+	type_=right.type_;
+	value_=right.value_;
 }
 
 argument_value::argument_value (float value)
 {
-	_type=const_float_value;
-	*((float*)&_value)=value;
+	type_=const_float_value;
+	*((float*)&value_)=value;
 }
 
 argument_value::argument_value (int value)
 {
-	_type=const_value;
-	_value=value;
+	type_=const_value;
+	value_=value;
 }
 
 argument_value::argument_value (adr_type type, dword addr)
 {
-	_type=type;
-	_addr=addr;
+	type_=type;
+	addr_=addr;
 }
 
 
@@ -1452,9 +1452,9 @@ argument_value::~argument_value()
 
 argument_value & argument_value::operator=(const argument_value &right)
 {
-	_addr=right._addr;
-	_type=right._type;
-	_value=right._value;
+	addr_=right.addr_;
+	type_=right.type_;
+	value_=right.value_;
 	return *this;
 }
 
@@ -1462,23 +1462,23 @@ argument_value & argument_value::operator=(const argument_value &right)
 
 int argument_value::get_value (program_context* context)
 {
-	if(_type==const_value || _type==const_float_value)
-		return _value;
+	if(type_==const_value || type_==const_float_value)
+		return value_;
 	else
-		return (int)context->get_register(_type,_addr);
+		return (int)context->get_register(type_,addr_);
 }
 
 float argument_value::get_float (program_context* context)
 {
-	if(_type==const_value || _type==const_float_value)
-		return *((float*)&_value);
+	if(type_==const_value || type_==const_float_value)
+		return *((float*)&value_);
 	else
-		return context->get_float(_type,_addr);
+		return context->get_float(type_,addr_);
 }
 
 bool argument_value::is_float ()
 {
-	return IS_FLOAT(_type);
+	return IS_FLOAT(type_);
 }
 
 double argument_value::get_double (program_context* context)
@@ -1487,7 +1487,7 @@ double argument_value::get_double (program_context* context)
 }
 
 
-// Class sl_runtime::register_value
+// Class sl_runtime::register_value 
 
 register_value::register_value()
 {
@@ -1495,14 +1495,14 @@ register_value::register_value()
 
 register_value::register_value(const register_value &right)
 {
-	_addr=right._addr;
-	_type=right._type;
+	addr_=right.addr_;
+	type_=right.type_;
 }
 
 register_value::register_value (adr_type type, dword addr)
 {
-	_addr=addr;
-	_type=type;
+	addr_=addr;
+	type_=type;
 }
 
 
@@ -1513,8 +1513,8 @@ register_value::~register_value()
 
 register_value & register_value::operator=(const register_value &right)
 {
-	_addr=right._addr;
-	_type=right._type;
+	addr_=right.addr_;
+	type_=right.type_;
 	return *this;
 }
 
@@ -1523,34 +1523,34 @@ register_value & register_value::operator=(const register_value &right)
 dword register_value::get_value (program_context* context)
 {
 
-	return context->get_register(_type,_addr);
+	return context->get_register(type_,addr_);
 }
 
 void register_value::set_value (program_context* context, dword val)
 {
-	  context->set_register(_type,_addr,val);
+	  context->set_register(type_,addr_,val);
 }
 
 uint64_t register_value::make_cache_value ()
 {
-	  return _addr|(((uint64_t)_type)<<32);
+	  return addr_|(((uint64_t)type_)<<32);
 }
 
 float register_value::get_float (program_context* context)
 {
 
-	return context->get_float(_type,_addr);
+	return context->get_float(type_,addr_);
 }
 
 void register_value::set_float (program_context* context, float val)
 {
 
-	context->set_float(_type,_addr,val);
+	context->set_float(type_,addr_,val);
 }
 
 bool register_value::is_float ()
 {
-	return IS_FLOAT(_type);
+	return IS_FLOAT(type_);
 }
 
 double register_value::get_double (program_context* context)
@@ -1564,30 +1564,30 @@ void register_value::set_double (program_context* context, double val)
 }
 
 
-// Class sl_runtime::bit_value
+// Class sl_runtime::bit_value 
 
 bit_value::bit_value()
-      : _addr(0),
-        _bit(0)
+      : addr_(0),
+        bit_(0)
 {
 }
 
 bit_value::bit_value(const bit_value &right)
-      : _addr(0),
-        _bit(0)
+      : addr_(0),
+        bit_(0)
 {
-	_bit=right._bit;
-	_addr=right._addr;
-	_type=right._type;
+	bit_=right.bit_;
+	addr_=right.addr_;
+	type_=right.type_;
 }
 
 bit_value::bit_value (adr_type type, dword addr, byte bit)
-      : _addr(0),
-        _bit(0)
+      : addr_(0),
+        bit_(0)
 {
-	_bit=bit;
-	_addr=addr;
-	_type=type;
+	bit_=bit;
+	addr_=addr;
+	type_=type;
 }
 
 
@@ -1598,9 +1598,9 @@ bit_value::~bit_value()
 
 bit_value & bit_value::operator=(const bit_value &right)
 {
-	_bit=right._bit;
-	_addr=right._addr;
-	_type=right._type;
+	bit_=right.bit_;
+	addr_=right.addr_;
+	type_=right.type_;
 	return *this;
 }
 
@@ -1608,41 +1608,41 @@ bit_value & bit_value::operator=(const bit_value &right)
 
 bool bit_value::get_value (program_context* context) const
 {
-	return context->get_bit(_type,_addr,_bit);
+	return context->get_bit(type_,addr_,bit_);
 }
 
 void bit_value::set_value (program_context* context, bool val)
 {
-	context->set_bit(_type,_addr,_bit,val);
+	context->set_bit(type_,addr_,bit_,val);
 }
 
 adr_type bit_value::get_type () const
 {
-	return _type;
+	return type_;
 }
 
 dword bit_value::get_addr () const
 {
-	return _addr;
+	return addr_;
 }
 
 byte bit_value::get_bit () const
 {
-	return _bit;
+	return bit_;
 }
 
 bool bit_value::get_positive_transact (program_context* context) const
 {
-	return context->get_positive_transact(_type,_addr,_bit);
+	return context->get_positive_transact(type_,addr_,bit_);
 }
 
 bool bit_value::get_negative_transact (program_context* context) const
 {
-	return context->get_negative_transact(_type,_addr,_bit);
+	return context->get_negative_transact(type_,addr_,bit_);
 }
 
 
-// Class sl_runtime::sl_ai_module
+// Class sl_runtime::sl_ai_module 
 
 sl_ai_module::sl_ai_module (int order)
   : sl_module_base(order)
@@ -1661,12 +1661,12 @@ void sl_ai_module::create_chanels (module_chanels_factory* builder)
 	for(int i=0; i<CHANELS_NUMBER; i++)
 	{
 		sl_ai_chanel* ch=builder->create_ai_chanel(i);
-		_chanels.push_back(ch);
+		chanels_.push_back(ch);
 	}
 }
 
 
-// Class sl_runtime::sl_ao_module
+// Class sl_runtime::sl_ao_module 
 
 sl_ao_module::sl_ao_module (int order)
   : sl_module_base(order)
@@ -1685,12 +1685,12 @@ void sl_ao_module::create_chanels (module_chanels_factory* builder)
 	for(int i=0; i<CHANELS_NUMBER; i++)
 	{
 		sl_ao_chanel* ch=builder->create_ao_chanel(i);
-		_chanels.push_back(ch);
+		chanels_.push_back(ch);
 	}
 }
 
 
-// Class sl_runtime::sl_ai_chanel
+// Class sl_runtime::sl_ai_chanel 
 
 sl_ai_chanel::sl_ai_chanel (int order)
   : sl_chanel_base(order)
@@ -1720,7 +1720,7 @@ void sl_ai_chanel::set_input_float (float value, int module, program_context* co
 }
 
 
-// Class sl_runtime::sl_ao_chanel
+// Class sl_runtime::sl_ao_chanel 
 
 sl_ao_chanel::sl_ao_chanel (int order)
   : sl_chanel_base(order)
@@ -1760,7 +1760,7 @@ void sl_ao_chanel::set_error_status (bool status, int module, program_context* c
 }
 
 
-// Class sl_runtime::watch_base
+// Class sl_runtime::watch_base 
 
 watch_base::watch_base(const watch_base &right)
 {
@@ -1768,7 +1768,7 @@ watch_base::watch_base(const watch_base &right)
 }
 
 watch_base::watch_base (program_context* context)
-	: _context(context)
+	: context_(context)
 {
 }
 
@@ -1788,14 +1788,14 @@ watch_base & watch_base::operator=(const watch_base &right)
 
 program_context* watch_base::get_context ()
 {
-	  return _context;
+	  return context_;
 }
 
 
-// Class sl_runtime::debug_segment_base
+// Class sl_runtime::debug_segment_base 
 
 debug_segment_base::debug_segment_base (program_context* context)
-      : _context(context)
+      : context_(context)
 {
 }
 
@@ -1808,11 +1808,11 @@ debug_segment_base::~debug_segment_base()
 
 program_context* debug_segment_base::get_context ()
 {
-	return _context;
+	return context_;
 }
 
 
-// Class sl_runtime::initialize_context
+// Class sl_runtime::initialize_context 
 
 initialize_context::initialize_context()
 {
@@ -1837,7 +1837,7 @@ initialize_context & initialize_context::operator=(const initialize_context &rig
 
 
 
-// Class sl_runtime::custom_program_step
+// Class sl_runtime::custom_program_step 
 
 custom_program_step::custom_program_step()
 {
@@ -1879,7 +1879,7 @@ void custom_program_step::deinitialize ()
 }
 
 
-// Class sl_runtime::deinitialize_context
+// Class sl_runtime::deinitialize_context 
 
 deinitialize_context::deinitialize_context()
 {
@@ -1892,7 +1892,7 @@ deinitialize_context::~deinitialize_context()
 
 
 
-// Class sl_runtime::io_program_data
+// Class sl_runtime::io_program_data 
 
 io_program_data::io_program_data()
 {
@@ -1905,14 +1905,14 @@ io_program_data::~io_program_data()
 
 
 
-// Class sl_runtime::laddder_io_program_data
+// Class sl_runtime::laddder_io_program_data 
 
 laddder_io_program_data::laddder_io_program_data (schema_type& schema, int& row, int& col, int inputs, int outputs)
-      : _schema(schema),
-        _row(row),
-        _col(col),
-        _inputs(inputs),
-        _outputs(outputs)
+      : schema_(schema),
+        row_(row),
+        col_(col),
+        inputs_(inputs),
+        outputs_(outputs)
 {
 }
 
@@ -1925,29 +1925,29 @@ laddder_io_program_data::~laddder_io_program_data()
 
 bool laddder_io_program_data::get_input (int idx)
 {
-	RX_ASSERT(idx<_inputs);
-	if(idx<_inputs)
-		return _schema[_col][_row+idx].active_horizontal_start;
+	RX_ASSERT(idx<inputs_);
+	if(idx<inputs_)
+		return schema_[col_][row_+idx].active_horizontal_start;
 	else
 		return false;
 }
 
 void laddder_io_program_data::set_output (int idx, bool val)
 {
-	RX_ASSERT(idx<_outputs);
-	if(idx<_outputs)
-		_schema[_col][_row+idx].active_horizontal_end=val;
+	RX_ASSERT(idx<outputs_);
+	if(idx<outputs_)
+		schema_[col_][row_+idx].active_horizontal_end=val;
 }
 
 void laddder_io_program_data::set_instruction_active (bool val)
 {
-	_schema[_col][_row].active_element=val;
+	schema_[col_][row_].active_element=val;
 }
 
 
 namespace builders {
 
-// Class sl_runtime::builders::program_holder_bulder
+// Class sl_runtime::builders::program_holder_bulder 
 
 program_holder_bulder::program_holder_bulder(const program_holder_bulder &right)
 {
@@ -1955,14 +1955,14 @@ program_holder_bulder::program_holder_bulder(const program_holder_bulder &right)
 }
 
 program_holder_bulder::program_holder_bulder (module_chanels_factory* chanels_factory)
-  : _chanels_factory(chanels_factory)
+  : chanels_factory_(chanels_factory)
 {
 }
 
 
 program_holder_bulder::~program_holder_bulder()
 {
-	delete _chanels_factory;
+	delete chanels_factory_;
 }
 
 
@@ -1982,7 +1982,7 @@ sl_program_holder* program_holder_bulder::build_program_holder ()
 	int order=1;
 	while(module=get_next_module(order))
 	{
-		module->create_chanels(_chanels_factory);
+		module->create_chanels(chanels_factory_);
 		ret->add_module(module);
 		order++;
 	}
@@ -2001,7 +2001,7 @@ sl_program_holder* program_holder_bulder::build_program_holder ()
 }
 
 
-// Class sl_runtime::builders::module_chanels_factory
+// Class sl_runtime::builders::module_chanels_factory 
 
 module_chanels_factory::module_chanels_factory()
 {
@@ -2026,7 +2026,7 @@ module_chanels_factory & module_chanels_factory::operator=(const module_chanels_
 
 
 
-// Class sl_runtime::builders::program_builder
+// Class sl_runtime::builders::program_builder 
 
 program_builder::program_builder()
 {
@@ -2051,7 +2051,7 @@ program_builder & program_builder::operator=(const program_builder &right)
 
 
 
-// Class sl_runtime::builders::ladder_program_builder
+// Class sl_runtime::builders::ladder_program_builder 
 
 ladder_program_builder::ladder_program_builder()
 {

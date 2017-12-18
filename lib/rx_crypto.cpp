@@ -41,44 +41,44 @@ namespace crypto {
 // Class rx::crypto::cryptography_key 
 
 cryptography_key::cryptography_key()
-      : _hkey(0)
+      : hkey_(0)
 {
 }
 
 
 cryptography_key::~cryptography_key()
 {
-	if (_hkey)
-		rx_crypt_destroy_key(_hkey);
+	if (hkey_)
+		rx_crypt_destroy_key(hkey_);
 }
 
 
 
 bool cryptography_key::is_valid () const
 {
-	return _hkey != 0;
+	return hkey_ != 0;
 }
 
 
 // Class rx::crypto::cryptography_hash 
 
 cryptography_hash::cryptography_hash()
-      : _hhash(0)
+      : hhash_(0)
 {
 }
 
 
 cryptography_hash::~cryptography_hash()
 {
-	if (_hhash)
-		rx_crypt_destroy_hash(_hhash);
+	if (hhash_)
+		rx_crypt_destroy_hash(hhash_);
 }
 
 
 
 bool cryptography_hash::is_valid () const
 {
-	return _hhash != 0;
+	return hhash_ != 0;
 }
 
 
@@ -86,7 +86,7 @@ bool cryptography_hash::is_valid () const
 
 symetric_key::symetric_key (const void* data, size_t size, int alg, int mode)
 {
-	_hkey = rx_crypt_create_symetric_key(data, size, alg, mode);
+	hkey_ = rx_crypt_create_symetric_key(data, size, alg, mode);
 }
 
 

@@ -71,7 +71,7 @@ cpp_classes_manager& cpp_classes_manager::instance ()
 
 bool cpp_classes_manager::check_class (rx::pointers::code_behind_definition_t* cd)
 {
-	return this->_definitions.find(cd) != _definitions.end();
+	return this->definitions_.find(cd) != definitions_.end();
 }
 
 

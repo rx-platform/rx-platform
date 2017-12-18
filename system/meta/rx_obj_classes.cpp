@@ -86,7 +86,7 @@ void base_object_class<metaT,_browsable>::construct (runtime_ptr_t what)
 	typedef typename metaT::RType rtype_t;
 	typedef typename rtype_t::smart_ptr rptr_t;
 	rptr_t runtime = what.cast_to<rptr_t>();
-	runtime->_programs = _programs;
+	runtime->programs_ = programs_;
 }
 
 
@@ -111,10 +111,6 @@ object_class::~object_class()
 
 
 void object_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-void object_class::get_value (values::rx_value& val) const
 {
 }
 

@@ -43,13 +43,13 @@ namespace python {
 // Class rx_platform::python::py_script 
 
 py_script::py_script()
-      : _initialized(false)
+      : initialized_(false)
 	, prog::server_script_host({"pera","zika","mika"})
 {
 }
 
 py_script::py_script(const py_script &right)
-      : _initialized(false)
+      : initialized_(false)
 	, prog::server_script_host({ "","","" })
 {
 	RX_ASSERT(false);
@@ -84,16 +84,16 @@ bool py_script::initialize ()
 {
 
 	Py_Initialize();
-	_initialized = Py_IsInitialized()!=0;
+	initialized_ = Py_IsInitialized()!=0;
 	PyEval_InitThreads();
 
-	return _initialized;
+	return initialized_;
 }
 
 bool py_script::dump_script_information (std::ostream& out)
 {
 
-	if (_initialized)
+	if (initialized_)
 	{
 		out << Py_GetVersion() << "\r\n";
 		//out << "\r\n" << Py_GetCopyright() << "\r\n\r\n";
@@ -126,7 +126,7 @@ bool py_script::deinit_thread ()
 // Class rx_platform::python::py_item 
 
 py_item::py_item()
-	: _obj(nullptr)
+	: obj_(nullptr)
 {
 }
 
@@ -134,8 +134,8 @@ py_item::py_item(const py_item &right)
 {
 	if (this != &right)
 	{
-		this->_obj = right._obj;
-		Py_XINCREF(this->_obj);
+		this->obj_ = right.obj_;
+		Py_XINCREF(this->obj_);
 	}
 }
 
@@ -143,55 +143,55 @@ py_item::py_item (py_item &&right)
 {
 	if (this != &right)
 	{
-		this->_obj = right._obj;
-		right._obj = nullptr;
+		this->obj_ = right.obj_;
+		right.obj_ = nullptr;
 	}
 }
 
 py_item::py_item (PyObject* obj)
 {
-	_obj = obj;
-	Py_XINCREF(_obj);
+	obj_ = obj;
+	Py_XINCREF(obj_);
 }
 
 py_item::py_item (float val)
 {
-	_obj = PyFloat_FromDouble(val);
-	Py_XINCREF(_obj);
+	obj_ = PyFloat_FromDouble(val);
+	Py_XINCREF(obj_);
 }
 
 py_item::py_item (long val)
 {
-	_obj = PyLong_FromLong(val);
-	Py_XINCREF(_obj);
+	obj_ = PyLong_FromLong(val);
+	Py_XINCREF(obj_);
 }
 
 py_item::py_item (size_t val)
 {
-	_obj = PyLong_FromSize_t(val);
-	Py_XINCREF(_obj);
+	obj_ = PyLong_FromSize_t(val);
+	Py_XINCREF(obj_);
 }
 
 py_item::py_item (bool val)
 {
-	_obj = PyBool_FromLong(val ? 1 : 0);
-	Py_XINCREF(_obj);
+	obj_ = PyBool_FromLong(val ? 1 : 0);
+	Py_XINCREF(obj_);
 }
 
 py_item::py_item (const string_type& val)
 {
 #if PY_MAJOR_VERSION>=3 // version 3 or latter
-	_obj = PyUnicode_FromString(val.c_str());
+	obj_ = PyUnicode_FromString(val.c_str());
 #else
-	_obj = PyString_FromString(val.c_str());
+	obj_ = PyString_FromString(val.c_str());
 #endif
-	Py_XINCREF(_obj);
+	Py_XINCREF(obj_);
 }
 
 
 py_item::~py_item()
 {
-	Py_CLEAR(this->_obj);
+	Py_CLEAR(this->obj_);
 }
 
 
@@ -199,9 +199,9 @@ py_item & py_item::operator=(const py_item &right)
 {
 	if (this != &right)
 	{
-		Py_CLEAR(this->_obj);
-		this->_obj = right._obj;
-		Py_XINCREF(this->_obj);
+		Py_CLEAR(this->obj_);
+		this->obj_ = right.obj_;
+		Py_XINCREF(this->obj_);
 	}
 	return *this;
 }
@@ -209,104 +209,104 @@ py_item & py_item::operator=(const py_item &right)
 
 bool py_item::operator==(const py_item &right) const
 {
-	return this->_obj==right._obj;
+	return this->obj_==right.obj_;
 }
 
 bool py_item::operator!=(const py_item &right) const
 {
-	return this->_obj == right._obj;
+	return this->obj_ == right.obj_;
 }
 
 
 bool py_item::operator<(const py_item &right) const
 {
-	return this->_obj < right._obj;
+	return this->obj_ < right.obj_;
 }
 
 bool py_item::operator>(const py_item &right) const
 {
-	return this->_obj > right._obj;
+	return this->obj_ > right.obj_;
 }
 
 bool py_item::operator<=(const py_item &right) const
 {
-	return this->_obj <= right._obj;
+	return this->obj_ <= right.obj_;
 }
 
 bool py_item::operator>=(const py_item &right) const
 {
-	return this->_obj >= right._obj;
+	return this->obj_ >= right.obj_;
 }
 
 
 
 const PyObject* py_item::operator -> () const
 {
-	return _obj;
+	return obj_;
 }
 
 PyObject* py_item::operator -> ()
 {
-	return _obj;
+	return obj_;
 }
 
 py_item::operator bool () const
 {
-	return _obj != nullptr;
+	return obj_ != nullptr;
 }
 
 bool py_item::is_float () const
 {
-	return (_obj && PyFloat_CheckExact(_obj));
+	return (obj_ && PyFloat_CheckExact(obj_));
 }
 
 double py_item::as_float () const
 {
 	RX_ASSERT(is_float());
 	if (is_float())
-		return PyFloat_AsDouble(_obj);
+		return PyFloat_AsDouble(obj_);
 	else
 		return std::numeric_limits<double>::signaling_NaN();
 }
 
 bool py_item::is_int () const
 {
-	return (_obj && PyLong_CheckExact(_obj));
+	return (obj_ && PyLong_CheckExact(obj_));
 }
 
 long py_item::as_int () const
 {
 	RX_ASSERT(is_int());
 	if (is_int())
-		return PyLong_AsLong(_obj);
+		return PyLong_AsLong(obj_);
 	else
 		return 0;
 }
 
 bool py_item::is_size () const
 {
-	return (_obj && PyLong_CheckExact(_obj));
+	return (obj_ && PyLong_CheckExact(obj_));
 }
 
 size_t py_item::as_size () const
 {
 	RX_ASSERT(is_size());
 	if (is_size())
-		return PyLong_AsSsize_t(_obj);
+		return PyLong_AsSsize_t(obj_);
 	else
 		return 0;
 }
 
 bool py_item::is_bool () const
 {
-	return (_obj && PyBool_Check(_obj));
+	return (obj_ && PyBool_Check(obj_));
 }
 
 bool py_item::as_bool () const
 {
 	RX_ASSERT(is_bool());
 	if (is_bool())
-		return _obj == Py_True;
+		return obj_ == Py_True;
 	else
 		return false;
 }
@@ -315,9 +315,9 @@ bool py_item::is_string () const
 {
 
 #if PY_MAJOR_VERSION>=3 // version 3 or latter
-	return (_obj && PyUnicode_Check(_obj));
+	return (obj_ && PyUnicode_Check(obj_));
 #else
-	return (_obj && PyString_Check(_obj));
+	return (obj_ && PyString_Check(obj_));
 #endif
 }
 
@@ -327,9 +327,9 @@ string_type py_item::as_string () const
 	if (is_string())
 	{
 #if PY_MAJOR_VERSION>=3 // version 3 or latter
-		const char* str = PyUnicode_AsUTF8(_obj);
+		const char* str = PyUnicode_AsUTF8(obj_);
 #else
-		const char* str = PyString_AsString(_obj);
+		const char* str = PyString_AsString(obj_);
 #endif
 		if (str)
 			return string_type(str);

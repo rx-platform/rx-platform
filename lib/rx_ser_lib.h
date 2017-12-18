@@ -41,7 +41,7 @@ using namespace rx::values;
 
 // streaming version
 
-#define RX_FIRST_SERIZALIZE_VERSION 0x80000
+#define RX_FIRST_SERIZALIZE_VERSION 0x00009
 
 #define RX_CURRENT_SERIALIZE_VERSION RX_FIRST_SERIZALIZE_VERSION
 
@@ -122,12 +122,12 @@ public:
 
       const uint32_t get_version () const
       {
-        return _version;
+        return version_;
       }
 
       void set_version (uint32_t value)
       {
-        _version = value;
+        version_ = value;
       }
 
 
@@ -141,7 +141,7 @@ public:
 
 
 
-      uint32_t _version;
+      uint32_t version_;
 
 
 };
@@ -204,12 +204,12 @@ class base_meta_reader
 
       const uint32_t get_version () const
       {
-        return _version;
+        return version_;
       }
 
       void set_version (uint32_t value)
       {
-        _version = value;
+        version_ = value;
       }
 
 
@@ -223,7 +223,7 @@ class base_meta_reader
 
 
 
-      uint32_t _version;
+      uint32_t version_;
 
 
 };

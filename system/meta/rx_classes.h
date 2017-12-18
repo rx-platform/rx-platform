@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -66,6 +66,7 @@ using namespace rx_platform::ns;
 #define RT_TYPE_ID_VALUE 2
 #define RT_TYPE_ID_FULL_VALUE 4
 
+#define RX_INITIAL_ITEM_VERSION 0x10000
 
 #define RX_TYPE_UNKNOWN		0x0
 #define RX_TYPE_OBJ			0x01
@@ -132,7 +133,6 @@ namespace rx_platform {
 
 namespace meta {
 // had to do forward declaration because of back template pattern
-class command_class;
 
 struct meta_data_t
 {
@@ -172,13 +172,13 @@ class base_meta_type : public ns::rx_platform_item
 
       const rx_node_id& get_id () const
       {
-        return _id;
+        return id_;
       }
 
 
       const bool get_system () const
       {
-        return _system;
+        return system_;
       }
 
 
@@ -190,41 +190,9 @@ class base_meta_type : public ns::rx_platform_item
   private:
 
 
-      rx_node_id _id;
+      rx_node_id id_;
 
-      bool _system;
-
-
-};
-
-
-
-
-
-
-typedef base_meta_type< command_class , false  > command_class_t;
-
-
-
-
-
-
-class command_class : public command_class_t, 
-                      	protected rx::point
-{
-
-  public:
-      command_class();
-
-      virtual ~command_class();
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
+      bool system_;
 
 
 };
@@ -268,13 +236,19 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
       const string_type& get_name () const
       {
-        return _name;
+        return name_;
       }
 
 
       const rx_node_id& get_parent () const
       {
-        return _parent;
+        return parent_;
+      }
+
+
+      const uint32_t get_version () const
+      {
+        return version_;
       }
 
 
@@ -289,9 +263,11 @@ class checkable_type : public base_meta_type<metaT, _browsable>
   private:
 
 
-      string_type _name;
+      string_type name_;
 
-      rx_node_id _parent;
+      rx_node_id parent_;
+
+      uint32_t version_;
 
 
 };
@@ -301,7 +277,7 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
 
 
-class const_value
+class const_value 
 {
 	const_value(const const_value &right) = delete;
 	const_value(const_value &&right) = delete;
@@ -325,7 +301,7 @@ class const_value
 
       const string_type& get_name () const
       {
-        return _name;
+        return name_;
       }
 
 
@@ -335,7 +311,7 @@ class const_value
   private:
 
 
-      string_type _name;
+      string_type name_;
 
 
 };
@@ -345,7 +321,7 @@ class const_value
 
 
 
-class simple_value_def
+class simple_value_def 
 {
 	simple_value_def(const simple_value_def &right) = delete;
 	simple_value_def(simple_value_def &&right) = delete;
@@ -369,13 +345,13 @@ class simple_value_def
 
       const bool get_read_only () const
       {
-        return _read_only;
+        return read_only_;
       }
 
 
       const string_type& get_name () const
       {
-        return _name;
+        return name_;
       }
 
 
@@ -385,9 +361,9 @@ class simple_value_def
   private:
 
 
-      bool _read_only;
+      bool read_only_;
 
-      string_type _name;
+      string_type name_;
 
 
 };
@@ -427,23 +403,37 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
       void construct (runtime_ptr_t what);
 
+      void get_value (values::rx_value& val) const;
+
 
       const const_values_type& get_const_values () const
       {
-        return _const_values;
+        return const_values_;
       }
 
 
 
       const bool is_sealed () const
       {
-        return _sealed;
+        return sealed_;
       }
 
 
       const bool is_abstract () const
       {
-        return _abstract;
+        return abstract_;
+      }
+
+
+      const rx_time get_created_time () const
+      {
+        return created_time_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
       }
 
 
@@ -465,20 +455,24 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
   private:
 
 
-      const_values_type _const_values;
+      const_values_type const_values_;
 
-      simple_values_type _simple_values;
+      simple_values_type simple_values_;
 
-      structs_type _structs;
+      structs_type structs_;
 
-      variables_type _variables;
+      variables_type variables_;
 
 
-      bool _sealed;
+      bool sealed_;
 
-      names_cahce_type _names_cache;
+      names_cahce_type names_cache_;
 
-      bool _abstract;
+      bool abstract_;
+
+      rx_time created_time_;
+
+      rx_time modified_time_;
 
 
 };
@@ -517,7 +511,7 @@ class base_mapped_class : public base_complex_type<metaT, _browsable>
   private:
 
 
-      mappers_type _mappers;
+      mappers_type mappers_;
 
 
 };
@@ -615,7 +609,7 @@ class class_const_value : public const_value
   private:
 
 
-      simple_const_value<valT> _storage;
+      simple_const_value<valT> storage_;
 
 
 };
@@ -625,7 +619,7 @@ class class_const_value : public const_value
 
 
 
-class complex_class_attribute
+class complex_class_attribute 
 {
 
   public:
@@ -641,13 +635,13 @@ class complex_class_attribute
 
       const string_type& get_name () const
       {
-        return _name;
+        return name_;
       }
 
 
       const rx_node_id& get_target_id () const
       {
-        return _target_id;
+        return target_id_;
       }
 
 
@@ -657,9 +651,9 @@ class complex_class_attribute
   private:
 
 
-      string_type _name;
+      string_type name_;
 
-      rx_node_id _target_id;
+      rx_node_id target_id_;
 
 
 };
@@ -824,11 +818,11 @@ class base_variable_class : public base_mapped_class<metaT, _browsable>
   private:
 
 
-      sources_type _sources;
+      sources_type sources_;
 
-      filters_type _filters;
+      filters_type filters_;
 
-      events_type _events;
+      events_type events_;
 
 
 };
@@ -989,23 +983,23 @@ class simple_value_item : public simple_value_def
   private:
 
 
-      simple_const_value<valT> _storage;
+      simple_const_value<valT> storage_;
 
 
 };
 
 
-// Parameterized Class rx_platform::meta::class_const_value
+// Parameterized Class rx_platform::meta::class_const_value 
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value)
-	: _storage(value)
+	: storage_(value)
 {
 }
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value, const string_type& name)
-	: _storage(value)
+	: storage_(value)
 	, const_value(name)
 {
 }
@@ -1021,21 +1015,21 @@ class_const_value<valT>::~class_const_value()
 template <typename valT>
 void class_const_value<valT>::get_value (values::rx_value& val) const
 {
-	_storage.get_value(val);
+	storage_.get_value(val);
 }
 
 
-// Parameterized Class rx_platform::meta::simple_value_item
+// Parameterized Class rx_platform::meta::simple_value_item 
 
 template <typename valT>
 simple_value_item<valT>::simple_value_item (const valT& value)
-	: _storage(value)
+	: storage_(value)
 {
 }
 
 template <typename valT>
 simple_value_item<valT>::simple_value_item (const valT& value, const string_type& name)
-	: _storage(value)
+	: storage_(value)
 	, simple_value_def(name)
 {
 }
@@ -1051,7 +1045,7 @@ simple_value_item<valT>::~simple_value_item()
 template <typename valT>
 void simple_value_item<valT>::get_value (values::rx_value& val) const
 {
-	_storage.get_value(val);
+	storage_.get_value(val);
 }
 
 
@@ -1067,11 +1061,11 @@ bool base_complex_type<metaT, _browsable>::register_const_value(const string_typ
 {
 	typedef class_const_value<constT> const_t;
 
-	auto it = _names_cache.find(name);
-	if (it == _names_cache.end())
+	auto it = names_cache_.find(name);
+	if (it == names_cache_.end())
 		//if (check_name(name))
 	{
-		_const_values.emplace_back(std::make_unique<const_t>(value, name));
+		const_values_.emplace_back(std::make_unique<const_t>(value, name));
 		return true;
 	}
 	else
@@ -1087,11 +1081,11 @@ bool base_complex_type<metaT, _browsable>::register_simple_value(const string_ty
 {
 	typedef simple_value_item<valT> val_t;
 
-	auto it = _names_cache.find(name);
-	if (it == _names_cache.end())
+	auto it = names_cache_.find(name);
+	if (it == names_cache_.end())
 		//if (check_name(name))
 	{
-		_simple_values.emplace_back(std::make_unique<val_t>(value, name));
+		simple_values_.emplace_back(std::make_unique<val_t>(value, name));
 		return true;
 	}
 	else

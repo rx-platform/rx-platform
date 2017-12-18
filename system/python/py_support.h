@@ -79,7 +79,7 @@ class py_script : public prog::server_script_host
 
 
 
-      bool _initialized;
+      bool initialized_;
 
 
 };
@@ -160,7 +160,7 @@ class py_item
   private:
 
 
-      PyObject* _obj;
+      PyObject* obj_;
 
 
 };

@@ -185,13 +185,13 @@ class simple_value
 
       const valT get_value () const
       {
-        return _value;
+        return value_;
       }
 
 
       const rx_time get_time_stamp () const
       {
-        return _time_stamp;
+        return time_stamp_;
       }
 
 
@@ -201,9 +201,9 @@ class simple_value
   private:
 
 
-      valT _value;
+      valT value_;
 
-      rx_time _time_stamp;
+      rx_time time_stamp_;
 
 
 };
@@ -327,29 +327,29 @@ class rx_value
 
       const uint8_t get_type () const
       {
-        return _type;
+        return type_;
       }
 
 
       const uint32_t get_quality () const
       {
-        return _quality;
+        return quality_;
       }
 
       void set_quality (uint32_t value)
       {
-        _quality = value;
+        quality_ = value;
       }
 
 
       const rx_time get_time () const
       {
-        return _time;
+        return time_;
       }
 
       void set_time (rx_time value)
       {
-        _time = value;
+        time_ = value;
       }
 
 
@@ -369,15 +369,15 @@ class rx_value
       void copy_union (uint8_t type, rx_value_union& to, const rx_value_union& from);
 
 
-      rx_value_union _value;
+      rx_value_union value_;
 
-      uint8_t _type;
+      uint8_t type_;
 
-      uint32_t _quality;
+      uint32_t quality_;
 
-      rx_time _time;
+      rx_time time_;
 
-      uint32_t _origin;
+      uint32_t origin_;
 
 
 };
@@ -435,7 +435,7 @@ class const_variable_value
   private:
 
 
-      rx_value _rx_value;
+      rx_value rx_value_;
 
 
 };
@@ -460,7 +460,7 @@ class allways_good_value
 
       operator valT ()
       {
-		  return _value;
+		  return value_;
       }
 
       valT& operator = (const valT& right);
@@ -481,20 +481,20 @@ class allways_good_value
 
       operator valT () const
       {
-		  return _value;
+		  return value_;
       }
 
 
       const valT& get_value () const
       {
-        return _value;
+        return value_;
       }
 
 
 
   protected:
 
-      valT _value;
+      valT value_;
 
 
   private:
@@ -519,7 +519,7 @@ class simple_const_value : public allways_good_value<valT>
 
       void get_value (rx_value& value) const
       {
-		  value = rx_value(this->_value);
+		  value = rx_value(this->value_);
       }
 
 
@@ -536,15 +536,15 @@ class simple_const_value : public allways_good_value<valT>
 template <typename valT>
 simple_value<valT>::simple_value(const simple_value<valT> &right)
 {
-	_value = right._value;
-	_time_stamp = right._time_stamp;
+	value_ = right.value_;
+	time_stamp_ = right.time_stamp_;
 }
 
 template <typename valT>
 simple_value<valT>::simple_value (const valT& value, rx_time time_stamp)
 {
-	_value = value;
-	_time_stamp = time_stamp;
+	value_ = value;
+	time_stamp_ = time_stamp;
 }
 
 
@@ -558,38 +558,38 @@ simple_value<valT>::~simple_value()
 template <typename valT>
 simple_value<valT>::operator valT () const
 {
-	return _value;
+	return value_;
 }
 
 template <typename valT>
 bool simple_value<valT>::operator == (const valT& right)
 {
-	return _value == right;
+	return value_ == right;
 }
 
 template <typename valT>
 bool simple_value<valT>::operator != (const valT& right)
 {
-	return _value != right;
+	return value_ != right;
 }
 
 template <typename valT>
 bool simple_value<valT>::operator > (const valT& right)
 {
-	return _value > right;
+	return value_ > right;
 }
 
 template <typename valT>
 bool simple_value<valT>::operator < (const valT& right)
 {
-	return _value < right._value;
+	return value_ < right.value_;
 }
 
 template <typename valT>
 valT& simple_value<valT>::operator = (const valT& right)
 {
-	_value = right._value;
-	_time_stamp == right.m_timestamp;
+	value_ = right.value_;
+	time_stamp_ == right.m_timestamp;
 }
 
 
@@ -603,19 +603,19 @@ const_variable_value<valT>::const_variable_value()
 template <typename valT>
 const_variable_value<valT>::const_variable_value (const valT& value)
 {
-	_rx_value = rx_value(value);
+	rx_value_ = rx_value(value);
 }
 
 template <typename valT>
 const_variable_value<valT>::const_variable_value (const rx_value&  right)
 {
-	_rx_value = right;
+	rx_value_ = right;
 }
 
 template <typename valT>
 const_variable_value<valT>::const_variable_value (valT&& right)
 {
-	_rx_value = rx_value(right);
+	rx_value_ = rx_value(right);
 }
 
 
@@ -629,80 +629,80 @@ const_variable_value<valT>::~const_variable_value()
 template <typename valT>
 const_variable_value<valT>::operator valT () const
 {
-	return _rx_value;
+	return rx_value_;
 }
 
 template <typename valT>
 bool const_variable_value<valT>::operator == (const valT& right)
 {
-  return _rx_value==rx_value(right);
+  return rx_value_==rx_value(right);
 }
 
 template <typename valT>
 bool const_variable_value<valT>::operator != (const valT& right)
 {
-  return _rx_value!=rx_value(right);
+  return rx_value_!=rx_value(right);
 }
 
 template <typename valT>
 bool const_variable_value<valT>::operator > (const valT& right)
 {
-  return _rx_value>rx_value(right);
+  return rx_value_>rx_value(right);
 }
 
 template <typename valT>
 bool const_variable_value<valT>::operator < (const valT& right)
 {
-  return _rx_value<rx_value(right);
+  return rx_value_<rx_value(right);
 }
 
 template <typename valT>
 const_variable_value<valT>::operator int ()
 {
-	return static_cast<valT>(_rx_value);
+	return static_cast<valT>(rx_value_);
 }
 
 template <typename valT>
 valT& const_variable_value<valT>::operator = (const valT& right)
 {
-	_rx_value = rx_value(right);
-	return _rx_value;
+	rx_value_ = rx_value(right);
+	return rx_value_;
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_bad () const
 {
-	return _rx_value.is_bad();
+	return rx_value_.is_bad();
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_uncertain () const
 {
-	return _rx_value.is_bad();
+	return rx_value_.is_bad();
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_test () const
 {
-	return _rx_value.is_test();
+	return rx_value_.is_test();
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_substituted () const
 {
-	return _rx_value.is_substituted();
+	return rx_value_.is_substituted();
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_array () const
 {
-	return _rx_value.is_array();
+	return rx_value_.is_array();
 }
 
 template <typename valT>
 bool const_variable_value<valT>::is_good () const
 {
-	return _rx_value.is_good();
+	return rx_value_.is_good();
 }
 
 
@@ -710,13 +710,13 @@ bool const_variable_value<valT>::is_good () const
 
 template <typename valT>
 allways_good_value<valT>::allways_good_value (const rx_value&  right)
-  : _value(rx_value(right))
+  : value_(rx_value(right))
 {
 }
 
 template <typename valT>
 allways_good_value<valT>::allways_good_value (valT&& right)
-  : _value(right)
+  : value_(right)
 {
 }
 
@@ -731,7 +731,7 @@ allways_good_value<valT>::~allways_good_value()
 template <typename valT>
 valT& allways_good_value<valT>::operator = (const valT& right)
 {
-	return _value;
+	return value_;
 }
 
 template <typename valT>
@@ -761,7 +761,7 @@ bool allways_good_value<valT>::is_substituted () const
 template <typename valT>
 bool allways_good_value<valT>::is_array () const
 {
-  rx_value temp(_value);
+  rx_value temp(value_);
   return temp.is_array();
 }
 

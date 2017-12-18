@@ -78,7 +78,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
   private:
 
 
-      programs_type _programs;
+      programs_type programs_;
 
 
 };
@@ -113,8 +113,6 @@ public:
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      void get_value (values::rx_value& val) const;
 
       const string_type& get_item_name () const;
 

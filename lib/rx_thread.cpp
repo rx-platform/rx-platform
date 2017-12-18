@@ -68,17 +68,17 @@ void execute_job(void* arg)
 // Class rx::threads::thread 
 
 thread::thread (const string_type& name, rx_thread_handle_t rx_thread_id)
-      : _thread_id(0),
-        _rx_thread_id(rx_thread_id)
+      : thread_id_(0),
+        rx_thread_id_(rx_thread_id)
 {
-	_name = name;
+	name_ = name;
 }
 
 
 thread::~thread()
 {
-	if (_handle)
-		rx_thread_close(_handle);
+	if (handle_)
+		rx_thread_close(handle_);
 }
 
 
@@ -87,7 +87,7 @@ void thread::_inner_handler (void* arg)
 {
 	thread *p = static_cast<thread *>(arg);
 
-	rx_push_thread_context(p->_rx_thread_id);
+	rx_push_thread_context(p->rx_thread_id_);
 
 	p->handler();
 
@@ -95,15 +95,15 @@ void thread::_inner_handler (void* arg)
 
 void thread::start (int priority)
 {
-	if (_handle)
-		rx_thread_close(_handle);
+	if (handle_)
+		rx_thread_close(handle_);
 
-	_handle = rx_thread_create(_inner_handler, this, priority, &_thread_id);
+	handle_ = rx_thread_create(_inner_handler, this, priority, &thread_id_);
 
-	if (_handle == 0)
+	if (handle_ == 0)
 	{// error occured
 		char buff[0x100];
-		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "Error while creating %s thread. Error code: %x", _name.c_str(), errno);
+		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "Error while creating %s thread. Error code: %x", name_.c_str(), errno);
 		throw rx_except(buff, errno);
 	}
 
@@ -139,7 +139,7 @@ job_aware_thread::~job_aware_thread()
 // Class rx::threads::physical_job_thread 
 
 physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
-      : _has_job(false)
+      : has_job_(false)
 	, thread(name,rx_thread_id)
 {
 }
@@ -175,9 +175,9 @@ uint32_t physical_job_thread::handler ()
 				rx_security_handle_t sec = obj->get_security_context();
 				if (sec)
 					rx_push_security_context(sec);
-				_current = obj;
+				current_ = obj;
 				obj->process();
-				_current = job_ptr::null_ptr;
+				current_ = job_ptr::null_ptr;
 				if (sec)
 					rx_pop_security_context();
 			}
@@ -200,24 +200,24 @@ void physical_job_thread::append (job_ptr pjob)
 {
 	locks::auto_lock dummy(this);
 
-	_queue.push(pjob);
+	queue_.push(pjob);
 
-	if (_queue.size() == 1)
-		_has_job.set();
+	if (queue_.size() == 1)
+		has_job_.set();
 }
 
 bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 {
-	if (RX_WAIT_0 != _has_job.wait_handle(timeout))
+	if (RX_WAIT_0 != has_job_.wait_handle(timeout))
 		return false;
 
 	locks::auto_lock dummy(this);
 
-	RX_ASSERT(!_queue.empty());
-	while (!_queue.empty())
+	RX_ASSERT(!queue_.empty());
+	while (!queue_.empty())
 	{
-		queued.emplace_back(_queue.front());
-		_queue.pop();
+		queued.emplace_back(queue_.front());
+		queue_.pop();
 	}
 
 	return true;
@@ -227,17 +227,17 @@ bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 void physical_job_thread::stop (uint32_t timeout)
 {
 	append(job_ptr::null_ptr);
-	if (_current)
-		_current->cancel();
+	if (current_)
+		current_->cancel();
 	wait_handle(timeout);
 	locks::auto_lock dummy(this);
-	while (!_queue.empty())
+	while (!queue_.empty())
 	{
-		if (_queue.front())
+		if (queue_.front())
 		{
-			_queue.front()->cancel();
+			queue_.front()->cancel();
 		}
-		_queue.pop();
+		queue_.pop();
 	}
 }
 
@@ -255,18 +255,18 @@ void physical_job_thread::virtual_release ()
 // Class rx::threads::dispatcher_pool 
 
 dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
-      : _name(name)
+      : name_(name)
 {
-	_dispatcher = rx_create_kernel_dispathcer(count);
+	dispatcher_ = rx_create_kernel_dispathcer(count);
 	for (int i = 0; i < count; i++)
-		_threads.emplace_back(new dispatcher_thread(name,rx_thread_id,_dispatcher));
+		threads_.emplace_back(new dispatcher_thread(name,rx_thread_id,dispatcher_));
 }
 
 
 dispatcher_pool::~dispatcher_pool()
 {
-	rx_destroy_kernel_dispatcher(_dispatcher);
-	for (auto& one : _threads)
+	rx_destroy_kernel_dispatcher(dispatcher_);
+	for (auto& one : threads_)
 		delete one;
 }
 
@@ -274,23 +274,23 @@ dispatcher_pool::~dispatcher_pool()
 
 void dispatcher_pool::run (int priority)
 {
-	for (auto& one : _threads)
+	for (auto& one : threads_)
 		one->start(priority);
 }
 
 void dispatcher_pool::end (uint32_t timeout)
 {
-	size_t count = _threads.size();
+	size_t count = threads_.size();
 	for (size_t i = 0; i < count; i++)
-		rx_dispatcher_signal_end(_dispatcher);
+		rx_dispatcher_signal_end(dispatcher_);
 	for (size_t i = 0; i < count; i++)
-		_threads[i]->wait_handle(timeout);
+		threads_[i]->wait_handle(timeout);
 }
 
 void dispatcher_pool::append (job_ptr pjob)
 {
 	job* job = pjob->get_unsafe_ptr();
-	rx_dispatch_function(_dispatcher,execute_job_c, job);
+	rx_dispatch_function(dispatcher_,execute_job_c, job);
 }
 
 void dispatcher_pool::virtual_bind ()
@@ -308,7 +308,7 @@ void dispatcher_pool::virtual_release ()
 
 dispatcher_thread::dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher)
   : thread(name,rx_thread_id)
-	, _dispatcher(dispatcher)
+	, dispatcher_(dispatcher)
 {
 }
 
@@ -323,7 +323,7 @@ uint32_t dispatcher_thread::handler ()
 {
 	while (true)
 	{
-		if (!rx_dispatch_events(_dispatcher))
+		if (!rx_dispatch_events(dispatcher_))
 			break;
 	}
 	return 0;
@@ -333,8 +333,8 @@ uint32_t dispatcher_thread::handler ()
 // Class rx::threads::timer 
 
 timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
-      : _wake_up(false),
-        _should_exit(false)
+      : wake_up_(false),
+        should_exit_(false)
 	, thread(name, rx_thread_id)
 {
 }
@@ -355,8 +355,8 @@ uint32_t timer::handler ()
 
 		uint64_t min = 0ull - 1ull;
 
-		auto it = _jobs.begin();
-		while (it != _jobs.end())
+		auto it = jobs_.begin();
+		while (it != jobs_.end())
 		{
 			bool remove = false;
 			timer_job_ptr one = *it;
@@ -378,18 +378,18 @@ uint32_t timer::handler ()
 			if (remove)
 			{
 				one->lock();
-				one->_my_timer = nullptr;
+				one->my_timer_ = nullptr;
 				one->unlock();
-				it = _jobs.erase(it);
+				it = jobs_.erase(it);
 			}
 		}
 
 
 		unlock();
 
-		_wake_up.wait_handle_us(min);
+		wake_up_.wait_handle_us(min);
 
-		if (_should_exit)
+		if (should_exit_)
 			break;
 
 	}
@@ -399,29 +399,29 @@ uint32_t timer::handler ()
 
 void timer::stop ()
 {
-	_should_exit = true;
+	should_exit_ = true;
 	wake_up();
 }
 
 void timer::wake_up ()
 {
-	_wake_up.set();
+	wake_up_.set();
 }
 
 void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period, bool now)
 {
 
 	job->lock();
-	job->_my_timer = this;
-	job->_executer = executer;
-	job->_period = period*1000;
-	job->_next = (now ? rx_get_us_ticks() : rx_get_us_ticks() + job->_period);
+	job->my_timer_ = this;
+	job->executer_ = executer;
+	job->period_ = period*1000;
+	job->next_ = (now ? rx_get_us_ticks() : rx_get_us_ticks() + job->period_);
 	job->unlock();
 
 	
 	lock();
 
-	_jobs.emplace(job);
+	jobs_.emplace(job);
 	wake_up();
 
 	unlock();

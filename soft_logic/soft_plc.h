@@ -150,7 +150,7 @@ class sl_chanel_base
 
       const int get_order () const
       {
-        return _order;
+        return order_;
       }
 
 
@@ -162,7 +162,7 @@ class sl_chanel_base
 
 
 
-      int _order;
+      int order_;
 
 
 };
@@ -193,14 +193,14 @@ class sl_module_base
 
       const int get_order () const
       {
-        return _order;
+        return order_;
       }
 
 
 
   protected:
 
-      chanels_type _chanels;
+      chanels_type chanels_;
 
 
   private:
@@ -210,7 +210,7 @@ class sl_module_base
 
 
 
-      int _order;
+      int order_;
 
 
 };
@@ -296,7 +296,7 @@ class program_executer
   private:
 
 
-      sl_program_holder *_program;
+      sl_program_holder *program_;
 
 
 };
@@ -356,15 +356,15 @@ class address_space
 
 
 
-      address_space_type _values;
+      address_space_type values_;
 
-      address_space_type _prev_values;
+      address_space_type prev_values_;
 
-      address_space_type _changed_values;
+      address_space_type changed_values_;
 
-      address_space_type _forced_bits;
+      address_space_type forced_bits_;
 
-      address_space_type _forced_mask;
+      address_space_type forced_mask_;
 
 	  uint32_t and_masks[0x20];
 	  uint32_t or_masks[0x20];
@@ -465,11 +465,11 @@ class argument_value
   private:
 
 
-      adr_type _type;
+      adr_type type_;
 
-      dword _addr;
+      dword addr_;
 
-      int _value;
+      int value_;
 
 
 };
@@ -513,13 +513,13 @@ class register_value
 
       const adr_type get_type () const
       {
-        return _type;
+        return type_;
       }
 
 
       const dword get_addr () const
       {
-        return _addr;
+        return addr_;
       }
 
 
@@ -529,9 +529,9 @@ class register_value
   private:
 
 
-      adr_type _type;
+      adr_type type_;
 
-      dword _addr;
+      dword addr_;
 
 
 };
@@ -573,11 +573,11 @@ class bit_value
 
   protected:
 
-      adr_type _type;
+      adr_type type_;
 
-      dword _addr;
+      dword addr_;
 
-      byte _bit;
+      byte bit_;
 
 
   private:
@@ -724,7 +724,7 @@ class watch_base
 
 
 
-      program_context *_context;
+      program_context *context_;
 
 
 };
@@ -754,7 +754,7 @@ class debug_segment_base
   private:
 
 
-      program_context *_context;
+      program_context *context_;
 
 
 };
@@ -821,19 +821,19 @@ class program_context
 
       const rx_uuid& get_guid () const
       {
-        return _guid;
+        return guid_;
       }
 
       void set_guid (const rx_uuid& value)
       {
-        _guid = value;
+        guid_ = value;
       }
 
 
 
   protected:
 
-      program_context *_parent;
+      program_context *parent_;
 
 
   private:
@@ -850,26 +850,26 @@ class program_context
 
 
 
-      address_space _addresses;
+      address_space addresses_;
 
-      watch_base *_watch_base;
+      watch_base *watch_base_;
 
-      sl_program_holder *_holder;
+      sl_program_holder *holder_;
 
-      debug_segment_base *_dbg_segment;
+      debug_segment_base *dbg_segment_;
 
 
-      watches_type _watches;
+      watches_type watches_;
 
-      int _wnd_id;
+      int wnd_id_;
 
-      watches_type _temp_watches;
+      watches_type temp_watches_;
 
-      int _temp_wnd_id;
+      int temp_wnd_id_;
 
-      rx_uuid _guid;
+      rx_uuid guid_;
 
-      int _debug_segment;
+      int debug_segment_;
 
 
 };
@@ -1133,11 +1133,11 @@ class sl_scheme
 
 
 
-      schema_type _runtime_schema;
+      schema_type runtime_schema_;
 
-      int _width;
+      int width_;
 
-      int _height;
+      int height_;
 
 
 };
@@ -1176,7 +1176,7 @@ class sl_ladder_program : public sl_program
   private:
 
 
-      schemas_type _schemas;
+      schemas_type schemas_;
 
 
 };
@@ -1264,30 +1264,30 @@ class sl_program_holder
 
 
 
-      program_executer *_executer;
+      program_executer *executer_;
 
-      modules_type _modules;
+      modules_type modules_;
 
-      sl_program *_main;
+      sl_program *main_;
 
-      program_context *_main_context;
+      program_context *main_context_;
 
-      subprograms_type _subprograms;
+      subprograms_type subprograms_;
 
-      custom_steps_type _custom_steps;
+      custom_steps_type custom_steps_;
 
 
-      dword _rate;
+      dword rate_;
 
-      string_type _name;
+      string_type name_;
 
-      subcontexts_type _subcontexts;
+      subcontexts_type subcontexts_;
 
-      program_context* _debug_context;
+      program_context* debug_context_;
 
-      subcontexts_hash _sub_hash;
+      subcontexts_hash sub_hash_;
 
-      bool _first_scan;
+      bool first_scan_;
 
 
 };
@@ -1329,7 +1329,7 @@ class sl_programs_collection
 
 
 
-      programs_type _programs;
+      programs_type programs_;
 
 
 };
@@ -1360,15 +1360,15 @@ class laddder_io_program_data : public io_program_data
   private:
 
 
-      schema_type& _schema;
+      schema_type& schema_;
 
-      int _row;
+      int row_;
 
-      int _col;
+      int col_;
 
-      int _inputs;
+      int inputs_;
 
-      int _outputs;
+      int outputs_;
 
 
 };
@@ -1471,7 +1471,7 @@ class program_holder_bulder
 
 
 
-      module_chanels_factory *_chanels_factory;
+      module_chanels_factory *chanels_factory_;
 
 
 };

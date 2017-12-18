@@ -79,14 +79,14 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 // Class rx_platform::prog::program_context_base 
 
 program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
-      : _root(root_context),
-        _holder(holder),
-        _program(program),
-        _current_directory(current_directory),
-        _out(out),
-        _err(err),
-        _postponed(false),
-        _canceled(false)
+      : root_(root_context),
+        holder_(holder),
+        program_(program),
+        current_directory_(current_directory),
+        out_(out),
+        err_(err),
+        postponed_(false),
+        canceled_(false)
 {
 }
 
@@ -99,12 +99,12 @@ program_context_base::~program_context_base()
 
 bool program_context_base::is_postponed () const
 {
-	return _postponed;
+	return postponed_;
 }
 
 bool program_context_base::postpone (uint32_t interval)
 {
-	_postponed = true;
+	postponed_ = true;
 	if (interval)
 	{
 		rx_platform::rx_gate::instance().get_runtime().append_timer_job(
@@ -130,9 +130,9 @@ bool program_context_base::postpone (uint32_t interval)
 
 bool program_context_base::return_control (bool done)
 {
-	_postponed = false;
-	bool ret = _program->process_program(smart_this(), rx_time::now(), false);
-	if (!_postponed)
+	postponed_ = false;
+	bool ret = program_->process_program(smart_this(), rx_time::now(), false);
+	if (!postponed_)
 	{
 		send_results(ret);
 	}
@@ -145,17 +145,17 @@ void program_context_base::send_results (bool result)
 
 void program_context_base::set_instruction_data (rx_struct_ptr data)
 {
-	_instructions_data.emplace(get_possition(), data);
+	instructions_data_.emplace(get_possition(), data);
 }
 
 bool program_context_base::is_canceled ()
 {
-	return _canceled.exchange(false, std::memory_order_relaxed);
+	return canceled_.exchange(false, std::memory_order_relaxed);
 }
 
 void program_context_base::cancel_execution ()
 {
-	_canceled.store(true, std::memory_order_relaxed);
+	canceled_.store(true, std::memory_order_relaxed);
 	return_control(false);
 }
 
@@ -168,8 +168,9 @@ bool program_context_base::should_run_again ()
 // Class rx_platform::prog::server_command_base 
 
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
-      : _console_name(console_name),
-        _security_guard(pointers::_create_new)
+      : time_stamp_(rx_time::now()),
+        console_name_(console_name),
+        security_guard_(pointers::_create_new)
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
 }
@@ -189,16 +190,13 @@ void server_command_base::get_class_info (string_type& class_name, string_type& 
 
 string_type server_command_base::get_type_name () const
 {
-  // generated from ROSE!!!
-  static string_type type_name = "COMMAND";
-  return type_name;
-
-
+	static string_type type_name = RX_CPP_COMMAND_TYPE_NAME;
+	return type_name;
 }
 
 void server_command_base::get_value (values::rx_value& val) const
 {
-	values::rx_value temp(get_type_name());
+	values::rx_value temp(get_console_name(),time_stamp_);
 	val = temp;
 }
 
@@ -230,7 +228,7 @@ const string_type& server_command_base::get_item_name () const
 
 bool server_command_base::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx)
 {
-	if (_security_guard->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	if (security_guard_->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
 	{
 		return do_console_command(in, out, err, ctx);
 	}
@@ -243,7 +241,7 @@ bool server_command_base::console_execute (std::istream& in, std::ostream& out, 
 
 bool server_command_base::dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
 {
-	return _security_guard->check_premissions(mask, extended_mask);
+	return security_guard_->check_premissions(mask, extended_mask);
 }
 
 
@@ -276,7 +274,7 @@ program_executer_base::~program_executer_base()
 // Class rx_platform::prog::server_program_holder 
 
 server_program_holder::server_program_holder (program_executer_ptr executer)
-      : _executer(executer)
+      : executer_(executer)
 {
 }
 
@@ -290,10 +288,10 @@ server_program_holder::~server_program_holder()
 // Class rx_platform::prog::console_program_context 
 
 console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program, rx_virtual<console_client> client)
-      : _client(client),
-        _current_line(0),
-        _out_std(out.unsafe_ptr()),
-        _err_std(err.unsafe_ptr())
+      : client_(client),
+        current_line_(0),
+        out_std_(out.unsafe_ptr()),
+        err_std_(err.unsafe_ptr())
   , prog::program_context_base(holder, root_context,current_directory,out,err, program)
 
 {
@@ -308,36 +306,36 @@ console_program_context::~console_program_context()
 
 size_t console_program_context::next_line ()
 {
-	_current_line++;
-	return _current_line;
+	current_line_++;
+	return current_line_;
 }
 
 std::ostream& console_program_context::get_stdout ()
 {
-	return _out_std;
+	return out_std_;
 }
 
 std::ostream& console_program_context::get_stderr ()
 {
-	return _err_std;
+	return err_std_;
 }
 
 console_program_context::smart_ptr console_program_context::create_console_sub_context ()
 {
 	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
-		, get_current_directory(), get_out(), get_err(),get_program(),_client);
+		, get_current_directory(), get_out(), get_err(),get_program(),client_);
 	return ctx_ret;
 }
 
 void console_program_context::send_results (bool result)
 {
-	if (_client)
-		_client->process_event(result, get_out(), get_err(),true);
+	if (client_)
+		client_->process_event(result, get_out(), get_err(),true);
 }
 
 size_t console_program_context::get_possition () const
 {
-	return _current_line;
+	return current_line_;
 }
 
 
@@ -349,18 +347,18 @@ server_console_program::server_console_program (std::istream& in)
 	{
 		char temp[SCRIPT_LINE_LENGTH];
 		in.getline(temp, SCRIPT_LINE_LENGTH);
-		_lines.emplace_back(temp);
+		lines_.emplace_back(temp);
 	}
 }
 
 server_console_program::server_console_program (const string_vector& lines)
-  : _lines(lines)
+  : lines_(lines)
 {
 }
 
 server_console_program::server_console_program (const string_type& line)
 {
-	_lines.emplace_back(line);
+	lines_.emplace_back(line);
 }
 
 
@@ -374,7 +372,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 {
 
 	console_program_context::smart_ptr ctx = context.cast_to<console_program_context::smart_ptr>();
-	size_t total_lines = _lines.size();
+	size_t total_lines = lines_.size();
 	size_t current_line = ctx->get_current_line();
 	string_type label;
 
@@ -384,7 +382,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 	while (current_line < total_lines && ctx->should_run_again())
 	{		
 		label.clear();
-		std::istringstream in(_lines[current_line]);
+		std::istringstream in(lines_[current_line]);
 		string_type name;
 		in >> name;
 		if (!name.empty())
@@ -405,7 +403,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 		if (ctx->is_canceled())
 		{
 			err << "Pending cancel for the current command:\r\n";
-			err << _lines[current_line];
+			err << lines_[current_line];
 			return false;
 		}
 		if(!ctx->is_postponed())
@@ -425,12 +423,12 @@ prog::program_context_ptr server_console_program::create_program_context (prog::
 // Class rx_platform::prog::console_client 
 
 console_client::console_client (rx_thread_handle_t executer)
-      : _executer(executer)
+      : executer_(executer)
 {
 #ifdef _DEBUG
-	_current_directory = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
+	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
 #else
-	_current_directory = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
+	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif
 }
 
@@ -450,7 +448,7 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 			sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
-		,_executer
+		,executer_
 	);
 	return true;
 }
@@ -458,12 +456,12 @@ bool console_client::do_command (const string_type& line, memory::buffer_ptr out
 void console_client::get_prompt (string_type& prompt)
 {
 	prompt = "\r\n";
-	prompt += _current_directory->get_path();
-	if (_current_object)
+	prompt += current_directory_->get_path();
+	if (current_object_)
 	{
 		prompt += RX_DIR_DELIMETER;
 		prompt += ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
-		prompt += _current_object->get_item_name();
+		prompt += current_object_->get_item_name();
 		prompt += ANSI_COLOR_RESET;
 	}
 	prompt += "\r\n" ANSI_COLOR_GREEN;
@@ -483,7 +481,7 @@ void console_client::get_wellcome (string_type& wellcome)
 
 bool console_client::is_postponed () const
 {
-	if (_current)
+	if (current_)
 		return true;
 	else
 		return false;
@@ -502,7 +500,7 @@ const string_type& console_client::get_console_terminal ()
 void console_client::synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	bool ret = false;
-	RX_ASSERT(!_current);
+	RX_ASSERT(!current_);
 	if (line.size() > 0 && line[0] == '@')
 	{// this is console command
 		ret = rx_platform::rx_gate::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
@@ -559,37 +557,37 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		prog::program_context_base_ptr ctx = temp_prog->create_program_context(
 			prog::server_program_holder_ptr::null_ptr,
 			prog::program_context_base_ptr::null_ptr,
-			_current_directory,
+			current_directory_,
 			out_buffer,
 			err_buffer,
 			smart_this());
-		ctx->set_current_directory(_current_directory);
-		ctx->set_current_object(_current_object);
-		ctx->set_current_item(_current_item);
+		ctx->set_current_directory(current_directory_);
+		ctx->set_current_object(current_object_);
+		ctx->set_current_item(current_item_);
 		ret = temp_prog->process_program(ctx, rx_time::now(), false);
 		if (ret)
 		{
 			if (ctx->is_postponed())
 			{
-				_current = ctx;
+				current_ = ctx;
 			}
 			else
 			{
-				_current_directory = ctx->get_current_directory();
-				_current_item = ctx->get_current_item();
-				_current_object = ctx->get_current_object();
+				current_directory_ = ctx->get_current_directory();
+				current_item_ = ctx->get_current_item();
+				current_object_ = ctx->get_current_object();
 			}
 		}
 	}
-	if(!_current)
+	if(!current_)
 		process_result(ret, out_buffer, err_buffer);
 }
 
 void console_client::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	if (_current)
+	if (current_)
 	{
-		_current = program_context_ptr::null_ptr;
+		current_ = program_context_ptr::null_ptr;
 		process_result(result, out_buffer, err_buffer);
 	}
 }
@@ -602,17 +600,17 @@ bool console_client::cancel_command (memory::buffer_ptr out_buffer, memory::buff
 			sended_this->synchronized_cancel_command(out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
-		, _executer
+		, executer_
 		);
 	return true;
 }
 
 void console_client::synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (_current)
+	if (current_)
 	{// we are in a command
-		_current->cancel_execution();
-		_current = program_context_ptr::null_ptr;
+		current_->cancel_execution();
+		current_ = program_context_ptr::null_ptr;
 	}
 	else
 	{// nothing to cancel!!!

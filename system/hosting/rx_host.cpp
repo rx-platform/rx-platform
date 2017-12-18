@@ -43,12 +43,12 @@ namespace hosting {
 // Class rx_platform::hosting::rx_platform_host 
 
 rx_platform_host::rx_platform_host()
-      : _parent(nullptr)
+      : parent_(nullptr)
 {
 }
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
-      : _parent(nullptr)
+      : parent_(nullptr)
 {
 	RX_ASSERT(false);
 }
@@ -103,10 +103,10 @@ sys_handle_t rx_platform_host::get_host_console_script_file (const string_type& 
 
 host_security_context::host_security_context()
 {
-	_user_name = "host";
-	_full_name = _user_name + "@";
-	_full_name += _location;
-	_port = "internal";
+	user_name_ = "host";
+	full_name_ = user_name_ + "@";
+	full_name_ += location_;
+	port_ = "internal";
 }
 
 

@@ -49,7 +49,7 @@ std_vector_allocator::std_vector_allocator()
 
 std_vector_allocator::~std_vector_allocator()
 {
-	size_t size = _buffer.size();
+	size_t size = buffer_.size();
 	g_memory_consuption -= (ref_counting_type)size;
 }
 
@@ -59,42 +59,42 @@ void std_vector_allocator::allocate (size_t size)
 {
 	if (size == 0)
 		size = 0x100;
-	_buffer.resize(size);
+	buffer_.resize(size);
 	g_memory_consuption += (ref_counting_type)size;
 }
 
 void std_vector_allocator::deallocate ()
 {
-	if (!_buffer.empty())
+	if (!buffer_.empty())
 	{
-		size_t size = _buffer.size();
-		_buffer.clear();
-		_buffer.resize(0);
+		size_t size = buffer_.size();
+		buffer_.clear();
+		buffer_.resize(0);
 		g_memory_consuption -= (ref_counting_type)size;
 	}
 }
 
 void std_vector_allocator::reallocate (size_t new_size)
 {
-	size_t buff_len = _buffer.size();
+	size_t buff_len = buffer_.size();
 	if (new_size > buff_len)
 	{
 		size_t old_len = buff_len;
 		while (buff_len < new_size)
 			buff_len = buff_len * 2;
-		_buffer.resize(buff_len);
+		buffer_.resize(buff_len);
 		g_memory_consuption += (ref_counting_type)(buff_len - old_len);
 	}
 }
 
 size_t std_vector_allocator::get_buffer_size () const
 {
-	return _buffer.size();
+	return buffer_.size();
 }
 
 char* std_vector_allocator::get_char_buffer () const
 {
-	return (char*)&this->_buffer[0];
+	return (char*)&this->buffer_[0];
 }
 
 
@@ -103,7 +103,7 @@ char* std_vector_allocator::get_char_buffer () const
 ref_counting_type backward_simple_allocator::g_memory_consuption;
 
 backward_simple_allocator::backward_simple_allocator (size_t initial)
-      : _size(initial)
+      : size_(initial)
 {
 }
 
@@ -124,23 +124,23 @@ void backward_simple_allocator::deallocate ()
 
 void backward_simple_allocator::reallocate (size_t new_size)
 {
-	uint8_t* old_ptr = _buffer;
-	size_t old_size = _size;
-	_size = new_size;
-	_buffer = new uint8_t[_size];
-	memmove(&_buffer[_size - old_size - 1], old_ptr, old_size);
+	uint8_t* old_ptr = buffer_;
+	size_t old_size = size_;
+	size_ = new_size;
+	buffer_ = new uint8_t[size_];
+	memmove(&buffer_[size_ - old_size - 1], old_ptr, old_size);
 	if (old_ptr)
 		delete[] old_ptr;
 }
 
 size_t backward_simple_allocator::get_buffer_size () const
 {
-	return _size;
+	return size_;
 }
 
 char* backward_simple_allocator::get_char_buffer () const
 {
-	return (char*)_buffer;
+	return (char*)buffer_;
 }
 
 

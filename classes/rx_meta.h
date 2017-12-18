@@ -31,10 +31,10 @@
 
 
 
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_construct
 #include "system/constructors/rx_construct.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 #include "system/meta/rx_classes.h"
 #include "system/meta/rx_obj_classes.h"
@@ -117,13 +117,13 @@ class relations_hash_data
   private:
 
 
-      relation_map_type _forward_hash;
+      relation_map_type forward_hash_;
 
-      relation_map_type _backward_hash;
+      relation_map_type backward_hash_;
 
-      relation_map_type _first_forward_hash;
+      relation_map_type first_forward_hash_;
 
-      relation_map_type _first_backward_hash;
+      relation_map_type first_backward_hash_;
 
 
 };
@@ -165,14 +165,14 @@ class type_hash
   private:
 
 
-      object_constructors_type _object_constructors;
+      object_constructors_type object_constructors_;
 
-      relations_hash_data _hash;
+      relations_hash_data hash_;
 
 
-      registered_objects_type _registered_objects;
+      registered_objects_type registered_objects_;
 
-      registered_classes_type _registered_classes;
+      registered_classes_type registered_classes_;
 
 
 };
@@ -222,9 +222,9 @@ class internal_classes_manager
 	struct type_cache_holder
 	{
 	public:
-		type_hash<T>* m_value;
+		type_hash<T>* value_;
 		type_cache_holder()
-			: m_value(NULL)
+			: value_(NULL)
 		{
 		}
 		~type_cache_holder()
@@ -239,13 +239,13 @@ class internal_classes_manager
 		template<class T>
 		type_hash<T>& get_internal(internal_classes_manager* manager, tl::type2type<T>)
 		{
-			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).m_value;
+			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
 			{
 				ret = new type_hash<T>();
 				//ret->set_manager(manager);
 				//manager->_cache_types.insert(cache_types_type::value_type(T::type_id, ret));
-				(static_cast<type_cache_holder<T>&>(*this)).m_value = ret;
+				(static_cast<type_cache_holder<T>&>(*this)).value_ = ret;
 			}
 			return *ret;
 		}
@@ -287,7 +287,7 @@ public:
 	  //template<class T>
 	  //void get_class(std::function<void(T))
 	  //{
-		 // //_worker.append();
+		 // //worker_.append();
 	  //}
   protected:
 
@@ -296,7 +296,7 @@ public:
 
 
 
-      rx::threads::physical_job_thread _worker;
+      rx::threads::physical_job_thread worker_;
 
 
 };
@@ -320,8 +320,8 @@ type_hash<typeT>::~type_hash()
 template <class typeT>
 typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx_node_id& id)
 {
-	auto it = _registered_classes.find(id);
-	if (it != _registered_classes.end())
+	auto it = registered_classes_.find(id);
+	if (it != registered_classes_.end())
 	{
 		return it->second;
 	}
@@ -334,10 +334,10 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx
 template <class typeT>
 bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
 {
-	auto it = _registered_classes.find(what->get_id());
-	if (it == _registered_classes.end())
+	auto it = registered_classes_.find(what->get_id());
+	if (it == registered_classes_.end())
 	{
-		_registered_classes.emplace(what->get_id(), what);
+		registered_classes_.emplace(what->get_id(), what);
 		return true;
 	}
 	else

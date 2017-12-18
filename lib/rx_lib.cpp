@@ -349,8 +349,8 @@ const rx_node_id rx_node_id::null_id;
 
 rx_node_id::rx_node_id()
 {
-	m_value.int_value = 0;
-	m_node_type = numeric_rx_node_id;
+	value_.int_value = 0;
+	node_type_ = numeric_rx_node_id;
 }
 
 rx_node_id::rx_node_id(const rx_node_id &right)
@@ -358,13 +358,13 @@ rx_node_id::rx_node_id(const rx_node_id &right)
 	memcpy(this, &right, sizeof(right));
 	if (!right.is_simple())
 	{
-		switch (m_node_type)
+		switch (node_type_)
 		{
 		case string_rx_node_id:
-			m_value.string_value = new string_type(*right.m_value.string_value);
+			value_.string_value = new string_type(*right.value_.string_value);
 			break;
 		case bytes_rx_node_id:
-			m_value.bstring_value = new byte_string(*right.m_value.bstring_value);
+			value_.bstring_value = new byte_string(*right.value_.bstring_value);
 			break;
 		default:;
 		}
@@ -372,25 +372,25 @@ rx_node_id::rx_node_id(const rx_node_id &right)
 }
 
 rx_node_id::rx_node_id(const uint32_t& id, const uint16_t& namesp)
-	: m_namespace(0),
-	m_node_type(numeric_rx_node_id)
+	: namespace_(0),
+	node_type_(numeric_rx_node_id)
 {
-	m_value.int_value = id;
-	m_namespace = namesp;
+	value_.int_value = id;
+	namespace_ = namesp;
 }
 
 rx_node_id::rx_node_id(const char* id, const uint16_t& namesp)
 {
-	m_value.string_value = new string_type(id);
-	m_node_type = string_rx_node_id;
-	m_namespace = namesp;
+	value_.string_value = new string_type(id);
+	node_type_ = string_rx_node_id;
+	namespace_ = namesp;
 }
 
 rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
 {
-	m_value.uuid_value = id;
-	m_node_type = guid_rx_node_id;
-	m_namespace = namesp;
+	value_.uuid_value = id;
+	node_type_ = guid_rx_node_id;
+	namespace_ = namesp;
 }
 
 rx_node_id::rx_node_id(rx_node_id&& right)
@@ -398,18 +398,18 @@ rx_node_id::rx_node_id(rx_node_id&& right)
 	memcpy(this, &right, sizeof(right));
 	if (!right.is_simple())
 	{
-		switch (m_node_type)
+		switch (node_type_)
 		{
 		case string_rx_node_id:
-			m_value.string_value = right.m_value.string_value;
+			value_.string_value = right.value_.string_value;
 			break;
 		case bytes_rx_node_id:
-			m_value.bstring_value = right.m_value.bstring_value;
+			value_.bstring_value = right.value_.bstring_value;
 			break;
 		default:;
 		}
 		// just dummy because
-		right.m_node_type = numeric_rx_node_id;
+		right.node_type_ = numeric_rx_node_id;
 	}
 }
 
@@ -426,13 +426,13 @@ rx_node_id & rx_node_id::operator=(const rx_node_id &right)
 	memcpy(this, &right, sizeof(right));
 	if (!right.is_simple())
 	{
-		switch (m_node_type)
+		switch (node_type_)
 		{
 		case string_rx_node_id:
-			m_value.string_value = new string_type(*right.m_value.string_value);
+			value_.string_value = new string_type(*right.value_.string_value);
 			break;
 		case bytes_rx_node_id:
-			m_value.bstring_value = new byte_string(*right.m_value.bstring_value);
+			value_.bstring_value = new byte_string(*right.value_.bstring_value);
 			break;
 		default:;
 		}
@@ -443,20 +443,20 @@ rx_node_id & rx_node_id::operator=(const rx_node_id &right)
 
 bool rx_node_id::operator==(const rx_node_id &right) const
 {
-	if (m_namespace != right.m_namespace)
+	if (namespace_ != right.namespace_)
 		return false;
-	if (m_node_type != right.m_node_type)
+	if (node_type_ != right.node_type_)
 		return false;
-	switch (m_node_type)
+	switch (node_type_)
 	{
 	case numeric_rx_node_id:
-		return m_value.int_value == right.m_value.int_value;
+		return value_.int_value == right.value_.int_value;
 	case guid_rx_node_id:
-		return memcmp(&m_value.uuid_value, &right.m_value.uuid_value, sizeof(m_value.uuid_value)) == 0;
+		return memcmp(&value_.uuid_value, &right.value_.uuid_value, sizeof(value_.uuid_value)) == 0;
 	case string_rx_node_id:
-		return (*(m_value.string_value)) == (*(right.m_value.string_value));
+		return (*(value_.string_value)) == (*(right.value_.string_value));
 	case bytes_rx_node_id:
-		return (*(m_value.bstring_value)) == (*(right.m_value.bstring_value));
+		return (*(value_.bstring_value)) == (*(right.value_.bstring_value));
 	default:
 		RX_ASSERT(false);
 		return false;
@@ -474,28 +474,28 @@ bool rx_node_id::operator < (const rx_node_id& right) const
 {
 
 
-	if (m_namespace<right.m_namespace)
+	if (namespace_<right.namespace_)
 		return true;
 
-	if (m_namespace>right.m_namespace)
+	if (namespace_>right.namespace_)
 		return false;
 
-	if (m_node_type<right.m_node_type)
+	if (node_type_<right.node_type_)
 		return true;
 
-	if (m_node_type>right.m_node_type)
+	if (node_type_>right.node_type_)
 		return false;
 
-	switch (m_node_type)
+	switch (node_type_)
 	{
 	case numeric_rx_node_id:
-		return m_value.int_value<right.m_value.int_value;
+		return value_.int_value<right.value_.int_value;
 	case guid_rx_node_id:
-		return memcmp(&m_value.uuid_value, &right.m_value.uuid_value, sizeof(m_value.uuid_value))<0;
+		return memcmp(&value_.uuid_value, &right.value_.uuid_value, sizeof(value_.uuid_value))<0;
 	case string_rx_node_id:
-		return (*(m_value.string_value))<(*(right.m_value.string_value));
+		return (*(value_.string_value))<(*(right.value_.string_value));
 	case bytes_rx_node_id:
-		return (*(m_value.bstring_value))<(*(right.m_value.bstring_value));
+		return (*(value_.bstring_value))<(*(right.value_.bstring_value));
 	default:
 		RX_ASSERT(false);
 		return false;
@@ -506,7 +506,7 @@ void rx_node_id::to_string(string_type& val) const
 {
 	char buff[0x40];
 	const char* type = "err";
-	switch (m_node_type)
+	switch (node_type_)
 	{
 	case numeric_rx_node_id:
 		type = "i";
@@ -524,29 +524,29 @@ void rx_node_id::to_string(string_type& val) const
 
 	string_type value;
 
-	switch (m_node_type)
+	switch (node_type_)
 	{
 	case numeric_rx_node_id:
-		snprintf(buff, 0x40, "%d", m_value.int_value);
+		snprintf(buff, 0x40, "%d", value_.int_value);
 		value = buff;
 		break;
 	case string_rx_node_id:
-		value = *m_value.string_value;
+		value = *value_.string_value;
 		break;
 	case guid_rx_node_id:
-		rx_uuid(m_value.uuid_value).to_string(value);
+		rx_uuid(value_.uuid_value).to_string(value);
 		break;
 	case bytes_rx_node_id:
 		{
-			for (size_t i = 0; i<m_value.bstring_value->size(); i++)
+			for (size_t i = 0; i<value_.bstring_value->size(); i++)
 			{
-				snprintf(buff, 0x40, "%02X", (int)m_value.bstring_value->at(i));
+				snprintf(buff, 0x40, "%02X", (int)value_.bstring_value->at(i));
 				value += buff;
 			}
 		}
 		break;
 	}
-	if (m_namespace == DEFAULT_NAMESPACE)
+	if (namespace_ == DEFAULT_NAMESPACE)
 	{
 		val = type;
 		val += ':';
@@ -555,7 +555,7 @@ void rx_node_id::to_string(string_type& val) const
 	else
 	{
 		char buffer[0x20];
-		snprintf(buffer,0x20,"%d",(int)m_namespace);
+		snprintf(buffer,0x20,"%d",(int)namespace_);
 		val = buffer;
 		val = type;
 		val += ':';
@@ -575,29 +575,29 @@ rx_node_id rx_node_id::from_string(const char* value)
 		size_t idx2 = strid.find(':', idx + 1);
 		if (idx2 != string_type::npos)
 		{
-			ret.m_namespace = atoi(strid.substr(0, idx).c_str());
+			ret.namespace_ = atoi(strid.substr(0, idx).c_str());
 			type = strid.substr(idx + 1, idx2 - idx - 1);
 		}
 		else
 		{
-			ret.m_namespace = 0;
+			ret.namespace_ = 0;
 			type = strid.substr(0, idx);
 			idx2 = idx;
 		}
 		if (type == "i")
 		{
-			ret.m_node_type = numeric_rx_node_id;
-			ret.m_value.int_value = atoi(strid.substr(idx2 + 1).c_str());
+			ret.node_type_ = numeric_rx_node_id;
+			ret.value_.int_value = atoi(strid.substr(idx2 + 1).c_str());
 		}
 		else if (type == "s")
 		{
-			ret.m_node_type = string_rx_node_id;
-			ret.m_value.string_value = new string_type(strid.substr(idx2 + 1).c_str());
+			ret.node_type_ = string_rx_node_id;
+			ret.value_.string_value = new string_type(strid.substr(idx2 + 1).c_str());
 		}
 		else if (type == "g")
 		{
-			ret.m_node_type = guid_rx_node_id;
-			rx_string_to_uuid(strid.substr(idx2 + 1).c_str(), &ret.m_value.uuid_value);
+			ret.node_type_ = guid_rx_node_id;
+			rx_string_to_uuid(strid.substr(idx2 + 1).c_str(), &ret.value_.uuid_value);
 		}
 		else if (type == "b")
 		{
@@ -608,34 +608,34 @@ rx_node_id rx_node_id::from_string(const char* value)
 
 bool rx_node_id::is_null() const
 {
-	return m_namespace == 0 && m_node_type == numeric_rx_node_id && m_value.int_value == 0;
+	return namespace_ == 0 && node_type_ == numeric_rx_node_id && value_.int_value == 0;
 }
 
 bool rx_node_id::is_standard() const
 {
-	return m_namespace == 1 && m_node_type == numeric_rx_node_id;
+	return namespace_ == 1 && node_type_ == numeric_rx_node_id;
 }
 bool rx_node_id::is_opc() const
 {
-	return m_namespace == 0 && m_node_type == numeric_rx_node_id;
+	return namespace_ == 0 && node_type_ == numeric_rx_node_id;
 }
 
 bool rx_node_id::is_simple() const
 {
-	return m_node_type == numeric_rx_node_id || m_node_type == guid_rx_node_id;
+	return node_type_ == numeric_rx_node_id || node_type_ == guid_rx_node_id;
 }
 
 void rx_node_id::clear_content()
 {
 	if (!is_simple())
 	{
-		switch (m_node_type)
+		switch (node_type_)
 		{
 		case string_rx_node_id:
-			delete m_value.string_value;
+			delete value_.string_value;
 			break;
 		case bytes_rx_node_id:
-			delete m_value.bstring_value;
+			delete value_.bstring_value;
 			break;
 		default:;
 		}
@@ -645,20 +645,20 @@ void rx_node_id::clear_content()
 void rx_node_id::set_string_id(const char* strid)
 {
 	clear_content();
-	m_node_type = string_rx_node_id;
-	m_value.string_value = new string_type(strid);
+	node_type_ = string_rx_node_id;
+	value_.string_value = new string_type(strid);
 }
 
 bool rx_node_id::is_guid() const
 {
-	return m_node_type == guid_rx_node_id;
+	return node_type_ == guid_rx_node_id;
 }
 
 bool rx_node_id::get_uuid(rx_uuid_t& id) const
 {
-	if (m_node_type == guid_rx_node_id)
+	if (node_type_ == guid_rx_node_id)
 	{
-		id = m_value.uuid_value;
+		id = value_.uuid_value;
 		return true;
 	}
 	else
@@ -667,9 +667,9 @@ bool rx_node_id::get_uuid(rx_uuid_t& id) const
 
 bool rx_node_id::get_numeric(uint32_t& id) const
 {
-	if (m_node_type == numeric_rx_node_id)
+	if (node_type_ == numeric_rx_node_id)
 	{
-		id = m_value.int_value;
+		id = value_.int_value;
 		return true;
 	}
 	else
@@ -678,10 +678,10 @@ bool rx_node_id::get_numeric(uint32_t& id) const
 
 bool rx_node_id::get_string(string_type& id) const
 {
-	if (m_node_type == string_rx_node_id)
+	if (node_type_ == string_rx_node_id)
 	{
-		if (m_value.string_value)
-			id = m_value.string_value->c_str();
+		if (value_.string_value)
+			id = value_.string_value->c_str();
 		return true;
 	}
 	else
@@ -690,23 +690,23 @@ bool rx_node_id::get_string(string_type& id) const
 
 const uint16_t rx_node_id::get_namespace() const
 {
-	return m_namespace;
+	return namespace_;
 }
 
 void rx_node_id::set_namespace(uint16_t value)
 {
-	m_namespace = value;
+	namespace_ = value;
 }
 
 const rx_node_id_type rx_node_id::get_node_type() const
 {
-	return m_node_type;
+	return node_type_;
 }
 
 void rx_node_id::set_node_type(rx_node_id_type value)
 {
 	clear_content();
-	m_node_type = value;
+	node_type_ = value;
 }
 
 const char* g_complie_time;

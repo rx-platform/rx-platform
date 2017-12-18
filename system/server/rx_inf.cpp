@@ -58,20 +58,20 @@ uint32_t server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t&
 {
 	if (data.io_pool_size > 0)
 	{
-		_io_pool = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, IO_POOL_ID, RX_DOMAIN_IO);
+		io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, IO_POOL_ID, RX_DOMAIN_IO);
 	}
 	if (data.genereal_pool_size > 0)
 	{
-		_general_pool = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, GENERAL_POOL_ID, RX_DOMAIN_GENERAL);
+		general_pool_ = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, GENERAL_POOL_ID, RX_DOMAIN_GENERAL);
 	}
 	if (data.workers_pool_size > 0)
 	{
-		_workers = domains_pool::smart_ptr(data.workers_pool_size);
-		_workers->reserve();
+		workers_ = domains_pool::smart_ptr(data.workers_pool_size);
+		workers_->reserve();
 	}
-	_general_timer = rx_create_reference<rx::threads::timer>("Timer", 0);
+	general_timer_ = rx_create_reference<rx::threads::timer>("Timer", 0);
 	if (data.has_callculation_timer)
-		_callculation_timer = rx_create_reference<rx::threads::timer>("Calc",0);
+		callculation_timer_ = rx_create_reference<rx::threads::timer>("Calc",0);
 
 
 	return RX_OK;
@@ -79,18 +79,18 @@ uint32_t server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t&
 
 uint32_t server_rt::deinitialize ()
 {
-	if (_io_pool)
-		_io_pool = server_dispatcher_object::smart_ptr::null_ptr;
-	if (_general_pool)
-		_general_pool = server_dispatcher_object::smart_ptr::null_ptr;
+	if (io_pool_)
+		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
+	if (general_pool_)
+		general_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
 
-	if(_workers)
-		_workers->clear();
+	if(workers_)
+		workers_->clear();
 
-	if (_general_timer)
-		_general_timer = rx::threads::timer::smart_ptr::null_ptr;
-	if (_callculation_timer)
-		_callculation_timer = rx::threads::timer::smart_ptr::null_ptr;
+	if (general_timer_)
+		general_timer_ = rx::threads::timer::smart_ptr::null_ptr;
+	if (callculation_timer_)
+		callculation_timer_ = rx::threads::timer::smart_ptr::null_ptr;
 
 	return RX_OK;
 }
@@ -98,56 +98,56 @@ uint32_t server_rt::deinitialize ()
 void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	rx::threads::job_thread* executer = get_executer(rx_thread_context());
-	if (_general_timer)
-		_general_timer->append_job(job,executer,period, now);
+	if (general_timer_)
+		general_timer_->append_job(job,executer,period, now);
 }
 
 uint32_t server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data)
 {
-	if (_io_pool)
-		_io_pool->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);
-	if (_general_pool)
-		_general_pool->get_pool()->run(RX_PRIORITY_NORMAL);
-	if(_workers)
-		_workers->run();
-	if (_general_timer)
-		_general_timer->start(RX_PRIORITY_HIGH);
-	if (_callculation_timer)
-		_callculation_timer->start(RX_PRIORITY_NORMAL);
+	if (io_pool_)
+		io_pool_->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);
+	if (general_pool_)
+		general_pool_->get_pool()->run(RX_PRIORITY_NORMAL);
+	if(workers_)
+		workers_->run();
+	if (general_timer_)
+		general_timer_->start(RX_PRIORITY_HIGH);
+	if (callculation_timer_)
+		callculation_timer_->start(RX_PRIORITY_NORMAL);
 
-	_dispatcher_timer = rx_create_reference<dispatcher_subscribers_job>();
-	if (_callculation_timer)
-		_callculation_timer->append_job(_dispatcher_timer, _general_pool->get_pool().unsafe_ptr(), data.io_timer_period);
-	if (_general_timer)
-		_general_timer->append_job(_dispatcher_timer, _general_pool->get_pool().unsafe_ptr(), data.io_timer_period);
+	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
+	if (callculation_timer_)
+		callculation_timer_->append_job(dispatcher_timer_, general_pool_->get_pool().unsafe_ptr(), data.io_timer_period);
+	if (general_timer_)
+		general_timer_->append_job(dispatcher_timer_, general_pool_->get_pool().unsafe_ptr(), data.io_timer_period);
 
 	return RX_OK;
 }
 
 uint32_t server_rt::stop ()
 {
-	if (_dispatcher_timer)
+	if (dispatcher_timer_)
 	{
-		_dispatcher_timer->cancel();
-		_dispatcher_timer = dispatcher_subscribers_job::smart_ptr::null_ptr;
+		dispatcher_timer_->cancel();
+		dispatcher_timer_ = dispatcher_subscribers_job::smart_ptr::null_ptr;
 	}
-	if (_io_pool)
-		_io_pool->get_pool()->end();
-	if (_general_pool)
-		_general_pool->get_pool()->end();
+	if (io_pool_)
+		io_pool_->get_pool()->end();
+	if (general_pool_)
+		general_pool_->get_pool()->end();
 
-	if(_workers)
-		_workers->end();
+	if(workers_)
+		workers_->end();
 
-	if (_general_timer)
+	if (general_timer_)
 	{
-		_general_timer->stop();
-		_general_timer->wait_handle();
+		general_timer_->stop();
+		general_timer_->wait_handle();
 	}
-	if (_callculation_timer)
+	if (callculation_timer_)
 	{
-		_callculation_timer->stop();
-		_callculation_timer->wait_handle();
+		callculation_timer_->stop();
+		callculation_timer_->wait_handle();
 	}
 
 	return RX_OK;
@@ -193,64 +193,64 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 	switch (domain)
 	{
 	case RX_DOMAIN_GENERAL:
-		if(_general_pool)
-			return _general_pool->get_pool().unsafe_ptr();
+		if(general_pool_)
+			return general_pool_->get_pool().unsafe_ptr();
 		else
-			return _io_pool->get_pool().unsafe_ptr();
+			return io_pool_->get_pool().unsafe_ptr();
 	case RX_DOMAIN_IO:
-		return _io_pool->get_pool().unsafe_ptr();
+		return io_pool_->get_pool().unsafe_ptr();
 	default:
-		if(_workers)
-			return _workers->get_executer(domain);
-		else if(_general_pool)
-			return _general_pool->get_pool().unsafe_ptr();
+		if(workers_)
+			return workers_->get_executer(domain);
+		else if(general_pool_)
+			return general_pool_->get_pool().unsafe_ptr();
 		else
-			return _io_pool->get_pool().unsafe_ptr();
+			return io_pool_->get_pool().unsafe_ptr();
 	}
 }
 
 void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
-	if(_callculation_timer)
-		_general_timer->append_job(job, executer, period, now);
-	if (_general_timer)
-		_general_timer->append_job(job, executer, period, now);
+	if(callculation_timer_)
+		general_timer_->append_job(job, executer, period, now);
+	if (general_timer_)
+		general_timer_->append_job(job, executer, period, now);
 }
 
 void server_rt::append_io_job (rx::jobs::job_ptr job)
 {
-	_io_pool->get_pool()->append(job);
+	io_pool_->get_pool()->append(job);
 }
 
 void server_rt::append_general_job (rx::jobs::job_ptr job)
 {
-	if (_general_pool)
-		return _general_pool->get_pool()->append(job);
+	if (general_pool_)
+		return general_pool_->get_pool()->append(job);
 	else
-		return _io_pool->get_pool()->append(job);
+		return io_pool_->get_pool()->append(job);
 }
 
 void server_rt::append_slow_job (rx::jobs::job_ptr job)
 {
-	if (_general_pool)
-		return _general_pool->get_pool()->append(job);
+	if (general_pool_)
+		return general_pool_->get_pool()->append(job);
 	else
-		return _io_pool->get_pool()->append(job);
+		return io_pool_->get_pool()->append(job);
 }
 
 void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
-	if (_general_timer)
-		_general_timer->append_job(job, _io_pool->get_pool().unsafe_ptr(), period, now);
+	if (general_timer_)
+		general_timer_->append_job(job, io_pool_->get_pool().unsafe_ptr(), period, now);
 }
 
 
 // Class rx_platform::runtime::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
-      : _threads_count(count)
-  , _pool(count, name,rx_thread_id), server_object(name,id)
+      : threads_count_(count)
+  , pool_(count, name,rx_thread_id), server_object(name,id)
 {
 	register_const_value("count", count);
 }
@@ -290,7 +290,7 @@ void dispatcher_subscribers_job::process ()
 // Class rx_platform::runtime::domains_pool 
 
 domains_pool::domains_pool (uint32_t pool_size)
-      : _pool_size(pool_size)
+      : pool_size_(pool_size)
 	, server_object(WORKER_POOL_NAME, WORKER_POOL_ID)
 {
 	register_const_value("count", (uint32_t)pool_size);
@@ -305,13 +305,13 @@ domains_pool::~domains_pool()
 
 void domains_pool::run (int priority)
 {
-	for (auto one : _workers)
+	for (auto one : workers_)
 		one->start(priority);
 }
 
 void domains_pool::end (uint32_t timeout)
 {
-	for (auto one : _workers)
+	for (auto one : workers_)
 		one->end();
 }
 
@@ -321,16 +321,16 @@ void domains_pool::append (job_ptr pjob)
 
 void domains_pool::reserve ()
 {
-	_workers.reserve(_pool_size);
-	for (uint32_t i = 0; i < _pool_size; i++)
-		_workers.emplace_back(new threads::physical_job_thread("Worker",i));
+	workers_.reserve(pool_size_);
+	for (uint32_t i = 0; i < pool_size_; i++)
+		workers_.emplace_back(new threads::physical_job_thread("Worker",i));
 }
 
 void domains_pool::clear ()
 {
-	for (auto one : _workers)
+	for (auto one : workers_)
 		delete one;
-	_workers.clear();
+	workers_.clear();
 }
 
 void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
@@ -343,14 +343,14 @@ void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
 
 rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 {
-	uint32_t size = _pool_size;
+	uint32_t size = pool_size_;
 	RX_ASSERT(size);
 	if (size == 0)
 		return nullptr;
 	else
 	{
 		uint32_t real_index = domain%size;
-		return _workers[real_index];
+		return workers_[real_index];
 	}
 }
 

@@ -45,25 +45,22 @@ namespace rx_platform {
 rx_gate* rx_gate::g_instance = nullptr;
 
 rx_gate::rx_gate()
-      : _host(nullptr),
-        _started(rx_time::now()),
-        _pid(0),
-        _shutting_down(false)
-	, _security_guard(pointers::_create_new)
+      : host_(nullptr),
+        started_(rx_time::now()),
+        pid_(0),
+        shutting_down_(false)
+	, security_guard_(pointers::_create_new)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
-	_os_info = buff;
-
-
-	_pid = rx_pid;
-
+	os_info_ = buff;
+	pid_ = rx_pid;
 	{
-		ASSIGN_MODULE_VERSION(_rx_version, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(rx_version_, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 	}
-	_rx_name = rx_get_server_name();
-	_lib_version = g_lib_version;
-	_hal_version = g_ositf_version;
+	rx_name_ = rx_get_server_name();
+	lib_version_ = g_lib_version;
+	hal_version_ = g_ositf_version;
 	
 	
 
@@ -72,7 +69,7 @@ rx_gate::rx_gate()
 		RX_COMPILER_VERSION,
 		RX_COMPILER_MINOR,
 		RX_COMPILER_BUILD);
-	_comp_version = buff;
+	comp_version_ = buff;
 
 }
 
@@ -100,18 +97,18 @@ void rx_gate::cleanup ()
 uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	python::py_script* python = &python::py_script::instance();
-	_scripts.emplace(python->get_definition().name, python);
+	scripts_.emplace(python->get_definition().name, python);
 	
-	_host = host;
+	host_ = host;
 
-	if (_runtime.initialize(host, data.runtime_data))
+	if (runtime_.initialize(host, data.runtime_data))
 	{
-		if (_manager.initialize(host, data.managment_data))
+		if (manager_.initialize(host, data.managment_data))
 		{
 			sys_internal::internal_ns::root_server_directory::initialize(host,data.namespace_data);
-			_root = rx_create_reference<sys_internal::internal_ns::root_server_directory>();
+			root_ = rx_create_reference<sys_internal::internal_ns::root_server_directory>();
 
-			for (auto one : _scripts)
+			for (auto one : scripts_)
 				one.second->initialize();
 
 			model::internal_classes_manager::instance().initialize(host, data.meta_data);
@@ -120,7 +117,7 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 		}
 		else
 		{
-			_runtime.deinitialize();
+			runtime_.deinitialize();
 		}
 	}
 	return RX_ERROR;
@@ -129,21 +126,21 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 uint32_t rx_gate::deinitialize ()
 {
 	
-	for (auto one : _scripts)
+	for (auto one : scripts_)
 		one.second->deinitialize();
 
 	model::internal_classes_manager::instance().deinitialize();
 
-	_manager.deinitialize();
-	_runtime.deinitialize();
+	manager_.deinitialize();
+	runtime_.deinitialize();
 	return RX_OK;
 }
 
 uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	if (_runtime.start(host, data.runtime_data))
+	if (runtime_.start(host, data.runtime_data))
 	{
-		if (_manager.start(host, data.managment_data))
+		if (manager_.start(host, data.managment_data))
 		{
 			model::internal_classes_manager::instance().start(host, data.meta_data);
 
@@ -153,7 +150,7 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 		}
 		else
 		{
-			_runtime.stop();
+			runtime_.stop();
 		}
 	}
 	return RX_ERROR;
@@ -162,24 +159,24 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 uint32_t rx_gate::stop ()
 {
 	model::internal_classes_manager::instance().stop();
-	_manager.stop();
-	_runtime.stop();
+	manager_.stop();
+	runtime_.stop();
 	return RX_OK;
 }
 
 server_directory_ptr rx_gate::get_root_directory ()
 {
-	return _root;
+	return root_;
 }
 
 bool rx_gate::shutdown (const string_type& msg)
 {
-	if (!_security_guard->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
+	if (!security_guard_->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
 	{
 		return false;
 	}
-	_shutting_down = true;
-	_host->shutdown(msg);
+	shutting_down_ = true;
+	host_->shutdown(msg);
 	return true;
 }
 
@@ -198,9 +195,9 @@ bool rx_gate::read_log (const log::log_query_type& query, log::log_events_type& 
 
 bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (!_security_guard->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	if (!security_guard_->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
 	{
-		return _host->do_host_command(line, out_buffer, err_buffer, ctx);
+		return host_->do_host_command(line, out_buffer, err_buffer, ctx);
 	}
 	else
 	{

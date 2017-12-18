@@ -44,14 +44,14 @@ namespace logic {
 string_type program_runtime::type_name = RX_CPP_PROGRAM_TYPE_NAME;
 
 program_runtime::program_runtime()
-      : _created_time(rx_time::now()),
-        _modified_time(rx_time::now())
+      : created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
 {
 }
 
 program_runtime::program_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : _created_time(rx_time::now()),
-        _modified_time(rx_time::now())
+      : created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
 	, program_runtime_t(name,id,system)
 {
 }

@@ -45,9 +45,9 @@ namespace jobs {
 // Class rx::jobs::job 
 
 job::job()
-      : _canceled(false)
+      : canceled_(false)
 {
-	_security_context = rx_security_context();
+	security_context_ = rx_security_context();
 }
 
 
@@ -59,17 +59,17 @@ job::~job()
 
 void job::cancel ()
 {
-	_canceled = true;
+	canceled_ = true;
 }
 
 bool job::is_canceled () const
 {
-	return _canceled;
+	return canceled_;
 }
 
 void job::un_cancel ()
 {
-	_canceled = false;
+	canceled_ = false;
 }
 
 job* job::get_unsafe_ptr ()
@@ -87,9 +87,9 @@ void job::release_unsafe_ptr ()
 // Class rx::jobs::timer_job 
 
 timer_job::timer_job()
-      : _next(0x0),
-        _period(0x0)
-  , _executer(nullptr), _my_timer(nullptr)
+      : next_(0x0),
+        period_(0x0)
+  , executer_(nullptr), my_timer_(nullptr)
 {
 }
 
@@ -103,7 +103,7 @@ timer_job::~timer_job()
 void timer_job::set_executer (threads::job_thread* executer)
 {
 	locks::auto_lock dummy(this);
-	_executer = executer;
+	executer_ = executer;
 }
 
 
@@ -122,18 +122,18 @@ post_period_job::~post_period_job()
 
 rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
-	if (((_next - current_tick) & 0x80000000) || (_next - current_tick) == 0)
+	if (((next_ - current_tick) & 0x80000000) || (next_ - current_tick) == 0)
 	{
 
 		// should be done
-		_executer->append(smart_this());// add job to right thread
+		executer_->append(smart_this());// add job to right thread
 
 		remove = true;// we're done
 
 		return 0;// return for how long
 	}
 	else
-		return _next - current_tick;// not jet so send how mutch more to timer
+		return next_ - current_tick;// not jet so send how mutch more to timer
 }
 
 
@@ -152,22 +152,22 @@ periodic_job::~periodic_job()
 
 rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
-	rx_timer_ticks_t diff = _next - current_tick;
+	rx_timer_ticks_t diff = next_ - current_tick;
 	if (std::bitset<sizeof(rx_timer_ticks_t) * 8>(diff).test(sizeof(rx_timer_ticks_t) * 8 - 1) || diff == 0)
 	{
 		// should be done
-		_executer->append(smart_this());// add job to right thread
+		executer_->append(smart_this());// add job to right thread
 
 		do
 		{
-			_next = _next + _period;// new time
+			next_ = next_ + period_;// new time
 
-		} while (_next <= current_tick);
+		} while (next_ <= current_tick);
 
-		return current_tick- _next;// return for how long
+		return current_tick- next_;// return for how long
 	}
 	else
-		return _next - current_tick;// not jet so send how mutch more to timer
+		return next_ - current_tick;// not jet so send how mutch more to timer
 }
 
 

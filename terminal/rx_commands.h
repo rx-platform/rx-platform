@@ -99,7 +99,7 @@ class server_command_manager : public rx_platform::objects::server_object
 server commands managment object\r\n\
 bin folder in file hierarcyh\
 ")
-	typedef std::map<string_type,server_command_base_ptr> registred_commands_type;
+	typedef std::map<string_type,server_command_base_ptr> registered_commands_type;
 
   public:
       server_command_manager();
@@ -129,7 +129,7 @@ bin folder in file hierarcyh\
   private:
 
 
-      registred_commands_type _registred_commands;
+      registered_commands_type registered_commands_;
 
 
 };

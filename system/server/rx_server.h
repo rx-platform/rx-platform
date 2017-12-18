@@ -112,74 +112,74 @@ class rx_gate
 
       runtime::server_rt& get_runtime ()
       {
-        return _runtime;
+        return runtime_;
       }
 
 
       mngt::server_manager& get_manager ()
       {
-        return _manager;
+        return manager_;
       }
 
 
       hosting::rx_platform_host * get_host ()
       {
-        return _host;
+        return host_;
       }
 
 
 
       const rx_time get_started () const
       {
-        return _started;
+        return started_;
       }
 
 
       const string_type& get_os_info () const
       {
-        return _os_info;
+        return os_info_;
       }
 
 
       const string_type& get_rx_version () const
       {
-        return _rx_version;
+        return rx_version_;
       }
 
 
       const string_type& get_lib_version () const
       {
-        return _lib_version;
+        return lib_version_;
       }
 
 
       const string_type& get_rx_name () const
       {
-        return _rx_name;
+        return rx_name_;
       }
 
 
       const string_type& get_comp_version () const
       {
-        return _comp_version;
+        return comp_version_;
       }
 
 
       const string_type& get_hal_version () const
       {
-        return _hal_version;
+        return hal_version_;
       }
 
 
       const rx_pid_t get_pid () const
       {
-        return _pid;
+        return pid_;
       }
 
 
       const bool is_shutting_down () const
       {
-        return _shutting_down;
+        return shutting_down_;
       }
 
 
@@ -198,38 +198,38 @@ class rx_gate
 
 
 
-      runtime::server_rt _runtime;
+      runtime::server_rt runtime_;
 
-      rx_reference<ns::rx_server_directory> _root;
+      rx_reference<ns::rx_server_directory> root_;
 
-      mngt::server_manager _manager;
+      mngt::server_manager manager_;
 
-      hosting::rx_platform_host *_host;
+      hosting::rx_platform_host *host_;
 
-      scripts_type _scripts;
+      scripts_type scripts_;
 
 
       static rx_gate* g_instance;
 
-      rx_time _started;
+      rx_time started_;
 
-      string_type _os_info;
+      string_type os_info_;
 
-      string_type _rx_version;
+      string_type rx_version_;
 
-      string_type _lib_version;
+      string_type lib_version_;
 
-      string_type _rx_name;
+      string_type rx_name_;
 
-      string_type _comp_version;
+      string_type comp_version_;
 
-      string_type _hal_version;
+      string_type hal_version_;
 
-      rx_pid_t _pid;
+      rx_pid_t pid_;
 
-      security::security_guard_ptr _security_guard;
+      security::security_guard_ptr security_guard_;
 
-      bool _shutting_down;
+      bool shutting_down_;
 
 
 };

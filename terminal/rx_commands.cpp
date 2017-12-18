@@ -102,7 +102,7 @@ void server_command_manager::register_command (server_command_base_ptr cmd)
 {
 	string_type con_name = cmd->get_console_name();
 	item_lock();
-	_registred_commands.emplace(con_name, cmd);
+	registered_commands_.emplace(con_name, cmd);
 	item_unlock();
 }
 
@@ -133,8 +133,8 @@ server_command_base_ptr server_command_manager::get_command_by_name (const strin
 
 	server_command_base_ptr command;
 	item_lock();
-	auto it = _registred_commands.find(name);
-	if (it != _registred_commands.end())
+	auto it = registered_commands_.find(name);
+	if (it != registered_commands_.end())
 	{
 		command = it->second;
 	}
@@ -161,8 +161,8 @@ void server_command_manager::get_class_info (string_type& class_name, string_typ
 void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) const
 {
 	item_lock();
-	sub_items.reserve(_registred_commands.size());
-	for (const auto& one : _registred_commands)
+	sub_items.reserve(registered_commands_.size());
+	for (const auto& one : registered_commands_)
 		sub_items.emplace_back(one.second);
 	item_unlock();
 }
@@ -174,7 +174,7 @@ bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a list of commands:\r\n";
 
-	for (const auto& one : _registred_commands)
+	for (const auto& one : registered_commands_)
 	{
 		out << "\r\n" ANSI_COLOR_YELLOW;
 		out <<one.first;

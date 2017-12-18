@@ -33,12 +33,12 @@
 
 #include "system/server/rx_server.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 
 namespace host {
 namespace interactive {
@@ -125,12 +125,12 @@ class interactive_console_client : public rx_platform::prog::console_client
   private:
 
 
-      rx_reference<interactive_security_context> _security_context;
+      rx_reference<interactive_security_context> security_context_;
 
-      interactive_console_host *_host;
+      interactive_console_host *host_;
 
 
-      bool _exit;
+      bool exit_;
 
 
 };
@@ -179,9 +179,9 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
   private:
 
 
-      bool _exit;
+      bool exit_;
 
-      objects::server_const_value_item<bool> _testBool;
+      objects::server_const_value_item<bool> testBool_;
 
 
 };

@@ -75,13 +75,13 @@ class job : private pointers::reference_object
 
       const rx_security_handle_t get_security_context () const
       {
-        return _security_context;
+        return security_context_;
       }
 
 
       const rx_thread_handle_t get_destination () const
       {
-        return _destination;
+        return destination_;
       }
 
 
@@ -99,11 +99,11 @@ class job : private pointers::reference_object
 
 
 
-      bool _canceled;
+      bool canceled_;
 
-      rx_security_handle_t _security_context;
+      rx_security_handle_t security_context_;
 
-      rx_thread_handle_t _destination;
+      rx_thread_handle_t destination_;
 
 	  friend void threads::execute_job(void*);
     friend class threads::dispatcher_pool;
@@ -132,18 +132,18 @@ class timer_job : public job,
 
   protected:
 
-      threads::job_thread *_executer;
+      threads::job_thread *executer_;
 
 
-      rx_timer_ticks_t _next;
+      rx_timer_ticks_t next_;
 
-      rx_timer_ticks_t _period;
+      rx_timer_ticks_t period_;
 
 
   private:
 
 
-      threads::timer *_my_timer;
+      threads::timer *my_timer_;
 
 
     friend class threads::timer;
@@ -186,8 +186,8 @@ class lambda_job : public job
 
   public:
       lambda_job (std::function<void(argT)> f, argT arg)
-            : _f(f),
-              _arg(arg)
+            : f_(f),
+              arg_(arg)
       {
       }
 
@@ -198,7 +198,7 @@ class lambda_job : public job
 
       void process ()
       {
-		  (_f)(_arg);
+		  (f_)(arg_);
       }
 
 
@@ -207,9 +207,9 @@ class lambda_job : public job
   private:
 
 
-      std::function<void(argT)> _f;
+      std::function<void(argT)> f_;
 
-      argT _arg;
+      argT arg_;
 
 
 };
@@ -251,8 +251,8 @@ class lambda_timer_job : public post_period_job
 
   public:
       lambda_timer_job (std::function<void(argT)> f, argT arg)
-            : _f(f),
-              _arg(arg)
+            : f_(f),
+              arg_(arg)
       {
       }
 
@@ -264,7 +264,7 @@ class lambda_timer_job : public post_period_job
       void process ()
       {
 		  cancel();
-		  (_f)(_arg);
+		  (f_)(arg_);
       }
 
 
@@ -273,9 +273,9 @@ class lambda_timer_job : public post_period_job
   private:
 
 
-      std::function<void(argT)> _f;
+      std::function<void(argT)> f_;
 
-      argT _arg;
+      argT arg_;
 
 
 };

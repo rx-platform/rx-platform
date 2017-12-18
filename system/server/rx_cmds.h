@@ -31,14 +31,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 namespace rx {
 namespace security {
@@ -107,67 +107,67 @@ public:
 
       const rx_reference<server_program_holder> get_holder () const
       {
-        return _holder;
+        return holder_;
       }
 
 
       rx_reference<server_program_base> get_program ()
       {
-        return _program;
+        return program_;
       }
 
 
 
       server_directory_ptr get_current_directory ()
       {
-        return _current_directory;
+        return current_directory_;
       }
 
       void set_current_directory (server_directory_ptr value)
       {
-        _current_directory = value;
+        current_directory_ = value;
       }
 
 
       const buffer_ptr get_out () const
       {
-        return _out;
+        return out_;
       }
 
 
       const buffer_ptr get_err () const
       {
-        return _err;
+        return err_;
       }
 
 
       platform_item_ptr get_current_object ()
       {
-        return _current_object;
+        return current_object_;
       }
 
       void set_current_object (platform_item_ptr value)
       {
-        _current_object = value;
+        current_object_ = value;
       }
 
 
       platform_item_ptr get_current_item ()
       {
-        return _current_item;
+        return current_item_;
       }
 
       void set_current_item (platform_item_ptr value)
       {
-        _current_item = value;
+        current_item_ = value;
       }
 
 
 	  template<typename T>
 	  pointers::reference<T> get_instruction_data()
 	  {
-		  auto it = _instructions_data.find(get_possition());
-		  if (it != _instructions_data.end())
+		  auto it = instructions_data_.find(get_possition());
+		  if (it != instructions_data_.end())
 		  {
 			  return it->second.cast_to<pointers::reference<T> >();
 		  }
@@ -189,30 +189,30 @@ public:
 
 
 
-      rx_reference<program_context_base> _root;
+      rx_reference<program_context_base> root_;
 
-      rx_reference<server_program_holder> _holder;
+      rx_reference<server_program_holder> holder_;
 
-      rx_reference<server_program_base> _program;
+      rx_reference<server_program_base> program_;
 
 
-      server_directory_ptr _current_directory;
+      server_directory_ptr current_directory_;
 
-      buffer_ptr _out;
+      buffer_ptr out_;
 
-      buffer_ptr _err;
+      buffer_ptr err_;
 
-      bool _postponed;
+      bool postponed_;
 
-      instructions_data_type _instructions_data;
+      instructions_data_type instructions_data_;
 
-      std::atomic_bool _canceled;
+      std::atomic_bool canceled_;
 
-      pending_jobs_type _pending_jobs;
+      pending_jobs_type pending_jobs_;
 
-      platform_item_ptr _current_object;
+      platform_item_ptr current_object_;
 
-      platform_item_ptr _current_item;
+      platform_item_ptr current_item_;
 
 
 };
@@ -263,7 +263,7 @@ class program_executer_base : public rx::pointers::virtual_reference_object
   private:
 
 
-      rx_reference<server_program_holder> _holder;
+      rx_reference<server_program_holder> holder_;
 
 
     friend class server_program_holder;
@@ -288,7 +288,7 @@ class server_program_holder : public rx::pointers::reference_object
 
       rx_virtual<program_executer_base> get_executer ()
       {
-        return _executer;
+        return executer_;
       }
 
 
@@ -298,13 +298,13 @@ class server_program_holder : public rx::pointers::reference_object
   private:
 
 
-      rx_reference<server_program_base> _main_program;
+      rx_reference<server_program_base> main_program_;
 
-      sub_programs_type _sub_programs;
+      sub_programs_type sub_programs_;
 
-      rx_virtual<program_executer_base> _executer;
+      rx_virtual<program_executer_base> executer_;
 
-      rx_reference<program_context_base> _main_context;
+      rx_reference<program_context_base> main_context_;
 
 
 };
@@ -357,22 +357,22 @@ class console_client : public rx::pointers::virtual_reference_object
       void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
-      server_directory_ptr _current_directory;
+      server_directory_ptr current_directory_;
 
 
 
-      rx_reference<program_context_base> _current;
+      rx_reference<program_context_base> current_;
 
 
-      string_type _line;
+      string_type line_;
 
-      string_type _name;
+      string_type name_;
 
-      rx_thread_handle_t _executer;
+      rx_thread_handle_t executer_;
 
-      platform_item_ptr _current_object;
+      platform_item_ptr current_object_;
 
-      platform_item_ptr _current_item;
+      platform_item_ptr current_item_;
 
 
 };
@@ -404,7 +404,7 @@ class console_program_context : public program_context_base
 
       const size_t get_current_line () const
       {
-        return _current_line;
+        return current_line_;
       }
 
 
@@ -419,14 +419,14 @@ class console_program_context : public program_context_base
   private:
 
 
-      rx_virtual<console_client> _client;
+      rx_virtual<console_client> client_;
 
 
-      size_t _current_line;
+      size_t current_line_;
 
-      std::ostream _out_std;
+      std::ostream out_std_;
 
-      std::ostream _err_std;
+      std::ostream err_std_;
 
 
 };
@@ -470,7 +470,7 @@ class server_command_base : public ns::rx_platform_item
 
       const string_type& get_console_name () const
       {
-        return _console_name;
+        return console_name_;
       }
 
 
@@ -482,15 +482,15 @@ class server_command_base : public ns::rx_platform_item
       bool dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask);
 
 
-      rx_time _time_stamp;
+      rx_time time_stamp_;
 
 
   private:
 
 
-      string_type _console_name;
+      string_type console_name_;
 
-      security::security_guard_ptr _security_guard;
+      security::security_guard_ptr security_guard_;
 
 
 };
@@ -527,7 +527,7 @@ class server_console_program : public server_program_base
   private:
 
 
-      string_vector _lines;
+      string_vector lines_;
 
 
 };
@@ -600,7 +600,7 @@ class server_script_host
 
       const script_def_t& get_definition () const
       {
-        return _definition;
+        return definition_;
       }
 
 
@@ -610,7 +610,7 @@ class server_script_host
   private:
 
 
-      script_def_t _definition;
+      script_def_t definition_;
 
 
 };

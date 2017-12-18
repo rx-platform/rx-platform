@@ -258,7 +258,7 @@ bool json_reader::start_array (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = 0;
-				_stack.push(new_data);
+				stack_.push(new_data);
 				return true;
 			}
 		}
@@ -272,7 +272,7 @@ bool json_reader::start_array (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = 0;
-			_stack.push(new_data);
+			stack_.push(new_data);
 			return true;
 		}
 	}
@@ -282,18 +282,18 @@ bool json_reader::start_array (const char* name)
 
 bool json_reader::array_end ()
 {
-	if (_stack.empty())
+	if (stack_.empty())
 	{
 		assert(false);
 		return true;
 	}
 
-	json_read_stack_data& data = _stack.top();
+	json_read_stack_data& data = stack_.top();
 	if (data.index >= 0 && data.index<(int)data.value.size())
 		return false;
 
 	assert(data.index >= 0);
-	_stack.pop();
+	stack_.pop();
 
 	return true;
 }
@@ -302,65 +302,65 @@ bool json_reader::read_header (int& type)
 {
 	int version = 0;
 	int idx = -1;
-	if (safe_read_int(idx, "sversion", version, _envelope))
+	if (safe_read_int(idx, "sversion", version, envelope_))
 	{
 		set_version(version);
-		if (_envelope.isMember("object"))
+		if (envelope_.isMember("object"))
 		{
-			Json::Value& temp = _envelope["object"];
+			Json::Value& temp = envelope_["object"];
 			if (temp.isObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				_stack.push(temps);
+				stack_.push(temps);
 				type = STREAMING_TYPE_OBJECT;
 				return true;
 			}
 		}
-		if (_envelope.isMember("body"))
+		if (envelope_.isMember("body"))
 		{
-			Json::Value& temp = _envelope["body"];
+			Json::Value& temp = envelope_["body"];
 			if (temp.isObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				_stack.push(temps);
+				stack_.push(temps);
 				type = STREAMING_TYPE_MESSAGE;
 				return true;
 			}
 		}
-		else if (_envelope.isMember("check_out"))
+		else if (envelope_.isMember("check_out"))
 		{
-			Json::Value& temp = _envelope["check_out"];
+			Json::Value& temp = envelope_["check_out"];
 			if (temp.isObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				_stack.push(temps);
+				stack_.push(temps);
 				type = STREAMING_TYPE_CHECKOUT;
 				return true;
 			}
 		}
-		else if (_envelope.isMember("objects"))
+		else if (envelope_.isMember("objects"))
 		{
-			Json::Value& temp = _envelope["objects"];
+			Json::Value& temp = envelope_["objects"];
 			if (temp.isArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				_stack.push(temps);
+				stack_.push(temps);
 				type = STREAMING_TYPE_OBJECTS;
 				return true;
 			}
 		}
-		else if (_envelope.isMember("details"))
+		else if (envelope_.isMember("details"))
 		{
-			Json::Value& temp = _envelope["details"];
+			Json::Value& temp = envelope_["details"];
 			if (temp.isArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				_stack.push(temps);
+				stack_.push(temps);
 				type = STREAMING_TYPE_DETAILS;
 				return true;
 			}
@@ -387,7 +387,7 @@ bool json_reader::start_object (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = -1;
-				_stack.push(new_data);
+				stack_.push(new_data);
 				return true;
 			}
 		}
@@ -401,7 +401,7 @@ bool json_reader::start_object (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = -1;
-			_stack.push(new_data);
+			stack_.push(new_data);
 			return true;
 		}
 	}
@@ -410,14 +410,14 @@ bool json_reader::start_object (const char* name)
 
 bool json_reader::end_object ()
 {
-	if (_stack.empty())
+	if (stack_.empty())
 		return false;
 
-	json_read_stack_data data = _stack.top();
+	json_read_stack_data data = stack_.top();
 	if (data.index >= 0)
 		return false;
 
-	_stack.pop();
+	stack_.pop();
 
 	return true;
 }
@@ -567,15 +567,15 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 
 Json::Value& json_reader::get_current_value (int& index)
 {
-	if (_stack.empty())
+	if (stack_.empty())
 	{
 		assert(false);
 		index = -1;
-		return _envelope;
+		return envelope_;
 	}
 	else
 	{
-		json_read_stack_data& current = _stack.top();
+		json_read_stack_data& current = stack_.top();
 		index = current.index;
 		if (index >= 0)
 			current.index = current.index + 1;
@@ -586,7 +586,7 @@ Json::Value& json_reader::get_current_value (int& index)
 bool json_reader::parse_data (const string_type& data)
 {
 	Json::Reader reader;
-	return reader.parse(data, _envelope, false);
+	return reader.parse(data, envelope_, false);
 }
 
 bool json_reader::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
@@ -789,21 +789,21 @@ bool json_writter::start_array (const char* name, size_t size)
 	data.is_array = true;
 	data.name = name;
 
-	_stack.push(data);
+	stack_.push(data);
 
 	return true;
 }
 
 bool json_writter::end_array ()
 {
-	if (_stack.empty())
+	if (stack_.empty())
 		return false;
 
-	json_write_stack_data data = _stack.top();
+	json_write_stack_data data = stack_.top();
 	if (!data.is_array)
 		return false;
 
-	_stack.pop();
+	stack_.pop();
 
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -818,17 +818,17 @@ bool json_writter::end_array ()
 
 bool json_writter::write_header (int type)
 {
-	_type = type;
+	type_ = type;
 	string_type ver;
 	if (!get_version_string(ver, get_version()))
 		return false;
 
-	_envelope["sversion"] = ver;
+	envelope_["sversion"] = ver;
 
 
 	json_write_stack_data data;
 
-	switch (_type)
+	switch (type_)
 	{
 	case STREAMING_TYPE_CLASS:
 		data.is_array = false;
@@ -863,18 +863,18 @@ bool json_writter::write_header (int type)
 		return false;
 	}
 
-	_stack.push(data);
+	stack_.push(data);
 
 	return true;
 }
 
 bool json_writter::write_footer ()
 {
-	if (_stack.empty())
+	if (stack_.empty())
 		return false;
 
-	json_write_stack_data data = _stack.top();
-	_envelope[data.name] = data.value;
+	json_write_stack_data data = stack_.top();
+	envelope_[data.name] = data.value;
 
 	return true;
 }
@@ -885,21 +885,21 @@ bool json_writter::start_object (const char* name)
 	data.is_array = false;
 	data.name = name;
 
-	_stack.push(data);
+	stack_.push(data);
 
 	return true;
 }
 
 bool json_writter::end_object ()
 {
-	if (_stack.empty())
+	if (stack_.empty())
 		return false;
 
-	json_write_stack_data data = _stack.top();
+	json_write_stack_data data = stack_.top();
 	if (data.is_array)
 		return false;
 
-	_stack.pop();
+	stack_.pop();
 
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -976,14 +976,14 @@ bool json_writter::write_bytes (const char* name, const uint8_t* val, size_t siz
 
 Json::Value& json_writter::get_current_value (bool& is_array)
 {
-	if (_stack.empty())
+	if (stack_.empty())
 	{
 		assert(false);
-		return _envelope;
+		return envelope_;
 	}
 	else
 	{
-		json_write_stack_data& current = _stack.top();
+		json_write_stack_data& current = stack_.top();
 		is_array = current.is_array;
 		return current.value;
 	}
@@ -994,12 +994,12 @@ bool json_writter::get_string (string_type& result, bool decorated)
 	if (decorated)
 	{
 		Json::StyledWriter writer;
-		result = writer.write(_envelope);
+		result = writer.write(envelope_);
 	}
 	else
 	{
 		json_writer_type writer;
-		result = writer.write(_envelope);
+		result = writer.write(envelope_);
 	}
 	return true;
 }
@@ -1014,11 +1014,10 @@ bool json_writter::write_version (const char* name, uint32_t val)
 
 bool json_writter::get_version_string (string_type& result, uint32_t version)
 {
-	int major = (version >> 24);
-	int minor = ((version >> 16) & 0xff);
-	int build = (version & 0xffff);
+	int major = (version >> 16);
+	int minor = (version & 0xffff);
 	char buff[0x20];
-	sprintf(buff, "%d.%d.%d", major, minor, build);
+	sprintf(buff, "%d.%d", major, minor);
 	result = buff;
 	return true;
 }

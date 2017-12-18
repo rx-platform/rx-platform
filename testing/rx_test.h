@@ -31,14 +31,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using namespace rx;
 
@@ -120,13 +120,13 @@ class test_program_context : public rx_platform::prog::program_context_base
 
       const test_status_t get_status () const
       {
-        return _status;
+        return status_;
       }
 
 
       const test_context_data& get_data () const
       {
-        return _data;
+        return data_;
       }
 
 
@@ -142,9 +142,9 @@ class test_program_context : public rx_platform::prog::program_context_base
 
 
 
-      test_status_t _status;
+      test_status_t status_;
 
-      test_context_data _data;
+      test_context_data data_;
 
 
 };
@@ -201,7 +201,7 @@ public:
 
       const string_type& get_name () const
       {
-        return _name;
+        return name_;
       }
 
 
@@ -215,15 +215,15 @@ public:
 
 
 
-      string_type _name;
+      string_type name_;
 
-      uint64_t _start_tick;
+      uint64_t start_tick_;
 
-      test_status_t _status;
+      test_status_t status_;
 
-      test_context_data _data;
+      test_context_data data_;
 
-      locks::slim_lock _status_lock;
+      locks::slim_lock status_lock_;
 
 
 };
@@ -254,7 +254,7 @@ public:
 
       const string_type& get_category () const
       {
-        return _category;
+        return category_;
       }
 
 
@@ -271,10 +271,10 @@ public:
 
 
 
-      cases_type _cases;
+      cases_type cases_;
 
 
-      string_type _category;
+      string_type category_;
 
 
 };
@@ -317,7 +317,7 @@ public:
 
 
 
-      categories_type _categories;
+      categories_type categories_;
 
 
 };

@@ -224,7 +224,7 @@ test_category::test_category(const test_category &right)
 }
 
 test_category::test_category (const string_type& category)
-	: _category(category)
+	: category_(category)
 {
 }
 
@@ -244,26 +244,26 @@ test_category & test_category::operator=(const test_category &right)
 
 void test_category::register_test_case (test_case::smart_ptr test)
 {
-	_cases.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
+	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
 }
 
 void test_category::collect_test_cases (std::vector<test_case::smart_ptr>& cases)
 {
-	for (auto& one : _cases)
+	for (auto& one : cases_)
 		cases.emplace_back(one.second);
 }
 
 void test_category::get_cases (string_array& cases)
 {
-	cases.reserve(_cases.size());
-	for (auto one : _cases)
+	cases.reserve(cases_.size());
+	for (auto one : cases_)
 		cases.emplace_back(one.first);
 }
 
 test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
 {
-	const auto& it = _cases.find(test_name);
-	if (it != _cases.end())
+	const auto& it = cases_.find(test_name);
+	if (it != cases_.end())
 	{
 		return it->second;
 	}
@@ -274,16 +274,16 @@ test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
 // Class testing::test_case 
 
 test_case::test_case(const test_case &right)
-      : _start_tick(0),
-        _status(RX_TEST_STATUS_UNKNOWN)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN)
 {
 	RX_ASSERT(false);
 }
 
 test_case::test_case (const string_type& name)
-      : _start_tick(0),
-        _status(RX_TEST_STATUS_UNKNOWN)
-	, _name(name)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN)
+	, name_(name)
 {
 }
 
@@ -314,7 +314,7 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 	if (active->is_interactive())
 	{
 		ret = true;
-		_start_tick = rx_get_us_ticks();
+		start_tick_ = rx_get_us_ticks();
 		TEST_LOG_INFO(start_message.c_str(), 500, "Test Case Started");
 	}
 	else
@@ -327,15 +327,15 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	TEST_LOG_INFO(_name, 500, "Test Case Ended");
+	TEST_LOG_INFO(name_, 500, "Test Case Ended");
 	out << "Result:";
 
-	_status_lock.lock();
-	_data = ctx->get_data();
-	_data.time_stamp = rx_time::now();
-	_data.user = security::active_security()->get_full_name();
-	test_status_t result = _status = ctx->get_status();
-	_status_lock.unlock();
+	status_lock_.lock();
+	data_ = ctx->get_data();
+	data_.time_stamp = rx_time::now();
+	data_.user = security::active_security()->get_full_name();
+	test_status_t result = status_ = ctx->get_status();
+	status_lock_.unlock();
 	switch (result)
 	{
 	case RX_TEST_STATUS_OK:
@@ -352,7 +352,7 @@ void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err
 		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
 	}
 	out << ANSI_COLOR_RESET "\r\n";
-	uint64_t ellapsed = rx_get_us_ticks() - _start_tick;
+	uint64_t ellapsed = rx_get_us_ticks() - start_tick_;
 	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
 }
 
@@ -373,7 +373,7 @@ string_type test_case::get_type_name () const
 
 void test_case::get_value (values::rx_value& val) const
 {
-	val = rx_value(_name);
+	val = rx_value(name_);
 }
 
 namespace_item_attributes test_case::get_attributes () const
@@ -383,7 +383,7 @@ namespace_item_attributes test_case::get_attributes () const
 
 const string_type& test_case::get_item_name () const
 {
-	return _name;
+	return name_;
 }
 
 bool test_case::generate_json (std::ostream& def, std::ostream& err) const
@@ -394,13 +394,13 @@ bool test_case::generate_json (std::ostream& def, std::ostream& err) const
 test_status_t test_case::get_status (test_context_data* data)
 {
 	if (data)
-		*data = _data;
-	return _status;
+		*data = data_;
+	return status_;
 }
 
 test_context_data test_case::get_data (test_context_data* data) const
 {
-	return _data;
+	return data_;
 }
 
 bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
@@ -414,7 +414,7 @@ bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostre
 	}
 	else
 	{
-		err << "Error starting test case:" << _name << "\r\n";
+		err << "Error starting test case:" << name_ << "\r\n";
 		return false;
 	}
 }
@@ -445,7 +445,7 @@ testing_enviroment::~testing_enviroment()
 
 void testing_enviroment::register_code_test (test_category::smart_ptr test)
 {
-	_categories.emplace(test->get_category(), std::forward<test_category::smart_ptr>(test));
+	categories_.emplace(test->get_category(), std::forward<test_category::smart_ptr>(test));
 }
 
 testing_enviroment& testing_enviroment::instance ()
@@ -458,20 +458,20 @@ void testing_enviroment::collect_test_cases (const string_type& category, std::v
 {
 	if (category.empty())
 	{
-		for (auto& one : _categories)
+		for (auto& one : categories_)
 			one.second->collect_test_cases(cases);
 	}
 	else
 	{
-		const auto& it = _categories.find(category);
-		if (it != _categories.end())
+		const auto& it = categories_.find(category);
+		if (it != categories_.end())
 			it->second->collect_test_cases(cases);
 	}
 }
 
 void testing_enviroment::get_categories (string_array& categories)
 {
-	for(auto& one : _categories)
+	for(auto& one : categories_)
 	{
 		categories.push_back(one.first);
 	}
@@ -479,8 +479,8 @@ void testing_enviroment::get_categories (string_array& categories)
 
 void testing_enviroment::get_cases (const string_type& category, string_array& cases)
 {
-	const auto& it = _categories.find(category);
-	if (it != _categories.end())
+	const auto& it = categories_.find(category);
+	if (it != categories_.end())
 		return it->second->get_cases(cases);
 }
 
@@ -491,8 +491,8 @@ test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_
 	{
 		string_type category(test_name.substr(0, idx));
 		string_type name = test_name.substr(idx + 1);
-		const auto& it = _categories.find(category);
-		if (it != _categories.end())
+		const auto& it = categories_.find(category);
+		if (it != categories_.end())
 		{
 			return it->second->get_test_case(name);
 		}
@@ -516,7 +516,7 @@ test_program_context::smart_ptr testing_enviroment::create_test_context (rx_plat
 // Class testing::test_program_context 
 
 test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
-      : _status(RX_TEST_STATUS_UNKNOWN)
+      : status_(RX_TEST_STATUS_UNKNOWN)
 	, rx_platform::prog::program_context_base(holder, root_context, current_directory, out, err,program)
 {
 }
@@ -530,20 +530,20 @@ test_program_context::~test_program_context()
 
 void test_program_context::set_failed ()
 {
-	_status = RX_TEST_STATUS_FAILED;
+	status_ = RX_TEST_STATUS_FAILED;
 	fill_data();
 }
 
 void test_program_context::set_passed ()
 {
-	_status = RX_TEST_STATUS_OK;
+	status_ = RX_TEST_STATUS_OK;
 	fill_data();
 }
 
 void test_program_context::fill_data ()
 {
-	_data.time_stamp = rx_time::now();
-	_data.user = security::active_security()->get_full_name();
+	data_.time_stamp = rx_time::now();
+	data_.user = security::active_security()->get_full_name();
 }
 
 size_t test_program_context::get_possition () const

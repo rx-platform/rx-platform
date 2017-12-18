@@ -40,7 +40,7 @@ namespace model {
 // Class model::internal_classes_manager 
 
 internal_classes_manager::internal_classes_manager()
-	: _worker("config",0)
+	: worker_("config",0)
 {
 }
 
@@ -70,13 +70,13 @@ uint32_t internal_classes_manager::deinitialize ()
 
 uint32_t internal_classes_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
 {
-	_worker.start(RX_PRIORITY_IDLE);
+	worker_.start(RX_PRIORITY_IDLE);
 	return RX_OK;
 }
 
 uint32_t internal_classes_manager::stop ()
 {
-	_worker.end();
+	worker_.end();
 	return RX_OK;
 }
 
@@ -97,8 +97,8 @@ relations_hash_data::~relations_hash_data()
 void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& first_backward)
 {
 	std::vector<rx_node_id> super_array;
-	auto itf = _backward_hash.find(first_backward);
-	if (itf != _backward_hash.end())
+	auto itf = backward_hash_.find(first_backward);
+	if (itf != backward_hash_.end())
 	{
 		// reserve the memory, you might need it
 		super_array.reserve(itf->second->size() + 1);
@@ -116,40 +116,40 @@ void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_n
 		{// this is first stuff do it once
 			first = false;
 			// backward update
-			auto it_elem = _first_backward_hash.find(new_id);
-			if (it_elem == _first_backward_hash.end())
+			auto it_elem = first_backward_hash_.find(new_id);
+			if (it_elem == first_backward_hash_.end())
 			{
-				auto result = _first_backward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+				auto result = first_backward_hash_.emplace(new_id, std::make_unique<relation_elements_type>());
 				result.first->second->insert(one);
 			}
 			else
 				it_elem->second->insert(one);
 
 			// forward update
-			it_elem = _first_forward_hash.find(one);
-			if (it_elem == _first_forward_hash.end())
+			it_elem = first_forward_hash_.find(one);
+			if (it_elem == first_forward_hash_.end())
 			{
-				auto result = _first_forward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+				auto result = first_forward_hash_.emplace(new_id, std::make_unique<relation_elements_type>());
 				result.first->second->insert(new_id);
 			}
 			else
 				it_elem->second->insert(new_id);
 		}
 		// backward update
-		auto it_elem = _backward_hash.find(new_id);
-		if (it_elem == _backward_hash.end())
+		auto it_elem = backward_hash_.find(new_id);
+		if (it_elem == backward_hash_.end())
 		{
-			auto result = _backward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+			auto result = backward_hash_.emplace(new_id, std::make_unique<relation_elements_type>());
 			result.first->second->insert(one);
 		}
 		else
 			it_elem->second->insert(one);
 
 		// forward update
-		it_elem = _forward_hash.find(one);
-		if (it_elem == _forward_hash.end())
+		it_elem = forward_hash_.find(one);
+		if (it_elem == forward_hash_.end())
 		{
-			auto result = _forward_hash.emplace(new_id, std::make_unique<relation_elements_type>());
+			auto result = forward_hash_.emplace(new_id, std::make_unique<relation_elements_type>());
 			result.first->second->insert(new_id);
 		}
 		else
@@ -159,17 +159,17 @@ void relations_hash_data::add_to_hash_data (const rx_node_id& new_id, const rx_n
 
 void relations_hash_data::remove_from_hash_data (const rx_node_id& id)
 {
-	auto it_elem = _backward_hash.find(id);
-	if (it_elem != _backward_hash.end())
+	auto it_elem = backward_hash_.find(id);
+	if (it_elem != backward_hash_.end())
 	{
 		for (auto ite : (*it_elem->second))
 		{
-			auto it_super = _forward_hash.find(ite);
-			if (it_super != _forward_hash.end())
+			auto it_super = forward_hash_.find(ite);
+			if (it_super != forward_hash_.end())
 				it_super->second->erase(id);
 		}
 		it_elem->second->clear();
-		_backward_hash.erase(it_elem);
+		backward_hash_.erase(it_elem);
 	}
 #ifdef _DEBUG
 	else
@@ -178,17 +178,17 @@ void relations_hash_data::remove_from_hash_data (const rx_node_id& id)
 	}
 #endif
 	// first instance hash data
-	it_elem = _first_backward_hash.find(id);
-	if (it_elem != _first_backward_hash.end())
+	it_elem = first_backward_hash_.find(id);
+	if (it_elem != first_backward_hash_.end())
 	{
 		for (auto ite : (*it_elem->second))
 		{
-			auto it_super = _first_forward_hash.find(ite);
-			if (it_super != _first_forward_hash.end())
+			auto it_super = first_forward_hash_.find(ite);
+			if (it_super != first_forward_hash_.end())
 				it_super->second->erase(id);
 		}
 		it_elem->second->clear();
-		_first_backward_hash.erase(it_elem);
+		first_backward_hash_.erase(it_elem);
 	}
 #ifdef _DEBUG
 	else

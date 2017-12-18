@@ -47,13 +47,13 @@ _create_new_type _create_new;
 std::atomic<ref_counting_type> reference_object::g_objects_count;
 
 reference_object::reference_object()
-      : _ref_count(1)
+      : ref_count_(1)
 {
 	g_objects_count++;
 }
 
 reference_object::reference_object(const reference_object &right)
-      : _ref_count(1)
+      : ref_count_(1)
 {
 	RX_ASSERT(false);
 }
@@ -75,12 +75,12 @@ reference_object & reference_object::operator=(const reference_object &right)
 
 void reference_object::bind ()
 {
-	_ref_count.fetch_add(1, std::memory_order_relaxed);
+	ref_count_.fetch_add(1, std::memory_order_relaxed);
 }
 
 void reference_object::release ()
 {
-	if (1 == _ref_count.fetch_sub(1, std::memory_order_acq_rel))
+	if (1 == ref_count_.fetch_sub(1, std::memory_order_acq_rel))
 		delete this;
 }
 
@@ -123,12 +123,12 @@ virtual_reference_object & virtual_reference_object::operator=(const virtual_ref
 
 void struct_reference::bind ()
 {
-	_ref_count++;
+	ref_count_++;
 }
 
 void struct_reference::release ()
 {
-	if (0 == --_ref_count)
+	if (0 == --ref_count_)
 		delete this;
 }
 

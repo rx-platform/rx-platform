@@ -45,119 +45,119 @@ namespace values {
 
 rx_value::rx_value()
 {
-	_origin = RX_DEFUALT_ORIGIN;
-	_quality = RX_DEFAULT_VALUE_QUALITY;
-	_type = RX_NULL_TYPE;
+	origin_ = RX_DEFUALT_ORIGIN;
+	quality_ = RX_DEFAULT_VALUE_QUALITY;
+	type_ = RX_NULL_TYPE;
 }
 
 rx_value::rx_value(const rx_value &right)
 {
 	memcpy(this, &right, sizeof(rx_value));
-	_type = right._type;
-	copy_union(_type, _value, right._value);
+	type_ = right.type_;
+	copy_union(type_, value_, right.value_);
 }
 
 rx_value::rx_value (bool val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_BOOL_TYPE;
-	_value.bool_value = val;
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_BOOL_TYPE;
+	value_.bool_value = val;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (int8_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_SBYTE_TYPE;
-	_value.int8_value = val;
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_SBYTE_TYPE;
+	value_.int8_value = val;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (uint8_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_BYTE_TYPE;
-	_value.uint8_value = val;
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_BYTE_TYPE;
+	value_.uint8_value = val;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (const bit_string& val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
+	type_ = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
-	_value.array_value = new std::vector<rx_value_union>(count);
+	value_.array_value = new std::vector<rx_value_union>(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		_value.array_value->at(i).bool_value = val[i];
+		value_.array_value->at(i).bool_value = val[i];
 	}
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (const std::vector<int8_t>& val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
+	type_ = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
 	size_t count = val.size();
-	_value.array_value = new std::vector<rx_value_union>(count);
+	value_.array_value = new std::vector<rx_value_union>(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		_value.array_value->at(i).int8_value = val[i];
+		value_.array_value->at(i).int8_value = val[i];
 	}
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (rx_value&& right)
 {
 	memcpy(this, &right, sizeof(rx_value));
-	right._type = RX_NULL_TYPE;
+	right.type_ = RX_NULL_TYPE;
 }
 
 rx_value::rx_value (int32_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_SDWORD_TYPE;
-	_value.int32_value = val;
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_SDWORD_TYPE;
+	value_.int32_value = val;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (uint32_t val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_DWORD_TYPE;
-	_value.uint32_value = val;
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_DWORD_TYPE;
+	value_.uint32_value = val;
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 rx_value::rx_value (const string_type& val, rx_time time, uint32_t quality, uint32_t origin)
 {
-	_type = RX_STRING_TYPE;
-	_value.string_value = new string_type(val);
-	_origin = origin;
-	_time = time;
-	_quality = quality;
+	type_ = RX_STRING_TYPE;
+	value_.string_value = new string_type(val);
+	origin_ = origin;
+	time_ = time;
+	quality_ = quality;
 }
 
 
 rx_value::~rx_value()
 {
-	clear_union(_type, _value);
+	clear_union(type_, value_);
 }
 
 
 rx_value & rx_value::operator=(const rx_value &right)
 {
-	clear_union(_type, _value);
+	clear_union(type_, value_);
 	memcpy(this, &right, sizeof(rx_value));
-	_type = right._type;
-	copy_union(_type, _value, right._value);
+	type_ = right.type_;
+	copy_union(type_, value_, right.value_);
 	return *this;
 }
 
@@ -176,7 +176,7 @@ bool rx_value::operator!=(const rx_value &right) const
 
 void rx_value::get_string (string_type& val)
 {
-	switch (_type)
+	switch (type_)
 	{
 		char buffer[0x20];
 
@@ -187,14 +187,14 @@ void rx_value::get_string (string_type& val)
 		break;
 		case RX_BOOL_TYPE:
 		{
-				val =  _value.bool_value ? "true" : "false";
+				val =  value_.bool_value ? "true" : "false";
 		}
 		break;
 		case RX_SBYTE_TYPE:
 		case RX_SWORD_TYPE:
 		case RX_SDWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (int32_t)_value.int32_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%d", (int32_t)value_.int32_value);
 				val = buffer;
 			}
 			break;
@@ -202,7 +202,7 @@ void rx_value::get_string (string_type& val)
 		case RX_WORD_TYPE:
 		case RX_DWORD_TYPE:
 			{
-				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (uint32_t)_value.uint32_value);
+				snprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), "%u", (uint32_t)value_.uint32_value);
 				val = buffer;
 
 			}
@@ -229,7 +229,7 @@ void rx_value::get_string (string_type& val)
 			break;
 		case RX_STRING_TYPE:
 			{
-				val = *_value.string_value;
+				val = *value_.string_value;
 			}
 			break;
 		case RX_TIME_TYPE:
@@ -262,38 +262,38 @@ void rx_value::get_string (string_type& val)
 
 bool rx_value::is_good () const
 {
-	return ((_quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
+	return ((quality_ & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
 }
 
 bool rx_value::is_bad () const
 {
-	return ((_quality & RX_QUALITY_MASK) == RX_BAD_QUALITY);
+	return ((quality_ & RX_QUALITY_MASK) == RX_BAD_QUALITY);
 }
 
 bool rx_value::is_uncertain () const
 {
-	return ((_quality & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
+	return ((quality_ & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
 }
 
 bool rx_value::is_test () const
 {
-	return ((_origin & RX_TEST_ORIGIN_MASK) == RX_TEST_ORIGIN_MASK);
+	return ((origin_ & RX_TEST_ORIGIN_MASK) == RX_TEST_ORIGIN_MASK);
 }
 
 bool rx_value::is_substituted () const
 {
-	return ((_origin & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
+	return ((origin_ & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
 }
 
 void rx_value::clear_union (uint8_t type, rx_value_union& value)
 {
 	if (IS_ARRAY_VALUE(type))
 	{// array stuff
-		for (auto& one : *(_value.array_value))
+		for (auto& one : *(value_.array_value))
 		{
 			clear_union(type&RX_SIMPLE_VALUE_MASK, one);
 		}
-		delete _value.array_value;
+		delete value_.array_value;
 	}
 	else
 	{// simple value stuff
@@ -349,37 +349,37 @@ void rx_value::copy_union (uint8_t type, rx_value_union& to, const rx_value_unio
 
 bool rx_value::is_array () const
 {
-	return IS_ARRAY_VALUE(_type);
+	return IS_ARRAY_VALUE(type_);
 }
 
 bool rx_value::operator > (const rx_value& right)
 {
-	return _value.int32_value < right._value.int32_value;
+	return value_.int32_value < right.value_.int32_value;
 }
 
 bool rx_value::operator < (const rx_value& right)
 {
-	return _value.int32_value > right._value.int32_value;
+	return value_.int32_value > right.value_.int32_value;
 }
 
 rx_value::operator int () const
 {
-	return _value.int32_value;
+	return value_.int32_value;
 }
 
 void rx_value::set_substituted ()
 {
-	_origin |= RX_FORCED_ORIGIN_MASK;
+	origin_ |= RX_FORCED_ORIGIN_MASK;
 }
 
 void rx_value::set_test ()
 {
-	_origin |= RX_TEST_ORIGIN_MASK;
+	origin_ |= RX_TEST_ORIGIN_MASK;
 }
 
 void rx_value::get_type_string (string_type& val)
 {
-	switch (_type)
+	switch (type_)
 	{
 	case RX_NULL_TYPE:
 		{
@@ -476,36 +476,36 @@ void rx_value::get_type_string (string_type& val)
 
 bool rx_value::serialize (base_meta_writter& stream) const
 {
-	if (!stream.write_uint("Quality", _quality))
+	if (!stream.write_uint("Quality", quality_))
 		return false;
-	if (!stream.write_time("Time", _time))
+	if (!stream.write_time("Time", time_))
 		return false;
-	if (!stream.write_uint("Origin", _origin))
+	if (!stream.write_uint("Origin", origin_))
 		return false;
 	/*if (!stream.write_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.write_byte("Type", _type))
+	if (!stream.write_byte("Type", type_))
 		return false;
-	if (!serialize_value(stream, _type, _value))
+	if (!serialize_value(stream, type_, value_))
 		return false;
 	return true;
 }
 
 bool rx_value::deserialize (base_meta_reader& stream)
 {
-	clear_union(_type, _value);
+	clear_union(type_, value_);
 
-	if (!stream.read_uint("Quality", _quality))
+	if (!stream.read_uint("Quality", quality_))
 		return false;
-	if (!stream.read_time("Time", _time))
+	if (!stream.read_time("Time", time_))
 		return false;
-	if (!stream.read_uint("Origin", _origin))
+	if (!stream.read_uint("Origin", origin_))
 		return false;
 	/*if (!stream.read_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.read_byte("Type", _type))
+	if (!stream.read_byte("Type", type_))
 		return false;
-	if (!deserialize_value(stream, _type, _value))
+	if (!deserialize_value(stream, type_, value_))
 		return false;
 	return true;
 }
@@ -803,7 +803,7 @@ bool rx_value::deserialize_value (base_meta_reader& stream, uint8_t type, rx_val
 bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 {
 	bool ret = false;
-	if (((_origin&RX_TEST_ORIGIN_MASK)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
+	if (((origin_&RX_TEST_ORIGIN_MASK)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
 	{
 		ret = true;
 		if (is_test())
@@ -818,26 +818,26 @@ bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 
 bool rx_value::serialize_value (base_meta_writter& stream) const
 {
-	if (!stream.write_byte("Type", _type))
+	if (!stream.write_byte("Type", type_))
 		return false;
-	return serialize_value(stream, _type, _value);
+	return serialize_value(stream, type_, value_);
 }
 
 bool rx_value::deserialize_value (base_meta_reader& stream)
 {
-	if (!stream.read_byte("Type", _type))
+	if (!stream.read_byte("Type", type_))
 		return false;
-	return deserialize_value(stream, _type, _value);
+	return deserialize_value(stream, type_, value_);
 }
 
 rx_value::operator uint32_t () const
 {
-	return _value.uint32_value;
+	return value_.uint32_value;
 }
 
 rx_value::operator bool () const
 {
-	return _value.bool_value;
+	return value_.bool_value;
 }
 
 

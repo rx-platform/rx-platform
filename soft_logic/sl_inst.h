@@ -98,7 +98,7 @@ class bit_instruction : public sl_instruction_base
       virtual bool is_active (program_context* context) = 0;
 
 
-      bit_value _bit;
+      bit_value bit_;
 
 
   private:
@@ -337,7 +337,7 @@ class sl_compare : public sl_instruction_base
   private:
 
 
-      argument_value _arguments[2];
+      argument_value arguments_[2];
 
 
 };
@@ -374,9 +374,9 @@ class sl_small_compare : public sl_instruction_base
   private:
 
 
-      argument_value _arguments[2];
+      argument_value arguments_[2];
 
-      compare_type _inst_type;
+      compare_type inst_type_;
 
 
 };
@@ -404,9 +404,9 @@ class sl_mov : public sl_instruction_base
   private:
 
 
-      argument_value _argument;
+      argument_value argument_;
 
-      register_value _result;
+      register_value result_;
 
 
 };
@@ -440,7 +440,7 @@ class subprogram_instruction : public sl_instruction_base
 
       const rx_uuid get_guid () const
       {
-        return _guid;
+        return guid_;
       }
 
 
@@ -450,19 +450,19 @@ class subprogram_instruction : public sl_instruction_base
   private:
 
 
-      string_type _sub_name;
+      string_type sub_name_;
 
-      int _inputs_bits;
+      int inputs_bits_;
 
-      int _output_bits;
+      int output_bits_;
 
-      int _height;
+      int height_;
 
-      std::vector<argument_value> _arguments;
+      std::vector<argument_value> arguments_;
 
-      rx_uuid _guid;
+      rx_uuid guid_;
 
-      std::vector<register_value> _out_arguments;
+      std::vector<register_value> out_arguments_;
 
 
 };
@@ -498,11 +498,11 @@ class sl_arithmetic : public sl_instruction_base
   private:
 
 
-      argument_value _arguments[2];
+      argument_value arguments_[2];
 
-      arithmetic_type _inst_type;
+      arithmetic_type inst_type_;
 
-      register_value _result;
+      register_value result_;
 
 
 };
@@ -536,11 +536,11 @@ class sl_logic : public sl_instruction_base
   private:
 
 
-      argument_value _arguments[2];
+      argument_value arguments_[2];
 
-      logic_type _inst_type;
+      logic_type inst_type_;
 
-      register_value _result;
+      register_value result_;
 
 
 };
@@ -583,22 +583,22 @@ class sl_counter : public sl_instruction_base
   private:
 
 
-      argument_value _preset;
+      argument_value preset_;
 
-      bool _prev_up_state;
+      bool prev_up_state_;
 
-      dword _value;
+      dword value_;
 
       //	broj brojaca
-      dword _number;
+      dword number_;
 
-      bool _prev_down_state;
+      bool prev_down_state_;
 
-      dword _preset_val;
+      dword preset_val_;
 
-      bool _bit_e;
+      bool bit_e_;
 
-      bool _bit_f;
+      bool bit_f_;
 
 
 };
@@ -701,9 +701,9 @@ class sl_inc_dec : public sl_instruction_base
   private:
 
 
-      register_value _value;
+      register_value value_;
 
-      bool _inc;
+      bool inc_;
 
 
 };
@@ -736,25 +736,25 @@ class sl_monostabile : public sl_instruction_base
   private:
 
 
-      argument_value _preset;
+      argument_value preset_;
 
       //	broj brojaca
-      dword _number;
+      dword number_;
 
       //	broj brojaca
-      dword _base;
+      dword base_;
 
-      dword _value;
+      dword value_;
 
-      dword _preset_val;
+      dword preset_val_;
 
-      bool _prev_c_state;
+      bool prev_c_state_;
 
-      dword _started_tick;
+      dword started_tick_;
 
-      bool _prev_r_state;
+      bool prev_r_state_;
 
-      bool _prev_i_state;
+      bool prev_i_state_;
 
 
 };
@@ -787,27 +787,27 @@ class sl_timer_inst : public sl_instruction_base
   private:
 
 
-      argument_value _preset;
+      argument_value preset_;
 
       //	broj brojaca
-      dword _number;
+      dword number_;
 
       //	broj brojaca
-      dword _base;
+      dword base_;
 
-      dword _value;
+      dword value_;
 
-      dword _preset_val;
+      dword preset_val_;
 
-      bool _prev_c_state;
+      bool prev_c_state_;
 
-      dword _started_tick;
+      dword started_tick_;
 
-      bool _prev_r_state;
+      bool prev_r_state_;
 
-      bool _prev_d_state;
+      bool prev_d_state_;
 
-      dword _ellapsed;
+      dword ellapsed_;
 
 
 };
