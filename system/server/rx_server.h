@@ -129,7 +129,7 @@ class rx_gate
 
 
 
-      const rx_time get_started () const
+      rx_time get_started () const
       {
         return started_;
       }
@@ -171,7 +171,7 @@ class rx_gate
       }
 
 
-      const rx_pid_t get_pid () const
+      rx_pid_t get_pid () const
       {
         return pid_;
       }

@@ -57,7 +57,7 @@ namespace logic {
 
 
 
-typedef meta::checkable_type< program_runtime , false  > program_runtime_t;
+typedef meta::checkable_type< rx_platform::logic::program_runtime , false  > program_runtime_t;
 
 
 
@@ -92,19 +92,6 @@ public:
       const string_type& get_item_name () const;
 
 
-      const rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
-
-
-
       static string_type type_name;
 
 
@@ -121,11 +108,6 @@ public:
 
 
       sl_runtime::sl_program_holder my_program_;
-
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
 
 
 };

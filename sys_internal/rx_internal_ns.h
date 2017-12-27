@@ -207,6 +207,28 @@ class system_server_item : public rx_platform::ns::rx_platform_item
 };
 
 
+
+
+
+
+template <class T>
+class simple_platform_item : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      simple_platform_item();
+
+      virtual ~simple_platform_item();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace internal_ns
 } // namespace sys_internal
 

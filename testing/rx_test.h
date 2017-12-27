@@ -182,7 +182,7 @@ public:
 
       string_type get_type_name () const;
 
-      void get_value (values::rx_value& val) const;
+      values::rx_value get_value () const;
 
       namespace_item_attributes get_attributes () const;
 
@@ -198,10 +198,18 @@ public:
 
       bool is_browsable () const;
 
+      rx_time get_created_time () const;
+
 
       const string_type& get_name () const
       {
         return name_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
       }
 
 
@@ -224,6 +232,36 @@ public:
       test_context_data data_;
 
       locks::slim_lock status_lock_;
+
+      rx_time modified_time_;
+
+
+};
+
+
+
+
+
+
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      virtual ~basic_test_case_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
 
 
 };
@@ -318,34 +356,6 @@ public:
 
 
       categories_type categories_;
-
-
-};
-
-
-
-
-
-
-class basic_test_case_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(basic_test_case_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-This test creates dummy test case and is used for testing this mechanism\
-");
-
-  public:
-      basic_test_case_test();
-
-      virtual ~basic_test_case_test();
-
-
-      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
 
 
 };

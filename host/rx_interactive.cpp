@@ -133,17 +133,10 @@ bool interactive_console_host::exit () const
 
 void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
 {
-	constructors::user_object_constructor constructor;
-	rx_platform::objects::object_runtime_ptr test = constructor.create_object("test_object", 59, 55);
-	items.push_back(test);
 }
 
 void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
 {
-	rx_platform::meta::object_class_ptr test("test_class", 55, false);
-	test->register_const_value("testBool", true);
-	test->register_simple_value("testVal", 158);
-	items.push_back(test);
 }
 
 bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)

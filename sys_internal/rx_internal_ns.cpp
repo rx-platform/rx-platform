@@ -280,6 +280,21 @@ system_server_item::~system_server_item()
 
 
 
+// Parameterized Class sys_internal::internal_ns::simple_platform_item 
+
+template <class T>
+simple_platform_item<T>::simple_platform_item()
+{
+}
+
+
+template <class T>
+simple_platform_item<T>::~simple_platform_item()
+{
+}
+
+
+
 } // namespace internal_ns
 } // namespace sys_internal
 

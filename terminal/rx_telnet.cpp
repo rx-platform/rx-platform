@@ -610,8 +610,7 @@ namespace
 bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 {
 	string_type quality_stirng;
-	values::rx_value val;
-	item->get_value(val);
+	values::rx_value val = item->get_value();
 	string_type value_string;
 	val.get_string(value_string);
 	ns::fill_quality_string(val, quality_stirng);
@@ -659,11 +658,10 @@ bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qua
 		string_type attrs;
 		ns::fill_namepsace_string(one->get_attributes(), attrs);
 		row.emplace_back(attrs);
-	}
+	}	
 	if (list_qualities || list_timestamps)
 	{
-		values::rx_value val;
-		one->get_value(val);
+		values::rx_value val = one->get_value();
 
 		if (list_qualities)
 		{
@@ -673,6 +671,10 @@ bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qua
 		}
 		if (list_timestamps)
 			row.emplace_back(val.get_time().get_string());
+	}
+	if (list_created)
+	{
+		row.emplace_back(one->get_created_time().get_string());
 	}
 
 	return true;
@@ -706,6 +708,13 @@ bool dump_dirs_on_console(rx_row_type& row, bool list_attributes, bool list_qual
 		}
 		if (list_timestamps)
 			row.emplace_back(val.get_time().get_string());
+	}
+	if (list_created)
+	{
+		string_type attrs;
+		row.emplace_back(one->get_created().get_string());
+		ns::fill_namepsace_string(one->get_attributes(), attrs);
+		row.emplace_back(attrs);
 	}
 
 	return true;
@@ -758,6 +767,8 @@ bool namespace_command::list_directory (std::ostream& out, std::ostream& err, co
 		table[0].emplace_back("Quality");
 	if (list_timestamps)
 		table[0].emplace_back("Time Stamp");
+	if (list_created)
+		table[0].emplace_back("Created Time");
 
 	size_t idx = 1;
 	for (auto& one : dirs)
@@ -832,6 +843,8 @@ bool namespace_command::list_object (std::ostream& out, std::ostream& err, const
 		table[0].emplace_back("Quality");
 	if (list_timestamps)
 		table[0].emplace_back("Time Stamp");
+	if (list_created)
+		table[0].emplace_back("Created Time");
 
 	size_t idx = 1;
 	for (auto& one : items)

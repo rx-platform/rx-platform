@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -32,6 +32,7 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
+#include "classes/rx_meta.h"
 
 
 namespace testing {
@@ -40,10 +41,10 @@ namespace basic_tests {
 
 namespace function_test {
 
-// Class testing::basic_tests::function_test::function_test_category 
+// Class testing::basic_tests::function_test::function_test_category
 
 function_test_category::function_test_category()
-	: test_category("function-objects")
+	: test_category("functions")
 {
 	register_test_case(rx_create_reference<platform_callback_test>());
 }
@@ -141,7 +142,7 @@ void test_callbacks(std::ostream& out)
 	out << "\r\n";
 }
 
-// Class testing::basic_tests::function_test::platform_callback_test 
+// Class testing::basic_tests::function_test::platform_callback_test
 
 platform_callback_test::platform_callback_test()
 	: test_case("rx-callback")
@@ -164,6 +165,77 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 
 
 } // namespace function_test
+
+namespace meta_test {
+
+ // Class testing::basic_tests::meta_test::meta_model_test_category
+
+ meta_model_test_category::meta_model_test_category()
+	 : test_category("meta")
+ {
+	 register_test_case(rx_create_reference<object_creation_test>());
+ }
+
+
+ meta_model_test_category::~meta_model_test_category()
+ {
+ }
+
+
+
+ // Class testing::basic_tests::meta_test::object_creation_test
+
+ object_creation_test::object_creation_test()
+	 : test_case("construct")
+ {
+ }
+
+
+ object_creation_test::~object_creation_test()
+ {
+ }
+
+
+
+ bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+ {
+
+	 out << "Creating test_class\r\n";
+	 server_directory_ptr dir = ctx->get_current_directory();
+
+	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
+	 test_class->register_const_value("testBool", true);
+	 test_class->register_simple_value("testVal", 158);
+
+	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
+	 {
+
+		 out << "test_class created\r\n";
+
+		 dir->add_item(test_class);
+
+
+		 out << "Creating test_object\r\n";
+
+		 constructors::user_object_constructor constructor;
+		 rx_platform::objects::object_runtime_ptr test_object = constructor.create_object("test_object", 59, 55);
+		 if (test_object)
+		 {
+            out << "test_class test_object\r\n";
+
+			 dir->add_item(test_object);
+			 ctx->set_passed();
+			 return true;
+		 }
+
+	 }
+	 ctx->set_failed();
+
+	 return true;
+ }
+
+
+} // namespace meta_test
 } // namespace basic_tests
 } // namespace testing
 

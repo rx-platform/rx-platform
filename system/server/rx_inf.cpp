@@ -245,6 +245,11 @@ void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t perio
 		general_timer_->append_job(job, io_pool_->get_pool().unsafe_ptr(), period, now);
 }
 
+rx_time server_rt::get_created_time (values::rx_value& val) const
+{
+	return rx_gate::instance().get_started();
+}
+
 
 // Class rx_platform::runtime::server_dispatcher_object 
 

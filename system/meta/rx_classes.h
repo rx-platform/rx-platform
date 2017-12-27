@@ -233,6 +233,8 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
       void construct (runtime_ptr_t what);
 
+      values::rx_value get_value () const;
+
 
       const string_type& get_name () const
       {
@@ -252,6 +254,18 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       }
 
 
+      rx_time get_created_time () const
+      {
+        return created_time_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
+      }
+
+
 
   protected:
 
@@ -268,6 +282,10 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       rx_node_id parent_;
 
       uint32_t version_;
+
+      rx_time created_time_;
+
+      rx_time modified_time_;
 
 
 };
@@ -403,8 +421,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
       void construct (runtime_ptr_t what);
 
-      void get_value (values::rx_value& val) const;
-
 
       const const_values_type& get_const_values () const
       {
@@ -422,18 +438,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
       const bool is_abstract () const
       {
         return abstract_;
-      }
-
-
-      const rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
       }
 
 
@@ -469,10 +473,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
       names_cahce_type names_cache_;
 
       bool abstract_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
 
 
 };

@@ -314,15 +314,11 @@ bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uin
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
 {
 }
 
 object_runtime::object_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, object_runtime_t(name,id,rx_node_id::null_id,system)
+	: object_runtime_t(name,id,rx_node_id::null_id,system)
 {
 }
 
@@ -338,7 +334,7 @@ rx_value object_runtime::get_value (const string_type path) const
 	if (path.empty())
 	{
 		rx_value ret(get_name());
-		ret.set_time(created_time_);
+		ret.set_time(get_modified_time());
 		ret.adapt_quality_to_mode(mode_);
 		return ret;
 	}
@@ -370,11 +366,10 @@ void object_runtime::set_test ()
 	mode_.set_test();
 }
 
-void object_runtime::get_value (values::rx_value& val) const
+values::rx_value object_runtime::get_value () const
 {
 	// this static object improves performance its, created only once and it is emtyy
-	static const string_type empty;
-	val = get_value(empty);
+	return rx_value(get_version(), get_modified_time());
 }
 
 namespace_item_attributes object_runtime::get_attributes () const
@@ -418,7 +413,7 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 	if (!checkable_type::serialize_definition(stream, type))
 		return false;
 
-	if (!complex_item_->serialize_definition(stream, type,modified_time_,mode_))
+	if (!complex_item_->serialize_definition(stream, type,get_modified_time(),mode_))
 		return false;
 	
 	if (!stream.start_array("Programs", programs_.size()))

@@ -217,214 +217,6 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 }
 
 
-// Class testing::test_category 
-
-test_category::test_category(const test_category &right)
-{
-}
-
-test_category::test_category (const string_type& category)
-	: category_(category)
-{
-}
-
-
-test_category::~test_category()
-{
-}
-
-
-test_category & test_category::operator=(const test_category &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-void test_category::register_test_case (test_case::smart_ptr test)
-{
-	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
-}
-
-void test_category::collect_test_cases (std::vector<test_case::smart_ptr>& cases)
-{
-	for (auto& one : cases_)
-		cases.emplace_back(one.second);
-}
-
-void test_category::get_cases (string_array& cases)
-{
-	cases.reserve(cases_.size());
-	for (auto one : cases_)
-		cases.emplace_back(one.first);
-}
-
-test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
-{
-	const auto& it = cases_.find(test_name);
-	if (it != cases_.end())
-	{
-		return it->second;
-	}
-	return test_case::smart_ptr::null_ptr;
-}
-
-
-// Class testing::test_case 
-
-test_case::test_case(const test_case &right)
-      : start_tick_(0),
-        status_(RX_TEST_STATUS_UNKNOWN)
-{
-	RX_ASSERT(false);
-}
-
-test_case::test_case (const string_type& name)
-      : start_tick_(0),
-        status_(RX_TEST_STATUS_UNKNOWN)
-	, name_(name)
-{
-}
-
-
-test_case::~test_case()
-{
-}
-
-
-test_case & test_case::operator=(const test_case &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
-{
-	bool ret = false;
-	string_type start_message("Test Case started by :");
-	out << start_message;
-	security::security_context_ptr active = security::active_security();
-	out << ANSI_COLOR_CYAN;
-	start_message += active->get_full_name();
-	out << active->get_user_name();
-	out << ANSI_COLOR_RESET "\r\n";
-	if (active->is_interactive())
-	{
-		ret = true;
-		start_tick_ = rx_get_us_ticks();
-		TEST_LOG_INFO(start_message.c_str(), 500, "Test Case Started");
-	}
-	else
-	{
-		err << "Access Denied!!!\r\n";
-	}
-	return ret;
-}
-
-void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
-{
-	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	TEST_LOG_INFO(name_, 500, "Test Case Ended");
-	out << "Result:";
-
-	status_lock_.lock();
-	data_ = ctx->get_data();
-	data_.time_stamp = rx_time::now();
-	data_.user = security::active_security()->get_full_name();
-	test_status_t result = status_ = ctx->get_status();
-	status_lock_.unlock();
-	switch (result)
-	{
-	case RX_TEST_STATUS_OK:
-		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
-		break;
-	case RX_TEST_STATUS_FAILED:
-		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
-		break;
-	case RX_TEST_STATUS_UNKNOWN:
-		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
-		break;
-	default:
-		RX_ASSERT(false);
-		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
-	}
-	out << ANSI_COLOR_RESET "\r\n";
-	uint64_t ellapsed = rx_get_us_ticks() - start_tick_;
-	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
-}
-
-void test_case::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-	class_name = "_TestCase";
-	has_own_code_info = true;
-}
-
-string_type test_case::get_type_name () const
-{
-  // generated from ROSE!!!
-  static string_type type_name = "TEST CASE";
-  return type_name;
-
-
-}
-
-void test_case::get_value (values::rx_value& val) const
-{
-	val = rx_value(name_);
-}
-
-namespace_item_attributes test_case::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
-}
-
-const string_type& test_case::get_item_name () const
-{
-	return name_;
-}
-
-bool test_case::generate_json (std::ostream& def, std::ostream& err) const
-{
-	return true;
-}
-
-test_status_t test_case::get_status (test_context_data* data)
-{
-	if (data)
-		*data = data_;
-	return status_;
-}
-
-test_context_data test_case::get_data (test_context_data* data) const
-{
-	return data_;
-}
-
-bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
-{
-	rx_reference<test_program_context> test_ctx = testing_enviroment::instance().create_test_context(ctx);
-	if (test_start(in, out, err, test_ctx))
-	{
-		bool ret = run_test(in, out, err, test_ctx);
-		test_end(in, out, err, test_ctx);
-		return ret;
-	}
-	else
-	{
-		err << "Error starting test case:" << name_ << "\r\n";
-		return false;
-	}
-}
-
-bool test_case::is_browsable () const
-{
-	return false;
-}
-
-
 // Class testing::testing_enviroment 
 
 testing_enviroment::testing_enviroment()
@@ -434,6 +226,7 @@ testing_enviroment::testing_enviroment()
 	register_code_test(std::make_unique<test_test>());
 	register_code_test(std::make_unique<script_test::rxs::rx_script_category>());
 	register_code_test(std::make_unique<basic_tests::function_test::function_test_category>());
+	register_code_test(std::make_unique<basic_tests::meta_test::meta_model_test_category>());
 }
 
 
@@ -600,6 +393,222 @@ test_test::~test_test()
 {
 }
 
+
+
+// Class testing::test_category 
+
+test_category::test_category(const test_category &right)
+{
+}
+
+test_category::test_category (const string_type& category)
+	: category_(category)
+{
+}
+
+
+test_category::~test_category()
+{
+}
+
+
+test_category & test_category::operator=(const test_category &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+void test_category::register_test_case (test_case::smart_ptr test)
+{
+	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
+}
+
+void test_category::collect_test_cases (std::vector<test_case::smart_ptr>& cases)
+{
+	for (auto& one : cases_)
+		cases.emplace_back(one.second);
+}
+
+void test_category::get_cases (string_array& cases)
+{
+	cases.reserve(cases_.size());
+	for (auto one : cases_)
+		cases.emplace_back(one.first);
+}
+
+test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
+{
+	const auto& it = cases_.find(test_name);
+	if (it != cases_.end())
+	{
+		return it->second;
+	}
+	return test_case::smart_ptr::null_ptr;
+}
+
+
+// Class testing::test_case 
+
+test_case::test_case(const test_case &right)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN),
+        modified_time_(rx_time::now())
+{
+	RX_ASSERT(false);
+}
+
+test_case::test_case (const string_type& name)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN),
+        modified_time_(rx_time::now())
+	, name_(name)
+{
+}
+
+
+test_case::~test_case()
+{
+}
+
+
+test_case & test_case::operator=(const test_case &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	bool ret = false;
+	string_type start_message("Test Case started by :");
+	out << start_message;
+	security::security_context_ptr active = security::active_security();
+	out << ANSI_COLOR_CYAN;
+	start_message += active->get_full_name();
+	out << active->get_user_name();
+	out << ANSI_COLOR_RESET "\r\n";
+	if (active->is_interactive())
+	{
+		ret = true;
+		start_tick_ = rx_get_us_ticks();
+		TEST_LOG_INFO(start_message.c_str(), 500, "Test Case Started");
+	}
+	else
+	{
+		err << "Access Denied!!!\r\n";
+	}
+	return ret;
+}
+
+void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	out << RX_CONSOLE_HEADER_LINE "\r\n";
+	TEST_LOG_INFO(name_, 500, "Test Case Ended");
+	out << "Result:";
+
+	status_lock_.lock();
+	data_ = ctx->get_data();
+	data_.time_stamp = rx_time::now();
+	data_.user = security::active_security()->get_full_name();
+	test_status_t result = status_ = ctx->get_status();
+	status_lock_.unlock();
+	switch (result)
+	{
+	case RX_TEST_STATUS_OK:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
+		break;
+	case RX_TEST_STATUS_FAILED:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
+		break;
+	case RX_TEST_STATUS_UNKNOWN:
+		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
+		break;
+	default:
+		RX_ASSERT(false);
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
+	}
+	out << ANSI_COLOR_RESET "\r\n";
+	uint64_t ellapsed = rx_get_us_ticks() - start_tick_;
+	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
+	modified_time_ = rx_time::now();
+}
+
+void test_case::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+	class_name = "_TestCase";
+	has_own_code_info = true;
+}
+
+string_type test_case::get_type_name () const
+{
+  // generated from ROSE!!!
+  static string_type type_name = RX_TEST_CASE_TYPE_NAME;
+  return type_name;
+
+
+}
+
+values::rx_value test_case::get_value () const
+{
+	return rx_value(status_,modified_time_);
+}
+
+namespace_item_attributes test_case::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
+}
+
+const string_type& test_case::get_item_name () const
+{
+	return name_;
+}
+
+bool test_case::generate_json (std::ostream& def, std::ostream& err) const
+{
+	return true;
+}
+
+test_status_t test_case::get_status (test_context_data* data)
+{
+	if (data)
+		*data = data_;
+	return status_;
+}
+
+test_context_data test_case::get_data (test_context_data* data) const
+{
+	return data_;
+}
+
+bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+{
+	rx_reference<test_program_context> test_ctx = testing_enviroment::instance().create_test_context(ctx);
+	if (test_start(in, out, err, test_ctx))
+	{
+		bool ret = run_test(in, out, err, test_ctx);
+		test_end(in, out, err, test_ctx);
+		return ret;
+	}
+	else
+	{
+		err << "Error starting test case:" << name_ << "\r\n";
+		return false;
+	}
+}
+
+bool test_case::is_browsable () const
+{
+	return false;
+}
+
+rx_time test_case::get_created_time () const
+{
+	return rx_gate::instance().get_started();
+}
 
 
 } // namespace testing

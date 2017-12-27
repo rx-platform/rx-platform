@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,20 +39,16 @@ namespace rx_platform {
 
 namespace logic {
 
-// Class rx_platform::logic::program_runtime 
+// Class rx_platform::logic::program_runtime
 
 string_type program_runtime::type_name = RX_CPP_PROGRAM_TYPE_NAME;
 
 program_runtime::program_runtime()
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
 {
 }
 
 program_runtime::program_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, program_runtime_t(name,id,system)
+	: program_runtime_t(name,id,system)
 {
 }
 
@@ -82,10 +78,10 @@ string_type program_runtime::get_type_name () const
 namespace_item_attributes program_runtime::get_attributes () const
 {
 	return (namespace_item_attributes)(
-		namespace_item_write_access 
-		| namespace_item_system 
-		| namespace_item_execute_access 
-		| namespace_item_program 
+		namespace_item_write_access
+		| namespace_item_system
+		| namespace_item_execute_access
+		| namespace_item_program
 		| namespace_item_read_access);
 }
 
@@ -110,7 +106,7 @@ const string_type& program_runtime::get_item_name () const
 }
 
 
-// Class rx_platform::logic::ladder_program 
+// Class rx_platform::logic::ladder_program
 
 ladder_program::ladder_program()
 {

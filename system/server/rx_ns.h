@@ -174,6 +174,8 @@ class rx_server_directory : public rx::pointers::reference_object
 
       virtual bool generate_json (std::ostream& def, std::ostream& err) = 0;
 
+      bool add_item (platform_item_ptr who);
+
 
       const rx_time get_created () const
       {
@@ -237,7 +239,7 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
       void item_unlock () const;
 
-      virtual void get_value (values::rx_value& val) const = 0;
+      virtual values::rx_value get_value () const = 0;
 
       virtual namespace_item_attributes get_attributes () const = 0;
 
@@ -260,6 +262,8 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
       virtual bool is_browsable () const = 0;
 
       virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
+
+      virtual rx_time get_created_time () const = 0;
 
 
   protected:

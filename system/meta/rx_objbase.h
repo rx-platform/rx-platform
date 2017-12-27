@@ -78,7 +78,7 @@ typedef pointers::reference<application_runtime> application_runtime_ptr;
 
 
 
-typedef meta::checkable_type< object_runtime , true  > object_runtime_t;
+typedef meta::checkable_type< rx_platform::objects::object_runtime , true  > object_runtime_t;
 
 
 
@@ -450,7 +450,7 @@ public:
 
       void set_test ();
 
-      void get_value (values::rx_value& val) const;
+      values::rx_value get_value () const;
 
       namespace_item_attributes get_attributes () const;
 
@@ -470,21 +470,9 @@ public:
 
 
 
-      const rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
       const rx_mode_type& get_mode () const
       {
         return mode_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
       }
 
 
@@ -535,11 +523,7 @@ public:
       programs_type programs_;
 
 
-      rx_time created_time_;
-
       rx_mode_type mode_;
-
-      rx_time modified_time_;
 
 
 };

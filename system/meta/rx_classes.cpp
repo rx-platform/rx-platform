@@ -219,13 +219,17 @@ struct_class::~struct_class()
 
 template <class metaT, bool _browsable>
 checkable_type<metaT,_browsable>::checkable_type()
-      : version_(RX_INITIAL_ITEM_VERSION)
+      : version_(RX_INITIAL_ITEM_VERSION),
+        created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
 {
 }
 
 template <class metaT, bool _browsable>
 checkable_type<metaT,_browsable>::checkable_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system)
-      : version_(RX_INITIAL_ITEM_VERSION)
+      : version_(RX_INITIAL_ITEM_VERSION),
+        created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
 	, name_(name),
 	base_meta_type<metaT, _browsable>(name, id, system)
 {
@@ -331,6 +335,12 @@ void checkable_type<metaT,_browsable>::construct (runtime_ptr_t what)
 	typedef typename rtype_t::smart_ptr rptr_t;
 	rptr_t runtime = what.cast_to<rptr_t>();
 	runtime->parent_ = this->get_id();
+}
+
+template <class metaT, bool _browsable>
+values::rx_value checkable_type<metaT,_browsable>::get_value () const
+{
+	return values::rx_value(this->get_name(), modified_time_);
 }
 
 
@@ -472,16 +482,12 @@ bool base_variable_class<metaT,_browsable>::register_event (const event_attribut
 
 template <class metaT, bool _browsable>
 base_complex_type<metaT,_browsable>::base_complex_type()
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
 {
 }
 
 template <class metaT, bool _browsable>
 base_complex_type<metaT,_browsable>::base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, checkable_type<metaT, _browsable>(name, id, parent, system)
+	: checkable_type<metaT, _browsable>(name, id, parent, system)
 	, sealed_(sealed)
 	, abstract_(abstract)
 {
@@ -664,12 +670,6 @@ void base_complex_type<metaT,_browsable>::construct (runtime_ptr_t what)
 		one->get_value(temp);
 		runtime->register_value(one->get_name(), temp);
 	}
-}
-
-template <class metaT, bool _browsable>
-void base_complex_type<metaT,_browsable>::get_value (values::rx_value& val) const
-{
-	val = values::rx_value("perica", modified_time_);
 }
 
 

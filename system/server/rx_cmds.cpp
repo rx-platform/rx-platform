@@ -170,7 +170,8 @@ bool program_context_base::should_run_again ()
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
       : time_stamp_(rx_time::now()),
         console_name_(console_name),
-        security_guard_(pointers::_create_new)
+        security_guard_(pointers::_create_new),
+        modified_time_(rx_time::now())
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
 }
@@ -194,10 +195,9 @@ string_type server_command_base::get_type_name () const
 	return type_name;
 }
 
-void server_command_base::get_value (values::rx_value& val) const
+values::rx_value server_command_base::get_value () const
 {
-	values::rx_value temp(get_console_name(),time_stamp_);
-	val = temp;
+	return values::rx_value(get_console_name(),time_stamp_);
 }
 
 void server_command_base::item_lock ()
@@ -242,6 +242,11 @@ bool server_command_base::console_execute (std::istream& in, std::ostream& out, 
 bool server_command_base::dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
 {
 	return security_guard_->check_premissions(mask, extended_mask);
+}
+
+rx_time server_command_base::get_created_time () const
+{
+	return rx_gate::instance().get_started();
 }
 
 

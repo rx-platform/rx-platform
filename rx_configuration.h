@@ -48,6 +48,7 @@
 #define RX_CPP_APPLICATION_TYPE_NAME "application"
 #define RX_CPP_PORT_CLASS_TYPE_NAME "port_type"
 #define RX_CPP_PORT_TYPE_NAME "port"
+#define RX_TEST_CASE_TYPE_NAME "test_case"
 
 #define RX_CPP_COMMAND_TYPE_NAME "command"
 #define RX_CPP_PROGRAM_TYPE_NAME "program"

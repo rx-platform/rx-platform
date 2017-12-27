@@ -451,7 +451,7 @@ class server_command_base : public ns::rx_platform_item
 
       string_type get_type_name () const;
 
-      void get_value (values::rx_value& val) const;
+      values::rx_value get_value () const;
 
       void item_lock ();
 
@@ -467,10 +467,18 @@ class server_command_base : public ns::rx_platform_item
 
       bool console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx);
 
+      rx_time get_created_time () const;
+
 
       const string_type& get_console_name () const
       {
         return console_name_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
       }
 
 
@@ -491,6 +499,8 @@ class server_command_base : public ns::rx_platform_item
       string_type console_name_;
 
       security::security_guard_ptr security_guard_;
+
+      rx_time modified_time_;
 
 
 };
