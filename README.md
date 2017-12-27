@@ -7,8 +7,9 @@
 The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions. 
 
 
-## [RX Platform](https://github.com/rx-platform/rx-docs/wiki)
+## RX Platform
 
+Read or download RX Platform Documentation. From general documents for users to source code documentation. It is currentlly in a "wiki phase" so first take a look at [Wiki Pages](https://github.com/rx-platform/rx-docs/wiki) of this repository.
 
 ## The Code...
 
