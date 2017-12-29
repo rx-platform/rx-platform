@@ -39,7 +39,6 @@ namespace rx
 {
 
 
-
 struct rx_table_cell_struct
 {
 	rx_table_cell_struct(const string_type& vvalue)
@@ -456,6 +455,8 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 #define RX_THREAD_NULL 0ull
 
+
+void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
 
 }// namespace rx
 

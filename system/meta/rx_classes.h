@@ -236,19 +236,13 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       values::rx_value get_value () const;
 
 
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
       const rx_node_id& get_parent () const
       {
         return parent_;
       }
 
 
-      const uint32_t get_version () const
+      uint32_t get_version () const
       {
         return version_;
       }

@@ -144,7 +144,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       string_type get_path () const;
 
-      string_type get_name (bool plain = false) const;
+      string_type get_name () const;
 
       void fill_path (string_type& path) const;
 
@@ -215,10 +215,13 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 {
 	DECLARE_VIRTUAL_REFERENCE_PTR(rx_platform_item);
 	
+public:
 	typedef std::map<string_type, platform_item_ptr> sub_items_type;
 
   public:
       rx_platform_item();
+
+      rx_platform_item (const string_type& name);
 
       virtual ~rx_platform_item();
 
@@ -231,19 +234,13 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
       virtual string_type get_type_name () const = 0;
 
-      void item_lock ();
+      void lock ();
 
-      void item_unlock ();
-
-      void item_lock () const;
-
-      void item_unlock () const;
+      void unlock ();
 
       virtual values::rx_value get_value () const = 0;
 
       virtual namespace_item_attributes get_attributes () const = 0;
-
-      virtual const string_type& get_item_name () const = 0;
 
       server_directory_ptr get_parent () const;
 
@@ -265,6 +262,22 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
       virtual rx_time get_created_time () const = 0;
 
+      virtual rx_platform_item::sub_items_type get_sub_items () const;
+
+
+      const rx_virtual<rx_platform_item> get_runtime_parent () const
+      {
+        return runtime_parent_;
+      }
+
+
+
+      const string_type get_name () const
+      {
+        return name_;
+      }
+
+
 
   protected:
 
@@ -275,8 +288,12 @@ class rx_platform_item : public rx::pointers::virtual_reference_object
 
       sub_items_type sub_items_;
 
+      rx_virtual<rx_platform_item> runtime_parent_;
+
 
       locks::lockable item_lock_;
+
+      string_type name_;
 
 
 };

@@ -53,6 +53,7 @@ template <class metaT, bool _browsable>
 base_meta_type<metaT,_browsable>::base_meta_type (const string_type& name, const rx_node_id& id, bool system)
 	: id_(id),
 	system_(system)
+	, rx_platform_item(name)
 {
 }
 
@@ -67,6 +68,8 @@ base_meta_type<metaT,_browsable>::~base_meta_type()
 template <class metaT, bool _browsable>
 bool base_meta_type<metaT,_browsable>::serialize (base_meta_writter& stream) const
 {
+	if (!rx_platform_item::serialize(stream))
+		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
 	if (!stream.write_bool("System", system_))
@@ -77,6 +80,8 @@ bool base_meta_type<metaT,_browsable>::serialize (base_meta_writter& stream) con
 template <class metaT, bool _browsable>
 bool base_meta_type<metaT,_browsable>::deserialize (base_meta_reader& stream)
 {
+	if (!rx_platform_item::deserialize(stream))
+		return false;
 	if (!stream.read_id("NodeId", id_))
 		return false;
 	if (!stream.read_bool("System", system_))
@@ -230,8 +235,7 @@ checkable_type<metaT,_browsable>::checkable_type (const string_type& name, const
       : version_(RX_INITIAL_ITEM_VERSION),
         created_time_(rx_time::now()),
         modified_time_(rx_time::now())
-	, name_(name),
-	base_meta_type<metaT, _browsable>(name, id, system)
+	, base_meta_type<metaT, _browsable>(name, id, system)
 {
 }
 
@@ -293,8 +297,7 @@ bool checkable_type<metaT,_browsable>::serialize_definition (base_meta_writter& 
 
 	if (!stream.write_id("SuperId", parent_))
 		return false;
-	if (!stream.write_string("Name", name_.c_str()))
-		return false;
+	
 	if (!stream.write_version("Ver", version_))
 		return false;
 	return true;
@@ -307,8 +310,6 @@ bool checkable_type<metaT,_browsable>::deserialize_definition (base_meta_reader&
 		return false;
 
 	if (!stream.read_id("Parent", parent_))
-		return false;
-	if (!stream.read_string("Name", name_))
 		return false;
 
 	return true;
@@ -867,3 +868,11 @@ RX_TEMPLATE_INST(rx_platform::meta::variable_class, false);
 } // namespace meta
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return name_;
+
+#endif

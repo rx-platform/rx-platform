@@ -33,10 +33,10 @@
 
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace logic {
@@ -88,8 +88,6 @@ public:
       bool load_program (base_meta_reader& stream, uint8_t type);
 
       void get_value (values::rx_value& val) const;
-
-      const string_type& get_item_name () const;
 
 
       static string_type type_name;

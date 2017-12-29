@@ -463,8 +463,6 @@ class server_command_base : public ns::rx_platform_item
 
       namespace_item_attributes get_attributes () const;
 
-      const string_type& get_item_name () const;
-
       bool console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx);
 
       rx_time get_created_time () const;

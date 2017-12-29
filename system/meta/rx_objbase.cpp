@@ -308,6 +308,16 @@ bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uin
 	return false;
 }
 
+string_type complex_runtime_item::get_const_name (uint32_t name_idx) const
+{
+	uint32_t idx =  name_idx & RT_INDEX_MASK;
+	const auto& it = indexes_cache_.find(idx);
+	if (it == indexes_cache_.end())
+		return  it->second;
+	else
+		return rx_get_error_text(RX_INTERNAL_ERROR_NO_REGISTERED_NAME);
+}
+
 
 // Class rx_platform::objects::object_runtime 
 
@@ -379,11 +389,6 @@ namespace_item_attributes object_runtime::get_attributes () const
 
 void object_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
-}
-
-const string_type& object_runtime::get_item_name () const
-{
-	return get_name();
 }
 
 bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
@@ -639,7 +644,8 @@ struct_runtime::~struct_runtime()
 
 const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
 
-const_value_item::const_value_item()
+const_value_item::const_value_item (uint32_t rt_idx, complex_runtime_item_ptr parent)
+      : name_idx_(rt_idx)
 {
 }
 
@@ -662,6 +668,11 @@ bool const_value_item::serialize_definition (base_meta_writter& stream, uint8_t 
 bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
+}
+
+string_type const_value_item::get_name () const
+{
+	return parent_->get_const_name(name_idx_);
 }
 
 
@@ -725,3 +736,11 @@ namespace_item_attributes user_object::get_attributes () const
 } // namespace objects
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return get_name();
+
+#endif

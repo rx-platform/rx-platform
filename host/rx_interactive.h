@@ -181,8 +181,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       bool exit_;
 
-      objects::server_const_value_item<bool> testBool_;
-
 
 };
 

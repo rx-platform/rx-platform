@@ -46,8 +46,7 @@ namespace interactive {
 // Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
-      : exit_(false),
-        testBool_(true)
+      : exit_(false)
 {
 }
 

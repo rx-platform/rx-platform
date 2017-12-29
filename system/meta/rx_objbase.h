@@ -44,6 +44,7 @@
 
 namespace rx_platform {
 namespace objects {
+class complex_runtime_item;
 class application_runtime;
 class domain_runtime;
 class object_runtime;
@@ -120,7 +121,7 @@ class const_value_item
 {
 
   public:
-      const_value_item();
+      const_value_item (uint32_t rt_idx, complex_runtime_item_ptr parent);
 
       virtual ~const_value_item();
 
@@ -131,13 +132,27 @@ class const_value_item
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+      string_type get_name () const;
+
+
+      uint32_t get_name_idx () const
+      {
+        return name_idx_;
+      }
+
+
 
   protected:
 
   private:
 
 
+      rx_reference<complex_runtime_item> parent_;
+
+
       static const uint32_t type_id_;
+
+      uint32_t name_idx_;
 
 
 };
@@ -154,7 +169,7 @@ class server_const_value_item : public const_value_item
 	typedef server_const_value_item<valT> item_type;
 
   public:
-      server_const_value_item (const valT& value);
+      server_const_value_item (const valT& value, uint32_t rt_idx, complex_runtime_item_ptr parent);
 
       virtual ~server_const_value_item();
 
@@ -263,7 +278,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	typedef std::vector<value_callback_t*> const_values_callbacks_type;
 
 	typedef std::map<string_type, uint32_t > names_cahce_type;
-
+	typedef std::map<uint32_t, string_type > indexes_cache_type;
 
 	template<class metaT,bool _browsable>
 	friend class meta::checkable_type;
@@ -286,6 +301,8 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+      string_type get_const_name (uint32_t name_idx) const;
+
 
       const rx_node_id& get_parent () const
       {
@@ -299,9 +316,11 @@ class complex_runtime_item : public rx::pointers::reference_object
 		  auto it = names_cache_.find(name);
 		  if (it == names_cache_.end())
 		  {
-			  const_values_.emplace_back(std::make_unique<server_const_value_item<T> >(val));
 			  uint32_t idx = (uint32_t)(const_values_.size() - 1);
-			  names_cache_.emplace(name, idx | RT_CONST_IDX_MASK);
+			  idx |= RT_CONST_IDX_MASK;
+			  const_values_.emplace_back(std::make_unique<server_const_value_item<T> >(val,idx,smart_this()));
+			  
+			  names_cache_.emplace(name,idx);
 			  return RX_OK;
 		  }
 		  return RX_ERROR;
@@ -403,6 +422,8 @@ class complex_runtime_item : public rx::pointers::reference_object
 
       rx_node_id parent_;
 
+      indexes_cache_type indexes_cache_;
+
 
 };
 
@@ -455,8 +476,6 @@ public:
       namespace_item_attributes get_attributes () const;
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      const string_type& get_item_name () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
@@ -827,8 +846,8 @@ user object class. basic implementation of a user object");
 // Parameterized Class rx_platform::objects::server_const_value_item 
 
 template <typename valT>
-server_const_value_item<valT>::server_const_value_item (const valT& value)
-	: storage_(value)
+server_const_value_item<valT>::server_const_value_item (const valT& value, uint32_t rt_idx, complex_runtime_item_ptr parent)
+	: storage_(value), const_value_item(rt_idx,parent)
 {
 }
 

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@ namespace rx_platform {
 
 namespace logic {
 
-// Class rx_platform::logic::program_runtime
+// Class rx_platform::logic::program_runtime 
 
 string_type program_runtime::type_name = RX_CPP_PROGRAM_TYPE_NAME;
 
@@ -100,13 +100,8 @@ void program_runtime::get_value (values::rx_value& val) const
 	val = rx_value(0u, get_modified_time());
 }
 
-const string_type& program_runtime::get_item_name () const
-{
-	return get_name();
-}
 
-
-// Class rx_platform::logic::ladder_program
+// Class rx_platform::logic::ladder_program 
 
 ladder_program::ladder_program()
 {

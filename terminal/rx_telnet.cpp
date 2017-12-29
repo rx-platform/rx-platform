@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 
+using namespace std::string_literals;
 
 // rx_telnet
 #include "terminal/rx_telnet.h"
@@ -627,7 +628,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	string_type temp = "aaa";
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << item->get_item_name() << "\r\n";
+	out << "Name       : " << item->get_name() << "\r\n";
 	out << "Full Path  : " << item->get_path() << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
@@ -646,9 +647,9 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_platform_item::smart_ptr one)
 {
 	if ((one->get_attributes()&namespace_item_browsable) != 0)
-		row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 	else
-		row.emplace_back(one->get_item_name());
+		row.emplace_back(one->get_name());
 	if (list_type)
 	{
 		row.emplace_back(one->get_type_name());
@@ -881,6 +882,7 @@ ls_command::ls_command()
 }
 
 
+
 ls_command::~ls_command()
 {
 }
@@ -892,30 +894,51 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	if (in.eof())
 	{// dump here
 		string_type filter;
-		server_directory_ptr temp(ctx->get_current_directory());
-		server_directories_type dirs;
-		server_items_type items;
-		temp->get_content(dirs, items, filter);
+		auto current_directory = ctx->get_current_directory();
+		auto current_object = ctx->get_current_object();
+		if (current_object)
+		{// we're inside an object itself
 
-		size_t count = dirs.size() + items.size();
+			server_items_type items;
+			current_object->get_content(items,string_type());
 
-		rx_row_type row;
-		row.reserve(count);
-
-		for (auto& one : dirs)
-		{
-			row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			size_t count = items.size();
+			rx_row_type row;
+			row.reserve(count);
+			for (auto& one : items)
+			{
+				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			}
+			err << "Haven't done for objects yet, trying to...\r\n";
+			return false;
 		}
-		for (auto& one : items)
-		{
-			if((one->get_attributes()&namespace_item_browsable)!=0)
-				row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
-			else
-				row.emplace_back(one->get_item_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+		else
+		{// we're on directories
+			server_directories_type dirs;
+			server_items_type items;
+			current_directory->get_content(dirs, items, filter);
+
+			size_t count = dirs.size() + items.size();
+
+			rx_row_type row;
+			row.reserve(count);
+
+			for (auto& one : dirs)
+			{
+				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			}
+			for (auto& one : items)
+			{
+				if ((one->get_attributes()&namespace_item_browsable) != 0)
+					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+				else
+					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+
+			}
+			rx_dump_large_row(row, out, 60);
+			return true;
 
 		}
-		rx_dump_large_row(row, out, 60);
-		return true;
 	}
 	else
 	{
@@ -1028,7 +1051,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 	string_type temp = "aaa";
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << directory->get_name(true) << "\r\n";
+	out << "Name       : " << directory->get_name() << "\r\n";
 	out << "Full Path  : " << directory->get_path() << "\r\n";
 	out << "Type       : " << directory->get_type_name() << "\r\n";
 	out << "Attributes : " << attrs << "\r\n\r\n";

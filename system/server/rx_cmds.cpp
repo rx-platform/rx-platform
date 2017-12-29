@@ -172,6 +172,8 @@ server_command_base::server_command_base (const string_type& console_name, ns::n
         console_name_(console_name),
         security_guard_(pointers::_create_new),
         modified_time_(rx_time::now())
+	 ,rx_platform_item(console_name)
+
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
 }
@@ -219,11 +221,6 @@ void server_command_base::item_unlock () const
 namespace_item_attributes server_command_base::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_system_const_value | namespace_item_execute_access | namespace_item_test_case);
-}
-
-const string_type& server_command_base::get_item_name () const
-{
-	return get_console_name();
 }
 
 bool server_command_base::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx)
@@ -466,7 +463,7 @@ void console_client::get_prompt (string_type& prompt)
 	{
 		prompt += RX_DIR_DELIMETER;
 		prompt += ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
-		prompt += current_object_->get_item_name();
+		prompt += current_object_->get_name();
 		prompt += ANSI_COLOR_RESET;
 	}
 	prompt += "\r\n" ANSI_COLOR_GREEN;
@@ -675,4 +672,5 @@ server_script_host::~server_script_host()
 
 } // namespace prog
 } // namespace rx_platform
+
 

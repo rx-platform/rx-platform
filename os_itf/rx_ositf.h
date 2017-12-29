@@ -32,6 +32,8 @@
 
 // including C style standard integer types
 #include <stdint.h>
+// errors above all
+#include "rx_errors.h"
 
 
 
@@ -45,6 +47,8 @@ extern "C" {
 #endif
 	// match pattern function
 	int match_pattern(const char *string, const char *Pattern, int bCaseSensitive);
+
+	const char* rx_get_error_text(uint32_t code);
 
 	extern const char* g_ositf_version;
 	/////////////////////////////////////////////////////////////////////////////////////////////////

@@ -751,7 +751,20 @@ void split_string(const string_type& what, string_vector& result, char delimeter
 	}
 	result.push_back(what.substr(idx1));
 }
-
+void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter)
+{
+	size_t idx = path.find(delimeter);
+	if (idx != string_type::npos)
+	{
+		name = path.substr(0, idx);
+		rest = path.substr(idx + 1);
+	}
+	else
+	{
+		name = path;
+		rest = "";
+	}
+}
 
 //
 
