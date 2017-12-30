@@ -228,7 +228,7 @@ public:
 
       virtual void code_info_to_string (string_type& info);
 
-      virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
+      virtual void fill_code_info (std::ostream& info, const string_type& name);
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -261,8 +261,6 @@ public:
       virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
 
       virtual rx_time get_created_time () const = 0;
-
-      virtual rx_platform_item::sub_items_type get_sub_items () const;
 
 
       const rx_virtual<rx_platform_item> get_runtime_parent () const

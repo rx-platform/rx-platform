@@ -428,7 +428,7 @@ console_client::console_client (rx_thread_handle_t executer)
       : executer_(executer)
 {
 #ifdef _DEBUG
-	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys/plugins/host");
+	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys");
 #else
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif

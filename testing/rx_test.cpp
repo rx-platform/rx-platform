@@ -361,14 +361,14 @@ void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err
 
 void test_case::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
-	class_name = "_TestCase";
+	class_name = "RXTestCase";
 	has_own_code_info = true;
 }
 
 string_type test_case::get_type_name () const
 {
   // generated from ROSE!!!
-  static string_type type_name = "TEST CASE";
+  static string_type type_name = RX_TEST_CASE_TYPE_NAME;
   return type_name;
 
 

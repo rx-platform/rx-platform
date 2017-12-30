@@ -53,6 +53,11 @@
 #define RX_CPP_COMMAND_TYPE_NAME "command"
 #define RX_CPP_PROGRAM_TYPE_NAME "program"
 
+#define RX_CONST_VALUE_TYPE_IDX 1
+#define RX_CONST_VALUE_TYPE_NAME "const_value"
+#define RX_VALUE_TYPE_IDX 1
+#define RX_VALUE_TYPE_NAME "value"
+
 #define RX_CPP_VARIABLE_CLASS_TYPE_NAME "variable_type"
 #define RX_CPP_VARIABLE_TYPE_NAME "variable"
 #define RX_CPP_STRUCT_CLASS_TYPE_NAME "struct_type"

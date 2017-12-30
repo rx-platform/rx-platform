@@ -114,11 +114,6 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 {
 }
 
-const string_type& object_class::get_item_name () const
-{
-	return get_name();
-}
-
 namespace_item_attributes object_class::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );

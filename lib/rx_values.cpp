@@ -277,12 +277,12 @@ bool rx_value::is_uncertain () const
 
 bool rx_value::is_test () const
 {
-	return ((origin_ & RX_TEST_ORIGIN_MASK) == RX_TEST_ORIGIN_MASK);
+	return ((origin_ & RX_TEST_ORIGIN) == RX_TEST_ORIGIN);
 }
 
 bool rx_value::is_substituted () const
 {
-	return ((origin_ & RX_FORCED_ORIGIN_MASK) == RX_FORCED_ORIGIN_MASK);
+	return ((origin_ & RX_FORCED_ORIGIN) == RX_FORCED_ORIGIN);
 }
 
 void rx_value::clear_union (uint8_t type, rx_value_union& value)
@@ -369,12 +369,15 @@ rx_value::operator int () const
 
 void rx_value::set_substituted ()
 {
-	origin_ |= RX_FORCED_ORIGIN_MASK;
+	uint32_t dummy =origin_&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
+	origin_ = dummy | (origin_^RX_ORIGIN_MASK);
 }
 
 void rx_value::set_test ()
 {
-	origin_ |= RX_TEST_ORIGIN_MASK;
+
+	uint32_t dummy = origin_&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
+	origin_ = dummy | (origin_^ RX_TEST_ORIGIN);
 }
 
 void rx_value::get_type_string (string_type& val)
@@ -803,7 +806,7 @@ bool rx_value::deserialize_value (base_meta_reader& stream, uint8_t type, rx_val
 bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 {
 	bool ret = false;
-	if (((origin_&RX_TEST_ORIGIN_MASK)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
+	if (((origin_&RX_TEST_ORIGIN)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
 	{
 		ret = true;
 		if (is_test())
@@ -838,6 +841,18 @@ rx_value::operator uint32_t () const
 rx_value::operator bool () const
 {
 	return value_.bool_value;
+}
+
+void rx_value::set_offline ()
+{
+	quality_ = RX_BAD_QUALITY_OFFLINE;
+	origin_ |= RX_TEST_ORIGIN;
+}
+
+void rx_value::set_good_locally ()
+{
+	quality_ = RX_GOOD_QUALITY;
+	origin_ = RX_LOCAL_ORIGIN;
 }
 
 

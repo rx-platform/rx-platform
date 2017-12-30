@@ -37,6 +37,8 @@
 #include "system/server/rx_inf.h"
 #include "testing/rx_test.h"
 #include "classes/rx_meta.h"
+#include "rx_configuration.h"
+
 
 
 namespace sys_internal {
@@ -63,7 +65,7 @@ root_server_directory::~root_server_directory()
 
 void root_server_directory::initialize (hosting::rx_platform_host* host, namespace_data_t& data)
 {
-	
+
 	server_directories_type dirs;
 	server_items_type items;
 	server_items_type sub_items;
@@ -79,7 +81,7 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	root_directories_.push_back(world);
 
 	dirs.clear();
-	items.clear();	
+	items.clear();
 	items.push_back(rx_gate::instance().get_manager().get_unassigned_app());
 	items.push_back(rx_gate::instance().get_manager().get_unassigned_domain());
 	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
@@ -127,7 +129,7 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 		sub_items.push_back(general_pool);
 	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers();
 	if(workers)
-		sub_items.push_back(workers);	
+		sub_items.push_back(workers);
 	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);
 
 
@@ -135,7 +137,7 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	items.clear();
 	namespace_directory::smart_ptr classes(RX_NS_CLASS_NAME, dirs, items);
 
-	
+
 	dirs.clear();
 	items.clear();
 
@@ -280,19 +282,105 @@ system_server_item::~system_server_item()
 
 
 
-// Parameterized Class sys_internal::internal_ns::simple_platform_item 
+// Class sys_internal::internal_ns::simple_platform_item 
 
-template <class T>
-simple_platform_item<T>::simple_platform_item()
+simple_platform_item::simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, rx_time created_time)
+      : value_(value),
+        attributes_(attributes),
+        type_name_(type_name),
+        created_time_(created_time)
+	, rx_platform_item(name)
 {
 }
 
 
-template <class T>
-simple_platform_item<T>::~simple_platform_item()
+simple_platform_item::~simple_platform_item()
 {
 }
 
+
+
+void simple_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+	has_own_code_info = false;
+}
+
+string_type simple_platform_item::get_type_name () const
+{
+	return type_name_;
+}
+
+values::rx_value simple_platform_item::get_value () const
+{
+	return value_;
+}
+
+namespace_item_attributes simple_platform_item::get_attributes () const
+{
+	return attributes_;
+}
+
+bool simple_platform_item::generate_json (std::ostream& def, std::ostream& err) const
+{
+	def << "Not implemented for simple item.";
+	return false;
+}
+
+bool simple_platform_item::is_browsable () const
+{
+	return false;
+}
+
+//template simple_platform_item< rx_platform::objects::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
+// Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
+
+template <class T, int class_name_idx>
+runtime_simple_platform_item<T,class_name_idx>::runtime_simple_platform_item()
+{
+}
+
+template <class T, int class_name_idx>
+runtime_simple_platform_item<T,class_name_idx>::runtime_simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name)
+{
+}
+
+
+template <class T, int class_name_idx>
+runtime_simple_platform_item<T,class_name_idx>::~runtime_simple_platform_item()
+{
+}
+
+
+
+template <class T, int class_name_idx>
+void runtime_simple_platform_item<T,class_name_idx>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+template <class T, int class_name_idx>
+string_type runtime_simple_platform_item<T,class_name_idx>::get_type_name ()
+{
+}
+
+template <class T, int class_name_idx>
+values::rx_value runtime_simple_platform_item<T,class_name_idx>::get_value ()
+{
+}
+
+template <class T, int class_name_idx>
+namespace_item_attributes runtime_simple_platform_item<T,class_name_idx>::get_attributes ()
+{
+}
+
+template <class T, int class_name_idx>
+bool runtime_simple_platform_item<T,class_name_idx>::generate_json (std::ostream& def, std::ostream& err)
+{
+}
+
+template <class T, int class_name_idx>
+bool runtime_simple_platform_item<T,class_name_idx>::is_browsable ()
+{
+}
 
 
 } // namespace internal_ns

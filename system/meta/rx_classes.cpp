@@ -297,7 +297,7 @@ bool checkable_type<metaT,_browsable>::serialize_definition (base_meta_writter& 
 
 	if (!stream.write_id("SuperId", parent_))
 		return false;
-	
+
 	if (!stream.write_version("Ver", version_))
 		return false;
 	return true;
@@ -348,11 +348,15 @@ values::rx_value checkable_type<metaT,_browsable>::get_value () const
 // Class rx_platform::meta::const_value 
 
 const_value::const_value()
+      : created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
 {
 }
 
 const_value::const_value (const string_type& name)
-	: name_(name)
+      : created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
+	, name_(name)
 {
 }
 
@@ -376,6 +380,12 @@ bool const_value::serialize_definition (base_meta_writter& stream, uint8_t type)
 bool const_value::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
+}
+
+void const_value::get_value (values::rx_value& val) const
+{
+	val.set_good_locally();
+	val.set_time(modified_time_);
 }
 
 
@@ -657,7 +667,7 @@ void base_complex_type<metaT,_browsable>::construct (runtime_ptr_t what)
 	typedef typename metaT::RType rtype_t;
 	typedef typename rtype_t::smart_ptr rptr_t;
 	rptr_t runtime = what.cast_to<rptr_t>();
-	// const values
+	// constant values
 	for (auto& one : const_values_)
 	{
 		rx_value temp;
@@ -868,11 +878,3 @@ RX_TEMPLATE_INST(rx_platform::meta::variable_class, false);
 } // namespace meta
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return name_;
-
-#endif

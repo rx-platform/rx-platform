@@ -108,131 +108,6 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class rx_platform::ns::rx_platform_item 
-
-rx_platform_item::rx_platform_item()
-{
-}
-
-rx_platform_item::rx_platform_item (const string_type& name)
-	: name_(name)
-{
-}
-
-
-rx_platform_item::~rx_platform_item()
-{
-}
-
-
-
-void rx_platform_item::code_info_to_string (string_type& info)
-{
-}
-
-void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-void rx_platform_item::lock ()
-{
-	item_lock_.lock();
-}
-
-void rx_platform_item::unlock ()
-{
-	item_lock_.unlock();
-}
-
-server_directory_ptr rx_platform_item::get_parent () const
-{
-	locks::auto_lock_t<rx_platform_item> dummy (const_cast<rx_platform_item*>(this));
-	return server_directory_ptr::null_ptr;
-}
-
-void rx_platform_item::set_parent (server_directory_ptr parent)
-{
-	locks::auto_lock_t<rx_platform_item> dummy(this);
-	parent_ = parent;
-}
-
-string_type rx_platform_item::get_path () const
-{
-	string_type ret;
-	locks::auto_lock_t<rx_platform_item> dummy(const_cast<rx_platform_item*>(this));
-	if (runtime_parent_)
-	{
-		return runtime_parent_->get_path() + "."s + name_;
-	}
-	else
-	{
-		return name_;
-	}
-}
-
-bool rx_platform_item::serialize (base_meta_writter& stream) const
-{
-	if (!stream.write_string("Name", name_.c_str()))
-		return false;
-
-	return true;
-}
-
-bool rx_platform_item::deserialize (base_meta_reader& stream)
-{
-	
-	if (!stream.read_string("Name", name_))
-		return false;
-
-	return true;
-}
-
-platform_item_ptr rx_platform_item::get_sub_item (const string_type& path) const
-{
-	size_t idx = path.rfind(RX_OBJECT_DELIMETER);
-	if (idx == string_type::npos)
-	{// plain item
-		//locks::const_auto_slim_lock dummy(&(const_cast<rx_platform_item*>(this)->item_lock_));
-		auto it = sub_items_.find(path);
-		if (it != sub_items_.end())
-			return it->second;
-		else
-			return platform_item_ptr::null_ptr;
-	}
-	else
-	{// dir + item
-		string_type dir_path = path.substr(0, idx);
-		string_type item_name = path.substr(idx + 1);
-		platform_item_ptr next = get_sub_item(dir_path);
-		if (next)
-		{
-			return next->get_sub_item(item_name);
-		}
-		else
-		{
-			return platform_item_ptr::null_ptr;
-		}
-	}
-}
-
-void rx_platform_item::get_content (server_items_type& sub_items, const string_type& pattern) const
-{
-	bool simple = pattern.empty();
-	for (const auto& one : sub_items_)
-	{
-		if (simple || match_pattern(one.first.c_str(), pattern.c_str(), true))
-		{
-			sub_items.emplace_back(one.second);
-		}
-	}
-}
-
-rx_platform_item::sub_items_type rx_platform_item::get_sub_items () const
-{
-	return sub_items_;
-}
-
-
 // Class rx_platform::ns::rx_server_directory 
 
 rx_server_directory::rx_server_directory()
@@ -493,6 +368,131 @@ bool rx_server_directory::add_item (platform_item_ptr who)
 	auto ret = sub_items_.emplace(who->get_name(), who);
 	structure_unlock();
 	return ret.second;
+}
+
+
+// Class rx_platform::ns::rx_platform_item 
+
+rx_platform_item::rx_platform_item()
+{
+}
+
+rx_platform_item::rx_platform_item (const string_type& name)
+	: name_(name)
+{
+}
+
+
+rx_platform_item::~rx_platform_item()
+{
+}
+
+
+
+void rx_platform_item::code_info_to_string (string_type& info)
+{
+}
+
+void rx_platform_item::fill_code_info (std::ostream& info, const string_type& name)
+{
+}
+
+void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+	has_own_code_info = false;
+}
+
+void rx_platform_item::lock ()
+{
+	item_lock_.lock();
+}
+
+void rx_platform_item::unlock ()
+{
+	item_lock_.unlock();
+}
+
+server_directory_ptr rx_platform_item::get_parent () const
+{
+	locks::auto_lock_t<rx_platform_item> dummy (const_cast<rx_platform_item*>(this));
+	return server_directory_ptr::null_ptr;
+}
+
+void rx_platform_item::set_parent (server_directory_ptr parent)
+{
+	locks::auto_lock_t<rx_platform_item> dummy(this);
+	parent_ = parent;
+}
+
+string_type rx_platform_item::get_path () const
+{
+	string_type ret;
+	locks::auto_lock_t<rx_platform_item> dummy(const_cast<rx_platform_item*>(this));
+	if (runtime_parent_)
+	{
+		return runtime_parent_->get_path() + "."s + name_;
+	}
+	else
+	{
+		return name_;
+	}
+}
+
+bool rx_platform_item::serialize (base_meta_writter& stream) const
+{
+	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+
+	return true;
+}
+
+bool rx_platform_item::deserialize (base_meta_reader& stream)
+{
+	
+	if (!stream.read_string("Name", name_))
+		return false;
+
+	return true;
+}
+
+platform_item_ptr rx_platform_item::get_sub_item (const string_type& path) const
+{
+	size_t idx = path.rfind(RX_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{// plain item
+		//locks::const_auto_slim_lock dummy(&(const_cast<rx_platform_item*>(this)->item_lock_));
+		auto it = sub_items_.find(path);
+		if (it != sub_items_.end())
+			return it->second;
+		else
+			return platform_item_ptr::null_ptr;
+	}
+	else
+	{// dir + item
+		string_type dir_path = path.substr(0, idx);
+		string_type item_name = path.substr(idx + 1);
+		platform_item_ptr next = get_sub_item(dir_path);
+		if (next)
+		{
+			return next->get_sub_item(item_name);
+		}
+		else
+		{
+			return platform_item_ptr::null_ptr;
+		}
+	}
+}
+
+void rx_platform_item::get_content (server_items_type& sub_items, const string_type& pattern) const
+{
+	bool simple = pattern.empty();
+	for (const auto& one : sub_items_)
+	{
+		if (simple || match_pattern(one.first.c_str(), pattern.c_str(), true))
+		{
+			sub_items.emplace_back(one.second);
+		}
+	}
 }
 
 

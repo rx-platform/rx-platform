@@ -37,11 +37,10 @@
 #include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
+class object_runtime;
 class complex_runtime_item;
 } // namespace objects
 
@@ -100,10 +99,7 @@ class domain_class;
 class struct_class;
 class port_class;
 
-class const_value_item;
-class value_item;
 
-typedef TYPELIST_2(const_value_item, value_item) runtime_types;
 
 
 typedef rx_reference<pointers::reference_object> runtime_ptr_t;
@@ -120,6 +116,11 @@ class port_runtime;
 class variable_runtime;
 class domain_runtime;
 class application_runtime;
+
+class const_value_item;
+class value_item;
+
+typedef rx_reference<object_runtime> object_runtime_ptr;
 }
 
 
@@ -308,12 +309,24 @@ class const_value
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      virtual void get_value (values::rx_value& val) const = 0;
+      virtual void get_value (values::rx_value& val) const;
 
 
       const string_type& get_name () const
       {
         return name_;
+      }
+
+
+      rx_time get_created_time () const
+      {
+        return created_time_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
       }
 
 
@@ -324,6 +337,10 @@ class const_value
 
 
       string_type name_;
+
+      rx_time created_time_;
+
+      rx_time modified_time_;
 
 
 };
@@ -582,7 +599,6 @@ typedef pointers::reference<mapper_class> mapper_class_ptr;
 
 
 
-
 template <typename valT>
 class class_const_value : public const_value  
 {
@@ -603,7 +619,7 @@ class class_const_value : public const_value
   private:
 
 
-      simple_const_value<valT> storage_;
+      allways_good_value<valT> storage_;
 
 
 };
@@ -956,7 +972,6 @@ class event_class : public event_class_t
 
 
 
-
 template <typename valT>
 class simple_value_item : public simple_value_def  
 {
@@ -977,7 +992,7 @@ class simple_value_item : public simple_value_def
   private:
 
 
-      simple_const_value<valT> storage_;
+      allways_good_value<valT> storage_;
 
 
 };
@@ -1009,7 +1024,7 @@ class_const_value<valT>::~class_const_value()
 template <typename valT>
 void class_const_value<valT>::get_value (values::rx_value& val) const
 {
-	storage_.get_value(val);
+	val = rx_value(storage_.value());
 }
 
 
@@ -1039,7 +1054,7 @@ simple_value_item<valT>::~simple_value_item()
 template <typename valT>
 void simple_value_item<valT>::get_value (values::rx_value& val) const
 {
-	storage_.get_value(val);
+	val = rx_value(storage_.value());
 }
 
 

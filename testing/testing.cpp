@@ -275,7 +275,7 @@ void test_thread()
 
 void test_values()
 {
-	rx::values::simple_const_value<uint32_t> perica(6);
+	rx::values::allways_good_value<uint32_t> perica(6);
 	//uint32_t zike = perica + 5;
 }
 void test_classes()

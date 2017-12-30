@@ -88,7 +88,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_object_class< object_class  > object_class_t;
+typedef base_object_class< rx_platform::meta::object_class  > object_class_t;
 
 
 
@@ -113,8 +113,6 @@ public:
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      const string_type& get_item_name () const;
 
       namespace_item_attributes get_attributes () const;
 
