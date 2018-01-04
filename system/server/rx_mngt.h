@@ -44,6 +44,7 @@
 #include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
+#include "system/meta/rx_classes.h"
 
 
 namespace rx_platform {

@@ -117,8 +117,8 @@ template <typename RType, typename DType>
 RType object_constructor_base<RType,DType>::create_object (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
 {
 	RType ret = create_runtime(name, id);
-	typename RType::pointee_type::definition_t::smart_ptr my_class(
-		rx_gate::instance().get_manager().get_class<typename RType::pointee_type::definition_t>(type_id));
+	typename RType::pointee_type::definition_t::smart_ptr my_class = 
+		rx_gate::instance().get_manager().get_class<typename RType::pointee_type::definition_t>(type_id);
 	if (my_class)
 	{
 		my_class->construct(ret);

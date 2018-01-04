@@ -40,8 +40,8 @@
 
 namespace rx_platform {
 namespace objects {
-class object_runtime;
 class complex_runtime_item;
+class object_runtime;
 } // namespace objects
 
 namespace meta {
@@ -398,6 +398,8 @@ class simple_value_def
 };
 
 
+class struct_attribute;
+typedef std::unique_ptr<struct_attribute> struct_type_unique_ptr;
 
 
 
@@ -411,8 +413,8 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
 	typedef std::vector<std::unique_ptr<const_value> > const_values_type;
 	typedef std::vector<std::unique_ptr<simple_value_def> > simple_values_type;
-	typedef std::vector<variable_attribute> variables_type;
-	typedef std::vector<struct_attribute> structs_type;
+	typedef std::vector<std::unique_ptr<struct_attribute> > structs_type;
+	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
 
 
 	typedef std::set<string_type> names_cahce_type;
@@ -426,9 +428,9 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
-      bool register_struct (const struct_attribute& item);
+      bool register_struct (const string_type& name, const rx_node_id& id);
 
-      bool register_variable (const variable_attribute& item);
+      bool register_variable (const string_type& name, const rx_node_id& id);
 
       void construct (runtime_ptr_t what);
 
@@ -542,12 +544,23 @@ typedef base_mapped_class< struct_class , false  > struct_class_t;
 class struct_class : public struct_class_t  
 {
 	DECLARE_REFERENCE_PTR(struct_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic struct class.\r\n\
+basic implementation inside object class");
+public:
 	typedef objects::struct_runtime RType;
 
   public:
       struct_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~struct_class();
+
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      namespace_item_attributes get_attributes () const;
+
+      void construct (runtime_ptr_t what);
 
 
       static string_type type_name;
@@ -562,6 +575,8 @@ class struct_class : public struct_class_t
 
 };
 
+
+typedef pointers::reference<struct_class> struct_class_ptr;
 
 
 
@@ -633,7 +648,7 @@ class complex_class_attribute
 {
 
   public:
-      complex_class_attribute();
+      complex_class_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~complex_class_attribute();
 
@@ -677,7 +692,7 @@ class struct_attribute : public complex_class_attribute
 {
 
   public:
-      struct_attribute();
+      struct_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~struct_attribute();
 
@@ -698,7 +713,7 @@ class variable_attribute : public complex_class_attribute
 {
 
   public:
-      variable_attribute();
+      variable_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~variable_attribute();
 
@@ -719,7 +734,7 @@ class mapper_attribute : public complex_class_attribute
 {
 
   public:
-      mapper_attribute();
+      mapper_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~mapper_attribute();
 
@@ -740,7 +755,7 @@ class source_attribute : public complex_class_attribute
 {
 
   public:
-      source_attribute();
+      source_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~source_attribute();
 
@@ -761,7 +776,7 @@ class filter_attribute : public complex_class_attribute
 {
 
   public:
-      filter_attribute();
+      filter_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~filter_attribute();
 
@@ -782,7 +797,7 @@ class event_attribute : public complex_class_attribute
 {
 
   public:
-      event_attribute();
+      event_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~event_attribute();
 

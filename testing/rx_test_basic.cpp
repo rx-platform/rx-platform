@@ -207,27 +207,38 @@ namespace meta_test {
 	 test_class->register_const_value("testBool", true);
 	 test_class->register_simple_value("testVal", 158);
 
+	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
+	 test_struct->register_simple_value("structVal", false);
+
+	 test_class->register_struct("structName", 41);
+
 	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
 	 {
-
 		 out << "test_class created\r\n";
 
 		 dir->add_item(test_class);
 
-
-		 out << "Creating test_object\r\n";
-
-		 constructors::user_object_constructor constructor;
-		 rx_platform::objects::object_runtime_ptr test_object = constructor.create_object("test_object", 59, 55);
-		 if (test_object)
+		 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
 		 {
-            out << "test_class test_object\r\n";
 
-			 dir->add_item(test_object);
-			 ctx->set_passed();
-			 return true;
+			 out << "test_struct created\r\n";
+
+			 dir->add_item(test_struct);
+
+
+			 out << "Creating test_object\r\n";
+
+			 constructors::user_object_constructor constructor;
+			 rx_platform::objects::object_runtime_ptr test_object = constructor.create_object("test_object", 59, 55);
+			 if (test_object)
+			 {
+				 out << "test_class test_object\r\n";
+
+				 dir->add_item(test_object);
+				 ctx->set_passed();
+				 return true;
+			 }
 		 }
-
 	 }
 	 ctx->set_failed();
 

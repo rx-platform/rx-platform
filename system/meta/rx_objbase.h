@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -73,19 +73,20 @@ typedef pointers::reference<object_runtime> object_runtime_ptr;
 typedef pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
 typedef pointers::reference<domain_runtime> domain_runtime_ptr;
 typedef pointers::reference<application_runtime> application_runtime_ptr;
+typedef pointers::reference<struct_runtime> struct_runtime_ptr;
 
 
 
 
 
-typedef meta::checkable_type< object_runtime , true  > object_runtime_t;
+typedef meta::checkable_type< rx_platform::objects::object_runtime , true  > object_runtime_t;
 
 
 
 
 
 
-class value_item
+class value_item 
 {
 
   public:
@@ -133,7 +134,7 @@ class value_item
 
 
 
-class const_value_item
+class const_value_item 
 {
 
   public:
@@ -291,10 +292,14 @@ class complex_runtime_item : public rx::pointers::reference_object
   public:
       complex_runtime_item (object_runtime_ptr my_object);
 
+      complex_runtime_item (const string_type& name, const rx_node_id& id, bool system = false);
+
       virtual ~complex_runtime_item();
 
 
       rx_value get_value (const string_type path) const;
+
+      uint32_t set_hosting_object (object_runtime_ptr obj);
 
       virtual void object_state_changed (const rx_time& now);
 
@@ -309,6 +314,10 @@ class complex_runtime_item : public rx::pointers::reference_object
       string_type get_const_name (uint32_t name_idx) const;
 
       virtual void get_sub_items (server_items_type& items, const string_type& pattern) const;
+
+      void create_struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
+
+      uint32_t register_struct (const string_type& name, struct_runtime_ptr val);
 
 
       const rx_node_id& get_parent () const
@@ -409,9 +418,6 @@ class complex_runtime_item : public rx::pointers::reference_object
 
   private:
 
-      uint32_t set_hosting_object (object_runtime_ptr obj);
-
-
 
       values_type values_;
 
@@ -488,6 +494,8 @@ public:
       bool is_browsable () const;
 
       virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
+
+      uint32_t register_struct (const string_type& name, struct_runtime_ptr val);
 
 
       rx_reference<complex_runtime_item> get_complex_item ()
@@ -669,8 +677,18 @@ class variable_runtime : public complex_runtime_item
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source::smart_ptr> sources_type;
 
+
+	template <class metaT, bool _browsable>
+	friend class meta::base_complex_type;
+
+public:
+	typedef rx_platform::meta::variable_class definition_t;
+	typedef objects::variable_runtime RType;
+
   public:
       variable_runtime (object_runtime_ptr my_object);
+
+      variable_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~variable_runtime();
 
@@ -738,8 +756,17 @@ class struct_runtime : public complex_runtime_item
 {
 	DECLARE_REFERENCE_PTR(struct_runtime);
 
+	template <class metaT, bool _browsable>
+	friend class meta::base_complex_type;
+
+public:
+	typedef rx_platform::meta::struct_class definition_t;
+	typedef objects::struct_runtime RType;
+
   public:
       struct_runtime (object_runtime_ptr my_object);
+
+      struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~struct_runtime();
 
@@ -859,7 +886,7 @@ user object class. basic implementation of a user object");
 };
 
 
-// Parameterized Class rx_platform::objects::server_const_value_item
+// Parameterized Class rx_platform::objects::server_const_value_item 
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
@@ -942,7 +969,7 @@ rx_value server_const_value_item<valT>::get_value (rx_time ts, rx_mode_type mode
 }
 
 
-// Parameterized Class rx_platform::objects::server_internal_value
+// Parameterized Class rx_platform::objects::server_internal_value 
 
 template <typename valT>
 server_internal_value<valT>::server_internal_value (const valT& value)

@@ -134,6 +134,9 @@ typename clsT::smart_ptr server_manager::get_class(const rx_node_id& id)
 	return def;
 }
 template object_class_ptr server_manager::get_class<object_class>(const rx_node_id& id);
+
+
+template struct_class_ptr server_manager::get_class<struct_class>(const rx_node_id& id);
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()

@@ -36,6 +36,10 @@
 #include "system/meta/rx_objbase.h"
 
 #include "system/meta/rx_obj_classes.h"
+#include "classes/rx_meta.h"
+#include "system/constructors/rx_construct.h"
+#include "rx_objbase.h"
+using namespace rx;
 
 
 namespace rx_platform {
@@ -210,6 +214,7 @@ struct_class::struct_class()
 }
 
 struct_class::struct_class (const string_type& name, const rx_node_id& id, bool system)
+	: struct_class_t(name,id, system)
 {
 }
 
@@ -218,6 +223,20 @@ struct_class::~struct_class()
 {
 }
 
+
+
+void struct_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+namespace_item_attributes struct_class::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
+}
+
+void struct_class::construct (runtime_ptr_t what)
+{
+}
 
 
 // Parameterized Class rx_platform::meta::checkable_type 
@@ -235,7 +254,7 @@ checkable_type<metaT,_browsable>::checkable_type (const string_type& name, const
       : version_(RX_INITIAL_ITEM_VERSION),
         created_time_(rx_time::now()),
         modified_time_(rx_time::now())
-	, base_meta_type<metaT, _browsable>(name, id, system)
+	, base_meta_type<metaT, _browsable>(name, id, system), name_(name)
 {
 }
 
@@ -558,7 +577,7 @@ bool base_complex_type<metaT,_browsable>::serialize_definition (base_meta_writte
 	{
 		if (!stream.start_object("Item"))
 			return false;
-		if (!one.serialize_definition(stream, type))
+		if (!one->serialize_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
@@ -572,7 +591,7 @@ bool base_complex_type<metaT,_browsable>::serialize_definition (base_meta_writte
 	{
 		if (!stream.start_object("Item"))
 			return false;
-		if (!one.serialize_definition(stream, type))
+		if (!one->serialize_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
@@ -618,11 +637,11 @@ bool base_complex_type<metaT,_browsable>::generate_json (std::ostream& def, std:
 }
 
 template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::register_struct (const struct_attribute& item)
+bool base_complex_type<metaT,_browsable>::register_struct (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(item.get_name()))
+	if (check_name(name))
 	{
-		structs_.emplace_back(item);
+		structs_.emplace_back(std::make_unique<struct_attribute>(name,id));
 		return true;
 	}
 	else
@@ -632,11 +651,11 @@ bool base_complex_type<metaT,_browsable>::register_struct (const struct_attribut
 }
 
 template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::register_variable (const variable_attribute& item)
+bool base_complex_type<metaT,_browsable>::register_variable (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(item.get_name()))
+	if (check_name(name))
 	{
-		variables_.emplace_back(item);
+		variables_.emplace_back(std::make_unique<variable_attribute>(name, id));
 		return true;
 	}
 	else
@@ -681,6 +700,15 @@ void base_complex_type<metaT,_browsable>::construct (runtime_ptr_t what)
 		one->get_value(temp);
 		runtime->register_value(one->get_name(), temp);
 	}
+	for (auto& one : structs_)
+	{
+		rx_node_id id = one->get_target_id();
+		struct_class_ptr one_struct_type = model::internal_classes_manager::instance().get_type_cache<struct_class>().get_class_definition(id);
+		constructors::object_constructor_base<objects::struct_runtime::smart_ptr, objects::struct_runtime::smart_ptr> one_constructor;
+		objects::struct_runtime::smart_ptr one_struct = one_constructor.create_object("", 5,67);
+
+		runtime->register_struct(one->get_name(), one_struct);
+	}
 }
 
 
@@ -701,7 +729,8 @@ mapper_class::~mapper_class()
 
 // Class rx_platform::meta::struct_attribute 
 
-struct_attribute::struct_attribute()
+struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name,id)
 {
 }
 
@@ -714,7 +743,8 @@ struct_attribute::~struct_attribute()
 
 // Class rx_platform::meta::variable_attribute 
 
-variable_attribute::variable_attribute()
+variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name, id)
 {
 }
 
@@ -727,7 +757,8 @@ variable_attribute::~variable_attribute()
 
 // Class rx_platform::meta::mapper_attribute 
 
-mapper_attribute::mapper_attribute()
+mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name,id)
 {
 }
 
@@ -740,7 +771,8 @@ mapper_attribute::~mapper_attribute()
 
 // Class rx_platform::meta::source_attribute 
 
-source_attribute::source_attribute()
+source_attribute::source_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name,id)
 {
 }
 
@@ -753,7 +785,9 @@ source_attribute::~source_attribute()
 
 // Class rx_platform::meta::complex_class_attribute 
 
-complex_class_attribute::complex_class_attribute()
+complex_class_attribute::complex_class_attribute (const string_type& name, const rx_node_id& id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
@@ -785,7 +819,8 @@ bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, 
 
 // Class rx_platform::meta::filter_attribute 
 
-filter_attribute::filter_attribute()
+filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name, id)
 {
 }
 
@@ -798,7 +833,8 @@ filter_attribute::~filter_attribute()
 
 // Class rx_platform::meta::event_attribute 
 
-event_attribute::event_attribute()
+event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
+	: complex_class_attribute(name, id)
 {
 }
 

@@ -141,6 +141,7 @@ class type_hash
 	void operator=(const type_hash&) = delete;
 	void operator=(type_hash&&) = delete;
 
+public:
 	typedef typename typeT::RType::smart_ptr RType;
 	typedef typename typeT::smart_ptr Tptr;
 	typedef typename constructors::object_constructor_base<RType,RType> constructorType;

@@ -67,7 +67,12 @@ namespace_item_attributes server_object::get_attributes () const
 // Class rx_platform::objects::complex_runtime_item 
 
 complex_runtime_item::complex_runtime_item (object_runtime_ptr my_object)
-      : my_object_(my_object)
+	: my_object_(my_object)
+{
+}
+
+complex_runtime_item::complex_runtime_item (const string_type& name, const rx_node_id& id, bool system)
+	: parent_(id)
 {
 }
 
@@ -288,6 +293,12 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint
 			break;
 		case RT_COMPLEX_IDX_MASK:
 			{// complex item
+			if (!stream.start_object("Item"))
+				return false;
+			if (!stream.write_string("Name", one.first.c_str()))
+				return false;
+			if (!stream.end_object())//Item
+				return false;
 			}
 			break;
 		default:
@@ -349,6 +360,15 @@ void complex_runtime_item::get_sub_items (server_items_type& items, const string
 			RX_ASSERT(false);
 		}
 	}
+}
+
+void complex_runtime_item::create_struct_runtime (const string_type& name, const rx_node_id& id, bool system)
+{
+}
+
+uint32_t complex_runtime_item::register_struct (const string_type& name, struct_runtime_ptr val)
+{
+	return register_sub_item(name, val);
 }
 
 
@@ -509,6 +529,11 @@ void object_runtime::get_content (server_items_type& sub_items, const string_typ
 	complex_item_->get_sub_items(sub_items,pattern);
 }
 
+uint32_t object_runtime::register_struct (const string_type& name, struct_runtime_ptr val)
+{
+	return complex_item_->register_struct(name, val);
+}
+
 
 // Class rx_platform::objects::value_item 
 
@@ -544,6 +569,11 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type,
 
 variable_runtime::variable_runtime (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
+{
+}
+
+variable_runtime::variable_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: complex_runtime_item(name, id, system)
 {
 }
 
@@ -670,6 +700,11 @@ namespace_item_attributes application_runtime::get_attributes () const
 
 struct_runtime::struct_runtime (object_runtime_ptr my_object)
 	: complex_runtime_item(my_object)
+{
+}
+
+struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: complex_runtime_item(name,id,system)
 {
 }
 
