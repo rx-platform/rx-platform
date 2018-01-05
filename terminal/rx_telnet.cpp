@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -136,7 +136,7 @@ const char* get_IAC_what(char code)
 	}
 }
 
-char g_password_prompt[] = "Password:";
+char g_password_prompt[] = "Enter Password:";
 
 
 char g_server_telnet_idetification[] = { IAC, DONT, ECHO, IAC, WILL, ECHO,
@@ -148,7 +148,7 @@ IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 
 
 
-// Class terminal::console::server_telnet_socket
+// Class terminal::console::server_telnet_socket 
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -164,17 +164,19 @@ server_telnet_socket::~server_telnet_socket()
 io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination)
 {
 	telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
+	ret->vt100_parser_ = std::make_unique<terminal_parser>(ret.unsafe_ptr());
 	ret->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
+	ret->vt100_parser_->set_password_mode(true);
 	//ret->set_receive_timeout(2000);
 	return ret;
 }
 
 
-// Class terminal::console::telnet_client
+// Class terminal::console::telnet_client 
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : security_context_(*addr,*local_addr),
-        send_echo_(false),
+        send_echo_(true),
         cancel_current_(false),
         verified_(false),
         exit_(false)
@@ -259,10 +261,12 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			{
 				buffer_ptr buff = get_free_buffer();
 
-				string_type wellcome;
-				get_wellcome(wellcome);
+				string_type temp_str;
+				get_wellcome(temp_str);
 				buff->push_line(ANSI_CLS ANSI_CUR_HOME);
-				buff->push_line(wellcome);
+				buff->push_line(temp_str);
+				get_security_error(temp_str, 0);
+				buff->push_line(temp_str);
 				string_type prompt;
 				get_prompt(prompt);
 				buff->push_string(prompt);
@@ -489,18 +493,111 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 {
 	if (count == 0)
 	{
-        RX_ASSERT(0);
+		RX_ASSERT(0);
 		return false;
 	}
 
-	const char* string = (const char*)data;
+	const char* buff = static_cast<const char*>(data);
 	size_t idx = 0;
-	while (idx < count)
+	char echo_buff[4];
+	int size_of_echo_buff = 0;
+
+	if (buff[0] == IAC)
 	{
-		if (!new_recive(&string[idx], idx))
-			return false;
+		//ATLTRACE(L);
+		if (buff[1] >= WILL)
+		{
+			if (buff[2] == ECHO)
+			{
+				if (buff[1] == DONT)
+				{
+					if (send_echo_)
+					{
+						send_echo_ = false;
+						char resp[] = { IAC, WONT, ECHO };
+						buffer_ptr buff = get_free_buffer();
+						buff->push_data(resp, 3);
+
+						send(buff);
+					}
+				}
+				else if (buff[1] == DO)
+				{
+					if (!send_echo_)
+					{
+						send_echo_ = true;
+						char resp[] = { IAC, WILL, ECHO };
+						buffer_ptr buff = get_free_buffer();
+						buff->push_data(resp, 3);
+						send(buff);
+					}
+				}
+				idx += 3;
+			}
+		}
+		else if (buff[1] == DO)
+		{
+			idx += 3;
+		}
+		else if (buff[1] == SB)
+		{
+
+			idx += 2;
+			int i = 2;
+			while (buff[i] != SE)
+			{
+				i++;
+				idx++;
+			}
+		}
+		else
+		{
+			switch (buff[1])
+			{
+			case BRK:
+			case IP:
+			case EL:
+				cancel_current_ = true;
+				send_string_response("\r\nCanceling...\r\n", false);
+				break;
+			case AYT:
+				cancel_current_ = true;
+				send_string_response("\r\nHello!\r\n");
+				break;
+			}
+			idx += 2;
+		}
+
+		// echo
+		if (size_of_echo_buff)
+		{
+			buffer_ptr buff = get_free_buffer();
+			buff->push_data(echo_buff, size_of_echo_buff);
+			send(buff);
+		}
+
+		return true;
+
+	}
+	else
+	{
+		// our buffer
+		string_type to_send;
+
+		for (size_t i = idx; i < count; i++)
+		{
+			vt100_parser_->char_received(buff[i], to_send);
+			//printf("%d ", (int)data[i]);
+		}
+		if (!to_send.empty())
+		{
+			auto buff = get_free_buffer();
+			buff->push_string(to_send);
+			send(buff);
+		}
 	}
 	return true;
+
 }
 
 void telnet_client::release_buffer (buffer_ptr what)
@@ -566,8 +663,74 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 	}
 }
 
+bool telnet_client::line_received (const string_type& line)
+{
 
-// Class terminal::console::telnet_security_context
+	if (!verified_)
+	{
+		string_type captured_line(line);
+		rx_post_function<smart_ptr>(
+			[captured_line](smart_ptr sended_this)
+		{
+			sended_this->verified_ = true;
+			sended_this->vt100_parser_->set_password_mode(false);
+
+			if (captured_line == MY_PASSWORD)
+			{
+				sended_this->security_context_->login();
+
+				security::security_auto_context dummy(sended_this->security_context_);
+
+				buffer_ptr buff = sended_this->get_free_buffer();
+
+				string_type wellcome;
+				sended_this->get_wellcome(wellcome);
+				buff->push_line(ANSI_CLS ANSI_CUR_HOME);
+				buff->push_line(wellcome);
+				string_type prompt;
+				sended_this->get_prompt(prompt);
+				buff->push_string(prompt);
+
+				sended_this->send(buff);
+
+			}
+			else
+			{
+				buffer_ptr buff = sended_this->get_free_buffer();
+
+				string_type temp_str;
+				sended_this->get_wellcome(temp_str);
+				buff->push_line(ANSI_CLS ANSI_CUR_HOME);
+				buff->push_line(temp_str);
+				sended_this->get_security_error(temp_str, 0);
+				buff->push_line(temp_str);
+				string_type prompt;
+				sended_this->get_prompt(prompt);
+				buff->push_string(prompt);
+
+				sended_this->send(buff);
+			}
+		}
+		, smart_this()
+		, get_executer()
+		);
+		return true;
+		
+	}
+	else
+	{
+		security::security_auto_context dummy(security_context_);
+
+		buffer_ptr out_buffer = get_free_buffer();
+		buffer_ptr err_buffer = get_free_buffer();
+
+		do_command(line, out_buffer, err_buffer, security_context_);
+	}
+	return true;
+}
+
+
+// Class terminal::console::telnet_security_context 
 
 telnet_security_context::telnet_security_context()
 {
@@ -731,7 +894,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::namespace_command
+// Class terminal::console::console_commands::namespace_command 
 
 namespace_command::namespace_command (const string_type& console_name)
   : server_command(console_name)
@@ -860,7 +1023,7 @@ bool namespace_command::list_object (std::ostream& out, std::ostream& err, const
 }
 
 
-// Class terminal::console::console_commands::dir_command
+// Class terminal::console::console_commands::dir_command 
 
 dir_command::dir_command()
   : namespace_command("dir")
@@ -874,13 +1037,12 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command
+// Class terminal::console::console_commands::ls_command 
 
 ls_command::ls_command()
   : namespace_command("ls")
 {
 }
-
 
 
 ls_command::~ls_command()
@@ -947,7 +1109,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::cd_command
+// Class terminal::console::console_commands::cd_command 
 
 cd_command::cd_command()
   : server_command("cd")
@@ -986,7 +1148,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::info_command
+// Class terminal::console::console_commands::info_command 
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -1067,7 +1229,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command
+// Class terminal::console::console_commands::code_command 
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1115,7 +1277,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command
+// Class terminal::console::console_commands::rx_name_command 
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1163,7 +1325,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command
+// Class terminal::console::console_commands::cls_command 
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1184,7 +1346,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class terminal::console::console_commands::shutdown_command
+// Class terminal::console::console_commands::shutdown_command 
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1210,7 +1372,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class terminal::console::console_commands::log_command
+// Class terminal::console::console_commands::log_command 
 
 log_command::log_command()
 	: server_command("log")
@@ -1316,7 +1478,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command
+// Class terminal::console::console_commands::sec_command 
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1402,7 +1564,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command
+// Class terminal::console::console_commands::time_command 
 
 time_command::time_command()
 	: server_command("time")
@@ -1424,7 +1586,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command
+// Class terminal::console::console_commands::sleep_command 
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1480,7 +1642,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command
+// Class terminal::console::console_commands::def_command 
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1535,7 +1697,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command
+// Class terminal::console::console_commands::directory_aware_command 
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1549,7 +1711,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command
+// Class terminal::console::console_commands::phyton_command 
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1588,6 +1750,215 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 
 
 } // namespace console_commands
+
+// Class terminal::console::terminal_parser 
+
+terminal_parser::terminal_parser (telnet_client* term)
+      : state_(parser_normal),
+        current_idx_(string_type::npos),
+        password_mode_(false)
+	, terminal_(term)
+{
+}
+
+
+terminal_parser::~terminal_parser()
+{
+}
+
+
+
+bool terminal_parser::move_cursor_left ()
+{
+	if (current_idx_ == string_type::npos && !current_line_.empty())
+	{
+		current_idx_ = current_line_.size() - 1;
+		return true;
+	}
+	if (current_idx_ > 0)
+	{
+		current_idx_--;
+		return true;
+	}
+	return false;
+}
+
+bool terminal_parser::move_cursor_right ()
+{
+	if (current_idx_ != string_type::npos && current_idx_<current_line_.size())
+	{
+		current_idx_++;
+		if (current_idx_ == current_line_.size())
+			current_idx_ = string_type::npos;
+		return true;
+	}
+	return false;
+}
+
+bool terminal_parser::char_received (const char ch, string_type& to_echo)
+{
+	switch (state_)
+	{
+	case parser_normal:
+		return char_received_normal(ch, to_echo);
+	case parser_in_end_line:
+		return char_received_in_end_line(ch, to_echo);
+	case parser_had_escape:
+		return char_received_had_escape(ch, to_echo);
+	case parser_had_bracket:
+		return char_received_had_bracket(ch, to_echo);
+	case parser_had_bracket_number:
+		return char_received_had_bracket_number(ch, to_echo);
+	}
+	return false;
+}
+
+bool terminal_parser::char_received_normal (const char ch, string_type& to_echo)
+{
+	switch (ch)
+	{
+	case '\x1b':
+		state_ = parser_had_escape;
+		break;
+	case '\b':
+	case '\x7f':
+		if (current_idx_ != string_type::npos && current_idx_>0)
+		{
+			to_echo += "\x08\033[1P";
+			current_line_.erase(current_idx_ - 1, 1);
+			move_cursor_left();
+		}
+		else
+		{
+			current_line_.pop_back();
+			to_echo += "\x08 \x08";
+		}
+		break;
+	case '\n':
+	case '\r':
+		to_echo += "\r\n";
+		terminal_->line_received(current_line_);
+		state_ = parser_in_end_line;
+		break;
+	case '\t':
+	{
+		string_type offered;//!! = m_consumer->line_asked(current_line_);
+		if (!offered.empty())
+		{
+
+			to_echo += "\033[1G\033[M";
+			to_echo += offered;
+			current_idx_ = string_type::npos;
+			current_line_ = offered;
+		}
+	}
+	break;
+	default:
+		if (ch >= 0x20)
+		{
+			if (current_idx_ != string_type::npos)
+			{
+				current_line_.insert(current_idx_, 1, ch);
+				to_echo += "\033[1@";
+				to_echo += ch;
+				move_cursor_right();
+				//to_echo.append("\033C");
+			}
+			else
+			{
+				current_line_ = current_line_ + ch;
+				to_echo = to_echo + (password_mode_ ? '*' : ch);
+			}
+		}
+	}
+	return true;
+}
+
+bool terminal_parser::char_received_in_end_line (char ch, string_type& to_echo)
+{
+	switch (ch)
+	{
+	case '\r':
+	case '\n':
+		break;
+	default:
+		current_line_.clear();
+		current_idx_ = string_type::npos;
+		state_ = parser_normal;
+		return char_received_normal(ch, to_echo);
+	}
+	return true;
+}
+
+bool terminal_parser::char_received_had_escape (const char ch, string_type& to_echo)
+{
+	switch (ch)
+	{
+	case '[':
+		state_ = parser_had_bracket;
+		break;
+	case 'D':
+		if (current_idx_ != 0 && !current_line_.empty())
+		{
+			to_echo += "\033[1G";
+			current_idx_ = 0;
+		}
+		state_ = parser_normal;
+		break;
+	case 'C':
+		if (current_idx_ != string_type::npos && !current_line_.empty())
+		{
+			char buff[0x10];
+			sprintf(buff,"\033[%dG", (int)current_line_.size());
+			to_echo += buff;
+			current_idx_ = string_type::npos;
+		}
+		state_ = parser_normal;
+		break;
+	default:
+		state_ = parser_normal;
+		return false;
+	}
+	return true;
+}
+
+bool terminal_parser::char_received_had_bracket (char ch, string_type& to_echo)
+{
+	switch (ch)
+	{
+	case 'D':
+		if (move_cursor_left())
+			to_echo.append("\033[D");
+		state_ = parser_normal;
+		break;
+	case 'C':
+		if (move_cursor_right())
+			to_echo.append("\033[C");
+		state_ = parser_normal;
+		break;
+	case 'H':
+		while (move_cursor_left())
+			to_echo.append("\033[D");
+		state_ = parser_normal;
+		break;
+	case 'F':
+		while (move_cursor_right())
+			to_echo.append("\033[C");
+		state_ = parser_normal;
+		break;
+	default:
+		state_ = parser_normal;
+		return false;
+	}
+	return true;
+}
+
+bool terminal_parser::char_received_had_bracket_number (const char ch, string_type& to_echo)
+{
+	return false;
+}
+
+
 } // namespace console
 } // namespace terminal
 

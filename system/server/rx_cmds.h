@@ -63,6 +63,7 @@ using namespace rx_platform::ns;
 namespace rx_platform {
 
 namespace prog {
+typedef std::uint_fast16_t sec_error_num_t;
 class program_executer_base;
 class server_program_base;
 class server_command_base;
@@ -335,6 +336,13 @@ class console_client : public rx::pointers::virtual_reference_object
       void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
 
 
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+
+
   protected:
 
       bool do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
@@ -348,6 +356,8 @@ class console_client : public rx::pointers::virtual_reference_object
       virtual void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer) = 0;
 
       bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void get_security_error (string_type& txt, sec_error_num_t err_number);
 
 
   private:

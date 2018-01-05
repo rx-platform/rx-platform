@@ -76,6 +76,8 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 " ANSI_COLOR_RESET;
 
 
+char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
+
 // Class rx_platform::prog::program_context_base 
 
 program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
@@ -443,6 +445,7 @@ console_client::~console_client()
 
 bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
+
 	string_type captured_line(line);
 	rx_post_function<smart_ptr>(
 		[captured_line,out_buffer, err_buffer, ctx](smart_ptr sended_this)
@@ -622,6 +625,14 @@ void console_client::synchronized_cancel_command (memory::buffer_ptr out_buffer,
 	}
 }
 
+void console_client::get_security_error (string_type& txt, sec_error_num_t err_number)
+{
+	if (err_number == 0)
+	{
+		txt = g_console_unauthorized;
+	}
+}
+
 
 // Class rx_platform::prog::server_script_program 
 
@@ -672,5 +683,4 @@ server_script_host::~server_script_host()
 
 } // namespace prog
 } // namespace rx_platform
-
 

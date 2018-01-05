@@ -103,6 +103,14 @@ bool win32_console_host::start (const string_array& args)
 	rx_initialize_os(GetCurrentProcessId(), true, tls, name);
 
 	rx::log::log_object::instance().start(std::cout, true);
+	//////////////////////////////////////////////
+
+	
+	
+	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+
+
+	/////////////////////////////////////////////
 
 	HANDLE std_out,std_in;
 	DWORD mode;
@@ -122,7 +130,6 @@ bool win32_console_host::start (const string_array& args)
 	SetConsoleMode(std_in, mode);
 
 	
-	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 
 
 	rx_platform::configuration_data_t config;
