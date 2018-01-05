@@ -102,6 +102,8 @@ class port_class;
 
 
 
+
+typedef rx_reference<objects::complex_runtime_item> complex_runtime_ptr;
 typedef rx_reference<pointers::reference_object> runtime_ptr_t;
 
 }
@@ -168,7 +170,9 @@ class base_meta_type : public ns::rx_platform_item
 
       string_type get_type_name () const;
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
+
+      void construct (objects::object_runtime_ptr what);
 
 
       const rx_node_id& get_id () const
@@ -232,9 +236,11 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
       bool is_browsable () const;
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
 
       values::rx_value get_value () const;
+
+      void construct (objects::object_runtime_ptr what);
 
 
       const rx_node_id& get_parent () const
@@ -419,7 +425,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
 	typedef std::set<string_type> names_cahce_type;
 
-
   public:
       base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
@@ -432,7 +437,9 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
 
       bool register_variable (const string_type& name, const rx_node_id& id);
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
+
+      void construct (objects::object_runtime_ptr what);
 
 
       const const_values_type& get_const_values () const
@@ -509,7 +516,9 @@ class base_mapped_class : public base_complex_type<metaT, _browsable>
 
       bool register_mapper (const mapper_attribute& item);
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
+
+      void construct (objects::object_runtime_ptr what);
 
 
   protected:
@@ -549,6 +558,7 @@ basic struct class.\r\n\
 basic implementation inside object class");
 public:
 	typedef objects::struct_runtime RType;
+	typedef RType CType;
 
   public:
       struct_class (const string_type& name, const rx_node_id& id, bool system = false);
@@ -560,7 +570,7 @@ public:
 
       namespace_item_attributes get_attributes () const;
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
 
 
       static string_type type_name;
@@ -657,6 +667,8 @@ class complex_class_attribute
 
       virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+      virtual complex_runtime_ptr construct () = 0;
+
 
       const string_type& get_name () const
       {
@@ -664,7 +676,7 @@ class complex_class_attribute
       }
 
 
-      const rx_node_id& get_target_id () const
+      rx_node_id get_target_id () const
       {
         return target_id_;
       }
@@ -697,6 +709,13 @@ class struct_attribute : public complex_class_attribute
       virtual ~struct_attribute();
 
 
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
   protected:
 
   private:
@@ -716,6 +735,13 @@ class variable_attribute : public complex_class_attribute
       variable_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~variable_attribute();
+
+
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   protected:
@@ -739,6 +765,13 @@ class mapper_attribute : public complex_class_attribute
       virtual ~mapper_attribute();
 
 
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
   protected:
 
   private:
@@ -758,6 +791,13 @@ class source_attribute : public complex_class_attribute
       source_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~source_attribute();
+
+
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   protected:
@@ -781,6 +821,13 @@ class filter_attribute : public complex_class_attribute
       virtual ~filter_attribute();
 
 
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
   protected:
 
   private:
@@ -800,6 +847,13 @@ class event_attribute : public complex_class_attribute
       event_attribute (const string_type& name, const rx_node_id& id);
 
       virtual ~event_attribute();
+
+
+      complex_runtime_ptr construct ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   protected:
@@ -835,6 +889,8 @@ class base_variable_class : public base_mapped_class<metaT, _browsable>
 
       bool register_event (const event_attribute& item);
 
+      void construct (complex_runtime_ptr what);
+
 
   protected:
       base_variable_class();
@@ -857,7 +913,7 @@ class base_variable_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_variable_class< variable_class  > variable_class_t;
+typedef base_variable_class< rx_platform::meta::variable_class  > variable_class_t;
 
 
 
@@ -869,11 +925,15 @@ class variable_class : public variable_class_t
 	DECLARE_REFERENCE_PTR(variable_class);
 public:
 	typedef objects::variable_runtime RType;
+	typedef RType CType;
 
   public:
       variable_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~variable_class();
+
+
+      void construct (complex_runtime_ptr what);
 
 
       static string_type type_name;

@@ -80,13 +80,19 @@ bool base_object_class<metaT,_browsable>::deserialize_definition (base_meta_read
 }
 
 template <class metaT, bool _browsable>
-void base_object_class<metaT,_browsable>::construct (runtime_ptr_t what)
+void base_object_class<metaT,_browsable>::construct (complex_runtime_ptr what)
 {
 	base_mapped_class<metaT, _browsable>::construct(what);
+}
+
+template <class metaT, bool _browsable>
+void base_object_class<metaT,_browsable>::construct (objects::object_runtime_ptr what)
+{
 	typedef typename metaT::RType rtype_t;
 	typedef typename rtype_t::smart_ptr rptr_t;
 	rptr_t runtime = what.cast_to<rptr_t>();
 	runtime->programs_ = programs_;
+	construct(runtime->get_complex_item());
 }
 
 
@@ -116,7 +122,16 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 
 namespace_item_attributes object_class::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
+}
+
+void object_class::construct (objects::object_runtime_ptr what)
+{
+	object_class_t::construct(what);
+}
+
+void object_class::construct (complex_runtime_ptr what)
+{
 }
 
 
@@ -139,6 +154,16 @@ domain_class::~domain_class()
 
 
 
+void domain_class::construct (objects::object_runtime_ptr what)
+{
+	domain_class_t::construct(what->get_complex_item());
+}
+
+void domain_class::construct (complex_runtime_ptr what)
+{
+}
+
+
 // Class rx_platform::meta::application_class 
 
 string_type application_class::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
@@ -158,6 +183,16 @@ application_class::~application_class()
 
 
 
+void application_class::construct (objects::object_runtime_ptr what)
+{
+	application_class_t::construct(what->get_complex_item());
+}
+
+void application_class::construct (complex_runtime_ptr what)
+{
+}
+
+
 // Class rx_platform::meta::port_class 
 
 string_type port_class::type_name = RX_CPP_PORT_CLASS_TYPE_NAME;
@@ -175,6 +210,16 @@ port_class::~port_class()
 {
 }
 
+
+
+void port_class::construct (objects::object_runtime_ptr what)
+{
+	port_class_t::construct(what->get_complex_item());
+}
+
+void port_class::construct (complex_runtime_ptr what)
+{
+}
 
 template class rx_platform::meta::base_object_class<rx_platform::meta::object_class, false>;
 template class rx_platform::meta::base_object_class<rx_platform::meta::domain_class, false>;

@@ -42,6 +42,7 @@ namespace rx_platform {
 namespace objects
 {
 	class object_runtime;
+	class struct_runtime;
 }
 
 namespace meta {
@@ -63,7 +64,9 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
       virtual ~base_object_class();
 
 
-      void construct (runtime_ptr_t what);
+      void construct (complex_runtime_ptr what);
+
+      void construct (objects::object_runtime_ptr what);
 
 
   protected:
@@ -103,10 +106,9 @@ basic object class.\r\n\
 basic implementation of object class");
 public:
 	typedef objects::object_runtime RType;
+	typedef objects::complex_runtime_item CType;
 
   public:
-      object_class();
-
       object_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~object_class();
@@ -116,6 +118,10 @@ public:
 
       namespace_item_attributes get_attributes () const;
 
+      void construct (objects::object_runtime_ptr what);
+
+      void construct (complex_runtime_ptr what);
+
 
       static string_type type_name;
 
@@ -123,6 +129,8 @@ public:
   protected:
 
   private:
+      object_class();
+
 
 
 };
@@ -133,7 +141,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef base_object_class< domain_class  > domain_class_t;
+typedef base_object_class< rx_platform::meta::domain_class  > domain_class_t;
 
 
 
@@ -145,11 +153,17 @@ class domain_class : public domain_class_t
 	DECLARE_REFERENCE_PTR(domain_class);
 public:
 	typedef objects::domain_runtime RType;
+	typedef objects::complex_runtime_item CType;
 
   public:
       domain_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~domain_class();
+
+
+      void construct (objects::object_runtime_ptr what);
+
+      void construct (complex_runtime_ptr what);
 
 
       static string_type type_name;
@@ -169,7 +183,7 @@ public:
 
 
 
-typedef base_object_class< application_class  > application_class_t;
+typedef base_object_class< rx_platform::meta::application_class  > application_class_t;
 
 
 
@@ -181,11 +195,17 @@ class application_class : public application_class_t
 	DECLARE_REFERENCE_PTR(application_class);
 public:
 	typedef objects::application_runtime RType;
+	typedef objects::complex_runtime_item CType;
 
   public:
       application_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~application_class();
+
+
+      void construct (objects::object_runtime_ptr what);
+
+      void construct (complex_runtime_ptr what);
 
 
       static string_type type_name;
@@ -205,7 +225,7 @@ public:
 
 
 
-typedef base_object_class< port_class  > port_class_t;
+typedef base_object_class< rx_platform::meta::port_class  > port_class_t;
 
 
 
@@ -217,11 +237,17 @@ class port_class : public port_class_t
 	DECLARE_REFERENCE_PTR(port_class);
 public:
 	typedef objects::port_runtime RType;
+	typedef objects::complex_runtime_item CType;
 
   public:
       port_class (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~port_class();
+
+
+      void construct (objects::object_runtime_ptr what);
+
+      void construct (complex_runtime_ptr what);
 
 
       static string_type type_name;

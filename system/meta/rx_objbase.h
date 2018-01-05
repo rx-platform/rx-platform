@@ -290,7 +290,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	friend class meta::checkable_type;
 
   public:
-      complex_runtime_item (object_runtime_ptr my_object);
+      complex_runtime_item();
 
       complex_runtime_item (const string_type& name, const rx_node_id& id, bool system = false);
 
@@ -314,8 +314,6 @@ class complex_runtime_item : public rx::pointers::reference_object
       string_type get_const_name (uint32_t name_idx) const;
 
       virtual void get_sub_items (server_items_type& items, const string_type& pattern) const;
-
-      void create_struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       uint32_t register_struct (const string_type& name, struct_runtime_ptr val);
 
@@ -609,7 +607,7 @@ class filter_runtime : public complex_runtime_item
 	DECLARE_REFERENCE_PTR(filter_runtime);
 
   public:
-      filter_runtime (object_runtime_ptr my_object);
+      filter_runtime();
 
       virtual ~filter_runtime();
 
@@ -631,7 +629,7 @@ class source : public complex_runtime_item
 	DECLARE_REFERENCE_PTR(source);
 
   public:
-      source (object_runtime_ptr my_object);
+      source();
 
       virtual ~source();
 
@@ -653,7 +651,7 @@ class mapper : public complex_runtime_item
 	DECLARE_REFERENCE_PTR(mapper);
 
   public:
-      mapper (object_runtime_ptr my_object);
+      mapper();
 
       virtual ~mapper();
 
@@ -686,11 +684,14 @@ public:
 	typedef objects::variable_runtime RType;
 
   public:
-      variable_runtime (object_runtime_ptr my_object);
+      variable_runtime();
 
       variable_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~variable_runtime();
+
+
+      static string_type type_name;
 
 
   protected:
@@ -707,6 +708,7 @@ public:
 
 };
 
+typedef variable_runtime::smart_ptr variable_runtime_ptr;
 
 
 
@@ -764,11 +766,19 @@ public:
 	typedef objects::struct_runtime RType;
 
   public:
-      struct_runtime (object_runtime_ptr my_object);
+      struct_runtime();
 
       struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~struct_runtime();
+
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type type_name;
 
 
   protected:

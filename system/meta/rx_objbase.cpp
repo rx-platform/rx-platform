@@ -66,8 +66,7 @@ namespace_item_attributes server_object::get_attributes () const
 
 // Class rx_platform::objects::complex_runtime_item 
 
-complex_runtime_item::complex_runtime_item (object_runtime_ptr my_object)
-	: my_object_(my_object)
+complex_runtime_item::complex_runtime_item()
 {
 }
 
@@ -232,10 +231,12 @@ uint32_t complex_runtime_item::register_sub_item (const string_type& name, compl
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
 	{
+		uint32_t idx = (uint32_t)(sub_items_.size());
+		idx |= RT_COMPLEX_IDX_MASK;
 		sub_items_.emplace_back(val);
-		uint32_t idx = (uint32_t)(sub_items_.size() - 1);
-		names_cache_.emplace(name, idx | RT_COMPLEX_IDX_MASK);
+		names_cache_.emplace(name, idx);
 		val->set_hosting_object(my_object_);
+		names_cache_.emplace(name, idx);
 		return RX_OK;
 	}
 	return RX_ERROR;
@@ -297,6 +298,13 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint
 				return false;
 			if (!stream.write_string("Name", one.first.c_str()))
 				return false;
+			if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
+				return false;
+			if (!stream.start_object("Val"))
+				return false;
+			sub_items_[one.second&RT_INDEX_MASK]->serialize_definition(stream, type,rx_time::now(),mode);
+			if (!stream.end_object())//Val
+				return false;
 			if (!stream.end_object())//Item
 				return false;
 			}
@@ -312,6 +320,7 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint
 
 bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
+	RX_ASSERT(false);//fuck it!!!
 	return false;
 }
 
@@ -362,10 +371,6 @@ void complex_runtime_item::get_sub_items (server_items_type& items, const string
 	}
 }
 
-void complex_runtime_item::create_struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-{
-}
-
 uint32_t complex_runtime_item::register_struct (const string_type& name, struct_runtime_ptr val)
 {
 	return register_sub_item(name, val);
@@ -377,12 +382,14 @@ uint32_t complex_runtime_item::register_struct (const string_type& name, struct_
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
-      : change_time_(rx_time::now())
+      : complex_item_(pointers::_create_new),
+        change_time_(rx_time::now())
 {
 }
 
 object_runtime::object_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : change_time_(rx_time::now())
+      : complex_item_(pointers::_create_new),
+        change_time_(rx_time::now())
 	, object_runtime_t(name,id,rx_node_id::null_id,system)
 {
 }
@@ -515,7 +522,6 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 
 bool object_runtime::init_object ()
 {
-	complex_item_ = complex_runtime_item_ptr(smart_this());
 	return true;
 }
 
@@ -567,8 +573,9 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type,
 
 // Class rx_platform::objects::variable_runtime 
 
-variable_runtime::variable_runtime (object_runtime_ptr my_object)
-	: complex_runtime_item(my_object)
+string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
+
+variable_runtime::variable_runtime()
 {
 }
 
@@ -586,8 +593,7 @@ variable_runtime::~variable_runtime()
 
 // Class rx_platform::objects::filter_runtime 
 
-filter_runtime::filter_runtime (object_runtime_ptr my_object)
-	: complex_runtime_item(my_object)
+filter_runtime::filter_runtime()
 {
 }
 
@@ -600,8 +606,7 @@ filter_runtime::~filter_runtime()
 
 // Class rx_platform::objects::source 
 
-source::source (object_runtime_ptr my_object)
-	: complex_runtime_item(my_object)
+source::source()
 {
 }
 
@@ -614,8 +619,7 @@ source::~source()
 
 // Class rx_platform::objects::mapper 
 
-mapper::mapper (object_runtime_ptr my_object)
-	: complex_runtime_item(my_object)
+mapper::mapper()
 {
 }
 
@@ -698,13 +702,14 @@ namespace_item_attributes application_runtime::get_attributes () const
 
 // Class rx_platform::objects::struct_runtime 
 
-struct_runtime::struct_runtime (object_runtime_ptr my_object)
-	: complex_runtime_item(my_object)
+string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
+
+struct_runtime::struct_runtime()
 {
 }
 
 struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: complex_runtime_item(name,id,system)
+	: complex_runtime_item(name, id, system)
 {
 }
 
@@ -713,6 +718,27 @@ struct_runtime::~struct_runtime()
 {
 }
 
+
+
+bool struct_runtime::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
+{
+	if (!stream.start_object(objects::struct_runtime::type_name.c_str()))
+		return false;
+
+	if (!complex_runtime_item::serialize_definition(stream, type, ts, mode))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
+}
+
+bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	RX_ASSERT(false);//
+	return true;
+}
 
 
 // Class rx_platform::objects::const_value_item 

@@ -81,6 +81,38 @@ class object_constructor_base
 typedef object_constructor_base< objects::object_runtime_ptr , objects::user_object::smart_ptr  > user_object_constructor;
 
 
+
+
+
+
+template <typename RType, typename DType>
+class item_constructor_base 
+{
+
+  public:
+      item_constructor_base();
+
+      virtual ~item_constructor_base();
+
+
+      RType create_item (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+
+
+  protected:
+
+      virtual DType create_runtime (bool system = false);
+
+
+  private:
+      item_constructor_base(const item_constructor_base< RType,DType > &right);
+
+      item_constructor_base< RType,DType > & operator=(const item_constructor_base< RType,DType > &right);
+
+
+
+};
+
+
 // Parameterized Class rx_platform::constructors::object_constructor_base 
 
 template <typename RType, typename DType>
@@ -123,6 +155,53 @@ RType object_constructor_base<RType,DType>::create_object (const string_type& na
 	{
 		my_class->construct(ret);
 		
+	}
+	return ret;
+}
+
+
+// Parameterized Class rx_platform::constructors::item_constructor_base 
+
+template <typename RType, typename DType>
+item_constructor_base<RType,DType>::item_constructor_base()
+{
+}
+
+template <typename RType, typename DType>
+item_constructor_base<RType,DType>::item_constructor_base(const item_constructor_base<RType,DType> &right)
+{
+}
+
+
+template <typename RType, typename DType>
+item_constructor_base<RType,DType>::~item_constructor_base()
+{
+}
+
+
+template <typename RType, typename DType>
+item_constructor_base<RType,DType> & item_constructor_base<RType,DType>::operator=(const item_constructor_base<RType,DType> &right)
+{
+}
+
+
+
+template <typename RType, typename DType>
+DType item_constructor_base<RType,DType>::create_runtime (bool system)
+{
+	return DType();
+}
+
+template <typename RType, typename DType>
+RType item_constructor_base<RType,DType>::create_item (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
+{
+	RType ret = create_runtime();
+	typename RType::pointee_type::definition_t::smart_ptr my_class =
+		rx_gate::instance().get_manager().get_class<typename RType::pointee_type::definition_t>(type_id);
+	if (my_class)
+	{
+		my_class->construct(ret);
+
 	}
 	return ret;
 }

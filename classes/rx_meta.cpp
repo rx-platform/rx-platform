@@ -59,7 +59,6 @@ internal_classes_manager& internal_classes_manager::instance ()
 
 uint32_t internal_classes_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
 {
-	static object_class g_obj;
 	return RX_OK;
 }
 
