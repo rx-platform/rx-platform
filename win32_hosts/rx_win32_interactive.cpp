@@ -62,6 +62,8 @@ namespace win32 {
 // Class win32::win32_console_host 
 
 win32_console_host::win32_console_host()
+      : out_handle_(NULL),
+        in_handle_(NULL)
 {
 }
 
@@ -111,15 +113,13 @@ bool win32_console_host::start (const string_array& args)
 
 
 	/////////////////////////////////////////////
-
-	HANDLE out_handle, in_handle;
-	out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	in_handle = GetStdHandle(STD_INPUT_HANDLE);
+	out_handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
+	in_handle_ = GetStdHandle(STD_INPUT_HANDLE);
 
 	DWORD in_mode = 0;
 	DWORD out_mode = 0;
-	GetConsoleMode(in_handle, &in_mode);
-	GetConsoleMode(out_handle, &out_mode);
+	GetConsoleMode(in_handle_, &in_mode);
+	GetConsoleMode(out_handle_, &out_mode);
 
 	std::bitset<32> in_bits(in_mode);
 	std::bitset<32> out_bits(out_mode);
@@ -134,31 +134,9 @@ bool win32_console_host::start (const string_array& args)
 	//out_bits.reset(0);
 	//out_bits.reset(3);
 
-	auto in_settings = in_bits.to_ulong();
+	SetConsoleMode(in_handle_, in_bits.to_ulong());
+	SetConsoleMode(out_handle_, out_bits.to_ulong());
 
-	SetConsoleMode(in_handle, in_bits.to_ulong());
-	SetConsoleMode(out_handle, out_bits.to_ulong());
-
-
-	/////////////////////////////////////////////
-	/*
-	HANDLE std_out,std_in;
-	DWORD mode;
-
-	std_out = GetStdHandle(STD_OUTPUT_HANDLE);
-	GetConsoleMode(std_out, &mode);
-	mode |= 0x4;// virtual terminal output
-	SetConsoleMode(std_out, mode);
-
-
-	std_in = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(std_in, &mode);
-	std::bitset<sizeof(mode) * 8> bts(mode);
-	bts.reset(0);
-	bts.set(1);
-	DWORD new_mode = bts.to_ulong();
-	SetConsoleMode(std_in, mode);
-	*/
 
 	rx_platform::configuration_data_t config;
 
@@ -195,13 +173,6 @@ void win32_console_host::get_host_info (string_array& hosts)
 	host::interactive::interactive_console_host::get_host_info(hosts);
 }
 
-bool win32_console_host::get_next_line (string_type& line)
-{
-	//std::cin >> line;
-	getline(std::cin, line);
-	return true;
-}
-
 bool win32_console_host::is_canceling () const
 {
 	return g_console_canceled.exchange(0) != 0;
@@ -210,6 +181,20 @@ bool win32_console_host::is_canceling () const
 bool win32_console_host::break_host (const string_type& msg)
 {
 	return GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0) != FALSE;
+}
+
+bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
+{
+	DWORD read = 0;
+	bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
+	count = read;
+	return ret;
+}
+
+bool win32_console_host::write_stdout (const string_type& lines)
+{
+	DWORD written = 0;
+	return FALSE != WriteFile(out_handle_, lines.c_str(), (DWORD)lines.size(), &written, NULL);
 }
 
 

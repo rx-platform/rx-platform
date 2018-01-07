@@ -31,14 +31,14 @@
 
 
 
-// rx_mngt
-#include "system/server/rx_mngt.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_mngt
+#include "system/server/rx_mngt.h"
 
 namespace rx {
 namespace security {
@@ -330,8 +330,6 @@ class console_client : public rx::pointers::virtual_reference_object
       bool is_postponed () const;
 
       const string_type& get_console_terminal ();
-
-      virtual bool get_next_line (string_type& line) = 0;
 
       void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
 

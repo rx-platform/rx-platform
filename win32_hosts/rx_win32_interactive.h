@@ -61,16 +61,23 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       void get_host_info (string_array& hosts);
 
-      bool get_next_line (string_type& line);
-
       bool is_canceling () const;
 
       bool break_host (const string_type& msg);
+
+      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
+
+      bool write_stdout (const string_type& lines);
 
 
   protected:
 
   private:
+
+
+      HANDLE out_handle_;
+
+      HANDLE in_handle_;
 
 
 };

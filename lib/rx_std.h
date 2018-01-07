@@ -48,12 +48,12 @@
 #include <queue>
 #include <list>
 #include <stack>
+#include <array>
+#include <bitset>
 //streams
 #include <ios>
 #include <iostream>
 #include <sstream>
-
-#include <bitset>
 #include <iomanip>
 
 

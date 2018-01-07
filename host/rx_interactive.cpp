@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host()
       : exit_(false)
@@ -205,7 +205,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client
+// Class host::interactive::interactive_console_client 
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : host_(host),
@@ -236,17 +236,23 @@ void interactive_console_client::run_interactive ()
 
 	string_type temp;
 	get_wellcome(temp);
-	std::cout << temp<<"\r\n";
+	temp += "\r\n";
+	host_->write_stdout(temp);
 
 	temp.clear();
 	get_prompt(temp);
-	std::cout << temp;
+	host_->write_stdout(temp);
 
 	string_type chars;
 
+	std::array<char, 0x100> buffer;
+
+	size_t count;
+
 	while (!exit_ && !host_->exit())
 	{
-		char ch = std::cin.get();
+		count = 0;
+		host_->read_stdin(buffer, count);
 
 		if (std::cin.fail())
 		{
@@ -268,24 +274,28 @@ void interactive_console_client::run_interactive ()
 			continue;
 
 		temp.clear();
-		vt100_transport_.char_received(ch, false, temp, [this](const string_type& line)
+		for (size_t i = 0; i < count; i++)
 		{
-			if (!line.empty())
-			{
-				memory::buffer_ptr out_buffer(pointers::_create_new);
-				memory::buffer_ptr err_buffer(pointers::_create_new);
 
-				do_command(line, out_buffer, err_buffer, security_context_);
-			}
-			/*else if (!rx_platform::rx_gate::instance().is_shutting_down())
+			vt100_transport_.char_received(buffer[i], false, temp, [this](const string_type& line)
 			{
-				string_type temp;
-				get_prompt(temp);
-				std::cout << temp;
-			}*/
-		});
+				if (!line.empty())
+				{
+					memory::buffer_ptr out_buffer(pointers::_create_new);
+					memory::buffer_ptr err_buffer(pointers::_create_new);
+
+					do_command(line, out_buffer, err_buffer, security_context_);
+				}
+				else if (!rx_platform::rx_gate::instance().is_shutting_down())
+				{
+					string_type temp;
+					get_prompt(temp);
+					host_->write_stdout(temp);
+				}
+			});
+		}
 		if (!temp.empty())
-			std::cout << temp;
+			host_->write_stdout(temp);
 
 	}
 	security_context_->logout();
@@ -307,11 +317,6 @@ security::security_context::smart_ptr interactive_console_client::get_current_se
 void interactive_console_client::exit_console ()
 {
 	rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
-}
-
-bool interactive_console_client::get_next_line (string_type& line)
-{
-	return host_->get_next_line(line);
 }
 
 void interactive_console_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
@@ -340,13 +345,13 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 	{
 		string_type temp;
 		get_prompt(temp);
-		std::cout << temp;
+		host_->write_stdout(temp);
 	}
 	rx_gate::instance().get_host()->break_host("");
 }
 
 
-// Class host::interactive::interactive_security_context
+// Class host::interactive::interactive_security_context 
 
 interactive_security_context::interactive_security_context()
 {
@@ -385,3 +390,11 @@ bool interactive_security_context::is_interactive () const
 } // namespace interactive
 } // namespace host
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return false;
+
+#endif

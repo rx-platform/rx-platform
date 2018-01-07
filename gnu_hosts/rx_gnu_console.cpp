@@ -185,16 +185,6 @@ void gnu_console_host::get_host_info (string_array& hosts)
 	host::interactive::interactive_console_host::get_host_info(hosts);
 }
 
-bool gnu_console_host::get_next_line (string_type& line)
-{
-  //std::cin>>line;
-  //char* ret=getline(nullptr);
-  //line=ret;
-  //free(ret);
-  std::getline(std::cin,line);
-  return true;
-}
-
 bool gnu_console_host::is_canceling () const
 {
 	return g_console_canceled.exchange(0) != 0;
@@ -206,6 +196,21 @@ bool gnu_console_host::break_host (const string_type& msg)
     if(ret<0)
         perror("kill");
     return true;
+}
+
+bool gnu_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
+{
+  uint32_t read=0;
+  bool ret = (RX_OK == rx_file_read(STDIN_FILENO,&chars[0],0x100, &read));
+  count=read;
+  return ret;
+}
+
+bool gnu_console_host::write_stdout (const string_type& lines)
+{
+  uint32_t written=0;
+  bool ret = RX_OK == rx_file_write(STDOUT_FILENO,lines.c_str(),lines.size(),&written);
+  return ret;
 }
 
 

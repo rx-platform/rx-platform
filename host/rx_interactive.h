@@ -33,14 +33,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_vt100
 #include "host/rx_vt100.h"
+// rx_host
+#include "system/hosting/rx_host.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 namespace host {
 namespace interactive {
@@ -110,8 +110,6 @@ class interactive_console_client : public rx_platform::prog::console_client
 
       security::security_context::smart_ptr get_current_security_context ();
 
-      bool get_next_line (string_type& line);
-
 
   protected:
 
@@ -170,9 +168,11 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       int console_main (int argc, char* argv[]);
 
-      virtual bool get_next_line (string_type& line) = 0;
-
       virtual bool is_canceling () const = 0;
+
+      virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
+
+      virtual bool write_stdout (const string_type& lines) = 0;
 
 
   protected:
