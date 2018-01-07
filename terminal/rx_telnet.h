@@ -49,14 +49,8 @@
 #include "lib/rx_io.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-
-namespace terminal {
-namespace console {
-class telnet_client;
-
-} // namespace console
-} // namespace terminal
-
+// rx_vt100
+#include "host/rx_vt100.h"
 
 
 
@@ -95,6 +89,108 @@ class telnet_security_context : public rx::security::security_context,
 
 
   protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class telnet_client : public rx_platform::prog::console_client, 
+                      	public rx::io::
+{
+	DECLARE_REFERENCE_PTR(telnet_client);
+
+	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
+
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+	typedef std::stack<buffer_ptr> buffers_type;
+	typedef std::queue<buffer_ptr> running_buffers_type;
+
+  public:
+      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher);
+
+      virtual ~telnet_client();
+
+
+      bool on_startup (rx_thread_handle_t destination);
+
+      void on_shutdown (rx_thread_handle_t destination);
+
+      const string_type& get_console_name ();
+
+      bool get_next_line (string_type& line);
+
+      void line_received (const string_type& line);
+
+
+  protected:
+
+      void exit_console ();
+
+      bool readed (const void* data, size_t count, rx_thread_handle_t destination);
+
+      void release_buffer (buffer_ptr what);
+
+      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+
+
+  private:
+
+      telnet_client::buffer_ptr get_free_buffer ();
+
+      bool new_recive (const char* buff, size_t& idx);
+
+      void send_string_response (const string_type& line, bool with_prompt = true);
+
+
+
+      rx_reference<telnet_security_context> security_context_;
+
+      host::rx_vt100::vt100_transport vt100_parser_;
+
+
+      locks::slim_lock buffers_lock_;
+
+      buffers_type buffers_;
+
+      string_type receiving_string_;
+
+      bool send_echo_;
+
+      bool cancel_current_;
+
+      bool verified_;
+
+      bool exit_;
+
+
+};
+
+
+
+
+
+
+
+class server_telnet_socket : public rx::io::tcp_listent_std_buffer  
+{
+	DECLARE_REFERENCE_PTR(server_telnet_socket);
+
+  public:
+      server_telnet_socket();
+
+      virtual ~server_telnet_socket();
+
+
+  protected:
+
+      io::tcp_socket_std_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination);
+
 
   private:
 
@@ -563,182 +659,6 @@ pyhton command for interfacing python scripting");
 
 
 } // namespace console_commands
-
-
-
-
-
-class terminal_parser 
-{
-  public:
-	terminal_parser(const terminal_parser &right) = delete;
-	terminal_parser & operator=(const terminal_parser &right) = delete;
-	terminal_parser(terminal_parser &&right) = delete;
-	terminal_parser & operator=(terminal_parser &&right) = delete;
-  private:
-	enum parser_state
-	{
-		parser_normal,
-		parser_in_end_line,
-		parser_had_escape,
-		parser_had_bracket,
-		parser_had_bracket_number
-	};
-
-  public:
-      terminal_parser (telnet_client* term);
-
-      virtual ~terminal_parser();
-
-
-      bool char_received (const char ch, string_type& to_echo);
-
-
-      void set_password_mode (bool value)
-      {
-        password_mode_ = value;
-      }
-
-
-
-  protected:
-
-  private:
-
-      bool move_cursor_left ();
-
-      bool move_cursor_right ();
-
-      bool char_received_normal (const char ch, string_type& to_echo);
-
-      bool char_received_in_end_line (char ch, string_type& to_echo);
-
-      bool char_received_had_escape (const char ch, string_type& to_echo);
-
-      bool char_received_had_bracket (char ch, string_type& to_echo);
-
-      bool char_received_had_bracket_number (const char ch, string_type& to_echo);
-
-
-
-      telnet_client* terminal_;
-
-
-      parser_state state_;
-
-      string_type current_line_;
-
-      string_type::size_type current_idx_;
-
-      bool password_mode_;
-
-
-};
-
-
-
-
-
-
-class telnet_client : public rx_platform::prog::console_client, 
-                      	public rx::io::
-{
-	DECLARE_REFERENCE_PTR(telnet_client);
-
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
-
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-	typedef std::stack<buffer_ptr> buffers_type;
-	typedef std::queue<buffer_ptr> running_buffers_type;
-
-  public:
-      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher);
-
-      virtual ~telnet_client();
-
-
-      bool on_startup (rx_thread_handle_t destination);
-
-      void on_shutdown (rx_thread_handle_t destination);
-
-      const string_type& get_console_name ();
-
-      bool get_next_line (string_type& line);
-
-      bool line_received (const string_type& line);
-
-
-      std::unique_ptr<terminal_parser> vt100_parser_;
-
-
-  protected:
-
-      void exit_console ();
-
-      bool readed (const void* data, size_t count, rx_thread_handle_t destination);
-
-      void release_buffer (buffer_ptr what);
-
-      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
-
-
-  private:
-
-      telnet_client::buffer_ptr get_free_buffer ();
-
-      bool new_recive (const char* buff, size_t& idx);
-
-      void send_string_response (const string_type& line, bool with_prompt = true);
-
-
-
-      rx_reference<telnet_security_context> security_context_;
-
-
-      locks::slim_lock buffers_lock_;
-
-      buffers_type buffers_;
-
-      string_type receiving_string_;
-
-      bool send_echo_;
-
-      bool cancel_current_;
-
-      bool verified_;
-
-      bool exit_;
-
-
-};
-
-
-
-
-
-
-
-class server_telnet_socket : public rx::io::tcp_listent_std_buffer  
-{
-	DECLARE_REFERENCE_PTR(server_telnet_socket);
-
-  public:
-      server_telnet_socket();
-
-      virtual ~server_telnet_socket();
-
-
-  protected:
-
-      io::tcp_socket_std_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination);
-
-
-  private:
-
-
-};
-
-
 } // namespace console
 } // namespace terminal
 

@@ -33,12 +33,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_host
+#include "system/hosting/rx_host.h"
+// rx_vt100
+#include "host/rx_vt100.h"
 
 namespace host {
 namespace interactive {
@@ -128,6 +130,8 @@ class interactive_console_client : public rx_platform::prog::console_client
       rx_reference<interactive_security_context> security_context_;
 
       interactive_console_host *host_;
+
+      rx_vt100::vt100_transport vt100_transport_;
 
 
       bool exit_;

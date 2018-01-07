@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host
 
 interactive_console_host::interactive_console_host()
       : exit_(false)
@@ -205,7 +205,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 }
 
 
-// Class host::interactive::interactive_console_client 
+// Class host::interactive::interactive_console_client
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : host_(host),
@@ -242,19 +242,11 @@ void interactive_console_client::run_interactive ()
 	get_prompt(temp);
 	std::cout << temp;
 
-	string_type line;
+	string_type chars;
 
 	while (!exit_ && !host_->exit())
 	{
-		get_next_line(line);
-
-		/*if (is_postponed())
-		{
-			memory::buffer_ptr out_buffer(pointers::_create_new);
-			memory::buffer_ptr err_buffer(pointers::_create_new);
-
-			bool ret = cancel_command(out_buffer, err_buffer, security_context_);
-		}*/
+		char ch = std::cin.get();
 
 		if (std::cin.fail())
 		{
@@ -275,20 +267,25 @@ void interactive_console_client::run_interactive ()
 		if (is_postponed())
 			continue;
 
-
-		if (!line.empty())
+		temp.clear();
+		vt100_transport_.char_received(ch, false, temp, [this](const string_type& line)
 		{
-			memory::buffer_ptr out_buffer(pointers::_create_new);
-			memory::buffer_ptr err_buffer(pointers::_create_new);
+			if (!line.empty())
+			{
+				memory::buffer_ptr out_buffer(pointers::_create_new);
+				memory::buffer_ptr err_buffer(pointers::_create_new);
 
-			do_command(line, out_buffer, err_buffer, security_context_);
-		}
-		else if(!rx_platform::rx_gate::instance().is_shutting_down())
-		{
-			temp.clear();
-			get_prompt(temp);
+				do_command(line, out_buffer, err_buffer, security_context_);
+			}
+			/*else if (!rx_platform::rx_gate::instance().is_shutting_down())
+			{
+				string_type temp;
+				get_prompt(temp);
+				std::cout << temp;
+			}*/
+		});
+		if (!temp.empty())
 			std::cout << temp;
-		}
 
 	}
 	security_context_->logout();
@@ -349,7 +346,7 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 }
 
 
-// Class host::interactive::interactive_security_context 
+// Class host::interactive::interactive_security_context
 
 interactive_security_context::interactive_security_context()
 {

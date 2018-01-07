@@ -112,6 +112,36 @@ bool win32_console_host::start (const string_array& args)
 
 	/////////////////////////////////////////////
 
+	HANDLE out_handle, in_handle;
+	out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	in_handle = GetStdHandle(STD_INPUT_HANDLE);
+
+	DWORD in_mode = 0;
+	DWORD out_mode = 0;
+	GetConsoleMode(in_handle, &in_mode);
+	GetConsoleMode(out_handle, &out_mode);
+
+	std::bitset<32> in_bits(in_mode);
+	std::bitset<32> out_bits(out_mode);
+
+	in_bits.reset(0);
+	in_bits.reset(1);
+	in_bits.reset(2);
+	in_bits.set(3);
+	in_bits.set(9);
+
+	out_bits.set(2);
+	//out_bits.reset(0);
+	//out_bits.reset(3);
+
+	auto in_settings = in_bits.to_ulong();
+
+	SetConsoleMode(in_handle, in_bits.to_ulong());
+	SetConsoleMode(out_handle, out_bits.to_ulong());
+
+
+	/////////////////////////////////////////////
+	/*
 	HANDLE std_out,std_in;
 	DWORD mode;
 
@@ -128,9 +158,7 @@ bool win32_console_host::start (const string_array& args)
 	bts.set(1);
 	DWORD new_mode = bts.to_ulong();
 	SetConsoleMode(std_in, mode);
-
-	
-
+	*/
 
 	rx_platform::configuration_data_t config;
 

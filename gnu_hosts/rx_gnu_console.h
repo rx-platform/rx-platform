@@ -73,6 +73,9 @@ class gnu_console_host : public host::interactive::interactive_console_host
   private:
 
 
+      termios ttyold_;
+
+
 };
 
 

@@ -139,8 +139,8 @@ const char* get_IAC_what(char code)
 char g_password_prompt[] = "Enter Password:";
 
 
-char g_server_telnet_idetification[] = { IAC, DONT, ECHO, IAC, WILL, ECHO,
-IAC, DO, LINEMODE, IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
+char g_server_telnet_idetification[] = { IAC, WILL, ECHO,
+IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 //IAC, SB, LINEMODE, 1, 0, IAC, SE /* IAC SB LINEMODE MODE 0 IAC SE */};
 #define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
 #define TELENET_RECIVE_TIMEOUT 600000
@@ -164,9 +164,7 @@ server_telnet_socket::~server_telnet_socket()
 io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination)
 {
 	telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
-	ret->vt100_parser_ = std::make_unique<terminal_parser>(ret.unsafe_ptr());
 	ret->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
-	ret->vt100_parser_->set_password_mode(true);
 	//ret->set_receive_timeout(2000);
 	return ret;
 }
@@ -183,6 +181,7 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
   , io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
   , console_client(0)
 {
+	vt100_parser_.set_password_mode(true);
 }
 
 
@@ -584,11 +583,24 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 		// our buffer
 		string_type to_send;
 
-		for (size_t i = idx; i < count; i++)
+		if (count > 1)
 		{
-			vt100_parser_->char_received(buff[i], to_send);
-			//printf("%d ", (int)data[i]);
+			for (size_t i = idx; i < count-1; i++)
+			{
+				vt100_parser_.char_received(buff[i], false, to_send
+					, [this](const string_type& line)
+				{
+					line_received(line);
+				});
+				//printf("%d ", (int)data[i]);
+			}
 		}
+		vt100_parser_.char_received(buff[count - 1], true, to_send
+			, [this](const string_type& line)
+		{
+			line_received(line);
+		});
+
 		if (!to_send.empty())
 		{
 			auto buff = get_free_buffer();
@@ -663,7 +675,7 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 	}
 }
 
-bool telnet_client::line_received (const string_type& line)
+void telnet_client::line_received (const string_type& line)
 {
 
 	if (!verified_)
@@ -673,7 +685,7 @@ bool telnet_client::line_received (const string_type& line)
 			[captured_line](smart_ptr sended_this)
 		{
 			sended_this->verified_ = true;
-			sended_this->vt100_parser_->set_password_mode(false);
+			sended_this->vt100_parser_.set_password_mode(false);
 
 			if (captured_line == MY_PASSWORD)
 			{
@@ -714,8 +726,7 @@ bool telnet_client::line_received (const string_type& line)
 		, smart_this()
 		, get_executer()
 		);
-		return true;
-		
+
 	}
 	else
 	{
@@ -726,7 +737,6 @@ bool telnet_client::line_received (const string_type& line)
 
 		do_command(line, out_buffer, err_buffer, security_context_);
 	}
-	return true;
 }
 
 
@@ -973,7 +983,6 @@ bool namespace_command::do_console_command (std::istream& in, std::ostream& out,
 			list_attributes = true;
 			list_qualities = true;
 			list_timestamps = true;
-			list_created = true;
 		}
 	}
 
@@ -1750,215 +1759,6 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 
 
 } // namespace console_commands
-
-// Class terminal::console::terminal_parser 
-
-terminal_parser::terminal_parser (telnet_client* term)
-      : state_(parser_normal),
-        current_idx_(string_type::npos),
-        password_mode_(false)
-	, terminal_(term)
-{
-}
-
-
-terminal_parser::~terminal_parser()
-{
-}
-
-
-
-bool terminal_parser::move_cursor_left ()
-{
-	if (current_idx_ == string_type::npos && !current_line_.empty())
-	{
-		current_idx_ = current_line_.size() - 1;
-		return true;
-	}
-	if (current_idx_ > 0)
-	{
-		current_idx_--;
-		return true;
-	}
-	return false;
-}
-
-bool terminal_parser::move_cursor_right ()
-{
-	if (current_idx_ != string_type::npos && current_idx_<current_line_.size())
-	{
-		current_idx_++;
-		if (current_idx_ == current_line_.size())
-			current_idx_ = string_type::npos;
-		return true;
-	}
-	return false;
-}
-
-bool terminal_parser::char_received (const char ch, string_type& to_echo)
-{
-	switch (state_)
-	{
-	case parser_normal:
-		return char_received_normal(ch, to_echo);
-	case parser_in_end_line:
-		return char_received_in_end_line(ch, to_echo);
-	case parser_had_escape:
-		return char_received_had_escape(ch, to_echo);
-	case parser_had_bracket:
-		return char_received_had_bracket(ch, to_echo);
-	case parser_had_bracket_number:
-		return char_received_had_bracket_number(ch, to_echo);
-	}
-	return false;
-}
-
-bool terminal_parser::char_received_normal (const char ch, string_type& to_echo)
-{
-	switch (ch)
-	{
-	case '\x1b':
-		state_ = parser_had_escape;
-		break;
-	case '\b':
-	case '\x7f':
-		if (current_idx_ != string_type::npos && current_idx_>0)
-		{
-			to_echo += "\x08\033[1P";
-			current_line_.erase(current_idx_ - 1, 1);
-			move_cursor_left();
-		}
-		else
-		{
-			current_line_.pop_back();
-			to_echo += "\x08 \x08";
-		}
-		break;
-	case '\n':
-	case '\r':
-		to_echo += "\r\n";
-		terminal_->line_received(current_line_);
-		state_ = parser_in_end_line;
-		break;
-	case '\t':
-	{
-		string_type offered;//!! = m_consumer->line_asked(current_line_);
-		if (!offered.empty())
-		{
-
-			to_echo += "\033[1G\033[M";
-			to_echo += offered;
-			current_idx_ = string_type::npos;
-			current_line_ = offered;
-		}
-	}
-	break;
-	default:
-		if (ch >= 0x20)
-		{
-			if (current_idx_ != string_type::npos)
-			{
-				current_line_.insert(current_idx_, 1, ch);
-				to_echo += "\033[1@";
-				to_echo += ch;
-				move_cursor_right();
-				//to_echo.append("\033C");
-			}
-			else
-			{
-				current_line_ = current_line_ + ch;
-				to_echo = to_echo + (password_mode_ ? '*' : ch);
-			}
-		}
-	}
-	return true;
-}
-
-bool terminal_parser::char_received_in_end_line (char ch, string_type& to_echo)
-{
-	switch (ch)
-	{
-	case '\r':
-	case '\n':
-		break;
-	default:
-		current_line_.clear();
-		current_idx_ = string_type::npos;
-		state_ = parser_normal;
-		return char_received_normal(ch, to_echo);
-	}
-	return true;
-}
-
-bool terminal_parser::char_received_had_escape (const char ch, string_type& to_echo)
-{
-	switch (ch)
-	{
-	case '[':
-		state_ = parser_had_bracket;
-		break;
-	case 'D':
-		if (current_idx_ != 0 && !current_line_.empty())
-		{
-			to_echo += "\033[1G";
-			current_idx_ = 0;
-		}
-		state_ = parser_normal;
-		break;
-	case 'C':
-		if (current_idx_ != string_type::npos && !current_line_.empty())
-		{
-			char buff[0x10];
-			sprintf(buff,"\033[%dG", (int)current_line_.size());
-			to_echo += buff;
-			current_idx_ = string_type::npos;
-		}
-		state_ = parser_normal;
-		break;
-	default:
-		state_ = parser_normal;
-		return false;
-	}
-	return true;
-}
-
-bool terminal_parser::char_received_had_bracket (char ch, string_type& to_echo)
-{
-	switch (ch)
-	{
-	case 'D':
-		if (move_cursor_left())
-			to_echo.append("\033[D");
-		state_ = parser_normal;
-		break;
-	case 'C':
-		if (move_cursor_right())
-			to_echo.append("\033[C");
-		state_ = parser_normal;
-		break;
-	case 'H':
-		while (move_cursor_left())
-			to_echo.append("\033[D");
-		state_ = parser_normal;
-		break;
-	case 'F':
-		while (move_cursor_right())
-			to_echo.append("\033[C");
-		state_ = parser_normal;
-		break;
-	default:
-		state_ = parser_normal;
-		return false;
-	}
-	return true;
-}
-
-bool terminal_parser::char_received_had_bracket_number (const char ch, string_type& to_echo)
-{
-	return false;
-}
-
-
 } // namespace console
 } // namespace terminal
 

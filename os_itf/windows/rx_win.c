@@ -1576,6 +1576,12 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	int on = 1;
 	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&on, sizeof(on));
 
+	ULONG buff_len = 0;
+	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&buff_len, sizeof(buff_len));
+	buff_len = 0;//just in case...
+	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char*)&buff_len, sizeof(buff_len));
+	
+
 	//////////////////////////////////////////////////////////////
 	// keep alive settings
 	struct tcp_keepalive kalive;

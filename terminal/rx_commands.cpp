@@ -164,7 +164,7 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 
 bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
 {
-	
+
 	out << "Printing help, well the beginig of making help :)\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a list of commands:\r\n";
