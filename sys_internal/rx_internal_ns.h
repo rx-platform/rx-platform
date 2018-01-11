@@ -56,7 +56,7 @@ class root_server_directory : public rx_platform::ns::rx_server_directory
 {
 	DECLARE_REFERENCE_PTR(root_server_directory);
 
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
+	DECLARE_CODE_INFO("rx", 0,6,0, "\
 root server directory:\r\n\
 contains root server folders\
 ");

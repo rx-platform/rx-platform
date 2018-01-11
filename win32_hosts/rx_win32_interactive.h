@@ -67,7 +67,7 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       bool read_stdin (std::array<char,0x100>& chars, size_t& count);
 
-      bool write_stdout (const string_type& lines);
+      bool write_stdout (const void* data, size_t size);
 
 
   protected:

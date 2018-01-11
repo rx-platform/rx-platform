@@ -124,7 +124,7 @@ bool win32_console_host::start (const string_array& args)
 	std::bitset<32> in_bits(in_mode);
 	std::bitset<32> out_bits(out_mode);
 
-	in_bits.reset(0);
+	//in_bits.reset(0);
 	in_bits.reset(1);
 	in_bits.reset(2);
 	in_bits.set(3);
@@ -191,10 +191,10 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 	return ret;
 }
 
-bool win32_console_host::write_stdout (const string_type& lines)
+bool win32_console_host::write_stdout (const void* data, size_t size)
 {
 	DWORD written = 0;
-	return FALSE != WriteFile(out_handle_, lines.c_str(), (DWORD)lines.size(), &written, NULL);
+	return FALSE != WriteFile(out_handle_, data, (DWORD)size, &written, NULL);
 }
 
 

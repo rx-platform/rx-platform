@@ -172,7 +172,9 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
 
-      virtual bool write_stdout (const string_type& lines) = 0;
+      virtual bool write_stdout (const void* data, size_t size) = 0;
+
+      bool write_stdout (const string_type& lines);
 
 
   protected:

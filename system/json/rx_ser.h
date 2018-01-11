@@ -59,6 +59,7 @@ class json_reader : public rx::base_meta_reader
 		Json::Value& value;
 		int index;
 	};
+	typedef std::stack<json_read_stack_data, std::vector<json_read_stack_data> > stack_type;
 
   public:
       json_reader();
@@ -123,7 +124,7 @@ class json_reader : public rx::base_meta_reader
 
 
 
-      std::stack<json_read_stack_data> stack_;
+      stack_type stack_;
 
       Json::Value envelope_;
 
@@ -146,6 +147,7 @@ class json_writter : public rx::base_meta_writter
 		bool is_array;
 		std::string name;
 	};
+	typedef std::stack<json_write_stack_data> stack_type;
 
   public:
       json_writter (int version = RX_CURRENT_SERIALIZE_VERSION);
@@ -206,7 +208,7 @@ class json_writter : public rx::base_meta_writter
 
 
 
-      std::stack<json_write_stack_data> stack_;
+      stack_type stack_;
 
       Json::Value envelope_;
 

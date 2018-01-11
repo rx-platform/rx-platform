@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,34 +38,14 @@ namespace host {
 
 namespace rx_vt100 {
 
-// Class host::rx_vt100::dummy_transport 
-
-dummy_transport::dummy_transport()
-{
-}
-
-
-dummy_transport::~dummy_transport()
-{
-}
-
-
-
-void dummy_transport::line_received (const string_type& line)
-{
-}
-
-void dummy_transport::do_stuff ()
-{
-}
-
-
-// Class host::rx_vt100::vt100_transport 
+// Class host::rx_vt100::vt100_transport
 
 vt100_transport::vt100_transport()
       : state_(parser_normal),
         current_idx_(string_type::npos),
-        password_mode_(false)
+        password_mode_(false),
+        history_it_(history_.begin()),
+        had_first_(false)
 {
 }
 
@@ -108,7 +88,7 @@ bool vt100_transport::char_received (const char ch, bool eof, string_type& to_ec
 	switch (state_)
 	{
 	case parser_normal:
-		return char_received_normal(ch, to_echo,received_line_callback);
+		return char_received_normal(ch, eof, to_echo,received_line_callback);
 	case parser_in_end_line:
 		return char_received_in_end_line(ch, to_echo,received_line_callback);
 	case parser_had_escape:
@@ -121,7 +101,7 @@ bool vt100_transport::char_received (const char ch, bool eof, string_type& to_ec
 	return false;
 }
 
-bool vt100_transport::char_received_normal (const char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback)
+bool vt100_transport::char_received_normal (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback)
 {
 	switch (ch)
 	{
@@ -150,7 +130,11 @@ bool vt100_transport::char_received_normal (const char ch, string_type& to_echo,
 		to_echo += "\r\n";
 
 		received_line_callback(current_line_);
-		state_ = parser_in_end_line;
+
+		current_line_.clear();
+		current_idx_ = string_type::npos;
+		if(!eof)
+			state_ = parser_in_end_line;
 		break;
 	case '\t':
 	{
@@ -188,6 +172,7 @@ bool vt100_transport::char_received_normal (const char ch, string_type& to_echo,
 
 bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback)
 {
+	state_ = parser_normal;
 	switch (ch)
 	{
 	case '\r':
@@ -196,8 +181,7 @@ bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, 
 	default:
 		current_line_.clear();
 		current_idx_ = string_type::npos;
-		state_ = parser_normal;
-		return char_received_normal(ch, to_echo, received_line_callback);
+		return char_received_normal(ch, true, to_echo, received_line_callback);
 	}
 	return true;
 }
@@ -238,6 +222,14 @@ bool vt100_transport::char_received_had_bracket (char ch, string_type& to_echo)
 {
 	switch (ch)
 	{
+	case 'A':
+		state_ = parser_normal;
+		return move_history_up(to_echo);
+		break;
+	case 'B':
+		state_ = parser_normal;
+		return move_history_down(to_echo);
+		break;
 	case 'D':
 		if (move_cursor_left())
 			to_echo.append("\033[D");
@@ -268,6 +260,66 @@ bool vt100_transport::char_received_had_bracket (char ch, string_type& to_echo)
 bool vt100_transport::char_received_had_bracket_number (const char ch, string_type& to_echo)
 {
 	return false;
+}
+
+void vt100_transport::add_to_history (const string_type& line)
+{
+	history_it_ = history_.insert(history_it_,line);
+	had_first_ = false;
+}
+
+bool vt100_transport::move_history_up (string_type& to_echo)
+{
+	if (had_first_ && history_it_ != history_.end())
+	{
+		string_type line(*history_it_);
+		if (history_it_ != history_.begin())
+			history_it_--;
+		else
+			had_first_ = true;
+		to_echo += "\033[1G\033[M";
+		to_echo += line;
+		current_idx_ = string_type::npos;
+		current_line_ = line;
+		return true;
+	}
+	return false;
+}
+
+bool vt100_transport::move_history_down (string_type& to_echo)
+{
+	if (history_it_ != history_.end())
+	{
+		string_type line(*history_it_);
+		history_it_++;
+		to_echo += "\033[1G\033[M";
+		to_echo += line;
+		current_idx_ = string_type::npos;
+		current_line_ = line;
+	}
+	return true;
+}
+
+
+// Class host::rx_vt100::dummy_transport
+
+dummy_transport::dummy_transport()
+{
+}
+
+
+dummy_transport::~dummy_transport()
+{
+}
+
+
+
+void dummy_transport::line_received (const string_type& line)
+{
+}
+
+void dummy_transport::do_stuff ()
+{
 }
 
 

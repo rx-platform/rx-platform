@@ -58,6 +58,7 @@ class vt100_transport
 		parser_had_bracket,
 		parser_had_bracket_number
 	};
+	typedef std::list<string_type> history_type;
 
   public:
       vt100_transport();
@@ -66,6 +67,8 @@ class vt100_transport
 
 
       bool char_received (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
+
+      void add_to_history (const string_type& line);
 
 
       void set_password_mode (bool value)
@@ -83,7 +86,7 @@ class vt100_transport
 
       bool move_cursor_right ();
 
-      bool char_received_normal (const char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback);
+      bool char_received_normal (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
 
       bool char_received_in_end_line (char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback);
 
@@ -92,6 +95,10 @@ class vt100_transport
       bool char_received_had_bracket (char ch, string_type& to_echo);
 
       bool char_received_had_bracket_number (const char ch, string_type& to_echo);
+
+      bool move_history_up (string_type& to_echo);
+
+      bool move_history_down (string_type& to_echo);
 
 
 
@@ -102,6 +109,12 @@ class vt100_transport
       string_type::size_type current_idx_;
 
       bool password_mode_;
+
+      history_type history_;
+
+      history_type::iterator history_it_;
+
+      bool had_first_;
 
 
 };

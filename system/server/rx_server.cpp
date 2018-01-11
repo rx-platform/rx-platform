@@ -48,8 +48,8 @@ rx_gate::rx_gate()
       : host_(nullptr),
         started_(rx_time::now()),
         pid_(0),
+        security_guard_(std::make_unique<security::security_guard>()),
         shutting_down_(false)
-	, security_guard_(pointers::_create_new)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);

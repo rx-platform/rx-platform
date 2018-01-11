@@ -393,7 +393,7 @@ rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
 	namespace_ = namesp;
 }
 
-rx_node_id::rx_node_id(rx_node_id&& right)
+rx_node_id::rx_node_id(rx_node_id&& right) noexcept
 {
 	memcpy(this, &right, sizeof(right));
 	if (!right.is_simple())
@@ -1244,8 +1244,9 @@ time_stamp time_stamp::now()
 
 class rx_thread_data_object
 {
+	typedef typename std::unique_ptr<std::stack<intptr_t, std::vector<intptr_t> > > stack_ptr_t;
 private:
-	std::map<int,std::unique_ptr<std::stack<intptr_t> > > m_objects;
+	std::map<int, stack_ptr_t> m_objects;
 	rx_thread_data_object()
 	{
 	}
@@ -1257,10 +1258,10 @@ public:
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end())
 		{
-			typedef typename std::unique_ptr<std::stack<intptr_t> > stcak_ptr_t;
-			stcak_ptr_t temp = std::make_unique<std::stack<intptr_t> >();
+
+			stack_ptr_t temp = std::make_unique<std::stack<intptr_t, std::vector<intptr_t> > >();
 			temp->push(obj);
-			m_objects.emplace(handle, std::forward<stcak_ptr_t>(temp));
+			m_objects.emplace(handle, std::forward<stack_ptr_t>(temp));
 			return true;
 		}
 		else

@@ -210,9 +210,10 @@ enum extended_security_mask_t : std::uint_fast32_t
 
 
 
-class security_guard : public pointers::reference_object  
+class security_guard 
 {
-	DECLARE_REFERENCE_PTR(security_guard);
+  public:
+	typedef std::unique_ptr<security_guard> smart_ptr;
 
   public:
       security_guard();
@@ -289,9 +290,11 @@ class built_in_security_context : public security_context,
 
 
 
-class unathorized_security_context : public security_context  
+class unathorized_security_context : public security_context, 
+                                   
 {
-	DECLARE_INTERFACE_PTR(unathorized_security_context);
+	DECLARE_REFERENCE_PTR(unathorized_security_context);
+	DECLARE_DERIVED_FROM_INTERFACE;
 
   public:
       unathorized_security_context();
@@ -304,9 +307,9 @@ class unathorized_security_context : public security_context
 
   protected:
 
-      void interface_bind ();
+      ///void interface_bind ();
 
-      void interface_release ();
+      //void interface_release ();
 
 
   private:
@@ -321,7 +324,8 @@ class unathorized_security_context : public security_context
 
 class loose_security_guard : public security_guard  
 {
-	DECLARE_REFERENCE_PTR(security_guard);
+public:
+	typedef std::unique_ptr<security_guard> smart_ptr;
 
   public:
       loose_security_guard();

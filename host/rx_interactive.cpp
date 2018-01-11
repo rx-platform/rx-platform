@@ -204,6 +204,11 @@ int interactive_console_host::console_main (int argc, char* argv[])
 
 }
 
+bool interactive_console_host::write_stdout (const string_type& lines)
+{
+	return write_stdout(lines.c_str(), lines.size());
+}
+
 
 // Class host::interactive::interactive_console_client 
 
@@ -279,22 +284,14 @@ void interactive_console_client::run_interactive ()
 
 			vt100_transport_.char_received(buffer[i], false, temp, [this](const string_type& line)
 			{
-				if (!line.empty())
-				{
-					memory::buffer_ptr out_buffer(pointers::_create_new);
-					memory::buffer_ptr err_buffer(pointers::_create_new);
+				memory::buffer_ptr out_buffer(pointers::_create_new);
+				memory::buffer_ptr err_buffer(pointers::_create_new);
 
-					do_command(line, out_buffer, err_buffer, security_context_);
-				}
-				else if (!rx_platform::rx_gate::instance().is_shutting_down())
-				{
-					string_type temp;
-					get_prompt(temp);
-					host_->write_stdout(temp);
-				}
+				do_command(line, out_buffer, err_buffer, security_context_);
 			});
 		}
-		if (!temp.empty())
+		if (!temp.empty() && 
+			!rx_platform::rx_gate::instance().is_shutting_down())
 			host_->write_stdout(temp);
 
 	}
@@ -324,21 +321,22 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 	if (!result)
 	{
 		if (!err_buffer->empty())
-			std::cout.write((const char*)err_buffer->pbase(), err_buffer->get_size());
+			host_->write_stdout(err_buffer->pbase(), err_buffer->get_size());
 		if (!exit_ && !host_->exit())
 		{
-			std::cout << "\r\n";
-			std::cout << ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET;
-			std::cout << "\r\n";
+			host_->write_stdout(
+				"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
+			);
 		}
 		if (!out_buffer->empty())
-			std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
 	}
 	else
 	{
 
 		if (!out_buffer->empty())
-			std::cout.write((const char*)out_buffer->pbase(), out_buffer->get_size());
+			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
+
 	}
 
 	if (!rx_gate::instance().is_shutting_down())
@@ -347,7 +345,7 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 		get_prompt(temp);
 		host_->write_stdout(temp);
 	}
-	rx_gate::instance().get_host()->break_host("");
+	//rx_gate::instance().get_host()->break_host("");
 }
 
 
@@ -390,11 +388,3 @@ bool interactive_security_context::is_interactive () const
 } // namespace interactive
 } // namespace host
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return false;
-
-#endif

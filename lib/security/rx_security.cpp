@@ -194,18 +194,18 @@ security_context_ptr security_manager::get_context (rx_security_handle_t handle)
 
 security_context_ptr active_security()
 {
-	static unathorized_security_context dummy_ctx;
+	static unathorized_security_context::smart_ptr dummy_ctx(pointers::_create_new);
 	rx_security_handle_t handle = rx_security_context();
 	if (!handle)
 	{// nothing active
-		return pointers::interface_reference<unathorized_security_context>::create_from_pointer(&dummy_ctx);
+		return dummy_ctx;
 	}
 	else
 	{// try to ge from handle
 		security_context_ptr ret = security_manager::instance().get_context(handle);
 		if (!ret)
 		{// context not active any more
-			ret = pointers::interface_reference<unathorized_security_context>::create_from_pointer(&dummy_ctx);
+			return dummy_ctx;
 		}
 		return ret;
 	}
@@ -306,6 +306,12 @@ unathorized_security_context::~unathorized_security_context()
 
 
 
+bool unathorized_security_context::is_authenticated () const
+{
+  return false;
+
+}
+/*
 void unathorized_security_context::interface_bind ()
 {
 }
@@ -313,13 +319,7 @@ void unathorized_security_context::interface_bind ()
 void unathorized_security_context::interface_release ()
 {
 }
-
-bool unathorized_security_context::is_authenticated () const
-{
-  return false;
-
-}
-
+*/
 
 // Class rx::security::loose_security_guard 
 

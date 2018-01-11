@@ -108,7 +108,7 @@ class telnet_client : public rx_platform::prog::console_client,
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-	typedef std::stack<buffer_ptr> buffers_type;
+	typedef std::stack<buffer_ptr,std::vector<buffer_ptr> > buffers_type;
 	typedef std::queue<buffer_ptr> running_buffers_type;
 
   public:

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2017 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -113,7 +113,7 @@ struct code_behind_definition_t
 
 
 template <class ptrT>
-class basic_smart_ptr 
+class basic_smart_ptr
 {
 
 	static code_behind_definition_t* rx_code_behind;
@@ -297,12 +297,9 @@ public:
 	// copy constructor
 	explicit reference(const reference<ptrT>& right)
 	{
-		if (this != &right)
-		{
-			this->ptr_ = right.ptr_;
-			if (this->ptr_)
-				this->ptr_->bind();
-		}
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->bind();
 	}
 	template<class derT>
 	reference(const basic_smart_ptr<derT>& right)
@@ -312,16 +309,13 @@ public:
 			this->ptr_->bind();
 	}
 	//move constructor
-	reference(reference<ptrT>&& right)
+	reference(reference<ptrT>&& right) noexcept
 	{
-		if (this != &right)
-		{
-			this->ptr_ = right.ptr_;
-			right.ptr_ = nullptr;
-		}
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	template<class derT>
-	reference(basic_smart_ptr<derT>&& right)
+	reference(basic_smart_ptr<derT>&& right) noexcept
 	{
 		this->ptr_ = right.ptr_;
 		right.ptr_ = nullptr;
@@ -340,7 +334,7 @@ public:
 		return *this;
 	}
 	template<class derT>
-	reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
+	reference<ptrT>& operator=(const reference<derT>& right)
 	{
 		if (this->ptr_)
 			this->ptr_->release();
@@ -351,26 +345,25 @@ public:
 	}
 
 	// move assignment  operator
-	reference<ptrT>& operator=(reference<ptrT>&& right)
+	reference<ptrT>& operator=(reference<ptrT>&& right) noexcept
 	{
 		if (this != &right)
 		{
 			if (this->ptr_)
 				this->ptr_->release();
 			this->ptr_ = right.ptr_;
-			if (this->ptr_)
-				this->ptr_->bind();
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
 		}
 		return *this;
 	}
 	template<class derT>
-	reference<ptrT>& operator=(basic_smart_ptr<derT>&& right)
+	reference<ptrT>& operator=(reference<derT>&& right) noexcept
 	{
 		if (this->ptr_)
 			this->ptr_->release();
 		this->ptr_ = right.ptr_;
-		if (this->ptr_)
-			this->ptr_->bind();
+		right.ptr_ = nullptr;
 		return *this;
 	}
 	// bool conversion
@@ -431,7 +424,7 @@ private:
 
 
 
-class reference_object 
+class reference_object
 {
 
 	DECLARE_REFERENCE_PTR(reference_object);
@@ -539,16 +532,13 @@ public:
 			this->ptr_->virtual_bind();
 	}
 	//move constructor
-	virtual_reference(virtual_reference<ptrT>&& right)
+	virtual_reference(virtual_reference<ptrT>&& right) noexcept
 	{
-		if (this != &right)
-		{
-			this->ptr_ = right.ptr_;
-			right.ptr_ = nullptr;
-		}
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	template<class derT>
-	virtual_reference(basic_smart_ptr<derT>&& right)
+	virtual_reference(basic_smart_ptr<derT>&& right) noexcept
 	{
 		this->ptr_ = right.ptr_;
 		right.ptr_ = nullptr;
@@ -567,13 +557,39 @@ public:
 		return *this;
 	}
 	template<class derT>
-	virtual_reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
+	virtual_reference<ptrT>& operator=(const virtual_reference<derT>& right)
 	{
-		if (this->ptr_)
-			this->ptr_->virtual_release();
-		this->ptr_ = right.ptr_;
-		if (this->ptr_)
-			this->ptr_->virtual_bind();
+		if ( this = &right)
+		{
+			if (this->ptr_)
+				this->ptr_->virtual_release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->virtual_bind();
+		}
+		return *this;
+	}
+	virtual_reference<ptrT>& operator=(virtual_reference<ptrT>&& right) noexcept
+	{
+		if (this != &right)
+		{
+			if (this->ptr_)
+				this->ptr_->virtual_release();
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
+		}
+		return *this;
+	}
+	template<class derT>
+	virtual_reference<ptrT>& operator=(const virtual_reference<derT>&& right) noexcept
+	{
+		if (this != &right)
+		{
+			if (this->ptr_)
+				this->ptr_->virtual_release();
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
+		}
 		return *this;
 	}
 	// bool conversion
@@ -581,7 +597,7 @@ public:
 	{
 		return (this->ptr_ != nullptr);
 	}
-	// operator access overridnig
+	// operator access overriding
 
 	~virtual_reference()
 	{
@@ -624,7 +640,7 @@ virtual_reference<ptrT> virtual_reference<ptrT>::null_ptr;
 
 
 
-class virtual_reference_object 
+class virtual_reference_object
 {
 
   public:
@@ -662,13 +678,13 @@ class virtual_reference_object
 
 
 
-struct struct_reference 
+struct struct_reference
 {
 	DECLARE_REFERENCE_PTR(struct_reference);
 
 public:
 	// nothing special here
-	struct_reference() 
+	struct_reference()
 		: ref_count_(1)
 	{
 	}
@@ -739,12 +755,9 @@ public:
 	// copy constructor
 	interface_reference(const interface_reference<ptrT>& right)
 	{
-		if (this != &right)
-		{
-			this->ptr_ = right.ptr_;
-			if (this->ptr_)
-				this->ptr_->interface_bind();
-		}
+		this->ptr_ = right.ptr_;
+		if (this->ptr_)
+			this->ptr_->interface_bind();
 	}
 	template<class derT>
 	interface_reference(const basic_smart_ptr<derT>& right)
@@ -754,22 +767,19 @@ public:
 			this->ptr_->interface_bind();
 	}
 	//move constructor
-	interface_reference(interface_reference<ptrT>&& right)
+	interface_reference(interface_reference<ptrT>&& right) noexcept
 	{
-		if (this != &right)
-		{
-			this->ptr_ = right.ptr_;
-			right.ptr_ = nullptr;
-		}
+		this->ptr_ = right.ptr_;
+		right.ptr_ = nullptr;
 	}
 	template<class derT>
-	interface_reference(basic_smart_ptr<derT>&& right)
+	interface_reference(basic_smart_ptr<derT>&& right) noexcept
 	{
 		this->ptr_ = right.ptr_;
 		right.ptr_ = nullptr;
 	}
 	// assignment operator
-	interface_reference<ptrT>& operator=(const interface_reference<ptrT>& right)
+	interface_reference<ptrT>& operator=(const interface_reference<ptrT>& right) noexcept
 	{
 		if (this != &right)
 		{
@@ -782,13 +792,39 @@ public:
 		return *this;
 	}
 	template<class derT>
-	interface_reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
+	interface_reference<ptrT>& operator=(const interface_reference<derT>& right) noexcept
 	{
-		if (this->ptr_)
-			this->ptr_->interface_release();
-		this->ptr_ = right.ptr_;
-		if (this->ptr_)
-			this->ptr_->interface_bind();
+		if (this != &right)
+		{
+			if (this->ptr_)
+				this->ptr_->interface_release();
+			this->ptr_ = right.ptr_;
+			if (this->ptr_)
+				this->ptr_->interface_bind();
+		}
+		return *this;
+	}
+	interface_reference<ptrT>& operator=(interface_reference<ptrT>&& right) noexcept
+	{
+		if (this != &right)
+		{
+			if (this->ptr_)
+				this->ptr_->interface_release();
+			this->ptr_ = right.ptr_;
+			right.ptr_ = nullptr;
+		}
+		return *this;
+	}
+	template<class derT>
+	interface_reference<ptrT>& operator=(interface_reference<derT>&& right) noexcept
+	{
+		if (this != &right)// i'll have to assume it latter any way...
+		{
+			if (this->ptr_)
+				this->ptr_->interface_release();
+			this->ptr_ = right.ptr_;// <====       i assumed the before mentioned
+			right.ptr_ = nullptr;
+		}
 		return *this;
 	}
 	// bool conversion
@@ -839,7 +875,7 @@ interface_reference<ptrT> interface_reference<ptrT>::null_ptr;
 
 
 
-class interface_object 
+class interface_object
 {
 
   public:
@@ -872,7 +908,7 @@ class interface_object
 };
 
 
-// Parameterized Class rx::pointers::basic_smart_ptr 
+// Parameterized Class rx::pointers::basic_smart_ptr
 
 //helper functions for creating concrete classes
 // for standard references
@@ -892,18 +928,18 @@ reference<T> create_reference()
 namespace rx
 {
 
-//convinient alias templates
+//convenient alias templates
 template<class Tptr>
 using rx_reference = pointers::reference<Tptr>;
 
-//convinient alias
+//convenient alias
 typedef pointers::struct_reference::smart_ptr rx_struct_ptr;
 
-//convinient alias templates
+//convenient alias templates
 template<class Tptr>
 using rx_interface = pointers::interface_reference<Tptr>;
 
-//convinient alias templates
+//convenient alias templates
 template<class Tptr>
 using rx_virtual = pointers::virtual_reference<Tptr>;
 

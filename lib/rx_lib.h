@@ -186,7 +186,7 @@ public:
 
 	rx_node_id(const rx_uuid_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(rx_node_id&& right);
+	rx_node_id(rx_node_id&& right)  noexcept;
 
 	~rx_node_id();
 

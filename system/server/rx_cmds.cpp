@@ -172,7 +172,7 @@ bool program_context_base::should_run_again ()
 server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
       : time_stamp_(rx_time::now()),
         console_name_(console_name),
-        security_guard_(pointers::_create_new),
+        security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
 	 ,rx_platform_item(console_name)
 
@@ -506,7 +506,14 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 {
 	bool ret = false;
 	RX_ASSERT(!current_);
-	if (line.size() > 0 && line[0] == '@')
+	if (line.empty())
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "\r\n";
+		ret = true;
+
+	}
+	else if (line[0] == '@')
 	{// this is console command
 		ret = rx_platform::rx_gate::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
 	}
@@ -541,17 +548,21 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 	}
 	else if (line == "host")
 	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(out_buffer.unsafe_ptr());
 
-		out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-		string_array hosts;
-		rx_gate::instance().get_host()->get_host_info(hosts);
-		for(const auto& one : hosts)
+		rx_post_function<smart_ptr>([out_buffer,err_buffer](smart_ptr) mutable
 		{
-			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n" ;
-		}
-		ret = true;
+			std::ostream out(out_buffer.unsafe_ptr());
+			std::ostream err(err_buffer.unsafe_ptr());
+
+			out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+			string_array hosts;
+			rx_gate::instance().get_host()->get_host_info(hosts);
+			for (const auto& one : hosts)
+			{
+				out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n";
+			}
+		}, smart_this(), executer_);
+		ret = false;
 	}
 	else
 	{

@@ -206,10 +206,10 @@ bool gnu_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
   return ret;
 }
 
-bool gnu_console_host::write_stdout (const string_type& lines)
+bool gnu_console_host::write_stdout (const void* data, size_t size)
 {
   uint32_t written=0;
-  bool ret = RX_OK == rx_file_write(STDOUT_FILENO,lines.c_str(),lines.size(),&written);
+  bool ret = RX_OK == rx_file_write(STDOUT_FILENO,data,size,&written);
   return ret;
 }
 
