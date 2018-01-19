@@ -444,9 +444,9 @@ class complex_runtime_item : public rx::pointers::reference_object
 
 
 class object_runtime : public object_runtime_t, 
-                       	public rx::poin
+                       	public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 object class. basic implementation of an object");
 
 	DECLARE_REFERENCE_PTR(object_runtime);
@@ -716,7 +716,7 @@ typedef variable_runtime::smart_ptr variable_runtime_ptr;
 
 class domain_runtime : public object_runtime  
 {
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
 system domain class. basic implementation of a domain");
 
 	DECLARE_REFERENCE_PTR(domain_runtime);
@@ -830,7 +830,7 @@ system port class. basic implementation of a port");
 
 class application_runtime : public domain_runtime  
 {
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
 system application class. contains system default application");
 
 	DECLARE_VIRTUAL_REFERENCE_PTR(application_runtime);

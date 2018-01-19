@@ -58,7 +58,7 @@ namespace commands {
 
 
 class server_command : public rx_platform::prog::server_command_base, 
-                       	public rx::poin
+                       	public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(server_command);
 

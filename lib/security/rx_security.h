@@ -266,7 +266,7 @@ class security_auto_context
 
 
 class built_in_security_context : public security_context, 
-                                  	
+                                  	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(built_in_security_context);
 
@@ -291,7 +291,7 @@ class built_in_security_context : public security_context,
 
 
 class unathorized_security_context : public security_context, 
-                                   
+                                     	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(unathorized_security_context);
 	DECLARE_DERIVED_FROM_INTERFACE;

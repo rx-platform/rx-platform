@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -147,7 +147,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      interactive_console_host();
+      interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
 
       virtual ~interactive_console_host();
 

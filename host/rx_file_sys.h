@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_console.h
+*  host\rx_file_sys.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,61 +26,62 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_console_h
-#define rx_gnu_console_h 1
+#ifndef rx_file_sys_h
+#define rx_file_sys_h 1
 
 
 
-// rx_gnu_file_sys
-#include "gnu_hosts/rx_gnu_file_sys.h"
-// rx_interactive
-#include "host/rx_interactive.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 
 
-namespace gnu {
+namespace host {
+
+namespace files {
 
 
 
 
 
-
-class gnu_console_host : public host::interactive::interactive_console_host  
+class file_system_storage : public rx_platform::hosting::rx_platform_storage  
 {
 
   public:
-      gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      file_system_storage();
 
-      virtual ~gnu_console_host();
+      virtual ~file_system_storage();
 
 
-      bool shutdown (const string_type& msg);
+      void get_storage_info (string_type& info);
 
-      bool start (const string_array& args);
+      sys_handle_t get_host_test_file (const string_type& path);
 
-      void get_host_info (string_array& hosts);
+      sys_handle_t get_host_console_script_file (const string_type& path);
 
-      bool is_canceling () const;
+      const string_type& get_license ();
 
-      bool break_host (const string_type& msg);
+      void init_storage ();
 
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
+      void deinit_storage ();
 
 
   protected:
 
+      virtual string_type get_root_folder () = 0;
+
+
   private:
 
 
-      termios ttyold_;
+      string_type root_;
 
 
 };
 
 
-} // namespace gnu
+} // namespace files
+} // namespace host
 
 
 

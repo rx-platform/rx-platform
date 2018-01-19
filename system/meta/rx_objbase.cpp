@@ -660,7 +660,7 @@ string_type domain_runtime::get_type_name () const
 
 namespace_item_attributes domain_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_script | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -696,7 +696,7 @@ string_type application_runtime::get_type_name () const
 
 namespace_item_attributes application_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
 }
 
 

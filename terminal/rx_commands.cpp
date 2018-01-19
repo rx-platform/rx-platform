@@ -124,6 +124,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::sleep_command>());
 	register_command(rx_create_reference<console::console_commands::def_command>());
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
+	register_command(rx_create_reference<console::console_commands::license_command>());
 	register_command(rx_create_reference<testing::test_command>());
 }
 

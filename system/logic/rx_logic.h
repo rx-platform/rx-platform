@@ -65,7 +65,7 @@ typedef meta::checkable_type< rx_platform::logic::program_runtime , false  > pro
 
 
 class program_runtime : public program_runtime_t, 
-                        	public rx::poi
+                        	public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(program_runtime);
 

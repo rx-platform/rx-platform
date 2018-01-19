@@ -187,7 +187,7 @@ typedef pointers::reference<memory_buffer_base< std_vector_allocator> > std_buff
 
 template <class allocT>
 class std_strbuff : public memory_buffer_base<allocT>, 
-                    	pu
+                    	public std::streambuf  
 {
 	DECLARE_REFERENCE_PTR(std_strbuff<allocT>);
 

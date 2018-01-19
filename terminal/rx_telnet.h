@@ -4,7 +4,7 @@
 *
 *  terminal\rx_telnet.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -39,8 +39,6 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
@@ -51,6 +49,8 @@
 #include "terminal/rx_commands.h"
 // rx_vt100
 #include "host/rx_vt100.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 
 
@@ -69,7 +69,7 @@ namespace console {
 
 
 class telnet_security_context : public rx::security::security_context, 
-                                	public
+                                	public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(telnet_security_context);
 
@@ -101,7 +101,7 @@ class telnet_security_context : public rx::security::security_context,
 
 
 class telnet_client : public rx_platform::prog::console_client, 
-                      	public rx::io::
+                      	public rx::io::tcp_socket_std_buffer  
 {
 	DECLARE_REFERENCE_PTR(telnet_client);
 
@@ -645,6 +645,35 @@ pyhton command for interfacing python scripting");
       phyton_command();
 
       virtual ~phyton_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class license_command : public commands::server_command  
+{
+
+	DECLARE_REFERENCE_PTR(license_command);
+
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+displays license info");
+
+  public:
+      license_command();
+
+      virtual ~license_command();
 
 
   protected:

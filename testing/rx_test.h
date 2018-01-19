@@ -61,11 +61,9 @@ typedef uint_fast8_t test_status_t;
 class test_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(test_command);
-	DECLARE_DERIVED_FROM_INTERFACE;
-	DECLARE_CODE_INFO("rx", 0,1,0, "\
-class intendend for console or script usage\r\n\
-responsable of executing the test cases for rx-platform or for your plugis.\r\n\
-test cases are devided into several categories. you can use test command to explore this test cases\
+	DECLARE_CONSOLE_CODE_INFO(0,1,0, "\
+responsible of executing the test cases for rx-platform or for your plug-ins.\r\n\
+test cases are divided into several categories. you can use test command to explore this test cases\
 ");
 
 
@@ -156,7 +154,7 @@ class test_program_context : public rx_platform::prog::program_context_base
 
 
 class test_case : public rx::pointers::reference_object, 
-                  	public rx_platform::ns:
+                  	public rx_platform::ns::rx_platform_item  
 {
 	DECLARE_REFERENCE_PTR(test_case);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;

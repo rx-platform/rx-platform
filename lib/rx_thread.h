@@ -4,7 +4,7 @@
 *
 *  lib\rx_thread.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -98,15 +98,21 @@ typedef pointers::reference<thread> thread_ptr;
 
 
 
-class job_aware_thread : public pointers::interface_object  
+
+class job_thread 
 {
-	DECLARE_INTERFACE_PTR(job_aware_thread);
+	job_thread& operator=(const job_thread&) = delete;
+	job_thread& operator=(job_thread&&) = delete;
+	job_thread(const job_thread&) = delete;
+	job_thread(job_thread&&) = delete;
 
   public:
-      job_aware_thread();
+      job_thread();
 
-      virtual ~job_aware_thread();
+      virtual ~job_thread();
 
+
+      virtual void append (job_ptr pjob) = 0;
 
       virtual void run (int priority = RX_PRIORITY_NORMAL) = 0;
 
@@ -125,40 +131,11 @@ class job_aware_thread : public pointers::interface_object
 
 
 
-
-class job_thread : public job_aware_thread  
-{
-	DECLARE_INTERFACE_PTR(job_thread);
-
-  public:
-      job_thread();
-
-      virtual ~job_thread();
-
-
-      virtual void append (job_ptr pjob) = 0;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class physical_job_thread : public thread, 
-                   
-                        
-                            	public
+                            	public job_thread, 
+                            	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(physical_job_thread);
-
-	DECLARE_DERIVED_FROM_INTERFACE;
 	typedef std::queue<job_ptr> queue_type;
 
   public:
@@ -182,10 +159,6 @@ class physical_job_thread : public thread,
 
       void stop (uint32_t timeout = RX_INFINITE);
 
-      void virtual_bind ();
-
-      void virtual_release ();
-
 
   private:
 
@@ -196,6 +169,8 @@ class physical_job_thread : public thread,
 
 
       locks::event has_job_;
+
+      locks::lockable lock_;
 
 
 };
@@ -234,10 +209,9 @@ class dispatcher_thread : public thread
 
 
 class dispatcher_pool : public job_thread, 
-                        	public poi
+                        	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(dispatcher_pool);
-	DECLARE_DERIVED_FROM_INTERFACE;
 	typedef std::vector<dispatcher_thread*> threads_type;
 
   public:
@@ -258,11 +232,6 @@ class dispatcher_pool : public job_thread,
 
   protected:
 
-      void virtual_bind ();
-
-      void virtual_release ();
-
-
   private:
 
 
@@ -281,8 +250,7 @@ class dispatcher_pool : public job_thread,
 
 
 class timer : public thread, 
-              	public lo
-              	public pointers::ref
+              	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(timer);
 	typedef std::set<jobs::timer_job_ptr> jobs_type;
@@ -315,6 +283,8 @@ class timer : public thread,
       locks::event wake_up_;
 
       bool should_exit_;
+
+      locks::lockable lock_;
 
 
 };

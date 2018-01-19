@@ -4,7 +4,7 @@
 *
 *  lib\rx_thread.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -123,19 +123,6 @@ job_thread::~job_thread()
 
 
 
-// Class rx::threads::job_aware_thread 
-
-job_aware_thread::job_aware_thread()
-{
-}
-
-
-job_aware_thread::~job_aware_thread()
-{
-}
-
-
-
 // Class rx::threads::physical_job_thread 
 
 physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
@@ -160,26 +147,27 @@ uint32_t physical_job_thread::handler ()
 	{
 		queued.clear();
 
-		wait(queued);
-
-		for (auto& obj : queued)
+		if (wait(queued))
 		{
-			if (!obj)
+			for (auto& obj : queued)
 			{
-				exit = true;
-				break;
-			}
+				if (!obj)
+				{
+					exit = true;
+					break;
+				}
 
-			if (!obj->is_canceled())
-			{
-				rx_security_handle_t sec = obj->get_security_context();
-				if (sec)
-					rx_push_security_context(sec);
-				current_ = obj;
-				obj->process();
-				current_ = job_ptr::null_ptr;
-				if (sec)
-					rx_pop_security_context();
+				if (!obj->is_canceled())
+				{
+					rx_security_handle_t sec = obj->get_security_context();
+					if (sec)
+						rx_push_security_context(sec);
+					current_ = obj;
+					obj->process();
+					current_ = job_ptr::null_ptr;
+					if (sec)
+						rx_pop_security_context();
+				}
 			}
 		}
 	}
@@ -198,11 +186,13 @@ void physical_job_thread::end (uint32_t timeout)
 
 void physical_job_thread::append (job_ptr pjob)
 {
-	locks::auto_lock dummy(this);
+	locks::auto_lock dummy(&lock_);
+
+	bool was_empty = queue_.empty();
 
 	queue_.push(pjob);
 
-	if (queue_.size() == 1)
+	if (was_empty)
 		has_job_.set();
 }
 
@@ -211,7 +201,7 @@ bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 	if (RX_WAIT_0 != has_job_.wait_handle(timeout))
 		return false;
 
-	locks::auto_lock dummy(this);
+	locks::auto_lock dummy(&lock_);
 
 	RX_ASSERT(!queue_.empty());
 	while (!queue_.empty())
@@ -230,7 +220,7 @@ void physical_job_thread::stop (uint32_t timeout)
 	if (current_)
 		current_->cancel();
 	wait_handle(timeout);
-	locks::auto_lock dummy(this);
+	locks::auto_lock dummy(&lock_);
 	while (!queue_.empty())
 	{
 		if (queue_.front())
@@ -239,16 +229,6 @@ void physical_job_thread::stop (uint32_t timeout)
 		}
 		queue_.pop();
 	}
-}
-
-void physical_job_thread::virtual_bind ()
-{
-	bind();
-}
-
-void physical_job_thread::virtual_release ()
-{
-	release();
 }
 
 
@@ -291,16 +271,6 @@ void dispatcher_pool::append (job_ptr pjob)
 {
 	job* job = pjob->get_unsafe_ptr();
 	rx_dispatch_function(dispatcher_,execute_job_c, job);
-}
-
-void dispatcher_pool::virtual_bind ()
-{
-	bind();
-}
-
-void dispatcher_pool::virtual_release ()
-{
-	release();
 }
 
 
@@ -351,7 +321,7 @@ uint32_t timer::handler ()
 
 	for (;;)
 	{
-		lock();
+		lock_.lock();
 
 		uint64_t min = 0ull - 1ull;
 
@@ -385,7 +355,7 @@ uint32_t timer::handler ()
 		}
 
 
-		unlock();
+		lock_.unlock();
 
 		wake_up_.wait_handle_us(min);
 
@@ -419,15 +389,17 @@ void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period
 	job->unlock();
 
 	
-	lock();
+	lock_.lock();
 
 	jobs_.emplace(job);
 	wake_up();
 
-	unlock();
+	lock_.unlock();
 }
 
 
 } // namespace threads
 } // namespace rx
+
+
 

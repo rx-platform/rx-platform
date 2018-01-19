@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -45,8 +45,9 @@ namespace interactive {
 
 // Class host::interactive::interactive_console_host 
 
-interactive_console_host::interactive_console_host()
+interactive_console_host::interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
       : exit_(false)
+	, hosting::rx_platform_host(storage)
 {
 }
 
@@ -118,7 +119,7 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	security::security_context_ptr ctx = security::active_security();
 	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
 	std::cout << ANSI_COLOR_RESET "\r\n";
-	std::cout << "Msg:" << msg << "\r\n";
+	std::cout << "Message:" << msg << "\r\n";
 	std::cout.flush();
 	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
@@ -153,36 +154,40 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 		string_type file_name;
 		in >> file_name;
 		file_name = "platform script one.rxs";
-		sys_handle_t file = get_host_console_script_file(file_name);
-		if (file)
+		auto storage = get_storage();
+		if (storage)
 		{
-			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-			if (buffer->fill_with_file_content(file))
+			sys_handle_t file = storage->get_host_console_script_file(file_name);
+			if (file)
 			{
-				out << "file loadad in memory...\r\n";
-				out << "Running file script:" << file_name;
-				out << "\r\n=====================================\r\n";
-
-				while (!buffer->eof())
+				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+				if (buffer->fill_with_file_content(file))
 				{
-					string_type line;
-					buffer->read_line(line);
-					out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
-				}
+					out << "file loaded in memory...\r\n";
+					out << "Running file script:" << file_name;
+					out << "\r\n=====================================\r\n";
 
-				out << "=====================================\r\nScript done.\r\n";
-				ret = true;
+					while (!buffer->eof())
+					{
+						string_type line;
+						buffer->read_line(line);
+						out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
+					}
+
+					out << "=====================================\r\nScript done.\r\n";
+					ret = true;
+				}
+				else
+				{
+					err << "error reading file content\r\n";
+				}
+				rx_file_close(file);
+				return ret;
 			}
 			else
 			{
-				err << "error reading file contet\r\n";
+				err << "error opening file\r\n";
 			}
-			rx_file_close(file);
-			return ret;
-		}
-		else
-		{
-			err << "error oppening file\r\n";
 		}
 	}
 	else
@@ -238,6 +243,15 @@ void interactive_console_client::run_interactive ()
 {
 
 	security::security_auto_context dummy(security_context_);
+
+	host_->write_stdout("\
+\r\n\
+Copyright(C) 2018  Dusan Ciric\r\n\r\n\
+This program comes with ABSOLUTELY NO WARRANTY; for details type `license'.\r\n\
+This is free software, and you are welcome to redistribute it\r\n\
+under certain conditions; type `license' for details.\r\n\
+\r\n" 
+	);
 
 	string_type temp;
 	get_wellcome(temp);

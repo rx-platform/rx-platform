@@ -40,7 +40,7 @@ namespace locks {
 
 
 //	basic class that implements slim lock mechanism that is
-//	reenternat, has no virtual constructor so it is smaller
+//	reentrant, has no virtual constructor so it is smaller
 
 
 
@@ -71,7 +71,7 @@ class slim_lock
 
 
 //	basic class that implements slim lock mechanism that is
-//	reenternat, has virtual constructor so can be inherited
+//	reentrant, has virtual constructor so can be inherited
 //	from
 
 

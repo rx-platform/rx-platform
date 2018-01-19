@@ -4,7 +4,7 @@
 *
 *  lib\rx_job.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,8 +31,6 @@
 
 
 
-// rx_lock
-#include "lib/rx_lock.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_thread
@@ -114,8 +112,7 @@ class job : private pointers::reference_object
 
 
 
-class timer_job : public job, 
-                  	publi
+class timer_job : public job  
 {
 	DECLARE_REFERENCE_PTR(timer_job);
 
@@ -128,6 +125,10 @@ class timer_job : public job,
       virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove) = 0;
 
       void set_executer (threads::job_thread* executer);
+
+      void lock ();
+
+      void unlock ();
 
 
   protected:
@@ -144,6 +145,9 @@ class timer_job : public job,
 
 
       threads::timer *my_timer_;
+
+
+      locks::lockable lock_;
 
 
     friend class threads::timer;

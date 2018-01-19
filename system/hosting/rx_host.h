@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -42,6 +42,8 @@
 
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -56,67 +58,6 @@ typedef rx::pointers::reference<security_context> execute_context_ptr;
 namespace rx_platform {
 
 namespace hosting {
-
-
-
-
-
-
-class rx_platform_host 
-{
-
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-
-  public:
-      rx_platform_host();
-
-      virtual ~rx_platform_host();
-
-
-      virtual void get_host_info (string_array& hosts);
-
-      virtual void server_started_event ();
-
-      virtual void server_stopping_event ();
-
-      virtual bool shutdown (const string_type& msg) = 0;
-
-      virtual void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items) = 0;
-
-      virtual void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items) = 0;
-
-      virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      virtual sys_handle_t get_host_test_file (const string_type& path);
-
-      virtual bool start (const string_array& args) = 0;
-
-      virtual sys_handle_t get_host_console_script_file (const string_type& path);
-
-      virtual bool break_host (const string_type& msg) = 0;
-
-
-      rx_platform_host * get_parent ()
-      {
-        return parent_;
-      }
-
-
-
-  protected:
-
-  private:
-      rx_platform_host(const rx_platform_host &right);
-
-      rx_platform_host & operator=(const rx_platform_host &right);
-
-
-
-      rx_platform_host *parent_;
-
-
-};
-
 
 
 
@@ -138,6 +79,106 @@ class host_security_context : public rx::security::built_in_security_context
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class rx_platform_storage : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(rx_platform_storage);
+
+  public:
+      rx_platform_storage();
+
+      virtual ~rx_platform_storage();
+
+
+      virtual void get_storage_info (string_type& info) = 0;
+
+      virtual sys_handle_t get_host_test_file (const string_type& path);
+
+      virtual sys_handle_t get_host_console_script_file (const string_type& path);
+
+      virtual const string_type& get_license () = 0;
+
+      virtual void init_storage ();
+
+      virtual void deinit_storage ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class rx_platform_host 
+{
+
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
+  public:
+      rx_platform_host (rx_platform_storage::smart_ptr storage);
+
+      virtual ~rx_platform_host();
+
+
+      virtual void get_host_info (string_array& hosts);
+
+      virtual void server_started_event ();
+
+      virtual void server_stopping_event ();
+
+      virtual bool shutdown (const string_type& msg) = 0;
+
+      virtual void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items) = 0;
+
+      virtual void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items) = 0;
+
+      virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      virtual bool start (const string_array& args) = 0;
+
+      virtual bool break_host (const string_type& msg) = 0;
+
+
+      rx_platform_host * get_parent ()
+      {
+        return parent_;
+      }
+
+
+      rx_reference<rx_platform_storage> get_storage () const
+      {
+        return storage_;
+      }
+
+
+
+  protected:
+
+  private:
+      rx_platform_host(const rx_platform_host &right);
+
+      rx_platform_host & operator=(const rx_platform_host &right);
+
+
+
+      rx_platform_host *parent_;
+
+      rx_reference<rx_platform_storage> storage_;
 
 
 };

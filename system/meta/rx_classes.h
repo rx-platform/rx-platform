@@ -412,7 +412,7 @@ typedef std::unique_ptr<struct_attribute> struct_type_unique_ptr;
 
 template <class metaT, bool _browsable>
 class base_complex_type : public checkable_type<metaT, _browsable>, 
-                          	protected rx::p
+                          	protected rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(base_complex_type);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;

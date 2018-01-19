@@ -214,7 +214,7 @@ class system_server_item : public rx_platform::ns::rx_platform_item
 
 
 class simple_platform_item : public rx_platform::ns::rx_platform_item, 
-                             	public rx
+                             	public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(simple_platform_item);
 

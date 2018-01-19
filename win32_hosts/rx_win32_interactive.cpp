@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -61,9 +61,10 @@ namespace win32 {
 
 // Class win32::win32_console_host 
 
-win32_console_host::win32_console_host()
+win32_console_host::win32_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
       : out_handle_(NULL),
         in_handle_(NULL)
+	, host::interactive::interactive_console_host(storage)
 {
 }
 
@@ -81,14 +82,6 @@ bool win32_console_host::shutdown (const string_type& msg)
 		return true;
 	}
 	return false;
-}
-
-sys_handle_t win32_console_host::get_host_test_file (const string_type& path)
-{
-	string_type full_path;
-	rx_combine_paths(RX_TEST_SCRIPTS_PATH, path, full_path);
-	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	return file;
 }
 
 bool win32_console_host::start (const string_array& args)
@@ -152,14 +145,6 @@ bool win32_console_host::start (const string_array& args)
 
 	return true;
 
-}
-
-sys_handle_t win32_console_host::get_host_console_script_file (const string_type& path)
-{
-	string_type full_path;
-	rx_combine_paths(RX_CONSOLE_SCRIPTS_PATH, path, full_path);
-	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	return file;
 }
 
 void win32_console_host::get_host_info (string_array& hosts)

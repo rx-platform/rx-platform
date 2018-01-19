@@ -4,7 +4,7 @@
 *
 *  lib\rx_job.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -102,8 +102,16 @@ timer_job::~timer_job()
 
 void timer_job::set_executer (threads::job_thread* executer)
 {
-	locks::auto_lock dummy(this);
+	locks::auto_lock dummy(&lock_);
 	executer_ = executer;
+}
+
+void timer_job::lock ()
+{
+}
+
+void timer_job::unlock ()
+{
 }
 
 

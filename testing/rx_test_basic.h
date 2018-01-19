@@ -99,7 +99,7 @@ namespace meta_test {
 
 
 
- class object_creation_test : public test_case 
+ class object_creation_test : public test_case  
  {
 	 DECLARE_REFERENCE_PTR(object_creation_test)
 	 DECLARE_TEST_CODE_INFO(0, 1, 0, "\
@@ -127,7 +127,7 @@ basic testing of callback capabilities.");
 
 
 
- class meta_model_test_category : public test_category 
+ class meta_model_test_category : public test_category  
  {
 
    public:

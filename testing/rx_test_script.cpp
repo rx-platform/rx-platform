@@ -137,50 +137,54 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 	else
 	{
 		file_name = "rx-script-1.rxs";
-		sys_handle_t file = rx_gate::instance().get_host()->get_host_test_file(file_name);
-		if (file)
+		auto storage = rx_gate::instance().get_host()->get_storage();
+		if (storage)
 		{
-			memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-			if (buffer->fill_with_file_content(file))
+			sys_handle_t file = storage->get_host_test_file(file_name);
+			if (file)
 			{
-				out << "file loadad in memory...\r\n";
-				out << "Running file script:" << file_name;
-				out << "\r\n=====================================\r\n";
-
-				while (!buffer->eof())
+				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+				if (buffer->fill_with_file_content(file))
 				{
-					string_type line;
-					buffer->read_line(line);
-					out << "\r\n" << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
+					out << "file loaded in memory...\r\n";
+					out << "Running file script:" << file_name;
+					out << "\r\n=====================================\r\n";
 
-					prog::server_console_program temp_prog(line);
-
-					prog::program_context_base_ptr ctx_script = temp_prog.create_program_context(
-						prog::server_program_holder_ptr::null_ptr,
-						prog::program_context_base_ptr::null_ptr,
-						ctx->get_current_directory(),
-						ctx->get_out(),
-						ctx->get_err(),
-						prog::console_client::smart_ptr::null_ptr);
-
-					bool ret = temp_prog.process_program(ctx_script, rx_time::now(), false);
-					if (!ret)
+					while (!buffer->eof())
 					{
-						ret = false;
-						break;
-					}
-					ret = true;
-				}
+						string_type line;
+						buffer->read_line(line);
+						out << "\r\n" << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
 
-				out << RX_CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
+						prog::server_console_program temp_prog(line);
+
+						prog::program_context_base_ptr ctx_script = temp_prog.create_program_context(
+							prog::server_program_holder_ptr::null_ptr,
+							prog::program_context_base_ptr::null_ptr,
+							ctx->get_current_directory(),
+							ctx->get_out(),
+							ctx->get_err(),
+							prog::console_client::smart_ptr::null_ptr);
+
+						bool ret = temp_prog.process_program(ctx_script, rx_time::now(), false);
+						if (!ret)
+						{
+							ret = false;
+							break;
+						}
+						ret = true;
+					}
+
+					out << RX_CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
+				}
+				else
+				{
+					err << "error reading file content\r\n";
+				}
+				rx_file_close(file);
+				ctx->set_passed();
+				return ret;
 			}
-			else
-			{
-				err << "error reading file contet\r\n";
-			}
-			rx_file_close(file);
-			ctx->set_passed();
-			return ret;
 		}
 		return true;
 	}

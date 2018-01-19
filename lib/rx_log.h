@@ -154,7 +154,7 @@ class log_subscriber : public pointers::interface_object
 
 
 class stream_log_subscriber : public log_subscriber, 
-                              	publ
+                              	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(stream_log_subscriber);
 	DECLARE_DERIVED_FROM_INTERFACE;
@@ -184,7 +184,7 @@ class stream_log_subscriber : public log_subscriber,
 
 
 class cache_log_subscriber : public log_subscriber, 
-                             	publi
+                             	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(cache_log_subscriber);
 	DECLARE_DERIVED_FROM_INTERFACE;

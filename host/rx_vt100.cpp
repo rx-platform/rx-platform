@@ -32,6 +32,7 @@
 // rx_vt100
 #include "host/rx_vt100.h"
 
+#define VT100_CURCOR_UP ""
 
 
 namespace host {

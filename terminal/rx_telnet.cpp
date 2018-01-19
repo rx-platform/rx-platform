@@ -4,7 +4,7 @@
 *
 *  terminal\rx_telnet.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *
 *  This file is part of rx-platform
@@ -57,11 +57,11 @@ namespace console {
 #define WONT              ((char)0xfc)
 #define WILL            ((char)0xfb)
 
-#define SE	((char)240)//	End of subnegotiation parameters.
+#define SE	((char)240)//	End of sub-negotiation parameters.
 #define NOP	((char)241)//	No operation
 #define DM	((char)242)//	Data mark.Indicates the position of
 #define LINEMODE  ((char)34)
-		/*					a Synch event within the data stream.This
+		/*					a Sync event within the data stream.This
 							should always be accompanied by a TCP
 							urgent notification.*/
 #define BRK	((char)243)//	Break.Indicates that the "break"
@@ -80,10 +80,10 @@ namespace console {
 							//stream back to but not including the previous CRLF.
 #define GA	((char)249)//	Go ahead.Used, under certain circumstances,
 							/*to tell the other end that it can transmit.*/
-#define SB	((char)250)//	Subnegotiation of the indicated option follows.
+#define SB	((char)250)//	Sub-negotiation of the indicated option follows.
 
 
-#define ECHO            ((char)0x01)
+#define TELNET_ECHO            ((char)0x01)
 #define SUPPRESS_GO_AHEAD ((char)0x03)
 #define TERMINAL_TYPE ((char)24)
 #define NAWS ((char)31)
@@ -97,7 +97,7 @@ const char* get_IAC_name(char code)
 	static char buffer[0x20];
 	switch (code)
 	{
-	case ECHO:
+	case TELNET_ECHO:
 		return "ECHO";
 	case SUPPRESS_GO_AHEAD:
 		return "SUPPRESS_GO_AHEAD";
@@ -139,7 +139,7 @@ const char* get_IAC_what(char code)
 char g_password_prompt[] = "Enter Password:";
 
 
-char g_server_telnet_idetification[] = { IAC, WILL, ECHO,
+char g_server_telnet_idetification[] = { IAC, WILL, TELNET_ECHO,
 IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 //IAC, SB, LINEMODE, 1, 0, IAC, SE /* IAC SB LINEMODE MODE 0 IAC SE */};
 #define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
@@ -165,7 +165,6 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 {
 	telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
 	ret->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
-	//ret->set_receive_timeout(2000);
 	return ret;
 }
 
@@ -286,7 +285,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 			if (buff[0] == 3)
 			{// Ctrl+C
-			 // canacel current stuff
+			 // cancel current stuff
 				cancel_command(out_buffer, err_buffer, security_context_);
 
 				send(err_buffer);
@@ -325,14 +324,14 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		//ATLTRACE(L);
 		if (buff[1] >= WILL)
 		{
-			if (buff[2] == ECHO)
+			if (buff[2] == TELNET_ECHO)
 			{
 				if (buff[1] == DONT)
 				{
 					if (send_echo_)
 					{
 						send_echo_ = false;
-						char resp[] = { IAC, WONT, ECHO };
+						char resp[] = { IAC, WONT, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 
@@ -344,7 +343,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 					if (!send_echo_)
 					{
 						send_echo_ = true;
-						char resp[] = { IAC, WILL, ECHO };
+						char resp[] = { IAC, WILL, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 						send(buff);
@@ -506,14 +505,14 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 		//ATLTRACE(L);
 		if (buff[1] >= WILL)
 		{
-			if (buff[2] == ECHO)
+			if (buff[2] == TELNET_ECHO)
 			{
 				if (buff[1] == DONT)
 				{
 					if (send_echo_)
 					{
 						send_echo_ = false;
-						char resp[] = { IAC, WONT, ECHO };
+						char resp[] = { IAC, WONT, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 
@@ -525,7 +524,7 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 					if (!send_echo_)
 					{
 						send_echo_ = true;
-						char resp[] = { IAC, WILL, ECHO };
+						char resp[] = { IAC, WILL, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 						send(buff);
@@ -798,7 +797,6 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 
 
 	string_type pera = g_complie_time;
-	string_type temp = "aaa";
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Name       : " << item->get_name() << "\r\n";
@@ -1219,7 +1217,6 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 
 
 	string_type pera = g_complie_time;
-	string_type temp = "aaa";
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Name       : " << directory->get_name() << "\r\n";
@@ -1400,8 +1397,8 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	string_type sub_command;
 	in >> sub_command;
 	if (sub_command.empty())
-	{// "jbg prazno
-		out << "Prazno je\r\n";
+	{// empty
+		out << get_help();
 	}
 	else if (sub_command == "test")
 	{// testing stuff
@@ -1506,8 +1503,8 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 	string_type sub_command;
 	in >> sub_command;
 	if (sub_command.empty())
-	{// "jbg prazno
-		out << "Prazno je\r\n";
+	{// empty
+		out << get_help();
 	}
 	else if (sub_command == "active")
 	{// testing stuff
@@ -1548,7 +1545,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 			prefix = ANSI_COLOR_CYAN;
 
 		char buff[0x20];
-		snprintf(buff, sizeof(buff), "[%llu]",sec_handle);
+		snprintf(buff, sizeof(buff), "[%" PRIxPTR "]",sec_handle);
 		table[i + 1].emplace_back(buff);
 		if (prefix.empty())
 			table[i + 1].emplace_back(name);
@@ -1755,6 +1752,45 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 		return false;
 	}
 	return true;
+}
+
+
+// Class terminal::console::console_commands::license_command
+
+license_command::license_command()
+	: server_command("license")
+{
+}
+
+
+license_command::~license_command()
+{
+}
+
+
+
+bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	auto storage = rx_gate::instance().get_host()->get_storage();
+	if (storage)
+	{
+		const string_type& lic_info = storage->get_license();
+		if (lic_info.empty())
+		{
+			err << "No valid LICENSE file in directory!!!";
+			return false;
+		}
+		else
+		{
+			out << lic_info;
+			return true;
+		}
+	}
+	else
+	{
+		err << "No LICENSE!!!";
+		return false;
+	}
 }
 
 

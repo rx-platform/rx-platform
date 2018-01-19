@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -33,6 +33,8 @@
 
 // rx_interactive
 #include "host/rx_interactive.h"
+// rx_win32_file_sys
+#include "win32_hosts/rx_win32_file_sys.h"
 
 
 
@@ -42,22 +44,19 @@ namespace win32 {
 
 
 
+
 class win32_console_host : public host::interactive::interactive_console_host  
 {
 
   public:
-      win32_console_host();
+      win32_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
 
       virtual ~win32_console_host();
 
 
       bool shutdown (const string_type& msg);
 
-      sys_handle_t get_host_test_file (const string_type& path);
-
       bool start (const string_array& args);
-
-      sys_handle_t get_host_console_script_file (const string_type& path);
 
       void get_host_info (string_array& hosts);
 

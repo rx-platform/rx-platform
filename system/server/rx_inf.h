@@ -127,7 +127,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 class domains_pool : public rx::threads::job_thread, 
-                     	public ob
+                     	public objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;

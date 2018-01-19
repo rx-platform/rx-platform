@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_console.h
+*  gnu_hosts\rx_gnu_file_sys.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,15 +26,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_console_h
-#define rx_gnu_console_h 1
+#ifndef rx_gnu_file_sys_h
+#define rx_gnu_file_sys_h 1
 
 
 
-// rx_gnu_file_sys
-#include "gnu_hosts/rx_gnu_file_sys.h"
-// rx_interactive
-#include "host/rx_interactive.h"
+// rx_file_sys
+#include "host/rx_file_sys.h"
 
 
 
@@ -44,37 +42,21 @@ namespace gnu {
 
 
 
-
-class gnu_console_host : public host::interactive::interactive_console_host  
+class gnu_file_system_storage : public host::files::file_system_storage  
 {
 
   public:
-      gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      gnu_file_system_storage();
 
-      virtual ~gnu_console_host();
-
-
-      bool shutdown (const string_type& msg);
-
-      bool start (const string_array& args);
-
-      void get_host_info (string_array& hosts);
-
-      bool is_canceling () const;
-
-      bool break_host (const string_type& msg);
-
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
+      virtual ~gnu_file_system_storage();
 
 
   protected:
 
+      string_type get_root_folder ();
+
+
   private:
-
-
-      termios ttyold_;
 
 
 };

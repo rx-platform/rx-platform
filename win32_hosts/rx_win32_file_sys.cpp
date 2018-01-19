@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_console.h
+*  win32_hosts\rx_win32_file_sys.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,62 +26,50 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_console_h
-#define rx_gnu_console_h 1
+#include "stdafx.h"
+
+
+// rx_win32_file_sys
+#include "win32_hosts/rx_win32_file_sys.h"
 
 
 
-// rx_gnu_file_sys
-#include "gnu_hosts/rx_gnu_file_sys.h"
-// rx_interactive
-#include "host/rx_interactive.h"
+namespace win32 {
 
+// Class win32::win32_file_system_storage 
 
-
-namespace gnu {
-
-
-
-
-
-
-class gnu_console_host : public host::interactive::interactive_console_host  
+win32_file_system_storage::win32_file_system_storage()
 {
-
-  public:
-      gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
-
-      virtual ~gnu_console_host();
+}
 
 
-      bool shutdown (const string_type& msg);
-
-      bool start (const string_array& args);
-
-      void get_host_info (string_array& hosts);
-
-      bool is_canceling () const;
-
-      bool break_host (const string_type& msg);
-
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
-
-
-  protected:
-
-  private:
-
-
-      termios ttyold_;
-
-
-};
-
-
-} // namespace gnu
+win32_file_system_storage::~win32_file_system_storage()
+{
+}
 
 
 
-#endif
+string_type win32_file_system_storage::get_root_folder ()
+{
+	char buff[1024];
+
+	if (GetModuleFileNameA(NULL, buff, 1024))
+	{
+		size_t j = strlen(buff);
+		for (size_t i = j - 1; i > 0; i--)
+		{
+			if (buff[i] == L'\\')
+			{
+				buff[i + 1] = L'\0';
+				break;
+			}
+		}
+		return buff;
+	}
+	else
+		return "";
+}
+
+
+} // namespace win32
+

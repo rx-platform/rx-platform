@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -42,20 +42,23 @@ namespace hosting {
 
 // Class rx_platform::hosting::rx_platform_host 
 
-rx_platform_host::rx_platform_host()
-      : parent_(nullptr)
-{
-}
-
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
 {
 	RX_ASSERT(false);
 }
 
+rx_platform_host::rx_platform_host (rx_platform_storage::smart_ptr storage)
+      : parent_(nullptr)
+	, storage_(storage)
+{
+	storage_->init_storage();
+}
+
 
 rx_platform_host::~rx_platform_host()
 {
+	storage_->deinit_storage();
 }
 
 
@@ -88,16 +91,6 @@ bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_
 	return true;
 }
 
-sys_handle_t rx_platform_host::get_host_test_file (const string_type& path)
-{
-	return 0;
-}
-
-sys_handle_t rx_platform_host::get_host_console_script_file (const string_type& path)
-{
-	return 0;
-}
-
 
 // Class rx_platform::hosting::host_security_context 
 
@@ -120,6 +113,38 @@ bool host_security_context::is_system () const
 {
   return true;
 
+}
+
+
+// Class rx_platform::hosting::rx_platform_storage 
+
+rx_platform_storage::rx_platform_storage()
+{
+}
+
+
+rx_platform_storage::~rx_platform_storage()
+{
+}
+
+
+
+sys_handle_t rx_platform_storage::get_host_test_file (const string_type& path)
+{
+	return 0;
+}
+
+sys_handle_t rx_platform_storage::get_host_console_script_file (const string_type& path)
+{
+	return 0;
+}
+
+void rx_platform_storage::init_storage ()
+{
+}
+
+void rx_platform_storage::deinit_storage ()
+{
 }
 
 
