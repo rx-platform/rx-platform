@@ -199,19 +199,38 @@ void relations_hash_data::remove_from_hash_data (const rx_node_id& id)
 
 void relations_hash_data::change_hash_data (const rx_node_id& id, const rx_node_id& first_backward_old, const rx_node_id& first_backward_new)
 {
+	remove_from_hash_data(id);
+	add_to_hash_data(id, first_backward_new);
 }
 
 bool relations_hash_data::is_backward_from (const rx_node_id& id, const rx_node_id& parent)
 {
+	auto it = backward_hash_.find(id);
+	if (it != backward_hash_.end())
+	{
+		return (it->second->find(parent) != it->second->end());
+	}
 	return false;
 }
 
 void relations_hash_data::get_full_forward (const rx_node_id& id, std::vector< rx_node_id>& result)
 {
+	auto it = forward_hash_.find(id);
+	if (it != forward_hash_.end())
+	{
+		for (const auto& one : *(it->second))
+			result.push_back(one);
+	}
 }
 
 void relations_hash_data::get_full_backward (const rx_node_id& id, std::vector< rx_node_id>& result)
 {
+	auto it = backward_hash_.find(id);
+	if (it != backward_hash_.end())
+	{
+		for (const auto& one : *(it->second))
+			result.push_back(one);
+	}
 }
 
 

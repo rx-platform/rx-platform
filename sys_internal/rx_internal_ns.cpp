@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_ns.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -82,18 +82,18 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 
 	dirs.clear();
 	items.clear();
-	items.push_back(rx_gate::instance().get_manager().get_unassigned_app());
-	items.push_back(rx_gate::instance().get_manager().get_unassigned_domain());
+	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_app()->get_item_ptr());
+	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_domain()->get_item_ptr());
 	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
-	root_directories_.push_back(unassigned);
+	//root_directories_.emplace_back(unassigned);
 
 	dirs.clear();
 	items.clear();
 	std::vector<prog::command_ptr> commands;
 	terminal::commands::server_command_manager::instance()->get_commands(commands);
 	for (auto one : commands)
-		items.push_back(one);
-	items.push_back(terminal::commands::server_command_manager::instance());
+		items.emplace_back(one->get_item_ptr());
+	items.emplace_back(terminal::commands::server_command_manager::instance()->get_item_ptr());
 	namespace_directory::smart_ptr bin(RX_NS_BIN_NAME, dirs, items);
 
 	dirs.clear();
@@ -109,7 +109,7 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 		testing::testing_enviroment::instance().collect_test_cases(one, cases);
 		for (auto tcase : cases)
 		{
-			items.push_back(tcase);
+			items.emplace_back(tcase->get_item_ptr());
 		}
 		dirs.push_back(namespace_directory::smart_ptr(one, dummy_empty, items));
 	}
@@ -119,17 +119,17 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	dirs.clear();
 	items.clear();
 	sub_items.clear();// just in case
-	sub_items.push_back(rx_gate::instance().get_manager().get_system_app());
-	sub_items.push_back(rx_gate::instance().get_manager().get_system_domain());
-	sub_items.push_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
+	sub_items.emplace_back(rx_gate::instance().get_manager().get_system_app()->get_item_ptr());
+	sub_items.emplace_back(rx_gate::instance().get_manager().get_system_domain()->get_item_ptr());
+	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
 	 //io_pool(IO_POOL_NAME, IO_POOL_ID, true);
-	sub_items.push_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool());
-	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool();
+	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_item_ptr());
+	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool()->get_item_ptr();
 	if(general_pool)
-		sub_items.push_back(general_pool);
-	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers();
+		sub_items.emplace_back(general_pool);
+	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers()->get_item_ptr();
 	if(workers)
-		sub_items.push_back(workers);
+		sub_items.emplace_back(workers);
 	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);
 
 
@@ -150,10 +150,10 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	host->get_host_objects(host_objects);
 
 	for (auto one : host_classes)
-		items.push_back(one);
+		items.emplace_back(one->get_item_ptr());
 
 	for (auto one : host_objects)
-		items.push_back(one);
+		items.emplace_back(one->get_item_ptr());
 
 	namespace_directory::smart_ptr host_dir(RX_NS_HOST_NAME, dirs, items);
 
@@ -288,8 +288,8 @@ simple_platform_item::simple_platform_item (const string_type& name, const rx_va
       : value_(value),
         attributes_(attributes),
         type_name_(type_name),
-        created_time_(created_time)
-	, rx_platform_item(name)
+        created_time_(created_time),
+        name_(name)
 {
 }
 
@@ -331,6 +331,11 @@ bool simple_platform_item::is_browsable () const
 	return false;
 }
 
+string_type simple_platform_item::get_name () const
+{
+	return name_;
+}
+
 //template simple_platform_item< rx_platform::objects::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
 // Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
 
@@ -360,29 +365,115 @@ void runtime_simple_platform_item<T,class_name_idx>::get_class_info (string_type
 template <class T, int class_name_idx>
 string_type runtime_simple_platform_item<T,class_name_idx>::get_type_name ()
 {
+  return "simple";
 }
 
 template <class T, int class_name_idx>
 values::rx_value runtime_simple_platform_item<T,class_name_idx>::get_value ()
 {
+  return values::rx_value {};
 }
 
 template <class T, int class_name_idx>
 namespace_item_attributes runtime_simple_platform_item<T,class_name_idx>::get_attributes ()
 {
+  return 0;
 }
 
 template <class T, int class_name_idx>
 bool runtime_simple_platform_item<T,class_name_idx>::generate_json (std::ostream& def, std::ostream& err)
 {
+  return false;
 }
 
 template <class T, int class_name_idx>
 bool runtime_simple_platform_item<T,class_name_idx>::is_browsable ()
 {
+  return false;
 }
 
 
+// Parameterized Class sys_internal::internal_ns::rx_item_implementation 
+
+template <class TImpl>
+rx_item_implementation<TImpl>::rx_item_implementation (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, TImpl impl)
+      : impl_(impl)
+{
+}
+
+template <class TImpl>
+rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
+      : impl_(impl)
+{
+}
+
+
+template <class TImpl>
+rx_item_implementation<TImpl>::~rx_item_implementation()
+{
+}
+
+
+
+template <class TImpl>
+void rx_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+template <class TImpl>
+string_type rx_item_implementation<TImpl>::get_type_name () const
+{
+	return impl_->get_type_name();
+}
+
+template <class TImpl>
+values::rx_value rx_item_implementation<TImpl>::get_value () const
+{
+	return impl_->get_value();
+}
+
+template <class TImpl>
+namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
+{
+	return impl_->get_attributes();
+}
+
+template <class TImpl>
+bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+{
+	return impl_->generate_json(def, err);
+}
+
+template <class TImpl>
+bool rx_item_implementation<TImpl>::is_browsable () const
+{
+	return impl_->is_browsable();
+}
+
+template <class TImpl>
+rx_time rx_item_implementation<TImpl>::get_created_time () const
+{
+	return impl_->get_created_time();
+}
+
+template <class TImpl>
+string_type rx_item_implementation<TImpl>::get_name () const
+{
+	return impl_->get_name();
+}
+
+template class rx_item_implementation<objects::domain_runtime::smart_ptr>;
+template class rx_item_implementation<objects::application_runtime_ptr>;
+template class rx_item_implementation<objects::object_runtime_ptr>;
+template class rx_item_implementation<testing::test_case::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<application_class, false>::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<domain_class, false>::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<struct_class,false>::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<object_class, false>::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<variable_class, false>::smart_ptr>;
+template class rx_item_implementation<meta::base_complex_type<port_class, false>::smart_ptr>;
+template class rx_item_implementation<prog::command_ptr>;
+template class rx_item_implementation<logic::program_runtime_ptr>;
 } // namespace internal_ns
 } // namespace sys_internal
 

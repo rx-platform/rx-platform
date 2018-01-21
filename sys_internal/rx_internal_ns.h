@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_ns.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,14 +31,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 using namespace rx_platform::ns;
 
@@ -213,12 +211,9 @@ class system_server_item : public rx_platform::ns::rx_platform_item
 
 
 
-class simple_platform_item : public rx_platform::ns::rx_platform_item, 
-                             	public rx::pointers::reference_object  
+class simple_platform_item : public rx_platform::ns::rx_platform_item  
 {
 	DECLARE_REFERENCE_PTR(simple_platform_item);
-
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
   public:
       simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, rx_time created_time);
@@ -237,6 +232,8 @@ class simple_platform_item : public rx_platform::ns::rx_platform_item,
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
       bool is_browsable () const;
+
+      string_type get_name () const;
 
 
       rx_time get_created_time () const
@@ -259,6 +256,8 @@ class simple_platform_item : public rx_platform::ns::rx_platform_item,
 
       rx_time created_time_;
 
+      string_type name_;
+
 
 };
 
@@ -270,6 +269,7 @@ class simple_platform_item : public rx_platform::ns::rx_platform_item,
 template <class T, int class_name_idx>
 class runtime_simple_platform_item : public rx_platform::ns::rx_platform_item  
 {
+	DECLARE_REFERENCE_PTR(runtime_simple_platform_item);
 
   public:
       runtime_simple_platform_item();
@@ -295,6 +295,51 @@ class runtime_simple_platform_item : public rx_platform::ns::rx_platform_item
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+template <class TImpl>
+class rx_item_implementation : public rx_platform::ns::rx_platform_item  
+{
+	DECLARE_REFERENCE_PTR(rx_item_implementation);
+
+  public:
+      rx_item_implementation (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, TImpl impl);
+
+      rx_item_implementation (TImpl impl);
+
+      virtual ~rx_item_implementation();
+
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      string_type get_type_name () const;
+
+      values::rx_value get_value () const;
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      bool is_browsable () const;
+
+      rx_time get_created_time () const;
+
+      string_type get_name () const;
+
+
+  protected:
+
+  private:
+
+
+      TImpl impl_;
 
 
 };

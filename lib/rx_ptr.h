@@ -4,7 +4,7 @@
 *
 *  lib\rx_ptr.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *
 *  This file is part of rx-platform
@@ -55,7 +55,7 @@ extern _create_new_type _create_new;
 #define DECLARE_REFERENCE_PTR(class_name) \
 public:\
 	typedef rx::pointers::reference<class_name > smart_ptr; \
-	template<class T>\
+	template<class Tptr>\
 	friend class rx::pointers::reference;\
 private:\
 	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }\
@@ -119,7 +119,7 @@ class basic_smart_ptr
 	static code_behind_definition_t* rx_code_behind;
 
 
-	// firend declaration here
+	// friend declaration here
 	template<class otherT>
 	friend class reference;
 	template<class otherT>
@@ -136,7 +136,7 @@ public:
 	basic_smart_ptr() = default;
 	// it's not virtual!!!
 	~basic_smart_ptr() = default;
-	// reference based objet no copying
+	// reference based object no copying
 	basic_smart_ptr(const basic_smart_ptr &right) = delete;
 	basic_smart_ptr & operator=(const basic_smart_ptr &right) = delete;
 	// use 'memmove' to move object around
@@ -259,7 +259,7 @@ private:
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// this code bellow is because this can't be done with constructors VS c++ stuff
-	// so constructor specialization is actualy this function specialization
+	// so constructor specialization is actually this function specialization
 	// vs detects two default constructors !?!
 	template<typename... Args>
 	void __constructor_workaround(Args... args)
@@ -280,14 +280,30 @@ private:
 	}
 	////////////////////////////////////////////////////////////////////////////////////
 public:
-
 	template<typename... Args>
 	explicit reference(Args... args)
 	{
-		// call dummy constructor function
-		__constructor_workaround(args...);
+		this->ptr_ = new ptrT(args...);
 	}
-	// firend declaration here
+	explicit reference()
+	{
+		this->ptr_ = nullptr;
+	}
+	explicit reference(_create_new_type)
+	{
+		this->ptr_ = new ptrT;
+	}
+	explicit reference(ptrT* pt)
+	{
+		STATIC_CHECK(false);
+	}
+	//template<typename... Args>
+	//explicit reference(Args... args)
+	//{
+	//	// call dummy constructor function
+	//	__constructor_workaround(args...);
+	//}
+	// friend declaration here
 	template<class otherT>
 	friend class reference;
 	template<class otherT>
@@ -406,7 +422,7 @@ public:
 template<class ptrT>
 reference<ptrT> reference<ptrT>::null_ptr;
 
-// this is an expreiment!!!
+// this is an experiment!!!
 template<typename T>
 class reference_pointer
 {
@@ -423,70 +439,12 @@ private:
 
 
 
-
-class reference_object
-{
-
-	DECLARE_REFERENCE_PTR(reference_object);
-
-
-	/*
-	where to put this code from macros?!?
-	public:
-	typedef basic_smart_ptr<ptrT> smart_ptr;
-	template<class Tother>
-	friend class rx::pointers::reference;
-	private:
-	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
-	*/
-
-  public:
-      reference_object();
-
-      virtual ~reference_object();
-
-
-      static size_t get_objects_count ();
-
-      virtual string_type get_class_name () const
-      {
-        return "*unknown*";
-
-      }
-
-
-  protected:
-
-      void bind ();
-
-      void release ();
-
-
-  private:
-      reference_object(const reference_object &right);
-
-      reference_object & operator=(const reference_object &right);
-
-
-
-      std::atomic<ref_counting_type> ref_count_;
-
-      static std::atomic<ref_counting_type> g_objects_count;
-
-
-};
-
-
-
-
-
-
 template <class ptrT>
 class virtual_reference : public basic_smart_ptr<ptrT>  
 {
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// class that implements virtual_bind/virtual_release smart ptr, this class uses second level abstract funcion calls that eventualy maps to pin/unpin
+	// class that implements virtual_bind/virtual_release smart ptr, this class uses second level abstract function calls that eventually maps to pin/unpin
 
 public:
 	typedef ptrT* pointer_type;
@@ -511,7 +469,7 @@ public:
 	{
 		STATIC_CHECK(false);
 	}
-	// firend declaration here
+	// friend declaration here
 	template<class otherT>
 	friend class virtual_reference;
 	// copy constructor
@@ -644,8 +602,6 @@ class virtual_reference_object
 {
 
   public:
-      virtual_reference_object();
-
       virtual ~virtual_reference_object();
 
 
@@ -655,6 +611,11 @@ class virtual_reference_object
 
       }
 
+	  virtual_reference_object() = default;
+	  virtual_reference_object(const virtual_reference_object&) = delete;
+	  virtual_reference_object(virtual_reference_object&&) = delete;
+	  virtual_reference_object& operator=(const virtual_reference_object&) = delete;
+	  virtual_reference_object& operator=(virtual_reference_object&&) = delete;
 
   protected:
 
@@ -664,10 +625,6 @@ class virtual_reference_object
 
 
   private:
-      virtual_reference_object(const virtual_reference_object &right);
-
-      virtual_reference_object & operator=(const virtual_reference_object &right);
-
 
 
 };
@@ -689,13 +646,11 @@ public:
 	{
 	}
 	// it's not virtual!!!
-	~struct_reference()
-	{
-	}
-	// reference based objet no copying
+	~struct_reference() = default;
+	// reference based object no copying
 	struct_reference(const struct_reference &right) = delete;
-	reference_object & operator=(const struct_reference &right) = delete;
-	// dont use '&&' to move object around
+	struct_reference & operator=(const struct_reference &right) = delete;
+	// don't use '&&' to move object around
 	struct_reference(struct_reference &&right) = delete;
 	struct_reference & operator=(struct_reference &&right) = delete;
 
@@ -726,7 +681,7 @@ class interface_reference : public basic_smart_ptr<ptrT>
 {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// class that implements virtual_bind/virtual_release smart ptr, this class uses second level abstract funcion calls that eventualy maps to pin/unpin
+	// class that implements virtual_bind/virtual_release smart ptr, this class uses second level abstract function calls that eventually maps to pin/unpin
 
 public:
 	static interface_reference<ptrT> null_ptr;
@@ -749,7 +704,7 @@ public:
 	{
 		STATIC_CHECK(false);
 	}
-	// firend declaration here
+	// friend declaration here
 	template<class otherT>
 	friend class interface_reference;
 	// copy constructor
@@ -832,7 +787,7 @@ public:
 	{
 		return (this->ptr_ != nullptr);
 	}
-	// operator access overridnig
+	// operator access overriding
 
 	~interface_reference()
 	{
@@ -879,8 +834,6 @@ class interface_object
 {
 
   public:
-      interface_object();
-
       virtual ~interface_object();
 
 
@@ -890,6 +843,11 @@ class interface_object
 
       }
 
+	  interface_object() = default;
+	  interface_object(const interface_object&) = delete;
+	  interface_object(interface_object&&) = delete;
+	  interface_object& operator=(const interface_object&) = delete;
+	  interface_object& operator=(interface_object&&) = delete;
 
   protected:
 
@@ -899,10 +857,63 @@ class interface_object
 
 
   private:
-      interface_object(const interface_object &right);
 
-      interface_object & operator=(const interface_object &right);
 
+};
+
+
+
+
+
+
+
+class reference_object
+{
+
+	DECLARE_REFERENCE_PTR(reference_object);
+
+
+	/*
+	where to put this code from macros?!?
+	public:
+	typedef basic_smart_ptr<ptrT> smart_ptr;
+	template<class Tother>
+	friend class rx::pointers::reference;
+	private:
+	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
+	*/
+
+  public:
+      reference_object();
+
+      virtual ~reference_object();
+
+
+      static size_t get_objects_count ();
+
+      virtual string_type get_class_name () const
+      {
+        return "*unknown*";
+
+      }
+
+	  reference_object(const reference_object&) = delete;
+	  reference_object(reference_object&&) = delete;
+	  reference_object& operator=(const reference_object&) = delete;
+	  reference_object& operator=(reference_object&&) = delete;
+  protected:
+
+      void bind ();
+
+      void release ();
+
+
+  private:
+
+
+      std::atomic<ref_counting_type> ref_count_;
+
+      static std::atomic<ref_counting_type> g_objects_count;
 
 
 };

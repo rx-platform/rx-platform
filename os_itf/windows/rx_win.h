@@ -38,6 +38,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _CRT_RAND_S
+#define NOMINMAX
 
 #include <WinSock2.h>
 #include <windows.h>

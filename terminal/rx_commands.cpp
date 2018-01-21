@@ -4,7 +4,7 @@
 *
 *  terminal\rx_commands.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -101,7 +101,7 @@ server_command_manager::~server_command_manager()
 void server_command_manager::register_command (server_command_base_ptr cmd)
 {
 	string_type con_name = cmd->get_console_name();
-	locks::auto_lock_t<server_command_manager> dummy (this);
+	locks::auto_lock dummy(&lock_);
 	registered_commands_.emplace(con_name, cmd);
 }
 
@@ -130,13 +130,13 @@ void server_command_manager::register_internal_commands ()
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
 {
-	locks::auto_lock_t<server_command_manager> dummy(this);
+	locks::auto_lock dummy(&lock_);
 	auto it = registered_commands_.find(name);
 	if (it != registered_commands_.end())
 	{
 		return it->second;
 	}
-	return server_command_base_ptr::null_ptr;
+	return server_command_base_ptr{};
 }
 
 server_command_manager::smart_ptr server_command_manager::instance ()
@@ -157,7 +157,7 @@ void server_command_manager::get_class_info (string_type& class_name, string_typ
 
 void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) const
 {
-	locks::auto_lock_t<server_command_manager> (const_cast<server_command_manager*>(this));
+	locks::const_auto_lock dummy(&lock_);
 	sub_items.reserve(registered_commands_.size());
 	for (const auto& one : registered_commands_)
 		sub_items.emplace_back(one.second);
@@ -166,7 +166,7 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
 {
 
-	out << "Printing help, well the beginig of making help :)\r\n";
+	out << "Printing help, well the beginning of making help :)\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a list of commands:\r\n";
 
@@ -177,7 +177,7 @@ bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
 		out << ANSI_COLOR_RESET "\r\n" << one.second->get_help()<<"\r\n";
 	}
 
-	out << "\r\n\r\nThis is acctually code comment dump :)\r\n";
+	out << "\r\n\r\nThis is actually code comment dump :)\r\n";
 	out << "Don't know what to tell you, try reading the reference...\r\n";
 
 	return true;

@@ -4,7 +4,7 @@
 *
 *  system\server\rx_inf.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -37,8 +37,6 @@
 #include "lib/rx_thread.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
-// rx_values
-#include "lib/rx_values.h"
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
@@ -52,7 +50,6 @@ using rx_platform::ns::namespace_item_attributes;
 namespace rx_platform {
 
 namespace runtime {
-
 
 
 
@@ -264,13 +261,13 @@ callculation ( normal priority)");
       }
 
 
-      const rx_reference<domains_pool> get_workers () const
+      rx_reference<domains_pool> get_workers () const
       {
         return workers_;
       }
 
 
-	  platform_item_ptr get_item_ptr() { return platform_item_ptr::create_from_pointer(this); }
+
   protected:
 
       void get_items (server_items_type& sub_items, const string_type& pattern) const;

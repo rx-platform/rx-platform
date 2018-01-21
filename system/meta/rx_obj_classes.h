@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_obj_classes.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -61,7 +61,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
   public:
       base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
-      virtual ~base_object_class();
+      ~base_object_class();
 
 
       void construct (complex_runtime_ptr what);
@@ -91,7 +91,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_object_class< rx_platform::meta::object_class  > object_class_t;
+typedef base_object_class< object_class  > object_class_t;
 
 
 
@@ -141,7 +141,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef base_object_class< rx_platform::meta::domain_class  > domain_class_t;
+typedef base_object_class< domain_class  > domain_class_t;
 
 
 
@@ -178,6 +178,7 @@ public:
 
 };
 
+typedef domain_class::smart_ptr domain_class_ptr;
 
 
 
@@ -220,12 +221,13 @@ public:
 
 };
 
+typedef application_class::smart_ptr application_class_ptr;
 
 
 
 
 
-typedef base_object_class< rx_platform::meta::port_class  > port_class_t;
+typedef base_object_class< port_class  > port_class_t;
 
 
 

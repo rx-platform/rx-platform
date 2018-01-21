@@ -4,7 +4,7 @@
 *
 *  system\server\rx_ns.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -64,8 +64,8 @@ namespace prog
 {
 class server_command_base;
 }
-typedef rx::pointers::virtual_reference<prog::server_command_base> server_command_base_ptr;
-typedef rx::pointers::virtual_reference<ns::rx_platform_item> platform_item_ptr;
+typedef rx::pointers::reference<prog::server_command_base> server_command_base_ptr;
+typedef rx::pointers::reference<ns::rx_platform_item> platform_item_ptr;
 typedef rx::pointers::reference<ns::rx_server_directory> server_directory_ptr;
 typedef std::vector<platform_item_ptr> server_items_type;
 typedef std::vector<server_directory_ptr> server_directories_type;
@@ -183,7 +183,8 @@ class rx_server_directory : public rx::pointers::reference_object
       }
 
 
-
+	  template<class TImpl>
+	  void add_item(TImpl who);
   protected:
 
   private:
@@ -211,17 +212,15 @@ class rx_server_directory : public rx::pointers::reference_object
 
 
 
-class rx_platform_item : public rx::pointers::virtual_reference_object  
+class rx_platform_item : public rx::pointers::reference_object  
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(rx_platform_item);
+	DECLARE_REFERENCE_PTR(rx_platform_item);
 	
 public:
 	typedef std::map<string_type, platform_item_ptr> sub_items_type;
 
   public:
       rx_platform_item();
-
-      rx_platform_item (const string_type& name);
 
       virtual ~rx_platform_item();
 
@@ -262,17 +261,12 @@ public:
 
       virtual rx_time get_created_time () const = 0;
 
+      virtual string_type get_name () const = 0;
 
-      const rx_virtual<rx_platform_item> get_runtime_parent () const
+
+      const rx_reference<rx_platform_item> get_runtime_parent () const
       {
         return runtime_parent_;
-      }
-
-
-
-      const string_type get_name () const
-      {
-        return name_;
       }
 
 
@@ -286,12 +280,10 @@ public:
 
       sub_items_type sub_items_;
 
-      rx_virtual<rx_platform_item> runtime_parent_;
+      rx_reference<rx_platform_item> runtime_parent_;
 
 
       locks::lockable item_lock_;
-
-      string_type name_;
 
 
 };

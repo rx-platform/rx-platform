@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_classes.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,8 +31,6 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 // rx_ptr
@@ -154,14 +152,13 @@ struct meta_data_t
 
 
 template <class metaT, bool _browsable>
-class base_meta_type : public ns::rx_platform_item  
+class base_meta_type 
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(base_meta_type);
 
   public:
       base_meta_type (const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~base_meta_type();
+      ~base_meta_type();
 
 
       bool serialize (base_meta_writter& stream) const;
@@ -181,7 +178,7 @@ class base_meta_type : public ns::rx_platform_item
       }
 
 
-      const bool get_system () const
+      bool get_system () const
       {
         return system_;
       }
@@ -211,8 +208,6 @@ class base_meta_type : public ns::rx_platform_item
 template <class metaT, bool _browsable>
 class checkable_type : public base_meta_type<metaT, _browsable>  
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(checkable_type);
-
 	template <class T1, bool T2>
 	friend class checkable_type;
 
@@ -221,7 +216,7 @@ class checkable_type : public base_meta_type<metaT, _browsable>
 
       checkable_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false);
 
-      virtual ~checkable_type();
+      ~checkable_type();
 
 
       bool serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
@@ -267,6 +262,12 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       }
 
 
+      string_type get_name () const
+      {
+        return name_;
+      }
+
+
 
   protected:
 
@@ -278,8 +279,6 @@ class checkable_type : public base_meta_type<metaT, _browsable>
   private:
 
 
-      string_type name_;
-
       rx_node_id parent_;
 
       uint32_t version_;
@@ -287,6 +286,8 @@ class checkable_type : public base_meta_type<metaT, _browsable>
       rx_time created_time_;
 
       rx_time modified_time_;
+
+      string_type name_;
 
 
 };
@@ -415,7 +416,6 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
                           	protected rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(base_complex_type);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
 	typedef std::vector<std::unique_ptr<const_value> > const_values_type;
 	typedef std::vector<std::unique_ptr<simple_value_def> > simple_values_type;
@@ -428,7 +428,7 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
   public:
       base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
-      virtual ~base_complex_type();
+      ~base_complex_type();
 
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
@@ -440,6 +440,12 @@ class base_complex_type : public checkable_type<metaT, _browsable>,
       void construct (complex_runtime_ptr what);
 
       void construct (objects::object_runtime_ptr what);
+
+      namespace_item_attributes get_attributes () const;
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      platform_item_ptr get_item_ptr ();
 
 
       const const_values_type& get_const_values () const
@@ -511,7 +517,7 @@ class base_mapped_class : public base_complex_type<metaT, _browsable>
   public:
       base_mapped_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
-      virtual ~base_mapped_class();
+      ~base_mapped_class();
 
 
       bool register_mapper (const mapper_attribute& item);
@@ -913,7 +919,7 @@ class base_variable_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_variable_class< rx_platform::meta::variable_class  > variable_class_t;
+typedef base_variable_class< variable_class  > variable_class_t;
 
 
 

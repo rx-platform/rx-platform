@@ -4,25 +4,25 @@
 *
 *  lib\rx_values.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -160,7 +160,7 @@ class rx_value;
 
 
 template <typename valT>
-class simple_value
+class simple_value 
 {
 
   public:
@@ -250,7 +250,7 @@ union rx_value_union
 
 
 
-class rx_value
+class rx_value 
 {
 
   public:
@@ -393,7 +393,7 @@ class rx_value
 
 
 template <typename valT>
-class const_variable_value
+class const_variable_value 
 {
 
   public:
@@ -452,7 +452,7 @@ class const_variable_value
 
 
 template <typename valT>
-class allways_good_value
+class allways_good_value 
 {
 
   public:
@@ -489,7 +489,7 @@ class allways_good_value
 		  return value_;
       }
 
-      void get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const;
+      void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
 
       const valT value () const
@@ -510,7 +510,7 @@ class allways_good_value
 };
 
 
-// Parameterized Class rx::values::simple_value
+// Parameterized Class rx::values::simple_value 
 
 template <typename valT>
 simple_value<valT>::simple_value(const simple_value<valT> &right)
@@ -572,7 +572,7 @@ valT& simple_value<valT>::operator = (const valT& right)
 }
 
 
-// Parameterized Class rx::values::const_variable_value
+// Parameterized Class rx::values::const_variable_value 
 
 template <typename valT>
 const_variable_value<valT>::const_variable_value()
@@ -685,7 +685,7 @@ bool const_variable_value<valT>::is_good () const
 }
 
 
-// Parameterized Class rx::values::allways_good_value
+// Parameterized Class rx::values::allways_good_value 
 
 template <typename valT>
 allways_good_value<valT>::allways_good_value (const rx_value&  right)
@@ -757,7 +757,7 @@ bool allways_good_value<valT>::can_operate (bool test_mode) const
 }
 
 template <typename valT>
-void allways_good_value<valT>::get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const
+void allways_good_value<valT>::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
 	val = rx_value(
 		value_);
@@ -777,5 +777,3 @@ void allways_good_value<valT>::get_value (values::rx_value& val, const rx_time& 
 
 
 #endif
-
-

@@ -4,7 +4,7 @@
 *
 *  system\logic\rx_logic.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -33,6 +33,7 @@
 #include "system/logic/rx_logic.h"
 
 #include "rx_configuration.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace rx_platform {
@@ -98,6 +99,16 @@ bool program_runtime::load_program (base_meta_reader& stream, uint8_t type)
 void program_runtime::get_value (values::rx_value& val) const
 {
 	val = rx_value(0u, get_modified_time());
+}
+
+platform_item_ptr program_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+values::rx_value program_runtime::get_value () const
+{
+	return rx_value(0u, get_modified_time());
 }
 
 

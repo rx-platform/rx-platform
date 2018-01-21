@@ -4,7 +4,7 @@
 *
 *  lib\rx_lock.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -40,7 +40,7 @@ namespace locks {
 
 
 //	basic class that implements slim lock mechanism that is
-//	reentrant, has no virtual constructor so it is smaller
+//	reenternat, has no virtual constructor so it is smaller
 
 
 
@@ -71,7 +71,7 @@ class slim_lock
 
 
 //	basic class that implements slim lock mechanism that is
-//	reentrant, has virtual constructor so can be inherited
+//	reenternat, has virtual constructor so can be inherited
 //	from
 
 

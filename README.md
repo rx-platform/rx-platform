@@ -4,7 +4,7 @@
 
 ## The Mission
 
-The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions. 
+The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions.
 
 
 ## RX Platform
@@ -15,12 +15,12 @@ Read or download RX Platform Documentation. From general documents for users to 
 
 Start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
 
-On GNU/Linux machines this is the main function example: 
+On GNU/Linux machines this is the main function example:
 
 ```cpp
  // this is a gnu/linux platform
  #include "os_itf/linux/rx_linux.h"
- 
+
  // a platform itself
  #include "rx_platform.h"
 
@@ -29,16 +29,18 @@ On GNU/Linux machines this is the main function example:
 
  int main(int argc, char* argv[])
  {
- 	// create the host
- 	host::gnu::gnu_console_host host;
+	// create the storage
+	auto storage = rx_create_reference<win32::gnu_file_system_storage>();
+  // create the host
+ 	host::gnu::gnu_console_host host(storage);
  	// run console
  	return host.console_main(argc,argv);
  }
 ```
 
-On Windows machines this is the main function example: 
+On Windows machines this is the main function example:
 ```cpp
- // this is a windows platform 
+ // this is a windows platform
  #include "os_itf/windows/rx_win.h"
 
  // a platform itself
@@ -49,8 +51,10 @@ On Windows machines this is the main function example:
 
  int main(int argc, char* argv[])
  {
- 	// create the host
- 	host::win32::win32_console_host host;
+	// create the storage
+	auto storage = rx_create_reference<win32::win32_file_system_storage>();
+  // create the host
+	win32::win32_console_host host(storage);
  	// run console
  	return host.console_main(argc, argv);
  }

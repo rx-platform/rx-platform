@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_objbase.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,16 +31,16 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
@@ -75,6 +75,12 @@ typedef pointers::reference<domain_runtime> domain_runtime_ptr;
 typedef pointers::reference<application_runtime> application_runtime_ptr;
 typedef pointers::reference<struct_runtime> struct_runtime_ptr;
 
+struct object_state_data
+{
+	rx_time ts;
+	rx_mode_type mode;
+};
+
 
 
 
@@ -95,11 +101,11 @@ class value_item
       virtual ~value_item();
 
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_mode_type& mode) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_mode_type& mode);
 
-      virtual rx_value get_value (rx_mode_type mode) const = 0;
+      virtual rx_value get_value (const object_state_data& data) const = 0;
 
 
       const rx_time get_change_time () const
@@ -143,11 +149,11 @@ class const_value_item
       virtual ~const_value_item();
 
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const;
 
       bool deserialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode);
 
-      virtual rx_value get_value (rx_time ts, rx_mode_type mode) const = 0;
+      virtual rx_value get_value (const object_state_data& data) const = 0;
 
 
   protected:
@@ -197,7 +203,7 @@ class server_const_value_item : public const_value_item
 
       string_type get_type_name () const;
 
-      rx_value get_value (rx_time ts, rx_mode_type mode) const;
+      rx_value get_value (const object_state_data& data) const;
 
 
   protected:
@@ -243,7 +249,7 @@ class server_internal_value : public value_item
 
       void item_unlock () const;
 
-      rx_value get_value (rx_mode_type mode) const;
+      rx_value get_value (const object_state_data& data) const;
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -494,6 +500,8 @@ public:
       virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
 
       uint32_t register_struct (const string_type& name, struct_runtime_ptr val);
+
+      platform_item_ptr get_item_ptr ();
 
 
       rx_reference<complex_runtime_item> get_complex_item ()
@@ -971,10 +979,10 @@ string_type server_const_value_item<valT>::get_type_name () const
 }
 
 template <typename valT>
-rx_value server_const_value_item<valT>::get_value (rx_time ts, rx_mode_type mode) const
+rx_value server_const_value_item<valT>::get_value (const object_state_data& data) const
 {
 	rx_value ret;
-	storage_.get_value(ret, ts,mode);
+	storage_.get_value(ret, data.ts,data.mode);
 	return ret;
 }
 
@@ -1040,10 +1048,10 @@ void server_internal_value<valT>::item_unlock () const
 }
 
 template <typename valT>
-rx_value server_internal_value<valT>::get_value (rx_mode_type mode) const
+rx_value server_internal_value<valT>::get_value (const object_state_data& data) const
 {
 	rx_value val;
-	storage_.get_value(val, get_change_time(), mode);
+	storage_.get_value(val, std::max(get_change_time(),data.ts), data.mode);
 	return val;
 }
 

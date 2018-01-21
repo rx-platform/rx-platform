@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_classes.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -36,6 +36,7 @@
 #include "system/meta/rx_objbase.h"
 
 #include "system/meta/rx_obj_classes.h"
+#include "sys_internal/rx_internal_ns.h"
 #include "classes/rx_meta.h"
 #include "system/constructors/rx_construct.h"
 #include "rx_objbase.h"
@@ -57,7 +58,6 @@ template <class metaT, bool _browsable>
 base_meta_type<metaT,_browsable>::base_meta_type (const string_type& name, const rx_node_id& id, bool system)
 	: id_(id),
 	system_(system)
-	, rx_platform_item(name)
 {
 }
 
@@ -72,8 +72,6 @@ base_meta_type<metaT,_browsable>::~base_meta_type()
 template <class metaT, bool _browsable>
 bool base_meta_type<metaT,_browsable>::serialize (base_meta_writter& stream) const
 {
-	if (!rx_platform_item::serialize(stream))
-		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
 	if (!stream.write_bool("System", system_))
@@ -84,8 +82,6 @@ bool base_meta_type<metaT,_browsable>::serialize (base_meta_writter& stream) con
 template <class metaT, bool _browsable>
 bool base_meta_type<metaT,_browsable>::deserialize (base_meta_reader& stream)
 {
-	if (!rx_platform_item::deserialize(stream))
-		return false;
 	if (!stream.read_id("NodeId", id_))
 		return false;
 	if (!stream.read_bool("System", system_))
@@ -268,7 +264,8 @@ checkable_type<metaT,_browsable>::checkable_type (const string_type& name, const
       : version_(RX_INITIAL_ITEM_VERSION),
         created_time_(rx_time::now()),
         modified_time_(rx_time::now())
-	, base_meta_type<metaT, _browsable>(name, id, system), name_(name)
+	, base_meta_type<metaT, _browsable>(name, id, system)
+	, name_(name)
 {
 }
 
@@ -328,6 +325,10 @@ bool checkable_type<metaT,_browsable>::serialize_definition (base_meta_writter& 
 	if (!base_meta_type<metaT, _browsable>::serialize(stream))
 		return false;
 
+	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+
+	return true;
 	if (!stream.write_id("SuperId", parent_))
 		return false;
 
@@ -342,6 +343,10 @@ bool checkable_type<metaT,_browsable>::deserialize_definition (base_meta_reader&
 	if (!base_meta_type<metaT, _browsable>::deserialize(stream))
 		return false;
 
+	if (!stream.read_string("Name", name_))
+		return false;
+
+	return true;
 	if (!stream.read_id("Parent", parent_))
 		return false;
 
@@ -376,6 +381,7 @@ values::rx_value checkable_type<metaT,_browsable>::get_value () const
 template <class metaT, bool _browsable>
 void checkable_type<metaT,_browsable>::construct (objects::object_runtime_ptr what)
 {
+	base_meta_type<metaT, _browsable>::construct(what);
 }
 
 
@@ -767,6 +773,24 @@ void base_complex_type<metaT,_browsable>::construct (objects::object_runtime_ptr
 	//}
 }
 
+template <class metaT, bool _browsable>
+namespace_item_attributes base_complex_type<metaT,_browsable>::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_class | namespace_item_read_access
+		| (this->get_system() ? namespace_item_system : 0));
+}
+
+template <class metaT, bool _browsable>
+void base_complex_type<metaT,_browsable>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+template <class metaT, bool _browsable>
+platform_item_ptr base_complex_type<metaT,_browsable>::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
 
 // Class rx_platform::meta::mapper_class 
 
@@ -799,7 +823,7 @@ struct_attribute::~struct_attribute()
 
 complex_runtime_ptr struct_attribute::construct ()
 {
-	objects::struct_runtime_ptr what(pointers::_create_new); 
+	objects::struct_runtime_ptr what(pointers::_create_new);
 	struct_class_ptr cls = model::internal_classes_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
 	if (cls)
 	{
@@ -1099,6 +1123,7 @@ RX_TEMPLATE_INST(rx_platform::meta::object_class, false);
 RX_TEMPLATE_INST(rx_platform::meta::domain_class, false);
 RX_TEMPLATE_INST(rx_platform::meta::application_class, false);
 RX_TEMPLATE_INST(rx_platform::meta::port_class, false);
+RX_TEMPLATE_INST(rx_platform::meta::struct_class, false);
 
 RX_TEMPLATE_INST_SIMPLE(rx_platform::objects::object_runtime, true);
 RX_TEMPLATE_INST_SIMPLE(rx_platform::logic::program_runtime, false);

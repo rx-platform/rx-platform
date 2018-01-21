@@ -216,27 +216,37 @@ namespace meta_test {
 	 {
 		 out << "test_class created\r\n";
 
-		 dir->add_item(test_class);
-
-		 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
+		 dir->add_item(test_class->get_item_ptr());
+		 if (test_class->generate_json(out, err))
 		 {
 
-			 out << "test_struct created\r\n";
-
-			 dir->add_item(test_struct);
-
-
-			 out << "Creating test_object\r\n";
-
-			 constructors::user_object_constructor constructor;
-			 rx_platform::objects::object_runtime_ptr test_object = constructor.create_object("test_object", 59, 55);
-			 if (test_object)
+			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
 			 {
-				 out << "test_class test_object\r\n";
 
-				 dir->add_item(test_object);
-				 ctx->set_passed();
-				 return true;
+				 out << "test_struct created\r\n";
+
+				 dir->add_item(test_struct->get_item_ptr());
+
+				 if (test_struct->generate_json(out, err))
+				 {
+					 out << "Creating test_object\r\n";
+
+					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > mapa;
+					 mapa.emplace(55, [] {
+						 return rx_create_reference<objects::user_object>();
+					 });
+
+					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().create_runtime("test_object", 59, 55);
+					 if (test_object)
+					 {
+						 out << "test_class test_object\r\n";
+
+						 dir->add_item(test_object->get_item_ptr());
+						 if (test_object->generate_json(out, err))
+							 ctx->set_passed();
+						 return true;
+					 }
+				 }
 			 }
 		 }
 	 }

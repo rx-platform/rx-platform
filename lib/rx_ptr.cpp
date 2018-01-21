@@ -4,7 +4,7 @@
 *
 *  lib\rx_ptr.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -42,75 +42,10 @@ _create_new_type _create_new;
 // Parameterized Class rx::pointers::reference 
 
 
-// Class rx::pointers::reference_object 
-
-std::atomic<ref_counting_type> reference_object::g_objects_count;
-
-reference_object::reference_object()
-      : ref_count_(1)
-{
-	g_objects_count++;
-}
-
-reference_object::reference_object(const reference_object &right)
-      : ref_count_(1)
-{
-	RX_ASSERT(false);
-}
-
-
-reference_object::~reference_object()
-{
-	g_objects_count--;
-}
-
-
-reference_object & reference_object::operator=(const reference_object &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-void reference_object::bind ()
-{
-	ref_count_.fetch_add(1, std::memory_order_relaxed);
-}
-
-void reference_object::release ()
-{
-	if (1 == ref_count_.fetch_sub(1, std::memory_order_acq_rel))
-		delete this;
-}
-
-size_t reference_object::get_objects_count ()
-{
-	return (size_t)g_objects_count.load();
-}
-
-
 // Class rx::pointers::virtual_reference_object 
-
-virtual_reference_object::virtual_reference_object()
-{
-}
-
-virtual_reference_object::virtual_reference_object(const virtual_reference_object &right)
-{
-	RX_ASSERT(false);
-}
-
 
 virtual_reference_object::~virtual_reference_object()
 {
-}
-
-
-virtual_reference_object & virtual_reference_object::operator=(const virtual_reference_object &right)
-{
-	RX_ASSERT(false);
-	return *this;
 }
 
 
@@ -138,27 +73,45 @@ void struct_reference::release ()
 
 // Class rx::pointers::interface_object 
 
-interface_object::interface_object()
-{
-}
-
-interface_object::interface_object(const interface_object &right)
-{
-	RX_ASSERT(false);
-}
-
-
 interface_object::~interface_object()
 {
 }
 
 
-interface_object & interface_object::operator=(const interface_object &right)
+
+// Class rx::pointers::reference_object 
+
+std::atomic<ref_counting_type> reference_object::g_objects_count;
+
+reference_object::reference_object()
+      : ref_count_(1)
 {
-	RX_ASSERT(false);
-	return *this;
+	g_objects_count++;
 }
 
+
+reference_object::~reference_object()
+{
+	g_objects_count--;
+}
+
+
+
+void reference_object::bind ()
+{
+	ref_count_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void reference_object::release ()
+{
+	if (1 == ref_count_.fetch_sub(1, std::memory_order_acq_rel))
+		delete this;
+}
+
+size_t reference_object::get_objects_count ()
+{
+	return (size_t)g_objects_count.load();
+}
 
 
 } // namespace pointers

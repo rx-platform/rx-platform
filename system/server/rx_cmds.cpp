@@ -4,7 +4,7 @@
 *
 *  system\server\rx_cmds.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -38,6 +38,7 @@
 #include "system/server/rx_server.h"
 #include "terminal/rx_telnet.h"
 #include "terminal/rx_commands.h"
+#include "sys_internal/rx_internal_ns.h"
 using namespace rx_platform;
 using namespace terminal::commands;
 
@@ -174,7 +175,6 @@ server_command_base::server_command_base (const string_type& console_name, ns::n
         console_name_(console_name),
         security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
-	 ,rx_platform_item(console_name)
 
   //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
 {
@@ -246,6 +246,26 @@ bool server_command_base::dword_check_premissions (security::security_mask_t mas
 rx_time server_command_base::get_created_time () const
 {
 	return rx_gate::instance().get_started();
+}
+
+bool server_command_base::is_browsable () const
+{
+	return false;
+}
+
+bool server_command_base::generate_json (std::ostream& def, std::ostream& err) const
+{
+	return false;
+}
+
+platform_item_ptr server_command_base::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+string_type server_command_base::get_name () const
+{
+	return console_name_;
 }
 
 

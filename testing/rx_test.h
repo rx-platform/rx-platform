@@ -4,7 +4,7 @@
 *
 *  testing\rx_test.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,14 +31,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
-// rx_ns
-#include "system/server/rx_ns.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 using namespace rx;
 
@@ -153,8 +151,7 @@ class test_program_context : public rx_platform::prog::program_context_base
 
 
 
-class test_case : public rx::pointers::reference_object, 
-                  	public rx_platform::ns::rx_platform_item  
+class test_case : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(test_case);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
@@ -196,10 +193,18 @@ public:
 
       rx_time get_created_time () const;
 
+      platform_item_ptr get_item_ptr ();
+
 
       const rx_time get_modified_time () const
       {
         return modified_time_;
+      }
+
+
+      string_type get_name () const
+      {
+        return name_;
       }
 
 
@@ -222,6 +227,8 @@ public:
       locks::slim_lock status_lock_;
 
       rx_time modified_time_;
+
+      string_type name_;
 
 
 };

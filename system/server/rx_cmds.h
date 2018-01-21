@@ -4,7 +4,7 @@
 *
 *  system\server\rx_cmds.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -37,23 +37,21 @@
 #include "lib/rx_mem.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
-// rx_ns
-#include "system/server/rx_ns.h"
+
+namespace rx {
+namespace security {
+class security_context;
+} // namespace security
+} // namespace rx
 
 namespace rx_platform {
 namespace prog {
 class server_program_holder;
 class server_program_base;
 class program_context_base;
+
 } // namespace prog
 } // namespace rx_platform
-
-namespace rx {
-namespace security {
-class security_context;
-
-} // namespace security
-} // namespace rx
 
 
 using namespace rx;
@@ -67,7 +65,7 @@ typedef std::uint_fast16_t sec_error_num_t;
 class program_executer_base;
 class server_program_base;
 class server_command_base;
-typedef pointers::virtual_reference<server_command_base> command_ptr;
+typedef pointers::reference<server_command_base> command_ptr;
 typedef pointers::reference<program_context_base> program_context_ptr;
 typedef pointers::reference<server_program_base> server_program_ptr;
 typedef pointers::virtual_reference<program_executer_base> program_executer_ptr;
@@ -445,9 +443,9 @@ class console_program_context : public program_context_base
 
 
 
-class server_command_base : public ns::rx_platform_item  
+class server_command_base : public rx::pointers::reference_object  
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(server_command_base);
+	DECLARE_REFERENCE_PTR(server_command_base);
 
   public:
       server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes);
@@ -474,6 +472,14 @@ class server_command_base : public ns::rx_platform_item
       bool console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx);
 
       rx_time get_created_time () const;
+
+      bool is_browsable () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      platform_item_ptr get_item_ptr ();
+
+      string_type get_name () const;
 
 
       const string_type& get_console_name () const

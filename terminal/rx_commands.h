@@ -4,7 +4,7 @@
 *
 *  terminal\rx_commands.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,12 +31,10 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 using namespace rx_platform::prog;
 using namespace rx_platform; 
@@ -57,8 +55,7 @@ namespace commands {
 
 
 
-class server_command : public rx_platform::prog::server_command_base, 
-                       	public rx::pointers::reference_object  
+class server_command : public rx_platform::prog::server_command_base  
 {
 	DECLARE_REFERENCE_PTR(server_command);
 
@@ -99,7 +96,7 @@ class server_command_manager : public rx_platform::objects::server_object
 server commands managment object\r\n\
 bin folder in file hierarcyh\
 ")
-	typedef std::map<string_type,server_command_base_ptr> registered_commands_type;
+	typedef std::map<string_type, server_command_base_ptr > registered_commands_type;
 
   public:
       server_command_manager();
@@ -130,6 +127,9 @@ bin folder in file hierarcyh\
 
 
       registered_commands_type registered_commands_;
+
+
+      locks::lockable lock_;
 
 
 };

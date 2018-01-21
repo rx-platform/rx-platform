@@ -4,7 +4,7 @@
 *
 *  testing\rx_test.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -34,6 +34,7 @@
 
 #include "lib/security/rx_security.h"
 #include "system/server/rx_server.h"
+#include "sys_internal/rx_internal_ns.h"
 
 #include "rx_test_io.h"
 #include "rx_test_script.h"
@@ -285,7 +286,7 @@ test_case::test_case (const string_type& name)
       : start_tick_(0),
         status_(RX_TEST_STATUS_UNKNOWN),
         modified_time_(rx_time::now())
-	, rx_platform_item(name)
+	, name_(name)
 {
 }
 
@@ -368,7 +369,7 @@ void test_case::get_class_info (string_type& class_name, string_type& console, b
 string_type test_case::get_type_name () const
 {
   // generated from ROSE!!!
-  static string_type type_name = RX_TEST_CASE_TYPE_NAME;
+  static string_type type_name = "TEST CASE";
   return type_name;
 
 
@@ -425,6 +426,11 @@ bool test_case::is_browsable () const
 rx_time test_case::get_created_time () const
 {
 	return rx_gate::instance().get_started();
+}
+
+platform_item_ptr test_case::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 

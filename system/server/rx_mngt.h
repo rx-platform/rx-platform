@@ -4,7 +4,7 @@
 *
 *  system\server\rx_mngt.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -32,6 +32,8 @@
 
 #include "lib/rx_lib.h"
 
+// rx_io
+#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
@@ -40,8 +42,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_io
-#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_classes.h"
@@ -136,7 +136,7 @@ public:
       meta::object_class_ptr get_object_class (const rx_node_id& id);
 
 
-      platform_item_ptr get_commands_manager ()
+      rx_reference<objects::server_object> get_commands_manager ()
       {
         return commands_manager_;
       }
@@ -179,7 +179,7 @@ public:
 
       rx_reference<rx::io::tcp_listent_std_buffer> telnet_listener_;
 
-      platform_item_ptr commands_manager_;
+      rx_reference<objects::server_object> commands_manager_;
 
       rx_reference<objects::domain_runtime> unassigned_domain_;
 

@@ -4,7 +4,7 @@
 *
 *  system\logic\rx_logic.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,12 +31,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace logic {
@@ -88,6 +88,10 @@ public:
       bool load_program (base_meta_reader& stream, uint8_t type);
 
       void get_value (values::rx_value& val) const;
+
+      platform_item_ptr get_item_ptr ();
+
+      values::rx_value get_value () const;
 
 
       static string_type type_name;
