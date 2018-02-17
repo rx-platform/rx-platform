@@ -205,16 +205,19 @@ bool rx_delete_all_files(const std::string& dir, const std::string& pattern)
 {
 	bool succeeded = true;
 	std::vector<std::string> files;
-	rx_list_files(dir, pattern, files);
+	std::vector<std::string> dirs;
+	rx_list_files(dir, pattern, files,dirs);
 	for (auto& one : files)
 	{
-		if (!rx_file_delete(one.c_str()))
+		string_type temp_path;
+		rx_combine_paths(dir, one, temp_path);
+		if (!rx_file_delete(temp_path.c_str()))
 			succeeded = false;
 	}
 	return succeeded;
 }
 
-void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files)
+void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories)
 {
 	std::string search;
 	rx_combine_paths(dir, pattern, search);
@@ -226,11 +229,10 @@ void rx_list_files(const std::string& dir, const std::string& pattern, std::vect
 		do
 		{
 			if (one.is_directory)
-				continue; // continue for directory
+				directories.emplace_back(one.file_name);
+			else
+				files.emplace_back(one.file_name);
 
-			std::string file;
-			rx_combine_paths(dir, one.file_name, file);
-			files.push_back(file);
 		} while (rx_get_next_file(hndl, &one));
 		rx_find_file_close(hndl);
 	}

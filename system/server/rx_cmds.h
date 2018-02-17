@@ -31,12 +31,12 @@
 
 
 
+// rx_mngt
+#include "system/server/rx_mngt.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// rx_mngt
-#include "system/server/rx_mngt.h"
 
 namespace rx {
 namespace security {
@@ -480,6 +480,12 @@ class server_command_base : public rx::pointers::reference_object
       platform_item_ptr get_item_ptr ();
 
       string_type get_name () const;
+
+      size_t get_size () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
       const string_type& get_console_name () const

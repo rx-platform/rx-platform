@@ -88,9 +88,58 @@ class host_security_context : public rx::security::built_in_security_context
 
 
 
+class rx_platform_file : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(rx_platform_file);
+
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+file class. basic implementation of a file");
+
+  public:
+      rx_platform_file();
+
+      virtual ~rx_platform_file();
+
+
+      string_type get_type_name () const;
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      bool is_browsable () const;
+
+      virtual values::rx_value get_value () const = 0;
+
+      virtual rx_time get_created_time () const = 0;
+
+      virtual string_type get_name () const = 0;
+
+      virtual size_t get_size () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      platform_item_ptr get_item_ptr ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class rx_platform_storage : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(rx_platform_storage);
+	typedef std::map<string_type, rx_platform_file::smart_ptr> files_type;
 
   public:
       rx_platform_storage();
@@ -110,10 +159,15 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual void deinit_storage ();
 
+      virtual void list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) = 0;
+
 
   protected:
 
   private:
+
+
+      files_type files_;
 
 
 };

@@ -31,12 +31,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using namespace rx;
 
@@ -194,6 +194,12 @@ public:
       rx_time get_created_time () const;
 
       platform_item_ptr get_item_ptr ();
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      size_t get_size () const;
 
 
       const rx_time get_modified_time () const

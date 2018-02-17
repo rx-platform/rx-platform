@@ -34,6 +34,7 @@
 
 #include "rx_configuration.h"
 #include "system/meta/rx_objbase.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace rx_platform {
@@ -54,26 +55,20 @@ base_object_class<metaT,_browsable>::base_object_class (const string_type& name,
 }
 
 
-template <class metaT, bool _browsable>
-base_object_class<metaT,_browsable>::~base_object_class()
-{
-}
-
-
 
 template <class metaT, bool _browsable>
-bool base_object_class<metaT,_browsable>::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool base_object_class<metaT,_browsable>::serialize_object_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!base_mapped_class<metaT, _browsable>::serialize_definition(stream, type))
+	if (!base_mapped_class<metaT, _browsable>::serialize_mapped_definition(stream, type))
 		return false;
 
 	return true;
 }
 
 template <class metaT, bool _browsable>
-bool base_object_class<metaT,_browsable>::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool base_object_class<metaT,_browsable>::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!base_mapped_class<metaT, _browsable>::deserialize_definition(stream, type))
+	if (!base_mapped_class<metaT, _browsable>::deserialize_mapped_definition(stream, type))
 		return false;
 
 	return true;
@@ -105,7 +100,7 @@ object_class::object_class()
 }
 
 object_class::object_class (const string_type& name, const rx_node_id& id, bool system)
-	: object_class_t(name, id, system)
+	: meta_type_adapter(name, id, system)
 {
 }
 
@@ -122,16 +117,32 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 
 namespace_item_attributes object_class::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_meta().get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
 }
 
 void object_class::construct (objects::object_runtime_ptr what)
 {
-	object_class_t::construct(what);
+	get_meta().construct(what);
 }
 
 void object_class::construct (complex_runtime_ptr what)
 {
+}
+
+bool object_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return get_meta().serialize_object_definition(stream, type);
+}
+
+bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return get_meta().deserialize_object_definition(stream, type);
+}
+
+platform_item_ptr object_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+
 }
 
 
@@ -144,6 +155,7 @@ domain_class::domain_class()
 }
 
 domain_class::domain_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_type_adapter(name,id,system)
 {
 }
 
@@ -156,11 +168,27 @@ domain_class::~domain_class()
 
 void domain_class::construct (objects::object_runtime_ptr what)
 {
-	domain_class_t::construct(what->get_complex_item());
+	get_meta().construct(what->get_complex_item());
 }
 
 void domain_class::construct (complex_runtime_ptr what)
 {
+}
+
+bool domain_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return get_meta().serialize_object_definition(stream, type);
+}
+
+bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return get_meta().deserialize_object_definition(stream, type);
+}
+
+platform_item_ptr domain_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+
 }
 
 
@@ -185,11 +213,27 @@ application_class::~application_class()
 
 void application_class::construct (objects::object_runtime_ptr what)
 {
-	application_class_t::construct(what->get_complex_item());
+	get_meta().construct(what->get_complex_item());
 }
 
 void application_class::construct (complex_runtime_ptr what)
 {
+}
+
+bool application_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return get_meta().serialize_object_definition(stream, type);
+}
+
+bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return get_meta().deserialize_object_definition(stream, type);
+}
+
+platform_item_ptr application_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+
 }
 
 
@@ -214,11 +258,27 @@ port_class::~port_class()
 
 void port_class::construct (objects::object_runtime_ptr what)
 {
-	port_class_t::construct(what->get_complex_item());
+	get_meta().construct(what->get_complex_item());
 }
 
 void port_class::construct (complex_runtime_ptr what)
 {
+}
+
+bool port_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return get_meta().serialize_object_definition(stream, type);
+}
+
+bool port_class::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
+{
+	return get_meta().deserialize_object_definition(stream, type);
+}
+
+platform_item_ptr port_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+
 }
 
 template class rx_platform::meta::base_object_class<rx_platform::meta::object_class, false>;

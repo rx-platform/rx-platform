@@ -29,7 +29,7 @@
 #include "stdafx.h"
 
 
-#ifndef NO_PYTHON_SUPPORT
+#ifdef PYTHON_SUPPORT
 
 // py_support
 #include "system/python/py_support.h"

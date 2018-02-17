@@ -31,22 +31,22 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
+class object_runtime;
 class application_runtime;
 class domain_runtime;
-class object_runtime;
 
 } // namespace objects
 } // namespace rx_platform
@@ -495,6 +495,10 @@ public:
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
       bool is_browsable () const;
 
       virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
@@ -549,10 +553,6 @@ public:
   protected:
       object_runtime();
 
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       bool init_object ();
 

@@ -32,6 +32,7 @@
 // rx_file_sys
 #include "host/rx_file_sys.h"
 
+#include "rx_configuration.h"
 
 
 namespace host {
@@ -79,7 +80,9 @@ const string_type& file_system_storage::get_license ()
 	if (!tried_get)
 	{
 		tried_get = true;
-		sys_handle_t file = rx_file((root_+"LICENSE").c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		string_type lic_path;
+		rx_combine_paths(root_, "LICENSE", lic_path);
+		sys_handle_t file = rx_file(lic_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 		if (file)
 		{
 			uint64_t size = 0;
@@ -99,11 +102,66 @@ const string_type& file_system_storage::get_license ()
 
 void file_system_storage::init_storage ()
 {
-	root_ = get_root_folder();
+	rx_combine_paths(get_root_folder(), RX_FILE_STORAGE_FOLDER, root_);
 }
 
 void file_system_storage::deinit_storage ()
 {
+}
+
+void file_system_storage::list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern)
+{
+	string_type result_path;
+	rx_combine_paths(root_, path, result_path);
+	string_array file_names, directory_names;
+	rx_list_files(result_path, "*", file_names, directory_names);
+	for(auto& one : file_names)
+	{
+		string_type one_path;
+		rx_combine_paths(result_path, one, one_path);
+		sub_items.push_back(file_system_file::smart_ptr(one_path, one)->get_item_ptr());
+	}
+}
+
+
+// Class host::files::file_system_file
+
+file_system_file::file_system_file (const string_type& path, const string_type& name)
+      : handle_(0),
+        path_(path),
+        name_(name),
+        valid_(false)
+{
+}
+
+
+file_system_file::~file_system_file()
+{
+}
+
+
+
+values::rx_value file_system_file::get_value () const
+{
+	values::rx_value temp;
+	temp.set_time(get_created_time());
+	temp.set_quality(valid_ ? RX_GOOD_QUALITY : RX_BAD_QUALITY);
+	return temp;
+}
+
+rx_time file_system_file::get_created_time () const
+{
+	return created_time_;
+}
+
+string_type file_system_file::get_name () const
+{
+	return name_;
+}
+
+size_t file_system_file::get_size () const
+{
+	return 0;
 }
 
 

@@ -314,46 +314,49 @@ server_directory_ptr rx_server_directory::get_parent () const
 
 server_directory_ptr rx_server_directory::get_sub_directory (const string_type& path) const
 {
-
-	if (path.empty() || path == ".")
-	{
-		return smart_ptr::create_from_pointer(const_cast<rx_server_directory*>(this));
-	}
-	else if (path == "..")
-	{// go one up
-		server_directory_ptr ret = get_parent();
-		if (!ret)
+	size_t idx = path.rfind(RX_DIR_DELIMETER);
+	if (idx == string_type::npos)
+	{// plain item
+		if (path.empty() || path == ".")
+		{
 			return smart_ptr::create_from_pointer(const_cast<rx_server_directory*>(this));
+		}
+		else if (path == "..")
+		{// go one up
+			server_directory_ptr ret = get_parent();
+			if (!ret)
+				return smart_ptr::create_from_pointer(const_cast<rx_server_directory*>(this));
+			else
+				return ret;
+		}
 		else
-			return ret;
-	}
-	else if (path == "/")
-	{// go one up
-		return rx_gate::instance().get_root_directory();
-	}
-	else if (path[0] == '/')
-	{// checked for empty before
-		return rx_gate::instance().get_root_directory()->get_sub_directory(path.substr(1));
+		{
+			locks::const_auto_slim_lock dummy(&structure_lock_);
+			auto it = sub_directories_.find(path);
+			if (it != sub_directories_.end())
+				return it->second;
+			else
+				return server_directory_ptr::null_ptr;
+		}
 	}
 	else
 	{
-		string_type mine;
-		string_type rest;
-		extract_next(path, mine, rest, '/');
-
-		server_directory_ptr ret;
-
-		locks::const_auto_slim_lock dummy(&structure_lock_);
-		auto it = sub_directories_.find(mine);
-		if (it != sub_directories_.end())
-		{
-			if (rest.empty())
-				return it->second;
-			else
-				return it->second->get_sub_directory(rest);
+		if (path[0] == '/')
+		{// checked for empty before
+			return rx_gate::instance().get_root_directory()->get_sub_directory(path.substr(1));
 		}
 		else
-			return server_directory_ptr::null_ptr;
+		{
+			string_type mine;
+			string_type rest;
+			extract_next(path, mine, rest, '/');
+
+			server_directory_ptr temp = get_sub_directory(mine);
+			if (temp)
+				return temp->get_sub_directory(rest);
+			else
+				return server_directory_ptr::null_ptr;
+		}
 	}
 }
 

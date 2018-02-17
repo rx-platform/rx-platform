@@ -257,28 +257,12 @@ public:
 	}
 private:
 
-	////////////////////////////////////////////////////////////////////////////////////
-	// this code bellow is because this can't be done with constructors VS c++ stuff
-	// so constructor specialization is actually this function specialization
-	// vs detects two default constructors !?!
-	template<typename... Args>
-	void __constructor_workaround(Args... args)
+	template<class T, class Tbase>
+	int32_t id_for()
 	{
-		this->ptr_ = new ptrT(args...);
+		static int result(5);
+		return result;
 	}
-	void __constructor_workaround()
-	{
-		this->ptr_ = nullptr;
-	}
-	void __constructor_workaround(_create_new_type)
-	{
-		this->ptr_ = new ptrT;
-	}
-	void __constructor_workaround(ptrT* pt)
-	{
-		STATIC_CHECK(false);
-	}
-	////////////////////////////////////////////////////////////////////////////////////
 public:
 	template<typename... Args>
 	explicit reference(Args... args)
@@ -297,13 +281,6 @@ public:
 	{
 		STATIC_CHECK(false);
 	}
-	//template<typename... Args>
-	//explicit reference(Args... args)
-	//{
-	//	// call dummy constructor function
-	//	__constructor_workaround(args...);
-	//}
-	// friend declaration here
 	template<class otherT>
 	friend class reference;
 	template<class otherT>
@@ -367,7 +344,6 @@ public:
 		{
 			if (this->ptr_)
 				this->ptr_->release();
-			this->ptr_ = right.ptr_;
 			this->ptr_ = right.ptr_;
 			right.ptr_ = nullptr;
 		}
@@ -802,6 +778,7 @@ private:
 	template<class otherT>
 	otherT _internal_cast_to(tl::type2type<otherT>)
 	{
+		// have to create dynamic cast!!!!
 		otherT ret;
 		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->ptr_));
 	}

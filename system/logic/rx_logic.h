@@ -31,10 +31,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
 
@@ -79,6 +79,10 @@ public:
       virtual ~program_runtime();
 
 
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
       string_type get_type_name () const;
 
       namespace_item_attributes get_attributes () const;
@@ -99,11 +103,6 @@ public:
 
   protected:
       program_runtime();
-
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
   private:

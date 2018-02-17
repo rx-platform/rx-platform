@@ -213,6 +213,11 @@ class base_meta_reader
       }
 
 
+	  template<class T>
+	  bool read_object(T& who,uint8_t type)
+	  {
+		  return who->deserialize_definition(*this, type);
+	  }
 
   protected:
 

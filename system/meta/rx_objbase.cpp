@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace rx_platform {
 namespace objects {
 const char* g_const_simple_class_name = "CONST_SIMPLE";
 
-// Class rx_platform::objects::server_object
+// Class rx_platform::objects::server_object 
 
 server_object::server_object (const string_type& name, const rx_node_id& id)
 	: object_runtime(name,id,true)
@@ -65,7 +65,7 @@ namespace_item_attributes server_object::get_attributes () const
 }
 
 
-// Class rx_platform::objects::complex_runtime_item
+// Class rx_platform::objects::complex_runtime_item 
 
 complex_runtime_item::complex_runtime_item()
 {
@@ -378,7 +378,7 @@ uint32_t complex_runtime_item::register_struct (const string_type& name, struct_
 }
 
 
-// Class rx_platform::objects::object_runtime
+// Class rx_platform::objects::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
@@ -478,7 +478,7 @@ bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 
 bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!checkable_type::serialize_definition(stream, type))
+	if (!serialize_checkable_definition(stream, type))
 		return false;
 
 	if (!complex_item_->serialize_definition(stream, type,get_modified_time(),mode_))
@@ -501,7 +501,7 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 
 bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!checkable_type::deserialize_definition(stream, type))
+	if (!deserialize_checkable_definition(stream, type))
 		return false;
 
 	if (!complex_item_->deserialize_definition(stream, type))
@@ -547,7 +547,7 @@ platform_item_ptr object_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::objects::value_item
+// Class rx_platform::objects::value_item 
 
 const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
 
@@ -577,7 +577,7 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type,
 }
 
 
-// Class rx_platform::objects::variable_runtime
+// Class rx_platform::objects::variable_runtime 
 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -597,7 +597,7 @@ variable_runtime::~variable_runtime()
 
 
 
-// Class rx_platform::objects::filter_runtime
+// Class rx_platform::objects::filter_runtime 
 
 filter_runtime::filter_runtime()
 {
@@ -610,7 +610,7 @@ filter_runtime::~filter_runtime()
 
 
 
-// Class rx_platform::objects::source
+// Class rx_platform::objects::source 
 
 source::source()
 {
@@ -623,7 +623,7 @@ source::~source()
 
 
 
-// Class rx_platform::objects::mapper
+// Class rx_platform::objects::mapper 
 
 mapper::mapper()
 {
@@ -636,7 +636,7 @@ mapper::~mapper()
 
 
 
-// Class rx_platform::objects::domain_runtime
+// Class rx_platform::objects::domain_runtime 
 
 string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
 
@@ -670,7 +670,7 @@ namespace_item_attributes domain_runtime::get_attributes () const
 }
 
 
-// Class rx_platform::objects::application_runtime
+// Class rx_platform::objects::application_runtime 
 
 string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
 
@@ -706,7 +706,7 @@ namespace_item_attributes application_runtime::get_attributes () const
 }
 
 
-// Class rx_platform::objects::struct_runtime
+// Class rx_platform::objects::struct_runtime 
 
 string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -747,7 +747,7 @@ bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 }
 
 
-// Class rx_platform::objects::const_value_item
+// Class rx_platform::objects::const_value_item 
 
 const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
 
@@ -775,7 +775,7 @@ bool const_value_item::deserialize_definition (base_meta_writter& stream, uint8_
 }
 
 
-// Class rx_platform::objects::port_runtime
+// Class rx_platform::objects::port_runtime 
 
 string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
 
@@ -807,7 +807,7 @@ namespace_item_attributes port_runtime::get_attributes () const
 }
 
 
-// Class rx_platform::objects::user_object
+// Class rx_platform::objects::user_object 
 
 user_object::user_object()
 {

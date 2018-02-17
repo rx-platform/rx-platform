@@ -268,6 +268,21 @@ string_type server_command_base::get_name () const
 	return console_name_;
 }
 
+size_t server_command_base::get_size () const
+{
+	return 0;
+}
+
+bool server_command_base::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return false;
+}
+
+bool server_command_base::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return false;
+}
+
 
 // Class rx_platform::prog::server_program_base 
 

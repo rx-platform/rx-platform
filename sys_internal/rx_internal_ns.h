@@ -31,13 +31,14 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
+#include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;
 
 
@@ -50,9 +51,9 @@ namespace internal_ns {
 
 
 
-class root_server_directory : public rx_platform::ns::rx_server_directory  
+class platform_root : public rx_platform::ns::rx_server_directory  
 {
-	DECLARE_REFERENCE_PTR(root_server_directory);
+	DECLARE_REFERENCE_PTR(platform_root);
 
 	DECLARE_CODE_INFO("rx", 0,6,0, "\
 root server directory:\r\n\
@@ -60,9 +61,9 @@ contains root server folders\
 ");
 
   public:
-      root_server_directory();
+      platform_root();
 
-      virtual ~root_server_directory();
+      virtual ~platform_root();
 
 
       static void initialize (hosting::rx_platform_host* host, namespace_data_t& data);
@@ -131,7 +132,7 @@ class unassigned_directory : public rx_platform::ns::rx_server_directory
 
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 storing unassigned domains and applications\r\n\
-All objects here are with unassgned state and hawing a bad quality\
+All objects here are with unassigned state and hawing a bad quality\
 ");
 
   public:
@@ -199,6 +200,9 @@ class system_server_item : public rx_platform::ns::rx_platform_item
       virtual ~system_server_item();
 
 
+      size_t get_size () const;
+
+
   protected:
 
   private:
@@ -234,6 +238,8 @@ class simple_platform_item : public rx_platform::ns::rx_platform_item
       bool is_browsable () const;
 
       string_type get_name () const;
+
+      size_t get_size () const;
 
 
       rx_time get_created_time () const
@@ -291,6 +297,8 @@ class runtime_simple_platform_item : public rx_platform::ns::rx_platform_item
 
       bool is_browsable ();
 
+      size_t get_size () const;
+
 
   protected:
 
@@ -310,11 +318,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 	DECLARE_REFERENCE_PTR(rx_item_implementation);
 
   public:
-      rx_item_implementation (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, TImpl impl);
-
       rx_item_implementation (TImpl impl);
-
-      virtual ~rx_item_implementation();
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
@@ -333,7 +337,9 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       string_type get_name () const;
 
+      size_t get_size () const;
 
+	  ~rx_item_implementation() = default;
   protected:
 
   private:
@@ -343,6 +349,124 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
 
 };
+
+
+
+
+
+
+class storage_directory : public rx_platform::ns::rx_server_directory  
+{
+	DECLARE_REFERENCE_PTR(storage_directory);
+
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+storage directory:\r\n\
+used to interface storage objects...\
+");
+
+  public:
+      storage_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
+
+      virtual ~storage_directory();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err);
+
+      void get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+// Parameterized Class sys_internal::internal_ns::rx_item_implementation 
+
+template <class TImpl>
+rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
+      : impl_(impl)
+{
+}
+
+
+
+template <class TImpl>
+void rx_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+template <class TImpl>
+string_type rx_item_implementation<TImpl>::get_type_name () const
+{
+	return impl_->get_type_name();
+}
+
+template <class TImpl>
+values::rx_value rx_item_implementation<TImpl>::get_value () const
+{
+	return impl_->get_value();
+}
+
+template <class TImpl>
+namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
+{
+	return impl_->get_attributes();
+}
+
+template <class TImpl>
+bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+{
+	rx_platform::serialization::json_writter writer;
+
+	writer.write_header(STREAMING_TYPE_CLASS);
+
+	writer.start_object(impl_->get_type_name().c_str());
+	{
+		impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+	}
+	writer.end_object();
+
+	writer.write_footer();
+
+	string_type result;
+	bool out = writer.get_string(result, true);
+
+	if (out)
+		def << result;
+	else
+		def << "Error in JSON deserialization.";
+
+	return true;
+}
+
+template <class TImpl>
+bool rx_item_implementation<TImpl>::is_browsable () const
+{
+	return impl_->is_browsable();
+}
+
+template <class TImpl>
+rx_time rx_item_implementation<TImpl>::get_created_time () const
+{
+	return impl_->get_created_time();
+}
+
+template <class TImpl>
+string_type rx_item_implementation<TImpl>::get_name () const
+{
+	return impl_->get_name();
+}
+
+template <class TImpl>
+size_t rx_item_implementation<TImpl>::get_size () const
+{
+	return impl_->get_size();
+}
 
 
 } // namespace internal_ns

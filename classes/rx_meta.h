@@ -340,10 +340,10 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx
 template <class typeT>
 bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
 {
-	auto it = registered_classes_.find(what->get_id());
+	auto it = registered_classes_.find(what->get_meta().get_id());
 	if (it == registered_classes_.end())
 	{
-		registered_classes_.emplace(what->get_id(), what);
+		registered_classes_.emplace(what->get_meta().get_id(), what);
 		return true;
 	}
 	else
@@ -393,6 +393,71 @@ typename type_hash<typeT>::RType type_hash<typeT>::create_runtime (const string_
 	return ret;
 }
 
+
+class type_safe_class
+{
+	static int32_t next_id()
+	{
+		static int32_t g_id(0);
+		return g_id++;
+	}
+	template<class T, class Tbase>
+	int32_t id_for()
+	{
+		static int result(next_id());
+	}
+};
+	/*
+private:
+	template <typename T_>
+	struct type_safe_object_type
+	{
+		virtual ~SomethingValueBase()
+		{
+		}
+	};
+
+	struct SomethingValueBase
+	{
+		std::string type_info_name;
+
+		SomethingValueBase(const std::string & t) :
+			type_info_name(t)
+		{
+		}
+	};
+
+	template <typename T_>
+	struct SomethingValue :
+		SomethingValueBase
+	{
+		T_ value;
+
+		SomethingValue(const T_ & v) :
+			SomethingValueBase(typeid(type_safe_object_type<T_>()).name()),
+			value(v)
+		{
+		}
+	};
+
+	std::shared_ptr<SomethingValueBase> _value;
+
+public:
+	template <typename T_>
+	type_safe_class(const T_ & t) :
+		_value(new SomethingValue<T_>(t))
+	{
+	}
+
+	template <typename T_>
+	const T_ & as() const
+	{
+		if (typeid(type_safe_object_type<T_>()).name() != _value->type_info_name)
+			throw SomethingIsSomethingElse();
+		return std::static_pointer_cast<const SomethingValue<T_> >(_value)->value;
+	}
+};
+*/
 
 } // namespace model
 

@@ -11,7 +11,7 @@ namespace testing
 		void test_callbacks();
 
 
-#ifndef NO_PYTHON_SUPPORT
+#ifdef PYTHON_SUPPORT
 		namespace python
 		{
 			void dump_python_information(std::ostream& out);

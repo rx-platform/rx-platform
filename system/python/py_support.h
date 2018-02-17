@@ -30,7 +30,7 @@
 #define py_support_h 1
 
 
-#ifndef NO_PYTHON_SUPPORT
+#ifdef PYTHON_SUPPORT
 
 // rx_cmds
 #include "system/server/rx_cmds.h"

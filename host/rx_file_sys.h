@@ -65,6 +65,8 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
 
       void deinit_storage ();
 
+      void list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern);
+
 
   protected:
 
@@ -75,6 +77,48 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
 
 
       string_type root_;
+
+
+};
+
+
+
+
+
+
+class file_system_file : public rx_platform::hosting::rx_platform_file  
+{
+	DECLARE_REFERENCE_PTR(file_system_file);
+
+  public:
+      file_system_file (const string_type& path, const string_type& name);
+
+      ~file_system_file();
+
+
+      values::rx_value get_value () const;
+
+      rx_time get_created_time () const;
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+
+  protected:
+
+  private:
+
+
+      sys_handle_t handle_;
+
+      rx_time created_time_;
+
+      string_type path_;
+
+      string_type name_;
+
+      bool valid_;
 
 
 };

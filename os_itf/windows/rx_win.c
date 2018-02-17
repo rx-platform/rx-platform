@@ -764,7 +764,7 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size)
 	}
 	sprintf(buffer, "%s ; Total Cores:%d", name_buff, sys.dwNumberOfProcessors);
 }
-void rx_collect_memory_info(uint64_t* total, uint64_t* free)
+void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)
 {
 	MEMORYSTATUSEX statex;
 
@@ -938,15 +938,21 @@ unsigned _stdcall _inner_handler(void* arg)
 
 #endif //RELEASE_TRACE
 
+#ifdef RX_PLATFORM_USE_COM
+
 		CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_SPEED_OVER_MEMORY);
 
+#endif //RX_PLATFORM_USE_COM
+
 		Sleep(0);// i don't know why, maybe microsoft does!!!
-
-
+		
 		(inner_arg->start_address)(inner_arg->arg);
-
+		
+#ifdef RX_PLATFORM_USE_COM
 
 		CoUninitialize();
+
+#endif //RX_PLATFORM_USE_COM
 
 
 #ifdef RELEASE_TRACE

@@ -34,6 +34,7 @@
 // rx_host
 #include "system/hosting/rx_host.h"
 
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace rx_platform {
@@ -145,6 +146,62 @@ void rx_platform_storage::init_storage ()
 
 void rx_platform_storage::deinit_storage ()
 {
+}
+
+
+// Class rx_platform::hosting::rx_platform_file 
+
+rx_platform_file::rx_platform_file()
+{
+}
+
+
+rx_platform_file::~rx_platform_file()
+{
+}
+
+
+
+string_type rx_platform_file::get_type_name () const
+{
+	return "file";
+}
+
+namespace_item_attributes rx_platform_file::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+bool rx_platform_file::generate_json (std::ostream& def, std::ostream& err) const
+{
+	err << "Can't serialize file object!";
+	return false;
+}
+
+bool rx_platform_file::is_browsable () const
+{
+	return false;
+}
+
+size_t rx_platform_file::get_size () const
+{
+	return 0;
+}
+
+bool rx_platform_file::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return false;
+}
+
+bool rx_platform_file::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return false;
+}
+
+platform_item_ptr rx_platform_file::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+
 }
 
 

@@ -51,6 +51,7 @@
 typedef std::string string_type;
 #endif
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -174,7 +175,7 @@ typedef struct _crypt_key_t
 
 typedef HMAC_CTX* crypt_hash_t;
 
-#ifndef NO_PYTHON_SUPPORT
+#ifdef PYTHON_SUPPORT
 #include <python2.7/Python.h>
 #endif
 

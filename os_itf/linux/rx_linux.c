@@ -508,12 +508,30 @@ extern "C" {
             free(cores);
         }
 	}
-	void rx_collect_memory_info(uint64_t* total, uint64_t* free)
+	void read_off_memory_status(size_t* process)
+	{
+		const char* statm_path = "/proc/self/statm";
+
+		FILE *f = fopen(statm_path, "r");
+
+		if (!f) {
+			perror(statm_path);
+		}
+		if (1 != fscanf(f, "%ulld" ,
+			process))
+		{
+			perror(statm_path);
+		}
+		fclose(f);
+	}
+	void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)
 	{
         struct sysinfo info;
         sysinfo(&info);
 		*total = info.totalram*info.mem_unit;
 		*free = info.freeram*info.mem_unit;
+
+		read_off_memory_status(process);
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

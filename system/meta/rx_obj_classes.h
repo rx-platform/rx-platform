@@ -35,6 +35,8 @@
 #include "system/logic/rx_logic.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -47,6 +49,27 @@ namespace objects
 
 namespace meta {
 
+template<class T>
+bool generate_json(T whose, std::ostream& def, std::ostream& err)
+{
+	rx_platform::serialization::json_writter writter;
+
+	writter.write_header(STREAMING_TYPE_OBJECT);
+
+	whose->serialize_definition(writter, STREAMING_TYPE_OBJECT);
+
+	writter.write_footer();
+
+	string_type result;
+	bool out = writter.get_string(result, true);
+
+	if (out)
+		def << result;
+	else
+		def << "Error in JSON deserialization.";
+
+	return out;
+}
 
 
 
@@ -54,15 +77,18 @@ namespace meta {
 template <class metaT, bool _browsable = false>
 class base_object_class : public base_mapped_class<metaT, _browsable>  
 {
-	DECLARE_REFERENCE_PTR(base_object_class);
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 	//typedef std::vector<int> programs_type;
 
   public:
+      base_object_class();
+
       base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
-      ~base_object_class();
 
+      bool serialize_object_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
       void construct (complex_runtime_ptr what);
 
@@ -70,13 +96,6 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
   protected:
-      base_object_class();
-
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
 
   private:
 
@@ -91,14 +110,15 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef base_object_class< object_class  > object_class_t;
+typedef meta_type_adapter< base_object_class< rx_platform::meta::object_class>  > object_class_t;
 
 
 
 
 
 
-class object_class : public object_class_t  
+class object_class : public rx::pointers::reference_object, 
+                     	public object_class_t  
 {
 	DECLARE_REFERENCE_PTR(object_class);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
@@ -122,6 +142,12 @@ public:
 
       void construct (complex_runtime_ptr what);
 
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      platform_item_ptr get_item_ptr ();
+
 
       static string_type type_name;
 
@@ -141,14 +167,15 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef base_object_class< domain_class  > domain_class_t;
+typedef meta_type_adapter< base_object_class< domain_class>  > domain_class_t;
 
 
 
 
 
 
-class domain_class : public domain_class_t  
+class domain_class : public rx::pointers::reference_object, 
+                     	public domain_class_t  
 {
 	DECLARE_REFERENCE_PTR(domain_class);
 public:
@@ -164,6 +191,12 @@ public:
       void construct (objects::object_runtime_ptr what);
 
       void construct (complex_runtime_ptr what);
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;
@@ -184,14 +217,15 @@ typedef domain_class::smart_ptr domain_class_ptr;
 
 
 
-typedef base_object_class< rx_platform::meta::application_class  > application_class_t;
+typedef meta_type_adapter< base_object_class< application_class>  > application_class_t;
 
 
 
 
 
 
-class application_class : public application_class_t  
+class application_class : public rx::pointers::reference_object, 
+                          	public application_class_t  
 {
 	DECLARE_REFERENCE_PTR(application_class);
 public:
@@ -207,6 +241,12 @@ public:
       void construct (objects::object_runtime_ptr what);
 
       void construct (complex_runtime_ptr what);
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;
@@ -227,14 +267,15 @@ typedef application_class::smart_ptr application_class_ptr;
 
 
 
-typedef base_object_class< port_class  > port_class_t;
+typedef meta_type_adapter< base_object_class< port_class>  > port_class_t;
 
 
 
 
 
 
-class port_class : public port_class_t  
+class port_class : public rx::pointers::reference_object, 
+                   	public port_class_t  
 {
 	DECLARE_REFERENCE_PTR(port_class);
 public:
@@ -250,6 +291,12 @@ public:
       void construct (objects::object_runtime_ptr what);
 
       void construct (complex_runtime_ptr what);
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;

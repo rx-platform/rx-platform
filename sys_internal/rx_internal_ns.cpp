@@ -35,6 +35,8 @@
 #include "system/server/rx_server.h"
 #include "terminal/rx_commands.h"
 #include "system/server/rx_inf.h"
+#include "system/meta/rx_classes.h"
+#include "system/meta/rx_obj_classes.h"
 #include "testing/rx_test.h"
 #include "classes/rx_meta.h"
 #include "rx_configuration.h"
@@ -45,27 +47,26 @@ namespace sys_internal {
 
 namespace internal_ns {
 
-// Class sys_internal::internal_ns::root_server_directory 
+// Class sys_internal::internal_ns::platform_root 
 
-server_directories_type root_server_directory::root_directories_;
+server_directories_type platform_root::root_directories_;
 
-server_items_type root_server_directory::root_items_;
+server_items_type platform_root::root_items_;
 
-root_server_directory::root_server_directory()
+platform_root::platform_root()
 	: rx_server_directory("",root_directories_,root_items_)
 {
 }
 
 
-root_server_directory::~root_server_directory()
+platform_root::~platform_root()
 {
 }
 
 
 
-void root_server_directory::initialize (hosting::rx_platform_host* host, namespace_data_t& data)
+void platform_root::initialize (hosting::rx_platform_host* host, namespace_data_t& data)
 {
-
 	server_directories_type dirs;
 	server_items_type items;
 	server_items_type sub_items;
@@ -75,24 +76,28 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 	items.clear();
 
 	world_directory::smart_ptr world(RX_NS_WORLD_NAME, dirs, items);
-
-
-
 	root_directories_.push_back(world);
+
+
+	dirs.clear();
+	items.clear();
+
+	storage_directory::smart_ptr storage(RX_NS_STORAGE_NAME, dirs, items);
+	root_directories_.push_back(storage);
 
 	dirs.clear();
 	items.clear();
 	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_app()->get_item_ptr());
 	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_domain()->get_item_ptr());
 	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
-	//root_directories_.emplace_back(unassigned);
+	root_directories_.push_back(unassigned);
 
 	dirs.clear();
 	items.clear();
 	std::vector<prog::command_ptr> commands;
 	terminal::commands::server_command_manager::instance()->get_commands(commands);
 	for (auto one : commands)
-		items.emplace_back(one->get_item_ptr());
+		items.push_back(one->get_item_ptr());
 	items.emplace_back(terminal::commands::server_command_manager::instance()->get_item_ptr());
 	namespace_directory::smart_ptr bin(RX_NS_BIN_NAME, dirs, items);
 
@@ -176,21 +181,21 @@ void root_server_directory::initialize (hosting::rx_platform_host* host, namespa
 
 	root_directories_.push_back(sys);
 	root_directories_.push_back(test);
-
 }
 
-void root_server_directory::deinitialize ()
+void platform_root::deinitialize ()
 {
 }
 
-namespace_item_attributes root_server_directory::get_attributes () const
+namespace_item_attributes platform_root::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
-bool root_server_directory::generate_json (std::ostream& def, std::ostream& err)
+bool platform_root::generate_json (std::ostream& def, std::ostream& err)
 {
-	return true;
+	err << "Can't serialize directory object!";
+	return false;
 }
 
 
@@ -215,7 +220,8 @@ namespace_item_attributes namespace_directory::get_attributes () const
 
 bool namespace_directory::generate_json (std::ostream& def, std::ostream& err)
 {
-	return true;
+	err << "Can't serialize directory object!";
+	return false;
 }
 
 
@@ -240,7 +246,8 @@ namespace_item_attributes unassigned_directory::get_attributes () const
 
 bool unassigned_directory::generate_json (std::ostream& def, std::ostream& err)
 {
-	return true;
+	err << "Can't serialize directory object!";
+	return false;
 }
 
 
@@ -265,7 +272,8 @@ namespace_item_attributes world_directory::get_attributes () const
 
 bool world_directory::generate_json (std::ostream& def, std::ostream& err)
 {
-	return true;
+	err << "Can't serialize directory object!";
+	return false;
 }
 
 
@@ -280,6 +288,12 @@ system_server_item::~system_server_item()
 {
 }
 
+
+
+size_t system_server_item::get_size () const
+{
+	return sizeof(*this);
+}
 
 
 // Class sys_internal::internal_ns::simple_platform_item 
@@ -334,6 +348,11 @@ bool simple_platform_item::is_browsable () const
 string_type simple_platform_item::get_name () const
 {
 	return name_;
+}
+
+size_t simple_platform_item::get_size () const
+{
+	return sizeof(*this);
 }
 
 //template simple_platform_item< rx_platform::objects::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
@@ -392,88 +411,58 @@ bool runtime_simple_platform_item<T,class_name_idx>::is_browsable ()
   return false;
 }
 
-
-// Parameterized Class sys_internal::internal_ns::rx_item_implementation 
-
-template <class TImpl>
-rx_item_implementation<TImpl>::rx_item_implementation (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, TImpl impl)
-      : impl_(impl)
+template <class T, int class_name_idx>
+size_t runtime_simple_platform_item<T,class_name_idx>::get_size () const
 {
-}
-
-template <class TImpl>
-rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
-      : impl_(impl)
-{
+  return 0;
 }
 
 
-template <class TImpl>
-rx_item_implementation<TImpl>::~rx_item_implementation()
+// Class sys_internal::internal_ns::storage_directory 
+
+storage_directory::storage_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
+	: rx_server_directory(name, sub_directories, items)
 {
 }
 
 
-
-template <class TImpl>
-void rx_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+storage_directory::~storage_directory()
 {
 }
 
-template <class TImpl>
-string_type rx_item_implementation<TImpl>::get_type_name () const
+
+
+namespace_item_attributes storage_directory::get_attributes () const
 {
-	return impl_->get_type_name();
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
 }
 
-template <class TImpl>
-values::rx_value rx_item_implementation<TImpl>::get_value () const
+bool storage_directory::generate_json (std::ostream& def, std::ostream& err)
 {
-	return impl_->get_value();
+	err << "Can't serialize directory object!";
+	return false;
 }
 
-template <class TImpl>
-namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
+void storage_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
 {
-	return impl_->get_attributes();
+	rx_gate::instance().get_host()->get_storage()->list_storage("", sub_directories, sub_items, pattern);
+	rx_server_directory::get_content(sub_directories, sub_items, pattern);
 }
 
-template <class TImpl>
-bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
-{
-	return impl_->generate_json(def, err);
-}
 
-template <class TImpl>
-bool rx_item_implementation<TImpl>::is_browsable () const
-{
-	return impl_->is_browsable();
-}
-
-template <class TImpl>
-rx_time rx_item_implementation<TImpl>::get_created_time () const
-{
-	return impl_->get_created_time();
-}
-
-template <class TImpl>
-string_type rx_item_implementation<TImpl>::get_name () const
-{
-	return impl_->get_name();
-}
-
-template class rx_item_implementation<objects::domain_runtime::smart_ptr>;
-template class rx_item_implementation<objects::application_runtime_ptr>;
-template class rx_item_implementation<objects::object_runtime_ptr>;
-template class rx_item_implementation<testing::test_case::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<application_class, false>::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<domain_class, false>::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<struct_class,false>::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<object_class, false>::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<variable_class, false>::smart_ptr>;
-template class rx_item_implementation<meta::base_complex_type<port_class, false>::smart_ptr>;
-template class rx_item_implementation<prog::command_ptr>;
-template class rx_item_implementation<logic::program_runtime_ptr>;
 } // namespace internal_ns
 } // namespace sys_internal
 
+template class sys_internal::internal_ns::rx_item_implementation<objects::domain_runtime::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<objects::application_runtime_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<objects::object_runtime_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<testing::test_case::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::application_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::domain_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::struct_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::object_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::variable_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<meta::port_class::smart_ptr>;

@@ -96,8 +96,10 @@ void rx_gate::cleanup ()
 
 uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
+#ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
+#endif
 	
 	host_ = host;
 
@@ -105,8 +107,8 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 	{
 		if (manager_.initialize(host, data.managment_data))
 		{
-			sys_internal::internal_ns::root_server_directory::initialize(host,data.namespace_data);
-			root_ = rx_create_reference<sys_internal::internal_ns::root_server_directory>();
+			sys_internal::internal_ns::platform_root::initialize(host,data.namespace_data);
+			root_ = rx_create_reference<sys_internal::internal_ns::platform_root>();
 
 			for (auto one : scripts_)
 				one.second->initialize();

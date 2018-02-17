@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +43,6 @@ using namespace std::string_literals;
 namespace terminal {
 
 namespace console {
-
 
 #define RX_CONSOLE_CHECKED "[X]"
 #define RX_CONSOLE_UNCHECKED "[ ]"
@@ -148,7 +147,7 @@ IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 
 
 
-// Class terminal::console::server_telnet_socket
+// Class terminal::console::server_telnet_socket 
 
 server_telnet_socket::server_telnet_socket()
 {
@@ -169,7 +168,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 }
 
 
-// Class terminal::console::telnet_client
+// Class terminal::console::telnet_client 
 
 telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
       : security_context_(*addr,*local_addr),
@@ -500,9 +499,38 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 	char echo_buff[4];
 	int size_of_echo_buff = 0;
 
-	if (buff[0] == IAC)
+	if (buff[0] != IAC)
 	{
-		//ATLTRACE(L);
+		// our buffer
+		string_type to_send;
+
+		if (count > 1)
+		{
+			for (size_t i = idx; i < count - 1; i++)
+			{
+				vt100_parser_.char_received(buff[i], false, to_send
+					, [this](const string_type& line)
+				{
+					line_received(line);
+				});
+				//printf("%d ", (int)data[i]);
+			}
+		}
+		vt100_parser_.char_received(buff[count - 1], true, to_send
+			, [this](const string_type& line)
+		{
+			line_received(line);
+		});
+
+		if (!to_send.empty())
+		{
+			auto buff = get_free_buffer();
+			buff->push_string(to_send);
+			send(buff);
+		}
+	}
+	else //if (buff[0] == IAC)!!!
+	{
 		if (buff[1] >= WILL)
 		{
 			if (buff[2] == TELNET_ECHO)
@@ -576,36 +604,6 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 
 		return true;
 
-	}
-	else
-	{
-		// our buffer
-		string_type to_send;
-
-		if (count > 1)
-		{
-			for (size_t i = idx; i < count-1; i++)
-			{
-				vt100_parser_.char_received(buff[i], false, to_send
-					, [this](const string_type& line)
-				{
-					line_received(line);
-				});
-				//printf("%d ", (int)data[i]);
-			}
-		}
-		vt100_parser_.char_received(buff[count - 1], true, to_send
-			, [this](const string_type& line)
-		{
-			line_received(line);
-		});
-
-		if (!to_send.empty())
-		{
-			auto buff = get_free_buffer();
-			buff->push_string(to_send);
-			send(buff);
-		}
 	}
 	return true;
 
@@ -739,7 +737,7 @@ void telnet_client::line_received (const string_type& line)
 }
 
 
-// Class terminal::console::telnet_security_context
+// Class terminal::console::telnet_security_context 
 
 telnet_security_context::telnet_security_context()
 {
@@ -815,36 +813,42 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	return true;
 }
 
-bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_platform_item::smart_ptr one)
+bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
 {
 	if ((one->get_attributes()&namespace_item_browsable) != 0)
 		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 	else
 		row.emplace_back(one->get_name());
-	if (list_type)
+	if (options.list_type)
 	{
 		row.emplace_back(one->get_type_name());
 	}
-	if (list_attributes)
+	if (options.list_attributes)
 	{
 		string_type attrs;
 		ns::fill_namepsace_string(one->get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
-	if (list_qualities || list_timestamps)
+	if (options.list_qualities || options.list_timestamps)
 	{
 		values::rx_value val = one->get_value();
 
-		if (list_qualities)
+		if (options.list_qualities)
 		{
 			string_type quality_stirng;
 			ns::fill_quality_string(val, quality_stirng);
 			row.emplace_back(quality_stirng);
 		}
-		if (list_timestamps)
+		if (options.list_timestamps)
 			row.emplace_back(val.get_time().get_string());
 	}
-	if (list_created)
+	if (options.list_size)
+	{
+		std::ostringstream temp;
+		temp << one->get_size();
+		row.emplace_back(temp.str());
+	}
+	if (options.list_created)
 	{
 		row.emplace_back(one->get_created_time().get_string());
 	}
@@ -853,35 +857,41 @@ bool dump_items_on_console(rx_row_type& row, bool list_attributes, bool list_qua
 }
 
 
-bool dump_dirs_on_console(rx_row_type& row, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, ns::rx_server_directory::smart_ptr one, const string_type& name)
+bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_server_directory::smart_ptr one, const string_type& name)
 {
 
 	row.emplace_back(name,ANSI_COLOR_CYAN ANSI_COLOR_BOLD,ANSI_COLOR_RESET);
-	if (list_type)
+	if (options.list_type)
 	{
 		row.emplace_back(one->get_type_name());
 	}
-	if (list_attributes)
+	if (options.list_attributes)
 	{
 		string_type attrs;
 		ns::fill_namepsace_string(one->get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
-	if (list_qualities || list_timestamps)
+	if (options.list_qualities || options.list_timestamps)
 	{
 		values::rx_value val;
 		one->get_value(val);
 
-		if (list_qualities)
+		if (options.list_qualities)
 		{
 			string_type quality_stirng;
 			ns::fill_quality_string(val, quality_stirng);
 			row.emplace_back(quality_stirng);
 		}
-		if (list_timestamps)
+		if (options.list_timestamps)
 			row.emplace_back(val.get_time().get_string());
 	}
-	if (list_created)
+	if (options.list_size)
+	{
+		std::ostringstream temp;
+		temp << 55;
+		row.emplace_back(temp.str());
+	}
+	if (options.list_created)
 	{
 		row.emplace_back(one->get_created().get_string());
 	}
@@ -902,7 +912,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::namespace_command
+// Class terminal::console::console_commands::namespace_command 
 
 namespace_command::namespace_command (const string_type& console_name)
   : server_command(console_name)
@@ -916,7 +926,7 @@ namespace_command::~namespace_command()
 
 
 
-bool namespace_command::list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory)
+bool namespace_command::list_directory (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, server_directory_ptr& directory)
 {
 	server_directories_type dirs;
 	server_items_type items;
@@ -928,26 +938,28 @@ bool namespace_command::list_directory (std::ostream& out, std::ostream& err, co
 
 
 	table[0].emplace_back("Name");
-	if (list_type)
+	if (options.list_type)
 		table[0].emplace_back("Type");
-	if (list_attributes)
+	if (options.list_attributes)
 		table[0].emplace_back("Attributes");
-	if (list_qualities)
+	if (options.list_qualities)
 		table[0].emplace_back("Quality");
-	if (list_timestamps)
+	if (options.list_timestamps)
 		table[0].emplace_back("Time Stamp");
-	if (list_created)
+	if (options.list_size)
+		table[0].emplace_back("Size");
+	if (options.list_created)
 		table[0].emplace_back("Created Time");
 
 	size_t idx = 1;
 	for (auto& one : dirs)
 	{
-		dump_dirs_on_console(table[idx], list_attributes, list_qualities, list_timestamps, list_created, list_type, one, one->get_name());
+		dump_dirs_on_console(table[idx], options, one, one->get_name());
 		idx++;
 	}
 	for (auto& one : items)
 	{
-		dump_items_on_console(table[idx], list_attributes, list_qualities, list_timestamps, list_created, list_type, one);
+		dump_items_on_console(table[idx], options, one);
 		idx++;
 	}
 
@@ -959,43 +971,47 @@ bool namespace_command::list_directory (std::ostream& out, std::ostream& err, co
 bool namespace_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type filter;
-	bool list_attributes = false;
-	bool list_qualities = false;
-	bool list_timestamps = false;
-	bool list_created = false;
-	bool list_type = true;
+	term_list_item_options options;
+	options.list_attributes = false;
+	options.list_qualities = false;
+	options.list_timestamps = false;
+	options.list_created = false;
+	options.list_type = true;
+	options.list_size = false;
 	while (!in.eof())
 	{
 		string_type opt;
 		in >> opt;
 		if (opt == "-q")
-			list_qualities = true;
+			options.list_qualities = true;
 		if (opt == "-t")
-			list_timestamps = true;
+			options.list_timestamps = true;
 		if (opt == "-a")
-			list_attributes = true;
+			options.list_attributes = true;
 		if (opt == "-c")
-			list_created = true;
+			options.list_created = true;
+		if (opt == "-s")
+			options.list_size = true;
 		if (opt == "-f")
 		{
-			list_attributes = true;
-			list_qualities = true;
-			list_timestamps = true;
+			options.list_attributes = true;
+			options.list_qualities = true;
+			options.list_timestamps = true;
 		}
 	}
 
 	if (ctx->get_current_object())
 	{
-		return list_object(out, err, filter, list_attributes, list_qualities, list_timestamps, list_created, list_type, ctx->get_current_object());
+		return list_object(out, err, filter, options, ctx->get_current_object());
 	}
 	else
 	{
         server_directory_ptr dir=ctx->get_current_directory();
-		return list_directory(out, err, filter, list_attributes, list_qualities, list_timestamps, list_created, list_type, dir);
+		return list_directory(out, err, filter, options, dir);
 	}
 }
 
-bool namespace_command::list_object (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, platform_item_ptr object)
+bool namespace_command::list_object (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, platform_item_ptr object)
 {
 	server_items_type items;
 	object->get_content(items,filter);
@@ -1006,21 +1022,23 @@ bool namespace_command::list_object (std::ostream& out, std::ostream& err, const
 
 
 	table[0].emplace_back("Name");
-	if (list_type)
+	if (options.list_type)
 		table[0].emplace_back("Type");
-	if (list_attributes)
+	if (options.list_attributes)
 		table[0].emplace_back("Attributes");
-	if (list_qualities)
+	if (options.list_qualities)
 		table[0].emplace_back("Quality");
-	if (list_timestamps)
+	if (options.list_timestamps)
 		table[0].emplace_back("Time Stamp");
-	if (list_created)
+	if (options.list_size)
+		table[0].emplace_back("Size");
+	if (options.list_created)
 		table[0].emplace_back("Created Time");
 
 	size_t idx = 1;
 	for (auto& one : items)
 	{
-		dump_items_on_console(table[idx], list_attributes, list_qualities, list_timestamps, list_created, list_type, one);
+		dump_items_on_console(table[idx], options, one);
 		idx++;
 	}
 
@@ -1030,7 +1048,7 @@ bool namespace_command::list_object (std::ostream& out, std::ostream& err, const
 }
 
 
-// Class terminal::console::console_commands::dir_command
+// Class terminal::console::console_commands::dir_command 
 
 dir_command::dir_command()
   : namespace_command("dir")
@@ -1044,7 +1062,7 @@ dir_command::~dir_command()
 
 
 
-// Class terminal::console::console_commands::ls_command
+// Class terminal::console::console_commands::ls_command 
 
 ls_command::ls_command()
   : namespace_command("ls")
@@ -1116,7 +1134,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::cd_command
+// Class terminal::console::console_commands::cd_command 
 
 cd_command::cd_command()
   : server_command("cd")
@@ -1141,10 +1159,10 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	if (!where)
 	{
 		where = ctx->get_current_directory();
-		item = ctx->get_current_directory()->get_sub_item(path);
+		item = where->get_sub_item(path);
 		if (!item)
 		{
-			err << "Directory not found!\r\n";
+			err << "Item not found!\r\n";
 			return false;
 		}
 	}
@@ -1155,7 +1173,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::info_command
+// Class terminal::console::console_commands::info_command 
 
 info_command::info_command()
   : directory_aware_command("info")
@@ -1235,7 +1253,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 }
 
 
-// Class terminal::console::console_commands::code_command
+// Class terminal::console::console_commands::code_command 
 
 code_command::code_command()
   : directory_aware_command("code")
@@ -1283,7 +1301,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::rx_name_command
+// Class terminal::console::console_commands::rx_name_command 
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -1317,13 +1335,17 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 		<< "\r\n";
 	/////////////////////////////////////////////////////////////////////////
 	// memory
-	uint64_t total = 0;
-	uint64_t free = 0;
-	rx_collect_memory_info(&total, &free);
+	size_t total = 0;
+	size_t free = 0;
+	size_t process = 0;
+	rx_collect_memory_info(&total, &free, &process);
 	out << "Memory: Total "
 		<< (int)(total / 1048576ull)
 		<< "MB / Free "
-		<< (int)(free / 1048576ull)  << "MB \r\n";
+		<< (int)(free / 1048576ull)
+		<< "MB / Process " 
+		<< (int)(process / 1024ull)
+		<< "KB \r\n";
 	/////////////////////////////////////////////////////////////////////////
 	out << "Page size: " << (int)rx_os_page_size() << " bytes\r\n";
 
@@ -1331,7 +1353,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command
+// Class terminal::console::console_commands::cls_command 
 
 cls_command::cls_command()
   : server_command("cls")
@@ -1352,7 +1374,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class terminal::console::console_commands::shutdown_command
+// Class terminal::console::console_commands::shutdown_command 
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -1378,7 +1400,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class terminal::console::console_commands::log_command
+// Class terminal::console::console_commands::log_command 
 
 log_command::log_command()
 	: server_command("log")
@@ -1484,7 +1506,7 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 }
 
 
-// Class terminal::console::console_commands::sec_command
+// Class terminal::console::console_commands::sec_command 
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -1570,7 +1592,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command
+// Class terminal::console::console_commands::time_command 
 
 time_command::time_command()
 	: server_command("time")
@@ -1592,7 +1614,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command
+// Class terminal::console::console_commands::sleep_command 
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -1648,7 +1670,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command
+// Class terminal::console::console_commands::def_command 
 
 def_command::def_command()
 	: directory_aware_command("def")
@@ -1703,7 +1725,7 @@ bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, 
 }
 
 
-// Class terminal::console::console_commands::directory_aware_command
+// Class terminal::console::console_commands::directory_aware_command 
 
 directory_aware_command::directory_aware_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1717,7 +1739,7 @@ directory_aware_command::~directory_aware_command()
 
 
 
-// Class terminal::console::console_commands::phyton_command
+// Class terminal::console::console_commands::phyton_command 
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -1733,6 +1755,7 @@ phyton_command::~phyton_command()
 
 bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
+#ifdef PYTHON_SUPPORT
 	string_type sub_command;
 	in >> sub_command;
 	if (sub_command.empty())
@@ -1752,10 +1775,14 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 		return false;
 	}
 	return true;
+#else
+	err << "No python support!!!!\r\n";
+	return false;
+#endif
 }
 
 
-// Class terminal::console::console_commands::license_command
+// Class terminal::console::console_commands::license_command 
 
 license_command::license_command()
 	: server_command("license")

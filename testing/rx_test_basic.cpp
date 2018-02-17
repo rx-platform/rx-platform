@@ -33,6 +33,7 @@
 #include "testing/rx_test_basic.h"
 
 #include "classes/rx_meta.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace testing {
@@ -200,24 +201,32 @@ namespace meta_test {
  bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
 
+
+
+	 size_t ret = sizeof(rx::pointers::basic_smart_ptr<rx::job_ptr>);
+
+	 auto one = rx_platform::rx_gate::instance().get_root_directory();
+
+	 ret = sizeof(one);
+
 	 out << "Creating test_class\r\n";
 	 server_directory_ptr dir = ctx->get_current_directory();
 
 	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
-	 test_class->register_const_value("testBool", true);
-	 test_class->register_simple_value("testVal", 158);
+	 test_class->get_meta().register_const_value("testBool", true);
+	 test_class->get_meta().register_simple_value("testVal", 158);
 
 	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
-	 test_struct->register_simple_value("structVal", false);
+	 test_struct->get_meta().register_simple_value("structVal", false);
 
-	 test_class->register_struct("structName", 41);
+	 test_class->get_meta().register_struct("structName", 41);
 
 	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
 	 {
 		 out << "test_class created\r\n";
 
 		 dir->add_item(test_class->get_item_ptr());
-		 if (test_class->generate_json(out, err))
+		 //if (test_class->generate_json(out, err))
 		 {
 
 			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
@@ -227,7 +236,7 @@ namespace meta_test {
 
 				 dir->add_item(test_struct->get_item_ptr());
 
-				 if (test_struct->generate_json(out, err))
+				 //if (test_struct->generate_json(out, err))
 				 {
 					 out << "Creating test_object\r\n";
 

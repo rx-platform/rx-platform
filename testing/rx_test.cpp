@@ -433,6 +433,21 @@ platform_item_ptr test_case::get_item_ptr ()
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
+bool test_case::serialize_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return true;
+}
+
+bool test_case::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return true;
+}
+
+size_t test_case::get_size () const
+{
+	return 0;
+}
+
 
 // Class testing::testing_enviroment 
 

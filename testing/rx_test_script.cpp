@@ -42,15 +42,18 @@ namespace script_test {
 namespace py_test {
 void dump_python_information(std::ostream& out)
 {
-
+#ifdef PYTHON_SUPPORT
 	out << "Python information\r\n==============================\r\n";
 	out << "Version:\r\n" << Py_GetVersion() << "\r\n";
 	out << "\r\n" << Py_GetCopyright() << "\r\n\r\n";
+#endif
 }
 
 void do_python_test(std::ostream& out, const string_type& command)
 {
+#ifdef PYTHON_SUPPORT
 	PyRun_SimpleString(command.c_str());
+#endif
 }
 
 // Class testing::script_test::py_test::python_test 

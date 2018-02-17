@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -262,6 +262,8 @@ public:
       virtual rx_time get_created_time () const = 0;
 
       virtual string_type get_name () const = 0;
+
+      virtual size_t get_size () const = 0;
 
 
       const rx_reference<rx_platform_item> get_runtime_parent () const

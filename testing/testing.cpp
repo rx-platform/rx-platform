@@ -236,8 +236,8 @@ void test_thread()
     printf("OS:%s\r\n",buff);
     rx_collect_processor_info(buff,0x100);
     printf("CPU:%s\r\n",buff);
-    uint64_t total,free;
-    rx_collect_memory_info(&total,&free);
+	size_t total,free,process;
+    rx_collect_memory_info(&total,&free,&process);
     printf("MEM: Total %dMB / Free %dMB\r\n",(int)(total/(1024*1024)),(int)(free/(1024*1024)));
 
 	//my_listener lisent;

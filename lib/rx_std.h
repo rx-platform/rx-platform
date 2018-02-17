@@ -33,6 +33,7 @@
 
 
 // general stuff
+#include <stdint.h>
 #include <stdio.h>
 #include <atomic>
 #include <assert.h>
@@ -68,7 +69,6 @@ using namespace std::placeholders;
 
 #define DEFAULT_NAMESPACE 1
 #define DEFAULT_OPC_NAMESPACE 0
-
 
 
 #define TIME_QUALITY_LEAP_SECONDS_KNOWN 0x80

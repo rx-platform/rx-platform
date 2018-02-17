@@ -2,6 +2,7 @@
 
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
+#define RX_NS_STORAGE_NAME "storage"
 #define RX_NS_SYS_NAME "_sys"
 #define RX_NS_TEST_NAME "_test"
 #define RX_NS_UNASSIGNED_NAME "_unassigned"
@@ -87,3 +88,6 @@
 #define RX_TEST_STATUS_UNKNOWN_NAME RX_NULL_ITEM_NAME
 #define RX_TEST_STATUS_OK_NAME "Passed"
 #define RX_TEST_STATUS_FAILED_NAME "*FAILED*"
+
+//Storage related stuff
+#define RX_FILE_STORAGE_FOLDER "storage"

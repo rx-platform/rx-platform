@@ -30,6 +30,14 @@
 #define rx_platform_h 1
 
 
+/*******************************************************************
+ Command Line switches
+ ======================
+
+ #define PYTHON_SUPPORT - includes the python support
+ 
+********************************************************************/
+
 #include "rx_library.h"
 #include "system/meta/rx_obj_classes.h"
 

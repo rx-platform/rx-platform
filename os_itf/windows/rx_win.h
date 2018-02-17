@@ -31,7 +31,6 @@
 
 
 
-
 #include "targetver.h"
 
 
@@ -157,10 +156,11 @@ typedef char socket_data_t;
 typedef DWORD rx_thread_data_t;
 
 //Python Support
-#ifndef NO_PYTHON_SUPPORT
+#ifdef PYTHON_SUPPORT
 #include "C:\Python\include/Python.h"
 #endif
 
+#include "C:\Python\include/Python.h"
 
 
 

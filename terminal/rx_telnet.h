@@ -39,18 +39,18 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_security
-#include "lib/security/rx_security.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_io
-#include "lib/rx_io.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 
@@ -201,6 +201,15 @@ class server_telnet_socket : public rx::io::tcp_listent_std_buffer
 namespace console_commands {
 typedef rx_platform::prog::console_program_context::smart_ptr console_program_contex_ptr;
 
+struct term_list_item_options
+{
+	bool list_attributes;
+	bool list_qualities;
+	bool list_timestamps;
+	bool list_created;
+	bool list_type;
+	bool list_size;
+};
 
 
 
@@ -216,9 +225,9 @@ list current directory on console ( dir, ls ");
       virtual ~namespace_command();
 
 
-      bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, server_directory_ptr& directory);
+      bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, server_directory_ptr& directory);
 
-      bool list_object (std::ostream& out, std::ostream& err, const string_type& filter, bool list_attributes, bool list_qualities, bool list_timestamps, bool list_created, bool list_type, platform_item_ptr object);
+      bool list_object (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, platform_item_ptr object);
 
 
   protected:
