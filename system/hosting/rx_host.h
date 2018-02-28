@@ -207,6 +207,8 @@ class rx_platform_host
 
       virtual bool break_host (const string_type& msg) = 0;
 
+      int console_main (int argc, char* argv[]);
+
 
       rx_platform_host * get_parent ()
       {

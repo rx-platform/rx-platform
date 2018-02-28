@@ -583,21 +583,17 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 	}
 	else if (line == "host")
 	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(err_buffer.unsafe_ptr());
 
-		rx_post_function<smart_ptr>([out_buffer,err_buffer](smart_ptr) mutable
+		out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		string_array hosts;
+		rx_gate::instance().get_host()->get_host_info(hosts);
+		for (const auto& one : hosts)
 		{
-			std::ostream out(out_buffer.unsafe_ptr());
-			std::ostream err(err_buffer.unsafe_ptr());
-
-			out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-			string_array hosts;
-			rx_gate::instance().get_host()->get_host_info(hosts);
-			for (const auto& one : hosts)
-			{
-				out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n";
-			}
-		}, smart_this(), executer_);
-		ret = false;
+			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n";
+		}
+		ret = true;
 	}
 	else
 	{

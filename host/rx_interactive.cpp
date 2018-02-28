@@ -28,7 +28,6 @@
 
 #include "stdafx.h"
 
-#include <iostream>
 #include "rx_interactive_version.h"
 
 // rx_interactive
@@ -42,178 +41,6 @@
 namespace host {
 
 namespace interactive {
-
-// Class host::interactive::interactive_console_host 
-
-interactive_console_host::interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
-      : exit_(false)
-	, hosting::rx_platform_host(storage)
-{
-}
-
-
-interactive_console_host::~interactive_console_host()
-{
-}
-
-
-
-void interactive_console_host::console_loop (configuration_data_t& config)
-{
-
-	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	sec_ctx->login();
-
-	security::security_auto_context dummy(sec_ctx);
-
-	if(!config.managment_data.telnet_port)// set to the last default if not set
-		config.managment_data.telnet_port = 12345;
-	if(config.runtime_data.genereal_pool_size<0)
-		config.runtime_data.genereal_pool_size = 2;
-	if (config.runtime_data.io_pool_size <=0)// has to have at least one
-		config.runtime_data.io_pool_size = 1;
-	if (config.runtime_data.workers_pool_size<0)
-		config.runtime_data.workers_pool_size = 2;
-
-
-	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-
-	if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
-	{
-
-		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-
-		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
-		{
-			interactive_console_client interactive(this);
-
-			interactive.run_interactive();
-
-			rx_platform::rx_gate::instance().stop();
-		}
-		rx_platform::rx_gate::instance().deinitialize();
-	}
-
-	HOST_LOG_INFO("Main", 999, "Closing console...");
-
-}
-
-void interactive_console_host::get_host_info (string_array& hosts)
-{
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
-	}
-	hosts.emplace_back(ret);
-	rx_platform_host::get_host_info(hosts);
-}
-
-void interactive_console_host::server_started_event ()
-{
-	printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
-}
-
-bool interactive_console_host::shutdown (const string_type& msg)
-{
-	security::security_context_ptr ctx = security::active_security();
-	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
-	std::cout << ANSI_COLOR_RESET "\r\n";
-	std::cout << "Message:" << msg << "\r\n";
-	std::cout.flush();
-	exit_ = true;
-	rx_gate::instance().get_host()->break_host("");
-	return true;
-}
-
-bool interactive_console_host::exit () const
-{
-	return exit_;
-}
-
-void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
-{
-}
-
-void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
-{
-}
-
-bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
-{
-	std::ostream out(out_buffer.unsafe_ptr());
-	std::stringstream in(line);
-	std::ostream err(err_buffer.unsafe_ptr());
-
-	bool ret = false;
-
-	string_type command;
-	in >> command;
-	if (command == "frun")
-	{
-		string_type file_name;
-		in >> file_name;
-		file_name = "platform script one.rxs";
-		auto storage = get_storage();
-		if (storage)
-		{
-			sys_handle_t file = storage->get_host_console_script_file(file_name);
-			if (file)
-			{
-				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-				if (buffer->fill_with_file_content(file))
-				{
-					out << "file loaded in memory...\r\n";
-					out << "Running file script:" << file_name;
-					out << "\r\n=====================================\r\n";
-
-					while (!buffer->eof())
-					{
-						string_type line;
-						buffer->read_line(line);
-						out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
-					}
-
-					out << "=====================================\r\nScript done.\r\n";
-					ret = true;
-				}
-				else
-				{
-					err << "error reading file content\r\n";
-				}
-				rx_file_close(file);
-				return ret;
-			}
-			else
-			{
-				err << "error opening file\r\n";
-			}
-		}
-	}
-	else
-	{
-		err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
-	}
-	return ret;
-}
-
-int interactive_console_host::console_main (int argc, char* argv[])
-{
-	string_vector arguments(argc);
-	for (int i = 0; i < argc; i++)
-		arguments[i] = argv[i];
-
-	bool ret = start(arguments);
-
-	return ret ? 0 : -1;
-
-}
-
-bool interactive_console_host::write_stdout (const string_type& lines)
-{
-	return write_stdout(lines.c_str(), lines.size());
-}
-
 
 // Class host::interactive::interactive_console_client 
 
@@ -396,6 +223,166 @@ bool interactive_security_context::is_interactive () const
 {
   return true;
 
+}
+
+
+// Class host::interactive::interactive_console_host 
+
+interactive_console_host::interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
+      : exit_(false)
+	, hosting::rx_platform_host(storage)
+{
+}
+
+
+interactive_console_host::~interactive_console_host()
+{
+}
+
+
+
+void interactive_console_host::console_loop (configuration_data_t& config)
+{
+
+	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
+	sec_ctx->login();
+
+	security::security_auto_context dummy(sec_ctx);
+
+	if(!config.managment_data.telnet_port)// set to the last default if not set
+		config.managment_data.telnet_port = 12345;
+	if(config.runtime_data.genereal_pool_size<0)
+		config.runtime_data.genereal_pool_size = 2;
+	if (config.runtime_data.io_pool_size <=0)// has to have at least one
+		config.runtime_data.io_pool_size = 1;
+	if (config.runtime_data.workers_pool_size<0)
+		config.runtime_data.workers_pool_size = 2;
+
+
+	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
+
+	if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
+	{
+
+		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
+
+		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
+		{
+			interactive_console_client interactive(this);
+
+			interactive.run_interactive();
+
+			rx_platform::rx_gate::instance().stop();
+		}
+		rx_platform::rx_gate::instance().deinitialize();
+	}
+
+	HOST_LOG_INFO("Main", 999, "Closing console...");
+
+}
+
+void interactive_console_host::get_host_info (string_array& hosts)
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
+	}
+	hosts.emplace_back(ret);
+	rx_platform_host::get_host_info(hosts);
+}
+
+void interactive_console_host::server_started_event ()
+{
+	printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
+}
+
+bool interactive_console_host::shutdown (const string_type& msg)
+{
+	security::security_context_ptr ctx = security::active_security();
+	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
+	std::cout << ANSI_COLOR_RESET "\r\n";
+	std::cout << "Message:" << msg << "\r\n";
+	std::cout.flush();
+	exit_ = true;
+	rx_gate::instance().get_host()->break_host("");
+	return true;
+}
+
+bool interactive_console_host::exit () const
+{
+	return exit_;
+}
+
+void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
+{
+}
+
+void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
+{
+}
+
+bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+{
+	std::ostream out(out_buffer.unsafe_ptr());
+	std::stringstream in(line);
+	std::ostream err(err_buffer.unsafe_ptr());
+
+	bool ret = false;
+
+	string_type command;
+	in >> command;
+	if (command == "frun")
+	{
+		string_type file_name;
+		in >> file_name;
+		file_name = "platform script one.rxs";
+		auto storage = get_storage();
+		if (storage)
+		{
+			sys_handle_t file = storage->get_host_console_script_file(file_name);
+			if (file)
+			{
+				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+				if (buffer->fill_with_file_content(file))
+				{
+					out << "file loaded in memory...\r\n";
+					out << "Running file script:" << file_name;
+					out << "\r\n=====================================\r\n";
+
+					while (!buffer->eof())
+					{
+						string_type line;
+						buffer->read_line(line);
+						out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
+					}
+
+					out << "=====================================\r\nScript done.\r\n";
+					ret = true;
+				}
+				else
+				{
+					err << "error reading file content\r\n";
+				}
+				rx_file_close(file);
+				return ret;
+			}
+			else
+			{
+				err << "error opening file\r\n";
+			}
+		}
+	}
+	else
+	{
+		err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
+	}
+	return ret;
+}
+
+bool interactive_console_host::write_stdout (const string_type& lines)
+{
+	return write_stdout(lines.c_str(), lines.size());
 }
 
 

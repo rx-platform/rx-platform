@@ -33,14 +33,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_security
-#include "lib/security/rx_security.h"
-// rx_vt100
-#include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
+// rx_vt100
+#include "host/rx_vt100.h"
 
 namespace host {
 namespace interactive {
@@ -165,8 +165,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
-
-      int console_main (int argc, char* argv[]);
 
       virtual bool is_canceling () const = 0;
 
