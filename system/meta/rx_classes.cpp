@@ -47,27 +47,24 @@ namespace rx_platform {
 
 namespace meta {
 
-// Parameterized Class rx_platform::meta::base_mapped_class 
+// Parameterized Class rx_platform::meta::mapped_data_type 
 
-template <class metaT, bool _browsable>
-base_mapped_class<metaT,_browsable>::base_mapped_class()
+template <class complexT>
+mapped_data_type<complexT>::mapped_data_type()
 {
 }
 
-template <class metaT, bool _browsable>
-base_mapped_class<metaT,_browsable>::base_mapped_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: base_complex_type<metaT, _browsable>(name, id, parent, system, sealed, abstract)
+template <class complexT>
+mapped_data_type<complexT>::mapped_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
 {
 }
 
 
 
-template <class metaT, bool _browsable>
-bool base_mapped_class<metaT,_browsable>::serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const
+template <class complexT>
+bool mapped_data_type<complexT>::serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!base_complex_type<metaT, _browsable>::serialize_complex_definition(stream, type))
-		return false;
-
+	
 	if (!stream.start_array("Mappers", mappers_.size()))
 		return false;
 	for (const auto& one : mappers_)
@@ -85,19 +82,17 @@ bool base_mapped_class<metaT,_browsable>::serialize_mapped_definition (base_meta
 	return true;
 }
 
-template <class metaT, bool _browsable>
-bool base_mapped_class<metaT,_browsable>::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
+template <class complexT>
+bool mapped_data_type<complexT>::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!base_complex_type<metaT, _browsable>::deserialize_complex_definition(stream, type))
-		return false;
 
 	return true;
 }
 
-template <class metaT, bool _browsable>
-bool base_mapped_class<metaT,_browsable>::register_mapper (const mapper_attribute& item)
+template <class complexT>
+bool mapped_data_type<complexT>::register_mapper (const mapper_attribute& item, complexT& complex_data)
 {
-	if (this->check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name()))
 	{
 		mappers_.emplace_back(item);
 		return true;
@@ -108,17 +103,16 @@ bool base_mapped_class<metaT,_browsable>::register_mapper (const mapper_attribut
 	}
 }
 
-template <class metaT, bool _browsable>
-void base_mapped_class<metaT,_browsable>::construct (complex_runtime_ptr what)
+template <class complexT>
+void mapped_data_type<complexT>::construct (complex_runtime_ptr what)
 {
-	base_complex_type<metaT, _browsable>::construct(what);
 	typedef typename metaT::CType rtype_t;
 	typedef typename rtype_t::smart_ptr rptr_t;
 	rptr_t runtime = what.cast_to<rptr_t>();
 }
 
-template <class metaT, bool _browsable>
-void base_mapped_class<metaT,_browsable>::construct (objects::object_runtime_ptr what)
+template <class complexT>
+void mapped_data_type<complexT>::construct (objects::object_runtime_ptr what)
 {
 }
 
@@ -149,12 +143,12 @@ void variable_class::construct (complex_runtime_ptr what)
 
 bool variable_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return get_meta().serialize_variable_definition(stream, type);
+	return variable_data().serialize_variable_definition(stream, type);
 }
 
 bool variable_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return get_meta().deserialize_variable_definition(stream, type);
+	return variable_data().deserialize_variable_definition(stream, type);
 }
 
 platform_item_ptr variable_class::get_item_ptr ()
@@ -190,23 +184,13 @@ void struct_class::get_class_info (string_type& class_name, string_type& console
 
 namespace_item_attributes struct_class::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (get_meta().get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
 }
 
 void struct_class::construct (complex_runtime_ptr what)
 {
-	get_meta().construct(what);
+	struct_class_t::construct(what);
 	objects::struct_runtime::smart_ptr runtime = what.cast_to<objects::struct_runtime::smart_ptr>();
-}
-
-bool struct_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_mapped_definition(stream, type);
-}
-
-bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_mapped_definition(stream, type);
 }
 
 platform_item_ptr struct_class::get_item_ptr ()
@@ -427,31 +411,30 @@ bool simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Parameterized Class rx_platform::meta::base_variable_class 
+// Parameterized Class rx_platform::meta::variable_data_type 
 
-template <class metaT, bool _browsable>
-base_variable_class<metaT,_browsable>::base_variable_class()
+template <class complexT>
+variable_data_type<complexT>::variable_data_type()
 {
 }
 
-template <class metaT, bool _browsable>
-base_variable_class<metaT,_browsable>::base_variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: base_mapped_class<metaT, _browsable>(name, id, parent, system, sealed, abstract)
-{
-}
-
-
-template <class metaT, bool _browsable>
-base_variable_class<metaT,_browsable>::~base_variable_class()
+template <class complexT>
+variable_data_type<complexT>::variable_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
 {
 }
 
 
-
-template <class metaT, bool _browsable>
-bool base_variable_class<metaT,_browsable>::register_source (const source_attribute& item)
+template <class complexT>
+variable_data_type<complexT>::~variable_data_type()
 {
-	if (this->check_name(item.get_name()))
+}
+
+
+
+template <class complexT>
+bool variable_data_type<complexT>::register_source (const source_attribute& item, complexT& complex_data)
+{
+	if (complex_data.check_name(item.get_name()))
 	{
 		sources_.emplace_back(item);
 		return true;
@@ -462,10 +445,10 @@ bool base_variable_class<metaT,_browsable>::register_source (const source_attrib
 	}
 }
 
-template <class metaT, bool _browsable>
-bool base_variable_class<metaT,_browsable>::register_filter (const filter_attribute& item)
+template <class complexT>
+bool variable_data_type<complexT>::register_filter (const filter_attribute& item, complexT& complex_data)
 {
-	if (this->check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name()))
 	{
 		filters_.emplace_back(item);
 		return true;
@@ -476,10 +459,10 @@ bool base_variable_class<metaT,_browsable>::register_filter (const filter_attrib
 	}
 }
 
-template <class metaT, bool _browsable>
-bool base_variable_class<metaT,_browsable>::register_event (const event_attribute& item)
+template <class complexT>
+bool variable_data_type<complexT>::register_event (const event_attribute& item, complexT& complex_data)
 {
-	if (this->check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name()))
 	{
 		events_.emplace_back(item);
 		return true;
@@ -490,53 +473,41 @@ bool base_variable_class<metaT,_browsable>::register_event (const event_attribut
 	}
 }
 
-template <class metaT, bool _browsable>
-void base_variable_class<metaT,_browsable>::construct (complex_runtime_ptr what)
+template <class complexT>
+void variable_data_type<complexT>::construct (complex_runtime_ptr what)
 {
 }
 
-template <class metaT, bool _browsable>
-bool base_variable_class<metaT,_browsable>::serialize_variable_definition (base_meta_writter& stream, uint8_t type) const
+template <class complexT>
+bool variable_data_type<complexT>::serialize_variable_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!base_mapped_class<metaT, _browsable>::serialize_mapped_definition(stream, type))
-		return false;
-
+	
 	return true;
 }
 
-template <class metaT, bool _browsable>
-bool base_variable_class<metaT,_browsable>::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
+template <class complexT>
+bool variable_data_type<complexT>::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!base_mapped_class<metaT, _browsable>::deserialize_mapped_definition(stream, type))
-		return false;
-
+	
 	return true;
 }
 
 
-// Parameterized Class rx_platform::meta::base_complex_type 
+// Class rx_platform::meta::complex_data_type 
 
-template <class metaT, bool _browsable>
-base_complex_type<metaT,_browsable>::base_complex_type()
+complex_data_type::complex_data_type()
 {
 }
 
-template <class metaT, bool _browsable>
-base_complex_type<metaT,_browsable>::base_complex_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: checkable_type<metaT, _browsable>(name, id, parent, system)
-	, sealed_(sealed)
-	, abstract_(abstract)
+complex_data_type::complex_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
 {
 }
 
 
 
-template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::serialize_complex_definition (base_meta_writter& stream, uint8_t type) const
+bool complex_data_type::serialize_complex_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!checkable_type<metaT, _browsable>::serialize_checkable_definition(stream, type))
-		return false;
-
+	
 	if (!stream.write_bool("Sealed", sealed_))
 		return false;
 
@@ -602,12 +573,9 @@ bool base_complex_type<metaT,_browsable>::serialize_complex_definition (base_met
 	return true;
 }
 
-template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
+bool complex_data_type::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!checkable_type<metaT, _browsable>::deserialize_checkable_definition(stream, type))
-		return false;
-
+	
 	if (!stream.read_bool("Sealed", sealed_))
 		return false;
 
@@ -626,8 +594,7 @@ bool base_complex_type<metaT,_browsable>::deserialize_complex_definition (base_m
 	return false;//!!!! NOT DONE
 }
 
-template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::register_struct (const string_type& name, const rx_node_id& id)
+bool complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
 {
 	if (check_name(name))
 	{
@@ -640,8 +607,7 @@ bool base_complex_type<metaT,_browsable>::register_struct (const string_type& na
 	}
 }
 
-template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::register_variable (const string_type& name, const rx_node_id& id)
+bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id)
 {
 	if (check_name(name))
 	{
@@ -654,8 +620,7 @@ bool base_complex_type<metaT,_browsable>::register_variable (const string_type& 
 	}
 }
 
-template <class metaT, bool _browsable>
-bool base_complex_type<metaT,_browsable>::check_name (const string_type& name)
+bool complex_data_type::check_name (const string_type& name)
 {
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
@@ -669,13 +634,31 @@ bool base_complex_type<metaT,_browsable>::check_name (const string_type& name)
 	}
 }
 
-template <class metaT, bool _browsable>
-void base_complex_type<metaT,_browsable>::construct (complex_runtime_ptr what)
+void complex_data_type::construct (complex_runtime_ptr what)
 {
-	checkable_type<metaT, _browsable>::construct(what);
-	typedef typename metaT::CType rtype_t;
-	typedef typename rtype_t::smart_ptr rptr_t;
-	rptr_t runtime = what.cast_to<rptr_t>();
+	// constant values
+	for (auto& one : const_values_)
+	{
+		rx_value temp;
+		one->get_value(temp);
+		what->register_const_value(one->get_name(), temp);
+	}
+
+	for (auto& one : simple_values_)
+	{
+		rx_value temp;
+		one->get_value(temp);
+		what->register_value(one->get_name(), temp);
+	}
+	for (auto& one : structs_)
+	{
+		what->register_struct(one->get_name(),one->construct().cast_to<objects::struct_runtime_ptr>());
+	}
+}
+
+void complex_data_type::construct (objects::object_runtime_ptr what)
+{
+	auto runtime = what->get_complex_item();
 	// constant values
 	for (auto& one : const_values_)
 	{
@@ -692,45 +675,8 @@ void base_complex_type<metaT,_browsable>::construct (complex_runtime_ptr what)
 	}
 	for (auto& one : structs_)
 	{
-		what->register_struct(one->get_name(),one->construct().cast_to<objects::struct_runtime_ptr>());
+		runtime->register_struct(one->get_name(),one->construct());
 	}
-}
-
-template <class metaT, bool _browsable>
-void base_complex_type<metaT,_browsable>::construct (objects::object_runtime_ptr what)
-{
-	//checkable_type<metaT, _browsable>::construct(what);
-	//complex_runtime_item_ptr runtime = what->get_complex_runtime();
-	//// constant values
-	//for (auto& one : const_values_)
-	//{
-	//	rx_value temp;
-	//	one->get_value(temp);
-	//	runtime->register_const_value(one->get_name(), temp);
-	//}
-
-	//for (auto& one : simple_values_)
-	//{
-	//	rx_value temp;
-	//	one->get_value(temp);
-	//	runtime->register_value(one->get_name(), temp);
-	//}
-	//for (auto& one : structs_)
-	//{
-	//	one->construct(what);
-	//}
-}
-
-template <class metaT, bool _browsable>
-namespace_item_attributes base_complex_type<metaT,_browsable>::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_class | namespace_item_read_access
-		| (this->get_system() ? namespace_item_system : 0));
-}
-
-template <class metaT, bool _browsable>
-void base_complex_type<metaT,_browsable>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
 }
 
 
@@ -748,16 +694,6 @@ mapper_class::~mapper_class()
 }
 
 
-
-bool mapper_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_complex_definition(stream, type);
-}
-
-bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_complex_definition(stream, type);
-}
 
 platform_item_ptr mapper_class::get_item_ptr ()
 {
@@ -780,10 +716,10 @@ struct_attribute::~struct_attribute()
 
 
 
-complex_runtime_ptr struct_attribute::construct ()
+struct_runtime_ptr struct_attribute::construct ()
 {
-	objects::struct_runtime_ptr what(pointers::_create_new);
-	struct_class_ptr cls = model::internal_classes_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
+	auto what = rx_create_reference<objects::struct_runtime>();
+	auto cls = model::internal_classes_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
 	if (cls)
 	{
 		cls->construct(what);
@@ -835,7 +771,7 @@ variable_attribute::~variable_attribute()
 
 
 
-complex_runtime_ptr variable_attribute::construct ()
+variable_runtime_ptr variable_attribute::construct ()
 {
 	objects::variable_runtime_ptr what(pointers::_create_new);
 	auto cls = model::internal_classes_manager::instance().get_type_cache<variable_class>().get_class_definition(get_target_id());
@@ -1037,16 +973,6 @@ source_class::~source_class()
 
 
 
-bool source_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_complex_definition(stream, type);
-}
-
-bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_complex_definition(stream, type);
-}
-
 platform_item_ptr source_class::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
@@ -1068,16 +994,6 @@ filter_class::~filter_class()
 }
 
 
-
-bool filter_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_complex_definition(stream, type);
-}
-
-bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_complex_definition(stream, type);
-}
 
 platform_item_ptr filter_class::get_item_ptr ()
 {
@@ -1101,20 +1017,44 @@ event_class::~event_class()
 
 
 
-bool event_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_complex_definition(stream, type);
-}
-
-bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_complex_definition(stream, type);
-}
-
 platform_item_ptr event_class::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 
+}
+
+
+// Class rx_platform::meta::not_implemented 
+
+
+bool not_implemented::serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return true;
+}
+
+bool not_implemented::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
+{
+	return true;
+}
+
+bool not_implemented::serialize_variable_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return true;
+}
+
+bool not_implemented::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
+{
+	return true;
+}
+
+bool not_implemented::serialize_object_definition (base_meta_writter& stream, uint8_t type) const
+{
+	return true;
+}
+
+bool not_implemented::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
+{
+	return true;
 }
 
 
@@ -1123,8 +1063,6 @@ platform_item_ptr event_class::get_item_ptr ()
 
 #define RX_TEMPLATE_INST(typeArg, brwArg) \
 template class rx_platform::meta::checkable_type<typeArg, brwArg>;\
-template class rx_platform::meta::base_complex_type<typeArg, brwArg>;\
-template class rx_platform::meta::base_mapped_class<typeArg, brwArg>;\
 
 RX_TEMPLATE_INST(rx_platform::meta::object_class, false);
 RX_TEMPLATE_INST(rx_platform::meta::domain_class, false);
@@ -1133,7 +1071,7 @@ RX_TEMPLATE_INST(rx_platform::meta::port_class, false);
 RX_TEMPLATE_INST(rx_platform::meta::struct_class, false);
 
 
-template class rx_platform::meta::base_variable_class<rx_platform::meta::variable_class, false>;
+template class rx_platform::meta::variable_data_type<rx_platform::meta::complex_data_type>;
 RX_TEMPLATE_INST(rx_platform::meta::variable_class, false);
 
 #define RX_TEMPLATE_INST_SIMPLE(typeArg, brwArg) \

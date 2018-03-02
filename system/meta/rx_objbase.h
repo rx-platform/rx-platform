@@ -464,8 +464,8 @@ object class. basic implementation of an object");
 	typedef complex_runtime_item_ptr items_type;
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 
-	template <class metaT, bool _browsable>
-	friend class meta::base_object_class;
+	template <class complexT>
+	friend class meta::object_data_type;
 
 public:
 	typedef rx_platform::meta::object_class definition_t;
@@ -684,8 +684,7 @@ class variable_runtime : public complex_runtime_item
 	typedef std::vector<source::smart_ptr> sources_type;
 
 
-	template <class metaT, bool _browsable>
-	friend class meta::base_complex_type;
+	friend class meta::complex_data_type;
 
 public:
 	typedef rx_platform::meta::variable_class definition_t;
@@ -766,8 +765,7 @@ class struct_runtime : public complex_runtime_item
 {
 	DECLARE_REFERENCE_PTR(struct_runtime);
 
-	template <class metaT, bool _browsable>
-	friend class meta::base_complex_type;
+	friend class meta::complex_data_type;
 
 public:
 	typedef rx_platform::meta::struct_class definition_t;

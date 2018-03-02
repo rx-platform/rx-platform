@@ -213,13 +213,13 @@ namespace meta_test {
 	 server_directory_ptr dir = ctx->get_current_directory();
 
 	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
-	 test_class->get_meta().register_const_value("testBool", true);
-	 test_class->get_meta().register_simple_value("testVal", 158);
+	 test_class->complex_data().register_const_value("testBool", true);
+	 test_class->complex_data().register_simple_value("testVal", 158);
 
 	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
-	 test_struct->get_meta().register_simple_value("structVal", false);
+	 test_struct->complex_data().register_simple_value("structVal", false);
 
-	 test_class->get_meta().register_struct("structName", 41);
+	 test_class->complex_data().register_struct("structName", 41);
 
 	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
 	 {

@@ -41,47 +41,41 @@ namespace rx_platform {
 
 namespace meta {
 
-// Parameterized Class rx_platform::meta::base_object_class 
+// Parameterized Class rx_platform::meta::object_data_type 
 
-template <class metaT, bool _browsable>
-base_object_class<metaT,_browsable>::base_object_class()
+template <class complexT>
+object_data_type<complexT>::object_data_type()
 {
 }
 
-template <class metaT, bool _browsable>
-base_object_class<metaT,_browsable>::base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-	: base_mapped_class<metaT, _browsable>(name, id, parent, system, sealed, abstract)
+template <class complexT>
+object_data_type<complexT>::object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
 {
 }
 
 
 
-template <class metaT, bool _browsable>
-bool base_object_class<metaT,_browsable>::serialize_object_definition (base_meta_writter& stream, uint8_t type) const
+template <class complexT>
+bool object_data_type<complexT>::serialize_object_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!base_mapped_class<metaT, _browsable>::serialize_mapped_definition(stream, type))
-		return false;
-
+	
 	return true;
 }
 
-template <class metaT, bool _browsable>
-bool base_object_class<metaT,_browsable>::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
+template <class complexT>
+bool object_data_type<complexT>::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!base_mapped_class<metaT, _browsable>::deserialize_mapped_definition(stream, type))
-		return false;
-
+	
 	return true;
 }
 
-template <class metaT, bool _browsable>
-void base_object_class<metaT,_browsable>::construct (complex_runtime_ptr what)
+template <class complexT>
+void object_data_type<complexT>::construct (complex_runtime_ptr what)
 {
-	base_mapped_class<metaT, _browsable>::construct(what);
 }
 
-template <class metaT, bool _browsable>
-void base_object_class<metaT,_browsable>::construct (objects::object_runtime_ptr what)
+template <class complexT>
+void object_data_type<complexT>::construct (objects::object_runtime_ptr what)
 {
 	typedef typename metaT::RType rtype_t;
 	typedef typename rtype_t::smart_ptr rptr_t;
@@ -117,26 +111,17 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 
 namespace_item_attributes object_class::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_meta().get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
 }
 
 void object_class::construct (objects::object_runtime_ptr what)
 {
-	get_meta().construct(what);
+	object_class_t::construct(what);
 }
 
 void object_class::construct (complex_runtime_ptr what)
 {
-}
-
-bool object_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_object_definition(stream, type);
-}
-
-bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_object_definition(stream, type);
+	object_class_t::construct(what);
 }
 
 platform_item_ptr object_class::get_item_ptr ()
@@ -168,21 +153,11 @@ domain_class::~domain_class()
 
 void domain_class::construct (objects::object_runtime_ptr what)
 {
-	get_meta().construct(what->get_complex_item());
+	construct(what->get_complex_item());
 }
 
 void domain_class::construct (complex_runtime_ptr what)
 {
-}
-
-bool domain_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_object_definition(stream, type);
-}
-
-bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_object_definition(stream, type);
 }
 
 platform_item_ptr domain_class::get_item_ptr ()
@@ -213,21 +188,11 @@ application_class::~application_class()
 
 void application_class::construct (objects::object_runtime_ptr what)
 {
-	get_meta().construct(what->get_complex_item());
+	construct(what->get_complex_item());
 }
 
 void application_class::construct (complex_runtime_ptr what)
 {
-}
-
-bool application_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_object_definition(stream, type);
-}
-
-bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_object_definition(stream, type);
 }
 
 platform_item_ptr application_class::get_item_ptr ()
@@ -258,21 +223,11 @@ port_class::~port_class()
 
 void port_class::construct (objects::object_runtime_ptr what)
 {
-	get_meta().construct(what->get_complex_item());
+	construct(what->get_complex_item());
 }
 
 void port_class::construct (complex_runtime_ptr what)
 {
-}
-
-bool port_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	return get_meta().serialize_object_definition(stream, type);
-}
-
-bool port_class::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
-{
-	return get_meta().deserialize_object_definition(stream, type);
 }
 
 platform_item_ptr port_class::get_item_ptr ()
@@ -281,10 +236,8 @@ platform_item_ptr port_class::get_item_ptr ()
 
 }
 
-template class rx_platform::meta::base_object_class<rx_platform::meta::object_class, false>;
-template class rx_platform::meta::base_object_class<rx_platform::meta::domain_class, false>;
-template class rx_platform::meta::base_object_class<rx_platform::meta::application_class, false>;
-template class rx_platform::meta::base_object_class<rx_platform::meta::port_class, false>;
 } // namespace meta
 } // namespace rx_platform
+
+
 

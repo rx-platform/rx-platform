@@ -31,12 +31,12 @@
 
 
 
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 
 
 
@@ -74,16 +74,16 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 
 
 
-template <class metaT, bool _browsable = false>
-class base_object_class : public base_mapped_class<metaT, _browsable>  
+template <class complexT>
+class object_data_type 
 {
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 	//typedef std::vector<int> programs_type;
 
   public:
-      base_object_class();
+      object_data_type();
 
-      base_object_class (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
+      object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
 
       bool serialize_object_definition (base_meta_writter& stream, uint8_t type) const;
@@ -110,7 +110,7 @@ class base_object_class : public base_mapped_class<metaT, _browsable>
 
 
 
-typedef meta_type_adapter< base_object_class< rx_platform::meta::object_class>  > object_class_t;
+typedef meta_type_adapter< rx_platform::meta::object_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > object_class_t;
 
 
 
@@ -142,10 +142,6 @@ public:
 
       void construct (complex_runtime_ptr what);
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
       platform_item_ptr get_item_ptr ();
 
 
@@ -167,7 +163,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef meta_type_adapter< base_object_class< domain_class>  > domain_class_t;
+typedef meta_type_adapter< rx_platform::meta::domain_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > domain_class_t;
 
 
 
@@ -192,10 +188,6 @@ public:
 
       void construct (complex_runtime_ptr what);
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
       platform_item_ptr get_item_ptr ();
 
 
@@ -217,7 +209,7 @@ typedef domain_class::smart_ptr domain_class_ptr;
 
 
 
-typedef meta_type_adapter< base_object_class< application_class>  > application_class_t;
+typedef meta_type_adapter< rx_platform::meta::application_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > application_class_t;
 
 
 
@@ -242,10 +234,6 @@ public:
 
       void construct (complex_runtime_ptr what);
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
       platform_item_ptr get_item_ptr ();
 
 
@@ -267,7 +255,7 @@ typedef application_class::smart_ptr application_class_ptr;
 
 
 
-typedef meta_type_adapter< base_object_class< port_class>  > port_class_t;
+typedef meta_type_adapter< rx_platform::meta::port_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > port_class_t;
 
 
 
@@ -291,10 +279,6 @@ public:
       void construct (objects::object_runtime_ptr what);
 
       void construct (complex_runtime_ptr what);
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
 
       platform_item_ptr get_item_ptr ();
 
