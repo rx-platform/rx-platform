@@ -33,18 +33,10 @@
 
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
-
-namespace rx_platform {
-namespace logic {
-class program_runtime;
-
-} // namespace logic
-} // namespace rx_platform
-
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -56,16 +48,7 @@ namespace logic {
 
 
 
-
-typedef meta::checkable_type< rx_platform::logic::program_runtime , false  > program_runtime_t;
-
-
-
-
-
-
-class program_runtime : public program_runtime_t, 
-                        	public rx::pointers::reference_object  
+class program_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(program_runtime);
 
@@ -97,6 +80,14 @@ public:
 
       values::rx_value get_value () const;
 
+      bool is_browsable () const;
+
+      rx_time get_created_time () const;
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
 
       static string_type type_name;
 
@@ -109,6 +100,8 @@ public:
 
 
       sl_runtime::sl_program_holder my_program_;
+
+      meta::checkable_data meta_data_;
 
 
 };

@@ -49,7 +49,7 @@ program_runtime::program_runtime()
 }
 
 program_runtime::program_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: program_runtime_t(name,id,system)
+	: meta_data_(name,id,system)
 {
 }
 
@@ -98,7 +98,7 @@ bool program_runtime::load_program (base_meta_reader& stream, uint8_t type)
 
 void program_runtime::get_value (values::rx_value& val) const
 {
-	val = rx_value(0u, get_modified_time());
+	val = rx_value(0u, meta_data_.get_modified_time());
 }
 
 platform_item_ptr program_runtime::get_item_ptr ()
@@ -108,7 +108,27 @@ platform_item_ptr program_runtime::get_item_ptr ()
 
 values::rx_value program_runtime::get_value () const
 {
-	return rx_value(0u, get_modified_time());
+	return rx_value(0u, meta_data_.get_modified_time());
+}
+
+bool program_runtime::is_browsable () const
+{
+	return false;
+}
+
+rx_time program_runtime::get_created_time () const
+{
+	return meta_data_.get_created_time();
+}
+
+string_type program_runtime::get_name () const
+{
+	return meta_data_.get_name();
+}
+
+size_t program_runtime::get_size () const
+{
+	return sizeof(*this);
 }
 
 

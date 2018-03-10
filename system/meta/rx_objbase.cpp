@@ -391,7 +391,7 @@ object_runtime::object_runtime()
 object_runtime::object_runtime (const string_type& name, const rx_node_id& id, bool system)
       : complex_item_(pointers::_create_new),
         change_time_(rx_time::now())
-	, object_runtime_t(name,id,rx_node_id::null_id,system)
+	, meta_data_(name,id,rx_node_id::null_id,system)
 {
 }
 
@@ -406,7 +406,7 @@ rx_value object_runtime::get_value (const string_type path) const
 {
 	if (path.empty())
 	{
-		rx_value ret(get_name());
+		rx_value ret(meta_data_.get_name());
 		ret.set_time(get_modified_time());
 		ret.adapt_quality_to_mode(mode_);
 		return ret;
@@ -442,7 +442,7 @@ void object_runtime::set_test ()
 values::rx_value object_runtime::get_value () const
 {
 	// this static object improves performance its, created only once and it is emtyy
-	return rx_value(get_version(), get_modified_time());
+	return rx_value(meta_data_.get_version(), meta_data_.get_modified_time());
 }
 
 namespace_item_attributes object_runtime::get_attributes () const
@@ -478,7 +478,7 @@ bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 
 bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	if (!serialize_checkable_definition(stream, type))
+	if (!meta_data_.serialize_checkable_definition(stream, type))
 		return false;
 
 	if (!complex_item_->serialize_definition(stream, type,get_modified_time(),mode_))
@@ -501,7 +501,7 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 
 bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!deserialize_checkable_definition(stream, type))
+	if (!meta_data_.deserialize_checkable_definition(stream, type))
 		return false;
 
 	if (!complex_item_->deserialize_definition(stream, type))
@@ -544,6 +544,26 @@ uint32_t object_runtime::register_struct (const string_type& name, struct_runtim
 platform_item_ptr object_runtime::get_item_ptr ()
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+rx_time object_runtime::get_created_time () const
+{
+	return meta_data_.get_created_time();
+}
+
+rx_time object_runtime::get_modified_time () const
+{
+	return meta_data_.get_modified_time();
+}
+
+string_type object_runtime::get_name () const
+{
+	return meta_data_.get_name();
+}
+
+size_t object_runtime::get_size () const
+{
+	return sizeof(*this);
 }
 
 

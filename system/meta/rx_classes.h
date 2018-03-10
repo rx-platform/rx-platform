@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -154,162 +154,7 @@ struct meta_data_t
 
 
 
-template <class complexT = complex_data_type>
-class mapped_data_type 
-{
-	typedef std::vector<mapper_attribute> mappers_type;
-
-  public:
-      mapped_data_type();
-
-      mapped_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
-
-
-      bool serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
-
-      bool register_mapper (const mapper_attribute& item, complexT& complex_data);
-
-      void construct (complex_runtime_ptr what);
-
-      void construct (objects::object_runtime_ptr what);
-
-
-  protected:
-
-  private:
-
-
-      mappers_type mappers_;
-
-
-};
-
-
-
-
-
-
-
-template <class metaT, bool _browsable>
-class checkable_type 
-{
-	template <class T1, bool T2>
-	friend class checkable_type;
-
-  public:
-      checkable_type();
-
-      checkable_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false);
-
-
-      bool serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
-
-      bool deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value);
-
-      bool check_in (base_meta_reader& stream);
-
-      bool check_out (base_meta_writter& stream) const;
-
-      bool is_browsable () const;
-
-      void construct (complex_runtime_ptr what);
-
-      values::rx_value get_value () const;
-
-      void construct (objects::object_runtime_ptr what);
-
-      string_type get_type_name () const;
-
-
-      const rx_node_id& get_parent () const
-      {
-        return parent_;
-      }
-
-
-      uint32_t get_version () const
-      {
-        return version_;
-      }
-
-
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
-
-
-      string_type get_name () const
-      {
-        return name_;
-      }
-
-
-      const rx_node_id& get_id () const
-      {
-        return id_;
-      }
-
-
-      bool get_system () const
-      {
-        return system_;
-      }
-
-
-      namespace_item_attributes get_attributes () const
-      {
-        return attributes_;
-      }
-
-
-	  constexpr size_t get_size() const
-	  {
-		  return sizeof(metaT);
-	  }
-  protected:
-
-      bool serialize_checkable_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type);
-
-
-  private:
-
-
-      rx_node_id parent_;
-
-      uint32_t version_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
-
-      string_type name_;
-
-      rx_node_id id_;
-
-      bool system_;
-
-      namespace_item_attributes attributes_;
-
-
-};
-
-
-
-
-
-
-class const_value 
+class const_value
 {
 	const_value(const const_value &right) = delete;
 	const_value(const_value &&right) = delete;
@@ -369,7 +214,7 @@ class const_value
 
 
 
-class simple_value_def 
+class simple_value_def
 {
 	simple_value_def(const simple_value_def &right) = delete;
 	simple_value_def(simple_value_def &&right) = delete;
@@ -417,91 +262,6 @@ class simple_value_def
 };
 
 
-class struct_attribute;
-typedef std::unique_ptr<struct_attribute> struct_type_unique_ptr;
-
-
-
-
-class complex_data_type 
-{
-
-	typedef std::vector<std::unique_ptr<const_value> > const_values_type;
-	typedef std::vector<std::unique_ptr<simple_value_def> > simple_values_type;
-	typedef std::vector<std::unique_ptr<struct_attribute> > structs_type;
-	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
-
-
-	typedef std::set<string_type> names_cahce_type;
-
-  public:
-      complex_data_type();
-
-      complex_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
-
-
-      bool serialize_complex_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_complex_definition (base_meta_reader& stream, uint8_t type);
-
-      bool register_struct (const string_type& name, const rx_node_id& id);
-
-      bool register_variable (const string_type& name, const rx_node_id& id);
-
-      bool check_name (const string_type& name);
-
-      void construct (complex_runtime_ptr what);
-
-      void construct (objects::object_runtime_ptr what);
-
-
-      const const_values_type& get_const_values () const
-      {
-        return const_values_;
-      }
-
-
-
-      const bool is_sealed () const
-      {
-        return sealed_;
-      }
-
-
-      const bool is_abstract () const
-      {
-        return abstract_;
-      }
-
-
-		template <typename constT>
-		bool register_const_value(const string_type& name, const constT& value);
-		template <typename valT>
-		bool register_simple_value(const string_type& name, const valT& value);
-  protected:
-
-  private:
-
-
-      const_values_type const_values_;
-
-      simple_values_type simple_values_;
-
-      structs_type structs_;
-
-      variables_type variables_;
-
-
-      bool sealed_;
-
-      names_cahce_type names_cache_;
-
-      bool abstract_;
-
-
-};
-
-
 
 
 
@@ -536,7 +296,7 @@ class class_const_value : public const_value
 
 
 
-class complex_class_attribute 
+class complex_class_attribute
 {
 
   public:
@@ -748,53 +508,6 @@ class event_attribute : public complex_class_attribute
 
 
 
-template <class complexT>
-class variable_data_type 
-{
-	typedef std::vector<source_attribute> sources_type;
-	typedef std::vector<filter_attribute> filters_type;
-	typedef std::vector<event_attribute> events_type;
-
-  public:
-      variable_data_type();
-
-      variable_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
-
-      virtual ~variable_data_type();
-
-
-      bool register_source (const source_attribute& item, complexT& complex_data);
-
-      bool register_filter (const filter_attribute& item, complexT& complex_data);
-
-      bool register_event (const event_attribute& item, complexT& complex_data);
-
-      void construct (complex_runtime_ptr what);
-
-      bool serialize_variable_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
-
-
-  protected:
-
-  private:
-
-
-      sources_type sources_;
-
-      filters_type filters_;
-
-      events_type events_;
-
-
-};
-
-
-
-
-
-
 template <typename valT>
 class simple_value_item : public simple_value_def  
 {
@@ -825,169 +538,238 @@ class simple_value_item : public simple_value_def
 
 
 
-class not_implemented 
+
+class checkable_data
 {
+	template <class T1, bool T2>
+	friend class checkable_type;
 
   public:
+      checkable_data();
+
+      checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false);
+
+
+      bool serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
+
+      bool deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value);
+
+      bool check_in (base_meta_reader& stream);
+
+      bool check_out (base_meta_writter& stream) const;
+
+      bool serialize_checkable_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type);
+
+      void construct (complex_runtime_ptr what);
+
+      values::rx_value get_value () const;
+
+      void construct (objects::object_runtime_ptr what);
+
+
+      const rx_node_id& get_parent () const
+      {
+        return parent_;
+      }
+
+
+      uint32_t get_version () const
+      {
+        return version_;
+      }
+
+
+      rx_time get_created_time () const
+      {
+        return created_time_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
+      }
+
+
+      string_type get_name () const
+      {
+        return name_;
+      }
+
+
+      const rx_node_id& get_id () const
+      {
+        return id_;
+      }
+
+
+      bool get_system () const
+      {
+        return system_;
+      }
+
+
+      namespace_item_attributes get_attributes () const
+      {
+        return attributes_;
+      }
+
+
+  protected:
+
+  private:
+
+
+      rx_node_id parent_;
+
+      uint32_t version_;
+
+      rx_time created_time_;
+
+      rx_time modified_time_;
+
+      string_type name_;
+
+      rx_node_id id_;
+
+      bool system_;
+
+      namespace_item_attributes attributes_;
+
+
+};
+
+
+class struct_attribute;
+typedef std::unique_ptr<struct_attribute> struct_type_unique_ptr;
+
+
+
+
+class complex_data_type
+{
+
+	typedef std::vector<std::unique_ptr<const_value> > const_values_type;
+	typedef std::vector<std::unique_ptr<simple_value_def> > simple_values_type;
+	typedef std::vector<std::unique_ptr<struct_attribute> > structs_type;
+	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
+
+
+	typedef std::set<string_type> names_cahce_type;
+
+  public:
+      complex_data_type();
+
+      complex_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
+
+
+      bool serialize_complex_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_complex_definition (base_meta_reader& stream, uint8_t type);
+
+      bool register_struct (const string_type& name, const rx_node_id& id);
+
+      bool register_variable (const string_type& name, const rx_node_id& id);
+
+      bool check_name (const string_type& name);
+
+      void construct (complex_runtime_ptr what);
+
+      void construct (objects::object_runtime_ptr what);
+
+
+      const const_values_type& get_const_values () const
+      {
+        return const_values_;
+      }
+
+
+
+      const bool is_sealed () const
+      {
+        return sealed_;
+      }
+
+
+      const bool is_abstract () const
+      {
+        return abstract_;
+      }
+
+
+		template <typename constT>
+		bool register_const_value(const string_type& name, const constT& value);
+		template <typename valT>
+		bool register_simple_value(const string_type& name, const valT& value);
+  protected:
+
+  private:
+
+
+      const_values_type const_values_;
+
+      simple_values_type simple_values_;
+
+      structs_type structs_;
+
+      variables_type variables_;
+
+
+      bool sealed_;
+
+      names_cahce_type names_cache_;
+
+      bool abstract_;
+
+
+};
+
+
+
+
+
+
+
+class mapped_data_type
+{
+	typedef std::vector<mapper_attribute> mappers_type;
+
+  public:
+      mapped_data_type();
+
+      mapped_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
+
 
       bool serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const;
 
       bool deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
 
-      bool serialize_variable_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
-
-      bool serialize_object_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-class meta_type_adapter : public checkable_type<metaT, _browsable>  
-{
-
-  public:
-      meta_type_adapter();
-
-      meta_type_adapter (const string_type& name, const rx_node_id& id, bool system = false);
-
-
-      size_t get_size () const;
-
-      variableT& variable_data ();
-
-      mappingT& mapped_data ();
-
-      complexT& complex_data ();
-
-      objectT& object_data ();
-
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-      const complexT& complex_data () const
-      {
-        return complex_data_;
-      }
-
-
-      const mappingT& mapped_data () const
-      {
-        return mapped_data_;
-      }
-
-
-      const variableT& variable_data () const
-      {
-        return variable_data_;
-      }
-
-
-      objectT& get_object_data ()
-      {
-        return object_data_;
-      }
-
-
-	  const metaT& get_meta() const
-	  {
-		  return meta_;
-	  }
-  protected:
-
-  private:
-
-
-      complexT complex_data_;
-
-      mappingT mapped_data_;
-
-      variableT variable_data_;
-
-      objectT object_data_;
-
-
-};
-
-
-
-
-
-
-
-typedef meta_type_adapter< variable_class , false , complex_data_type , mapped_data_type<complex_data_type> , variable_data_type<complex_data_type> , not_implemented  > variable_class_t;
-
-
-
-
-
-
-class variable_class : public rx::pointers::reference_object, 
-                       	public variable_class_t  
-{
-	DECLARE_REFERENCE_PTR(variable_class);
-public:
-	typedef objects::variable_runtime RType;
-	typedef RType CType;
-
-  public:
-      variable_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~variable_class();
-
+      bool register_mapper (const mapper_attribute& item, complex_data_type& complex_data);
 
       void construct (complex_runtime_ptr what);
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      platform_item_ptr get_item_ptr ();
-
-
-      static string_type type_name;
+      void construct (objects::object_runtime_ptr what);
 
 
   protected:
 
   private:
-      variable_class();
 
+
+      mappers_type mappers_;
 
 
 };
 
-typedef pointers::reference<rx_platform::meta::variable_class> variable_class_ptr;
-
-
-
-
-
-typedef meta_type_adapter< struct_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , not_implemented  > struct_class_t;
 
 
 
 
 
 
-class struct_class : public rx::pointers::reference_object, 
-                     	public struct_class_t  
+class struct_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(struct_class);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
@@ -1011,6 +793,31 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      rx_platform::meta::complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
 
       static string_type type_name;
 
@@ -1022,6 +829,11 @@ public:
 
 
 
+      rx_platform::meta::complex_data_type complex_data_;
+
+      checkable_data meta_data_;
+
+
 };
 
 
@@ -1031,23 +843,103 @@ typedef pointers::reference<struct_class> struct_class_ptr;
 
 
 
-typedef meta_type_adapter<  mapper_class , false , complex_data_type , not_implemented , not_implemented , not_implemented  > mapper_class_t;
 
-
-
-
-
-
-class mapper_class : public rx::pointers::reference_object, 
-                     	public mapper_class_t  
+class variable_data_type
 {
-	DECLARE_REFERENCE_PTR(mapper_class);
+	typedef std::vector<source_attribute> sources_type;
+	typedef std::vector<filter_attribute> filters_type;
+	typedef std::vector<event_attribute> events_type;
 
   public:
-      virtual ~mapper_class();
+      variable_data_type();
 
+      variable_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
+
+      virtual ~variable_data_type();
+
+
+      bool register_source (const source_attribute& item, complex_data_type& complex_data);
+
+      bool register_filter (const filter_attribute& item, complex_data_type& complex_data);
+
+      bool register_event (const event_attribute& item, complex_data_type& complex_data);
+
+      void construct (complex_runtime_ptr what);
+
+      bool serialize_variable_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+
+
+  protected:
+
+  private:
+
+
+      sources_type sources_;
+
+      filters_type filters_;
+
+      events_type events_;
+
+
+};
+
+
+
+
+
+
+
+class variable_class : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(variable_class);
+public:
+	typedef objects::variable_runtime RType;
+	typedef RType CType;
+
+  public:
+      variable_class (const string_type& name, const rx_node_id& id, bool system = false);
+
+      virtual ~variable_class();
+
+
+      void construct (complex_runtime_ptr what);
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       platform_item_ptr get_item_ptr ();
+
+      rx_value get_value () const;
+
+      const checkable_data& meta_data () const;
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      rx_platform::meta::complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
+      variable_data_type& variable_data ()
+      {
+        return variable_data_;
+      }
+
 
 
       static string_type type_name;
@@ -1056,8 +948,73 @@ class mapper_class : public rx::pointers::reference_object,
   protected:
 
   private:
+      variable_class();
+
+
+
+      checkable_data meta_data_;
+
+      rx_platform::meta::complex_data_type complex_data_;
+
+      variable_data_type variable_data_;
+
+
+};
+
+typedef pointers::reference<rx_platform::meta::variable_class> variable_class_ptr;
+
+
+
+
+
+
+class mapper_class : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(mapper_class);
+
+  public:
       mapper_class();
 
+
+      platform_item_ptr get_item_ptr ();
+
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      rx_platform::meta::complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+      checkable_data meta_data_;
+
+      rx_platform::meta::complex_data_type complex_data_;
 
 
 };
@@ -1068,15 +1025,8 @@ typedef pointers::reference<mapper_class> mapper_class_ptr;
 
 
 
-typedef meta_type_adapter< source_class , false , complex_data_type , not_implemented , not_implemented , not_implemented  > source_class_t;
 
-
-
-
-
-
-class source_class : public rx::pointers::reference_object, 
-                     	public source_class_t  
+class source_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(source_class);
 
@@ -1085,6 +1035,25 @@ class source_class : public rx::pointers::reference_object,
 
 
       platform_item_ptr get_item_ptr ();
+
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
 
 
       static string_type type_name;
@@ -1097,6 +1066,11 @@ class source_class : public rx::pointers::reference_object,
 
 
 
+      rx_platform::meta::complex_data_type complex_data_;
+
+      checkable_data meta_data_;
+
+
 };
 
 
@@ -1104,22 +1078,8 @@ class source_class : public rx::pointers::reference_object,
 
 
 
-typedef meta_type_adapter< event_class , false , complex_data_type , not_implemented , not_implemented , not_implemented  > event_class_t;
 
-
-
-
-
-
-typedef meta_type_adapter< filter_class , false , complex_data_type , not_implemented , not_implemented , not_implemented  > filter_class_t;
-
-
-
-
-
-
-class filter_class : public rx::pointers::reference_object, 
-                     	public filter_class_t  
+class filter_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(filter_class);
 
@@ -1128,6 +1088,25 @@ class filter_class : public rx::pointers::reference_object,
 
 
       platform_item_ptr get_item_ptr ();
+
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
 
 
       static string_type type_name;
@@ -1140,6 +1119,11 @@ class filter_class : public rx::pointers::reference_object,
 
 
 
+      rx_platform::meta::complex_data_type complex_data_;
+
+      checkable_data meta_data_;
+
+
 };
 
 
@@ -1147,8 +1131,8 @@ class filter_class : public rx::pointers::reference_object,
 
 
 
-class event_class : public rx::pointers::reference_object, 
-                    	public event_class_t  
+
+class event_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(event_class);
 
@@ -1157,6 +1141,25 @@ class event_class : public rx::pointers::reference_object,
 
 
       platform_item_ptr get_item_ptr ();
+
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
 
 
       static string_type type_name;
@@ -1169,10 +1172,15 @@ class event_class : public rx::pointers::reference_object,
 
 
 
+      rx_platform::meta::complex_data_type complex_data_;
+
+      checkable_data meta_data_;
+
+
 };
 
 
-// Parameterized Class rx_platform::meta::class_const_value 
+// Parameterized Class rx_platform::meta::class_const_value
 
 template <typename valT>
 class_const_value<valT>::class_const_value (const valT& value)
@@ -1202,7 +1210,7 @@ void class_const_value<valT>::get_value (values::rx_value& val) const
 }
 
 
-// Parameterized Class rx_platform::meta::simple_value_item 
+// Parameterized Class rx_platform::meta::simple_value_item
 
 template <typename valT>
 simple_value_item<valT>::simple_value_item (const valT& value)
@@ -1229,84 +1237,6 @@ template <typename valT>
 void simple_value_item<valT>::get_value (values::rx_value& val) const
 {
 	val = rx_value(storage_.value());
-}
-
-
-// Parameterized Class rx_platform::meta::meta_type_adapter 
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::meta_type_adapter()
-{
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::meta_type_adapter (const string_type& name, const rx_node_id& id, bool system)
-	: checkable_type(name,id,rx_node_id::null_id, system)
-{
-}
-
-
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-size_t meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::get_size () const
-{
-	return sizeof(this);
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-variableT& meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::variable_data ()
-{
-	return variable_data_;
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-mappingT& meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::mapped_data ()
-{
-	return mapped_data_;
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-complexT& meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::complex_data ()
-{
-	return complex_data_;
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-objectT& meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::object_data ()
-{
-	return object_data_;
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-bool meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::serialize_definition (base_meta_writter& stream, uint8_t type) const
-{
-	if (!serialize_checkable_definition(stream, type))
-		return false;
-	if (!complex_data_.serialize_complex_definition(stream, type))
-		return false;
-	if (!mapped_data_.serialize_mapped_definition(stream, type))
-		return false;
-	if (!variable_data_.serialize_variable_definition(stream, type))
-		return false;
-	if (!object_data_.serialize_object_definition(stream, type))
-		return false;
-	return true;
-}
-
-template <class metaT, bool _browsable, class complexT, class mappingT, class variableT, class objectT>
-bool meta_type_adapter<metaT,_browsable,complexT,mappingT,variableT,objectT>::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!deserialize_checkable_definition(stream, type))
-		return false;
-	if (!complex_data_.deserialize_complex_definition(stream, type))
-		return false;
-	if (!mapped_data_.deserialize_mapped_definition(stream, type))
-		return false;
-	if (!variable_data_.deserialize_variable_definition(stream, type))
-		return false;
-	if (!object_data_.deserialize_object_definition(stream, type))
-		return false;
-	return true;
 }
 
 
@@ -1356,5 +1286,53 @@ bool complex_data_type::register_simple_value(const string_type& name, const val
 } // namespace meta
 } // namespace server rx_platform
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	  const metaT& get_meta() const
+	  {
+		  return meta_;
+	  }
+
+	: checkable_type(name,id,rx_node_id::null_id, system)
+
+	return sizeof(this);
+
+	return variable_data_;
+
+	return mapped_data_;
+
+	return complex_data_;
+
+	return object_data_;
+
+	if (!serialize_checkable_definition(stream, type))
+		return false;
+	if (!complex_data_.serialize_complex_definition(stream, type))
+		return false;
+	if (!mapped_data_.serialize_mapped_definition(stream, type))
+		return false;
+	if (!variable_data_.serialize_variable_definition(stream, type))
+		return false;
+	if (!object_data_.serialize_object_definition(stream, type))
+		return false;
+	return true;
+
+
+	if (!deserialize_checkable_definition(stream, type))
+		return false;
+	if (!complex_data_.deserialize_complex_definition(stream, type))
+		return false;
+	if (!mapped_data_.deserialize_mapped_definition(stream, type))
+		return false;
+	if (!variable_data_.deserialize_variable_definition(stream, type))
+		return false;
+	if (!object_data_.deserialize_object_definition(stream, type))
+		return false;
+	return true;
 
 #endif

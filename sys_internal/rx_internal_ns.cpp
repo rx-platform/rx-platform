@@ -460,9 +460,9 @@ template class sys_internal::internal_ns::rx_item_implementation<testing::test_c
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::application_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::domain_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::struct_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::object_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::variable_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<meta::port_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class::smart_ptr>;

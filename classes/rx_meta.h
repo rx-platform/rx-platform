@@ -340,10 +340,10 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx
 template <class typeT>
 bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
 {
-	auto it = registered_classes_.find(what->get_id());
+	auto it = registered_classes_.find(what->meta_data().get_id());
 	if (it == registered_classes_.end())
 	{
-		registered_classes_.emplace(what->get_id(), what);
+		registered_classes_.emplace(what->meta_data().get_id(), what);
 		return true;
 	}
 	else

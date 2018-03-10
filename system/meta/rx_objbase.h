@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,8 +31,6 @@
 
 
 
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_classes
@@ -41,6 +39,8 @@
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 
 namespace rx_platform {
 namespace objects {
@@ -85,14 +85,7 @@ struct object_state_data
 
 
 
-typedef meta::checkable_type< rx_platform::objects::object_runtime , true  > object_runtime_t;
-
-
-
-
-
-
-class value_item 
+class value_item
 {
 
   public:
@@ -140,7 +133,7 @@ class value_item
 
 
 
-class const_value_item 
+class const_value_item
 {
 
   public:
@@ -292,8 +285,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 	typedef std::map<string_type, uint32_t > names_cahce_type;
 	typedef std::map<uint32_t, string_type > indexes_cache_type;
 
-	template<class metaT,bool _browsable>
-	friend class meta::checkable_type;
+	friend class meta::complex_data_type;
 
   public:
       complex_runtime_item();
@@ -449,8 +441,7 @@ class complex_runtime_item : public rx::pointers::reference_object
 
 
 
-class object_runtime : public object_runtime_t, 
-                       	public rx::pointers::reference_object  
+class object_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 object class. basic implementation of an object");
@@ -464,7 +455,6 @@ object class. basic implementation of an object");
 	typedef complex_runtime_item_ptr items_type;
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 
-	template <class complexT>
 	friend class meta::object_data_type;
 
 public:
@@ -507,6 +497,14 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      rx_time get_created_time () const;
+
+      rx_time get_modified_time () const;
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
 
       rx_reference<complex_runtime_item> get_complex_item ()
       {
@@ -518,6 +516,12 @@ public:
       const rx_mode_type& get_mode () const
       {
         return mode_;
+      }
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
       }
 
 
@@ -568,6 +572,8 @@ public:
       rx_reference<complex_runtime_item> complex_item_;
 
       programs_type programs_;
+
+      meta::checkable_data meta_data_;
 
 
       rx_mode_type mode_;
@@ -902,7 +908,7 @@ user object class. basic implementation of a user object");
 };
 
 
-// Parameterized Class rx_platform::objects::server_const_value_item 
+// Parameterized Class rx_platform::objects::server_const_value_item
 
 template <typename valT>
 server_const_value_item<valT>::server_const_value_item (const valT& value)
@@ -985,7 +991,7 @@ rx_value server_const_value_item<valT>::get_value (const object_state_data& data
 }
 
 
-// Parameterized Class rx_platform::objects::server_internal_value 
+// Parameterized Class rx_platform::objects::server_internal_value
 
 template <typename valT>
 server_internal_value<valT>::server_internal_value (const valT& value)

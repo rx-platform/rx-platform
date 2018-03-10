@@ -31,12 +31,12 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;
@@ -385,6 +385,48 @@ used to interface storage objects...\
 };
 
 
+
+
+
+
+template <class TImpl>
+class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      rx_meta_item_implementation (TImpl impl);
+
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      string_type get_type_name () const;
+
+      values::rx_value get_value () const;
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      bool is_browsable () const;
+
+      rx_time get_created_time () const;
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+
+  protected:
+
+  private:
+
+
+      TImpl impl_;
+
+
+};
+
+
 // Parameterized Class sys_internal::internal_ns::rx_item_implementation 
 
 template <class TImpl>
@@ -466,6 +508,90 @@ template <class TImpl>
 size_t rx_item_implementation<TImpl>::get_size () const
 {
 	return impl_->get_size();
+}
+
+
+// Parameterized Class sys_internal::internal_ns::rx_meta_item_implementation 
+
+template <class TImpl>
+rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
+      : impl_(impl)
+{
+}
+
+
+
+template <class TImpl>
+void rx_meta_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+template <class TImpl>
+string_type rx_meta_item_implementation<TImpl>::get_type_name () const
+{
+	return impl_->get_type_name();
+}
+
+template <class TImpl>
+values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
+{
+	return impl_->meta_data().get_value();
+}
+
+template <class TImpl>
+namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () const
+{
+	return impl_->meta_data().get_attributes();
+}
+
+template <class TImpl>
+bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+{
+	rx_platform::serialization::json_writter writer;
+
+	writer.write_header(STREAMING_TYPE_CLASS);
+
+	writer.start_object(impl_->get_type_name().c_str());
+	{
+		impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+	}
+	writer.end_object();
+
+	writer.write_footer();
+
+	string_type result;
+	bool out = writer.get_string(result, true);
+
+	if (out)
+		def << result;
+	else
+		def << "Error in JSON deserialization.";
+
+	return true;
+}
+
+template <class TImpl>
+bool rx_meta_item_implementation<TImpl>::is_browsable () const
+{
+	return false;
+}
+
+template <class TImpl>
+rx_time rx_meta_item_implementation<TImpl>::get_created_time () const
+{
+	return impl_->meta_data().get_created_time();
+}
+
+template <class TImpl>
+string_type rx_meta_item_implementation<TImpl>::get_name () const
+{
+	return impl_->meta_data().get_name();
+}
+
+template <class TImpl>
+size_t rx_meta_item_implementation<TImpl>::get_size () const
+{
+	return sizeof(*this);
 }
 
 

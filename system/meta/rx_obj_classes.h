@@ -31,8 +31,6 @@
 
 
 
-// rx_classes
-#include "system/meta/rx_classes.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_logic
@@ -74,7 +72,6 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 
 
 
-template <class complexT>
 class object_data_type 
 {
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
@@ -110,15 +107,7 @@ class object_data_type
 
 
 
-typedef meta_type_adapter< rx_platform::meta::object_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > object_class_t;
-
-
-
-
-
-
-class object_class : public rx::pointers::reference_object, 
-                     	public object_class_t  
+class object_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(object_class);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
@@ -144,8 +133,30 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      const checkable_data& meta_data () const;
 
-      static string_type type_name;
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
 
 
   protected:
@@ -153,6 +164,13 @@ public:
   private:
       object_class();
 
+
+
+      static string_type type_name;
+
+      checkable_data meta_data_;
+
+      complex_data_type complex_data_;
 
 
 };
@@ -163,15 +181,7 @@ typedef pointers::reference<object_class> object_class_ptr;
 
 
 
-typedef meta_type_adapter< rx_platform::meta::domain_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > domain_class_t;
-
-
-
-
-
-
-class domain_class : public rx::pointers::reference_object, 
-                     	public domain_class_t  
+class domain_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(domain_class);
 public:
@@ -190,6 +200,31 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
 
       static string_type type_name;
 
@@ -201,6 +236,11 @@ public:
 
 
 
+      checkable_data meta_data_;
+
+      complex_data_type complex_data_;
+
+
 };
 
 typedef domain_class::smart_ptr domain_class_ptr;
@@ -209,15 +249,7 @@ typedef domain_class::smart_ptr domain_class_ptr;
 
 
 
-typedef meta_type_adapter< rx_platform::meta::application_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > application_class_t;
-
-
-
-
-
-
-class application_class : public rx::pointers::reference_object, 
-                          	public application_class_t  
+class application_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(application_class);
 public:
@@ -236,6 +268,31 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
 
       static string_type type_name;
 
@@ -247,6 +304,11 @@ public:
 
 
 
+      checkable_data meta_data_;
+
+      complex_data_type complex_data_;
+
+
 };
 
 typedef application_class::smart_ptr application_class_ptr;
@@ -255,15 +317,7 @@ typedef application_class::smart_ptr application_class_ptr;
 
 
 
-typedef meta_type_adapter< rx_platform::meta::port_class , false , complex_data_type , mapped_data_type<complex_data_type> , not_implemented , object_data_type<complex_data_type>  > port_class_t;
-
-
-
-
-
-
-class port_class : public rx::pointers::reference_object, 
-                   	public port_class_t  
+class port_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(port_class);
 public:
@@ -282,6 +336,31 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
+      const checkable_data& meta_data () const;
+
+      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      checkable_data& meta_data ()
+      {
+        return meta_data_;
+      }
+
+
+      complex_data_type& complex_data ()
+      {
+        return complex_data_;
+      }
+
+
 
       static string_type type_name;
 
@@ -291,6 +370,11 @@ public:
   private:
       port_class();
 
+
+
+      checkable_data meta_data_;
+
+      complex_data_type complex_data_;
 
 
 };
