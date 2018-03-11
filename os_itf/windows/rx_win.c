@@ -32,6 +32,7 @@
 // rx_win
 #include "os_itf/windows/rx_win.h"
 
+#include "third-party/win_internals/ntdll.h"
 //#include <winternl.h">
 #include "version/rx_version.h"
 #include "os_itf/rx_ositf.h"
@@ -88,52 +89,23 @@ uint32_t rx_string_to_uuid(const char* str, uuid_t* u)
 	}
 }
 
-typedef enum  _PROCESS_INFORMATION_CLASS_EX {
-	ProcessBasicInformation,
-	ProcessQuotaLimits,
-	ProcessIoCounters,
-	ProcessVmCounters,
-	ProcessTimes,
-	ProcessBasePriority,
-	ProcessRaisePriority,
-	ProcessDebugPort,
-	ProcessExceptionPort,
-	ProcessAccessToken,
-	ProcessLdtInformation,
-	ProcessLdtSize,
-	ProcessDefaultHardErrorMode,
-	ProcessIoPortHandlers,
-	ProcessPooledUsageAndLimits,
-	ProcessWorkingSetWatch,
-	ProcessUserModeIOPL,
-	ProcessEnableAlignmentFaultFixup,
-	ProcessPriorityClass,
-	ProcessWx86Information,
-	ProcessHandleCount,
-	ProcessAffinityMask,
-	ProcessPriorityBoost,
-	MaxProcessInfoClass
-
-} PROCESS_INFORMATION_CLASS_EX, *PPROCESS_INFORMATION_CLASS_EX;
-
-
 typedef DWORD(__stdcall * 
-	NtSetInformationProcess)(
+	NtSetInformationProcess_t)(
 	IN HANDLE               ProcessHandle,
-	IN PROCESS_INFORMATION_CLASS_EX ProcessInformationClass,
+	IN PROCESS_INFORMATION_CLASS ProcessInformationClass,
 	IN PVOID                ProcessInformation,
 	IN ULONG                ProcessInformationLength);
 
 
 typedef DWORD(__stdcall *
-	NtSetTimerResolution) (
+	NtSetTimerResolution_t) (
 	IN ULONG RequestedResolution,
 	IN BOOLEAN Set,
 	OUT PULONG ActualResolution
 	);
 
 typedef DWORD(__stdcall *
-	NtQueryTimerResolution) (
+	NtQueryTimerResolution_t) (
 	OUT PULONG              MinimumResolution,
 	OUT PULONG              MaximumResolution,
 	OUT PULONG              CurrentResolution
@@ -309,8 +281,159 @@ const char* g_ositf_version = "ERROR!!!";
 char ver_buffer[0x100];
 rx_pid_t rx_pid;
 
+LPWSTR LpcPortName = L"\\rx_platform_port";      // Name of the LPC port
+void test_lpc(void* arg)
+{
+
+	SECURITY_DESCRIPTOR sd;
+	OBJECT_ATTRIBUTES ObjAttr;              // Object attributes for the name
+	UNICODE_STRING PortName;
+	NTSTATUS Status;
+	HANDLE LpcPortHandle = NULL;
+	HANDLE ServerHandle = NULL;
+	BYTE RequestBuffer[sizeof(PORT_MESSAGE) + MAX_LPC_DATA];
+	BOOL WeHaveToStop = FALSE;
+	int nError;
+
+	PPORT_MESSAGE message = (PPORT_MESSAGE)&RequestBuffer;
+
+	__try     // try-finally
+	{
+		//
+		// Initialize security descriptor that will be set to
+		// "Everyone has the full access"
+		//
+
+		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+		{
+			nError = GetLastError();
+			__leave;
+		}
+
+		//
+		// Set the empty DACL to the security descriptor
+		//
+
+		if (!SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE))
+		{
+			nError = GetLastError();
+			__leave;
+		}
+
+		//
+		// Initialize attributes for the port and create it
+		//
+
+		RtlInitUnicodeString(&PortName, LpcPortName);
+		InitializeObjectAttributes(&ObjAttr, &PortName, 0, NULL, &sd);
+
+		wprintf(L"Server: Creating LPC port \"%s\" (NtCreatePort) ...\n", LpcPortName);
+		Status = NtCreatePort(&LpcPortHandle,
+			&ObjAttr,
+			0,
+			sizeof(PORT_MESSAGE) + MAX_LPC_DATA,
+			0);
+		printf("Server: NtCreatePort result 0x%08lX\n", Status);
+
+		if (!NT_SUCCESS(Status))
+			__leave;
+
+		while (WeHaveToStop == FALSE)
+		{
+			if (NT_SUCCESS(Status))
+			{
+				printf("Server: Listening to LPC port (NtListenPort) ...\n");
+				Status = NtListenPort(LpcPortHandle,
+					message);
+				printf("Server: NtListenPort result 0x%08lX\n", Status);
+			}
+
+			//
+			// Accept the port connection
+			//
+
+			if (NT_SUCCESS(Status))
+			{
+				printf("Server: Accepting LPC connection (NtAcceptConnectPort) ...\n");
+				Status = NtAcceptConnectPort(&ServerHandle,
+					NULL,
+					message,
+					TRUE,
+					NULL,
+					NULL);
+				printf("Server: NtAcceptConnectPort result 0x%08lX\n", Status);
+			}
+
+			//
+			// Complete the connection
+			//
+
+			if (NT_SUCCESS(Status))
+			{
+				printf("Server: Completing LPC connection (NtCompleteConnectPort) ...\n");
+				Status = NtCompleteConnectPort(ServerHandle);
+				printf("Server: NtCompleteConnectPort result 0x%08lX\n", Status);
+			}
+
+			//
+			// Now accept the data request coming from the port.
+			//
+
+			if (NT_SUCCESS(Status))
+			{
+				printf("Server: Receiving LPC data (NtReplyWaitReceivePort) ...\n");
+				Status = NtReplyWaitReceivePort(ServerHandle,
+					NULL,
+					NULL,
+					message);
+				printf("Server: NtReplyWaitReceivePort result 0x%08lX\n", Status);
+			}
+		}
+	}
+	__finally
+	{
+		if (LpcPortHandle != NULL)
+			NtClose(LpcPortHandle);
+	}
+
+}
+
+void test_client_lpc()
+{
+	SECURITY_QUALITY_OF_SERVICE SecurityQos;
+	UNICODE_STRING PortName;
+	NTSTATUS Status = STATUS_SUCCESS;
+	HANDLE PortHandle = NULL;
+	ULONG MaxMessageLength = 0;
+
+	RtlInitUnicodeString(&PortName, LpcPortName);
+	SecurityQos.Length = sizeof(SECURITY_QUALITY_OF_SERVICE);
+	SecurityQos.ImpersonationLevel = SecurityImpersonation;
+	SecurityQos.EffectiveOnly = FALSE;
+	SecurityQos.ContextTrackingMode = SECURITY_DYNAMIC_TRACKING;
+
+	printf("Client: Test sending LPC data of size less than 0x%lX bytes ...\n", MAX_LPC_DATA);
+	wprintf(L"Client: Connecting to port \"%s\" (NtConnectPort) ...\n", LpcPortName);
+	Status = NtConnectPort(&PortHandle,
+		&PortName,
+		&SecurityQos,
+		NULL,
+		NULL,
+		&MaxMessageLength,
+		NULL,
+		NULL);
+	printf("Client: NtConnectPort result 0x%08lX\n", Status);
+}
+
 void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* server_name)
 {
+#ifndef _DEBUG
+	uint32_t tid;
+	rx_thread_create(test_lpc, 0, RX_PRIORITY_NORMAL, &tid);
+#else
+	test_client_lpc();
+#endif
+
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
@@ -347,8 +470,8 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 
 	if (hLib)
 	{
-		NtSetTimerResolution set = (NtSetTimerResolution)GetProcAddress(hLib, "NtSetTimerResolution");
-		NtQueryTimerResolution query = (NtQueryTimerResolution)GetProcAddress(hLib, "NtQueryTimerResolution");
+		NtSetTimerResolution_t set = (NtSetTimerResolution_t)GetProcAddress(hLib, "NtSetTimerResolution");
+		NtQueryTimerResolution_t query = (NtQueryTimerResolution_t)GetProcAddress(hLib, "NtQueryTimerResolution");
 
 		if (query)
 		{
