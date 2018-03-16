@@ -179,42 +179,48 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 		row.emplace_back(data.user);
 		table.emplace_back(row);
 	}
-	rx_dump_table(table, out, true);
+	rx_dump_table(table, out, true,false);
 	return true;
 }
 
 bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
-	string_type temp_str;
-	in >> temp_str;
-	if (temp_str.empty())
+	string_array categories;
+	testing_enviroment::instance().get_categories(categories);
+	size_t size = categories.size();
+	size_t table_size = 1;
+	std::vector<string_array> cases(size);
+	for (auto i=0; i<size; i++)
 	{
-		string_array categories;
-		testing_enviroment::instance().get_categories(categories);
-		out << "Registered  Test Categories\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
-		for (const auto& one : categories)
-		{
-			out << one;
-			out << "\r\n";
-		}
-		out << ANSI_COLOR_RESET;
-		return true;
+		testing_enviroment::instance().get_cases(categories[i], cases[i]);
+		table_size += cases[i].size();
 	}
-	else
-	{
-		string_array cases;
-		testing_enviroment::instance().get_cases(temp_str,cases);
+	rx_table_type table(table_size);
 
-		out << "Registered Test Cases for ";
-		out << temp_str << " :\r\n=====================================\r\n" ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
-		for (const auto& one : cases)
+	table[0].emplace_back("Category");
+	table[0].emplace_back("Test Cases");
+
+	int row = 1;
+	for (auto i = 0; i<size; i++)
+	{
+		table[row].emplace_back(categories[i], ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+		if (cases[i].empty())
 		{
-			out << one;
-			out << "\r\n";
+			table[row].emplace_back("");
 		}
-		out << ANSI_COLOR_RESET;
-		return true;
+		else
+		{
+			table[row].emplace_back(cases[i][0],ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+			for (auto j = 1; j < cases[i].size(); j++)
+			{
+				table[row].emplace_back("");
+				table[row].emplace_back(cases[i][j], ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+			}
+		}
+		row++;
 	}
+	rx_dump_table(table, out, true, true);
+	return true;
 }
 
 

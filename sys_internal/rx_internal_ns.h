@@ -545,29 +545,34 @@ namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () 
 }
 
 template <class TImpl>
-bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+bool rx_meta_item_implementation<TImpl>::generate_json(std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writter writer;
 
 	writer.write_header(STREAMING_TYPE_CLASS);
 
+	bool out = false;
+
 	writer.start_object(impl_->get_type_name().c_str());
 	{
-		impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+		out = impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
 	}
 	writer.end_object();
 
 	writer.write_footer();
 
 	string_type result;
-	bool out = writer.get_string(result, true);
+	if (out)
+	{
+		out = writer.get_string(result, true);
+	}
 
 	if (out)
 		def << result;
 	else
 		def << "Error in JSON deserialization.";
 
-	return true;
+	return out;
 }
 
 template <class TImpl>

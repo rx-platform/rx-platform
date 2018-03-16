@@ -963,7 +963,7 @@ bool namespace_command::list_directory (std::ostream& out, std::ostream& err, co
 		idx++;
 	}
 
-	rx_dump_table(table, out, true);
+	rx_dump_table(table, out, true,false);
 
 	return true;
 }
@@ -1042,7 +1042,7 @@ bool namespace_command::list_object (std::ostream& out, std::ostream& err, const
 		idx++;
 	}
 
-	rx_dump_table(table, out, true);
+	rx_dump_table(table, out, true,false);
 
 	return true;
 }
@@ -1586,7 +1586,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 			table[i + 1].emplace_back(RX_CONSOLE_UNCHECKED);
 		table[i + 1].emplace_back(ctxs[i]->get_port());
 	}
-	rx_dump_table(table, out,true);
+	rx_dump_table(table, out,true,true);
 
 	return true;
 }

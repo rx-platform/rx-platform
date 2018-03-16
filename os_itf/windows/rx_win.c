@@ -282,6 +282,8 @@ char ver_buffer[0x100];
 rx_pid_t rx_pid;
 
 LPWSTR LpcPortName = L"\\rx_platform_port";      // Name of the LPC port
+#define LPC_DATA_SIZE 0x10
+#define LPC_MSG_SIZE LPC_DATA_SIZE+sizeof(PORT_MESSAGE)
 void test_lpc(void* arg)
 {
 
@@ -291,11 +293,13 @@ void test_lpc(void* arg)
 	NTSTATUS Status;
 	HANDLE LpcPortHandle = NULL;
 	HANDLE ServerHandle = NULL;
-	BYTE RequestBuffer[sizeof(PORT_MESSAGE) + MAX_LPC_DATA];
+	BYTE RequestBuffer[LPC_MSG_SIZE];
+	BYTE OutBuffer[LPC_MSG_SIZE];
 	BOOL WeHaveToStop = FALSE;
 	int nError;
 
 	PPORT_MESSAGE message = (PPORT_MESSAGE)&RequestBuffer;
+	PPORT_MESSAGE out_message = (PPORT_MESSAGE)&OutBuffer;
 
 	__try     // try-finally
 	{
@@ -388,6 +392,13 @@ void test_lpc(void* arg)
 					message);
 				printf("Server: NtReplyWaitReceivePort result 0x%08lX\n", Status);
 			}
+			if (NT_SUCCESS(Status))
+			{
+				memcpy(out_message, message,sizeof(PORT_MESSAGE));
+				printf("Server: Sending reply (NtReplyPort) ...\n");
+				Status = NtReplyPort(LpcPortHandle, out_message);
+				printf("Server: NtReplyPort result 0x%08lX\n", Status);
+			}
 		}
 	}
 	__finally
@@ -405,6 +416,13 @@ void test_client_lpc()
 	NTSTATUS Status = STATUS_SUCCESS;
 	HANDLE PortHandle = NULL;
 	ULONG MaxMessageLength = 0;
+	BYTE OutBuffer[LPC_MSG_SIZE];
+	BYTE InBuffer[LPC_MSG_SIZE];
+	PPORT_MESSAGE out_message = (PPORT_MESSAGE)&OutBuffer;
+	PPORT_MESSAGE in_message = (PPORT_MESSAGE)&InBuffer;
+	InitializeMessageHeader(out_message, LPC_MSG_SIZE, 0);
+	InitializeMessageHeader(out_message, LPC_MSG_SIZE, 0);
+
 
 	RtlInitUnicodeString(&PortName, LpcPortName);
 	SecurityQos.Length = sizeof(SECURITY_QUALITY_OF_SERVICE);
@@ -423,6 +441,15 @@ void test_client_lpc()
 		NULL,
 		NULL);
 	printf("Client: NtConnectPort result 0x%08lX\n", Status);
+
+	printf("Client: Sending request, waiting for reply (NtRequestWaitReplyPort)\n");
+	Status = NtRequestWaitReplyPort(PortHandle, out_message, in_message);
+	printf("Client: NtRequestWaitReplyPort result 0x%08lX\n", Status);
+	Sleep(500);
+
+	printf("Client: Closing the port (NtClose) \n");
+	Status = NtClose(PortHandle);
+	printf("Client: NtClose result 0x%08lX\n", Status);
 }
 
 void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* server_name)

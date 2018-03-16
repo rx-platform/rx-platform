@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -54,12 +54,15 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 
 	writter.write_header(STREAMING_TYPE_OBJECT);
 
-	whose->serialize_definition(writter, STREAMING_TYPE_OBJECT);
+	bool out = whose->serialize_definition(writter, STREAMING_TYPE_OBJECT);
 
-	writter.write_footer();
+    string_type result;
+	if (out)
+	{
+		writter.write_footer();
 
-	string_type result;
-	bool out = writter.get_string(result, true);
+		out = writter.get_string(result, true);
+	}
 
 	if (out)
 		def << result;
@@ -72,7 +75,7 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 
 
 
-class object_data_type 
+class object_data_type
 {
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 	//typedef std::vector<int> programs_type;
@@ -116,6 +119,8 @@ basic implementation of object class");
 public:
 	typedef objects::object_runtime RType;
 	typedef objects::complex_runtime_item CType;
+
+	friend class meta_helpers;
 
   public:
       object_class (const string_type& name, const rx_node_id& id, bool system = false);
@@ -188,6 +193,8 @@ public:
 	typedef objects::domain_runtime RType;
 	typedef objects::complex_runtime_item CType;
 
+	friend class meta_helpers;
+
   public:
       domain_class (const string_type& name, const rx_node_id& id, bool system = false);
 
@@ -256,6 +263,8 @@ public:
 	typedef objects::application_runtime RType;
 	typedef objects::complex_runtime_item CType;
 
+	friend class meta_helpers;
+
   public:
       application_class (const string_type& name, const rx_node_id& id, bool system = false);
 
@@ -323,6 +332,8 @@ class port_class : public rx::pointers::reference_object
 public:
 	typedef objects::port_runtime RType;
 	typedef objects::complex_runtime_item CType;
+
+	friend class meta_helpers;
 
   public:
       port_class (const string_type& name, const rx_node_id& id, bool system = false);

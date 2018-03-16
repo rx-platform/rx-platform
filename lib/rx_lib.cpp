@@ -122,7 +122,7 @@ void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width)
 	out << "\r\n";
 }
 
-void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names)
+void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names, bool dot_lines)
 {
 	if (table.empty())
 		return;
@@ -137,7 +137,7 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 		else
 		{
 			if (!row.empty())
-			{// we allow emty rows
+			{// we allow empty rows
 				if (columns_number != row.size())
 				{
 					out << "Error in table format\r\n";
@@ -148,7 +148,7 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 		}
 	}
 
-	// o.k. we checked now so let's callculate columns width
+	// o.k. we checked now so let's calculate columns width
 	std::vector<size_t> widths(columns_number);
 	for (const auto& row : table)
 	{
@@ -161,19 +161,18 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 			}
 		}
 	}
+	char empty_char = dot_lines ? '.' : ' ';
 	// now we have all widths
 	bool first = true;
 	for (const auto& row : table)
 	{
-		if (first)
-			first = false;
-		else
+		if(!first)
 			out << "\r\n";
 		if (!row.empty())
 		{
 			for (size_t i = 0; i < columns_number; i++)
 			{
-				string_type rest(widths[i] + col_diff - row[i].value.size(), ' ');
+				string_type rest(widths[i] + col_diff - row[i].value.size(), i==columns_number-1 || first ? ' ' : empty_char);
 				if (!row[i].prefix.empty())
 					out << row[i].prefix;
 				out << row[i].value;
@@ -182,6 +181,8 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 				out << rest;
 			}
 		}
+		if (first)
+			first = false;
 		if (column_names)
 		{
 			out << "\r\n";

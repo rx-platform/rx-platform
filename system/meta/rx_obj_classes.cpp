@@ -40,17 +40,28 @@
 namespace rx_platform {
 
 namespace meta {
-template<class objectT>
-bool serialize_object_class(const objectT& whose, base_meta_writter& stream, uint8_t type)
-{
-	return false;
-}
 
-template<class objectT>
-bool deserialize_object_class(objectT& whose, base_meta_reader& stream, uint8_t type)
+
+class meta_helpers
 {
-	return false;
-}
+public:
+	template<class objectT>
+	static bool serialize_object_class(const objectT& whose, base_meta_writter& stream, uint8_t type)
+	{
+		if (!whose.meta_data_.serialize_checkable_definition(stream, type))
+			return false;
+		if (!whose.complex_data_.serialize_complex_definition(stream, type))
+			return false;
+		return true;
+	}
+
+	template<class objectT>
+	static bool deserialize_object_class(objectT& whose, base_meta_reader& stream, uint8_t type)
+	{
+		return false;
+	}
+};
+
 
 
 // Class rx_platform::meta::object_data_type 
@@ -139,12 +150,12 @@ const checkable_data& object_class::meta_data () const
 
 bool object_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return serialize_object_class<object_class>(*this, stream, type);
+	return meta_helpers::serialize_object_class<object_class>(*this, stream, type);
 }
 
 bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_object_class<object_class>(*this, stream, type);
+	return meta_helpers::deserialize_object_class<object_class>(*this, stream, type);
 }
 
 
@@ -191,12 +202,12 @@ const checkable_data& domain_class::meta_data () const
 
 bool domain_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return serialize_object_class<domain_class>(*this, stream, type);
+	return meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
 }
 
 bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_object_class<domain_class>(*this, stream, type);
+	return meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
 }
 
 
@@ -242,12 +253,12 @@ const checkable_data& application_class::meta_data () const
 
 bool application_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return serialize_object_class<application_class>(*this, stream, type);
+	return meta_helpers::serialize_object_class<application_class>(*this, stream, type);
 }
 
 bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_object_class<application_class>(*this, stream, type);
+	return meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
 }
 
 
@@ -293,12 +304,12 @@ const checkable_data& port_class::meta_data () const
 
 bool port_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return serialize_object_class<port_class>(*this, stream, type);
+	return meta_helpers::serialize_object_class<port_class>(*this, stream, type);
 }
 
 bool port_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_object_class<port_class>(*this, stream, type);
+	return meta_helpers::deserialize_object_class<port_class>(*this, stream, type);
 }
 
 

@@ -405,12 +405,12 @@ const checkable_data& mapper_class::meta_data () const
 
 bool mapper_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return serialize_complex_class<mapper_class>(*this, stream, type);
+	return serialize_complex_class(*this, stream, type);
 }
 
 bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_complex_class<mapper_class>(*this, stream, type);
+	return deserialize_complex_class(*this, stream, type);
 }
 
 
@@ -797,6 +797,9 @@ checkable_data::checkable_data (const string_type& name, const rx_node_id& id, c
       : version_(RX_INITIAL_ITEM_VERSION),
         created_time_(rx_time::now()),
         modified_time_(rx_time::now())
+	, name_(name)
+	, id_(id)
+	, system_(system)
 {
 }
 
@@ -849,10 +852,8 @@ bool checkable_data::serialize_checkable_definition (base_meta_writter& stream, 
 		return false;
 	if (!stream.write_bool("System", system_))
 		return false;
-	return true;
 	if (!stream.write_string("Name", name_.c_str()))
 		return false;
-	return true;
 	if (!stream.write_id("SuperId", parent_))
 		return false;
 	if (!stream.write_version("Ver", version_))

@@ -225,8 +225,9 @@ namespace meta_test {
 	 {
 		 out << "test_class created\r\n";
 
-		 dir->add_item(test_class->get_item_ptr());
-		 //if (test_class->generate_json(out, err))
+		 auto rx_class_item = test_class->get_item_ptr();
+		 dir->add_item(rx_class_item);
+		 if (rx_class_item->generate_json(out, err))
 		 {
 
 			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
@@ -234,9 +235,11 @@ namespace meta_test {
 
 				 out << "test_struct created\r\n";
 
-				 dir->add_item(test_struct->get_item_ptr());
+				 auto rx_struct_item = test_struct->get_item_ptr();
 
-				 //if (test_struct->generate_json(out, err))
+				 dir->add_item(rx_struct_item);
+
+				 if (rx_struct_item->generate_json(out, err))
 				 {
 					 out << "Creating test_object\r\n";
 

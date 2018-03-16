@@ -564,10 +564,15 @@ extern "C" {
         int ret;
 		eventfd_t buff = 0;
 
+        struct timespec ts;
+        ts.tv_sec = timeout / 1000000ul;
+        ts.tv_nsec = timeout % 1000000ul * 1000;
+
 		pfds.fd=what;
 		pfds.events=POLLIN;
 		pfds.revents=0;
-		ret = poll(&pfds,1,(int)(timeout/1000ull));
+		sigset_t sigset;
+		ret = ppoll(&pfds,1,&ts,&sigset);
 		if(ret==0)
             return RX_WAIT_TIMEOUT;
 		else if(ret==1)

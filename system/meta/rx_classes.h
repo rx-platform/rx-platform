@@ -97,7 +97,7 @@ class domain_class;
 class struct_class;
 class port_class;
 
-
+class meta_helpers;
 
 
 
