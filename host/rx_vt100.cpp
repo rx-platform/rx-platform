@@ -4,25 +4,25 @@
 *
 *  host\rx_vt100.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@ namespace host {
 
 namespace rx_vt100 {
 
-// Class host::rx_vt100::vt100_transport
+// Class host::rx_vt100::vt100_transport 
 
 vt100_transport::vt100_transport()
       : state_(parser_normal),
@@ -302,7 +302,7 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 }
 
 
-// Class host::rx_vt100::dummy_transport
+// Class host::rx_vt100::dummy_transport 
 
 dummy_transport::dummy_transport()
 {

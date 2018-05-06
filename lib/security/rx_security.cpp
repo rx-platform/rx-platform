@@ -4,7 +4,7 @@
 *
 *  lib\security\rx_security.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -311,7 +311,7 @@ bool unathorized_security_context::is_authenticated () const
   return false;
 
 }
-/*
+
 void unathorized_security_context::interface_bind ()
 {
 }
@@ -319,7 +319,7 @@ void unathorized_security_context::interface_bind ()
 void unathorized_security_context::interface_release ()
 {
 }
-*/
+
 
 // Class rx::security::loose_security_guard 
 

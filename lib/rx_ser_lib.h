@@ -4,7 +4,7 @@
 *
 *  lib\rx_ser_lib.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -218,7 +218,6 @@ class base_meta_reader
 	  {
 		  return who->deserialize_definition(*this, type);
 	  }
-
   protected:
 
   private:

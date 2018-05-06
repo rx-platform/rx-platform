@@ -42,7 +42,7 @@ namespace rx_platform {
 namespace meta {
 
 
-class meta_helpers
+class obj_meta_helpers
 {
 public:
 	template<class objectT>
@@ -60,6 +60,7 @@ public:
 	{
 		return false;
 	}
+
 };
 
 
@@ -128,12 +129,7 @@ namespace_item_attributes object_class::get_attributes () const
 
 void object_class::construct (objects::object_runtime_ptr what)
 {
-	//!!!!!***TODO
-}
-
-void object_class::construct (complex_runtime_ptr what)
-{
-	//!!!!!***TODO
+	complex_data_.construct(what->get_complex_item());
 }
 
 platform_item_ptr object_class::get_item_ptr ()
@@ -150,12 +146,17 @@ const checkable_data& object_class::meta_data () const
 
 bool object_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_object_class<object_class>(*this, stream, type);
+	return obj_meta_helpers::serialize_object_class<object_class>(*this, stream, type);
 }
 
 bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_object_class<object_class>(*this, stream, type);
+	return obj_meta_helpers::deserialize_object_class<object_class>(*this, stream, type);
+}
+
+objects::object_runtime_ptr object_class::create_runtime_ptr ()
+{
+	return rx_create_reference<objects::object_runtime>();
 }
 
 
@@ -181,7 +182,6 @@ domain_class::~domain_class()
 
 void domain_class::construct (objects::object_runtime_ptr what)
 {
-	construct(what->get_complex_item());
 }
 
 void domain_class::construct (complex_runtime_ptr what)
@@ -202,12 +202,12 @@ const checkable_data& domain_class::meta_data () const
 
 bool domain_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
+	return obj_meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
 }
 
 bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
+	return obj_meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
 }
 
 
@@ -232,7 +232,6 @@ application_class::~application_class()
 
 void application_class::construct (objects::object_runtime_ptr what)
 {
-	construct(what->get_complex_item());
 }
 
 void application_class::construct (complex_runtime_ptr what)
@@ -253,12 +252,12 @@ const checkable_data& application_class::meta_data () const
 
 bool application_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_object_class<application_class>(*this, stream, type);
+	return obj_meta_helpers::serialize_object_class<application_class>(*this, stream, type);
 }
 
 bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
+	return obj_meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
 }
 
 
@@ -283,7 +282,6 @@ port_class::~port_class()
 
 void port_class::construct (objects::object_runtime_ptr what)
 {
-	construct(what->get_complex_item());
 }
 
 void port_class::construct (complex_runtime_ptr what)
@@ -304,12 +302,12 @@ const checkable_data& port_class::meta_data () const
 
 bool port_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_object_class<port_class>(*this, stream, type);
+	return obj_meta_helpers::serialize_object_class<port_class>(*this, stream, type);
 }
 
 bool port_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_object_class<port_class>(*this, stream, type);
+	return obj_meta_helpers::deserialize_object_class<port_class>(*this, stream, type);
 }
 
 

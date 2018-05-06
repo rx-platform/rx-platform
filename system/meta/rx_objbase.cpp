@@ -67,10 +67,6 @@ namespace_item_attributes server_object::get_attributes () const
 
 // Class rx_platform::objects::complex_runtime_item 
 
-complex_runtime_item::complex_runtime_item()
-{
-}
-
 complex_runtime_item::complex_runtime_item (const string_type& name, const rx_node_id& id, bool system)
 	: parent_(id)
 {
@@ -113,7 +109,7 @@ rx_value complex_runtime_item::get_value (const string_type path) const
 			if ((it->second&RT_CONST_IDX_MASK) == RT_CONST_IDX_MASK)
 			{// const value
 				RX_ASSERT((it->second&RT_INDEX_MASK) < const_values_.size());
-				return const_values_[(it->second&RT_INDEX_MASK)]->get_value({ my_object_->get_change_time(),my_object_->get_mode() } );
+				return const_values_[(it->second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(),my_object_->get_mode() } );
 			}
 			else if ((it->second&RT_COMPLEX_IDX_MASK) == RT_COMPLEX_IDX_MASK)
 			{// has to be but?!?, it's fast so lets do it
@@ -156,7 +152,7 @@ void complex_runtime_item::object_state_changed (const rx_time& now)
 				if ((one.second&RT_CALLBACK_MASK)!=0)
 				{// has callback so fire all og it quality changed
 					(*(const_values_callbacks_[RT_CALLBACK_INDEX(one.second)]))(
-						const_values_[(one.second&RT_INDEX_MASK)]->get_value({ my_object_->get_change_time(), my_object_->get_mode() } ), 0);
+						const_values_[(one.second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(), my_object_->get_mode() } ), 0);
 				}
 
 			}
@@ -227,7 +223,7 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 	return nullptr;
 }
 
-uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val)
+uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item* val)
 {
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
@@ -269,7 +265,7 @@ bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint
 					return false;
 				if (!stream.start_object("Val"))
 					return false;
-				const_values_[one.second&RT_INDEX_MASK]->serialize_definition(stream, type, { ts, mode });
+				const_values_[one.second&RT_INDEX_MASK].serialize_definition(stream, type, { ts, mode });
 				if (!stream.end_object())//Val
 					return false;
 				if (!stream.end_object())//Item
@@ -345,7 +341,7 @@ void complex_runtime_item::get_sub_items (server_items_type& items, const string
 			{// const value
 				items.push_back(sys_internal::internal_ns::simple_platform_item::smart_ptr(
 					one.first
-					, const_values_[(one.second&RT_INDEX_MASK)]->get_value({ my_object_->get_modified_time()
+					, const_values_[(one.second&RT_INDEX_MASK)].get_value({ my_object_->get_modified_time()
 					, my_object_->get_mode() })
 					, namespace_item_read_access
 					, RX_CONST_VALUE_TYPE_NAME
@@ -372,26 +368,21 @@ void complex_runtime_item::get_sub_items (server_items_type& items, const string
 	}
 }
 
-uint32_t complex_runtime_item::register_struct (const string_type& name, struct_runtime_ptr val)
-{
-	return register_sub_item(name, val);
-}
-
 
 // Class rx_platform::objects::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
-      : complex_item_(pointers::_create_new),
-        change_time_(rx_time::now())
+      : change_time_(rx_time::now())
+	, runtime_item_("_unnamed", rx_node_id::null_id, false)
 {
 }
 
 object_runtime::object_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : complex_item_(pointers::_create_new),
-        change_time_(rx_time::now())
+      : change_time_(rx_time::now())
 	, meta_data_(name,id,rx_node_id::null_id,system)
+	, runtime_item_(name, id, system)
 {
 }
 
@@ -413,20 +404,20 @@ rx_value object_runtime::get_value (const string_type path) const
 	}
 	else
 	{
-		return complex_item_->get_value(path);
+		return runtime_item_.get_value(path);
 	}
 }
 
 void object_runtime::turn_on ()
 {
 	if (mode_.turn_on())
-		complex_item_->object_state_changed(rx_time::now());
+		runtime_item_.object_state_changed(rx_time::now());
 }
 
 void object_runtime::turn_off ()
 {
 	if (mode_.turn_off())
-		complex_item_->object_state_changed(rx_time::now());
+		runtime_item_.object_state_changed(rx_time::now());
 }
 
 void object_runtime::set_blocked ()
@@ -441,7 +432,7 @@ void object_runtime::set_test ()
 
 values::rx_value object_runtime::get_value () const
 {
-	// this static object improves performance its, created only once and it is emtyy
+	// this static object improves performance its, created only once and it is empty
 	return rx_value(meta_data_.get_version(), meta_data_.get_modified_time());
 }
 
@@ -481,7 +472,7 @@ bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 	if (!meta_data_.serialize_checkable_definition(stream, type))
 		return false;
 
-	if (!complex_item_->serialize_definition(stream, type,get_modified_time(),mode_))
+	if (!runtime_item_.serialize_definition(stream, type,get_modified_time(),mode_))
 		return false;
 
 	if (!stream.start_array("Programs", programs_.size()))
@@ -504,7 +495,7 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 	if (!meta_data_.deserialize_checkable_definition(stream, type))
 		return false;
 
-	if (!complex_item_->deserialize_definition(stream, type))
+	if (!runtime_item_.deserialize_definition(stream, type))
 		return false;
 
 	if (!stream.start_array("Programs"))
@@ -533,12 +524,7 @@ bool object_runtime::is_browsable () const
 
 void object_runtime::get_content (server_items_type& sub_items, const string_type& pattern) const
 {
-	complex_item_->get_sub_items(sub_items,pattern);
-}
-
-uint32_t object_runtime::register_struct (const string_type& name, struct_runtime_ptr val)
-{
-	return complex_item_->register_struct(name, val);
+	runtime_item_.get_sub_items(sub_items,pattern);
 }
 
 platform_item_ptr object_runtime::get_item_ptr ()
@@ -566,22 +552,15 @@ size_t object_runtime::get_size () const
 	return sizeof(*this);
 }
 
+complex_runtime_item_ptr object_runtime::get_complex_item ()
+{
+	return &runtime_item_;
+}
+
 
 // Class rx_platform::objects::value_item 
 
 const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
-
-value_item::value_item()
-      : change_time_(rx_time::now()),
-        readonly_(false)
-{
-}
-
-
-value_item::~value_item()
-{
-}
-
 
 
 bool value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const
@@ -596,6 +575,13 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type,
 	return true;
 }
 
+rx_value value_item::get_value (const object_state_data& data) const
+{
+	rx_value val;
+	//storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
+	return val;
+}
+
 
 // Class rx_platform::objects::variable_runtime 
 
@@ -606,7 +592,7 @@ variable_runtime::variable_runtime()
 }
 
 variable_runtime::variable_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: complex_runtime_item(name, id, system)
+	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
 {
 }
 
@@ -620,6 +606,7 @@ variable_runtime::~variable_runtime()
 // Class rx_platform::objects::filter_runtime 
 
 filter_runtime::filter_runtime()
+	: my_item_(std::make_unique<complex_runtime_item>("_unnamed", rx_node_id::null_id, false))
 {
 }
 
@@ -735,7 +722,7 @@ struct_runtime::struct_runtime()
 }
 
 struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: complex_runtime_item(name, id, system)
+	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
 {
 }
 
@@ -751,7 +738,7 @@ bool struct_runtime::serialize_definition (base_meta_writter& stream, uint8_t ty
 	if (!stream.start_object(objects::struct_runtime::type_name.c_str()))
 		return false;
 
-	if (!complex_runtime_item::serialize_definition(stream, type, ts, mode))
+	if (!my_item_->serialize_definition(stream, type, ts, mode))
 		return false;
 
 	if (!stream.end_object())
@@ -771,16 +758,6 @@ bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 
 const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
 
-const_value_item::const_value_item()
-{
-}
-
-
-const_value_item::~const_value_item()
-{
-}
-
-
 
 bool const_value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const
 {
@@ -792,6 +769,52 @@ bool const_value_item::serialize_definition (base_meta_writter& stream, uint8_t 
 bool const_value_item::deserialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode)
 {
 	return true;
+}
+
+bool const_value_item::has_own_time () const
+{
+  return false;
+
+}
+
+namespace_item_attributes const_value_item::get_attributes () const
+{
+	return namespace_item_attributes::namespace_item_system_const_value;
+}
+
+void const_value_item::item_lock ()
+{
+}
+
+void const_value_item::item_unlock ()
+{
+}
+
+void const_value_item::item_lock () const
+{
+}
+
+void const_value_item::item_unlock () const
+{
+}
+
+void const_value_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+string_type const_value_item::get_type_name () const
+{
+	return "";
+}
+
+rx_value const_value_item::get_value (const object_state_data& data) const
+{
+	return 0;
+}
+
+uint32_t const_value_item::register_value (const string_type& name, const rx_value& val)
+{
+	return 0;
 }
 
 

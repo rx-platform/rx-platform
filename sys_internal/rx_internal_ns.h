@@ -31,12 +31,12 @@
 
 
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 
 #include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;
@@ -71,8 +71,6 @@ contains root server folders\
       static void deinitialize ();
 
       namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err);
 
 
   protected:
@@ -110,8 +108,6 @@ used to create system defined folders...\
 
       namespace_item_attributes get_attributes () const;
 
-      bool generate_json (std::ostream& def, std::ostream& err);
-
 
   protected:
 
@@ -143,8 +139,6 @@ All objects here are with unassigned state and hawing a bad quality\
 
       namespace_item_attributes get_attributes () const;
 
-      bool generate_json (std::ostream& def, std::ostream& err);
-
 
   protected:
 
@@ -175,32 +169,6 @@ used to create user defined folders...\
 
 
       namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class system_server_item : public rx_platform::ns::rx_platform_item  
-{
-
-  public:
-      system_server_item();
-
-      virtual ~system_server_item();
-
-
-      size_t get_size () const;
 
 
   protected:
@@ -371,8 +339,6 @@ used to interface storage objects...\
 
 
       namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err);
 
       void get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const;
 
@@ -545,7 +511,7 @@ namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () 
 }
 
 template <class TImpl>
-bool rx_meta_item_implementation<TImpl>::generate_json(std::ostream& def, std::ostream& err) const
+bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writter writer;
 

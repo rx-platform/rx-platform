@@ -181,8 +181,6 @@ public:
 
       namespace_item_attributes get_attributes () const;
 
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
       test_status_t get_status (test_context_data* data = nullptr);
 
       test_context_data get_data (test_context_data* data = nullptr) const;

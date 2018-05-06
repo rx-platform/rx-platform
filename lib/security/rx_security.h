@@ -4,7 +4,7 @@
 *
 *  lib\security\rx_security.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -294,7 +294,6 @@ class unathorized_security_context : public security_context,
                                      	public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(unathorized_security_context);
-	DECLARE_DERIVED_FROM_INTERFACE;
 
   public:
       unathorized_security_context();
@@ -307,9 +306,9 @@ class unathorized_security_context : public security_context,
 
   protected:
 
-      ///void interface_bind ();
+      void interface_bind ();
 
-      //void interface_release ();
+      void interface_release ();
 
 
   private:

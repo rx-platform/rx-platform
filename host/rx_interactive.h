@@ -33,14 +33,14 @@
 
 #include "system/server/rx_server.h"
 
+// rx_vt100
+#include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
-// rx_vt100
-#include "host/rx_vt100.h"
 
 namespace host {
 namespace interactive {

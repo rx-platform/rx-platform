@@ -2,8 +2,8 @@
 
 #include "version/rx_version.h"
 
-#define RX_HOST_NAME "RX Console"
+#define RX_HOST_NAME "RX Interactive Console"
 #define RX_HOST_MAJOR_VERSION 0
-#define RX_HOST_MINOR_VERSION 12
+#define RX_HOST_MINOR_VERSION 13
 #define RX_HOST_BUILD_NUMBER 0
 

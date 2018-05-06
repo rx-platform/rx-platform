@@ -41,6 +41,69 @@ namespace rx_platform {
 
 namespace hosting {
 
+// Class rx_platform::hosting::rx_platform_host 
+
+rx_platform_host::rx_platform_host(const rx_platform_host &right)
+      : parent_(nullptr)
+{
+	RX_ASSERT(false);
+}
+
+rx_platform_host::rx_platform_host (rx_platform_storage::smart_ptr storage)
+      : parent_(nullptr)
+	, storage_(storage)
+{
+	storage_->init_storage();
+}
+
+
+rx_platform_host::~rx_platform_host()
+{
+	storage_->deinit_storage();
+}
+
+
+rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+void rx_platform_host::get_host_info (string_array& hosts)
+{
+}
+
+void rx_platform_host::server_started_event ()
+{
+}
+
+void rx_platform_host::server_stopping_event ()
+{
+}
+
+bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+
+	std::ostream out(out_buffer.unsafe_ptr());
+	out << "dummy inmplmentation by base interface class\r\n";
+
+	return true;
+}
+
+int rx_platform_host::console_main (int argc, char* argv[])
+{
+	string_vector arguments(argc);
+	for (int i = 0; i < argc; i++)
+		arguments[i] = argv[i];
+
+	bool ret = start(arguments);
+
+	return ret ? 0 : -1;
+}
+
+
 // Class rx_platform::hosting::host_security_context 
 
 host_security_context::host_security_context()
@@ -150,69 +213,6 @@ platform_item_ptr rx_platform_file::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 
-}
-
-
-// Class rx_platform::hosting::rx_platform_host 
-
-rx_platform_host::rx_platform_host(const rx_platform_host &right)
-      : parent_(nullptr)
-{
-	RX_ASSERT(false);
-}
-
-rx_platform_host::rx_platform_host (rx_platform_storage::smart_ptr storage)
-      : parent_(nullptr)
-	, storage_(storage)
-{
-	storage_->init_storage();
-}
-
-
-rx_platform_host::~rx_platform_host()
-{
-	storage_->deinit_storage();
-}
-
-
-rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-void rx_platform_host::get_host_info (string_array& hosts)
-{
-}
-
-void rx_platform_host::server_started_event ()
-{
-}
-
-void rx_platform_host::server_stopping_event ()
-{
-}
-
-bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-
-	std::ostream out(out_buffer.unsafe_ptr());
-	out << "dummy inmplmentation by base interface class\r\n";
-
-	return true;
-}
-
-int rx_platform_host::console_main (int argc, char* argv[])
-{
-	string_vector arguments(argc);
-	for (int i = 0; i < argc; i++)
-		arguments[i] = argv[i];
-
-	bool ret = start(arguments);
-
-	return ret ? 0 : -1;
 }
 
 

@@ -32,8 +32,6 @@
 
 #include "lib/rx_lib.h"
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_cmds
@@ -42,6 +40,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_io
+#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_classes.h"

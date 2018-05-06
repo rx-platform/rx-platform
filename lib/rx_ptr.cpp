@@ -42,6 +42,41 @@ _create_new_type _create_new;
 // Parameterized Class rx::pointers::reference 
 
 
+// Class rx::pointers::reference_object 
+
+std::atomic<ref_counting_type> reference_object::g_objects_count;
+
+reference_object::reference_object()
+      : ref_count_(1)
+{
+	g_objects_count++;
+}
+
+
+reference_object::~reference_object()
+{
+	g_objects_count--;
+}
+
+
+
+void reference_object::bind ()
+{
+	ref_count_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void reference_object::release ()
+{
+	if (1 == ref_count_.fetch_sub(1, std::memory_order_acq_rel))
+		delete this;
+}
+
+size_t reference_object::get_objects_count ()
+{
+	return (size_t)g_objects_count.load();
+}
+
+
 // Class rx::pointers::virtual_reference_object 
 
 virtual_reference_object::~virtual_reference_object()
@@ -77,41 +112,6 @@ interface_object::~interface_object()
 {
 }
 
-
-
-// Class rx::pointers::reference_object 
-
-std::atomic<ref_counting_type> reference_object::g_objects_count;
-
-reference_object::reference_object()
-      : ref_count_(1)
-{
-	g_objects_count++;
-}
-
-
-reference_object::~reference_object()
-{
-	g_objects_count--;
-}
-
-
-
-void reference_object::bind ()
-{
-	ref_count_.fetch_add(1, std::memory_order_relaxed);
-}
-
-void reference_object::release ()
-{
-	if (1 == ref_count_.fetch_sub(1, std::memory_order_acq_rel))
-		delete this;
-}
-
-size_t reference_object::get_objects_count ()
-{
-	return (size_t)g_objects_count.load();
-}
 
 
 } // namespace pointers

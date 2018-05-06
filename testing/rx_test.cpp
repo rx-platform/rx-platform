@@ -391,11 +391,6 @@ namespace_item_attributes test_case::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
 }
 
-bool test_case::generate_json (std::ostream& def, std::ostream& err) const
-{
-	return true;
-}
-
 test_status_t test_case::get_status (test_context_data* data)
 {
 	if (data)

@@ -172,8 +172,6 @@ class rx_server_directory : public rx::pointers::reference_object
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
-      virtual bool generate_json (std::ostream& def, std::ostream& err) = 0;
-
       bool add_item (platform_item_ptr who);
 
 

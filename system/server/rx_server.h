@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -39,8 +39,6 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
-// rx_inf
-#include "system/server/rx_inf.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_mngt
@@ -49,6 +47,8 @@
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_inf
+#include "system/server/rx_inf.h"
 
 
 #include "lib/rx_log.h"

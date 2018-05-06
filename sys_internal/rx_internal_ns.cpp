@@ -192,12 +192,6 @@ namespace_item_attributes platform_root::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
-bool platform_root::generate_json (std::ostream& def, std::ostream& err)
-{
-	err << "Can't serialize directory object!";
-	return false;
-}
-
 
 // Class sys_internal::internal_ns::namespace_directory 
 
@@ -216,12 +210,6 @@ namespace_directory::~namespace_directory()
 namespace_item_attributes namespace_directory::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
-}
-
-bool namespace_directory::generate_json (std::ostream& def, std::ostream& err)
-{
-	err << "Can't serialize directory object!";
-	return false;
 }
 
 
@@ -244,12 +232,6 @@ namespace_item_attributes unassigned_directory::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
-bool unassigned_directory::generate_json (std::ostream& def, std::ostream& err)
-{
-	err << "Can't serialize directory object!";
-	return false;
-}
-
 
 // Class sys_internal::internal_ns::world_directory 
 
@@ -268,31 +250,6 @@ world_directory::~world_directory()
 namespace_item_attributes world_directory::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
-}
-
-bool world_directory::generate_json (std::ostream& def, std::ostream& err)
-{
-	err << "Can't serialize directory object!";
-	return false;
-}
-
-
-// Class sys_internal::internal_ns::system_server_item 
-
-system_server_item::system_server_item()
-{
-}
-
-
-system_server_item::~system_server_item()
-{
-}
-
-
-
-size_t system_server_item::get_size () const
-{
-	return sizeof(*this);
 }
 
 
@@ -437,12 +394,6 @@ namespace_item_attributes storage_directory::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
 }
 
-bool storage_directory::generate_json (std::ostream& def, std::ostream& err)
-{
-	err << "Can't serialize directory object!";
-	return false;
-}
-
 void storage_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
 {
 	rx_gate::instance().get_host()->get_storage()->list_storage("", sub_directories, sub_items, pattern);
@@ -466,3 +417,5 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::stru
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class::smart_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class::smart_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class::smart_ptr>;
+
+

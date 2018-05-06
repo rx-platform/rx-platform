@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -31,10 +31,10 @@
 
 
 
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_construct
 #include "system/constructors/rx_construct.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 #include "system/meta/rx_classes.h"
 #include "system/meta/rx_obj_classes.h"
@@ -80,7 +80,7 @@ typedef TYPELIST_10(reference_type, object_class, variable_class, source_class, 
 
 
 
-class relations_hash_data
+class relations_hash_data 
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -134,7 +134,7 @@ class relations_hash_data
 
 
 template <class typeT>
-class type_hash
+class type_hash 
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -142,13 +142,14 @@ class type_hash
 	void operator=(type_hash&&) = delete;
 
 public:
-	typedef typename typeT::RType::smart_ptr RType;
+	typedef typename typeT::RType RType;
+	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 	typedef typename constructors::object_constructor_base<RType,RType> constructorType;
 
 	typedef typename std::map<rx_node_id, RType> registered_objects_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_classes_type;
-	typedef typename std::map<rx_node_id, std::function<RType()> > object_constructors_type;
+	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > object_constructors_type;
 
 
   public:
@@ -163,7 +164,7 @@ public:
 
       bool register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      typename type_hash<typeT>::RType create_runtime (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system = false);
+      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system = false);
 
 
   protected:
@@ -217,7 +218,7 @@ struct ids_hash_element
 
 
 
-class internal_classes_manager
+class internal_classes_manager 
 {
 	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
 	typedef std::map<string_type, names_hash_element> names_hash_type;
@@ -308,7 +309,7 @@ public:
 };
 
 
-// Parameterized Class model::type_hash
+// Parameterized Class model::type_hash 
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -360,9 +361,9 @@ bool type_hash<typeT>::register_constructor (const rx_node_id& id, std::function
 }
 
 template <class typeT>
-typename type_hash<typeT>::RType type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
 {
-	RType ret;
+	auto ret = typeT::create_runtime_ptr();
 
 	std::vector<rx_node_id> base;
 	base.emplace_back(type_id);
@@ -378,13 +379,8 @@ typename type_hash<typeT>::RType type_hash<typeT>::create_runtime (const string_
 		}
 
 	}
-	if (!ret)
-	{
-		// user class object
-		ret = rx_create_reference<objects::user_object>();
-	}
-	typename RType::pointee_type::definition_t::smart_ptr my_class =
-		rx_gate::instance().get_manager().get_class<typename RType::pointee_type::definition_t>(type_id);
+	auto my_class =
+		rx_gate::instance().get_manager().get_class<typename RType::definition_t>(type_id);
 	if (my_class)
 	{
 		my_class->construct(ret);
@@ -458,7 +454,6 @@ public:
 	}
 };
 */
-
 } // namespace model
 
 

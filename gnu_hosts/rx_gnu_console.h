@@ -31,10 +31,10 @@
 
 
 
-// rx_gnu_file_sys
-#include "gnu_hosts/rx_gnu_file_sys.h"
 // rx_interactive
 #include "host/rx_interactive.h"
+// rx_gnu_file_sys
+#include "gnu_hosts/rx_gnu_file_sys.h"
 
 
 

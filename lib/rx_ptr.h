@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -113,7 +113,7 @@ struct code_behind_definition_t
 
 
 template <class ptrT>
-class basic_smart_ptr
+class basic_smart_ptr 
 {
 
 	static code_behind_definition_t* rx_code_behind;
@@ -415,6 +415,63 @@ private:
 
 
 
+
+class reference_object 
+{
+
+	DECLARE_REFERENCE_PTR(reference_object);
+
+
+	/*
+	where to put this code from macros?!?
+	public:
+	typedef basic_smart_ptr<ptrT> smart_ptr;
+	template<class Tother>
+	friend class rx::pointers::reference;
+	private:
+	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
+	*/
+
+  public:
+      reference_object();
+
+      virtual ~reference_object();
+
+
+      static size_t get_objects_count ();
+
+      virtual string_type get_class_name () const
+      {
+        return "*unknown*";
+
+      }
+
+	  reference_object(const reference_object&) = delete;
+	  reference_object(reference_object&&) = delete;
+	  reference_object& operator=(const reference_object&) = delete;
+	  reference_object& operator=(reference_object&&) = delete;
+  protected:
+
+      void bind ();
+
+      void release ();
+
+
+  private:
+
+
+      std::atomic<ref_counting_type> ref_count_;
+
+      static std::atomic<ref_counting_type> g_objects_count;
+
+
+};
+
+
+
+
+
+
 template <class ptrT>
 class virtual_reference : public basic_smart_ptr<ptrT>  
 {
@@ -574,7 +631,7 @@ virtual_reference<ptrT> virtual_reference<ptrT>::null_ptr;
 
 
 
-class virtual_reference_object
+class virtual_reference_object 
 {
 
   public:
@@ -592,7 +649,6 @@ class virtual_reference_object
 	  virtual_reference_object(virtual_reference_object&&) = delete;
 	  virtual_reference_object& operator=(const virtual_reference_object&) = delete;
 	  virtual_reference_object& operator=(virtual_reference_object&&) = delete;
-
   protected:
 
       virtual void virtual_bind () = 0;
@@ -611,7 +667,7 @@ class virtual_reference_object
 
 
 
-struct struct_reference
+struct struct_reference 
 {
 	DECLARE_REFERENCE_PTR(struct_reference);
 
@@ -807,7 +863,7 @@ interface_reference<ptrT> interface_reference<ptrT>::null_ptr;
 
 
 
-class interface_object
+class interface_object 
 {
 
   public:
@@ -825,7 +881,6 @@ class interface_object
 	  interface_object(interface_object&&) = delete;
 	  interface_object& operator=(const interface_object&) = delete;
 	  interface_object& operator=(interface_object&&) = delete;
-
   protected:
 
       virtual void interface_bind () = 0;
@@ -839,64 +894,7 @@ class interface_object
 };
 
 
-
-
-
-
-
-class reference_object
-{
-
-	DECLARE_REFERENCE_PTR(reference_object);
-
-
-	/*
-	where to put this code from macros?!?
-	public:
-	typedef basic_smart_ptr<ptrT> smart_ptr;
-	template<class Tother>
-	friend class rx::pointers::reference;
-	private:
-	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
-	*/
-
-  public:
-      reference_object();
-
-      virtual ~reference_object();
-
-
-      static size_t get_objects_count ();
-
-      virtual string_type get_class_name () const
-      {
-        return "*unknown*";
-
-      }
-
-	  reference_object(const reference_object&) = delete;
-	  reference_object(reference_object&&) = delete;
-	  reference_object& operator=(const reference_object&) = delete;
-	  reference_object& operator=(reference_object&&) = delete;
-  protected:
-
-      void bind ();
-
-      void release ();
-
-
-  private:
-
-
-      std::atomic<ref_counting_type> ref_count_;
-
-      static std::atomic<ref_counting_type> g_objects_count;
-
-
-};
-
-
-// Parameterized Class rx::pointers::basic_smart_ptr
+// Parameterized Class rx::pointers::basic_smart_ptr 
 
 //helper functions for creating concrete classes
 // for standard references

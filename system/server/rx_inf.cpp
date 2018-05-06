@@ -257,7 +257,7 @@ server_dispatcher_object::server_dispatcher_object (int count, const string_type
       : threads_count_(count)
   , pool_(count, name,rx_thread_id), server_object(name,id)
 {
-	register_const_value("count", count);
+	//register_const_value("count", count);
 }
 
 
@@ -298,7 +298,7 @@ domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
 	, server_object(WORKER_POOL_NAME, WORKER_POOL_ID)
 {
-	register_const_value("count", (uint32_t)pool_size);
+	//register_const_value("count", (uint32_t)pool_size);
 }
 
 

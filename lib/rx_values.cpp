@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.cpp
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -854,6 +854,14 @@ void rx_value::set_good_locally ()
 	quality_ = RX_GOOD_QUALITY;
 	origin_ = RX_LOCAL_ORIGIN;
 }
+
+
+// Class rx::values::const_values_storage 
+
+const_values_storage::const_values_storage()
+{
+}
+
 
 
 } // namespace values

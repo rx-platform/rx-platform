@@ -4,7 +4,7 @@
 *
 *  rx_errors.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -29,7 +29,6 @@
 #ifndef rx_errors_h
 #define rx_errors_h 1
 
-#include <stdint.h>
 
 // INternal error codes
 

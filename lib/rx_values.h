@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -30,6 +30,7 @@
 #define rx_values_h 1
 
 
+#include "rx_ptr.h"
 
 #define RX_NULL_TYPE		0
 #define RX_BOOL_TYPE		1
@@ -72,7 +73,7 @@
 #define RX_BAD_QUALITY			0x80000000
 
 
-// bad , unceratin quality codes
+// bad , uncertain quality codes
 #define RX_Q_OUT_OF_RANGE		0x00000004
 #define RX_Q_BAD_REFERENCE		0x00000008
 #define RX_Q_OSCILLATORY		0x00000010
@@ -90,7 +91,7 @@
 #define RX_Q_DIVISION_BY_ZERO	0x00000800
 #define RX_Q_OFFLINE			0x00001000
 
-// unceratin quality codes
+// uncertain quality codes
 #define RX_Q_OLD_DATA			0x00000001
 #define RX_Q_INCONSISTENT		0x00000002
 #define RX_Q_INACURATE			0x00000020
@@ -153,62 +154,8 @@ using namespace rx;
 namespace rx {
 
 namespace values {
+typedef std::uint_fast8_t rx_value_t;
 class rx_value;
-
-
-
-
-
-template <typename valT>
-class simple_value 
-{
-
-  public:
-      simple_value(const simple_value< valT > &right);
-
-      simple_value (const valT& value, rx_time time_stamp = rx_time::now());
-
-      ~simple_value();
-
-
-      operator valT () const;
-
-      bool operator == (const valT& right);
-
-      bool operator != (const valT& right);
-
-      bool operator > (const valT& right);
-
-      bool operator < (const valT& right);
-
-      valT& operator = (const valT& right);
-
-
-      const valT get_value () const
-      {
-        return value_;
-      }
-
-
-      const rx_time get_time_stamp () const
-      {
-        return time_stamp_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      valT value_;
-
-      rx_time time_stamp_;
-
-
-};
-
 
 
 struct complex_value_struct
@@ -250,7 +197,7 @@ union rx_value_union
 
 
 
-class rx_value 
+class rx_value
 {
 
   public:
@@ -330,7 +277,7 @@ class rx_value
       void set_good_locally ();
 
 
-      const uint8_t get_type () const
+      const rx_value_t get_type () const
       {
         return type_;
       }
@@ -376,7 +323,7 @@ class rx_value
 
       rx_value_union value_;
 
-      uint8_t type_;
+      rx_value_t type_;
 
       uint32_t quality_;
 
@@ -392,55 +339,32 @@ class rx_value
 
 
 
-template <typename valT>
-class const_variable_value 
+class const_values_storage
 {
+  protected:
+	uint8_t buffer[sizeof(pointers::reference_object)];
+public:
+	template<typename typeT>
+	const_values_storage(const typeT& val)
+	{
+		if (allways_good_value<typeT>::is_large())
+		{
+
+		}
+		else
+		{
+			ZeroMemory(buffer, sizeof(buffer));
+			memcpy(buffer, &val, sizeof(typeT));
+		}
+	}
 
   public:
-      const_variable_value();
-
-      const_variable_value (const valT& value);
-
-      const_variable_value (const rx_value&  right);
-
-      const_variable_value (valT&& right);
-
-      virtual ~const_variable_value();
-
-
-      operator valT () const;
-
-      bool operator == (const valT& right);
-
-      bool operator != (const valT& right);
-
-      bool operator > (const valT& right);
-
-      bool operator < (const valT& right);
-
-      operator int ();
-
-      valT& operator = (const valT& right);
-
-      bool is_bad () const;
-
-      bool is_uncertain () const;
-
-      bool is_test () const;
-
-      bool is_substituted () const;
-
-      bool is_array () const;
-
-      bool is_good () const;
+      const_values_storage();
 
 
   protected:
 
   private:
-
-
-      rx_value rx_value_;
 
 
 };
@@ -452,15 +376,18 @@ class const_variable_value
 
 
 template <typename valT>
-class allways_good_value 
+class allways_good_value : public const_values_storage  
 {
+public:
+	static constexpr bool is_large() noexcept
+	{
+		return sizeof(valT)>sizeof(const_values_storage);
+	}
 
   public:
-      allways_good_value (const rx_value&  right);
+      allways_good_value (const valT&  right);
 
       allways_good_value (valT&& right);
-
-      virtual ~allways_good_value();
 
 
       operator valT ()
@@ -492,216 +419,26 @@ class allways_good_value
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
 
-      const valT value () const
-      {
-        return value_;
-      }
-
-
-
   protected:
 
   private:
 
+      valT& value ();
 
-      valT value_;
 
 
 };
 
 
-// Parameterized Class rx::values::simple_value 
+// Parameterized Class rx::values::allways_good_value
 
 template <typename valT>
-simple_value<valT>::simple_value(const simple_value<valT> &right)
-{
-	value_ = right.value_;
-	time_stamp_ = right.time_stamp_;
-}
-
-template <typename valT>
-simple_value<valT>::simple_value (const valT& value, rx_time time_stamp)
-{
-	value_ = value;
-	time_stamp_ = time_stamp;
-}
-
-
-template <typename valT>
-simple_value<valT>::~simple_value()
-{
-}
-
-
-
-template <typename valT>
-simple_value<valT>::operator valT () const
-{
-	return value_;
-}
-
-template <typename valT>
-bool simple_value<valT>::operator == (const valT& right)
-{
-	return value_ == right;
-}
-
-template <typename valT>
-bool simple_value<valT>::operator != (const valT& right)
-{
-	return value_ != right;
-}
-
-template <typename valT>
-bool simple_value<valT>::operator > (const valT& right)
-{
-	return value_ > right;
-}
-
-template <typename valT>
-bool simple_value<valT>::operator < (const valT& right)
-{
-	return value_ < right.value_;
-}
-
-template <typename valT>
-valT& simple_value<valT>::operator = (const valT& right)
-{
-	value_ = right.value_;
-	time_stamp_ == right.m_timestamp;
-}
-
-
-// Parameterized Class rx::values::const_variable_value 
-
-template <typename valT>
-const_variable_value<valT>::const_variable_value()
-{
-}
-
-template <typename valT>
-const_variable_value<valT>::const_variable_value (const valT& value)
-{
-	rx_value_ = rx_value(value);
-}
-
-template <typename valT>
-const_variable_value<valT>::const_variable_value (const rx_value&  right)
-{
-	rx_value_ = right;
-}
-
-template <typename valT>
-const_variable_value<valT>::const_variable_value (valT&& right)
-{
-	rx_value_ = rx_value(right);
-}
-
-
-template <typename valT>
-const_variable_value<valT>::~const_variable_value()
-{
-}
-
-
-
-template <typename valT>
-const_variable_value<valT>::operator valT () const
-{
-	return rx_value_;
-}
-
-template <typename valT>
-bool const_variable_value<valT>::operator == (const valT& right)
-{
-  return rx_value_==rx_value(right);
-}
-
-template <typename valT>
-bool const_variable_value<valT>::operator != (const valT& right)
-{
-  return rx_value_!=rx_value(right);
-}
-
-template <typename valT>
-bool const_variable_value<valT>::operator > (const valT& right)
-{
-  return rx_value_>rx_value(right);
-}
-
-template <typename valT>
-bool const_variable_value<valT>::operator < (const valT& right)
-{
-  return rx_value_<rx_value(right);
-}
-
-template <typename valT>
-const_variable_value<valT>::operator int ()
-{
-	return static_cast<valT>(rx_value_);
-}
-
-template <typename valT>
-valT& const_variable_value<valT>::operator = (const valT& right)
-{
-	rx_value_ = rx_value(right);
-	return rx_value_;
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_bad () const
-{
-	return rx_value_.is_bad();
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_uncertain () const
-{
-	return rx_value_.is_bad();
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_test () const
-{
-	return rx_value_.is_test();
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_substituted () const
-{
-	return rx_value_.is_substituted();
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_array () const
-{
-	return rx_value_.is_array();
-}
-
-template <typename valT>
-bool const_variable_value<valT>::is_good () const
-{
-	return rx_value_.is_good();
-}
-
-
-// Parameterized Class rx::values::allways_good_value 
-
-template <typename valT>
-allways_good_value<valT>::allways_good_value (const rx_value&  right)
-  : value_(rx_value(right))
+allways_good_value<valT>::allways_good_value (const valT&  right)
 {
 }
 
 template <typename valT>
 allways_good_value<valT>::allways_good_value (valT&& right)
-  : value_(right)
-{
-}
-
-
-template <typename valT>
-allways_good_value<valT>::~allways_good_value()
 {
 }
 
@@ -759,15 +496,30 @@ bool allways_good_value<valT>::can_operate (bool test_mode) const
 template <typename valT>
 void allways_good_value<valT>::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	val = rx_value(
-		value_);
-	val.set_time(ts);
-	if(mode.is_off())		
-	val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	if(is_large())
+		val = rx_value(value());
 	else
-	val.set_good_locally();
+		val=
+	val.set_time(ts);
+	if(mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else
+		val.set_good_locally();
 	if(mode.is_test())
 		val.set_test();
+}
+
+template <typename valT>
+valT& allways_good_value<valT>::value ()
+{
+	if (is_large())
+	{
+		return *(*(reinterpret_cast<valT*>(&buffer)));
+	}
+	else
+	{
+		return *(reinterpret_cast<valT*>(&buffer))
+	}
 }
 
 
@@ -775,5 +527,63 @@ void allways_good_value<valT>::get_value (values::rx_value& val, rx_time ts, con
 } // namespace rx
 
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	value_ = right.value_;
+	time_stamp_ = right.time_stamp_;
+
+	value_ = value;
+	time_stamp_ = time_stamp;
+
+	return value_;
+
+	return value_ == right;
+
+	return value_ != right;
+
+	return value_ > right;
+
+	return value_ < right.value_;
+
+	value_ = right.value_;
+	time_stamp_ == right.m_timestamp;
+
+	rx_value_ = rx_value(value);
+
+	rx_value_ = right;
+
+	rx_value_ = rx_value(right);
+
+	return rx_value_;
+
+  return rx_value_==rx_value(right);
+
+  return rx_value_!=rx_value(right);
+
+  return rx_value_>rx_value(right);
+
+  return rx_value_<rx_value(right);
+
+	return static_cast<valT>(rx_value_);
+
+	rx_value_ = rx_value(right);
+	return rx_value_;
+
+	return rx_value_.is_bad();
+
+	return rx_value_.is_bad();
+
+	return rx_value_.is_test();
+
+	return rx_value_.is_substituted();
+
+	return rx_value_.is_array();
+
+	return rx_value_.is_good();
 
 #endif
