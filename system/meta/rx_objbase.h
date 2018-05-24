@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,23 +31,23 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
-class object_runtime;
-class complex_runtime_item;
 class application_runtime;
 class domain_runtime;
+class object_runtime;
+class complex_runtime_item;
 
 } // namespace objects
 } // namespace rx_platform
@@ -82,20 +82,12 @@ struct object_state_data
 	rx_mode_type mode;
 };
 
-template<typename T>
-T& get_raw_value()
-{
-	if (allways_good_value<T>::is_large())
-	{
-
-	}
-}
 
 
 
 
 
-class value_item 
+class value_item
 {
 public:
 	value_item(const value_item& right) = default;
@@ -105,18 +97,11 @@ public:
 	template<typename T>
 	value_item(const T& t)
 		: change_time_(rx_time::now()),
-		readonly_(false)
+		readonly_(false),
+		storage_(t)
 	{
-		new((void*)&storage_)allways_good_value<T>(t);
 	}
 
-	template<>
-	value_item(const bool& t)
-		: change_time_(rx_time::now()),
-		readonly_(false)
-	{
-		new(reinterpret_cast<allways_good_value<bool>*>(&storage_))allways_good_value<bool>(t);
-	}
 
   public:
 
@@ -145,7 +130,7 @@ public:
   private:
 
 
-      rx::values::const_values_storage storage_;
+      rx::values::rx_value_storage storage_;
 
 
       static const uint32_t type_id_;
@@ -162,7 +147,7 @@ public:
 
 
 
-class filter_runtime 
+class filter_runtime
 {
   public:
 	typedef std::unique_ptr<filter_runtime> smart_ptr;
@@ -188,7 +173,7 @@ class filter_runtime
 
 
 
-class source 
+class source
 {
   public:
 	typedef std::unique_ptr<source> smart_ptr;
@@ -214,7 +199,7 @@ class source
 
 
 
-class mapper 
+class mapper
 {
 
   public:
@@ -239,7 +224,7 @@ class mapper
 
 
 
-class variable_runtime 
+class variable_runtime
 {
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source::smart_ptr> sources_type;
@@ -283,7 +268,7 @@ public:
 
 
 
-class struct_runtime 
+class struct_runtime
 {
 
 	friend class meta::complex_data_type;
@@ -325,7 +310,7 @@ public:
 
 
 
-class const_value_item 
+class const_value_item
 {
   public:
 	const_value_item(const const_value_item& right) = default;
@@ -335,8 +320,8 @@ class const_value_item
 
 	template<typename T>
 	const_value_item(const T& t)
+	: storage_(t)
 	{
-		new(&storage_)allways_good_value<T>::allways_good_value(t);
 	}
 
   public:
@@ -371,7 +356,7 @@ class const_value_item
   private:
 
 
-      rx::values::const_values_storage storage_;
+      rx::values::rx_value_storage storage_;
 
 
       static const uint32_t type_id_;
@@ -391,7 +376,7 @@ class const_value_item
 
 
 
-class complex_runtime_item 
+class complex_runtime_item
 {
 public:
 	typedef std::unique_ptr<complex_runtime_item > smart_ptr;
@@ -562,7 +547,7 @@ class object_runtime : public rx::pointers::reference_object
 object class. basic implementation of an object");
 
 	DECLARE_REFERENCE_PTR(object_runtime);
-	
+
 	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
 	typedef std::map<string_type, size_t> items_cache_type;
 	typedef complex_runtime_item_ptr items_type;
@@ -647,26 +632,6 @@ public:
 
       static string_type type_name;
 
-	  template<typename... Args>
-	  callback::callback_handle_t register_callback(const string_type& path,Args... args)
-	  {
-		  return complex_item_.register_callback(path, args...);
-	  }
-	  void unregister_callback(const string_type& path, callback::callback_handle_t)
-	  {
-		//  return _items->unregister_callaback(path);
-	  }
-
-	  template<typename T>
-	  uint32_t register_const_value(const string_type& name, const T& val)
-	  {
-		  return complex_item_.register_const_value<T>(name,val);
-	  }
-	  template<typename T>
-	  uint32_t register_value(const string_type& name, const T& val)
-	  {
-		  return complex_item_.register_value<T>(name, val);
-	  }
   protected:
       object_runtime();
 

@@ -141,6 +141,7 @@
 
 
 
+
 namespace rx {
 class base_meta_reader;
 class base_meta_writter;
@@ -154,6 +155,7 @@ using namespace rx;
 namespace rx {
 
 namespace values {
+const size_t rx_pointer_optimization_size = 2*sizeof(void*);
 typedef std::uint_fast8_t rx_value_t;
 class rx_value;
 
@@ -162,7 +164,7 @@ struct complex_value_struct
 {
 	double real;
 	double imag;
-	double amplitude()
+	double amplitude() const
 	{
 		return sqrt(real*real + imag*imag);
 	}
@@ -335,32 +337,132 @@ class rx_value
 };
 
 
+template<typename typeT>
+rx_value_t inner_get_type(tl::type2type<typeT>&);
 
+template<>
+rx_value_t inner_get_type(tl::type2type<bool>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<int8_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<uint8_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<int16_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<uint16_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<int32_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<uint32_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<int64_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<uint64_t>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<float>&);
+template<>
+rx_value_t inner_get_type(tl::type2type<double>&);
 
-
-
-class const_values_storage
+template<typename typeT>
+rx_value_t get_type()
 {
-  protected:
-	uint8_t buffer[sizeof(pointers::reference_object)];
-public:
-	template<typename typeT>
-	const_values_storage(const typeT& val)
-	{
-		if (allways_good_value<typeT>::is_large())
-		{
+	return inner_get_type(tl::type2type<typeT>());
+}
 
+
+//	This is a class that only cares about storage of value.
+//	It does not have enything to do with type safety.
+
+
+
+class rx_value_storage
+{
+private:
+	template<typename typeT>
+	static constexpr bool is_stored_as_pointer() noexcept
+	{
+		return sizeof(typeT)>rx_pointer_optimization_size;
+	}
+	template<typename typeT>
+	static constexpr bool static_check_size() noexcept
+	{
+		return (sizeof(typeT) < rx_pointer_optimization_size);
+	}
+#pragma pack(push,1)
+	struct value_storgae_internal
+	{
+		uint8_t data[rx_pointer_optimization_size];
+	};
+	value_storgae_internal data_;
+#pragma pack(pop)
+public:
+	rx_value_storage() = default;
+	rx_value_storage(const rx_value_storage& right) = default;
+	rx_value_storage(rx_value_storage&& right) noexcept = default;
+	~rx_value_storage() = default;
+	rx_value_storage& operator=(const rx_value_storage& right) = default;
+	rx_value_storage& operator=(rx_value_storage&& right) noexcept = default;
+	template<typename typeT>
+	rx_value_storage(const typeT& val)
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			*(reinterpret_cast<std::unique_ptr<typeT>*>(data_.data)) = std::make_unique<typeT>(val);
 		}
 		else
 		{
-			ZeroMemory(buffer, sizeof(buffer));
-			memcpy(buffer, &val, sizeof(typeT));
+			static_assert(static_check_size<typeT>(),
+				"Wrong optimization size here, sizeof(stored type can not be larger then the buffer)");
+			*(reinterpret_cast<typeT*>(data_.data)) = val;
 		}
+	}
+	template<typename typeT>
+	rx_value_storage(typeT&& val)
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			*(reinterpret_cast<std::unique_ptr<typeT>*>(data_.data)) = std::make_unique<typeT>(std::forward<typeT>(val));
+		}
+		else
+		{
+			static_assert(static_check_size<typeT>(),
+				"Wrong optimization size here, sizeof(stored type can not be larger then the buffer)");
+			*(reinterpret_cast<typeT*>(data_.data)) = val;
+		}
+	}
+	template<typename typeT>
+	typeT& value()
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			return **(reinterpret_cast<typeT**>(data_.data));
+		}
+		else
+		{
+			return *(reinterpret_cast<typeT*>(data_.data));
+		}
+	}
+	template<typename typeT>
+	void destroy_value()
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			// call the destructor explicitly
+			(*(reinterpret_cast<typeT**>(data_.data)))->~typeT();
+		}
+		else
+		{
+			(*(reinterpret_cast<typeT*>(data_.data))).~typeT();
+		}
+
+		// nothing to do if not large!!!
 	}
 
   public:
-      const_values_storage();
-
 
   protected:
 
@@ -370,32 +472,46 @@ public:
 };
 
 
+void destroy_value_storage(rx_value_storage& storage, rx_value_t type);
+
+class const_values_storage;
 
 
 
 
-
-template <typename valT>
-class allways_good_value : public const_values_storage  
+class allways_good_value
 {
-public:
-	static constexpr bool is_large() noexcept
-	{
-		return sizeof(valT)>sizeof(const_values_storage);
-	}
+  public:
+	  template<typename typeT>
+	  allways_good_value(const typeT& val)
+			: storage_(val)
+			, type_(get_type<typeT>())
+	  {
+	  }
+	  template<typename typeT>
+	  allways_good_value(typeT&& val) noexcept
+			: storage_(std::move(val))
+			, type_(get_type<typeT>())
+	  {
+	  }
+	  template<typename typeT>
+	  allways_good_value& operator=(const typeT& val)
+	  {
+		  storage_ = val;
+		  type_ = get_type<typeT>();
+	  }
+	  template<typename typeT>
+	  allways_good_value& operator=(typeT&& val)
+	  {
+		  storage_ = val;
+		  type_ = get_type<typeT>();
+	  }
 
   public:
-      allways_good_value (const valT&  right);
+      allways_good_value();
 
-      allways_good_value (valT&& right);
+      ~allways_good_value();
 
-
-      operator valT ()
-      {
-		  return value_;
-      }
-
-      valT& operator = (const valT& right);
 
       bool is_bad () const;
 
@@ -411,11 +527,6 @@ public:
 
       bool can_operate (bool test_mode) const;
 
-      operator valT () const
-      {
-		  return value_;
-      }
-
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
 
@@ -423,167 +534,19 @@ public:
 
   private:
 
-      valT& value ();
 
+      rx_value_storage storage_;
+
+
+      rx_value_t type_;
 
 
 };
-
-
-// Parameterized Class rx::values::allways_good_value
-
-template <typename valT>
-allways_good_value<valT>::allways_good_value (const valT&  right)
-{
-}
-
-template <typename valT>
-allways_good_value<valT>::allways_good_value (valT&& right)
-{
-}
-
-
-
-template <typename valT>
-valT& allways_good_value<valT>::operator = (const valT& right)
-{
-	return value_;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_bad () const
-{
-  return false;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_uncertain () const
-{
-  return false;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_test () const
-{
-  return false;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_substituted () const
-{
-  return false;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_array () const
-{
-  rx_value temp(value_);
-  return temp.is_array();
-}
-
-template <typename valT>
-bool allways_good_value<valT>::is_good () const
-{
-  return true;
-}
-
-template <typename valT>
-bool allways_good_value<valT>::can_operate (bool test_mode) const
-{
-  return true;
-}
-
-template <typename valT>
-void allways_good_value<valT>::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
-{
-	if(is_large())
-		val = rx_value(value());
-	else
-		val=
-	val.set_time(ts);
-	if(mode.is_off())
-		val.set_quality(RX_BAD_QUALITY_OFFLINE);
-	else
-		val.set_good_locally();
-	if(mode.is_test())
-		val.set_test();
-}
-
-template <typename valT>
-valT& allways_good_value<valT>::value ()
-{
-	if (is_large())
-	{
-		return *(*(reinterpret_cast<valT*>(&buffer)));
-	}
-	else
-	{
-		return *(reinterpret_cast<valT*>(&buffer))
-	}
-}
 
 
 } // namespace values
 } // namespace rx
 
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	value_ = right.value_;
-	time_stamp_ = right.time_stamp_;
-
-	value_ = value;
-	time_stamp_ = time_stamp;
-
-	return value_;
-
-	return value_ == right;
-
-	return value_ != right;
-
-	return value_ > right;
-
-	return value_ < right.value_;
-
-	value_ = right.value_;
-	time_stamp_ == right.m_timestamp;
-
-	rx_value_ = rx_value(value);
-
-	rx_value_ = right;
-
-	rx_value_ = rx_value(right);
-
-	return rx_value_;
-
-  return rx_value_==rx_value(right);
-
-  return rx_value_!=rx_value(right);
-
-  return rx_value_>rx_value(right);
-
-  return rx_value_<rx_value(right);
-
-	return static_cast<valT>(rx_value_);
-
-	rx_value_ = rx_value(right);
-	return rx_value_;
-
-	return rx_value_.is_bad();
-
-	return rx_value_.is_bad();
-
-	return rx_value_.is_test();
-
-	return rx_value_.is_substituted();
-
-	return rx_value_.is_array();
-
-	return rx_value_.is_good();
 
 #endif

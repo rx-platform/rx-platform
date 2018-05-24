@@ -148,7 +148,7 @@ int test_smart_ptr()
 class my_thread : public rx::threads::thread
 {
 public:
-	my_thread() 
+	my_thread()
 		: rx::threads::thread("Test",66)
 	{
 
@@ -275,7 +275,8 @@ void test_thread()
 
 void test_values()
 {
-	rx::values::allways_good_value<uint32_t> perica(6);
+	double temp = 6.7;
+	rx::values::allways_good_value perica;//(temp);
 	//uint32_t zike = perica + 5;
 }
 void test_classes()

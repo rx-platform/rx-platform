@@ -41,6 +41,124 @@ namespace rx {
 
 namespace values {
 
+
+template<>
+rx_value_t inner_get_type(tl::type2type<bool>&)
+{
+	return RX_BOOL_TYPE;
+}
+
+template<>
+rx_value_t inner_get_type(tl::type2type<int8_t>&)
+{
+	return RX_SBYTE_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<uint8_t>&)
+{
+	return RX_BYTE_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<int16_t>&)
+{
+	return RX_SWORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<uint16_t>&)
+{
+	return RX_WORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<int32_t>&)
+{
+	return RX_SDWORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<uint32_t>&)
+{
+	return RX_DWORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<int64_t>&)
+{
+	return RX_SQWORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<uint64_t>&)
+{
+	return RX_QWORD_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<float>&)
+{
+	return RX_FLOAT_TYPE;
+}
+template<>
+rx_value_t inner_get_type(tl::type2type<double>&)
+{
+	return RX_DOUBLE_TYPE;
+}
+
+
+void rx_destroy_value_storage(rx_value_storage& storage, rx_value_t type)
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		storage.destroy_value<bool>();
+		break;
+	case RX_SBYTE_TYPE:
+		storage.destroy_value<int8_t>();
+		break;
+	case RX_BYTE_TYPE:
+		storage.destroy_value<uint8_t>();
+		break;
+	case RX_SWORD_TYPE:
+		storage.destroy_value<int16_t>();
+		break;
+	case RX_WORD_TYPE:
+		storage.destroy_value<uint16_t>();
+		break;
+	case RX_SDWORD_TYPE:
+		storage.destroy_value<int32_t>();
+		break;
+	case RX_DWORD_TYPE:
+		storage.destroy_value<uint32_t>();
+		break;
+	case RX_SQWORD_TYPE:
+		storage.destroy_value<int64_t>();
+		break;
+	case RX_QWORD_TYPE:
+		storage.destroy_value<uint64_t>();
+		break;
+	case RX_FLOAT_TYPE:
+		storage.destroy_value<float>();
+		break;
+	case RX_DOUBLE_TYPE:
+		storage.destroy_value<double>();
+		break;
+	case RX_STRING_TYPE:
+		storage.destroy_value<string_type>();
+		break;
+	case RX_TIME_TYPE:
+		storage.destroy_value<rx_time>();
+		break;
+	case RX_UUID_TYPE:
+		storage.destroy_value<rx_uuid>();
+		break;
+	case RX_BSTRING_TYPE:
+		storage.destroy_value<byte_string>();
+		break;
+	case RX_COMPLEX_TYPE:
+		storage.destroy_value<std::complex<double> >();
+		break;
+	default:
+		RX_ASSERT(false);
+	}
+}
+
 // Class rx::values::rx_value 
 
 rx_value::rx_value()
@@ -856,12 +974,69 @@ void rx_value::set_good_locally ()
 }
 
 
-// Class rx::values::const_values_storage 
+// Class rx::values::allways_good_value 
 
-const_values_storage::const_values_storage()
+allways_good_value::allways_good_value()
+	: type_(RX_NULL_TYPE)
 {
 }
 
+
+allways_good_value::~allways_good_value()
+{
+}
+
+
+
+bool allways_good_value::is_bad () const
+{
+	return false;
+}
+
+bool allways_good_value::is_uncertain () const
+{
+	return false;
+}
+
+bool allways_good_value::is_test () const
+{
+	return false;
+}
+
+bool allways_good_value::is_substituted () const
+{
+	return false;
+}
+
+bool allways_good_value::is_array () const
+{
+	return false;
+}
+
+bool allways_good_value::is_good () const
+{
+	return true;
+}
+
+bool allways_good_value::can_operate (bool test_mode) const
+{
+	return true;
+}
+
+void allways_good_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
+{
+
+	val.set_time(ts);
+	if (mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else
+		val.set_good_locally();
+	if (mode.is_test())
+		val.set_test();
+}
+
+
+// Class rx::values::rx_value_storage 
 
 
 } // namespace values

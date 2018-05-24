@@ -319,7 +319,7 @@ public:
 
       rx_time modified_time_;
 
-      values::const_values_storage storage_;
+      values::rx_value_storage storage_;
 
 
 };
@@ -393,7 +393,7 @@ public:
 
       rx_time modified_time_;
 
-      values::const_values_storage storage_;
+      values::rx_value_storage storage_;
 
 
 };
@@ -565,7 +565,7 @@ public:
       }
 
 
-      rx_platform::meta::complex_data_type& complex_data ()
+      complex_data_type& complex_data ()
       {
         return complex_data_;
       }
@@ -594,7 +594,7 @@ public:
 
 
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
       checkable_data meta_data_;
 
@@ -641,7 +641,7 @@ class mapper_class : public rx::pointers::reference_object
       }
 
 
-      rx_platform::meta::complex_data_type& complex_data ()
+      complex_data_type& complex_data ()
       {
         return complex_data_;
       }
@@ -658,7 +658,7 @@ class mapper_class : public rx::pointers::reference_object
 
       checkable_data meta_data_;
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
 
 };
@@ -968,7 +968,7 @@ public:
       }
 
 
-      rx_platform::meta::complex_data_type& complex_data ()
+      complex_data_type& complex_data ()
       {
         return complex_data_;
       }
@@ -993,7 +993,7 @@ public:
 
       checkable_data meta_data_;
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
       variable_data_type variable_data_;
 
@@ -1048,7 +1048,7 @@ class source_class : public rx::pointers::reference_object
 
 
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
       checkable_data meta_data_;
 
@@ -1102,7 +1102,7 @@ class filter_class : public rx::pointers::reference_object
 
 
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
       checkable_data meta_data_;
 
@@ -1156,7 +1156,7 @@ class event_class : public rx::pointers::reference_object
 
 
 
-      rx_platform::meta::complex_data_type complex_data_;
+      complex_data_type complex_data_;
 
       checkable_data meta_data_;
 
