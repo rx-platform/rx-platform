@@ -290,150 +290,149 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 {
 	using namespace std::string_literals;
 
-	ctx->set_failed();
-
-	rx::values::rx_simple_value bool_before(true);
-	rx::values::rx_simple_value int_before(8);
-	rx::values::rx_simple_value double_before(6.7);
-	rx::values::rx_simple_value str_before("string"s);
-
-	rx::values::rx_timed_value boolt_before(false);
-	rx::values::rx_timed_value intt_before(9);
-	rx::values::rx_timed_value doublet_before(6.9);
-	rx::values::rx_timed_value strt_before("string2"s);
-
-	strt_before.set_time(
-		doublet_before.set_time(
-		intt_before.set_time(
-		boolt_before.set_time(rx_time::now()))));
-
-	out << "Created four basic values and four timed values\r\n";
-	out << "\r\nbool_before=";
-	bool_before.dump_to_stream(out);
-	out << "\r\nint_before=";
-	int_before.dump_to_stream(out);
-	out << "\r\ndouble_before=";
-	double_before.dump_to_stream(out);
-	out << "\r\nstr_before=";
-	str_before.dump_to_stream(out);
-	out << "\r\nboolt_before=";
-	boolt_before.dump_to_stream(out);
-	out << "\r\nintt_before=";
-	intt_before.dump_to_stream(out);
-	out << "\r\ndoublet_before=";
-	doublet_before.dump_to_stream(out);
-	out << "\r\nstrt_before=";
-	strt_before.dump_to_stream(out);
-	out << "\r\nJSON Serialization:\r\n==============================\r\n";
-
-
-	out << "JSON serialization array of values...\r\n";
-	serialization::json_writter writter;
-
-	writter.write_header(STREAMING_TYPE_VALUES);
-	
-	bool_before.serialize(writter);
-	int_before.serialize(writter);
-	double_before.serialize(writter);
-	str_before.serialize(writter);
-	boolt_before.serialize(writter);
-	intt_before.serialize(writter);
-	doublet_before.serialize(writter);
-	strt_before.serialize(writter);
-
-
-	if (writter.write_footer())
 	{
-		string_type result;
-		bool succeeded = writter.get_string(result, true);
 
-		if (succeeded)
+		ctx->set_failed();
+		bool failed = false;
+
+		std::vector<rx::values::rx_simple_value> simples;
+		simples.emplace_back(true);
+		simples.emplace_back(8);
+		simples.emplace_back(6.7);
+		simples.emplace_back("string"s);
+
+		rx_time now = rx::rx_time::now();
+
+		std::vector<rx::values::rx_timed_value> timed;
+		timed.emplace_back(false, now);
+		timed.emplace_back(9, now);
+		timed.emplace_back(6.8, now);
+		timed.emplace_back("string2"s, now);
+
+		out << ANSI_COLOR_GREEN "Created four simple values and four timed values in an std::vector\r\n" ANSI_COLOR_RESET;
+
+		out << "\r\nsimple values\r\n==================================";
+		for (size_t idx = 0; idx < simples.size(); idx++)
 		{
-			out << result;
+			out << "\r\nsimple[" << idx << "]=";
+			simples[idx].dump_to_stream(out);
+		}
 
-			rx::values::rx_simple_value bool_after;
-			rx::values::rx_simple_value int_after;
-			rx::values::rx_simple_value double_after;
-			rx::values::rx_simple_value str_after;
+		out << "\r\ntimed values\r\n==================================";
+		for (size_t idx = 0; idx < timed.size(); idx++)
+		{
+			out << "\r\ntimed[" << idx << "]=";
+			timed[idx].dump_to_stream(out);
+		}
 
-			rx::values::rx_timed_value boolt_after;
-			rx::values::rx_timed_value intt_after;
-			rx::values::rx_timed_value doublet_after;
-			rx::values::rx_timed_value strt_after;
+		out << "\r\n\r\nJSON serialization std::vector 8 of values...\r\n";
+		serialization::json_writter writter;
 
+		writter.write_header(STREAMING_TYPE_VALUES);
 
-			out << "JSON deserialization array of values...\r\n";
+		for (const auto& one : simples)
+			one.serialize(writter);
+		for (const auto& one : timed)
+			one.serialize(writter);
 
-			serialization::json_reader reader;
+		if (writter.write_footer())
+		{
+			string_type result;
+			bool succeeded = writter.get_string(result, true);
 
-			if (reader.parse_data(result))
+			if (succeeded)
 			{
-				int type;
-				reader.read_header(type);
+				out << "\r\n" ANSI_COLOR_GREEN " JSON serialization succeeded" ANSI_COLOR_RESET " \r\n===========================================\r\n";
 
-				if (type == STREAMING_TYPE_VALUES)
+				out << result;
+
+
+				out << "\r\nJSON deserialization array of std::vector...\r\n";
+
+				serialization::json_reader reader;
+
+				if (reader.parse_data(result))
 				{
-					if (!reader.array_end())
+					int type;
+					reader.read_header(type);
+
+					std::vector<rx::values::rx_simple_value> simples_after(4);
+					std::vector<rx::values::rx_timed_value> timed_after(4);
+
+					if (type == STREAMING_TYPE_VALUES)
 					{
-						bool_after.deserialize(reader);
-						if (!reader.array_end())
+						for (auto& one : simples_after)
 						{
-							int_after.deserialize(reader);
-							if (!reader.array_end())
+							if (reader.array_end())
 							{
-								double_after.deserialize(reader);
-								if (!reader.array_end())
-								{
-									str_after.deserialize(reader);
-									if (!reader.array_end())
-									{
-										boolt_after.deserialize(reader);
-										if (!reader.array_end())
-										{
-											intt_after.deserialize(reader);
-											if (!reader.array_end())
-											{
-												doublet_after.deserialize(reader);
-												if (!reader.array_end())
-												{
-													strt_after.deserialize(reader);
-													if (reader.array_end())
-													{
-
-														out << "/r\n==============================\r\nValues deserialize:/r\n";
-
-														out << "\r\nbool_after=";
-														bool_after.dump_to_stream(out);
-														out << "\r\nint_after=";
-														int_after.dump_to_stream(out);
-														out << "\r\ndouble_after=";
-														double_after.dump_to_stream(out);
-														out << "\r\nstr_after=";
-														str_after.dump_to_stream(out);
-														out << "\r\nboolt_after=";
-														boolt_after.dump_to_stream(out);
-														out << "\r\nintt_after=";
-														intt_after.dump_to_stream(out);
-														out << "\r\ndoublet_after=";
-														doublet_after.dump_to_stream(out);
-														out << "\r\nstrt_after=";
-														strt_after.dump_to_stream(out);
-														out << "\r\nJSON DEserialization:\r\n==============================\r\n";
-
-														ctx->set_passed();
-													}
-												}
-											}
-										}
-									}
-								}
+								failed = true;
+								break;
 							}
+							if (!one.deserialize(reader))
+							{
+								failed = true;
+								break;
+							}
+						}
+						for (auto& one : timed_after)
+						{
+							if (reader.array_end())
+							{
+								failed = true;
+								break;
+							}
+							if (!one.deserialize(reader))
+							{
+								failed = true;
+								break;
+							}
+						}
+
+						if (!failed)
+						{
+							out << "\r\n==============================\r\n " ANSI_COLOR_GREEN "JSON deserialization succeeded" ANSI_COLOR_RESET "\r\n";
+
+							out << ANSI_COLOR_GREEN "Deserialize four simple values and four timed values in an std::vector\r\n" ANSI_COLOR_RESET;
+
+							out << "\r\nsimple values\r\n==================================";
+							for (size_t idx = 0; idx < simples.size(); idx++)
+							{
+								out << "\r\nsimple[" << idx << "]=";
+								simples[idx].dump_to_stream(out);
+							}
+
+							out << "\r\ntimed values\r\n==================================";
+							for (size_t idx = 0; idx < timed.size(); idx++)
+							{
+								out << "\r\ntimed[" << idx << "]=";
+								timed[idx].dump_to_stream(out);
+							}
+
+							out << "\r\ncomparing values";
+							for (size_t idx = 0; idx < simples.size(); idx++)
+							{
+								bool same = simples[idx] == simples_after[idx];
+								if (!same)
+									failed = true;
+								out << "\r\nsimples[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
+							}
+
+							for (size_t idx = 0; idx < timed.size(); idx++)
+							{
+								bool same = timed[idx] == timed_after[idx];
+								if (!same)
+									failed = true;
+								out << "\r\ntimed[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
+							}
+							if(!failed)
+								ctx->set_passed();
 						}
 					}
 				}
 			}
 		}
 	}
+	out << "\r\n\r\n";
 	return true;
 }
 

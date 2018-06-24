@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -199,7 +199,7 @@ union rx_value_union
 
 
 
-class rx_value 
+class rx_value
 {
 
   public:
@@ -375,9 +375,10 @@ rx_value_t get_type()
 
 
 
-class rx_value_storage 
+class rx_value_storage
 {
 private:
+
 	template<typename typeT>
 	static constexpr bool is_stored_as_pointer() noexcept
 	{
@@ -422,14 +423,27 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****Stored as pointer\r\n");
 			typeT** ptr = (reinterpret_cast<typeT**>(&data_.data[0]));
 			*ptr= new typeT(val);
 		}
 		else
 		{
 			typeT* ptr = reinterpret_cast<typeT*>(&data_.data[0]);
-			printf("****Stored as value\r\n");
+			ptr = new(ptr)typeT(val);
+		}
+	}
+	template<typename typeT>
+	rx_value_storage(typeT val,rx_time time)
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			typeT** ptr = (reinterpret_cast<typeT**>(&data_.data[0]));
+			*ptr = new typeT(val);
+		}
+		else
+		{
+			typeT* ptr = reinterpret_cast<typeT*>(&data_.data[0]);
 			ptr = new(ptr)typeT(val);
 		}
 	}
@@ -439,13 +453,11 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****extracting as pointerr\n");
 			typeT** ptr = reinterpret_cast<typeT**>(&data_.data[0]);
 			return **ptr;
 		}
 		else
 		{
-			printf("****Extracting as value\r\n");
 			return *(reinterpret_cast<typeT*>(&data_.data[0]));
 		}
 	}
@@ -469,12 +481,10 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****Deleted as pointer\r\n");
 			delete (*(reinterpret_cast<typeT**>(data_.data)));
 		}
 		else
 		{
-			printf("****Deleted as value\r\n");
 			// call the destructor explicitly
 			(*(reinterpret_cast<typeT*>(data_.data))).~typeT();
 		}
@@ -486,13 +496,11 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****Stored as pointer\r\n");
 			*(reinterpret_cast<typeT**>(data_.data)) = new typeT(val);
 		}
 		else
 		{
 			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
-			printf("****Stored as value\r\n");
 			ptr = new(ptr)typeT(val);
 		}
 	}
@@ -502,13 +510,11 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****Stored as pointer\r\n");
 			*(reinterpret_cast<typeT**>(data_.data)) = new typeT(val);
 		}
 		else
 		{
 			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
-			printf("****Stored as value\r\n");
 			ptr = new(ptr)typeT(val);
 		}
 	}
@@ -518,7 +524,6 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			printf("****Allocated as pointer\r\n");
 			typeT** ptr = (reinterpret_cast<typeT**>(data_.data));
 			*ptr = new typeT;
 			return **ptr;
@@ -526,7 +531,6 @@ public:
 		else
 		{
 			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
-			printf("****Allocated as value\r\n");
 			ptr = new(ptr)typeT();
 			return *ptr;
 		}
@@ -534,7 +538,7 @@ public:
 
   public:
 
-      bool serialize (base_meta_writter& writter, rx_value_t type);
+      bool serialize (base_meta_writter& writter, rx_value_t type) const;
 
       bool deserialize (base_meta_reader& reader, rx_value_t& type);
 
@@ -545,6 +549,8 @@ public:
       void destroy_by_type (const rx_value_t type);
 
       void assign_storage (const rx_value_storage& right, rx_value_t type);
+
+      bool compare (const rx_value_storage& right, rx_value_t type) const;
 
 
   protected:
@@ -562,7 +568,7 @@ class const_values_storage;
 
 
 
-class rx_simple_value 
+class rx_simple_value
 {
   public:
 	  template<typename typeT>
@@ -604,6 +610,10 @@ class rx_simple_value
 
       rx_simple_value & operator=(const rx_simple_value &right);
 
+      bool operator==(const rx_simple_value &right) const;
+
+      bool operator!=(const rx_simple_value &right) const;
+
 
       bool is_bad () const;
 
@@ -621,7 +631,7 @@ class rx_simple_value
 
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
-      bool serialize (base_meta_writter& writter);
+      bool serialize (base_meta_writter& writter) const;
 
       bool deserialize (base_meta_reader& reader);
 
@@ -650,22 +660,39 @@ class rx_simple_value
 
 
 
+enum time_compare_type
+{
+	time_compare_skip,
+	time_compare_ms_accurate,
+	time_compare_exact,
+};
 
 
 
-class rx_timed_value 
+
+class rx_timed_value
 {
 public:
 	template<typename typeT>
 	rx_timed_value(const typeT& val)
 		: storage_(val)
 		, type_(get_type<typeT>())
+		, default_time_compare_(time_compare_skip)
 	{
 	}
 	template<typename typeT>
 	rx_timed_value(typeT&& val) noexcept
 		: storage_(std::move(val))
 		, type_(get_type<typeT>())
+		, default_time_compare_(time_compare_skip)
+	{
+	}
+	template<typename typeT>
+	rx_timed_value(typeT&& val,rx_time time) noexcept
+		: storage_(std::move(val))
+		, type_(get_type<typeT>())
+		, time_(time)
+		, default_time_compare_(time_compare_skip)
 	{
 	}
 	template<typename typeT>
@@ -674,6 +701,7 @@ public:
 		clear_storage(storage_, type_);
 		type_ = get_type<typeT>();
 		storage_.assign<typeT>(val);
+		time_ = val.time_;
 		return *this;
 	}
 	template<typename typeT>
@@ -682,6 +710,7 @@ public:
 		clear_storage(storage_, type_);
 		type_ = get_type<typeT>();
 		storage_.assign<typeT>(std::move(val));
+		time_ = val.time_;
 		return *this;
 	}
 	rx_timed_value(rx_timed_value&& right) noexcept;
@@ -694,6 +723,10 @@ public:
       ~rx_timed_value();
 
       rx_timed_value & operator=(const rx_timed_value &right);
+
+      bool operator==(const rx_timed_value &right) const;
+
+      bool operator!=(const rx_timed_value &right) const;
 
 
       bool is_bad () const;
@@ -712,7 +745,7 @@ public:
 
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
-      bool serialize (base_meta_writter& writter);
+      bool serialize (base_meta_writter& writter) const;
 
       bool deserialize (base_meta_reader& reader);
 
@@ -721,6 +754,8 @@ public:
       void parse_from_stream (std::istream& in);
 
       rx_time set_time (rx_time time);
+
+      bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
 
   protected:
@@ -739,6 +774,8 @@ public:
       rx_value_t type_;
 
       rx_time time_;
+
+      time_compare_type default_time_compare_;
 
 
 };

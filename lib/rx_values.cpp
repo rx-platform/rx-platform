@@ -1014,6 +1014,18 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 }
 
 
+bool rx_simple_value::operator==(const rx_simple_value &right) const
+{
+	return type_ == right.type_
+		&& storage_.compare(right.storage_, type_);
+}
+
+bool rx_simple_value::operator!=(const rx_simple_value &right) const
+{
+	return !operator==(right);
+}
+
+
 
 bool rx_simple_value::is_bad () const
 {
@@ -1073,7 +1085,7 @@ void rx_simple_value::assign_storage (rx_value_storage& left, const rx_value_sto
 	left.assign_storage(right, type);
 }
 
-bool rx_simple_value::serialize (base_meta_writter& writter)
+bool rx_simple_value::serialize (base_meta_writter& writter) const
 {
 	return storage_.serialize(writter, type_);
 }
@@ -1102,7 +1114,7 @@ rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
 // Class rx::values::rx_value_storage 
 
 
-bool rx_value_storage::serialize (base_meta_writter& writter, rx_value_t type)
+bool rx_value_storage::serialize (base_meta_writter& writter, rx_value_t type) const
 {
 	writter.start_object("_Val");
 	writter.write_byte("Type", type);
@@ -1268,38 +1280,38 @@ void rx_value_storage::dump_to_stream (std::ostream& out, rx_value_t type) const
 		out << (value<bool>() ? "true" : "false");
 		break;
 	case RX_SBYTE_TYPE:
-		out << value<int8_t>();
+		out << value<int8_t>()<<"sb";
 		break;
 	case RX_BYTE_TYPE:
-		out << value<uint8_t>();
+		out << value<uint8_t>() << "b";
 		break;
 	case RX_SWORD_TYPE:
-		out << value<int16_t>();
+		out << value<int16_t>() << "sw";
 		break;
 	case RX_WORD_TYPE:
-		out << value<uint16_t>();
+		out << value<uint16_t>() << "w";
 		break;
 	case RX_SDWORD_TYPE:
-		out << value<int32_t>();
+		out << value<int32_t>() << "sdw";
 		break;
 	case RX_DWORD_TYPE:
-		out << value<uint32_t>();
+		out << value<uint32_t>() << "dw";
 		break;
 	case RX_SQWORD_TYPE:
-		out << value<int64_t>();
+		out << value<int64_t>() << "sqw";
 		break;
 	case RX_QWORD_TYPE:
-		out << value<uint64_t>();
+		out << value<uint64_t>() << "qw";
 		break;
 	case RX_FLOAT_TYPE:
-		out << value<float>();
+		out << value<float>() << "f8";
 		break;
 	case RX_DOUBLE_TYPE:
-		out << value<double>();
+		out << value<double>() << "f64";
 		break;
 	case RX_STRING_TYPE:
 		auto val = value<std::string>();
-		out <<  val;
+		out << "\"" << val << "\"";
 		break;
 	}
 }
@@ -1426,15 +1438,62 @@ void rx_value_storage::assign_storage (const rx_value_storage& right, rx_value_t
 	}
 }
 
+bool rx_value_storage::compare (const rx_value_storage& right, rx_value_t type) const
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		return value<bool>() == (right.value<bool>());
+	case RX_SBYTE_TYPE:
+		return value<int8_t>()==(right.value<int8_t>());
+	case RX_BYTE_TYPE:
+		return value<uint8_t>() == (right.value<uint8_t>());
+	case RX_SWORD_TYPE:
+		return value<int16_t>() == (right.value<int16_t>());
+	case RX_WORD_TYPE:
+		return value<uint16_t>() == (right.value<uint16_t>());
+	case RX_SDWORD_TYPE:
+		return value<int32_t>() == (right.value<int32_t>());
+	case RX_DWORD_TYPE:
+		return value<uint32_t>() == (right.value<uint32_t>());
+	case RX_SQWORD_TYPE:
+		return value<int64_t>() == (right.value<int64_t>());
+	case RX_QWORD_TYPE:
+		return value<uint64_t>() == (right.value<uint64_t>());
+	case RX_FLOAT_TYPE:
+		return value<float>() == (right.value<float>());
+	case RX_DOUBLE_TYPE:
+		return value<double>() == (right.value<double>());
+	case RX_STRING_TYPE:
+		return value<string_type>() == (right.value<string_type>());
+	case RX_TIME_TYPE:
+		return value<rx_time>() == (right.value<rx_time>());
+	case RX_UUID_TYPE:
+		return value<rx_uuid>() == (right.value<rx_uuid>());
+	case RX_BSTRING_TYPE:
+		return value<byte_string>() == (right.value<byte_string>());
+	case RX_COMPLEX_TYPE:
+		assert(false);
+		break;
+	default:
+		assert(false);
+	}
+	return false;
+}
+
 
 // Class rx::values::rx_timed_value 
 
 rx_timed_value::rx_timed_value()
-	: type_(RX_NULL_TYPE)
+      : default_time_compare_(time_compare_skip)
+	, type_(RX_NULL_TYPE)
 {
 }
 
 rx_timed_value::rx_timed_value(const rx_timed_value &right)
+      : default_time_compare_(time_compare_skip)
 {
 }
 
@@ -1451,6 +1510,17 @@ rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 	type_ = right.type_;
 	assign_storage(storage_, right.storage_, right.type_);
 	return *this;
+}
+
+
+bool rx_timed_value::operator==(const rx_timed_value &right) const
+{
+	return compare(right, default_time_compare_);
+}
+
+bool rx_timed_value::operator!=(const rx_timed_value &right) const
+{
+	return !operator==(right);
 }
 
 
@@ -1505,6 +1575,7 @@ void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode
 
 void rx_timed_value::clear_storage (rx_value_storage& data, rx_value_t type)
 {
+	data.destroy_by_type(type);
 }
 
 void rx_timed_value::assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type)
@@ -1512,7 +1583,7 @@ void rx_timed_value::assign_storage (rx_value_storage& left, const rx_value_stor
 	left.assign_storage(right, type);
 }
 
-bool rx_timed_value::serialize (base_meta_writter& writter)
+bool rx_timed_value::serialize (base_meta_writter& writter) const
 {
 	if (!writter.start_object("Timed_"))
 		return false;
@@ -1555,14 +1626,34 @@ rx_time rx_timed_value::set_time (rx_time time)
 	return time;
 }
 
+bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type time_compare) const
+{
+	switch (time_compare)
+	{
+	case time_compare_skip:
+		return type_ == right.type_
+			&& storage_.compare(right.storage_, type_);
+	case time_compare_ms_accurate:
+		return type_ == right.type_
+			&& storage_.compare(right.storage_, type_)
+				&& (time_.get_longlong_miliseconds() == right.time_.get_longlong_miliseconds());
+	case time_compare_exact:
+		return type_ == right.type_
+			&& storage_.compare(right.storage_, type_)
+				&& time_ == right.time_;
+	default:
+		return false;
+	}
+}
+
 
 rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
+	: default_time_compare_(time_compare_skip)
 {
 	time_ = right.time_;
 	type_ = right.type_;
 	storage_ = std::move(right.storage_);
 }
-
 } // namespace values
 } // namespace rx
 
