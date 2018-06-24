@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -58,7 +58,7 @@ class complex_runtime_item;
 using namespace rx;
 using namespace rx_platform::ns;
 using rx::values::rx_value;
-using rx::values::allways_good_value;
+using rx::values::rx_simple_value;
 
 
 namespace rx_platform {
@@ -87,7 +87,7 @@ struct object_state_data
 
 
 
-class value_item
+class value_item 
 {
 public:
 	value_item(const value_item& right) = default;
@@ -130,7 +130,7 @@ public:
   private:
 
 
-      rx::values::rx_value_storage storage_;
+      rx::values::rx_simple_value storage_;
 
 
       static const uint32_t type_id_;
@@ -147,7 +147,7 @@ public:
 
 
 
-class filter_runtime
+class filter_runtime 
 {
   public:
 	typedef std::unique_ptr<filter_runtime> smart_ptr;
@@ -173,7 +173,7 @@ class filter_runtime
 
 
 
-class source
+class source 
 {
   public:
 	typedef std::unique_ptr<source> smart_ptr;
@@ -199,7 +199,7 @@ class source
 
 
 
-class mapper
+class mapper 
 {
 
   public:
@@ -224,7 +224,7 @@ class mapper
 
 
 
-class variable_runtime
+class variable_runtime 
 {
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source::smart_ptr> sources_type;
@@ -268,7 +268,7 @@ public:
 
 
 
-class struct_runtime
+class struct_runtime 
 {
 
 	friend class meta::complex_data_type;
@@ -310,7 +310,7 @@ public:
 
 
 
-class const_value_item
+class const_value_item 
 {
   public:
 	const_value_item(const const_value_item& right) = default;
@@ -356,7 +356,7 @@ class const_value_item
   private:
 
 
-      rx::values::rx_value_storage storage_;
+      rx::values::rx_simple_value storage_;
 
 
       static const uint32_t type_id_;
@@ -376,7 +376,7 @@ class const_value_item
 
 
 
-class complex_runtime_item
+class complex_runtime_item 
 {
 public:
 	typedef std::unique_ptr<complex_runtime_item > smart_ptr;
@@ -631,6 +631,7 @@ public:
 
 
       static string_type type_name;
+
 
   protected:
       object_runtime();

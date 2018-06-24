@@ -157,5 +157,5 @@ struct boxing_t
 	T value;
 };
 
-	
+
 }

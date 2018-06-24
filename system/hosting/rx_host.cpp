@@ -103,6 +103,11 @@ int rx_platform_host::console_main (int argc, char* argv[])
 	return ret ? 0 : -1;
 }
 
+string_type rx_platform_host::get_startup_script ()
+{
+	return "nop/r/n";
+}
+
 
 // Class rx_platform::hosting::host_security_context 
 

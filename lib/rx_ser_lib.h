@@ -55,6 +55,7 @@ using namespace rx::values;
 #define STREAMING_TYPE_DETAILS		0x06
 #define STREAMING_TYPE_MESSAGE		0x07
 #define STREAMING_TYPE_DIRECTORY	0x08
+#define STREAMING_TYPE_VALUES		0x09
 
 
 namespace rx {
@@ -163,13 +164,13 @@ class base_meta_reader
 
       virtual bool read_id (const char* name, rx_node_id& id) = 0;
 
-      virtual bool read_string (const char* name, string_type str) = 0;
+      virtual bool read_string (const char* name, string_type& str) = 0;
 
       virtual bool read_bool (const char* name, bool& val) = 0;
 
       virtual bool read_double (const char* name, double& val) = 0;
 
-      virtual bool read_time (const char* name, rx_time_struct_t val) = 0;
+      virtual bool read_time (const char* name, rx_time_struct_t& val) = 0;
 
       virtual bool read_uuid (const char* name, rx_uuid_t& val) = 0;
 

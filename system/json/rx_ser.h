@@ -69,13 +69,13 @@ class json_reader : public rx::base_meta_reader
 
       bool read_id (const char* name, rx_node_id& id);
 
-      bool read_string (const char* name, string_type str);
+      bool read_string (const char* name, string_type& str);
 
       bool read_bool (const char* name, bool& val);
 
       bool read_double (const char* name, double& val);
 
-      bool read_time (const char* name, rx_time_struct_t val);
+      bool read_time (const char* name, rx_time_struct_t& val);
 
       bool read_uuid (const char* name, rx_uuid_t& val);
 
@@ -101,7 +101,7 @@ class json_reader : public rx::base_meta_reader
 
       bool read_int64 (const char* name, int64_t& val);
 
-      bool read_uint64 (const string_type& name, uint64_t val);
+      bool read_uint64 (const string_type& name, uint64_t& val);
 
       bool read_bytes (const char* name, byte_string& val);
 

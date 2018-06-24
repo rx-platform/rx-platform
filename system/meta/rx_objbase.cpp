@@ -95,7 +95,7 @@ rx_value complex_runtime_item::get_value (const string_type path) const
 				return sub_items_[(it->second&RT_INDEX_MASK)]->get_value(bellow);
 			}
 			else
-			{// this here should never happend
+			{// this here should never happed
 				RX_ASSERT(false);
 			}
 
@@ -150,7 +150,7 @@ void complex_runtime_item::object_state_changed (const rx_time& now)
 		case RT_CONST_IDX_MASK:
 			{
 				if ((one.second&RT_CALLBACK_MASK)!=0)
-				{// has callback so fire all og it quality changed
+				{// has callback so fire all, its quality changed
 					(*(const_values_callbacks_[RT_CALLBACK_INDEX(one.second)]))(
 						const_values_[(one.second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(), my_object_->get_mode() } ), 0);
 				}
@@ -578,7 +578,7 @@ bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type,
 rx_value value_item::get_value (const object_state_data& data) const
 {
 	rx_value val;
-	//storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
+	storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
 	return val;
 }
 

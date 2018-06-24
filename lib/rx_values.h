@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -199,7 +199,7 @@ union rx_value_union
 
 
 
-class rx_value
+class rx_value 
 {
 
   public:
@@ -278,6 +278,8 @@ class rx_value
 
       void set_good_locally ();
 
+      rx_time set_time (rx_time time);
+
 
       const rx_value_t get_type () const
       {
@@ -299,11 +301,6 @@ class rx_value
       const rx_time get_time () const
       {
         return time_;
-      }
-
-      void set_time (rx_time value)
-      {
-        time_ = value;
       }
 
 
@@ -338,30 +335,33 @@ class rx_value
 
 
 template<typename typeT>
-rx_value_t inner_get_type(tl::type2type<typeT>&);
+rx_value_t inner_get_type(tl::type2type<typeT>);
 
 template<>
-rx_value_t inner_get_type(tl::type2type<bool>&);
+rx_value_t inner_get_type(tl::type2type<bool>);
 template<>
-rx_value_t inner_get_type(tl::type2type<int8_t>&);
+rx_value_t inner_get_type(tl::type2type<int8_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<uint8_t>&);
+rx_value_t inner_get_type(tl::type2type<uint8_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<int16_t>&);
+rx_value_t inner_get_type(tl::type2type<int16_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<uint16_t>&);
+rx_value_t inner_get_type(tl::type2type<uint16_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<int32_t>&);
+rx_value_t inner_get_type(tl::type2type<int32_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<uint32_t>&);
+rx_value_t inner_get_type(tl::type2type<uint32_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<int64_t>&);
+rx_value_t inner_get_type(tl::type2type<int64_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<uint64_t>&);
+rx_value_t inner_get_type(tl::type2type<uint64_t>);
 template<>
-rx_value_t inner_get_type(tl::type2type<float>&);
+rx_value_t inner_get_type(tl::type2type<float>);
 template<>
-rx_value_t inner_get_type(tl::type2type<double>&);
+rx_value_t inner_get_type(tl::type2type<double>);
+template<>
+rx_value_t inner_get_type(tl::type2type<typename std::string>);
+
 
 template<typename typeT>
 rx_value_t get_type()
@@ -375,7 +375,7 @@ rx_value_t get_type()
 
 
 
-class rx_value_storage
+class rx_value_storage 
 {
 private:
 	template<typename typeT>
@@ -396,40 +396,41 @@ private:
 	value_storgae_internal data_;
 #pragma pack(pop)
 public:
-	rx_value_storage() = default;
-	rx_value_storage(const rx_value_storage& right) = default;
-	rx_value_storage(rx_value_storage&& right) noexcept = default;
-	~rx_value_storage() = default;
-	rx_value_storage& operator=(const rx_value_storage& right) = default;
-	rx_value_storage& operator=(rx_value_storage&& right) noexcept = default;
-	template<typename typeT>
-	rx_value_storage(const typeT& val)
+	rx_value_storage()
 	{
-		// this should be turned off with optimizer
-		if (is_stored_as_pointer<typeT>())
-		{
-			*(reinterpret_cast<std::unique_ptr<typeT>*>(data_.data)) = std::make_unique<typeT>(val);
-		}
-		else
-		{
-			static_assert(static_check_size<typeT>(),
-				"Wrong optimization size here, sizeof(stored type can not be larger then the buffer)");
-			*(reinterpret_cast<typeT*>(data_.data)) = val;
-		}
+		memzero(&data_, sizeof(data_));
 	}
+	rx_value_storage(const rx_value_storage& right) = delete;
+	rx_value_storage(rx_value_storage&& right) noexcept
+	{
+		memcpy(data_.data, right.data_.data, sizeof(data_.data));
+	}
+	~rx_value_storage() = default;
+	rx_value_storage& operator=(const rx_value_storage& right) = delete;
+	rx_value_storage& operator=(rx_value_storage&& right) noexcept
+	{
+		if (this != &right)
+		{
+			memcpy(data_.data, &right.data_.data, sizeof(data_.data));
+		}
+		return *this;
+	}
+
 	template<typename typeT>
-	rx_value_storage(typeT&& val)
+	rx_value_storage(typeT val)
 	{
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			*(reinterpret_cast<std::unique_ptr<typeT>*>(data_.data)) = std::make_unique<typeT>(std::forward<typeT>(val));
+			printf("****Stored as pointer\r\n");
+			typeT** ptr = (reinterpret_cast<typeT**>(&data_.data[0]));
+			*ptr= new typeT(val);
 		}
 		else
 		{
-			static_assert(static_check_size<typeT>(),
-				"Wrong optimization size here, sizeof(stored type can not be larger then the buffer)");
-			*(reinterpret_cast<typeT*>(data_.data)) = val;
+			typeT* ptr = reinterpret_cast<typeT*>(&data_.data[0]);
+			printf("****Stored as value\r\n");
+			ptr = new(ptr)typeT(val);
 		}
 	}
 	template<typename typeT>
@@ -438,11 +439,28 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			return **(reinterpret_cast<typeT**>(data_.data));
+			printf("****extracting as pointerr\n");
+			typeT** ptr = reinterpret_cast<typeT**>(&data_.data[0]);
+			return **ptr;
 		}
 		else
 		{
-			return *(reinterpret_cast<typeT*>(data_.data));
+			printf("****Extracting as value\r\n");
+			return *(reinterpret_cast<typeT*>(&data_.data[0]));
+		}
+	}
+	template<typename typeT>
+	const typeT& value() const
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<const typeT>())
+		{
+			const typeT*const* ptr = (reinterpret_cast<const typeT*const*>(&data_.data[0]));
+			return **ptr;
+		}
+		else
+		{
+			return *(reinterpret_cast<const typeT*>(&data_.data[0]));
 		}
 	}
 	template<typename typeT>
@@ -451,18 +469,83 @@ public:
 		// this should be turned off with optimizer
 		if (is_stored_as_pointer<typeT>())
 		{
-			// call the destructor explicitly
-			(*(reinterpret_cast<typeT**>(data_.data)))->~typeT();
+			printf("****Deleted as pointer\r\n");
+			delete (*(reinterpret_cast<typeT**>(data_.data)));
 		}
 		else
 		{
+			printf("****Deleted as value\r\n");
+			// call the destructor explicitly
 			(*(reinterpret_cast<typeT*>(data_.data))).~typeT();
 		}
 
-		// nothing to do if not large!!!
+	}
+	template<typename typeT>
+	void assign(const typeT& val)
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			printf("****Stored as pointer\r\n");
+			*(reinterpret_cast<typeT**>(data_.data)) = new typeT(val);
+		}
+		else
+		{
+			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
+			printf("****Stored as value\r\n");
+			ptr = new(ptr)typeT(val);
+		}
+	}
+	template<typename typeT>
+	void assign(typeT&& val)
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			printf("****Stored as pointer\r\n");
+			*(reinterpret_cast<typeT**>(data_.data)) = new typeT(val);
+		}
+		else
+		{
+			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
+			printf("****Stored as value\r\n");
+			ptr = new(ptr)typeT(val);
+		}
+	}
+	template<typename typeT>
+	typeT& allocate_empty()
+	{
+		// this should be turned off with optimizer
+		if (is_stored_as_pointer<typeT>())
+		{
+			printf("****Allocated as pointer\r\n");
+			typeT** ptr = (reinterpret_cast<typeT**>(data_.data));
+			*ptr = new typeT;
+			return **ptr;
+		}
+		else
+		{
+			typeT* ptr = reinterpret_cast<typeT*>(data_.data);
+			printf("****Allocated as value\r\n");
+			ptr = new(ptr)typeT();
+			return *ptr;
+		}
 	}
 
   public:
+
+      bool serialize (base_meta_writter& writter, rx_value_t type);
+
+      bool deserialize (base_meta_reader& reader, rx_value_t& type);
+
+      void dump_to_stream (std::ostream& out, rx_value_t type) const;
+
+      void parse_from_stream (std::istream& in, rx_value_t type);
+
+      void destroy_by_type (const rx_value_t type);
+
+      void assign_storage (const rx_value_storage& right, rx_value_t type);
+
 
   protected:
 
@@ -479,38 +562,47 @@ class const_values_storage;
 
 
 
-class allways_good_value
+class rx_simple_value 
 {
   public:
 	  template<typename typeT>
-	  allways_good_value(const typeT& val)
+	  rx_simple_value(const typeT& val)
 			: storage_(val)
 			, type_(get_type<typeT>())
 	  {
 	  }
 	  template<typename typeT>
-	  allways_good_value(typeT&& val) noexcept
+	  rx_simple_value(typeT&& val) noexcept
 			: storage_(std::move(val))
 			, type_(get_type<typeT>())
 	  {
 	  }
 	  template<typename typeT>
-	  allways_good_value& operator=(const typeT& val)
+	  rx_simple_value& operator=(const typeT& val)
 	  {
-		  storage_ = val;
+		  clear_storage(storage_, type_);
 		  type_ = get_type<typeT>();
+		  storage_.assign<typeT>(val);
+		  return *this;
 	  }
 	  template<typename typeT>
-	  allways_good_value& operator=(typeT&& val)
+	  rx_simple_value& operator=(typeT&& val) noexcept
 	  {
-		  storage_ = val;
+		  clear_storage(storage_, type_);
 		  type_ = get_type<typeT>();
+		  storage_.assign<typeT>(std::move(val));
+		  return *this;
 	  }
+	  rx_simple_value(rx_simple_value&& right) noexcept;
 
   public:
-      allways_good_value();
+      rx_simple_value();
 
-      ~allways_good_value();
+      rx_simple_value(const rx_simple_value &right);
+
+      ~rx_simple_value();
+
+      rx_simple_value & operator=(const rx_simple_value &right);
 
 
       bool is_bad () const;
@@ -529,16 +621,124 @@ class allways_good_value
 
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
+      bool serialize (base_meta_writter& writter);
+
+      bool deserialize (base_meta_reader& reader);
+
+      void dump_to_stream (std::ostream& out) const;
+
+      void parse_from_stream (std::istream& in);
+
 
   protected:
 
   private:
+
+      void clear_storage (rx_value_storage& data, rx_value_t type);
+
+      void assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type);
+
 
 
       rx_value_storage storage_;
 
 
       rx_value_t type_;
+
+
+};
+
+
+
+
+
+
+class rx_timed_value 
+{
+public:
+	template<typename typeT>
+	rx_timed_value(const typeT& val)
+		: storage_(val)
+		, type_(get_type<typeT>())
+	{
+	}
+	template<typename typeT>
+	rx_timed_value(typeT&& val) noexcept
+		: storage_(std::move(val))
+		, type_(get_type<typeT>())
+	{
+	}
+	template<typename typeT>
+	rx_timed_value& operator=(const typeT& val)
+	{
+		clear_storage(storage_, type_);
+		type_ = get_type<typeT>();
+		storage_.assign<typeT>(val);
+		return *this;
+	}
+	template<typename typeT>
+	rx_timed_value& operator=(typeT&& val) noexcept
+	{
+		clear_storage(storage_, type_);
+		type_ = get_type<typeT>();
+		storage_.assign<typeT>(std::move(val));
+		return *this;
+	}
+	rx_timed_value(rx_timed_value&& right) noexcept;
+
+  public:
+      rx_timed_value();
+
+      rx_timed_value(const rx_timed_value &right);
+
+      ~rx_timed_value();
+
+      rx_timed_value & operator=(const rx_timed_value &right);
+
+
+      bool is_bad () const;
+
+      bool is_uncertain () const;
+
+      bool is_test () const;
+
+      bool is_substituted () const;
+
+      bool is_array () const;
+
+      bool is_good () const;
+
+      bool can_operate (bool test_mode) const;
+
+      void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
+
+      bool serialize (base_meta_writter& writter);
+
+      bool deserialize (base_meta_reader& reader);
+
+      void dump_to_stream (std::ostream& out) const;
+
+      void parse_from_stream (std::istream& in);
+
+      rx_time set_time (rx_time time);
+
+
+  protected:
+
+  private:
+
+      void clear_storage (rx_value_storage& data, rx_value_t type);
+
+      void assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type);
+
+
+
+      rx_value_storage storage_;
+
+
+      rx_value_t type_;
+
+      rx_time time_;
 
 
 };

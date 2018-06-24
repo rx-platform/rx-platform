@@ -319,7 +319,7 @@ public:
 
       rx_time modified_time_;
 
-      values::rx_value_storage storage_;
+      values::rx_simple_value storage_;
 
 
 };
@@ -393,7 +393,7 @@ public:
 
       rx_time modified_time_;
 
-      values::rx_value_storage storage_;
+      values::rx_simple_value storage_;
 
 
 };
@@ -1175,7 +1175,6 @@ bool complex_data_type::register_const_value(const string_type& name, const cons
 {
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
-		//if (check_name(name))
 	{
 		const_values_.emplace_back(name, value);
 		return true;
@@ -1193,7 +1192,6 @@ bool complex_data_type::register_simple_value(const string_type& name, const val
 
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
-		//if (check_name(name))
 	{
 		simple_values_.emplace_back(name,value);
 		return true;

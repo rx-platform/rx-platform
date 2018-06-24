@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@
 
 namespace testing {
 
-// Class testing::test_command 
+// Class testing::test_command
 
 test_command::test_command()
 	: server_command("test")
@@ -147,7 +147,7 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 	header.emplace_back("Status");
 	header.emplace_back("Time");
 	header.emplace_back("User");
-	
+
 	table.emplace_back(header);
 
 	for (auto& one : cases)
@@ -190,7 +190,7 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 	size_t size = categories.size();
 	size_t table_size = 1;
 	std::vector<string_array> cases(size);
-	for (auto i=0; i<size; i++)
+	for (size_t i=0; i<size; i++)
 	{
 		testing_enviroment::instance().get_cases(categories[i], cases[i]);
 		table_size += cases[i].size();
@@ -201,7 +201,7 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 	table[0].emplace_back("Test Cases");
 
 	int row = 1;
-	for (auto i = 0; i<size; i++)
+	for (size_t i = 0; i<size; i++)
 	{
 		table[row].emplace_back(categories[i], ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
 		if (cases[i].empty())
@@ -211,8 +211,9 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 		else
 		{
 			table[row].emplace_back(cases[i][0],ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
-			for (auto j = 1; j < cases[i].size(); j++)
+			for (size_t j = 1; j < cases[i].size(); j++)
 			{
+				row++;
 				table[row].emplace_back("");
 				table[row].emplace_back(cases[i][j], ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 			}
@@ -224,7 +225,7 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 }
 
 
-// Class testing::test_category 
+// Class testing::test_category
 
 test_category::test_category(const test_category &right)
 {
@@ -278,7 +279,7 @@ test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
 }
 
 
-// Class testing::test_case 
+// Class testing::test_case
 
 test_case::test_case(const test_case &right)
       : start_tick_(0),
@@ -450,7 +451,7 @@ size_t test_case::get_size () const
 }
 
 
-// Class testing::testing_enviroment 
+// Class testing::testing_enviroment
 
 testing_enviroment::testing_enviroment()
 {
@@ -458,7 +459,7 @@ testing_enviroment::testing_enviroment()
 	register_code_test(std::make_unique<script_test::py_test::python_test>());
 	register_code_test(std::make_unique<test_test>());
 	register_code_test(std::make_unique<script_test::rxs::rx_script_category>());
-	register_code_test(std::make_unique<basic_tests::function_test::function_test_category>());
+	register_code_test(std::make_unique<basic_tests::lib_test::library_test_category>());
 	register_code_test(std::make_unique<basic_tests::meta_test::meta_model_test_category>());
 }
 
@@ -539,7 +540,7 @@ test_program_context::smart_ptr testing_enviroment::create_test_context (rx_plat
 }
 
 
-// Class testing::test_program_context 
+// Class testing::test_program_context
 
 test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
       : status_(RX_TEST_STATUS_UNKNOWN)
@@ -578,7 +579,7 @@ size_t test_program_context::get_possition () const
 }
 
 
-// Class testing::basic_test_case_test 
+// Class testing::basic_test_case_test
 
 basic_test_case_test::basic_test_case_test()
 	: test_case("test")
@@ -613,7 +614,7 @@ bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class testing::test_test 
+// Class testing::test_test
 
 test_test::test_test()
 	: test_category("test")

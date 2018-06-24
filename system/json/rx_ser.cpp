@@ -73,7 +73,7 @@ bool json_reader::read_id (const char* name, rx_node_id& id)
 	return false;
 }
 
-bool json_reader::read_string (const char* name, string_type str)
+bool json_reader::read_string (const char* name, string_type& str)
 {
 	string_type sstr;
 	int index = 0;
@@ -149,7 +149,7 @@ bool json_reader::read_double (const char* name, double& val)
 	return false;
 }
 
-bool json_reader::read_time (const char* name, rx_time_struct_t val)
+bool json_reader::read_time (const char* name, rx_time_struct_t& val)
 {
 	string_type str;
 	int index = 0;
@@ -300,9 +300,9 @@ bool json_reader::array_end ()
 
 bool json_reader::read_header (int& type)
 {
-	int version = 0;
+	uint32_t version = 0;
 	int idx = -1;
-	if (safe_read_int(idx, "sversion", version, envelope_))
+	if (read_version("sversion", version))
 	{
 		set_version(version);
 		if (envelope_.isMember("object"))
@@ -362,6 +362,18 @@ bool json_reader::read_header (int& type)
 				temps.index = 0;
 				stack_.push(temps);
 				type = STREAMING_TYPE_DETAILS;
+				return true;
+			}
+		}
+		else if (envelope_.isMember("values"))
+		{
+			Json::Value& temp = envelope_["values"];
+			if (temp.isArray())
+			{
+				json_read_stack_data temps(temp);
+				temps.index = 0;
+				stack_.push(temps);
+				type = STREAMING_TYPE_VALUES;
 				return true;
 			}
 		}
@@ -498,7 +510,7 @@ bool json_reader::read_int64 (const char* name, int64_t& val)
 	return false;
 }
 
-bool json_reader::read_uint64 (const string_type& name, uint64_t val)
+bool json_reader::read_uint64 (const string_type& name, uint64_t& val)
 {
 	int idx = 0;
 	Json::Value& object = get_current_value(idx);
@@ -569,7 +581,6 @@ Json::Value& json_reader::get_current_value (int& index)
 {
 	if (stack_.empty())
 	{
-		assert(false);
 		index = -1;
 		return envelope_;
 	}
@@ -659,6 +670,17 @@ bool json_reader::read_version (const char* name, uint32_t& val)
 
 bool json_reader::parse_version_string (uint32_t& result, const string_type& version)
 {
+	size_t idx = version.find('.');
+	if (idx != string_type::npos)
+	{
+		int major = atoi(version.substr(0, idx).c_str());
+		int minor = atoi(version.substr(idx + 1).c_str());
+		if (major >= 0 && minor > 0 && major < 0xffff && minor < 0xffff)
+		{
+			result = (((uint32_t)major) << 16) | (((uint32_t)minor)&0xffff);
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -857,6 +879,10 @@ bool json_writter::write_header (int type)
 	case STREAMING_TYPE_DETAILS:
 		data.is_array = true;
 		data.name = "details";
+		break;
+	case STREAMING_TYPE_VALUES:
+		data.is_array = true;
+		data.name = "values";
 		break;
 	default:
 		assert(false);

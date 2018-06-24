@@ -209,6 +209,8 @@ class rx_platform_host
 
       int console_main (int argc, char* argv[]);
 
+      virtual string_type get_startup_script ();
+
 
       rx_platform_host * get_parent ()
       {

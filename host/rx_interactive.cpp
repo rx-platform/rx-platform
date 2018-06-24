@@ -48,6 +48,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
+	startup_script_ = "test run lib/values/r/n";
 }
 
 
@@ -201,6 +202,11 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 	return write_stdout(lines.c_str(), lines.size());
 }
 
+string_type interactive_console_host::get_startup_script ()
+{
+	return startup_script_;
+}
+
 
 // Class host::interactive::interactive_console_client 
 
@@ -254,7 +260,7 @@ under certain conditions; type `license' for details.\r\n\
 	std::array<char, 0x100> buffer;
 
 	size_t count;
-
+	
 	while (!exit_ && !host_->exit())
 	{
 		count = 0;

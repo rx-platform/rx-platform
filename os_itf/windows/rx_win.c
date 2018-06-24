@@ -181,7 +181,7 @@ int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_
 	sys.wMonth = full->month;
 	sys.wDay = full->day;
 	sys.wDayOfWeek = 0;
-	sys.wHour = full->w_day;
+	sys.wHour = full->hour;
 	sys.wMinute = full->minute;
 	sys.wSecond = full->second;
 	sys.wMilliseconds = full->milliseconds;

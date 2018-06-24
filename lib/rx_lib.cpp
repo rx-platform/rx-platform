@@ -62,10 +62,10 @@ void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width)
 	{
 		widths[i] = row[i].value.size();
 	}
-	// first try to get how manny columns do we need
+	// first try to get how many columns do we need
 	size_t columns = count + 1;
 	std::vector<size_t> column_widths;
-	size_t total_width = 1000000000ull;// i guess will be enought
+	size_t total_width = 1000000000ull;// i guess will be enough
 
 	while (total_width>console_width)
 	{
@@ -172,7 +172,9 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 		{
 			for (size_t i = 0; i < columns_number; i++)
 			{
-				string_type rest(widths[i] + col_diff - row[i].value.size(), i==columns_number-1 || first ? ' ' : empty_char);
+				string_type rest(widths[i] + col_diff - row[i].value.size(),
+					i==columns_number-1 || first || row[i].value.empty()
+					? ' ' : empty_char);
 				if (!row[i].prefix.empty())
 					out << row[i].prefix;
 				out << row[i].value;
@@ -1074,6 +1076,8 @@ int64_t rx_time::get_useconds() const
 
 std::string rx_time::get_string() const
 {
+	if (is_null())
+		return "<null>";
 	rx_full_time full;
 	char buff[0x200];
 
@@ -1261,7 +1265,6 @@ public:
 		auto it = m_objects.find(handle);
 		if (it == m_objects.end())
 		{
-
 			stack_ptr_t temp = std::make_unique<std::stack<intptr_t, std::vector<intptr_t> > >();
 			temp->push(obj);
 			m_objects.emplace(handle, std::forward<stack_ptr_t>(temp));
@@ -1289,11 +1292,7 @@ public:
 		if (it == m_objects.end() || it->second->empty())
 			return 0;
 		else
-		{
-			//pointers::reference<T> ret;
-			//ret.create_from_pointer
 			return it->second->top();
-		}
 	}
 };
 

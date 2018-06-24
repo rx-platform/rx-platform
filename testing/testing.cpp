@@ -272,13 +272,6 @@ void test_thread()
     printf("Izasao Main\r\n");
 }
 
-
-void test_values()
-{
-	double temp = 6.7;
-	rx::values::allways_good_value perica;//(temp);
-	//uint32_t zike = perica + 5;
-}
 void test_classes()
 {
 	rx_platform::meta::object_class_ptr obj("test_class", 55, true);

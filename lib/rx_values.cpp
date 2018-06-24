@@ -43,60 +43,66 @@ namespace values {
 
 
 template<>
-rx_value_t inner_get_type(tl::type2type<bool>&)
+rx_value_t inner_get_type(tl::type2type<bool>)
 {
 	return RX_BOOL_TYPE;
 }
 
 template<>
-rx_value_t inner_get_type(tl::type2type<int8_t>&)
+rx_value_t inner_get_type(tl::type2type<int8_t>)
 {
 	return RX_SBYTE_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<uint8_t>&)
+rx_value_t inner_get_type(tl::type2type<uint8_t>)
 {
 	return RX_BYTE_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<int16_t>&)
+rx_value_t inner_get_type(tl::type2type<int16_t>)
 {
 	return RX_SWORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<uint16_t>&)
+rx_value_t inner_get_type(tl::type2type<uint16_t>)
 {
 	return RX_WORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<int32_t>&)
+rx_value_t inner_get_type(tl::type2type<int32_t>)
 {
 	return RX_SDWORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<uint32_t>&)
+rx_value_t inner_get_type(tl::type2type<uint32_t>)
 {
 	return RX_DWORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<int64_t>&)
+rx_value_t inner_get_type(tl::type2type<int64_t>)
 {
 	return RX_SQWORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<uint64_t>&)
+rx_value_t inner_get_type(tl::type2type<uint64_t>)
 {
 	return RX_QWORD_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<float>&)
+rx_value_t inner_get_type(tl::type2type<float>)
 {
 	return RX_FLOAT_TYPE;
 }
 template<>
-rx_value_t inner_get_type(tl::type2type<double>&)
+rx_value_t inner_get_type(tl::type2type<double>)
 {
 	return RX_DOUBLE_TYPE;
+}
+
+template<>
+rx_value_t inner_get_type(tl::type2type<typename std::string>)
+{
+	return RX_STRING_TYPE;
 }
 
 
@@ -889,7 +895,7 @@ bool rx_value::deserialize_value (base_meta_reader& stream, uint8_t type, rx_val
 		case RX_UUID_TYPE:
 			{
 				rx_uuid_t temp;
-				
+
 				if (stream.read_uuid("Value", temp))
 				{
 					value.uuid_value = new rx_uuid(temp);
@@ -973,59 +979,81 @@ void rx_value::set_good_locally ()
 	origin_ = RX_LOCAL_ORIGIN;
 }
 
+rx_time rx_value::set_time (rx_time time)
+{
+	time_ = time;
+	return time;
+}
 
-// Class rx::values::allways_good_value 
 
-allways_good_value::allways_good_value()
+// Class rx::values::rx_simple_value 
+
+rx_simple_value::rx_simple_value()
 	: type_(RX_NULL_TYPE)
 {
 }
 
-
-allways_good_value::~allways_good_value()
+rx_simple_value::rx_simple_value(const rx_simple_value &right)
 {
+	assign_storage(storage_, right.storage_, right.type_);
+}
+
+
+rx_simple_value::~rx_simple_value()
+{
+	clear_storage(storage_, type_);
+}
+
+
+rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
+{
+	clear_storage(storage_, type_);
+	type_ = right.type_;
+	assign_storage(storage_, right.storage_, right.type_);
+	return *this;
 }
 
 
 
-bool allways_good_value::is_bad () const
-{
-	return false;
-}
-
-bool allways_good_value::is_uncertain () const
-{
-	return false;
-}
-
-bool allways_good_value::is_test () const
-{
-	return false;
-}
-
-bool allways_good_value::is_substituted () const
-{
-	return false;
-}
-
-bool allways_good_value::is_array () const
+bool rx_simple_value::is_bad () const
 {
 	return false;
 }
 
-bool allways_good_value::is_good () const
+bool rx_simple_value::is_uncertain () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_test () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_substituted () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_array () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_good () const
 {
 	return true;
 }
 
-bool allways_good_value::can_operate (bool test_mode) const
+bool rx_simple_value::can_operate (bool test_mode) const
 {
 	return true;
 }
 
-void allways_good_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
+void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-
+	//TODONOW
+	//storage_.g
 	val.set_time(ts);
 	if (mode.is_off())
 		val.set_quality(RX_BAD_QUALITY_OFFLINE);
@@ -1035,9 +1063,505 @@ void allways_good_value::get_value (values::rx_value& val, rx_time ts, const rx_
 		val.set_test();
 }
 
+void rx_simple_value::clear_storage (rx_value_storage& data, rx_value_t type)
+{
+	data.destroy_by_type(type);
+}
 
+void rx_simple_value::assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type)
+{
+	left.assign_storage(right, type);
+}
+
+bool rx_simple_value::serialize (base_meta_writter& writter)
+{
+	return storage_.serialize(writter, type_);
+}
+
+bool rx_simple_value::deserialize (base_meta_reader& reader)
+{
+	return storage_.deserialize(reader, type_);
+}
+
+void rx_simple_value::dump_to_stream (std::ostream& out) const
+{
+	storage_.dump_to_stream(out, type_);
+}
+
+void rx_simple_value::parse_from_stream (std::istream& in)
+{
+	storage_.parse_from_stream(in, type_);
+}
+
+
+rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
+{
+	type_ = right.type_;
+	storage_ = std::move(right.storage_);
+}
 // Class rx::values::rx_value_storage 
 
+
+bool rx_value_storage::serialize (base_meta_writter& writter, rx_value_t type)
+{
+	writter.start_object("_Val");
+	writter.write_byte("Type", type);
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		writter.write_bool("Val", value<bool>());
+		break;
+	case RX_SBYTE_TYPE:
+		writter.write_byte("Val", value<int8_t>());
+		break;
+	case RX_BYTE_TYPE:
+		writter.write_byte("Val", value<uint8_t>());
+		break;
+	case RX_SWORD_TYPE:
+		writter.write_int("Val", value<int16_t>());
+		break;
+	case RX_WORD_TYPE:
+		writter.write_uint("Val", value<uint16_t>());
+		break;
+	case RX_SDWORD_TYPE:
+		writter.write_int("Val", value<int32_t>());
+		break;
+	case RX_DWORD_TYPE:
+		writter.write_uint("Val", value<uint32_t>());
+		break;
+	case RX_SQWORD_TYPE:
+		writter.write_int64("Val", value<int64_t>());
+		break;
+	case RX_QWORD_TYPE:
+		writter.write_uint64("Val", value<uint64_t>());
+		break;
+	case RX_FLOAT_TYPE:
+		writter.write_double("Val", value<float>());
+		break;
+	case RX_DOUBLE_TYPE:
+		writter.write_double("Val", value<double>());
+		break;
+	case RX_STRING_TYPE:
+	{
+		auto val = value<std::string>();
+		writter.write_string("Val", val.c_str());
+	}
+		//writter.write_string("Val", value<std::string>().c_str());
+		break;
+	case RX_TIME_TYPE:
+		writter.write_time("Val", value<rx::rx_time>());
+		break;
+	/*case RX_UUID_TYPE:
+		writter.write_uuid("Val", value<rx::rx_uuid>());
+		break;
+	case RX_BSTRING_TYPE:
+	{
+	}
+	break;
+	case RX_COMPLEX_TYPE:
+	{
+	}
+	break;*/
+	}
+	return writter.end_object();
+}
+
+bool rx_value_storage::deserialize (base_meta_reader& reader, rx_value_t& type)
+{
+	// first destroy eventual values allready inside
+	destroy_by_type(type);
+	if (!reader.start_object("_Val"))
+		return false;
+	if (!reader.read_byte("Type", type))
+		return false;
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		reader.read_bool("Val", allocate_empty<bool>());
+		break;
+	case RX_SBYTE_TYPE:
+		{
+			uint8_t temp;
+			reader.read_byte("Val", temp);
+			allocate_empty<int8_t>() = temp;
+		}		
+		break;
+	case RX_BYTE_TYPE:
+		reader.read_byte("Val", allocate_empty<uint8_t>());
+		break;
+	case RX_SWORD_TYPE:
+		{
+			uint32_t temp;
+			reader.read_uint("Val", temp);
+			allocate_empty<int16_t>() = (int16_t)temp;
+		}
+		break;
+	case RX_WORD_TYPE:
+		{
+			uint32_t temp;
+			reader.read_uint("Val", temp);
+			allocate_empty<uint16_t>() = (uint16_t)temp;
+		}
+		break;
+	case RX_SDWORD_TYPE:
+		reader.read_int("Val", allocate_empty<int32_t>());
+		break;
+	case RX_DWORD_TYPE:
+		reader.read_uint("Val", allocate_empty<uint32_t>());
+		break;
+	case RX_SQWORD_TYPE:
+		reader.read_int64("Val", allocate_empty<int64_t>());
+		break;
+	case RX_QWORD_TYPE:
+		reader.read_uint64("Val", allocate_empty<uint64_t>());
+		break;
+	case RX_FLOAT_TYPE:
+		{
+			double temp;
+			reader.read_double("Val", temp);
+			allocate_empty<float>() = (float)temp;
+		}
+		break;
+	case RX_DOUBLE_TYPE:
+		reader.read_double("Val", allocate_empty<double>());
+		break;
+	case RX_STRING_TYPE:
+	{
+		string_type& val = allocate_empty<std::string>();
+		reader.read_string("Val", val);
+	}
+	//reader,read_string("Val", value<std::string>().c_str());
+	break;
+	case RX_TIME_TYPE:
+		reader.read_time("Val", allocate_empty<rx::rx_time>());
+		break;
+		/*case RX_UUID_TYPE:
+		reader,read_uuid("Val", value<rx::rx_uuid>());
+		break;
+		case RX_BSTRING_TYPE:
+		{
+		}
+		break;
+		case RX_COMPLEX_TYPE:
+		{
+		}
+		break;*/
+	}
+	if (!reader.end_object())
+		return false;
+	
+	return true;
+}
+
+void rx_value_storage::dump_to_stream (std::ostream& out, rx_value_t type) const
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		out << "<null>";
+		break;
+	case RX_BOOL_TYPE:
+		out << (value<bool>() ? "true" : "false");
+		break;
+	case RX_SBYTE_TYPE:
+		out << value<int8_t>();
+		break;
+	case RX_BYTE_TYPE:
+		out << value<uint8_t>();
+		break;
+	case RX_SWORD_TYPE:
+		out << value<int16_t>();
+		break;
+	case RX_WORD_TYPE:
+		out << value<uint16_t>();
+		break;
+	case RX_SDWORD_TYPE:
+		out << value<int32_t>();
+		break;
+	case RX_DWORD_TYPE:
+		out << value<uint32_t>();
+		break;
+	case RX_SQWORD_TYPE:
+		out << value<int64_t>();
+		break;
+	case RX_QWORD_TYPE:
+		out << value<uint64_t>();
+		break;
+	case RX_FLOAT_TYPE:
+		out << value<float>();
+		break;
+	case RX_DOUBLE_TYPE:
+		out << value<double>();
+		break;
+	case RX_STRING_TYPE:
+		auto val = value<std::string>();
+		out <<  val;
+		break;
+	}
+}
+
+void rx_value_storage::parse_from_stream (std::istream& in, rx_value_t type)
+{
+}
+
+void rx_value_storage::destroy_by_type (const rx_value_t type)
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		destroy_value<bool>();
+		break;
+	case RX_SBYTE_TYPE:
+		destroy_value<int8_t>();
+		break;
+	case RX_BYTE_TYPE:
+		destroy_value<uint8_t>();
+		break;
+	case RX_SWORD_TYPE:
+		destroy_value<int16_t>();
+		break;
+	case RX_WORD_TYPE:
+		destroy_value<uint16_t>();
+		break;
+	case RX_SDWORD_TYPE:
+		destroy_value<int32_t>();
+		break;
+	case RX_DWORD_TYPE:
+		destroy_value<uint32_t>();
+		break;
+	case RX_SQWORD_TYPE:
+		destroy_value<int64_t>();
+		break;
+	case RX_QWORD_TYPE:
+		destroy_value<uint64_t>();
+		break;
+	case RX_FLOAT_TYPE:
+		destroy_value<float>();
+		break;
+	case RX_DOUBLE_TYPE:
+		destroy_value<double>();
+		break;
+	case RX_STRING_TYPE:
+		destroy_value<string_type>();
+		break;
+	case RX_TIME_TYPE:
+		destroy_value<rx::rx_time>();
+		break;
+	case RX_UUID_TYPE:
+		destroy_value<rx::rx_uuid>();
+		break;
+	case RX_BSTRING_TYPE:
+		destroy_value<byte_string>();
+		break;
+	case RX_COMPLEX_TYPE:
+		assert(false);
+		break;
+	default:
+		assert(false);
+	}
+}
+
+void rx_value_storage::assign_storage (const rx_value_storage& right, rx_value_t type)
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		break;
+	case RX_BOOL_TYPE:
+		assign<bool>(right.value<bool>());
+		break;
+	case RX_SBYTE_TYPE:
+		assign<int8_t>(right.value<int8_t>());
+		break;
+	case RX_BYTE_TYPE:
+		assign<uint8_t>(right.value<uint8_t>());
+		break;
+	case RX_SWORD_TYPE:
+		assign<int16_t>(right.value<int16_t>());
+		break;
+	case RX_WORD_TYPE:
+		assign<uint16_t>(right.value<uint16_t>());
+		break;
+	case RX_SDWORD_TYPE:
+		assign<int32_t>(right.value<int32_t>());
+		break;
+	case RX_DWORD_TYPE:
+		assign<uint32_t>(right.value<uint32_t>());
+		break;
+	case RX_SQWORD_TYPE:
+		assign<int64_t>(right.value<int64_t>());
+		break;
+	case RX_QWORD_TYPE:
+		assign<uint64_t>(right.value<uint64_t>());
+		break;
+	case RX_FLOAT_TYPE:
+		assign<float>(right.value<float>());
+		break;
+	case RX_DOUBLE_TYPE:
+		assign<double>(right.value<double>());
+		break;
+	case RX_STRING_TYPE:
+		assign<string_type>(right.value<string_type>());
+		break;
+	case RX_TIME_TYPE:
+		assign<rx_time>(right.value<rx_time>());
+		break;
+	case RX_UUID_TYPE:
+		assign<rx_uuid>(right.value<rx_uuid>());
+		break;
+	case RX_BSTRING_TYPE:
+		assign<byte_string>(right.value<byte_string>());
+		break;
+	case RX_COMPLEX_TYPE:
+		assert(false);
+		break;
+	default:
+		assert(false);
+	}
+}
+
+
+// Class rx::values::rx_timed_value 
+
+rx_timed_value::rx_timed_value()
+	: type_(RX_NULL_TYPE)
+{
+}
+
+rx_timed_value::rx_timed_value(const rx_timed_value &right)
+{
+}
+
+
+rx_timed_value::~rx_timed_value()
+{
+	clear_storage(storage_, type_);
+}
+
+
+rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
+{
+	clear_storage(storage_, type_);
+	type_ = right.type_;
+	assign_storage(storage_, right.storage_, right.type_);
+	return *this;
+}
+
+
+
+bool rx_timed_value::is_bad () const
+{
+	return false;
+}
+
+bool rx_timed_value::is_uncertain () const
+{
+	return false;
+}
+
+bool rx_timed_value::is_test () const
+{
+	return false;
+}
+
+bool rx_timed_value::is_substituted () const
+{
+	return false;
+}
+
+bool rx_timed_value::is_array () const
+{
+	return false;
+}
+
+bool rx_timed_value::is_good () const
+{
+	return true;
+}
+
+bool rx_timed_value::can_operate (bool test_mode) const
+{
+	return true;
+}
+
+void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
+{
+	//TODONOW
+	//storage_.g
+	val.set_time(ts);
+	if (mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else
+		val.set_good_locally();
+	if (mode.is_test())
+		val.set_test();
+}
+
+void rx_timed_value::clear_storage (rx_value_storage& data, rx_value_t type)
+{
+}
+
+void rx_timed_value::assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type)
+{
+	left.assign_storage(right, type);
+}
+
+bool rx_timed_value::serialize (base_meta_writter& writter)
+{
+	if (!writter.start_object("Timed_"))
+		return false;
+	if (!storage_.serialize(writter, type_))
+		return false;
+	if (!writter.write_time("time", time_))
+		return false;
+	if (!writter.end_object())
+		return false;
+	return true;
+}
+
+bool rx_timed_value::deserialize (base_meta_reader& reader)
+{
+	if (!reader.start_object("Timed_"))
+		return false;
+	if (!storage_.deserialize(reader, type_))
+		return false;
+	if (!reader.read_time("time", time_))
+		return false;
+	if (!reader.end_object())
+		return false;
+	return true;
+}
+
+void rx_timed_value::dump_to_stream (std::ostream& out) const
+{
+	storage_.dump_to_stream(out, type_);
+	out << " [" << time_.get_string() << "]";
+}
+
+void rx_timed_value::parse_from_stream (std::istream& in)
+{
+	storage_.parse_from_stream(in, type_);
+}
+
+rx_time rx_timed_value::set_time (rx_time time)
+{
+	time_ = time;
+	return time;
+}
+
+
+rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
+{
+	time_ = right.time_;
+	type_ = right.type_;
+	storage_ = std::move(right.storage_);
+}
 
 } // namespace values
 } // namespace rx

@@ -385,8 +385,8 @@ bool const_value::deserialize_definition (base_meta_reader& stream, uint8_t type
 
 void const_value::get_value (values::rx_value& val) const
 {
-	val.set_good_locally();
-	val.set_time(modified_time_);
+	rx_mode_type t;
+	storage_.get_value(val, modified_time_, t);
 }
 
 
