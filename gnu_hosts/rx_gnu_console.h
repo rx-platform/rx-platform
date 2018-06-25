@@ -68,6 +68,10 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       bool write_stdout (const void* data, size_t size);
 
+      std::vector<ETH_interfaces> get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      std::vector<IP_interfaces> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
 
   protected:
 

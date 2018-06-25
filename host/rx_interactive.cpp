@@ -207,6 +207,18 @@ string_type interactive_console_host::get_startup_script ()
 	return startup_script_;
 }
 
+std::vector<ETH_interfaces> interactive_console_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	std::vector<ETH_interfaces> ret;
+	return ret;
+}
+
+std::vector<IP_interfaces> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	std::vector<IP_interfaces> ret;
+	return ret;
+}
+
 
 // Class host::interactive::interactive_console_client 
 

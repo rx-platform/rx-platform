@@ -70,6 +70,7 @@
 #include <windows.h>
 #include <crtdefs.h>
 #include <wincrypt.h>
+#include <IPHlpApi.h>
 
 typedef HCRYPTKEY crypt_key_t;
 typedef HCRYPTHASH  crypt_hash_t;
@@ -94,6 +95,8 @@ typedef SOCKET gs_socket_t;
 #include <Security.h>
 
 typedef uuid_t rx_uuid_t;
+typedef ULONG ip_addr_ctx_t;
+
 typedef ULONG ip_addr_ctx_t;
 
 typedef HANDLE sys_handle_t;

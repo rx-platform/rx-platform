@@ -58,6 +58,11 @@ typedef rx::pointers::reference<security_context> execute_context_ptr;
 namespace rx_platform {
 
 namespace hosting {
+///////////////////////////////////////////////////////////////////////////////////////////////
+// IP addresses
+	int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
+	int rx_remove_ip_address(ip_addr_ctx_t ctx);
+	int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
 
 
 
@@ -210,6 +215,10 @@ class rx_platform_host
       int console_main (int argc, char* argv[]);
 
       virtual string_type get_startup_script ();
+
+      virtual std::vector<ETH_interfaces> get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      virtual std::vector<IP_interfaces> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
       rx_platform_host * get_parent ()

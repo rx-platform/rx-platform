@@ -198,6 +198,14 @@ bool gnu_console_host::write_stdout (const void* data, size_t size)
   return ret;
 }
 
+std::vector<ETH_interfaces> gnu_console_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+}
+
+std::vector<IP_interfaces> gnu_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+}
+
 
 } // namespace gnu
 

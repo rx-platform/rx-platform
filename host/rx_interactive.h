@@ -33,14 +33,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 namespace host {
 namespace interactive {
@@ -173,8 +173,12 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       virtual bool write_stdout (const void* data, size_t size) = 0;
 
       bool write_stdout (const string_type& lines);
-	  
+
       string_type get_startup_script ();
+
+      std::vector<ETH_interfaces> get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      std::vector<IP_interfaces> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
   protected:

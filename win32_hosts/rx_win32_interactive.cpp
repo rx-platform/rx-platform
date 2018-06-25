@@ -35,6 +35,7 @@
 
 namespace
 {
+	typedef uint32_t dword;
 	std::atomic<uint_fast8_t> g_console_canceled = 0;
 	BOOL ctrl_handler(DWORD fdwCtrlType)
 	{
@@ -54,6 +55,169 @@ namespace
 			return FALSE;
 		}
 	}
+
+
+	typedef struct mac_addr_t
+	{
+		byte addr[MAC_ADDR_SIZE];
+	} mac_addr_t;
+
+	typedef struct eth_adapter_def
+	{
+		char* name;
+		char* desc;
+		byte mac_address[MAC_ADDR_SIZE];
+		dword index;
+		dword state;
+	} eth_adapter;
+
+	typedef struct eth_adapters_list_def
+	{
+		size_t count;
+		eth_adapter* adapters;
+	} eth_adapters;
+
+
+
+	DWORD get_ip_addresses(size_t* count, char*** addresses, char*** names, ip_addr_ctx_t** ctxs, dword** states)
+	{
+
+		DWORD dwRetVal = 0;
+		int i = 0;
+		ULONG outBufLen = 0;
+		PIP_ADAPTER_ADDRESSES pAddresses;
+		PIP_ADAPTER_ADDRESSES pCurrAddresses;
+		IP_ADDR_STRING Addresses;
+
+		IP_ADAPTER_INFO info[20];
+		char** locnames;
+		ip_addr_ctx_t* locctxs;
+		dword* locstates;
+		size_t idx;
+		char** locaddrs;
+
+		ULONG size = sizeof(info);
+
+		char* itf_name;
+		char* conn_name;
+		DWORD ret;
+
+		ret = GetAdaptersInfo(info, &size);
+
+		outBufLen = sizeof(IP_ADAPTER_ADDRESSES);
+		pAddresses = (IP_ADAPTER_ADDRESSES *)malloc(outBufLen);
+
+		dwRetVal = GetAdaptersAddresses(AF_INET, 0, NULL, pAddresses, &outBufLen);
+
+		if (dwRetVal == ERROR_BUFFER_OVERFLOW)
+		{
+			free(pAddresses);
+			pAddresses = (IP_ADAPTER_ADDRESSES *)malloc(outBufLen);
+			dwRetVal = GetAdaptersAddresses(AF_INET, 0, NULL, pAddresses, &outBufLen);
+		}
+		
+		if (ret == ERROR_SUCCESS)
+		{
+			IP_ADAPTER_INFO* iter = info;
+			
+			*count = 0;
+			// iterate to get count first
+			do
+			{
+
+				if (iter->Type == MIB_IF_TYPE_ETHERNET)// || iter->Type==IF_TYPE_IEEE80211)
+					(*count)++;
+
+				iter = iter->Next;
+
+			} while (iter);
+
+			//allocate some space
+			*names = (char**)malloc((*count) * sizeof(char**));
+			*addresses = (char**)malloc((*count) * sizeof(char**));
+			*ctxs = (ip_addr_ctx_t*)malloc((*count) * sizeof(dword));
+			*states = (dword*)malloc((*count) * sizeof(dword));
+
+			// easier this way
+			locnames = *names;
+			locaddrs = *addresses;
+			locctxs = *ctxs;
+			locstates = *states;
+
+			idx = 0;
+			iter = info;
+
+			do
+			{
+				if (iter->Type == MIB_IF_TYPE_ETHERNET)// || iter->Type==IF_TYPE_IEEE80211)
+				{
+					itf_name = NULL;
+					conn_name = NULL;
+					int i = 0;
+					// try to find it in addresses
+					for (pCurrAddresses = pAddresses; pCurrAddresses != NULL; pCurrAddresses = pCurrAddresses->Next)
+					{
+						locnames[i] = iter->Description;
+						Addresses = iter[i].IpAddressList;
+						while (Addresses.Next)
+						{
+							locnames[i] = Addresses.IpAddress.String;
+						}
+						i++;
+						
+					}
+					idx++;
+					
+				}
+
+				iter = iter->Next;
+
+			} while (iter);
+
+		}
+
+		*count = idx;
+		
+		return ret;
+	}
+
+
+	size_t list_ip_adapters(IP_interfaces** interfaces)
+	{
+		size_t ret_count = 0;
+		size_t count;
+		dword ret;
+		size_t i;
+		IP_interfaces* padapters;
+		char** names;
+		char** addresses;
+		ip_addr_ctx_t* ctxs;
+		dword* states;
+		
+		ret = get_ip_addresses(&count, &addresses, &names, &ctxs, &states);
+
+		if (ERROR_SUCCESS == ret)
+		{
+			if (count > 0)
+			{
+				padapters = (IP_interfaces*)malloc(sizeof(IP_interfaces)*count);
+				for (i = 0; i <count; i++)
+				{
+					padapters[i].name = names[i];
+					padapters[i].ip_address = addresses[i];
+					padapters[i].index = ctxs[i];
+					padapters[i].status = status_disconnected;
+					ret_count++;
+				}
+				free(names);
+				free(addresses);
+				free(ctxs);
+				free(states);
+			}
+		}
+		return ret;
+	}
+
 }
 
 
@@ -180,6 +344,26 @@ bool win32_console_host::write_stdout (const void* data, size_t size)
 {
 	DWORD written = 0;
 	return FALSE != WriteFile(out_handle_, data, (DWORD)size, &written, NULL);
+}
+
+std::vector<ETH_interfaces> win32_console_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	std::vector<ETH_interfaces> ret;
+	return ret;
+}
+
+std::vector<IP_interfaces> win32_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	std::vector<IP_interfaces> ret;
+	IP_interfaces* itfs;
+
+	size_t count = list_ip_adapters(&itfs);
+	for (size_t i = 0; i < count; i++)
+	{
+
+	}
+
+	return ret;
 }
 
 

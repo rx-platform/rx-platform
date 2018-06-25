@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -91,6 +91,44 @@ string_type& to_upper(string_type& str);
 
 string_type get_code_module(const string_type& full);
 
+///////////////////////////////////////////////////////////////
+// PHYSICAL INTERFACES
+///////////////////////////////////////////////////////////////
+enum interface_status_type
+{
+	status_disconnected = 0,
+	status_active
+};
+#define MAC_ADDR_SIZE 6
+struct ETH_interfaces
+{
+	uint8_t mac_address[MAC_ADDR_SIZE];
+	string_type name;
+	size_t index;
+	interface_status_type status;
+	void init()
+	{
+		index = 0;
+		status = status_disconnected;
+		name = "<unnanmed>";
+	}
+};
+
+
+
+struct IP_interfaces
+{
+	string_type ip_address;
+	string_type name;
+	size_t index;
+	interface_status_type status;
+	void init()
+	{
+		index = 0;
+		status = status_disconnected;
+		name = "<unnanmed>";
+	}
+};
 
 ///////////////////////////////////////////////////////////////
 // TIMES FOR ASN1 MMS IEC TIME VALUES
