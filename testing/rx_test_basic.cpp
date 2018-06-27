@@ -49,6 +49,7 @@ library_test_category::library_test_category()
 {
 	register_test_case(rx_create_reference<platform_callback_test>());
 	register_test_case(rx_create_reference<values_test>());
+	register_test_case(rx_create_reference<external_interfasec_test>());
 }
 
 
@@ -166,112 +167,6 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-} // namespace lib_test
-
-namespace meta_test {
-
- // Class testing::basic_tests::meta_test::meta_model_test_category 
-
- meta_model_test_category::meta_model_test_category()
-	 : test_category("meta")
- {
-	 register_test_case(rx_create_reference<object_creation_test>());
- }
-
-
- meta_model_test_category::~meta_model_test_category()
- {
- }
-
-
-
- // Class testing::basic_tests::meta_test::object_creation_test 
-
- object_creation_test::object_creation_test()
-	 : test_case("construct")
- {
- }
-
-
- object_creation_test::~object_creation_test()
- {
- }
-
-
-
- bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
- {
-
-
-
-	 size_t ret = sizeof(rx::pointers::basic_smart_ptr<rx::job_ptr>);
-
-	 auto one = rx_platform::rx_gate::instance().get_root_directory();
-
-	 ret = sizeof(one);
-
-	 out << "Creating test_class\r\n";
-	 server_directory_ptr dir = ctx->get_current_directory();
-
-	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
-	 test_class->complex_data().register_const_value("testBool", true);
-	 test_class->complex_data().register_simple_value("testVal", 158);
-
-	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
-	 test_struct->complex_data().register_simple_value("structVal", false);
-
-	 test_class->complex_data().register_struct("structName", 41);
-
-	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
-	 {
-		 out << "test_class created\r\n";
-
-		 auto rx_class_item = test_class->get_item_ptr();
-		 dir->add_item(rx_class_item);
-		 if (rx_class_item->generate_json(out, err))
-		 {
-
-			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
-			 {
-
-				 out << "test_struct created\r\n";
-
-				 auto rx_struct_item = test_struct->get_item_ptr();
-
-				 dir->add_item(rx_struct_item);
-
-				 if (rx_struct_item->generate_json(out, err))
-				 {
-					 out << "Creating test_object\r\n";
-
-					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > mapa;
-					 mapa.emplace(55, [] {
-						 return rx_create_reference<objects::user_object>();
-					 });
-
-					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().create_runtime("test_object", 59, 55);
-					 if (test_object)
-					 {
-						 out << "test_class test_object\r\n";
-
-						 dir->add_item(test_object->get_item_ptr());
-						 if (test_object->generate_json(out, err))
-							 ctx->set_passed();
-						 return true;
-					 }
-				 }
-			 }
-		 }
-	 }
-	 ctx->set_failed();
-
-	 return true;
- }
-
-
-} // namespace meta_test
-
-namespace lib_test {
 // Class testing::basic_tests::lib_test::values_test 
 
 values_test::values_test()
@@ -433,6 +328,134 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		}
 	}
 	out << "\r\n\r\n";
+	return true;
+}
+
+
+} // namespace lib_test
+
+namespace meta_test {
+
+ // Class testing::basic_tests::meta_test::meta_model_test_category 
+
+ meta_model_test_category::meta_model_test_category()
+	 : test_category("meta")
+ {
+	 register_test_case(rx_create_reference<object_creation_test>());
+ }
+
+
+ meta_model_test_category::~meta_model_test_category()
+ {
+ }
+
+
+
+ // Class testing::basic_tests::meta_test::object_creation_test 
+
+ object_creation_test::object_creation_test()
+	 : test_case("construct")
+ {
+ }
+
+
+ object_creation_test::~object_creation_test()
+ {
+ }
+
+
+
+ bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+ {
+
+
+
+	 size_t ret = sizeof(rx::pointers::basic_smart_ptr<rx::job_ptr>);
+
+	 auto one = rx_platform::rx_gate::instance().get_root_directory();
+
+	 ret = sizeof(one);
+
+	 out << "Creating test_class\r\n";
+	 server_directory_ptr dir = ctx->get_current_directory();
+
+	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
+	 test_class->complex_data().register_const_value("testBool", true);
+	 test_class->complex_data().register_simple_value("testVal", 158);
+
+	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
+	 test_struct->complex_data().register_simple_value("structVal", false);
+
+	 test_class->complex_data().register_struct("structName", 41);
+
+	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
+	 {
+		 out << "test_class created\r\n";
+
+		 auto rx_class_item = test_class->get_item_ptr();
+		 dir->add_item(rx_class_item);
+		 if (rx_class_item->generate_json(out, err))
+		 {
+
+			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
+			 {
+
+				 out << "test_struct created\r\n";
+
+				 auto rx_struct_item = test_struct->get_item_ptr();
+
+				 dir->add_item(rx_struct_item);
+
+				 if (rx_struct_item->generate_json(out, err))
+				 {
+					 out << "Creating test_object\r\n";
+
+					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > mapa;
+					 mapa.emplace(55, [] {
+						 return rx_create_reference<objects::user_object>();
+					 });
+
+					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().create_runtime("test_object", 59, 55);
+					 if (test_object)
+					 {
+						 out << "test_class test_object\r\n";
+
+						 dir->add_item(test_object->get_item_ptr());
+						 if (test_object->generate_json(out, err))
+							 ctx->set_passed();
+						 return true;
+					 }
+				 }
+			 }
+		 }
+	 }
+	 ctx->set_failed();
+
+	 return true;
+ }
+
+
+} // namespace meta_test
+
+namespace lib_test {
+// Class testing::basic_tests::lib_test::external_interfasec_test 
+
+	external_interfasec_test::external_interfasec_test()
+		: test_case("interfaces")
+{
+}
+
+
+external_interfasec_test::~external_interfasec_test()
+{
+}
+
+
+
+bool external_interfasec_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	ctx->set_failed();
+	out << "\r\nNot Implemented yet!!!\r\n";
 	return true;
 }
 

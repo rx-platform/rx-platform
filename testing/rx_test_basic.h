@@ -43,6 +43,27 @@ namespace basic_tests {
 namespace lib_test {
 
 
+	
+
+
+class library_test_category : public test_category  
+{
+
+  public:
+      library_test_category();
+
+      virtual ~library_test_category();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
 
 
 
@@ -69,12 +90,39 @@ basic testing of callback capabilities.");
 };
 
 
+
+
+
+
+class values_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(values_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+basic testing for platform values.");
+
+  public:
+      values_test();
+
+      virtual ~values_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace lib_test
 
 namespace meta_test {
 
 
-	
+
 
 
  class object_creation_test : public test_case  
@@ -129,41 +177,19 @@ namespace lib_test {
 
 
 
-class values_test : public test_case  
+class external_interfasec_test : public test_case  
 {
-	DECLARE_REFERENCE_PTR(values_test)
+	DECLARE_REFERENCE_PTR(external_interfasec_test)
 	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-basic testing for platform values.");
+basic testing for Ethernet and RS232/485 port resources on this staffroom.");
 
   public:
-      values_test();
+      external_interfasec_test();
 
-      virtual ~values_test();
+      virtual ~external_interfasec_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class library_test_category : public test_category  
-{
-
-  public:
-      library_test_category();
-
-      virtual ~library_test_category();
 
 
   protected:

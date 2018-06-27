@@ -42,84 +42,13 @@
 namespace rx {
 
 namespace memory {
-
-
-
-
-
-template <class allocT>
-class memory_buffer_base : public pointers::reference_object  
+//	Verry important
+enum big_endian_type
 {
-	DECLARE_REFERENCE_PTR(memory_buffer_base<allocT>);
-
-  public:
-      memory_buffer_base();
-
-      memory_buffer_base (const void* ptr, size_t size);
-
-      virtual ~memory_buffer_base();
-
-
-      void push_data (const void* ptr, size_t size);
-
-      void read_data (void* ptr, size_t size);
-
-      bool eof () const;
-
-      void push_string (const string_type& str);
-
-      void push_line (const string_type& str);
-
-      void read_line (string_type& line);
-
-      void reinit (bool clear_memory = false);
-
-      size_t get_size () const;
-
-      bool empty () const;
-
-      void* get_data () const;
-
-      bool fill_with_file_content (sys_handle_t file);
-
-	  template<typename T>
-	  void read_data(T& val)
-	  {
-		  from_buffer(val, std::is_trivially_copyable<T>());
-	  }
-	  template<typename T>
-	  void push_data(const T& val)
-	  {
-		  to_buffer(val, std::is_trivially_copyable<T>());
-	  }
-	  template<typename T>
-	  T* get_buffer()
-	  {
-		  return get_buffer_internal(tl::type2type<T>());
-	  }
-  protected:
-
-      size_t current_read_;
-
-      size_t next_push_;
-
-      allocT allocator_;
-
-
-  private:
-	  template<typename T>
-	  T* get_buffer_internal(tl::type2type<T>)
-	  {
-		  return allocator_.get_buffer<T>();
-	  }
-	  template<typename T>
-	  void to_buffer(const T& val, std::true_type&)
-	  {
-		  push_data(&val, sizeof(T));
-	  }
-
+	same = 0,
+	little_edian = 1,
+	big_endian = 2
 };
-
 
 
 
@@ -170,64 +99,6 @@ public:
 
 };
 
-
-
-
-
-
-
-typedef memory_buffer_base< std_vector_allocator  > std_buffer;
-
-typedef pointers::reference<memory_buffer_base< std_vector_allocator> > std_buffer_ptr;
-
-
-
-
-
-
-template <class allocT>
-class std_strbuff : public memory_buffer_base<allocT>, 
-                    	public std::streambuf  
-{
-	DECLARE_REFERENCE_PTR(std_strbuff<allocT>);
-
-  public:
-      std_strbuff();
-
-      virtual ~std_strbuff();
-
-
-      char* pbase () const;
-
-      char* pptr () const;
-
-      char* epptr () const;
-
-      char* eback () const;
-
-      char* gptr () const;
-
-      char* egptr () const;
-
-
-  protected:
-	  virtual int_type overflow( int_type ch = traits_type::eof())
-	  {
-		  if(traits_type::not_eof(ch))
-		  {
-			  traits_type::char_type temp = traits_type::to_char_type(ch);
-			  this->push_data(&temp, sizeof(temp));
-		  }
-		  return ch;
-	  }
-
-  private:
-
-
-};
-
-
-typedef rx_reference<std_strbuff<memory::std_vector_allocator> > buffer_ptr;
 
 
 
@@ -343,195 +214,140 @@ class backward_simple_allocator
 typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
-// Parameterized Class rx::memory::memory_buffer_base 
 
-template <class allocT>
-memory_buffer_base<allocT>::memory_buffer_base()
-      : current_read_(0),
-        next_push_(0)
+
+
+
+template <class allocT, big_endian_type big_endian = same>
+class memory_buffer_base : public pointers::reference_object  
 {
-	allocator_.allocate(0);// default allocation
-}
+	DECLARE_REFERENCE_PTR(memory_buffer_base<allocT>);
 
-template <class allocT>
-memory_buffer_base<allocT>::memory_buffer_base (const void* ptr, size_t size)
-      : current_read_(0),
-        next_push_(0)
+  public:
+      memory_buffer_base();
+
+      memory_buffer_base (const void* ptr, size_t size);
+
+      virtual ~memory_buffer_base();
+
+
+      void push_data (const void* ptr, size_t size);
+
+      void read_data (void* ptr, size_t size);
+
+      bool eof () const;
+
+      void push_string (const string_type& str);
+
+      void push_line (const string_type& str);
+
+      void read_line (string_type& line);
+
+      void reinit (bool clear_memory = false);
+
+      size_t get_size () const;
+
+      bool empty () const;
+
+      void* get_data () const;
+
+      bool fill_with_file_content (sys_handle_t file);
+
+	  template<typename T>
+	  void read_data(T& val)
+	  {
+		  from_buffer(val, std::is_trivially_copyable<T>());
+	  }
+	  template<typename T>
+	  void push_data(const T& val)
+	  {
+		  to_buffer(val, std::is_trivially_copyable<T>());
+	  }
+	  template<typename T>
+	  T* get_buffer()
+	  {
+		  return get_buffer_internal(tl::type2type<T>());
+	  }
+  protected:
+
+      size_t current_read_;
+
+      size_t next_push_;
+
+      allocT allocator_;
+
+
+  private:
+	  template<typename T>
+	  T* get_buffer_internal(tl::type2type<T>)
+	  {
+		  return allocator_.get_buffer<T>();
+	  }
+	  template<typename T>
+	  void to_buffer(const T& val, std::true_type&)
+	  {
+		  push_data(&val, sizeof(T));
+	  }
+
+};
+
+
+
+
+
+
+template <class allocT,  big_endian_type big_endian = same>
+class std_strbuff : public memory_buffer_base<allocT, big_endian>, 
+                    	public std::streambuf  
 {
-	next_push_ = (int)size;
-	allocator_.allocate(size);
-	memcpy(allocator_.get_buffer<uint8_t>(), ptr, size);
-}
+	DECLARE_REFERENCE_PTR(std_strbuff<allocT>);
+
+  public:
+      std_strbuff();
+
+      virtual ~std_strbuff();
 
 
-template <class allocT>
-memory_buffer_base<allocT>::~memory_buffer_base()
-{
-}
+      char* pbase () const;
+
+      char* pptr () const;
+
+      char* epptr () const;
+
+      char* eback () const;
+
+      char* gptr () const;
+
+      char* egptr () const;
 
 
+  protected:
+	  virtual int_type overflow( int_type ch = traits_type::eof())
+	  {
+		  if(traits_type::not_eof(ch))
+		  {
+			  traits_type::char_type temp = traits_type::to_char_type(ch);
+			  this->push_data(&temp, sizeof(temp));
+		  }
+		  return ch;
+	  }
 
-template <class allocT>
-void memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
-{
-	while (next_push_ + size>allocator_.get_buffer_size())
-		allocator_.reallocate(next_push_ + size);
-	memcpy(&allocator_.get_buffer<uint8_t>()[next_push_], ptr, size);
-	next_push_ += size;
-}
-
-template <class allocT>
-void memory_buffer_base<allocT>::read_data (void* ptr, size_t size)
-{
-	if (current_read_ + size>next_push_)
-		throw std::exception("buffer end of file!");
-	memcpy(ptr, &allocator_.get_buffer<uint8_t>()[current_read_], size);
-	current_read_ += size;
-}
-
-template <class allocT>
-bool memory_buffer_base<allocT>::eof () const
-{
-	RX_ASSERT(current_read_ <= next_push_);// check first
-	return current_read_ >= next_push_;// just in case
-}
-
-template <class allocT>
-void memory_buffer_base<allocT>::push_string (const string_type& str)
-{
-	push_data(str.c_str(), str.size());
-}
-
-template <class allocT>
-void memory_buffer_base<allocT>::push_line (const string_type& str)
-{
-	push_data(str.c_str(), str.size());
-	push_data("\r\n", 2);
-}
-
-template <class allocT>
-void memory_buffer_base<allocT>::read_line (string_type& line)
-{
-	if (eof())
-		return;
-	char* buff = &allocator_.get_buffer<char>()[current_read_];
-	char* start = buff;
-	while (*buff!='\r' && *buff!='\n' && !eof())
-		buff++;
-	if (buff - start > 0)
-	{
-		current_read_ += (buff - start);
-		size_t len = (buff - start);
-		while ((*buff == '\r' || *buff == '\n') && !eof())
-		{
-			buff++;
-			current_read_++;
-		}
-		line.assign(start, len);
-	}
-}
-
-template <class allocT>
-void memory_buffer_base<allocT>::reinit (bool clear_memory)
-{
-	if (clear_memory)
-		allocator_.deallocate();
-	current_read_ = 0;
-	next_push_ = 0;
-}
-
-template <class allocT>
-size_t memory_buffer_base<allocT>::get_size () const
-{
-	return next_push_;
-}
-
-template <class allocT>
-bool memory_buffer_base<allocT>::empty () const
-{
-	return next_push_ == 0;
-}
-
-template <class allocT>
-void* memory_buffer_base<allocT>::get_data () const
-{
-  return allocator_.get_char_buffer();
-}
-
-template <class allocT>
-bool memory_buffer_base<allocT>::fill_with_file_content (sys_handle_t file)
-{
-	uint64_t sz = 0;
-	if (rx_file_get_size(file, &sz))
-	{
-		if (sz == 0)
-			return true;
-		// init buffer
-		current_read_ = 0;
-		next_push_ = (int)sz;
-		allocator_.reallocate((size_t)sz);
-		uint32_t readed = 0;
-		if (rx_file_read(file, allocator_.get_buffer<void>(), (uint32_t)sz, &readed) && readed == sz)
-		{
-			return true;
-		}
-	}
-	return false;
-}
+  private:
 
 
-// Parameterized Class rx::memory::std_strbuff 
-
-template <class allocT>
-std_strbuff<allocT>::std_strbuff()
-{
-}
+};
 
 
-template <class allocT>
-std_strbuff<allocT>::~std_strbuff()
-{
-}
+typedef rx_reference<std_strbuff<memory::std_vector_allocator> > buffer_ptr;
 
 
 
-template <class allocT>
-char* std_strbuff<allocT>::pbase () const
-{
-	return this->allocator_.get_char_buffer();
-}
 
-template <class allocT>
-char* std_strbuff<allocT>::pptr () const
-{
-	char* ret= &this->allocator_.get_char_buffer()[this->next_push_];
-	return ret;
-}
 
-template <class allocT>
-char* std_strbuff<allocT>::epptr () const
-{
-	return &this->allocator_.get_char_buffer()[this->allocator_.get_size()];
-}
 
-template <class allocT>
-char* std_strbuff<allocT>::eback () const
-{
-  return this->allocator_.get_char_buffer();
-}
+typedef memory_buffer_base< std_vector_allocator  > std_buffer;
 
-template <class allocT>
-char* std_strbuff<allocT>::gptr () const
-{
-  char* ret= &this->allocator_.get_char_buffer()[this->current_read_];
-  return ret;
-}
-
-template <class allocT>
-char* std_strbuff<allocT>::egptr () const
-{
-  return nullptr;
-}
+typedef pointers::reference<memory_buffer_base< std_vector_allocator> > std_buffer_ptr;
 
 
 // Parameterized Class rx::memory::backward_memory_buffer_base 
@@ -601,6 +417,197 @@ template <class allocT>
 void* backward_memory_buffer_base<allocT>::get_data () const
 {
 	return &allocator_.get_buffer<uint8_t>()[allocator_.size() - next_push_];
+}
+
+
+// Parameterized Class rx::memory::memory_buffer_base 
+
+template <class allocT, big_endian_type big_endian>
+memory_buffer_base<allocT,big_endian>::memory_buffer_base()
+      : current_read_(0),
+        next_push_(0)
+{
+	allocator_.allocate(0);// default allocation
+}
+
+template <class allocT, big_endian_type big_endian>
+memory_buffer_base<allocT,big_endian>::memory_buffer_base (const void* ptr, size_t size)
+      : current_read_(0),
+        next_push_(0)
+{
+	next_push_ = (int)size;
+	allocator_.allocate(size);
+	memcpy(allocator_.get_buffer<uint8_t>(), ptr, size);
+}
+
+
+template <class allocT, big_endian_type big_endian>
+memory_buffer_base<allocT,big_endian>::~memory_buffer_base()
+{
+}
+
+
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::push_data (const void* ptr, size_t size)
+{
+	while (next_push_ + size>allocator_.get_buffer_size())
+		allocator_.reallocate(next_push_ + size);
+	memcpy(&allocator_.get_buffer<uint8_t>()[next_push_], ptr, size);
+	next_push_ += size;
+}
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::read_data (void* ptr, size_t size)
+{
+	if (current_read_ + size>next_push_)
+		throw std::exception("buffer end of file!");
+	memcpy(ptr, &allocator_.get_buffer<uint8_t>()[current_read_], size);
+	current_read_ += size;
+}
+
+template <class allocT, big_endian_type big_endian>
+bool memory_buffer_base<allocT,big_endian>::eof () const
+{
+	RX_ASSERT(current_read_ <= next_push_);// check first
+	return current_read_ >= next_push_;// just in case
+}
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::push_string (const string_type& str)
+{
+	push_data(str.c_str(), str.size());
+}
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::push_line (const string_type& str)
+{
+	push_data(str.c_str(), str.size());
+	push_data("\r\n", 2);
+}
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::read_line (string_type& line)
+{
+	if (eof())
+		return;
+	char* buff = &allocator_.get_buffer<char>()[current_read_];
+	char* start = buff;
+	while (*buff!='\r' && *buff!='\n' && !eof())
+		buff++;
+	if (buff - start > 0)
+	{
+		current_read_ += (buff - start);
+		size_t len = (buff - start);
+		while ((*buff == '\r' || *buff == '\n') && !eof())
+		{
+			buff++;
+			current_read_++;
+		}
+		line.assign(start, len);
+	}
+}
+
+template <class allocT, big_endian_type big_endian>
+void memory_buffer_base<allocT,big_endian>::reinit (bool clear_memory)
+{
+	if (clear_memory)
+		allocator_.deallocate();
+	current_read_ = 0;
+	next_push_ = 0;
+}
+
+template <class allocT, big_endian_type big_endian>
+size_t memory_buffer_base<allocT,big_endian>::get_size () const
+{
+	return next_push_;
+}
+
+template <class allocT, big_endian_type big_endian>
+bool memory_buffer_base<allocT,big_endian>::empty () const
+{
+	return next_push_ == 0;
+}
+
+template <class allocT, big_endian_type big_endian>
+void* memory_buffer_base<allocT,big_endian>::get_data () const
+{
+  return allocator_.get_char_buffer();
+}
+
+template <class allocT, big_endian_type big_endian>
+bool memory_buffer_base<allocT,big_endian>::fill_with_file_content (sys_handle_t file)
+{
+	uint64_t sz = 0;
+	if (rx_file_get_size(file, &sz))
+	{
+		if (sz == 0)
+			return true;
+		// init buffer
+		current_read_ = 0;
+		next_push_ = (int)sz;
+		allocator_.reallocate((size_t)sz);
+		uint32_t readed = 0;
+		if (rx_file_read(file, allocator_.get_buffer<void>(), (uint32_t)sz, &readed) && readed == sz)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
+// Parameterized Class rx::memory::std_strbuff 
+
+template <class allocT,  big_endian_type big_endian>
+std_strbuff<allocT,big_endian>::std_strbuff()
+{
+}
+
+
+template <class allocT,  big_endian_type big_endian>
+std_strbuff<allocT,big_endian>::~std_strbuff()
+{
+}
+
+
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::pbase () const
+{
+	return this->allocator_.get_char_buffer();
+}
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::pptr () const
+{
+	char* ret= &this->allocator_.get_char_buffer()[this->next_push_];
+	return ret;
+}
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::epptr () const
+{
+	return &this->allocator_.get_char_buffer()[this->allocator_.get_size()];
+}
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::eback () const
+{
+  return this->allocator_.get_char_buffer();
+}
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::gptr () const
+{
+  char* ret= &this->allocator_.get_char_buffer()[this->current_read_];
+  return ret;
+}
+
+template <class allocT,  big_endian_type big_endian>
+char* std_strbuff<allocT,big_endian>::egptr () const
+{
+  return nullptr;
 }
 
 
