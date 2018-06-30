@@ -563,7 +563,6 @@ public:
 
 void destroy_value_storage(rx_value_storage& storage, rx_value_t type);
 
-class const_values_storage;
 
 
 

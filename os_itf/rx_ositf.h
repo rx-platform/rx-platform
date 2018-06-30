@@ -107,7 +107,9 @@ extern "C" {
 	void* rx_allocate_os_memory(size_t size);
 	void rx_deallocate_os_memory(void* p, size_t size);
 
-
+	uint16_t rx_swap_2bytes(uint16_t val);
+	uint32_t rx_swap_4bytes(uint32_t val);
+	uint64_t rx_swap_8bytes(uint64_t val);
 
 	uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val);
 	uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val);

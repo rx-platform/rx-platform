@@ -54,6 +54,7 @@
 #include <uuid/uuid.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <byteswap.h>
 
 
 #ifdef __cplusplus
@@ -1692,6 +1693,18 @@ extern "C" {
     }
 
 
+	uint16_t rx_swap_2bytes(uint16_t val)
+	{
+		return bswap_16(val);
+	}
+	uint32_t rx_swap_4bytes(uint32_t val)
+	{
+		return bswap_32(val);
+	}
+	uint64_t rx_swap_8bytes(uint64_t val)
+	{
+		return bswap_64(val);
+	}
 
 	uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
 	{

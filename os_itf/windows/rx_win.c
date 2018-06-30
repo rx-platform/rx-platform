@@ -232,6 +232,19 @@ void* rx_allocate_thread_memory(size_t size)
 
 
 
+uint16_t rx_swap_2bytes(uint16_t val)
+{
+	return _byteswap_ushort(val);
+}
+uint32_t rx_swap_4bytes(uint32_t val)
+{
+	return _byteswap_ulong(val);
+}
+uint64_t rx_swap_8bytes(uint64_t val)
+{
+	return _byteswap_uint64(val);
+}
+
 uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
 {
 	return (uint32_t)InterlockedAdd((LONG*)val, add);

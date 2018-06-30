@@ -38,8 +38,74 @@ namespace rx {
 
 namespace memory {
 
+template<>
+bool rx_byte_swap(bool val)
+{
+	return val;
+}
+template<>
+int8_t rx_byte_swap(int8_t val)
+{
+	return val;
+}
+template<>
+uint8_t rx_byte_swap(uint8_t val)
+{
+	return val;
+}
+template<>
+int16_t rx_byte_swap(int16_t val)
+{
+	return rx_swap_2bytes(val);
+}
+template<>
+uint16_t rx_byte_swap(uint16_t val)
+{
+	return rx_swap_2bytes(val);
+}
+template<>
+int32_t rx_byte_swap(int32_t val)
+{
+	return rx_swap_4bytes(val);
+}
+template<>
+uint32_t rx_byte_swap(uint32_t val)
+{
+	return rx_swap_4bytes(val);
+}
+template<>
+int64_t rx_byte_swap(int64_t val)
+{
+	return rx_swap_8bytes(val);
+}
+template<>
+uint64_t rx_byte_swap(uint64_t val)
+{
+	return rx_swap_8bytes(val);
+}
+template<>
+float rx_byte_swap(float val)
+{
+	uint32_t temp = *((uint32_t*)&val);
+	temp = rx_swap_4bytes(temp);
+	return *((float*)&temp);
+}
+template<>
+double rx_byte_swap(double val)
+{
+	uint64_t temp = *((uint64_t*)&val);
+	temp = rx_swap_8bytes(temp);
+	return *((double*)&temp);
+}
+
+
 // Class rx::memory::std_vector_allocator 
 
+
+byte_order_type get_platform_byte_order()
+{
+	return rx_big_endian == 0 ? intel_byte_order : network_byte_order;
+}
 ref_counting_type std_vector_allocator::g_memory_consuption;
 
 std_vector_allocator::std_vector_allocator()

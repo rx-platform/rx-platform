@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -37,14 +37,12 @@
 // rx_mem
 #include "lib/rx_mem.h"
 
-using rx::memory::big_endian_type;
+using rx::memory::byte_order_type;
 
 
 namespace rx_platform {
 
 namespace serialization {
-using namespace rx::values;
-
 
 
 
@@ -228,7 +226,7 @@ class json_writter : public rx::base_meta_writter
 
 
 
-template <typename allocT, big_endian_type big_endian>
+template <typename allocT, bool swap_bytes>
 class binary_reader : public rx::base_meta_reader  
 {
 	struct binray_object
@@ -314,7 +312,7 @@ class binary_reader : public rx::base_meta_reader
 
       string_type result_;
 
-      rx::memory::memory_buffer_base<rx::memory::std_buffer, rx::memory::same> buffer_;
+      rx::memory::memory_buffer_base<rx::memory::std_buffer, false> buffer_;
 
 
 };
@@ -325,7 +323,7 @@ class binary_reader : public rx::base_meta_reader
 
 
 
-template <typename allocT, big_endian_type big_endian>
+template <typename allocT, bool swap_bytes>
 class binary_writter : public rx::base_meta_writter  
 {
 	struct json_write_stack_data
@@ -423,274 +421,363 @@ class binary_writter : public rx::base_meta_writter
 
       int type_;
 
-      rx::memory::memory_buffer_base<rx::memory::std_buffer, rx::memory::same> buffer_;
+      rx::memory::memory_buffer_base<rx::memory::std_buffer, false> buffer_;
 
 
 };
 
 
-// Parameterized Class rx_platform::serialization::binary_reader
+// Parameterized Class rx_platform::serialization::binary_reader 
 
-template <typename allocT, big_endian_type big_endian>
-binary_reader<allocT,big_endian>::~binary_reader()
+template <typename allocT, bool swap_bytes>
+binary_reader<allocT,swap_bytes>::~binary_reader()
 {
 }
 
 
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_id (const char* name, rx_node_id& id)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_id (const char* name, rx_node_id& id)
+{
+	uint8_t encoding;
+	buffer_.read_data(encoding);
+	switch (encoding & 0xf)
+	{
+	case 0:
+	{// two uint8_ts
+		uint8_t val;
+		buffer_.read_data(val);
+		buffer_.read_data(val);
+		id = rx_node_id(val);
+	}
+	break;
+	case 1:
+	{// four uint8_ts
+		uint8_t namesp;
+		uint16_t val;
+		buffer_.read_data(namesp);
+		buffer_.read_data(val);
+		id = rx_node_id(val, namesp);
+	}
+	break;
+	case 2:
+	{// full numeric uint8_ts
+		uint16_t namesp;
+		uint32_t val;
+		buffer_.read_data(namesp);
+		buffer_.read_data(val);
+		id = rx_node_id(val, namesp);
+	}
+	break;
+	case 3:
+	{// string value
+		uint16_t namesp;
+		string_type val;
+		buffer_.read_data(namesp);
+		buffer_.read_data(val);
+		id = rx_node_id(val.c_str(), namesp);
+	}
+	break;
+	case 4:
+	{// uuid value
+		uint16_t namesp;
+		rx_uuid_t val;
+		buffer_.read_data(namesp);
+		buffer_.read_data(val);
+		id = rx_node_id(val, namesp);
+	}
+	break;
+	case 5:
+	{// binary value
+		uint16_t namesp;
+		byte_string val;
+		buffer_.read_data(namesp);
+		buffer_.read_data(val);
+		id = rx_node_id(val, namesp);
+		return false;// not implemented yet
+					 //id=base::node_id(val,namesp);
+	}
+	break;
+	default:
+		return false;// unknown encoding value
+	}
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_string (const char* name, string_type& str)
+{
+	buffer_.read_data(str);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_bool (const char* name, bool& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_double (const char* name, double& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_time (const char* name, rx_time_struct_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_uuid (const char* name, rx_uuid_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_int (const char* name, int& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_uint (const char* name, uint32_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::start_array (const char* name)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_string (const char* name, string_type& str)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::array_end ()
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_bool (const char* name, bool& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_header (int& type)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_double (const char* name, double& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_footer ()
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_time (const char* name, rx_time_struct_t& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::start_object (const char* name)
+{
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::end_object ()
+{
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_byte (const char* name, uint8_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_value (const char* name, rx_value& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_int64 (const char* name, int64_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_uint64 (const string_type& name, uint64_t& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_bytes (const char* name, byte_string& val)
+{
+	buffer_.read_data(val);
+	return true;
+}
+
+template <typename allocT, bool swap_bytes>
+Json::Value& binary_reader<allocT,swap_bytes>::get_current_value (int& index)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_uuid (const char* name, rx_uuid_t& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::parse_data (const string_type& data)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_int (const char* name, int& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_uint (const char* name, uint32_t& val)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::start_array (const char* name)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_version (const char* name, uint32_t& val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::array_end ()
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_header (int& type)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_footer ()
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::start_object (const char* name)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::end_object ()
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_byte (const char* name, uint8_t& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_value (const char* name, rx_value& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_int64 (const char* name, int64_t& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_uint64 (const string_type& name, uint64_t& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_bytes (const char* name, byte_string& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-Json::Value& binary_reader<allocT,big_endian>::get_current_value (int& index)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::parse_data (const string_type& data)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::read_version (const char* name, uint32_t& val)
-{
-}
-
-template <typename allocT, big_endian_type big_endian>
-bool binary_reader<allocT,big_endian>::parse_version_string (uint32_t& result, const string_type& version)
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::parse_version_string (uint32_t& result, const string_type& version)
 {
 }
 
 
-// Parameterized Class rx_platform::serialization::binary_writter
+// Parameterized Class rx_platform::serialization::binary_writter 
 
-template <typename allocT, big_endian_type big_endian>
-binary_writter<allocT,big_endian>::binary_writter (int version)
+template <typename allocT, bool swap_bytes>
+binary_writter<allocT,swap_bytes>::binary_writter (int version)
 {
 }
 
 
-template <typename allocT, big_endian_type big_endian>
-binary_writter<allocT,big_endian>::~binary_writter()
+template <typename allocT, bool swap_bytes>
+binary_writter<allocT,swap_bytes>::~binary_writter()
 {
 }
 
 
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_id (const char* name, const rx_node_id& id)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_id (const char* name, const rx_node_id& id)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_string (const char* name, const char* str)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_string (const char* name, const char* str)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_bool (const char* name, bool val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_bool (const char* name, bool val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_double (const char* name, double val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_double (const char* name, double val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_time (const char* name, const rx_time_struct_t& val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_time (const char* name, const rx_time_struct_t& val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_uuid (const char* name, const rx_uuid_t& val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_uuid (const char* name, const rx_uuid_t& val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_int (const char* name, int val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_int (const char* name, int val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_uint (const char* name, uint32_t val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_uint (const char* name, uint32_t val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::start_array (const char* name, size_t size)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::start_array (const char* name, size_t size)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::end_array ()
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::end_array ()
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_header (int type)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_header (int type)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_footer ()
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_footer ()
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::start_object (const char* name)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::start_object (const char* name)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::end_object ()
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::end_object ()
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_byte (const char* name, uint8_t val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_byte (const char* name, uint8_t val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_value (const char* name, const rx_value& val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_value (const char* name, const rx_value& val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_int64 (const char* name, int64_t val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_int64 (const char* name, int64_t val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_uint64 (const char* name, uint64_t val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_uint64 (const char* name, uint64_t val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_bytes (const char* name, const uint8_t* val, size_t size)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-Json::Value& binary_writter<allocT,big_endian>::get_current_value (bool& is_array)
+template <typename allocT, bool swap_bytes>
+Json::Value& binary_writter<allocT,swap_bytes>::get_current_value (bool& is_array)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::get_string (string_type& result, bool decorated)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::get_string (string_type& result, bool decorated)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::write_version (const char* name, uint32_t val)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::write_version (const char* name, uint32_t val)
 {
 }
 
-template <typename allocT, big_endian_type big_endian>
-bool binary_writter<allocT,big_endian>::get_version_string (string_type& result, uint32_t version)
+template <typename allocT, bool swap_bytes>
+bool binary_writter<allocT,swap_bytes>::get_version_string (string_type& result, uint32_t version)
 {
 }
 
