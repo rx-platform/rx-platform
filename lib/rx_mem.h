@@ -114,15 +114,62 @@ class memory_buffer_base : public pointers::reference_object
 
       bool fill_with_file_content (sys_handle_t file);
 
+      void dump_to_stream (std::ostream& out);
+
 	  template<typename T>
 	  void read_data(T& val)
 	  {
 		  from_buffer(val, std::is_fundamental<T>(), std::is_trivially_copyable<T>());
 	  }
+	  template<>
+	  void read_data(bool& val)
+	  {
+		  uint8_t temp;
+		  read_data(temp);
+		  val = temp != 0;
+	  }
+	  template<>
+	  void read_data(string_type& val)
+	  {
+		  uint32_t size;
+		  read_data(size);
+		  val.assign(size, '\0');
+		  read_data(&val[0], size);
+	  }
+	  template<>
+	  void read_data(byte_string& val)
+	  {
+		  uint32_t size;
+		  read_data(size);
+		  val.assign(size, '\0');
+		  read_data(&val[0], size);
+	  }
+	  template<>
+	  void read_data(rx_uuid_t& val)
+	  {
+		  read_data(&val, sizeof(rx_uuid_t));
+	  }
 	  template<typename T>
 	  void push_data(const T& val)
 	  {
 		  to_buffer(val, std::is_fundamental<T>(),  std::is_trivially_copyable<T>());
+	  }
+	  template<>
+	  void push_data(const bool& val)
+	  {
+		  uint8_t temp = val ? 0xff : 0x00;
+		  push_data(temp);
+	  }
+	  template<>
+	  void push_data(const string_type& val)
+	  {
+		  push_data((uint32_t)val.size());
+		  push_data(val.c_str(), val.size());
+	  }
+	  template<>
+	  void push_data(const rx_uuid_t& val)
+	  {
+		  push_data(&val,sizeof(rx_uuid_t));
 	  }
 	  template<typename T>
 	  T* get_buffer()
@@ -182,7 +229,7 @@ class memory_buffer_base : public pointers::reference_object
 		  read_data(&val, sizeof(T));
 		  if (swap_bytes)
 		  {
-			  val.swap_bytes();
+			  val.swap_bytes<T>(val);
 		  }
 	  }
 
@@ -545,6 +592,31 @@ bool memory_buffer_base<allocT,swap_bytes>::fill_with_file_content (sys_handle_t
 		}
 	}
 	return false;
+}
+
+template <class allocT, bool swap_bytes>
+void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
+{
+	bool show32_addr = (next_push_ >= std::numeric_limits<uint16_t>::max());
+	out << "\r\n";
+	out.setf(std::ios::hex, std::ios::basefield);
+	out << std::setfill('0');
+	byte* buffer = get_buffer<byte>();
+	for (size_t addr = 0; addr < get_size(); addr += 8)
+	{
+		out << std::setw(show32_addr ? 8 : 4) << addr << " ";
+		for (size_t i = 0; i < 8;  i++)
+		{
+			if (addr * 8 + i > get_size())
+				out << "00 ";
+			else
+				out << std::setw(2) << (size_t)buffer[addr * 8 + i] << " ";
+		}
+		out << "\r\n";
+	}
+	out.unsetf(std::ios::hex);
+
+	out << "\r\n";
 }
 
 

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -52,7 +52,7 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 {
 	rx_platform::serialization::json_writter writter;
 
-	writter.write_header(STREAMING_TYPE_OBJECT);
+	writter.write_header(STREAMING_TYPE_OBJECT, 0);
 
 	bool out = whose->serialize_definition(writter, STREAMING_TYPE_OBJECT);
 
@@ -75,7 +75,7 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 
 
 
-class object_data_type 
+class object_data_type
 {
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 	//typedef std::vector<int> programs_type;

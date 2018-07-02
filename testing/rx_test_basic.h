@@ -43,7 +43,7 @@ namespace basic_tests {
 namespace lib_test {
 
 
-	
+
 
 
 class library_test_category : public test_category  
@@ -113,6 +113,38 @@ basic testing for platform values.");
 
   private:
 
+      bool test_serialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_writter& writter, std::ostream& out);
+
+      bool test_deserialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_reader& reader, std::ostream& out);
+
+
+
+};
+
+
+
+
+
+
+class external_interfaces_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(external_interfaces_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+basic testing for Ethernet and RS232/485 port resources on this staffroom.");
+
+  public:
+      external_interfaces_test();
+
+      virtual ~external_interfaces_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
 
 };
 
@@ -171,36 +203,6 @@ basic testing of callback capabilities.");
 
 
 } // namespace meta_test
-
-namespace lib_test {
-
-
-
-
-class external_interfasec_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(external_interfasec_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-basic testing for Ethernet and RS232/485 port resources on this staffroom.");
-
-  public:
-      external_interfasec_test();
-
-      virtual ~external_interfasec_test();
-
-
-      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace lib_test
 } // namespace basic_tests
 } // namespace testing
 

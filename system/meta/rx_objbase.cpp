@@ -448,16 +448,16 @@ void object_runtime::get_class_info (string_type& class_name, string_type& conso
 bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 {
 
-	rx_platform::serialization::json_writter writter;
+	rx_platform::serialization::json_writer writer;
 
-	writter.write_header(STREAMING_TYPE_OBJECT);
+	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
-	serialize_definition(writter, STREAMING_TYPE_OBJECT);
+	serialize_definition(writer, STREAMING_TYPE_OBJECT);
 
-	writter.write_footer();
+	writer.write_footer();
 
 	string_type result;
-	bool out = writter.get_string(result, true);
+	bool out = writer.get_string(result, true);
 
 	if (out)
 		def << result;

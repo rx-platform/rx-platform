@@ -282,7 +282,7 @@ checkable_data::checkable_data (const string_type& name, const rx_node_id& id, c
 
 bool checkable_data::serialize_node (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const
 {
-	if (!stream.write_header(type))
+	if (!stream.write_header(type, 0))
 		return false;
 
 	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
@@ -308,7 +308,7 @@ bool checkable_data::check_in (base_meta_reader& stream)
 
 bool checkable_data::check_out (base_meta_writter& stream) const
 {
-	if (!stream.write_header(STREAMING_TYPE_CHECKOUT))
+	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
 		return false;
 
 	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));

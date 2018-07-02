@@ -224,6 +224,8 @@ public:
 
 	rx_node_id(const rx_uuid_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
 
+	rx_node_id(const byte_string& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
+
 	rx_node_id(rx_node_id&& right)  noexcept;
 
 	~rx_node_id();
@@ -452,6 +454,7 @@ public:
 	bool operator<(const rx_time_struct& right) const;
 	bool operator<=(const rx_time_struct& right) const;
 
+	void swap_bytes() const;
 
 	void set_as_span(uint32_t days);
 	uint32_t get_as_span() const;

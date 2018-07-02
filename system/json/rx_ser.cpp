@@ -685,21 +685,21 @@ bool json_reader::parse_version_string (uint32_t& result, const string_type& ver
 }
 
 
-// Class rx_platform::serialization::json_writter 
+// Class rx_platform::serialization::json_writer 
 
-json_writter::json_writter (int version)
+json_writer::json_writer (int version)
 	: base_meta_writter(version)
 {
 }
 
 
-json_writter::~json_writter()
+json_writer::~json_writer()
 {
 }
 
 
 
-bool json_writter::write_id (const char* name, const rx_node_id& id)
+bool json_writer::write_id (const char* name, const rx_node_id& id)
 {
 	string_type buff;
 	id.to_string(buff);
@@ -714,7 +714,7 @@ bool json_writter::write_id (const char* name, const rx_node_id& id)
 	return true;
 }
 
-bool json_writter::write_string (const char* name, const char* str)
+bool json_writer::write_string (const char* name, const char* str)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -726,7 +726,7 @@ bool json_writter::write_string (const char* name, const char* str)
 	return true;
 }
 
-bool json_writter::write_bool (const char* name, bool val)
+bool json_writer::write_bool (const char* name, bool val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -738,7 +738,7 @@ bool json_writter::write_bool (const char* name, bool val)
 	return true;
 }
 
-bool json_writter::write_double (const char* name, double val)
+bool json_writer::write_double (const char* name, double val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -750,7 +750,7 @@ bool json_writter::write_double (const char* name, double val)
 	return true;
 }
 
-bool json_writter::write_time (const char* name, const rx_time_struct_t& val)
+bool json_writer::write_time (const char* name, const rx_time_struct_t& val)
 {
 	rx_time tval(val);
 	string_type str = tval.get_IEC_string();
@@ -765,7 +765,7 @@ bool json_writter::write_time (const char* name, const rx_time_struct_t& val)
 	return true;
 }
 
-bool json_writter::write_uuid (const char* name, const rx_uuid_t& val)
+bool json_writer::write_uuid (const char* name, const rx_uuid_t& val)
 {
 	string_type buff;
 	rx_uuid vval(val);
@@ -781,7 +781,7 @@ bool json_writter::write_uuid (const char* name, const rx_uuid_t& val)
 	return true;
 }
 
-bool json_writter::write_int (const char* name, int val)
+bool json_writer::write_int (const char* name, int val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -793,7 +793,7 @@ bool json_writter::write_int (const char* name, int val)
 	return true;
 }
 
-bool json_writter::write_uint (const char* name, uint32_t val)
+bool json_writer::write_uint (const char* name, uint32_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -805,7 +805,7 @@ bool json_writter::write_uint (const char* name, uint32_t val)
 	return true;
 }
 
-bool json_writter::start_array (const char* name, size_t size)
+bool json_writer::start_array (const char* name, size_t size)
 {
 	json_write_stack_data data;
 	data.is_array = true;
@@ -816,7 +816,7 @@ bool json_writter::start_array (const char* name, size_t size)
 	return true;
 }
 
-bool json_writter::end_array ()
+bool json_writer::end_array ()
 {
 	if (stack_.empty())
 		return false;
@@ -838,11 +838,11 @@ bool json_writter::end_array ()
 	return true;
 }
 
-bool json_writter::write_header (int type)
+bool json_writer::write_header (int type, size_t size)
 {
 	type_ = type;
 	string_type ver;
-	if (!get_version_string(ver, get_version()))
+	if (!get_version_string(ver, (uint32_t)get_version()))
 		return false;
 
 	envelope_["sversion"] = ver;
@@ -894,7 +894,7 @@ bool json_writter::write_header (int type)
 	return true;
 }
 
-bool json_writter::write_footer ()
+bool json_writer::write_footer ()
 {
 	if (stack_.empty())
 		return false;
@@ -905,7 +905,7 @@ bool json_writter::write_footer ()
 	return true;
 }
 
-bool json_writter::start_object (const char* name)
+bool json_writer::start_object (const char* name)
 {
 	json_write_stack_data data;
 	data.is_array = false;
@@ -916,7 +916,7 @@ bool json_writter::start_object (const char* name)
 	return true;
 }
 
-bool json_writter::end_object ()
+bool json_writer::end_object ()
 {
 	if (stack_.empty())
 		return false;
@@ -938,7 +938,7 @@ bool json_writter::end_object ()
 	return true;
 }
 
-bool json_writter::write_byte (const char* name, uint8_t val)
+bool json_writer::write_byte (const char* name, uint8_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -950,7 +950,7 @@ bool json_writter::write_byte (const char* name, uint8_t val)
 	return true;
 }
 
-bool json_writter::write_value (const char* name, const rx_value& val)
+bool json_writer::write_value (const char* name, const rx_value& val)
 {
 	if (!start_object(name))
 		return false;
@@ -964,7 +964,7 @@ bool json_writter::write_value (const char* name, const rx_value& val)
 	return true;
 }
 
-bool json_writter::write_int64 (const char* name, int64_t val)
+bool json_writer::write_int64 (const char* name, int64_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -976,7 +976,7 @@ bool json_writter::write_int64 (const char* name, int64_t val)
 	return true;
 }
 
-bool json_writter::write_uint64 (const char* name, uint64_t val)
+bool json_writer::write_uint64 (const char* name, uint64_t val)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -988,7 +988,7 @@ bool json_writter::write_uint64 (const char* name, uint64_t val)
 	return true;
 }
 
-bool json_writter::write_bytes (const char* name, const uint8_t* val, size_t size)
+bool json_writer::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
 	char buff[8];
 	string_type temp;
@@ -1000,7 +1000,7 @@ bool json_writter::write_bytes (const char* name, const uint8_t* val, size_t siz
 	return write_string(name, temp.c_str());
 }
 
-Json::Value& json_writter::get_current_value (bool& is_array)
+Json::Value& json_writer::get_current_value (bool& is_array)
 {
 	if (stack_.empty())
 	{
@@ -1015,7 +1015,7 @@ Json::Value& json_writter::get_current_value (bool& is_array)
 	}
 }
 
-bool json_writter::get_string (string_type& result, bool decorated)
+bool json_writer::get_string (string_type& result, bool decorated)
 {
 	if (decorated)
 	{
@@ -1030,7 +1030,7 @@ bool json_writter::get_string (string_type& result, bool decorated)
 	return true;
 }
 
-bool json_writter::write_version (const char* name, uint32_t val)
+bool json_writer::write_version (const char* name, uint32_t val)
 {
 	string_type str;
 	if (!get_version_string(str, val))
@@ -1038,7 +1038,7 @@ bool json_writter::write_version (const char* name, uint32_t val)
 	return write_string(name, str.c_str());
 }
 
-bool json_writter::get_version_string (string_type& result, uint32_t version)
+bool json_writer::get_version_string (string_type& result, uint32_t version)
 {
 	int major = (version >> 16);
 	int minor = (version & 0xffff);

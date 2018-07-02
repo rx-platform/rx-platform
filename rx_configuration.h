@@ -91,3 +91,5 @@
 
 //Storage related stuff
 #define RX_FILE_STORAGE_FOLDER "storage"
+
+#define RX_TESTING_CON_LINE "\r\n=================================="

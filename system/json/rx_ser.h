@@ -139,7 +139,7 @@ class json_reader : public rx::base_meta_reader
 
 
 
-class json_writter : public rx::base_meta_writter  
+class json_writer : public rx::base_meta_writter  
 {
 	struct json_write_stack_data
 	{
@@ -151,9 +151,9 @@ class json_writter : public rx::base_meta_writter
 	typedef std::stack<json_write_stack_data> stack_type;
 
   public:
-      json_writter (int version = RX_CURRENT_SERIALIZE_VERSION);
+      json_writer (int version = RX_CURRENT_SERIALIZE_VERSION);
 
-      virtual ~json_writter();
+      virtual ~json_writer();
 
 
       bool write_id (const char* name, const rx_node_id& id);
@@ -176,7 +176,7 @@ class json_writter : public rx::base_meta_writter
 
       bool end_array ();
 
-      bool write_header (int type);
+      bool write_header (int type, size_t size);
 
       bool write_footer ();
 
@@ -229,23 +229,18 @@ class json_writter : public rx::base_meta_writter
 template <typename allocT, bool swap_bytes>
 class binary_reader : public rx::base_meta_reader  
 {
-	struct binray_object
-	{
-
-	};
+	typedef rx::memory::memory_buffer_base<allocT, false> buffer_type;
 	struct binary_read_stack_data
 	{
 	public:
-		binary_read_stack_data(binray_object vval)
-			: value(vval)
-		{
-		}
-		binray_object value;
-		int index;
+		int array_size;
+		int object_size;
 	};
 	typedef std::stack<binary_read_stack_data, std::vector<binary_read_stack_data> > stack_type;
 
   public:
+      binary_reader (buffer_type& buffer);
+
       virtual ~binary_reader();
 
 
@@ -287,36 +282,27 @@ class binary_reader : public rx::base_meta_reader
 
       bool read_bytes (const char* name, byte_string& val);
 
-      bool parse_data (const string_type& data);
-
       bool read_version (const char* name, uint32_t& val);
+
+      void dump_to_stream (std::ostream& out);
 
 
   protected:
 
   private:
 
-      Json::Value& get_current_value (int& index);
-
-      bool safe_read_int (int idx, const string_type& name, int val, const Json::Value& object);
-
-      bool safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object);
-
-      bool parse_version_string (uint32_t& result, const string_type& version);
-
-
 
       stack_type stack_;
 
-      Json::Value envelope_;
+      buffer_type& buffer_;
 
-      string_type result_;
-
-      rx::memory::memory_buffer_base<rx::memory::std_buffer, false> buffer_;
+      int type_;
 
 
 };
 
+
+typedef typename binary_reader<memory::std_vector_allocator, false> std_buffer_reader;
 
 
 
@@ -324,8 +310,9 @@ class binary_reader : public rx::base_meta_reader
 
 
 template <typename allocT, bool swap_bytes>
-class binary_writter : public rx::base_meta_writter  
+class binary_writer : public rx::base_meta_writter  
 {
+	typedef rx::memory::memory_buffer_base<allocT, false> buffer_type;
 	struct json_write_stack_data
 	{
 	public:
@@ -336,9 +323,9 @@ class binary_writter : public rx::base_meta_writter
 	typedef std::stack<json_write_stack_data> stack_type;
 
   public:
-      binary_writter (int version = RX_CURRENT_SERIALIZE_VERSION);
+      binary_writer (buffer_type& buffer, int version = RX_CURRENT_SERIALIZE_VERSION);
 
-      virtual ~binary_writter();
+      virtual ~binary_writer();
 
 
       bool write_id (const char* name, const rx_node_id& id);
@@ -361,7 +348,7 @@ class binary_writter : public rx::base_meta_writter
 
       bool end_array ();
 
-      bool write_header (int type);
+      bool write_header (int type, size_t size);
 
       bool write_footer ();
 
@@ -379,9 +366,9 @@ class binary_writter : public rx::base_meta_writter
 
       bool write_bytes (const char* name, const uint8_t* val, size_t size);
 
-      bool get_string (string_type& result, bool decorated);
-
       bool write_version (const char* name, uint32_t val);
+
+      void dump_to_stream (std::ostream& out);
 
 		bool is_string()
 		{
@@ -397,7 +384,7 @@ class binary_writter : public rx::base_meta_writter
 		{
 			T value;
 		};
-		binary_writter& operator >> (rx_uuid& val)
+		binary_writer& operator >> (rx_uuid& val)
 		{
 			buffer_.read_data(&val,sizeof(val));
 			return *this;
@@ -407,27 +394,26 @@ class binary_writter : public rx::base_meta_writter
 
   private:
 
-      Json::Value& get_current_value (bool& is_array);
-
-      bool get_version_string (string_type& result, uint32_t version);
-
-
 
       stack_type stack_;
 
-      Json::Value envelope_;
-
-      string_type result_;
-
       int type_;
 
-      rx::memory::memory_buffer_base<rx::memory::std_buffer, false> buffer_;
+      buffer_type& buffer_;
 
 
 };
 
+typedef typename binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 
 // Parameterized Class rx_platform::serialization::binary_reader 
+
+template <typename allocT, bool swap_bytes>
+binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer)
+      : buffer_(buffer)
+{
+}
+
 
 template <typename allocT, bool swap_bytes>
 binary_reader<allocT,swap_bytes>::~binary_reader()
@@ -528,7 +514,7 @@ bool binary_reader<allocT,swap_bytes>::read_double (const char* name, double& va
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_time (const char* name, rx_time_struct_t& val)
 {
-	buffer_.read_data(val);
+	buffer_.read_data(val.t_value);
 	return true;
 }
 
@@ -556,21 +542,89 @@ bool binary_reader<allocT,swap_bytes>::read_uint (const char* name, uint32_t& va
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::start_array (const char* name)
 {
+	uint32_t size;
+	buffer_.read_data(size);
+	stack_.emplace(binary_read_stack_data{ (int)size,-1 });
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::array_end ()
 {
+	if (stack_.empty())
+		return true;// no arrays here!!!
+	binary_read_stack_data& last = stack_.top();
+	if (last.array_size == 0)
+	{// array end
+	 // remove last array
+		stack_.pop();
+		return true;
+	}
+	else
+	{
+		last.array_size = last.array_size - 1;
+		return false;
+	}
 }
 
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_header (int& type)
 {
+	bool ret = false;
+	uint32_t version = 0;
+	int idx = -1;
+	if (read_version("sversion", version))
+	{
+		set_version(version);
+		buffer_.read_data(type_);
+		switch (type_)
+		{
+		case STREAMING_TYPE_CLASS:
+            ret=true;
+            break;
+		case STREAMING_TYPE_CLASSES:
+            ret=true;
+            break;
+		case STREAMING_TYPE_OBJECT:
+			ret = true;
+			break;
+		case STREAMING_TYPE_MESSAGE:
+			ret = true;
+			break;
+		case STREAMING_TYPE_CHECKOUT:
+			ret = true;
+			break;
+		case STREAMING_TYPE_OBJECTS:
+			ret = true;
+			break;
+		case STREAMING_TYPE_DETAILS:
+			ret = true;
+			break;
+        case STREAMING_TYPE_DIRECTORY:
+            ret=true;
+            break;
+		case STREAMING_TYPE_VALUES:
+			ret = true;
+			break;
+		}
+	}
+	if (ret)
+	{
+		type = type_;
+		if (is_serialization_type_array(type_))
+		{
+			uint32_t size;
+			buffer_.read_data(size);
+			stack_.emplace(binary_read_stack_data { (int)size,-1 });
+		}
+	}
+	return ret;
 }
 
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_footer ()
 {
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
@@ -595,8 +649,7 @@ bool binary_reader<allocT,swap_bytes>::read_byte (const char* name, uint8_t& val
 template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_value (const char* name, rx_value& val)
 {
-	buffer_.read_data(val);
-	return true;
+	return false;
 }
 
 template <typename allocT, bool swap_bytes>
@@ -621,164 +674,237 @@ bool binary_reader<allocT,swap_bytes>::read_bytes (const char* name, byte_string
 }
 
 template <typename allocT, bool swap_bytes>
-Json::Value& binary_reader<allocT,swap_bytes>::get_current_value (int& index)
-{
-}
-
-template <typename allocT, bool swap_bytes>
-bool binary_reader<allocT,swap_bytes>::parse_data (const string_type& data)
-{
-}
-
-template <typename allocT, bool swap_bytes>
-bool binary_reader<allocT,swap_bytes>::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
-{
-}
-
-template <typename allocT, bool swap_bytes>
-bool binary_reader<allocT,swap_bytes>::safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object)
-{
-}
-
-template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_version (const char* name, uint32_t& val)
 {
+	buffer_.read_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_reader<allocT,swap_bytes>::parse_version_string (uint32_t& result, const string_type& version)
+void binary_reader<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
+{
+	buffer_.dump_to_stream(out);
+}
+
+
+// Parameterized Class rx_platform::serialization::binary_writer 
+
+template <typename allocT, bool swap_bytes>
+binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
+      : buffer_(buffer)
+	, base_meta_writter(version)
 {
 }
 
 
-// Parameterized Class rx_platform::serialization::binary_writter 
-
 template <typename allocT, bool swap_bytes>
-binary_writter<allocT,swap_bytes>::binary_writter (int version)
-{
-}
-
-
-template <typename allocT, bool swap_bytes>
-binary_writter<allocT,swap_bytes>::~binary_writter()
+binary_writer<allocT,swap_bytes>::~binary_writer()
 {
 }
 
 
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_id (const char* name, const rx_node_id& id)
+bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node_id& id)
 {
+	switch (id.get_node_type())
+	{
+	case numeric_rx_node_id:
+	{
+		uint16_t namesp = id.get_namespace();
+		uint32_t val = 0;
+		id.get_numeric(val);
+		if (namesp == 0 && (val<0x100))
+		{// two uint8_ts encoding 0
+			uint8_t vals[]{ 0,(uint8_t)val };
+			buffer_.push_data(vals[0]);
+			buffer_.push_data(vals[1]);
+		}
+		else if (namesp<0x100 && val<0x10000)
+		{// four uint8_ts encoding 0
+			uint8_t vals[]{ 0,(uint8_t)namesp };
+			uint16_t val16 = (uint16_t)val;
+			buffer_.push_data(vals[0]);
+			buffer_.push_data(vals[1]);
+			buffer_.push_data(val16);
+		}
+		else
+		{// regular id
+			uint8_t type = 2;
+			buffer_.push_data(type);
+			buffer_.push_data(namesp);
+			buffer_.push_data(val);
+		}
+	}
+	break;
+	case string_rx_node_id:
+	{
+		uint16_t namesp = id.get_namespace();
+		string_type val;
+		id.get_string(val);
+
+		buffer_.push_data(((uint8_t)3));
+		buffer_.push_data(namesp);
+		buffer_.push_data(val);
+	}
+	break;
+	case guid_rx_node_id:
+	{
+		uint16_t namesp = id.get_namespace();
+		rx_uuid_t val;
+		id.get_uuid(val);
+
+		buffer_.push_data((uint8_t)4);
+		buffer_.push_data(namesp);
+		buffer_.push_data(val);
+	}
+	break;
+	case bytes_rx_node_id:
+	{
+		return false;// not implemented yet!!!
+	}
+	break;
+	}
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_string (const char* name, const char* str)
+bool binary_writer<allocT,swap_bytes>::write_string (const char* name, const char* str)
 {
+	buffer_.push_data(string_type(str));
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_bool (const char* name, bool val)
+bool binary_writer<allocT,swap_bytes>::write_bool (const char* name, bool val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_double (const char* name, double val)
+bool binary_writer<allocT,swap_bytes>::write_double (const char* name, double val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_time (const char* name, const rx_time_struct_t& val)
+bool binary_writer<allocT,swap_bytes>::write_time (const char* name, const rx_time_struct_t& val)
 {
+	buffer_.push_data(val.t_value);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_uuid (const char* name, const rx_uuid_t& val)
+bool binary_writer<allocT,swap_bytes>::write_uuid (const char* name, const rx_uuid_t& val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_int (const char* name, int val)
+bool binary_writer<allocT,swap_bytes>::write_int (const char* name, int val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_uint (const char* name, uint32_t val)
+bool binary_writer<allocT,swap_bytes>::write_uint (const char* name, uint32_t val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::start_array (const char* name, size_t size)
+bool binary_writer<allocT,swap_bytes>::start_array (const char* name, size_t size)
 {
+	return write_uint(name, (uint32_t)size);
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::end_array ()
+bool binary_writer<allocT,swap_bytes>::end_array ()
 {
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_header (int type)
+bool binary_writer<allocT,swap_bytes>::write_header (int type, size_t size)
 {
+	buffer_.push_data((uint32_t)get_version());
+	buffer_.push_data(type);
+	type_ = type;
+	if (rx::is_serialization_type_array(type))
+	{
+		buffer_.push_data((uint32_t)size);
+	}
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_footer ()
+bool binary_writer<allocT,swap_bytes>::write_footer ()
 {
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::start_object (const char* name)
+bool binary_writer<allocT,swap_bytes>::start_object (const char* name)
 {
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::end_object ()
+bool binary_writer<allocT,swap_bytes>::end_object ()
 {
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_byte (const char* name, uint8_t val)
+bool binary_writer<allocT,swap_bytes>::write_byte (const char* name, uint8_t val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_value (const char* name, const rx_value& val)
+bool binary_writer<allocT,swap_bytes>::write_value (const char* name, const rx_value& val)
 {
+	return false;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_int64 (const char* name, int64_t val)
+bool binary_writer<allocT,swap_bytes>::write_int64 (const char* name, int64_t val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_uint64 (const char* name, uint64_t val)
+bool binary_writer<allocT,swap_bytes>::write_uint64 (const char* name, uint64_t val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_bytes (const char* name, const uint8_t* val, size_t size)
+bool binary_writer<allocT,swap_bytes>::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
+	buffer_.push_data(val,size);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-Json::Value& binary_writter<allocT,swap_bytes>::get_current_value (bool& is_array)
+bool binary_writer<allocT,swap_bytes>::write_version (const char* name, uint32_t val)
 {
+	buffer_.push_data(val);
+	return true;
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::get_string (string_type& result, bool decorated)
+void binary_writer<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 {
-}
-
-template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::write_version (const char* name, uint32_t val)
-{
-}
-
-template <typename allocT, bool swap_bytes>
-bool binary_writter<allocT,swap_bytes>::get_version_string (string_type& result, uint32_t version)
-{
+	buffer_.dump_to_stream(out);
 }
 
 

@@ -29,11 +29,13 @@
 #include "stdafx.h"
 
 
+
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
 #include "classes/rx_meta.h"
 #include "sys_internal/rx_internal_ns.h"
+using namespace std::string_literals;
 
 
 namespace testing {
@@ -49,7 +51,7 @@ library_test_category::library_test_category()
 {
 	register_test_case(rx_create_reference<platform_callback_test>());
 	register_test_case(rx_create_reference<values_test>());
-	register_test_case(rx_create_reference<external_interfasec_test>());
+	register_test_case(rx_create_reference<external_interfaces_test>());
 }
 
 
@@ -183,10 +185,8 @@ values_test::~values_test()
 
 bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	using namespace std::string_literals;
 
 	{
-
 		ctx->set_failed();
 		bool failed = false;
 
@@ -204,130 +204,198 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		timed.emplace_back(6.8, now);
 		timed.emplace_back("string2"s, now);
 
+
+		std::vector<rx::values::rx_value> fulls;
+
 		out << ANSI_COLOR_GREEN "Created four simple values and four timed values in an std::vector\r\n" ANSI_COLOR_RESET;
 
-		out << "\r\nsimple values\r\n==================================";
+		out << "\r\nsimple values" RX_TESTING_CON_LINE;
 		for (size_t idx = 0; idx < simples.size(); idx++)
 		{
 			out << "\r\nsimple[" << idx << "]=";
 			simples[idx].dump_to_stream(out);
 		}
 
-		out << "\r\ntimed values\r\n==================================";
+		out << "\r\ntimed values" RX_TESTING_CON_LINE;
 		for (size_t idx = 0; idx < timed.size(); idx++)
 		{
 			out << "\r\ntimed[" << idx << "]=";
 			timed[idx].dump_to_stream(out);
 		}
 
-		out << "\r\n\r\nJSON serialization std::vector 8 of values...\r\n";
-		serialization::json_writter writter;
+		serialization::json_writer writter;
+		
 
-		writter.write_header(STREAMING_TYPE_VALUES);
-
-		for (const auto& one : simples)
-			one.serialize(writter);
-		for (const auto& one : timed)
-			one.serialize(writter);
-
-		if (writter.write_footer())
+		if (test_serialization("JSON", simples, timed, fulls, writter, out))
 		{
 			string_type result;
-			bool succeeded = writter.get_string(result, true);
-
-			if (succeeded)
+			if (writter.get_string(result, true))
 			{
-				out << "\r\n" ANSI_COLOR_GREEN " JSON serialization succeeded" ANSI_COLOR_RESET " \r\n===========================================\r\n";
-
+				out << RX_TESTING_CON_LINE;
 				out << result;
-
-
-				out << "\r\nJSON deserialization array of std::vector...\r\n";
-
+				out << RX_TESTING_CON_LINE;
 				serialization::json_reader reader;
-
 				if (reader.parse_data(result))
 				{
-					int type;
-					reader.read_header(type);
-
-					std::vector<rx::values::rx_simple_value> simples_after(4);
-					std::vector<rx::values::rx_timed_value> timed_after(4);
-
-					if (type == STREAMING_TYPE_VALUES)
+					if (test_deserialization("JSON", simples, timed, fulls, reader, out))
 					{
-						for (auto& one : simples_after)
-						{
-							if (reader.array_end())
-							{
-								failed = true;
-								break;
-							}
-							if (!one.deserialize(reader))
-							{
-								failed = true;
-								break;
-							}
-						}
-						for (auto& one : timed_after)
-						{
-							if (reader.array_end())
-							{
-								failed = true;
-								break;
-							}
-							if (!one.deserialize(reader))
-							{
-								failed = true;
-								break;
-							}
-						}
-
-						if (!failed)
-						{
-							out << "\r\n==============================\r\n " ANSI_COLOR_GREEN "JSON deserialization succeeded" ANSI_COLOR_RESET "\r\n";
-
-							out << ANSI_COLOR_GREEN "Deserialize four simple values and four timed values in an std::vector\r\n" ANSI_COLOR_RESET;
-
-							out << "\r\nsimple values\r\n==================================";
-							for (size_t idx = 0; idx < simples.size(); idx++)
-							{
-								out << "\r\nsimple[" << idx << "]=";
-								simples[idx].dump_to_stream(out);
-							}
-
-							out << "\r\ntimed values\r\n==================================";
-							for (size_t idx = 0; idx < timed.size(); idx++)
-							{
-								out << "\r\ntimed[" << idx << "]=";
-								timed[idx].dump_to_stream(out);
-							}
-
-							out << "\r\ncomparing values";
-							for (size_t idx = 0; idx < simples.size(); idx++)
-							{
-								bool same = simples[idx] == simples_after[idx];
-								if (!same)
-									failed = true;
-								out << "\r\nsimples[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
-							}
-
-							for (size_t idx = 0; idx < timed.size(); idx++)
-							{
-								bool same = timed[idx] == timed_after[idx];
-								if (!same)
-									failed = true;
-								out << "\r\ntimed[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
-							}
-							if(!failed)
-								ctx->set_passed();
-						}
+						failed = false;
 					}
 				}
 			}
 		}
+		memory::std_buffer buffer;
+		serialization::std_buffer_writer bwriter(buffer);
+		if (test_serialization("Binary", simples, timed, fulls, bwriter, out))
+		{
+			out << RX_TESTING_CON_LINE;
+			bwriter.dump_to_stream(out);
+			out << RX_TESTING_CON_LINE;
+			serialization::std_buffer_reader reader(buffer);
+			if (test_deserialization("Binary", simples, timed, fulls, reader, out))
+			{
+				failed = false;
+			}
+
+		}
+
+
+		if (!failed)
+			ctx->set_passed();
 	}
 	out << "\r\n\r\n";
+	return true;
+}
+
+bool values_test::test_serialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_writter& writter, std::ostream& out)
+{
+	
+	out << "\r\n\r\n" << name << " serialization std::vector 8 of values...\r\n";
+
+	memory::std_buffer binary_buffer;
+	serialization::binary_writer<memory::std_vector_allocator, false> bwritter(binary_buffer);
+
+	writter.write_header(STREAMING_TYPE_VALUES, simples.size() + timed.size());
+
+	for (const auto& one : simples)
+		one.serialize(writter);
+	for (const auto& one : timed)
+		one.serialize(writter);
+
+	if (writter.write_footer())
+	{
+		out << "\r\n==============================\r\n " ANSI_COLOR_GREEN << name << ANSI_COLOR_RESET " serialization succeeded";
+		return true;
+	}
+	else return false;
+}
+
+bool values_test::test_deserialization(const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_reader& reader, std::ostream& out)
+{
+	bool failed = false;
+	int type;
+
+
+	out << "\r\n\r\n" << name << " deserialization std::vector, 8 values...\r\n";
+	if (reader.read_header(type))
+	{
+		std::vector<rx::values::rx_simple_value> simples_after(4);
+		std::vector<rx::values::rx_timed_value> timed_after(4);
+
+		if (type == STREAMING_TYPE_VALUES)
+		{
+			for (auto& one : simples_after)
+			{
+				if (reader.array_end())
+				{
+					failed = true;
+					break;
+				}
+				if (!one.deserialize(reader))
+				{
+					failed = true;
+					break;
+				}
+			}
+			for (auto& one : timed_after)
+			{
+				if (reader.array_end())
+				{
+					failed = true;
+					break;
+				}
+				if (!one.deserialize(reader))
+				{
+					failed = true;
+					break;
+				}
+			}
+
+
+			if (!failed)
+			{
+				out << "\r\n==============================\r\n " ANSI_COLOR_GREEN << name << " deserialization succeeded" ANSI_COLOR_RESET "\r\n";
+
+				out << ANSI_COLOR_GREEN "Deserialize four simple values and four timed values in an two std::vector\r\n" ANSI_COLOR_RESET;
+
+				out << "\r\nsimple values\r\n==================================";
+				for (size_t idx = 0; idx < simples.size(); idx++)
+				{
+					out << "\r\nsimple[" << idx << "]=";
+					simples[idx].dump_to_stream(out);
+				}
+
+				out << "\r\ntimed values\r\n==================================";
+				for (size_t idx = 0; idx < timed.size(); idx++)
+				{
+					out << "\r\ntimed[" << idx << "]=";
+					timed[idx].dump_to_stream(out);
+				}
+
+				out << "\r\ncomparing values";
+				for (size_t idx = 0; idx < simples.size(); idx++)
+				{
+					bool same = simples[idx] == simples_after[idx];
+					if (!same)
+						failed = true;
+					out << "\r\nsimples[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
+				}
+
+				for (size_t idx = 0; idx < timed.size(); idx++)
+				{
+					bool same = timed[idx] == timed_after[idx];
+					if (!same)
+						failed = true;
+					out << "\r\ntimed[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
+				}
+			}
+		}
+	}
+	else
+		failed = true;
+
+	return !failed;
+}
+
+
+// Class testing::basic_tests::lib_test::external_interfaces_test 
+
+external_interfaces_test::external_interfaces_test()
+		: test_case("interfaces")
+{
+}
+
+
+external_interfaces_test::~external_interfaces_test()
+{
+}
+
+
+
+bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	ctx->set_failed();
+	out << "\r\nNot Implemented yet!!!\r\n";
 	return true;
 }
 
@@ -436,31 +504,6 @@ namespace meta_test {
 
 
 } // namespace meta_test
-
-namespace lib_test {
-// Class testing::basic_tests::lib_test::external_interfasec_test 
-
-	external_interfasec_test::external_interfasec_test()
-		: test_case("interfaces")
-{
-}
-
-
-external_interfasec_test::~external_interfasec_test()
-{
-}
-
-
-
-bool external_interfasec_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
-{
-	ctx->set_failed();
-	out << "\r\nNot Implemented yet!!!\r\n";
-	return true;
-}
-
-
-} // namespace lib_test
 } // namespace basic_tests
 } // namespace testing
 

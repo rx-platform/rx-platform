@@ -58,7 +58,9 @@ using namespace rx::values;
 #define STREAMING_TYPE_VALUES		0x09
 
 
+
 namespace rx {
+bool is_serialization_type_array(int type);
 
 
 
@@ -100,7 +102,7 @@ public:
 
       virtual bool end_array () = 0;
 
-      virtual bool write_header (int type) = 0;
+      virtual bool write_header (int type, size_t size) = 0;
 
       virtual bool write_footer () = 0;
 
@@ -121,12 +123,12 @@ public:
       virtual bool write_version (const char* name, uint32_t val) = 0;
 
 
-      const uint32_t get_version () const
+      const size_t get_version () const
       {
         return version_;
       }
 
-      void set_version (uint32_t value)
+      void set_version (size_t value)
       {
         version_ = value;
       }
@@ -142,7 +144,7 @@ public:
 
 
 
-      uint32_t version_;
+      size_t version_;
 
 
 };

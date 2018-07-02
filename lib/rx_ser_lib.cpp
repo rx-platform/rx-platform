@@ -36,6 +36,17 @@
 
 namespace rx {
 
+bool is_serialization_type_array(int type)
+{
+	return (type == STREAMING_TYPE_CLASSES
+		|| type == STREAMING_TYPE_OBJECTS
+		|| type == STREAMING_TYPE_DETAILS
+		|| type == STREAMING_TYPE_DIRECTORY
+		|| type == STREAMING_TYPE_VALUES
+		);
+}
+
+
 // Class rx::base_meta_writter 
 
 base_meta_writter::base_meta_writter(const base_meta_writter &right)

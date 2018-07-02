@@ -429,9 +429,9 @@ namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
 template <class TImpl>
 bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
-	rx_platform::serialization::json_writter writer;
+	rx_platform::serialization::json_writer writer;
 
-	writer.write_header(STREAMING_TYPE_CLASS);
+	writer.write_header(STREAMING_TYPE_CLASS, 0);
 
 	writer.start_object(impl_->get_type_name().c_str());
 	{
@@ -513,9 +513,9 @@ namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () 
 template <class TImpl>
 bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
-	rx_platform::serialization::json_writter writer;
+	rx_platform::serialization::json_writer writer;
 
-	writer.write_header(STREAMING_TYPE_CLASS);
+	writer.write_header(STREAMING_TYPE_CLASS, 0);
 
 	bool out = false;
 

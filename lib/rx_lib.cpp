@@ -32,6 +32,7 @@
 // rx_lib
 #include "lib/rx_lib.h"
 
+#include "lib/rx_mem.h"
 #include "version/rx_version.h"
 
 #define MS_IN_DAY (1000*60*60*24)
@@ -397,6 +398,15 @@ rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
 	node_type_ = guid_rx_node_id;
 	namespace_ = namesp;
 }
+
+
+rx_node_id::rx_node_id(const byte_string& id, const uint16_t& namesp)
+{
+	value_.bstring_value = new byte_string(id);
+	node_type_ = bytes_rx_node_id;
+	namespace_ = namesp;
+}
+
 
 rx_node_id::rx_node_id(rx_node_id&& right) noexcept
 {
@@ -1230,6 +1240,14 @@ void rx_time::set_as_span(uint32_t days)
 	uint64_t temp = ((uint64_t)days) * 10000 * 1000 * 3600 * 24;
 
 	t_value = temp;
+
+}
+
+
+void rx_time::swap_bytes() const
+{
+
+	memory::rx_byte_swap<uint64_t>(t_value);
 
 }
 uint32_t rx_time::get_as_span() const
