@@ -165,123 +165,50 @@ void rx_destroy_value_storage(rx_value_storage& storage, rx_value_t type)
 	}
 }
 
+rx_value::rx_value(rx_value&& right) noexcept
+	: default_time_compare_(time_compare_skip)
+{
+	memcpy(this, &right, sizeof(rx_value));
+	right.value_type_ = RX_NULL_TYPE;
+}
+rx_value & rx_value::operator=(rx_value&& right) noexcept
+{
+	memcpy(this, &right, sizeof(rx_value));
+	right.value_type_ = RX_NULL_TYPE;
+	return *this;
+}
+
 // Class rx::values::rx_value 
 
 rx_value::rx_value()
+      : default_time_compare_(time_compare_skip)
 {
 	origin_ = RX_DEFUALT_ORIGIN;
 	quality_ = RX_DEFAULT_VALUE_QUALITY;
-	type_ = RX_NULL_TYPE;
+	value_type_ = RX_NULL_TYPE;
 }
 
 rx_value::rx_value(const rx_value &right)
+      : default_time_compare_(time_compare_skip)
 {
 	memcpy(this, &right, sizeof(rx_value));
-	type_ = right.type_;
-	copy_union(type_, value_, right.value_);
-}
-
-rx_value::rx_value (bool val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_BOOL_TYPE;
-	value_.bool_value = val;
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (int8_t val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_SBYTE_TYPE;
-	value_.int8_value = val;
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (uint8_t val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_BYTE_TYPE;
-	value_.uint8_value = val;
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (const bit_string& val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK;
-	size_t count = val.size();
-	value_.array_value = new std::vector<rx_value_union>(count);
-	for (size_t i = 0; i < count; i++)
-	{
-		value_.array_value->at(i).bool_value = val[i];
-	}
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (const std::vector<int8_t>& val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_SBYTE_TYPE | RX_ARRAY_VALUE_MASK;
-	size_t count = val.size();
-	value_.array_value = new std::vector<rx_value_union>(count);
-	for (size_t i = 0; i < count; i++)
-	{
-		value_.array_value->at(i).int8_value = val[i];
-	}
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (rx_value&& right)
-{
-	memcpy(this, &right, sizeof(rx_value));
-	right.type_ = RX_NULL_TYPE;
-}
-
-rx_value::rx_value (int32_t val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_SDWORD_TYPE;
-	value_.int32_value = val;
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (uint32_t val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_DWORD_TYPE;
-	value_.uint32_value = val;
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
-}
-
-rx_value::rx_value (const string_type& val, rx_time time, uint32_t quality, uint32_t origin)
-{
-	type_ = RX_STRING_TYPE;
-	value_.string_value = new string_type(val);
-	origin_ = origin;
-	time_ = time;
-	quality_ = quality;
+	value_type_ = right.value_type_;
+	copy_union(value_type_, value_, right.value_);
 }
 
 
 rx_value::~rx_value()
 {
-	clear_union(type_, value_);
+	clear_union(value_type_, value_);
 }
 
 
 rx_value & rx_value::operator=(const rx_value &right)
 {
-	clear_union(type_, value_);
+	clear_union(value_type_, value_);
 	memcpy(this, &right, sizeof(rx_value));
-	type_ = right.type_;
-	copy_union(type_, value_, right.value_);
+	value_type_ = right.value_type_;
+	copy_union(value_type_, value_, right.value_);
 	return *this;
 }
 
@@ -300,7 +227,7 @@ bool rx_value::operator!=(const rx_value &right) const
 
 void rx_value::get_string (string_type& val)
 {
-	switch (type_)
+	switch (value_type_)
 	{
 		char buffer[0x20];
 
@@ -473,7 +400,7 @@ void rx_value::copy_union (uint8_t type, rx_value_union& to, const rx_value_unio
 
 bool rx_value::is_array () const
 {
-	return IS_ARRAY_VALUE(type_);
+	return IS_ARRAY_VALUE(value_type_);
 }
 
 bool rx_value::operator > (const rx_value& right)
@@ -506,7 +433,7 @@ void rx_value::set_test ()
 
 void rx_value::get_type_string (string_type& val)
 {
-	switch (type_)
+	switch (value_type_)
 	{
 	case RX_NULL_TYPE:
 		{
@@ -590,7 +517,7 @@ void rx_value::get_type_string (string_type& val)
 		break;
 	case RX_COMPLEX_TYPE:
 		{
-			val = "complaex";
+			val = "complex";
 		}
 		break;
 	default:
@@ -611,16 +538,16 @@ bool rx_value::serialize (base_meta_writter& stream) const
 		return false;
 	/*if (!stream.write_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.write_byte("Type", type_))
+	if (!stream.write_byte("Type", value_type_))
 		return false;
-	if (!serialize_value(stream, type_, value_))
+	if (!serialize_value(stream, value_type_, value_))
 		return false;
 	return true;
 }
 
 bool rx_value::deserialize (base_meta_reader& stream)
 {
-	clear_union(type_, value_);
+	clear_union(value_type_, value_);
 
 	if (!stream.read_uint("Quality", quality_))
 		return false;
@@ -630,9 +557,9 @@ bool rx_value::deserialize (base_meta_reader& stream)
 		return false;
 	/*if (!stream.read_uint("TQuality", m_time_quality))
 		return false;*/
-	if (!stream.read_byte("Type", type_))
+	if (!stream.read_byte("Type", value_type_))
 		return false;
-	if (!deserialize_value(stream, type_, value_))
+	if (!deserialize_value(stream, value_type_, value_))
 		return false;
 	return true;
 }
@@ -945,16 +872,16 @@ bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 
 bool rx_value::serialize_value (base_meta_writter& stream) const
 {
-	if (!stream.write_byte("Type", type_))
+	if (!stream.write_byte("Type", value_type_))
 		return false;
-	return serialize_value(stream, type_, value_);
+	return serialize_value(stream, value_type_, value_);
 }
 
 bool rx_value::deserialize_value (base_meta_reader& stream)
 {
-	if (!stream.read_byte("Type", type_))
+	if (!stream.read_byte("Type", value_type_))
 		return false;
-	return deserialize_value(stream, type_, value_);
+	return deserialize_value(stream, value_type_, value_);
 }
 
 rx_value::operator uint32_t () const
@@ -985,39 +912,47 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
+void rx_value::clear_storage (rx_value_storage& data, rx_value_t type)
+{
+}
+
+void rx_value::assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type)
+{
+}
+
 
 // Class rx::values::rx_simple_value 
 
 rx_simple_value::rx_simple_value()
-	: type_(RX_NULL_TYPE)
+	: value_type_(RX_NULL_TYPE)
 {
 }
 
 rx_simple_value::rx_simple_value(const rx_simple_value &right)
 {
-	assign_storage(storage_, right.storage_, right.type_);
+	assign_storage(storage_, right.storage_, right.value_type_);
 }
 
 
 rx_simple_value::~rx_simple_value()
 {
-	clear_storage(storage_, type_);
+	clear_storage(storage_, value_type_);
 }
 
 
 rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 {
-	clear_storage(storage_, type_);
-	type_ = right.type_;
-	assign_storage(storage_, right.storage_, right.type_);
+	clear_storage(storage_, value_type_);
+	value_type_ = right.value_type_;
+	assign_storage(storage_, right.storage_, right.value_type_);
 	return *this;
 }
 
 
 bool rx_simple_value::operator==(const rx_simple_value &right) const
 {
-	return type_ == right.type_
-		&& storage_.compare(right.storage_, type_);
+	return value_type_ == right.value_type_
+		&& storage_.compare(right.storage_, value_type_);
 }
 
 bool rx_simple_value::operator!=(const rx_simple_value &right) const
@@ -1087,28 +1022,28 @@ void rx_simple_value::assign_storage (rx_value_storage& left, const rx_value_sto
 
 bool rx_simple_value::serialize (base_meta_writter& writter) const
 {
-	return storage_.serialize(writter, type_);
+	return storage_.serialize(writter, value_type_);
 }
 
 bool rx_simple_value::deserialize (base_meta_reader& reader)
 {
-	return storage_.deserialize(reader, type_);
+	return storage_.deserialize(reader, value_type_);
 }
 
 void rx_simple_value::dump_to_stream (std::ostream& out) const
 {
-	storage_.dump_to_stream(out, type_);
+	storage_.dump_to_stream(out, value_type_);
 }
 
 void rx_simple_value::parse_from_stream (std::istream& in)
 {
-	storage_.parse_from_stream(in, type_);
+	storage_.parse_from_stream(in, value_type_);
 }
 
 
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
 {
-	type_ = right.type_;
+	value_type_ = right.value_type_;
 	storage_ = std::move(right.storage_);
 }
 // Class rx::values::rx_value_storage 
@@ -1182,7 +1117,7 @@ bool rx_value_storage::serialize (base_meta_writter& writter, rx_value_t type) c
 
 bool rx_value_storage::deserialize (base_meta_reader& reader, rx_value_t& type)
 {
-	// first destroy eventual values allready inside
+	// first destroy eventual values already inside
 	destroy_by_type(type);
 	if (!reader.start_object("_Val"))
 		return false;
@@ -1488,7 +1423,7 @@ bool rx_value_storage::compare (const rx_value_storage& right, rx_value_t type) 
 
 rx_timed_value::rx_timed_value()
       : default_time_compare_(time_compare_skip)
-	, type_(RX_NULL_TYPE)
+	, value_type_(RX_NULL_TYPE)
 {
 }
 
@@ -1500,15 +1435,15 @@ rx_timed_value::rx_timed_value(const rx_timed_value &right)
 
 rx_timed_value::~rx_timed_value()
 {
-	clear_storage(storage_, type_);
+	clear_storage(storage_, value_type_);
 }
 
 
 rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 {
-	clear_storage(storage_, type_);
-	type_ = right.type_;
-	assign_storage(storage_, right.storage_, right.type_);
+	clear_storage(storage_, value_type_);
+	value_type_ = right.value_type_;
+	assign_storage(storage_, right.storage_, right.value_type_);
 	return *this;
 }
 
@@ -1587,7 +1522,7 @@ bool rx_timed_value::serialize (base_meta_writter& writter) const
 {
 	if (!writter.start_object("Timed_"))
 		return false;
-	if (!storage_.serialize(writter, type_))
+	if (!storage_.serialize(writter, value_type_))
 		return false;
 	if (!writter.write_time("time", time_))
 		return false;
@@ -1600,7 +1535,7 @@ bool rx_timed_value::deserialize (base_meta_reader& reader)
 {
 	if (!reader.start_object("Timed_"))
 		return false;
-	if (!storage_.deserialize(reader, type_))
+	if (!storage_.deserialize(reader, value_type_))
 		return false;
 	if (!reader.read_time("time", time_))
 		return false;
@@ -1611,13 +1546,13 @@ bool rx_timed_value::deserialize (base_meta_reader& reader)
 
 void rx_timed_value::dump_to_stream (std::ostream& out) const
 {
-	storage_.dump_to_stream(out, type_);
+	storage_.dump_to_stream(out, value_type_);
 	out << " [" << time_.get_string() << "]";
 }
 
 void rx_timed_value::parse_from_stream (std::istream& in)
 {
-	storage_.parse_from_stream(in, type_);
+	storage_.parse_from_stream(in, value_type_);
 }
 
 rx_time rx_timed_value::set_time (rx_time time)
@@ -1631,15 +1566,15 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	switch (time_compare)
 	{
 	case time_compare_skip:
-		return type_ == right.type_
-			&& storage_.compare(right.storage_, type_);
+		return value_type_ == right.value_type_
+			&& storage_.compare(right.storage_, value_type_);
 	case time_compare_ms_accurate:
-		return type_ == right.type_
-			&& storage_.compare(right.storage_, type_)
+		return value_type_ == right.value_type_
+			&& storage_.compare(right.storage_, value_type_)
 				&& (time_.get_longlong_miliseconds() == right.time_.get_longlong_miliseconds());
 	case time_compare_exact:
-		return type_ == right.type_
-			&& storage_.compare(right.storage_, type_)
+		return value_type_ == right.value_type_
+			&& storage_.compare(right.storage_, value_type_)
 				&& time_ == right.time_;
 	default:
 		return false;
@@ -1651,7 +1586,7 @@ rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
 	: default_time_compare_(time_compare_skip)
 {
 	time_ = right.time_;
-	type_ = right.type_;
+	value_type_ = right.value_type_;
 	storage_ = std::move(right.storage_);
 }
 } // namespace values

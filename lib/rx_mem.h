@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -121,14 +121,12 @@ class memory_buffer_base : public pointers::reference_object
 	  {
 		  from_buffer(val, std::is_fundamental<T>(), std::is_trivially_copyable<T>());
 	  }
-	  template<>
 	  void read_data(bool& val)
 	  {
 		  uint8_t temp;
 		  read_data(temp);
 		  val = temp != 0;
 	  }
-	  template<>
 	  void read_data(string_type& val)
 	  {
 		  uint32_t size;
@@ -136,7 +134,6 @@ class memory_buffer_base : public pointers::reference_object
 		  val.assign(size, '\0');
 		  read_data(&val[0], size);
 	  }
-	  template<>
 	  void read_data(byte_string& val)
 	  {
 		  uint32_t size;
@@ -144,7 +141,6 @@ class memory_buffer_base : public pointers::reference_object
 		  val.assign(size, '\0');
 		  read_data(&val[0], size);
 	  }
-	  template<>
 	  void read_data(rx_uuid_t& val)
 	  {
 		  read_data(&val, sizeof(rx_uuid_t));
@@ -154,19 +150,16 @@ class memory_buffer_base : public pointers::reference_object
 	  {
 		  to_buffer(val, std::is_fundamental<T>(),  std::is_trivially_copyable<T>());
 	  }
-	  template<>
 	  void push_data(const bool& val)
 	  {
 		  uint8_t temp = val ? 0xff : 0x00;
 		  push_data(temp);
 	  }
-	  template<>
 	  void push_data(const string_type& val)
 	  {
 		  push_data((uint32_t)val.size());
 		  push_data(val.c_str(), val.size());
 	  }
-	  template<>
 	  void push_data(const rx_uuid_t& val)
 	  {
 		  push_data(&val,sizeof(rx_uuid_t));
@@ -189,10 +182,11 @@ class memory_buffer_base : public pointers::reference_object
 	  template<typename T>
 	  T* get_buffer_internal(tl::type2type<T>)
 	  {
-		  return allocator_.get_buffer<T>();
-	  }	  
+          T* ret = (T*)allocator_.get_char_buffer();
+		  return ret;
+	  }
 	  template<typename T>
-	  void to_buffer(const T& val, std::true_type&, std::true_type&)
+	  void to_buffer(const T& val, std::true_type, std::true_type)
 	  {
 		  if (swap_bytes)
 		  {
@@ -203,7 +197,7 @@ class memory_buffer_base : public pointers::reference_object
 			  push_data(&val, sizeof(T));
 	  }
 	  template<typename T>
-	  void to_buffer(const T& val, std::false_type&, std::true_type&)
+	  void to_buffer(const T& val, std::false_type, std::true_type)
 	  {
 		  if (swap_bytes)
 		  {
@@ -215,7 +209,7 @@ class memory_buffer_base : public pointers::reference_object
 			  push_data(&val, sizeof(T));
 	  }
 	  template<typename T>
-	  void from_buffer(T& val, std::true_type&, std::true_type&)
+	  void from_buffer(T& val, std::true_type, std::true_type)
 	  {
 		  read_data(&val, sizeof(T));
 		  if (swap_bytes)
@@ -224,12 +218,12 @@ class memory_buffer_base : public pointers::reference_object
 		  }
 	  }
 	  template<typename T>
-	  void from_buffer(T& val, std::false_type&, std::true_type&)
+	  void from_buffer(T& val, std::false_type, std::true_type)
 	  {
 		  read_data(&val, sizeof(T));
 		  if (swap_bytes)
 		  {
-			  val.swap_bytes<T>(val);
+			  val.swap_bytes(val);
 		  }
 	  }
 
@@ -240,7 +234,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator 
+class std_vector_allocator
 {
 
   public:
@@ -415,7 +409,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator 
+class backward_simple_allocator
 {
 
   public:
@@ -458,7 +452,7 @@ class backward_simple_allocator
 typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
-// Parameterized Class rx::memory::memory_buffer_base 
+// Parameterized Class rx::memory::memory_buffer_base
 
 template <class allocT, bool swap_bytes>
 memory_buffer_base<allocT,swap_bytes>::memory_buffer_base()
@@ -475,7 +469,7 @@ memory_buffer_base<allocT,swap_bytes>::memory_buffer_base (const void* ptr, size
 {
 	next_push_ = (int)size;
 	allocator_.allocate(size);
-	memcpy(allocator_.get_buffer<uint8_t>(), ptr, size);
+	memcpy(allocator_.get_char_buffer(), ptr, size);
 }
 
 
@@ -491,7 +485,7 @@ void memory_buffer_base<allocT,swap_bytes>::push_data (const void* ptr, size_t s
 {
 	while (next_push_ + size>allocator_.get_buffer_size())
 		allocator_.reallocate(next_push_ + size);
-	memcpy(&allocator_.get_buffer<uint8_t>()[next_push_], ptr, size);
+	memcpy(&allocator_.get_char_buffer()[next_push_], ptr, size);
 	next_push_ += size;
 }
 
@@ -499,8 +493,8 @@ template <class allocT, bool swap_bytes>
 void memory_buffer_base<allocT,swap_bytes>::read_data (void* ptr, size_t size)
 {
 	if (current_read_ + size>next_push_)
-		throw std::exception("buffer end of file!");
-	memcpy(ptr, &allocator_.get_buffer<uint8_t>()[current_read_], size);
+		throw std::overflow_error("buffer end of file!");
+	memcpy(ptr, &allocator_.get_char_buffer()[current_read_], size);
 	current_read_ += size;
 }
 
@@ -529,7 +523,7 @@ void memory_buffer_base<allocT,swap_bytes>::read_line (string_type& line)
 {
 	if (eof())
 		return;
-	char* buff = &allocator_.get_buffer<char>()[current_read_];
+	char* buff = &allocator_.get_char_buffer()[current_read_];
 	char* start = buff;
 	while (*buff!='\r' && *buff!='\n' && !eof())
 		buff++;
@@ -586,7 +580,7 @@ bool memory_buffer_base<allocT,swap_bytes>::fill_with_file_content (sys_handle_t
 		next_push_ = (int)sz;
 		allocator_.reallocate((size_t)sz);
 		uint32_t readed = 0;
-		if (rx_file_read(file, allocator_.get_buffer<void>(), (uint32_t)sz, &readed) && readed == sz)
+		if (rx_file_read(file, allocator_.get_char_buffer(), (uint32_t)sz, &readed) && readed == sz)
 		{
 			return true;
 		}
@@ -601,16 +595,16 @@ void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 	out << "\r\n";
 	out.setf(std::ios::hex, std::ios::basefield);
 	out << std::setfill('0');
-	byte* buffer = get_buffer<byte>();
+	uint8_t* buffer = get_buffer<uint8_t>();
 	for (size_t addr = 0; addr < get_size(); addr += 8)
 	{
 		out << std::setw(show32_addr ? 8 : 4) << addr << " ";
 		for (size_t i = 0; i < 8;  i++)
 		{
-			if (addr * 8 + i > get_size())
-				out << "00 ";
+			if (addr + i > get_size())
+				out << "   ";
 			else
-				out << std::setw(2) << (size_t)buffer[addr * 8 + i] << " ";
+				out << std::setw(2) << (size_t)buffer[addr + i] << " ";
 		}
 		out << "\r\n";
 	}
@@ -620,7 +614,7 @@ void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 }
 
 
-// Parameterized Class rx::memory::std_strbuff 
+// Parameterized Class rx::memory::std_strbuff
 
 template <class allocT, bool swap_bytes>
 std_strbuff<allocT,swap_bytes>::std_strbuff()
@@ -674,7 +668,7 @@ char* std_strbuff<allocT,swap_bytes>::egptr () const
 }
 
 
-// Parameterized Class rx::memory::backward_memory_buffer_base 
+// Parameterized Class rx::memory::backward_memory_buffer_base
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)
@@ -699,7 +693,7 @@ void backward_memory_buffer_base<allocT>::push_data (const void* ptr, size_t siz
 {
 	while (next_push_ + size>allocator_.get_buffer_size())
 		allocator_.reallocate(next_push_+size);
-	memcpy(&allocator_.get_buffer<uint8_t>()[allocator_.get_buffer_size() - next_push_ - size], ptr, size);
+	memcpy(&allocator_.get_char_buffer()[allocator_.get_buffer_size() - next_push_ - size], ptr, size);
 	next_push_ += ((int)size);
 }
 
@@ -740,7 +734,7 @@ bool backward_memory_buffer_base<allocT>::empty () const
 template <class allocT>
 void* backward_memory_buffer_base<allocT>::get_data () const
 {
-	return &allocator_.get_buffer<uint8_t>()[allocator_.size() - next_push_];
+	return &allocator_.get_char_buffer[allocator_.size() - next_push_];
 }
 
 

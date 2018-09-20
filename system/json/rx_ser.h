@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -302,7 +302,7 @@ class binary_reader : public rx::base_meta_reader
 };
 
 
-typedef typename binary_reader<memory::std_vector_allocator, false> std_buffer_reader;
+typedef binary_reader<memory::std_vector_allocator, false> std_buffer_reader;
 
 
 
@@ -404,9 +404,9 @@ class binary_writer : public rx::base_meta_writter
 
 };
 
-typedef typename binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
+typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 
-// Parameterized Class rx_platform::serialization::binary_reader 
+// Parameterized Class rx_platform::serialization::binary_reader
 
 template <typename allocT, bool swap_bytes>
 binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer)
@@ -572,7 +572,6 @@ bool binary_reader<allocT,swap_bytes>::read_header (int& type)
 {
 	bool ret = false;
 	uint32_t version = 0;
-	int idx = -1;
 	if (read_version("sversion", version))
 	{
 		set_version(version);
@@ -687,7 +686,7 @@ void binary_reader<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 }
 
 
-// Parameterized Class rx_platform::serialization::binary_writer 
+// Parameterized Class rx_platform::serialization::binary_writer
 
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)

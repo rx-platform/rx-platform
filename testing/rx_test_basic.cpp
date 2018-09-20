@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace basic_tests {
 
 namespace lib_test {
 
-// Class testing::basic_tests::lib_test::library_test_category 
+// Class testing::basic_tests::lib_test::library_test_category
 
 library_test_category::library_test_category()
 	: test_category("lib")
@@ -147,7 +147,7 @@ void test_callbacks(std::ostream& out)
 	out << "\r\n";
 }
 
-// Class testing::basic_tests::lib_test::platform_callback_test 
+// Class testing::basic_tests::lib_test::platform_callback_test
 
 platform_callback_test::platform_callback_test()
 	: test_case("callback")
@@ -169,7 +169,7 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_tests::lib_test::values_test 
+// Class testing::basic_tests::lib_test::values_test
 
 values_test::values_test()
 	: test_case("values")
@@ -224,7 +224,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		}
 
 		serialization::json_writer writter;
-		
+
 
 		if (test_serialization("JSON", simples, timed, fulls, writter, out))
 		{
@@ -269,7 +269,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 
 bool values_test::test_serialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_writter& writter, std::ostream& out)
 {
-	
+
 	out << "\r\n\r\n" << name << " serialization std::vector 8 of values...\r\n";
 
 	memory::std_buffer binary_buffer;
@@ -378,7 +378,7 @@ bool values_test::test_deserialization(const string_type& name, std::vector<rx::
 }
 
 
-// Class testing::basic_tests::lib_test::external_interfaces_test 
+// Class testing::basic_tests::lib_test::external_interfaces_test
 
 external_interfaces_test::external_interfaces_test()
 		: test_case("interfaces")
@@ -404,7 +404,7 @@ bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, st
 
 namespace meta_test {
 
- // Class testing::basic_tests::meta_test::meta_model_test_category 
+ // Class testing::basic_tests::meta_test::meta_model_test_category
 
  meta_model_test_category::meta_model_test_category()
 	 : test_category("meta")
@@ -419,7 +419,7 @@ namespace meta_test {
 
 
 
- // Class testing::basic_tests::meta_test::object_creation_test 
+ // Class testing::basic_tests::meta_test::object_creation_test
 
  object_creation_test::object_creation_test()
 	 : test_case("construct")
@@ -436,13 +436,8 @@ namespace meta_test {
  bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
 
-
-
-	 size_t ret = sizeof(rx::pointers::basic_smart_ptr<rx::job_ptr>);
-
 	 auto one = rx_platform::rx_gate::instance().get_root_directory();
 
-	 ret = sizeof(one);
 
 	 out << "Creating test_class\r\n";
 	 server_directory_ptr dir = ctx->get_current_directory();

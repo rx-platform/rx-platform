@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -85,7 +85,7 @@ public:
 	}
 };
 
-// Class rx_platform::meta::mapped_data_type 
+// Class rx_platform::meta::mapped_data_type
 
 mapped_data_type::mapped_data_type()
 {
@@ -99,7 +99,7 @@ mapped_data_type::mapped_data_type (const string_type& name, const rx_node_id& i
 
 bool mapped_data_type::serialize_mapped_definition (base_meta_writter& stream, uint8_t type) const
 {
-	
+
 	if (!stream.start_array("Mappers", mappers_.size()))
 		return false;
 	for (const auto& one : mappers_)
@@ -145,7 +145,7 @@ void mapped_data_type::construct (objects::object_runtime_ptr what)
 }
 
 
-// Class rx_platform::meta::variable_class 
+// Class rx_platform::meta::variable_class
 
 string_type variable_class::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
 
@@ -197,7 +197,7 @@ const checkable_data& variable_class::meta_data () const
 }
 
 
-// Class rx_platform::meta::struct_class 
+// Class rx_platform::meta::struct_class
 
 string_type struct_class::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
 
@@ -259,7 +259,7 @@ struct_runtime_ptr struct_class::create_runtime_ptr ()
 }
 
 
-// Class rx_platform::meta::checkable_data 
+// Class rx_platform::meta::checkable_data
 
 checkable_data::checkable_data()
       : version_(RX_INITIAL_ITEM_VERSION),
@@ -365,7 +365,7 @@ void checkable_data::construct (objects::object_runtime_ptr what)
 }
 
 
-// Class rx_platform::meta::const_value 
+// Class rx_platform::meta::const_value
 
 
 bool const_value::serialize_definition (base_meta_writter& stream, uint8_t type) const
@@ -390,7 +390,7 @@ void const_value::get_value (values::rx_value& val) const
 }
 
 
-// Class rx_platform::meta::simple_value_def 
+// Class rx_platform::meta::simple_value_def
 
 
 bool simple_value_def::serialize_definition (base_meta_writter& stream, uint8_t type) const
@@ -413,7 +413,7 @@ void simple_value_def::get_value (values::rx_value& val) const
 }
 
 
-// Class rx_platform::meta::variable_data_type 
+// Class rx_platform::meta::variable_data_type
 
 variable_data_type::variable_data_type()
 {
@@ -475,18 +475,18 @@ void variable_data_type::construct (complex_runtime_ptr what)
 
 bool variable_data_type::serialize_variable_definition (base_meta_writter& stream, uint8_t type) const
 {
-	
+
 	return true;
 }
 
 bool variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
 {
-	
+
 	return true;
 }
 
 
-// Class rx_platform::meta::complex_data_type 
+// Class rx_platform::meta::complex_data_type
 
 complex_data_type::complex_data_type()
 {
@@ -500,7 +500,7 @@ complex_data_type::complex_data_type (const string_type& name, const rx_node_id&
 
 bool complex_data_type::serialize_complex_definition (base_meta_writter& stream, uint8_t type) const
 {
-	
+
 	if (!stream.write_bool("Sealed", sealed_))
 		return false;
 
@@ -568,7 +568,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writter& stream,
 
 bool complex_data_type::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
 {
-	
+
 	if (!stream.read_bool("Sealed", sealed_))
 		return false;
 
@@ -643,14 +643,14 @@ void complex_data_type::construct (complex_runtime_ptr what)
 		one.get_value(temp);
 		what->register_value(one.get_name(), temp);
 	}
-	for (auto& one : structs_)
-	{
+	//for (auto& one : structs_)
+	//{
 		//!!!what->register_sub_item(one->get_name(),one->construct().cast_to<objects::struct_runtime_ptr>());
-	}
+	//}
 }
 
 
-// Class rx_platform::meta::mapper_class 
+// Class rx_platform::meta::mapper_class
 
 string_type mapper_class::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
 
@@ -683,7 +683,7 @@ bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 }
 
 
-// Class rx_platform::meta::struct_attribute 
+// Class rx_platform::meta::struct_attribute
 
 struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name,id)
@@ -738,7 +738,7 @@ bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::variable_attribute 
+// Class rx_platform::meta::variable_attribute
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name, id)
@@ -784,7 +784,7 @@ bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8
 }
 
 
-// Class rx_platform::meta::mapper_attribute 
+// Class rx_platform::meta::mapper_attribute
 
 mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name,id)
@@ -814,7 +814,7 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::source_attribute 
+// Class rx_platform::meta::source_attribute
 
 source_attribute::source_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name,id)
@@ -844,7 +844,7 @@ bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::complex_class_attribute 
+// Class rx_platform::meta::complex_class_attribute
 
 complex_class_attribute::complex_class_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -879,7 +879,7 @@ bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, 
 }
 
 
-// Class rx_platform::meta::filter_attribute 
+// Class rx_platform::meta::filter_attribute
 
 filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name, id)
@@ -909,7 +909,7 @@ bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::event_attribute 
+// Class rx_platform::meta::event_attribute
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
 	: complex_class_attribute(name, id)
@@ -939,7 +939,7 @@ bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t 
 }
 
 
-// Class rx_platform::meta::source_class 
+// Class rx_platform::meta::source_class
 
 string_type source_class::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
 
@@ -977,7 +977,7 @@ bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 }
 
 
-// Class rx_platform::meta::filter_class 
+// Class rx_platform::meta::filter_class
 
 string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
@@ -1015,7 +1015,7 @@ bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 }
 
 
-// Class rx_platform::meta::event_class 
+// Class rx_platform::meta::event_class
 
 string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
 

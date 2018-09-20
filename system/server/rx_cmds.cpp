@@ -434,7 +434,7 @@ bool server_console_program::process_program (prog::program_context_ptr context,
 			}
 			else
 			{
-				err << "Syntax Error!\r\nCommand:" << name << " not exsisting!";
+				err << "Syntax Error!\r\nCommand:" << name << " not existing!";
 				err.flush();
 				return false;
 			}

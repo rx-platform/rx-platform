@@ -153,186 +153,17 @@ using namespace rx;
 
 
 namespace rx {
+enum time_compare_type
+{
+	time_compare_skip,
+	time_compare_ms_accurate,
+	time_compare_exact,
+};
 
 namespace values {
 const size_t rx_pointer_optimization_size = 2*sizeof(void*);
 typedef std::uint_fast8_t rx_value_t;
 class rx_value;
-
-
-struct complex_value_struct
-{
-	double real;
-	double imag;
-	double amplitude() const
-	{
-		return sqrt(real*real + imag*imag);
-	}
-};
-
-union rx_value_union
-{
-	bool bool_value;
-	uint8_t uint8_value;
-	int8_t int8_value;
-	uint16_t uint16_value;
-	int16_t int16_value;
-	uint32_t uint32_value;
-	int32_t int32_value;
-	uint64_t uint64_value;
-	int64_t int64_value;
-	float float_value;
-	double double_value;
-	string_type* string_value;
-	byte_string* bstring_value;
-	bit_string* bits_value;
-	rx_time_struct time_value;
-	rx_uuid* uuid_value;
-	complex_value_struct* complex_value;
-	std::vector<rx_value_union>* array_value;
-};
-
-#define DEFAULT_TIME_VAL (rx_time::now())
-
-
-
-
-
-
-class rx_value
-{
-
-  public:
-      rx_value();
-
-      rx_value(const rx_value &right);
-
-      rx_value (bool val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (int8_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (uint8_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (const bit_string& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (const std::vector<int8_t>& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (rx_value&& right);
-
-      rx_value (int32_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (uint32_t val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      rx_value (const string_type& val, rx_time time = DEFAULT_TIME_VAL, uint32_t quality = RX_GOOD_QUALITY, uint32_t origin = RX_DEFUALT_ORIGIN);
-
-      ~rx_value();
-
-      rx_value & operator=(const rx_value &right);
-
-      bool operator==(const rx_value &right) const;
-
-      bool operator!=(const rx_value &right) const;
-
-
-      void get_string (string_type& val);
-
-      bool is_good () const;
-
-      bool is_bad () const;
-
-      bool is_uncertain () const;
-
-      bool is_test () const;
-
-      bool is_substituted () const;
-
-      bool is_array () const;
-
-      bool operator > (const rx_value& right);
-
-      bool operator < (const rx_value& right);
-
-      operator int () const;
-
-      void set_substituted ();
-
-      void set_test ();
-
-      void get_type_string (string_type& val);
-
-      bool serialize (base_meta_writter& stream) const;
-
-      bool deserialize (base_meta_reader& stream);
-
-      bool adapt_quality_to_mode (const rx_mode_type& mode);
-
-      bool serialize_value (base_meta_writter& stream) const;
-
-      bool deserialize_value (base_meta_reader& stream);
-
-      operator uint32_t () const;
-
-      operator bool () const;
-
-      void set_offline ();
-
-      void set_good_locally ();
-
-      rx_time set_time (rx_time time);
-
-
-      const rx_value_t get_type () const
-      {
-        return type_;
-      }
-
-
-      const uint32_t get_quality () const
-      {
-        return quality_;
-      }
-
-      void set_quality (uint32_t value)
-      {
-        quality_ = value;
-      }
-
-
-      const rx_time get_time () const
-      {
-        return time_;
-      }
-
-
-
-  protected:
-
-  private:
-
-      bool serialize_value (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
-
-      bool deserialize_value (base_meta_reader& stream, uint8_t type, rx_value_union& value);
-
-
-
-      void clear_union (uint8_t type, rx_value_union& value);
-
-      void copy_union (uint8_t type, rx_value_union& to, const rx_value_union& from);
-
-
-      rx_value_union value_;
-
-      rx_value_t type_;
-
-      uint32_t quality_;
-
-      rx_time time_;
-
-      uint32_t origin_;
-
-
-};
-
 
 template<typename typeT>
 rx_value_t inner_get_type(tl::type2type<typeT>);
@@ -366,7 +197,7 @@ rx_value_t inner_get_type(tl::type2type<typename std::string>);
 template<typename typeT>
 rx_value_t get_type()
 {
-	return inner_get_type(tl::type2type<typeT>());
+	return inner_get_type(tl::type2type<std::remove_const_t<std::remove_reference_t<typeT> > >());
 }
 
 
@@ -564,6 +395,193 @@ public:
 void destroy_value_storage(rx_value_storage& storage, rx_value_t type);
 
 
+struct complex_value_struct
+{
+	double real;
+	double imag;
+	double amplitude() const
+	{
+		return sqrt(real*real + imag*imag);
+	}
+};
+
+union rx_value_union
+{
+	bool bool_value;
+	uint8_t uint8_value;
+	int8_t int8_value;
+	uint16_t uint16_value;
+	int16_t int16_value;
+	uint32_t uint32_value;
+	int32_t int32_value;
+	uint64_t uint64_value;
+	int64_t int64_value;
+	float float_value;
+	double double_value;
+	string_type* string_value;
+	byte_string* bstring_value;
+	bit_string* bits_value;
+	rx_time_struct time_value;
+	rx_uuid* uuid_value;
+	complex_value_struct* complex_value;
+	std::vector<rx_value_union>* array_value;
+};
+
+#define DEFAULT_TIME_VAL (rx_time::now())
+
+
+
+
+
+
+class rx_value
+{
+public:
+	rx_value();
+
+	rx_value(const rx_value &right);
+
+	rx_value(rx_value&& right) noexcept;
+	rx_value & operator=(rx_value&& right) noexcept;
+
+	template<typename typeT>
+	rx_value(typeT val) noexcept
+		: storage_(std::move(val))
+		, value_type_(get_type<typeT>())
+		, default_time_compare_(time_compare_skip)
+	{
+	}
+	template<typename typeT>
+	rx_value(typeT val, rx_time time) noexcept
+		: storage_(std::move(val))
+		, value_type_(get_type<typeT>())
+		, time_(time)
+		, default_time_compare_(time_compare_skip)
+	{
+	}
+
+
+  public:
+
+      ~rx_value();
+
+      rx_value & operator=(const rx_value &right);
+
+      bool operator==(const rx_value &right) const;
+
+      bool operator!=(const rx_value &right) const;
+
+
+      void get_string (string_type& val);
+
+      bool is_good () const;
+
+      bool is_bad () const;
+
+      bool is_uncertain () const;
+
+      bool is_test () const;
+
+      bool is_substituted () const;
+
+      bool is_array () const;
+
+      bool operator > (const rx_value& right);
+
+      bool operator < (const rx_value& right);
+
+      operator int () const;
+
+      void set_substituted ();
+
+      void set_test ();
+
+      void get_type_string (string_type& val);
+
+      bool serialize (base_meta_writter& stream) const;
+
+      bool deserialize (base_meta_reader& stream);
+
+      bool adapt_quality_to_mode (const rx_mode_type& mode);
+
+      bool serialize_value (base_meta_writter& stream) const;
+
+      bool deserialize_value (base_meta_reader& stream);
+
+      operator uint32_t () const;
+
+      operator bool () const;
+
+      void set_offline ();
+
+      void set_good_locally ();
+
+      rx_time set_time (rx_time time);
+
+
+      const rx_value_t get_value_type () const
+      {
+        return value_type_;
+      }
+
+
+      const uint32_t get_quality () const
+      {
+        return quality_;
+      }
+
+      void set_quality (uint32_t value)
+      {
+        quality_ = value;
+      }
+
+
+      const rx_time get_time () const
+      {
+        return time_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      bool serialize_value (base_meta_writter& stream, uint8_t type, const rx_value_union& value) const;
+
+      bool deserialize_value (base_meta_reader& stream, uint8_t type, rx_value_union& value);
+
+      void clear_storage (rx_value_storage& data, rx_value_t type);
+
+      void assign_storage (rx_value_storage& left, const rx_value_storage& right, rx_value_t type);
+
+
+
+      void clear_union (uint8_t type, rx_value_union& value);
+
+      void copy_union (uint8_t type, rx_value_union& to, const rx_value_union& from);
+
+
+      rx_value_storage storage_;
+
+
+      rx_value_union value_;
+
+      rx_value_t value_type_;
+
+      uint32_t quality_;
+
+      rx_time time_;
+
+      uint32_t origin_;
+
+      time_compare_type default_time_compare_;
+
+
+};
+
+
+
 
 
 
@@ -573,28 +591,28 @@ class rx_simple_value
 	  template<typename typeT>
 	  rx_simple_value(const typeT& val)
 			: storage_(val)
-			, type_(get_type<typeT>())
+			, value_type_(get_type<typeT>())
 	  {
 	  }
 	  template<typename typeT>
 	  rx_simple_value(typeT&& val) noexcept
 			: storage_(std::move(val))
-			, type_(get_type<typeT>())
+			, value_type_(get_type<typeT>())
 	  {
 	  }
 	  template<typename typeT>
 	  rx_simple_value& operator=(const typeT& val)
 	  {
-		  clear_storage(storage_, type_);
-		  type_ = get_type<typeT>();
+		  clear_storage(storage_, value_type_);
+		  value_type_ = get_type<typeT>();
 		  storage_.assign<typeT>(val);
 		  return *this;
 	  }
 	  template<typename typeT>
 	  rx_simple_value& operator=(typeT&& val) noexcept
 	  {
-		  clear_storage(storage_, type_);
-		  type_ = get_type<typeT>();
+		  clear_storage(storage_, value_type_);
+		  value_type_ = get_type<typeT>();
 		  storage_.assign<typeT>(std::move(val));
 		  return *this;
 	  }
@@ -652,19 +670,12 @@ class rx_simple_value
       rx_value_storage storage_;
 
 
-      rx_value_t type_;
+      rx_value_t value_type_;
 
 
 };
 
 
-
-enum time_compare_type
-{
-	time_compare_skip,
-	time_compare_ms_accurate,
-	time_compare_exact,
-};
 
 
 
@@ -675,21 +686,21 @@ public:
 	template<typename typeT>
 	rx_timed_value(const typeT& val)
 		: storage_(val)
-		, type_(get_type<typeT>())
+		, value_type_(get_type<typeT>())
 		, default_time_compare_(time_compare_skip)
 	{
 	}
 	template<typename typeT>
 	rx_timed_value(typeT&& val) noexcept
 		: storage_(std::move(val))
-		, type_(get_type<typeT>())
+		, value_type_(get_type<typeT>())
 		, default_time_compare_(time_compare_skip)
 	{
 	}
 	template<typename typeT>
 	rx_timed_value(typeT&& val,rx_time time) noexcept
 		: storage_(std::move(val))
-		, type_(get_type<typeT>())
+		, value_type_(get_type<typeT>())
 		, time_(time)
 		, default_time_compare_(time_compare_skip)
 	{
@@ -697,8 +708,8 @@ public:
 	template<typename typeT>
 	rx_timed_value& operator=(const typeT& val)
 	{
-		clear_storage(storage_, type_);
-		type_ = get_type<typeT>();
+		clear_storage(storage_, value_type_);
+		value_type_ = get_type<typeT>();
 		storage_.assign<typeT>(val);
 		time_ = val.time_;
 		return *this;
@@ -706,8 +717,8 @@ public:
 	template<typename typeT>
 	rx_timed_value& operator=(typeT&& val) noexcept
 	{
-		clear_storage(storage_, type_);
-		type_ = get_type<typeT>();
+		clear_storage(storage_, value_type_);
+		value_type_ = get_type<typeT>();
 		storage_.assign<typeT>(std::move(val));
 		time_ = val.time_;
 		return *this;
@@ -770,7 +781,7 @@ public:
       rx_value_storage storage_;
 
 
-      rx_value_t type_;
+      rx_value_t value_type_;
 
       rx_time time_;
 

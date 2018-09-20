@@ -50,18 +50,18 @@ namespace meta {
 template<class T>
 bool generate_json(T whose, std::ostream& def, std::ostream& err)
 {
-	rx_platform::serialization::json_writter writter;
+	rx_platform::serialization::json_writer writer;
 
-	writter.write_header(STREAMING_TYPE_OBJECT, 0);
+	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
-	bool out = whose->serialize_definition(writter, STREAMING_TYPE_OBJECT);
+	bool out = whose->serialize_definition(writer, STREAMING_TYPE_OBJECT);
 
     string_type result;
 	if (out)
 	{
-		writter.write_footer();
+		writer.write_footer();
 
-		out = writter.get_string(result, true);
+		out = writer.get_string(result, true);
 	}
 
 	if (out)

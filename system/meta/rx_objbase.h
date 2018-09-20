@@ -453,7 +453,7 @@ public:
 	  }
 	  uint32_t register_value(const string_type& name, const rx_value& val)
 	  {
-		  switch (val.get_type())
+		  switch (val.get_value_type())
 		  {
 		  case RX_BOOL_TYPE:
 			  return register_value<bool>(name, val);
@@ -466,7 +466,7 @@ public:
 
 	  uint32_t register_const_value(const string_type& name, const rx_value& val)
 	  {
-		  switch (val.get_type())
+		  switch (val.get_value_type())
 		  {
 		  case RX_BOOL_TYPE:
 			  return register_const_value<bool>(name, val);
