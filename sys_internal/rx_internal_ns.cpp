@@ -404,18 +404,18 @@ void storage_directory::get_content (server_directories_type& sub_directories, s
 } // namespace internal_ns
 } // namespace sys_internal
 
-template class sys_internal::internal_ns::rx_item_implementation<objects::domain_runtime::smart_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<objects::domain_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<objects::application_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<objects::object_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<testing::test_case::smart_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class::smart_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class::smart_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class_ptr>;
 
 

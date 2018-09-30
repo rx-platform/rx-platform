@@ -216,7 +216,7 @@ size_t rx_platform_file::get_size () const
 	return 0;
 }
 
-bool rx_platform_file::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool rx_platform_file::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return false;
 }

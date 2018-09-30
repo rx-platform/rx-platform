@@ -247,7 +247,7 @@ public:
 
       virtual bool generate_json (std::ostream& def, std::ostream& err) const = 0;
 
-      virtual bool serialize (base_meta_writter& stream) const;
+      virtual bool serialize (base_meta_writer& stream) const;
 
       virtual bool deserialize (base_meta_reader& stream);
 

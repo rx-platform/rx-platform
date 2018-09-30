@@ -47,25 +47,25 @@ bool is_serialization_type_array(int type)
 }
 
 
-// Class rx::base_meta_writter 
+// Class rx::base_meta_writer 
 
-base_meta_writter::base_meta_writter(const base_meta_writter &right)
+base_meta_writer::base_meta_writer(const base_meta_writer &right)
 {
 	RX_ASSERT(false);
 }
 
-base_meta_writter::base_meta_writter (int version)
+base_meta_writer::base_meta_writer (int version)
 	: version_(version)
 {
 }
 
 
-base_meta_writter::~base_meta_writter()
+base_meta_writer::~base_meta_writer()
 {
 }
 
 
-base_meta_writter & base_meta_writter::operator=(const base_meta_writter &right)
+base_meta_writer & base_meta_writer::operator=(const base_meta_writer &right)
 {
 	RX_ASSERT(false);
 	return *this;

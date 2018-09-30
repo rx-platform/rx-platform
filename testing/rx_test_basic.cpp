@@ -6,28 +6,27 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
 #include "stdafx.h"
-
 
 
 // rx_test_basic
@@ -44,7 +43,7 @@ namespace basic_tests {
 
 namespace lib_test {
 
-// Class testing::basic_tests::lib_test::library_test_category
+// Class testing::basic_tests::lib_test::library_test_category 
 
 library_test_category::library_test_category()
 	: test_category("lib")
@@ -147,7 +146,7 @@ void test_callbacks(std::ostream& out)
 	out << "\r\n";
 }
 
-// Class testing::basic_tests::lib_test::platform_callback_test
+// Class testing::basic_tests::lib_test::platform_callback_test 
 
 platform_callback_test::platform_callback_test()
 	: test_case("callback")
@@ -169,7 +168,7 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_tests::lib_test::values_test
+// Class testing::basic_tests::lib_test::values_test 
 
 values_test::values_test()
 	: test_case("values")
@@ -190,19 +189,19 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		ctx->set_failed();
 		bool failed = false;
 
-		std::vector<rx::values::rx_simple_value> simples;
-		simples.emplace_back(true);
-		simples.emplace_back(8);
-		simples.emplace_back(6.7);
-		simples.emplace_back("string"s);
+		std::vector<rx::values::rx_simple_value> simples(4);
+		simples[0].assign_static(true);
+		simples[1].assign_static(8);
+		simples[2].assign_static(6.7);
+		simples[3].assign_static("string"s);
 
 		rx_time now = rx::rx_time::now();
 
-		std::vector<rx::values::rx_timed_value> timed;
-		timed.emplace_back(false, now);
-		timed.emplace_back(9, now);
-		timed.emplace_back(6.8, now);
-		timed.emplace_back("string2"s, now);
+		std::vector<rx::values::rx_timed_value> timed(4);
+		timed[0].assign_static(false, now);
+		timed[1].assign_static(9, now);
+		timed[2].assign_static(6.8, now);
+		timed[3].assign_static("string2"s, now);
 
 
 		std::vector<rx::values::rx_value> fulls;
@@ -267,7 +266,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 	return true;
 }
 
-bool values_test::test_serialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_writter& writter, std::ostream& out)
+bool values_test::test_serialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_writer& writer, std::ostream& out)
 {
 
 	out << "\r\n\r\n" << name << " serialization std::vector 8 of values...\r\n";
@@ -275,14 +274,14 @@ bool values_test::test_serialization (const string_type& name, std::vector<rx::v
 	memory::std_buffer binary_buffer;
 	serialization::binary_writer<memory::std_vector_allocator, false> bwritter(binary_buffer);
 
-	writter.write_header(STREAMING_TYPE_VALUES, simples.size() + timed.size());
+	writer.write_header(STREAMING_TYPE_VALUES, simples.size() + timed.size());
 
 	for (const auto& one : simples)
-		one.serialize(writter);
+		one.serialize(writer);
 	for (const auto& one : timed)
-		one.serialize(writter);
+		one.serialize(writer);
 
-	if (writter.write_footer())
+	if (writer.write_footer())
 	{
 		out << "\r\n==============================\r\n " ANSI_COLOR_GREEN << name << ANSI_COLOR_RESET " serialization succeeded";
 		return true;
@@ -290,7 +289,7 @@ bool values_test::test_serialization (const string_type& name, std::vector<rx::v
 	else return false;
 }
 
-bool values_test::test_deserialization(const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_reader& reader, std::ostream& out)
+bool values_test::test_deserialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_reader& reader, std::ostream& out)
 {
 	bool failed = false;
 	int type;
@@ -378,7 +377,7 @@ bool values_test::test_deserialization(const string_type& name, std::vector<rx::
 }
 
 
-// Class testing::basic_tests::lib_test::external_interfaces_test
+// Class testing::basic_tests::lib_test::external_interfaces_test 
 
 external_interfaces_test::external_interfaces_test()
 		: test_case("interfaces")
@@ -404,7 +403,7 @@ bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, st
 
 namespace meta_test {
 
- // Class testing::basic_tests::meta_test::meta_model_test_category
+ // Class testing::basic_tests::meta_test::meta_model_test_category 
 
  meta_model_test_category::meta_model_test_category()
 	 : test_category("meta")
@@ -419,7 +418,7 @@ namespace meta_test {
 
 
 
- // Class testing::basic_tests::meta_test::object_creation_test
+ // Class testing::basic_tests::meta_test::object_creation_test 
 
  object_creation_test::object_creation_test()
 	 : test_case("construct")
@@ -443,15 +442,15 @@ namespace meta_test {
 	 server_directory_ptr dir = ctx->get_current_directory();
 
 	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
-	 test_class->complex_data().register_const_value("testBool", true);
-	 test_class->complex_data().register_simple_value("testVal", 158);
+	 test_class->complex_data().register_const_value_static("testBool", true);
+	 test_class->complex_data().register_simple_value_static("testVal", 158);
 
 	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
-	 test_struct->complex_data().register_simple_value("structVal", false);
+	 test_struct->complex_data().register_simple_value_static("structVal", false);
 
 	 test_class->complex_data().register_struct("structName", 41);
 
-	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().register_class(test_class))
+	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().register_class(test_class))
 	 {
 		 out << "test_class created\r\n";
 
@@ -460,7 +459,7 @@ namespace meta_test {
 		 if (rx_class_item->generate_json(out, err))
 		 {
 
-			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::struct_class>().register_class(test_struct))
+			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
 			 {
 
 				 out << "test_struct created\r\n";
@@ -475,10 +474,10 @@ namespace meta_test {
 
 					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > mapa;
 					 mapa.emplace(55, [] {
-						 return rx_create_reference<objects::user_object>();
+						 return rx_create_reference<objects::object_types::user_object>();
 					 });
 
-					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_class>().create_runtime("test_object", 59, 55);
+					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 59, 55);
 					 if (test_object)
 					 {
 						 out << "test_class test_object\r\n";

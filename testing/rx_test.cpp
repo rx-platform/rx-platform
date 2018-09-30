@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@
 
 namespace testing {
 
-// Class testing::test_command
+// Class testing::test_command 
 
 test_command::test_command()
 	: server_command("test")
@@ -225,7 +225,7 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 }
 
 
-// Class testing::test_category
+// Class testing::test_category 
 
 test_category::test_category(const test_category &right)
 {
@@ -279,7 +279,7 @@ test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
 }
 
 
-// Class testing::test_case
+// Class testing::test_case 
 
 test_case::test_case(const test_case &right)
       : start_tick_(0),
@@ -384,7 +384,9 @@ string_type test_case::get_type_name () const
 
 values::rx_value test_case::get_value () const
 {
-	return rx_value(status_,modified_time_);
+	rx_value temp;
+	temp.assign_static(status_, modified_time_);
+	return temp;
 }
 
 namespace_item_attributes test_case::get_attributes () const
@@ -435,7 +437,7 @@ platform_item_ptr test_case::get_item_ptr ()
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
-bool test_case::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool test_case::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
 }
@@ -451,7 +453,7 @@ size_t test_case::get_size () const
 }
 
 
-// Class testing::testing_enviroment
+// Class testing::testing_enviroment 
 
 testing_enviroment::testing_enviroment()
 {
@@ -540,7 +542,7 @@ test_program_context::smart_ptr testing_enviroment::create_test_context (rx_plat
 }
 
 
-// Class testing::test_program_context
+// Class testing::test_program_context 
 
 test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
       : status_(RX_TEST_STATUS_UNKNOWN)
@@ -579,7 +581,7 @@ size_t test_program_context::get_possition () const
 }
 
 
-// Class testing::basic_test_case_test
+// Class testing::basic_test_case_test 
 
 basic_test_case_test::basic_test_case_test()
 	: test_case("test")
@@ -614,7 +616,7 @@ bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class testing::test_test
+// Class testing::test_test 
 
 test_test::test_test()
 	: test_category("test")

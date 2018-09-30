@@ -41,12 +41,12 @@ namespace rx_platform {
 
 namespace meta {
 
-
+namespace object_defs {
 class obj_meta_helpers
 {
 public:
 	template<class objectT>
-	static bool serialize_object_class(const objectT& whose, base_meta_writter& stream, uint8_t type)
+	static bool serialize_object_class(const objectT& whose, base_meta_writer& stream, uint8_t type)
 	{
 		if (!whose.meta_data_.serialize_checkable_definition(stream, type))
 			return false;
@@ -63,42 +63,162 @@ public:
 
 };
 
+// Class rx_platform::meta::object_defs::application_class 
 
+string_type application_class::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
 
-// Class rx_platform::meta::object_data_type 
-
-object_data_type::object_data_type()
+application_class::application_class()
 {
 }
 
-object_data_type::object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
-{
-}
-
-
-
-bool object_data_type::serialize_object_definition (base_meta_writter& stream, uint8_t type) const
-{
-	
-	return true;
-}
-
-bool object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
-{
-	
-	return true;
-}
-
-void object_data_type::construct (complex_runtime_ptr what)
-{
-}
-
-void object_data_type::construct (objects::object_runtime_ptr what)
+application_class::application_class (const string_type& name, const rx_node_id& id, bool system)
 {
 }
 
 
-// Class rx_platform::meta::object_class 
+application_class::~application_class()
+{
+}
+
+
+
+void application_class::construct (objects::object_runtime_ptr what)
+{
+}
+
+void application_class::construct (complex_runtime_ptr what)
+{
+}
+
+platform_item_ptr application_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool application_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return obj_meta_helpers::serialize_object_class<application_class>(*this, stream, type);
+}
+
+bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return obj_meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
+}
+
+checkable_data& application_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& application_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const object_data_type& application_class::object_data () const
+{
+  return object_data_;
+}
+
+const checkable_data& application_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::complex_data_type& application_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const def_blocks::mapped_data_type& application_class::mapping_data () const
+{
+  return mapping_data_;
+}
+
+
+// Class rx_platform::meta::object_defs::domain_class 
+
+string_type domain_class::type_name = RX_CPP_DOMAIN_CLASS_TYPE_NAME;
+
+domain_class::domain_class()
+{
+}
+
+domain_class::domain_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name,id,system)
+{
+}
+
+
+domain_class::~domain_class()
+{
+}
+
+
+
+void domain_class::construct (objects::object_runtime_ptr what)
+{
+}
+
+void domain_class::construct (complex_runtime_ptr what)
+{
+}
+
+platform_item_ptr domain_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool domain_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return obj_meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
+}
+
+bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return obj_meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
+}
+
+checkable_data& domain_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& domain_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const object_data_type& domain_class::object_data () const
+{
+  return object_data_;
+}
+
+const checkable_data& domain_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::complex_data_type& domain_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const def_blocks::mapped_data_type& domain_class::mapping_data () const
+{
+  return mapping_data_;
+}
+
+
+// Class rx_platform::meta::object_defs::object_class 
 
 string_type object_class::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
 
@@ -138,13 +258,7 @@ platform_item_ptr object_class::get_item_ptr ()
 
 }
 
-const checkable_data& object_class::meta_data () const
-{
-  return meta_data_;
-
-}
-
-bool object_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool object_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return obj_meta_helpers::serialize_object_class<object_class>(*this, stream, type);
 }
@@ -156,112 +270,72 @@ bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 
 objects::object_runtime_ptr object_class::create_runtime_ptr ()
 {
-	return rx_create_reference<objects::object_runtime>();
+	return rx_create_reference<objects::object_types::object_runtime>();
 }
 
-
-// Class rx_platform::meta::domain_class 
-
-string_type domain_class::type_name = RX_CPP_DOMAIN_CLASS_TYPE_NAME;
-
-domain_class::domain_class()
-{
-}
-
-domain_class::domain_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id,system)
-{
-}
-
-
-domain_class::~domain_class()
-{
-}
-
-
-
-void domain_class::construct (objects::object_runtime_ptr what)
-{
-}
-
-void domain_class::construct (complex_runtime_ptr what)
-{
-}
-
-platform_item_ptr domain_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-const checkable_data& domain_class::meta_data () const
+checkable_data& object_class::meta_data ()
 {
   return meta_data_;
 
 }
 
-bool domain_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+def_blocks::complex_data_type& object_class::complex_data ()
 {
-	return obj_meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
-}
+  return complex_data_;
 
-bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return obj_meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
 }
 
 
-// Class rx_platform::meta::application_class 
-
-string_type application_class::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
-
-application_class::application_class()
+const object_data_type& object_class::object_data () const
 {
+  return object_data_;
 }
 
-application_class::application_class (const string_type& name, const rx_node_id& id, bool system)
-{
-}
-
-
-application_class::~application_class()
-{
-}
-
-
-
-void application_class::construct (objects::object_runtime_ptr what)
-{
-}
-
-void application_class::construct (complex_runtime_ptr what)
-{
-}
-
-platform_item_ptr application_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-const checkable_data& application_class::meta_data () const
+const checkable_data& object_class::meta_data () const
 {
   return meta_data_;
-
 }
 
-bool application_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+const def_blocks::complex_data_type& object_class::complex_data () const
 {
-	return obj_meta_helpers::serialize_object_class<application_class>(*this, stream, type);
+  return complex_data_;
 }
 
-bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+
+// Class rx_platform::meta::object_defs::object_data_type 
+
+object_data_type::object_data_type()
 {
-	return obj_meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
+}
+
+object_data_type::object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
+{
 }
 
 
-// Class rx_platform::meta::port_class 
+
+bool object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
+{
+	
+	return true;
+}
+
+bool object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
+{
+	
+	return true;
+}
+
+void object_data_type::construct (complex_runtime_ptr what)
+{
+}
+
+void object_data_type::construct (objects::object_runtime_ptr what)
+{
+}
+
+
+// Class rx_platform::meta::object_defs::port_class 
 
 string_type port_class::type_name = RX_CPP_PORT_CLASS_TYPE_NAME;
 
@@ -294,13 +368,7 @@ platform_item_ptr port_class::get_item_ptr ()
 
 }
 
-const checkable_data& port_class::meta_data () const
-{
-  return meta_data_;
-
-}
-
-bool port_class::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool port_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return obj_meta_helpers::serialize_object_class<port_class>(*this, stream, type);
 }
@@ -310,7 +378,41 @@ bool port_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 	return obj_meta_helpers::deserialize_object_class<port_class>(*this, stream, type);
 }
 
+checkable_data& port_class::meta_data ()
+{
+  return meta_data_;
 
+}
+
+def_blocks::complex_data_type& port_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const object_data_type& port_class::object_data () const
+{
+  return object_data_;
+}
+
+const checkable_data& port_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::complex_data_type& port_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const def_blocks::mapped_data_type& port_class::mapping_data () const
+{
+  return mapping_data_;
+}
+
+
+} // namespace object_defs
 } // namespace meta
 } // namespace rx_platform
 

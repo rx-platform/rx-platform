@@ -78,7 +78,7 @@ class object_constructor_base
 
 
 
-typedef object_constructor_base< objects::object_runtime_ptr , objects::user_object::smart_ptr  > user_object_constructor;
+typedef object_constructor_base< objects::object_runtime_ptr , objects::object_types::user_object::smart_ptr  > user_object_constructor;
 
 
 

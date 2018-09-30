@@ -60,7 +60,7 @@ program_runtime::~program_runtime()
 
 
 
-bool program_runtime::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool program_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
 }
@@ -86,7 +86,7 @@ namespace_item_attributes program_runtime::get_attributes () const
 		| namespace_item_read_access);
 }
 
-bool program_runtime::save_program (base_meta_writter& stream, uint8_t type) const
+bool program_runtime::save_program (base_meta_writer& stream, uint8_t type) const
 {
 	return serialize_definition(stream, type);
 }
@@ -98,7 +98,7 @@ bool program_runtime::load_program (base_meta_reader& stream, uint8_t type)
 
 void program_runtime::get_value (values::rx_value& val) const
 {
-	val = rx_value(0u, meta_data_.get_modified_time());
+	val.assign_static(0u, meta_data_.get_modified_time());
 }
 
 platform_item_ptr program_runtime::get_item_ptr ()
@@ -108,7 +108,9 @@ platform_item_ptr program_runtime::get_item_ptr ()
 
 values::rx_value program_runtime::get_value () const
 {
-	return rx_value(0u, meta_data_.get_modified_time());
+	rx_value temp;
+	temp.assign_static(0u, meta_data_.get_modified_time());
+	return temp;
 }
 
 bool program_runtime::is_browsable () const
@@ -149,7 +151,7 @@ ladder_program::~ladder_program()
 
 
 
-bool ladder_program::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool ladder_program::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!program_runtime::serialize_definition(stream, type))
 		return false;

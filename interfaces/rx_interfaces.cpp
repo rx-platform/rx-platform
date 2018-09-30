@@ -64,7 +64,6 @@ rx_ethernet_card & rx_ethernet_card::operator=(rx_ethernet_card &&right)
 	assert(false);
 	return *this;
 }
-
 // Class interfaces::rx_ip_address 
 
 rx_ip_address::rx_ip_address()
@@ -95,6 +94,5 @@ rx_ip_address & rx_ip_address::operator=(rx_ip_address &&right)
 	assert(false);
 	return *this;
 }
-
 } // namespace interfaces
 

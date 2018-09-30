@@ -122,7 +122,7 @@ file class. basic implementation of a file");
 
       virtual size_t get_size () const;
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 

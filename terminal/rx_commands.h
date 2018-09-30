@@ -89,7 +89,7 @@ class server_command : public rx_platform::prog::server_command_base
 
 
 
-class server_command_manager : public rx_platform::objects::server_object  
+class server_command_manager : public rx_platform::objects::object_types::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\

@@ -201,7 +201,9 @@ string_type server_command_base::get_type_name () const
 
 values::rx_value server_command_base::get_value () const
 {
-	return values::rx_value(get_console_name(),time_stamp_);
+	values::rx_value temp;
+	temp.assign_static(get_console_name(), time_stamp_);
+	return temp;
 }
 
 void server_command_base::item_lock ()
@@ -273,7 +275,7 @@ size_t server_command_base::get_size () const
 	return 0;
 }
 
-bool server_command_base::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool server_command_base::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return false;
 }

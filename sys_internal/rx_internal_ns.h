@@ -31,12 +31,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 #include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;

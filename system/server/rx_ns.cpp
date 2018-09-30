@@ -170,7 +170,7 @@ string_type rx_platform_item::get_path () const
 	}
 }
 
-bool rx_platform_item::serialize (base_meta_writter& stream) const
+bool rx_platform_item::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("Name", get_name().c_str()))
 		return false;
@@ -463,16 +463,12 @@ void rx_server_directory::structure_unlock () const
 
 void rx_server_directory::get_value (rx_value& value)
 {
-	values::rx_value temp;
-	temp.set_time(get_created());
-	temp.set_quality(RX_GOOD_QUALITY);
-	value = temp;
+	value.assign_static(get_name(), get_created());
 }
 
 void rx_server_directory::fill_code_info (std::ostream& info)
 {
 	string_type name = get_path();
-
 	fill_code_info(info, name);
 }
 
@@ -502,11 +498,3 @@ void rx_server_directory::add_item(TImpl who)
 } // namespace ns
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	: name_(name)
-
-#endif

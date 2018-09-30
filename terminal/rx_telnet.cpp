@@ -780,11 +780,9 @@ namespace
 
 bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 {
-	string_type quality_stirng;
-	values::rx_value val = item->get_value();
-	string_type value_string;
-	val.get_string(value_string);
-	ns::fill_quality_string(val, quality_stirng);
+	string_type quality_string;
+	values::rx_value val(item->get_value());
+	ns::fill_quality_string(val, quality_string);
 	string_type attrs;
 	ns::fill_namepsace_string(item->get_attributes(), attrs);
 	string_type cls_name;
@@ -804,8 +802,10 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	out << "Type       : " << item->get_type_name() << "\r\n";
 	out << "Attributes : " << attrs << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Value      : " << value_string << "\r\n";
-	out << "Quality	   : " << quality_stirng << "\r\n";
+	out << "Value      : ";
+	val.get_storage().dump_to_stream(out);
+	out << "\r\n";
+	out << "Quality	   : " << quality_string << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Class      : " << cls_name << "\r\n";

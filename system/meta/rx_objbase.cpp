@@ -44,7 +44,34 @@ namespace rx_platform {
 namespace objects {
 const char* g_const_simple_class_name = "CONST_SIMPLE";
 
-// Class rx_platform::objects::server_object 
+namespace object_types {
+
+// Class rx_platform::objects::object_types::user_object 
+
+user_object::user_object()
+{
+}
+
+user_object::user_object (const string_type& name, const rx_node_id& id)
+	: object_runtime(name, id, true)
+{
+	init_object();
+}
+
+
+user_object::~user_object()
+{
+}
+
+
+
+namespace_item_attributes user_object::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access | namespace_item_object);
+}
+
+
+// Class rx_platform::objects::object_types::server_object 
 
 server_object::server_object (const string_type& name, const rx_node_id& id)
 	: object_runtime(name,id,true)
@@ -65,311 +92,109 @@ namespace_item_attributes server_object::get_attributes () const
 }
 
 
-// Class rx_platform::objects::complex_runtime_item 
+// Class rx_platform::objects::object_types::application_runtime 
 
-complex_runtime_item::complex_runtime_item (const string_type& name, const rx_node_id& id, bool system)
-	: parent_(id)
+string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
+
+application_runtime::application_runtime()
+{
+	my_application_ = smart_this();
+	my_domain_ = smart_this();
+}
+
+application_runtime::application_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: domain_runtime(name,id,system)
+{
+	my_application_ = smart_this();
+	my_domain_ = smart_this();
+}
+
+
+application_runtime::~application_runtime()
 {
 }
 
 
-complex_runtime_item::~complex_runtime_item()
+
+string_type application_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+namespace_item_attributes application_runtime::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+}
+
+
+// Class rx_platform::objects::object_types::domain_runtime 
+
+string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
+
+domain_runtime::domain_runtime()
+{
+	my_domain_ = smart_this();
+}
+
+domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: object_runtime(name,id,system)
+{
+	my_domain_ = smart_this();
+}
+
+
+domain_runtime::~domain_runtime()
 {
 }
 
 
 
-rx_value complex_runtime_item::get_value (const string_type path) const
+string_type domain_runtime::get_type_name () const
 {
-	size_t idx = path.find(RX_OBJECT_DELIMETER);
-	string_type mine;
-	if (idx != string_type::npos)
-	{// bellow us, split it
-		mine = path.substr(0, idx);
-		string_type bellow = path.substr(idx + 1);
-		auto it = names_cache_.find(mine);
-		if (it != names_cache_.end())
-		{// found it
-			if ((it->second&RT_COMPLEX_IDX_MASK) == RT_COMPLEX_IDX_MASK)
-			{// has to be but?!?, it's fast so lets do it
-				return sub_items_[(it->second&RT_INDEX_MASK)]->get_value(bellow);
-			}
-			else
-			{// this here should never happed
-				RX_ASSERT(false);
-			}
-
-		}
-	}
-	else// its' ours
-	{
-		auto it = names_cache_.find(path);
-		if (it != names_cache_.end())
-		{// search const values first
-			if ((it->second&RT_CONST_IDX_MASK) == RT_CONST_IDX_MASK)
-			{// const value
-				RX_ASSERT((it->second&RT_INDEX_MASK) < const_values_.size());
-				return const_values_[(it->second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(),my_object_->get_mode() } );
-			}
-			else if ((it->second&RT_COMPLEX_IDX_MASK) == RT_COMPLEX_IDX_MASK)
-			{// has to be but?!?, it's fast so lets do it
-				return sub_items_[(it->second&RT_INDEX_MASK)]->get_value(nullptr);
-			}
-		}
-	}
-
-	rx_value ret;
-	ret.set_time(rx_time::now());
-	ret.set_quality(RX_BAD_QUALITY_CONFIG_ERROR);
-	return ret;
+  return type_name;
 
 }
 
-uint32_t complex_runtime_item::set_hosting_object (object_runtime_ptr obj)
+namespace_item_attributes domain_runtime::get_attributes () const
 {
-	RX_ASSERT(!my_object_);
-	if (my_object_)
-		return RX_ERROR;
-
-	my_object_ = obj;
-	return RX_OK;
-}
-
-object_runtime_ptr& complex_runtime_item::get_hosting_object ()
-{
-	return my_object_;
-}
-
-void complex_runtime_item::object_state_changed (const rx_time& now)
-{
-	for (auto& one : names_cache_)
-	{
-		uint32_t type = (one.second& RT_TYPE_MASK);
-		switch (type)
-		{
-		case RT_CONST_IDX_MASK:
-			{
-				if ((one.second&RT_CALLBACK_MASK)!=0)
-				{// has callback so fire all, its quality changed
-					(*(const_values_callbacks_[RT_CALLBACK_INDEX(one.second)]))(
-						const_values_[(one.second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(), my_object_->get_mode() } ), 0);
-				}
-
-			}
-			break;
-		case RT_VALUE_IDX_MASK:
-			{
-
-			}
-			break;
-		case RT_COMPLEX_IDX_MASK:
-			{
-				sub_items_[(one.second&RT_INDEX_MASK)]->object_state_changed(now);
-			}
-			break;
-
-		}
-	}
-}
-
-value_callback_t* complex_runtime_item::get_callback (const string_type& path, rx_value& val)
-{
-	size_t idx = path.find(RX_OBJECT_DELIMETER);
-	string_type mine;
-	if (idx != string_type::npos)
-	{// bellow us, split it
-		mine = path.substr(0, idx);
-		string_type bellow = path.substr(idx + 1);
-		auto it = names_cache_.find(mine);
-		if (it != names_cache_.end())
-		{// found it
-			if ((it->second&RT_COMPLEX_IDX_MASK) == RT_COMPLEX_IDX_MASK)
-			{// has to be but?!?, it's fast so lets do it
-				return sub_items_[(it->second&RT_INDEX_MASK)]->get_callback(bellow,val);
-			}
-			else
-			{// this here should never happend
-				RX_ASSERT(false);
-			}
-
-		}
-	}
-	else// its' ours
-	{
-		auto it = names_cache_.find(path);
-		if (it != names_cache_.end())
-		{// search const values first
-			if ((it->second&RT_CONST_IDX_MASK) == RT_CONST_IDX_MASK)
-			{// const value
-				RX_ASSERT((it->second&RT_INDEX_MASK) < const_values_.size());
-				if (it->second&RT_CALLBACK_MASK)
-				{// we have callback mask so return it
-					return const_values_callbacks_[(it->second&RT_CONST_IDX_MASK)];
-				}
-				else
-				{// create new callback
-					value_callback_t *ret = new value_callback_t;
-					uint32_t idx = RT_CALLBACK_INDEX(it->second);
-					if (idx >= const_values_callbacks_.size())
-						const_values_callbacks_.resize(idx + 1);
-					const_values_callbacks_[idx]=ret;
-					return ret;
-
-				}
-			}
-
-		}
-	}
-	return nullptr;
-}
-
-uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item* val)
-{
-	auto it = names_cache_.find(name);
-	if (it == names_cache_.end())
-	{
-		uint32_t idx = (uint32_t)(sub_items_.size());
-		idx |= RT_COMPLEX_IDX_MASK;
-		sub_items_.emplace_back(val);
-		names_cache_.emplace(name, idx);
-		val->set_hosting_object(my_object_);
-		names_cache_.emplace(name, idx);
-		return RX_OK;
-	}
-	return RX_ERROR;
-}
-
-rx_value complex_runtime_item::get_value ()
-{
-	rx_value ret;
-	ret.set_time(get_hosting_object()->get_created_time());
-	ret.set_quality(RX_Q_TYPE_MISMATCH);
-	return ret;
-}
-
-bool complex_runtime_item::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
-{
-	if (!stream.start_array("Items", names_cache_.size()))
-		return false;
-	for (const auto& one : names_cache_)
-	{
-		switch (one.second&RT_TYPE_MASK)
-		{
-		case RT_CONST_IDX_MASK:
-			{// const value
-				if (!stream.start_object("Item"))
-					return false;
-				if (!stream.write_string("Name", one.first.c_str()))
-					return false;
-				if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
-					return false;
-				if (!stream.start_object("Val"))
-					return false;
-				const_values_[one.second&RT_INDEX_MASK].serialize_definition(stream, type, { ts, mode });
-				if (!stream.end_object())//Val
-					return false;
-				if (!stream.end_object())//Item
-					return false;
-			}
-			break;
-		case RT_VALUE_IDX_MASK:
-			{// simple value
-				if (!stream.start_object("Item"))
-					return false;
-				if (!stream.write_string("Name", one.first.c_str()))
-					return false;
-				if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
-					return false;
-				if (!stream.start_object("Val"))
-					return false;
-				values_[one.second&RT_INDEX_MASK]->serialize_definition(stream, type, { ts, mode } );
-				if (!stream.end_object())//Val
-					return false;
-				if (!stream.end_object())//Item
-					return false;
-			}
-			break;
-		case RT_COMPLEX_IDX_MASK:
-			{// complex item
-			if (!stream.start_object("Item"))
-				return false;
-			if (!stream.write_string("Name", one.first.c_str()))
-				return false;
-			if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
-				return false;
-			if (!stream.start_object("Val"))
-				return false;
-			sub_items_[one.second&RT_INDEX_MASK]->serialize_definition(stream, type,rx_time::now(),mode);
-			if (!stream.end_object())//Val
-				return false;
-			if (!stream.end_object())//Item
-				return false;
-			}
-			break;
-		default:
-			RX_ASSERT(false);
-		}
-	}
-	if (!stream.end_array())
-		return false;
-	return true;
-}
-
-bool complex_runtime_item::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	RX_ASSERT(false);//fuck it!!!
-	return false;
-}
-
-string_type complex_runtime_item::get_const_name (uint32_t name_idx) const
-{
-	uint32_t idx =  name_idx & RT_INDEX_MASK;
-	const auto& it = indexes_cache_.find(idx);
-	if (it == indexes_cache_.end())
-		return  it->second;
-	else
-		return rx_get_error_text(RX_INTERNAL_ERROR_NO_REGISTERED_NAME);
-}
-
-void complex_runtime_item::get_sub_items (server_items_type& items, const string_type& pattern) const
-{
-	for (const auto& one : names_cache_)
-	{
-		switch (one.second&RT_TYPE_MASK)
-		{
-		case RT_CONST_IDX_MASK:
-			{// const value
-				items.push_back(sys_internal::internal_ns::simple_platform_item::smart_ptr(
-					one.first
-					, const_values_[(one.second&RT_INDEX_MASK)].get_value({ my_object_->get_modified_time()
-					, my_object_->get_mode() })
-					, namespace_item_read_access
-					, RX_CONST_VALUE_TYPE_NAME
-					,my_object_->get_created_time()));
-			}
-			break;
-		case RT_VALUE_IDX_MASK:
-			{// const value
-				items.push_back(sys_internal::internal_ns::simple_platform_item::smart_ptr(
-					one.first
-					, values_[(one.second&RT_INDEX_MASK)]->get_value({ my_object_->get_modified_time() , my_object_->get_mode() } )
-					, (namespace_item_attributes)(namespace_item_read_access| (values_[(one.second&RT_INDEX_MASK)]->is_readonly() ? namespace_item_null : namespace_item_write_access))
-					, RX_VALUE_TYPE_NAME
-					, my_object_->get_created_time()));
-			}
-			break;
-		case RT_COMPLEX_IDX_MASK:
-		{// complex item
-		}
-		break;
-		default:
-			RX_ASSERT(false);
-		}
-	}
+	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
 }
 
 
-// Class rx_platform::objects::object_runtime 
+// Class rx_platform::objects::object_types::port_runtime 
+
+string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
+
+port_runtime::port_runtime()
+{
+}
+
+port_runtime::port_runtime (const string_type& name, const rx_node_id& id)
+	: object_runtime(name,id,true)// every port is system objects
+{
+}
+
+
+port_runtime::~port_runtime()
+{
+}
+
+
+
+string_type port_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+namespace_item_attributes port_runtime::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
+}
+
+
+// Class rx_platform::objects::object_types::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
@@ -397,8 +222,8 @@ rx_value object_runtime::get_value (const string_type path) const
 {
 	if (path.empty())
 	{
-		rx_value ret(meta_data_.get_name());
-		ret.set_time(get_modified_time());
+		rx_value ret;
+		ret.assign_static(meta_data_.get_name(), get_modified_time());
 		ret.adapt_quality_to_mode(mode_);
 		return ret;
 	}
@@ -433,7 +258,9 @@ void object_runtime::set_test ()
 values::rx_value object_runtime::get_value () const
 {
 	// this static object improves performance its, created only once and it is empty
-	return rx_value(meta_data_.get_version(), meta_data_.get_modified_time());
+	rx_value temp;
+	temp.assign_static(meta_data_.get_version(), meta_data_.get_modified_time());
+	return temp;
 }
 
 namespace_item_attributes object_runtime::get_attributes () const
@@ -467,7 +294,7 @@ bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 	return out;
 }
 
-bool object_runtime::serialize_definition (base_meta_writter& stream, uint8_t type) const
+bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_data_.serialize_checkable_definition(stream, type))
 		return false;
@@ -552,329 +379,13 @@ size_t object_runtime::get_size () const
 	return sizeof(*this);
 }
 
-complex_runtime_item_ptr object_runtime::get_complex_item ()
+blocks::complex_runtime_item_ptr object_runtime::get_complex_item ()
 {
 	return &runtime_item_;
 }
 
 
-// Class rx_platform::objects::value_item 
-
-const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
-
-
-bool value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const
-{
-	if (!get_value(data).serialize_value(stream))
-		return false;
-	return true;
-}
-
-bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_mode_type& mode)
-{
-	return true;
-}
-
-rx_value value_item::get_value (const object_state_data& data) const
-{
-	rx_value val;
-	storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
-	return val;
-}
-
-
-// Class rx_platform::objects::variable_runtime 
-
-string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
-
-variable_runtime::variable_runtime()
-{
-}
-
-variable_runtime::variable_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
-{
-}
-
-
-variable_runtime::~variable_runtime()
-{
-}
-
-
-
-// Class rx_platform::objects::filter_runtime 
-
-filter_runtime::filter_runtime()
-	: my_item_(std::make_unique<complex_runtime_item>("_unnamed", rx_node_id::null_id, false))
-{
-}
-
-
-filter_runtime::~filter_runtime()
-{
-}
-
-
-
-// Class rx_platform::objects::source 
-
-source::source()
-{
-}
-
-
-source::~source()
-{
-}
-
-
-
-// Class rx_platform::objects::mapper 
-
-mapper::mapper()
-{
-}
-
-
-mapper::~mapper()
-{
-}
-
-
-
-// Class rx_platform::objects::domain_runtime 
-
-string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
-
-domain_runtime::domain_runtime()
-{
-	my_domain_ = smart_this();
-}
-
-domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: object_runtime(name,id,system)
-{
-	my_domain_ = smart_this();
-}
-
-
-domain_runtime::~domain_runtime()
-{
-}
-
-
-
-string_type domain_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes domain_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
-}
-
-
-// Class rx_platform::objects::application_runtime 
-
-string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
-
-application_runtime::application_runtime()
-{
-	my_application_ = smart_this();
-	my_domain_ = smart_this();
-}
-
-application_runtime::application_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: domain_runtime(name,id,system)
-{
-	my_application_ = smart_this();
-	my_domain_ = smart_this();
-}
-
-
-application_runtime::~application_runtime()
-{
-}
-
-
-
-string_type application_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes application_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
-}
-
-
-// Class rx_platform::objects::struct_runtime 
-
-string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
-
-struct_runtime::struct_runtime()
-{
-}
-
-struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
-{
-}
-
-
-struct_runtime::~struct_runtime()
-{
-}
-
-
-
-bool struct_runtime::serialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
-{
-	if (!stream.start_object(objects::struct_runtime::type_name.c_str()))
-		return false;
-
-	if (!my_item_->serialize_definition(stream, type, ts, mode))
-		return false;
-
-	if (!stream.end_object())
-		return false;
-
-	return true;
-}
-
-bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	RX_ASSERT(false);//
-	return true;
-}
-
-
-// Class rx_platform::objects::const_value_item 
-
-const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
-
-
-bool const_value_item::serialize_definition (base_meta_writter& stream, uint8_t type, const object_state_data& data) const
-{
-	if (!get_value(data).serialize_value(stream))
-		return false;
-	return true;
-}
-
-bool const_value_item::deserialize_definition (base_meta_writter& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode)
-{
-	return true;
-}
-
-bool const_value_item::has_own_time () const
-{
-  return false;
-
-}
-
-namespace_item_attributes const_value_item::get_attributes () const
-{
-	return namespace_item_attributes::namespace_item_system_const_value;
-}
-
-void const_value_item::item_lock ()
-{
-}
-
-void const_value_item::item_unlock ()
-{
-}
-
-void const_value_item::item_lock () const
-{
-}
-
-void const_value_item::item_unlock () const
-{
-}
-
-void const_value_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-string_type const_value_item::get_type_name () const
-{
-	return "";
-}
-
-rx_value const_value_item::get_value (const object_state_data& data) const
-{
-	return 0;
-}
-
-uint32_t const_value_item::register_value (const string_type& name, const rx_value& val)
-{
-	return 0;
-}
-
-
-// Class rx_platform::objects::port_runtime 
-
-string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
-
-port_runtime::port_runtime()
-{
-}
-
-port_runtime::port_runtime (const string_type& name, const rx_node_id& id)
-	: object_runtime(name,id,true)// every port is system objects
-{
-}
-
-
-port_runtime::~port_runtime()
-{
-}
-
-
-
-string_type port_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes port_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
-}
-
-
-// Class rx_platform::objects::user_object 
-
-user_object::user_object()
-{
-}
-
-user_object::user_object (const string_type& name, const rx_node_id& id)
-	: object_runtime(name, id, true)
-{
-	init_object();
-}
-
-
-user_object::~user_object()
-{
-}
-
-
-
-namespace_item_attributes user_object::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access | namespace_item_object);
-}
-
-
+} // namespace object_types
 } // namespace objects
 } // namespace rx_platform
 

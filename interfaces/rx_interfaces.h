@@ -53,7 +53,6 @@ class rx_ip_address
       rx_ip_address & operator=(const rx_ip_address &right);
 
 	  rx_ip_address & operator=(rx_ip_address &&right);
-
   protected:
 
   private:
@@ -76,7 +75,6 @@ class rx_ethernet_card
       virtual ~rx_ethernet_card();
 
 	  rx_ethernet_card & operator=(rx_ethernet_card &&right);
-
   protected:
 
   private:

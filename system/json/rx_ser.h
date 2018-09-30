@@ -139,7 +139,7 @@ class json_reader : public rx::base_meta_reader
 
 
 
-class json_writer : public rx::base_meta_writter  
+class json_writer : public rx::base_meta_writer  
 {
 	struct json_write_stack_data
 	{
@@ -310,7 +310,7 @@ typedef binary_reader<memory::std_vector_allocator, false> std_buffer_reader;
 
 
 template <typename allocT, bool swap_bytes>
-class binary_writer : public rx::base_meta_writter  
+class binary_writer : public rx::base_meta_writer  
 {
 	typedef rx::memory::memory_buffer_base<allocT, false> buffer_type;
 	struct json_write_stack_data
@@ -691,7 +691,7 @@ void binary_reader<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
       : buffer_(buffer)
-	, base_meta_writter(version)
+	, base_meta_writer(version)
 {
 }
 

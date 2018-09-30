@@ -33,10 +33,10 @@
 
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -62,7 +62,7 @@ public:
       virtual ~program_runtime();
 
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
@@ -70,7 +70,7 @@ public:
 
       namespace_item_attributes get_attributes () const;
 
-      bool save_program (base_meta_writter& stream, uint8_t type) const;
+      bool save_program (base_meta_writer& stream, uint8_t type) const;
 
       bool load_program (base_meta_reader& stream, uint8_t type);
 
@@ -133,7 +133,7 @@ ladder program class.");
       ladder_program();
 
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 

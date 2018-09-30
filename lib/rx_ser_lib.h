@@ -67,7 +67,7 @@ bool is_serialization_type_array(int type);
 
 
 
-class base_meta_writter 
+class base_meta_writer 
 {
 public:
 	template<typename T>
@@ -77,9 +77,9 @@ public:
 	}
 
   public:
-      base_meta_writter (int version);
+      base_meta_writer (int version);
 
-      virtual ~base_meta_writter();
+      virtual ~base_meta_writer();
 
 
       virtual bool write_id (const char* name, const rx_node_id& id) = 0;
@@ -138,9 +138,9 @@ public:
   protected:
 
   private:
-      base_meta_writter(const base_meta_writter &right);
+      base_meta_writer(const base_meta_writer &right);
 
-      base_meta_writter & operator=(const base_meta_writter &right);
+      base_meta_writer & operator=(const base_meta_writer &right);
 
 
 

@@ -31,12 +31,12 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using namespace rx;
 
@@ -193,7 +193,7 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writter& stream, uint8_t type) const;
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
