@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,19 +31,21 @@
 
 
 
+// rx_classes
+#include "system/meta/rx_classes.h"
 // rx_values
 #include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace objects {
-namespace blocks {
-class complex_runtime_item;
-} // namespace blocks
-
 namespace object_types {
 class object_runtime;
-
 } // namespace object_types
+
+namespace blocks {
+class complex_runtime_item;
+
+} // namespace blocks
 } // namespace objects
 } // namespace rx_platform
 
@@ -84,7 +86,7 @@ typedef struct_runtime* struct_runtime_ptr;
 
 
 
-class const_value_item 
+class const_value_item
 {
 public:
 	const_value_item(const const_value_item& right) = default;
@@ -117,7 +119,7 @@ public:
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      string_type get_type_name () const;
+      static string_type get_type_name ();
 
       rx_value get_value (const object_state_data& data) const;
 
@@ -142,7 +144,97 @@ public:
 
 
 
-class value_item 
+class filter_runtime
+{
+public:
+	typedef std::unique_ptr<filter_runtime> smart_ptr;
+
+  public:
+      filter_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<complex_runtime_item> my_item_;
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class mapper_runtime
+{
+
+  public:
+      mapper_runtime();
+
+      virtual ~mapper_runtime();
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<complex_runtime_item> my_item_;
+
+
+};
+
+
+
+
+
+
+class source_runtime
+{
+public:
+	typedef std::unique_ptr<source_runtime> smart_ptr;
+
+  public:
+      source_runtime();
+
+      virtual ~source_runtime();
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<complex_runtime_item> my_item_;
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class value_item
 {
 public:
 	value_item(const value_item& right) = default;
@@ -165,6 +257,8 @@ public:
       bool deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_mode_type& mode);
 
       rx_value get_value (const object_state_data& data) const;
+
+      static string_type get_type_name ();
 
 
       const rx_time get_change_time () const
@@ -198,32 +292,6 @@ public:
 };
 
 
-
-
-
-
-class filter_runtime 
-{
-public:
-	typedef std::unique_ptr<filter_runtime> smart_ptr;
-
-  public:
-      filter_runtime();
-
-      virtual ~filter_runtime();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-};
-
-
 #define RT_CONST_IDX_MASK	0xc0000000
 #define RT_VALUE_IDX_MASK	0x80000000
 #define RT_COMPLEX_IDX_MASK 0x40000000
@@ -235,7 +303,7 @@ public:
 
 
 
-class complex_runtime_item 
+class complex_runtime_item
 {
 public:
 	typedef std::unique_ptr<complex_runtime_item > smart_ptr;
@@ -251,9 +319,11 @@ public:
 	friend class meta::def_blocks::complex_data_type;
 
   public:
+      complex_runtime_item();
+
       complex_runtime_item (const string_type& name, const rx_node_id& id, bool system = false);
 
-      ~complex_runtime_item();
+      virtual ~complex_runtime_item();
 
 
       rx_value get_value (const string_type path) const;
@@ -278,6 +348,8 @@ public:
 
       uint32_t register_value (const string_type& name, rx_timed_value&& val);
 
+      virtual string_type get_type_name () const;
+
 
       const rx_node_id& get_parent () const
       {
@@ -294,7 +366,9 @@ public:
 	  template<typename T>
 	  uint32_t register_value_direct(const string_type& name, T&& val)
 	  {
-		  return register_value(name, rx_timed_value(std::forward<T>(val)));
+		  rx_timed_value temp;
+		  temp.assign_static(std::forward<T>(val));
+		  return register_value(name, std::move(temp));
 	  }
 	  callback::callback_handle_t register_callback(const string_type& path, void* p, value_callback_t::callback_function_t func)
 	  {
@@ -360,7 +434,7 @@ public:
 
 
 
-class struct_runtime 
+class struct_runtime : public complex_runtime_item  
 {
 
 	friend class meta::def_blocks::complex_data_type;
@@ -375,12 +449,17 @@ public:
 
       struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~struct_runtime();
-
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      meta::checkable_data& meta_data ();
+
+      string_type get_type_name () const;
+
+
+      const meta::checkable_data& meta_data () const;
 
 
       static string_type type_name;
@@ -391,57 +470,7 @@ public:
   private:
 
 
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-};
-
-
-
-
-
-
-class mapper_runtime 
-{
-
-  public:
-      mapper_runtime();
-
-      virtual ~mapper_runtime();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-};
-
-
-
-
-
-
-class source_runtime 
-{
-public:
-	typedef std::unique_ptr<source_runtime> smart_ptr;
-
-  public:
-      source_runtime();
-
-      virtual ~source_runtime();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
+      meta::checkable_data meta_data_;
 
 
 };
@@ -452,7 +481,7 @@ public:
 
 
 
-class variable_runtime 
+class variable_runtime
 {
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source_runtime::smart_ptr> sources_type;

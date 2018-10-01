@@ -40,14 +40,14 @@
 
 namespace rx_platform {
 namespace objects {
-namespace blocks {
-class complex_runtime_item;
-} // namespace blocks
-
 namespace object_types {
 class object_runtime;
-
 } // namespace object_types
+
+namespace blocks {
+class complex_runtime_item;
+
+} // namespace blocks
 } // namespace objects
 } // namespace rx_platform
 

@@ -155,8 +155,8 @@
 
 
 namespace rx {
-class base_meta_reader;
 class base_meta_writer;
+class base_meta_reader;
 
 } // namespace rx
 
@@ -532,6 +532,7 @@ class rx_simple_value
 
 
 
+
 class rx_timed_value 
 {
 public:
@@ -582,7 +583,9 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      static rx_timed_value from_simple (const rx_simple_value&& value);
+      static rx_timed_value from_simple (const rx_simple_value& value, rx_time ts);
+
+      static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
 
       const rx_value_storage& get_storage () const

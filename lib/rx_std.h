@@ -72,6 +72,7 @@ using namespace std::string_literals;
 
 #define DEFAULT_NAMESPACE 1
 #define DEFAULT_OPC_NAMESPACE 0
+#define RX_USER_NAMESPACE 999
 
 
 #define TIME_QUALITY_LEAP_SECONDS_KNOWN 0x80

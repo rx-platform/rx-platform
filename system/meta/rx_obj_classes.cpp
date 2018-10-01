@@ -250,6 +250,7 @@ namespace_item_attributes object_class::get_attributes () const
 void object_class::construct (objects::object_runtime_ptr what)
 {
 	complex_data_.construct(what->get_complex_item());
+	object_data_.construct(what);
 }
 
 platform_item_ptr object_class::get_item_ptr ()
@@ -324,10 +325,6 @@ bool object_data_type::deserialize_object_definition (base_meta_reader& stream, 
 {
 	
 	return true;
-}
-
-void object_data_type::construct (complex_runtime_ptr what)
-{
 }
 
 void object_data_type::construct (objects::object_runtime_ptr what)

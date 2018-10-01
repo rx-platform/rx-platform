@@ -92,108 +92,6 @@ namespace_item_attributes server_object::get_attributes () const
 }
 
 
-// Class rx_platform::objects::object_types::application_runtime 
-
-string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
-
-application_runtime::application_runtime()
-{
-	my_application_ = smart_this();
-	my_domain_ = smart_this();
-}
-
-application_runtime::application_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: domain_runtime(name,id,system)
-{
-	my_application_ = smart_this();
-	my_domain_ = smart_this();
-}
-
-
-application_runtime::~application_runtime()
-{
-}
-
-
-
-string_type application_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes application_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
-}
-
-
-// Class rx_platform::objects::object_types::domain_runtime 
-
-string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
-
-domain_runtime::domain_runtime()
-{
-	my_domain_ = smart_this();
-}
-
-domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: object_runtime(name,id,system)
-{
-	my_domain_ = smart_this();
-}
-
-
-domain_runtime::~domain_runtime()
-{
-}
-
-
-
-string_type domain_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes domain_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
-}
-
-
-// Class rx_platform::objects::object_types::port_runtime 
-
-string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
-
-port_runtime::port_runtime()
-{
-}
-
-port_runtime::port_runtime (const string_type& name, const rx_node_id& id)
-	: object_runtime(name,id,true)// every port is system objects
-{
-}
-
-
-port_runtime::~port_runtime()
-{
-}
-
-
-
-string_type port_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-namespace_item_attributes port_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
-}
-
-
 // Class rx_platform::objects::object_types::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
@@ -382,6 +280,120 @@ size_t object_runtime::get_size () const
 blocks::complex_runtime_item_ptr object_runtime::get_complex_item ()
 {
 	return &runtime_item_;
+}
+
+meta::checkable_data& object_runtime::meta_data ()
+{
+  return meta_data_;
+
+}
+
+
+const meta::checkable_data& object_runtime::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::objects::object_types::application_runtime 
+
+string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
+
+application_runtime::application_runtime()
+{
+	my_application_ = smart_this();
+	my_domain_ = smart_this();
+}
+
+application_runtime::application_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: domain_runtime(name,id,system)
+{
+	my_application_ = smart_this();
+	my_domain_ = smart_this();
+}
+
+
+application_runtime::~application_runtime()
+{
+}
+
+
+
+string_type application_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+namespace_item_attributes application_runtime::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+}
+
+
+// Class rx_platform::objects::object_types::domain_runtime 
+
+string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
+
+domain_runtime::domain_runtime()
+{
+	my_domain_ = smart_this();
+}
+
+domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: object_runtime(name,id,system)
+{
+	my_domain_ = smart_this();
+}
+
+
+domain_runtime::~domain_runtime()
+{
+}
+
+
+
+string_type domain_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+namespace_item_attributes domain_runtime::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+}
+
+
+// Class rx_platform::objects::object_types::port_runtime 
+
+string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
+
+port_runtime::port_runtime()
+{
+}
+
+port_runtime::port_runtime (const string_type& name, const rx_node_id& id)
+	: object_runtime(name,id,true)// every port is system objects
+{
+}
+
+
+port_runtime::~port_runtime()
+{
+}
+
+
+
+string_type port_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+namespace_item_attributes port_runtime::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
 }
 
 

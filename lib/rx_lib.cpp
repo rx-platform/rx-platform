@@ -377,7 +377,7 @@ rx_node_id::rx_node_id(const rx_node_id &right)
 	}
 }
 
-rx_node_id::rx_node_id(const uint32_t& id, const uint16_t& namesp)
+rx_node_id::rx_node_id(uint32_t id, uint16_t namesp)
 	: namespace_(0),
 	node_type_(numeric_rx_node_id)
 {
@@ -385,14 +385,21 @@ rx_node_id::rx_node_id(const uint32_t& id, const uint16_t& namesp)
 	namespace_ = namesp;
 }
 
-rx_node_id::rx_node_id(const char* id, const uint16_t& namesp)
+rx_node_id::rx_node_id(const char* id, uint16_t namesp)
 {
 	value_.string_value = new string_type(id);
 	node_type_ = string_rx_node_id;
 	namespace_ = namesp;
 }
-
-rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
+/*
+rx_node_id::rx_node_id(const rx_uuid_t& id, uint16_t namesp)
+{
+	value_.uuid_value = id;
+	node_type_ = guid_rx_node_id;
+	namespace_ = namesp;
+}
+*/
+rx_node_id::rx_node_id(rx_uuid_t id, uint16_t namesp)
 {
 	value_.uuid_value = id;
 	node_type_ = guid_rx_node_id;
@@ -400,7 +407,7 @@ rx_node_id::rx_node_id(const rx_uuid_t& id, const uint16_t& namesp)
 }
 
 
-rx_node_id::rx_node_id(const byte_string& id, const uint16_t& namesp)
+rx_node_id::rx_node_id(const byte_string& id, uint16_t namesp)
 {
 	value_.bstring_value = new byte_string(id);
 	node_type_ = bytes_rx_node_id;
@@ -577,7 +584,10 @@ void rx_node_id::to_string(string_type& val) const
 		val += value;
 	}
 }
-
+rx_node_id rx_node_id::generate_new(uint16_t namesp)
+{
+	return rx_node_id(rx_uuid::create_new().uuid(), namesp);
+}
 rx_node_id rx_node_id::from_string(const char* value)
 {
 

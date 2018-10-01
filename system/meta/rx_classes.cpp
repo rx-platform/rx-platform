@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -82,7 +82,391 @@ public:
 	}
 };
 
-// Class rx_platform::meta::checkable_data
+namespace basic_defs {
+
+// Class rx_platform::meta::basic_defs::event_class 
+
+string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
+
+event_class::event_class()
+{
+}
+
+
+event_class::~event_class()
+{
+}
+
+
+
+platform_item_ptr event_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return meta_helpers::serialize_complex_class<event_class>(*this, stream, type);
+}
+
+bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return meta_helpers::deserialize_complex_class<event_class>(*this, stream, type);
+}
+
+checkable_data& event_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& event_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const def_blocks::complex_data_type& event_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const checkable_data& event_class::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::filter_class 
+
+string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
+
+filter_class::filter_class()
+{
+}
+
+
+filter_class::~filter_class()
+{
+}
+
+
+
+platform_item_ptr filter_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool filter_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return meta_helpers::serialize_complex_class<filter_class>(*this, stream, type);
+}
+
+bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return meta_helpers::deserialize_complex_class<filter_class>(*this, stream, type);
+}
+
+checkable_data& filter_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& filter_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const def_blocks::complex_data_type& filter_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const checkable_data& filter_class::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::mapper_class 
+
+string_type mapper_class::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
+
+mapper_class::mapper_class()
+{
+}
+
+
+
+platform_item_ptr mapper_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool mapper_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return meta_helpers::serialize_complex_class(*this, stream, type);
+}
+
+bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return meta_helpers::deserialize_complex_class(*this, stream, type);
+}
+
+checkable_data& mapper_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& mapper_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const checkable_data& mapper_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::complex_data_type& mapper_class::complex_data () const
+{
+  return complex_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::source_class 
+
+string_type source_class::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
+
+source_class::source_class()
+{
+}
+
+
+source_class::~source_class()
+{
+}
+
+
+
+platform_item_ptr source_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool source_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return meta_helpers::serialize_complex_class<source_class>(*this, stream, type);
+}
+
+bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return meta_helpers::deserialize_complex_class<source_class>(*this, stream, type);
+}
+
+checkable_data& source_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& source_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const def_blocks::complex_data_type& source_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const checkable_data& source_class::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::struct_class 
+
+string_type struct_class::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
+
+struct_class::struct_class()
+{
+}
+
+struct_class::struct_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name,id, system)
+{
+}
+
+
+struct_class::~struct_class()
+{
+}
+
+
+
+void struct_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+namespace_item_attributes struct_class::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (meta_data_.get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
+}
+
+void struct_class::construct (struct_runtime_ptr what)
+{
+	complex_data_.construct(what);
+}
+
+platform_item_ptr struct_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool struct_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return meta_helpers::serialize_struct_class<struct_class>(*this, stream, type);
+}
+
+bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return false;
+}
+
+struct_runtime_ptr struct_class::create_runtime_ptr ()
+{
+	return new objects::blocks::struct_runtime;
+}
+
+checkable_data& struct_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& struct_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const def_blocks::complex_data_type& struct_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const def_blocks::mapped_data_type& struct_class::mapping_data () const
+{
+  return mapping_data_;
+}
+
+const checkable_data& struct_class::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::variable_class 
+
+string_type variable_class::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
+
+variable_class::variable_class()
+{
+}
+
+variable_class::variable_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name,id,system)
+{
+}
+
+
+variable_class::~variable_class()
+{
+}
+
+
+
+void variable_class::construct (variable_runtime_ptr what)
+{
+}
+
+bool variable_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return variable_data_.serialize_variable_definition(stream, type);
+}
+
+bool variable_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return variable_data_.deserialize_variable_definition(stream, type);
+}
+
+platform_item_ptr variable_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+rx_value variable_class::get_value () const
+{
+	rx_value temp;
+	temp.assign_static(meta_data_.get_version(), meta_data_.get_created_time());
+	return temp;
+}
+
+checkable_data& variable_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& variable_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+
+const checkable_data& variable_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::variable_data_type& variable_class::variable_data () const
+{
+  return variable_data_;
+}
+
+const def_blocks::mapped_data_type& variable_class::mapping_data () const
+{
+  return mapping_data_;
+}
+
+const def_blocks::complex_data_type& variable_class::complex_data () const
+{
+  return complex_data_;
+}
+
+
+} // namespace basic_defs
+
+// Class rx_platform::meta::checkable_data 
 
 checkable_data::checkable_data()
       : version_(RX_INITIAL_ITEM_VERSION),
@@ -189,389 +573,6 @@ void checkable_data::construct (const string_type& name, const rx_node_id& id, r
 }
 
 
-namespace basic_defs {
-
-// Class rx_platform::meta::basic_defs::event_class
-
-string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
-
-event_class::event_class()
-{
-}
-
-
-event_class::~event_class()
-{
-}
-
-
-
-platform_item_ptr event_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return meta_helpers::serialize_complex_class<event_class>(*this, stream, type);
-}
-
-bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return meta_helpers::deserialize_complex_class<event_class>(*this, stream, type);
-}
-
-checkable_data& event_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& event_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const def_blocks::complex_data_type& event_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& event_class::meta_data () const
-{
-  return meta_data_;
-}
-
-
-// Class rx_platform::meta::basic_defs::filter_class
-
-string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
-
-filter_class::filter_class()
-{
-}
-
-
-filter_class::~filter_class()
-{
-}
-
-
-
-platform_item_ptr filter_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool filter_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return meta_helpers::serialize_complex_class<filter_class>(*this, stream, type);
-}
-
-bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return meta_helpers::deserialize_complex_class<filter_class>(*this, stream, type);
-}
-
-checkable_data& filter_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& filter_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const def_blocks::complex_data_type& filter_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& filter_class::meta_data () const
-{
-  return meta_data_;
-}
-
-
-// Class rx_platform::meta::basic_defs::mapper_class
-
-string_type mapper_class::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
-
-mapper_class::mapper_class()
-{
-}
-
-
-
-platform_item_ptr mapper_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool mapper_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return meta_helpers::serialize_complex_class(*this, stream, type);
-}
-
-bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return meta_helpers::deserialize_complex_class(*this, stream, type);
-}
-
-checkable_data& mapper_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& mapper_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const checkable_data& mapper_class::meta_data () const
-{
-  return meta_data_;
-}
-
-const def_blocks::complex_data_type& mapper_class::complex_data () const
-{
-  return complex_data_;
-}
-
-
-// Class rx_platform::meta::basic_defs::source_class
-
-string_type source_class::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
-
-source_class::source_class()
-{
-}
-
-
-source_class::~source_class()
-{
-}
-
-
-
-platform_item_ptr source_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool source_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return meta_helpers::serialize_complex_class<source_class>(*this, stream, type);
-}
-
-bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return meta_helpers::deserialize_complex_class<source_class>(*this, stream, type);
-}
-
-checkable_data& source_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& source_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const def_blocks::complex_data_type& source_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& source_class::meta_data () const
-{
-  return meta_data_;
-}
-
-
-// Class rx_platform::meta::basic_defs::struct_class
-
-string_type struct_class::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
-
-struct_class::struct_class()
-{
-}
-
-struct_class::struct_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id, system)
-{
-}
-
-
-struct_class::~struct_class()
-{
-}
-
-
-
-void struct_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-namespace_item_attributes struct_class::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (meta_data_.get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
-}
-
-void struct_class::construct (struct_runtime_ptr what)
-{
-	//!!!!!!!!!!!TODO
-}
-
-platform_item_ptr struct_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool struct_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return meta_helpers::serialize_struct_class<struct_class>(*this, stream, type);
-}
-
-bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return false;
-}
-
-struct_runtime_ptr struct_class::create_runtime_ptr ()
-{
-	return new objects::blocks::struct_runtime;
-}
-
-checkable_data& struct_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& struct_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const def_blocks::complex_data_type& struct_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const def_blocks::mapped_data_type& struct_class::mapping_data () const
-{
-  return mapping_data_;
-}
-
-const checkable_data& struct_class::meta_data () const
-{
-  return meta_data_;
-}
-
-
-// Class rx_platform::meta::basic_defs::variable_class
-
-string_type variable_class::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
-
-variable_class::variable_class()
-{
-}
-
-variable_class::variable_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id,system)
-{
-}
-
-
-variable_class::~variable_class()
-{
-}
-
-
-
-void variable_class::construct (variable_runtime_ptr what)
-{
-}
-
-bool variable_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return variable_data_.serialize_variable_definition(stream, type);
-}
-
-bool variable_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return variable_data_.deserialize_variable_definition(stream, type);
-}
-
-platform_item_ptr variable_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-rx_value variable_class::get_value () const
-{
-	rx_value temp;
-	temp.assign_static(meta_data_.get_version(), meta_data_.get_created_time());
-	return temp;
-}
-
-checkable_data& variable_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& variable_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-
-const checkable_data& variable_class::meta_data () const
-{
-  return meta_data_;
-}
-
-const def_blocks::variable_data_type& variable_class::variable_data () const
-{
-  return variable_data_;
-}
-
-const def_blocks::mapped_data_type& variable_class::mapping_data () const
-{
-  return mapping_data_;
-}
-
-const def_blocks::complex_data_type& variable_class::complex_data () const
-{
-  return complex_data_;
-}
-
-
-} // namespace basic_defs
 } // namespace meta
 } // namespace rx_platform
 

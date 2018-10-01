@@ -100,62 +100,68 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 	if (!stream.write_bool("Abstract", abstract_))
 		return false;
 
-	if (!stream.start_array("Const", const_values_.size()))
+	if (!stream.start_array("Items", names_cache_.size()))
 		return false;
-	for (const auto& one : const_values_)
+	for (const auto& one : names_cache_)
 	{
-		if (!stream.start_object("Item"))
-			return false;
-		if (!one.serialize_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
+		switch (one.second&type_mask)
+		{
+		case structs_mask:
+		{
+
+			if (!stream.start_object("Item"))
+				return false;
+			if (!stream.write_string("Type",struct_class::type_name.c_str()))
+				return false;
+			if (!structs_[one.second&index_mask]->serialize_definition(stream,type))
+				return false;
+			if (!stream.end_object())
+				return false;
+		}
+		break;
+		case variables_mask:
+		{
+
+			if (!stream.start_object("Item"))
+				return false;
+			if (!stream.write_string("Type", variable_class::type_name.c_str()))
+				return false;
+			if (!variables_[one.second&index_mask]->serialize_definition(stream, type))
+				return false;
+			if (!stream.end_object())
+				return false;
+		}
+
+		case simple_values_mask:
+		{
+			if (!stream.start_object("Item"))
+				return false;
+			if (!stream.write_string("Type", simple_value_def::type_name.c_str()))
+				return false;
+			if (!simple_values_[one.second&index_mask].serialize_definition(stream, type))
+				return false;
+			if (!stream.end_object())
+				return false;
+		}
+		break;
+		case const_values_mask:
+		{
+			if (!stream.start_object("Item"))
+				return false;
+			if (!stream.write_string("Type", const_value_def::type_name.c_str()))
+				return false;
+			if (!const_values_[one.second&index_mask].serialize_definition(stream, type))
+				return false;
+			if (!stream.end_object())
+				return false;
+		}
+		break;
+
+		}
 	}
 	if (!stream.end_array())
 		return false;
-
-	if (!stream.start_array("Vals", simple_values_.size()))
-		return false;
-	for (const auto& one : simple_values_)
-	{
-		if (!stream.start_object("Item"))
-			return false;
-		if (!one.serialize_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-
-	if (!stream.start_array("Structs", structs_.size()))
-		return false;
-	for (const auto& one : structs_)
-	{
-		if (!stream.start_object("Item"))
-			return false;
-		if (!one->serialize_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-
-	if (!stream.start_array("Vars", variables_.size()))
-		return false;
-	for (const auto& one : variables_)
-	{
-		if (!stream.start_object("Item"))
-			return false;
-		if (!one->serialize_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-
+	
 	return true;
 }
 
@@ -181,7 +187,7 @@ bool complex_data_type::deserialize_complex_definition (base_meta_reader& stream
 
 bool complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|structs_mask))))
 	{
 		structs_.emplace_back(std::make_unique<struct_attribute>(name, id));
 		return true;
@@ -194,7 +200,7 @@ bool complex_data_type::register_struct (const string_type& name, const rx_node_
 
 bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|variables_mask))))
 	{
 		variables_.emplace_back(std::make_unique<variable_attribute>(name, id));
 		return true;
@@ -205,12 +211,12 @@ bool complex_data_type::register_variable (const string_type& name, const rx_nod
 	}
 }
 
-bool complex_data_type::check_name (const string_type& name)
+bool complex_data_type::check_name (const string_type& name, int rt_index)
 {
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
 	{
-		names_cache_.emplace(name);
+		names_cache_.emplace(name, rt_index);
 		return true;
 	}
 	else
@@ -222,6 +228,37 @@ bool complex_data_type::check_name (const string_type& name)
 void complex_data_type::construct (complex_runtime_ptr what)
 {
 	// constant values
+	for (const auto& one : names_cache_)
+	{
+		switch (one.second&type_mask)
+		{
+		case structs_mask:
+		{
+			struct_runtime_ptr temp= model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_runtime("test_object", rx_node_id::null_id, structs_[one.second&index_mask]->get_target_id());
+			
+			what->register_sub_item(structs_[one.second&index_mask]->get_name(), temp);
+		}
+		break;
+		case variables_mask:
+		{
+		}
+		break;
+		case const_values_mask:
+		{
+			what->register_const_value(
+				const_values_[one.second&index_mask].get_name(),
+				const_values_[one.second&index_mask].get_value());
+		}
+		break;
+		case simple_values_mask:
+		{
+			what->register_value(
+				simple_values_[one.second&index_mask].get_name(),
+				simple_values_[one.second&index_mask].get_value((rx_time::now())));
+		}
+		break;
+		}
+	}
 	for (auto& one : const_values_)
 	{
 		what->register_const_value(one.get_name(), one.get_value());
@@ -229,7 +266,7 @@ void complex_data_type::construct (complex_runtime_ptr what)
 
 	for (auto& one : simple_values_)
 	{
-		what->register_value(one.get_name(), rx_timed_value::from_simple(one.get_value(rx_time::now())));
+		what->register_value(one.get_name(), one.get_value(rx_time::now()));
 	}
 	//for (auto& one : structs_)
 	//{
@@ -239,7 +276,7 @@ void complex_data_type::construct (complex_runtime_ptr what)
 
 bool complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|simple_values_mask))))
 	{
 		simple_values_.emplace_back(name, std::move(val));
 		return true;
@@ -252,7 +289,7 @@ bool complex_data_type::register_simple_value (const string_type& name, rx_simpl
 
 bool complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|const_values_mask))))
 	{
 		const_values_.emplace_back(name, std::move(val));
 		return true;
@@ -265,7 +302,7 @@ bool complex_data_type::register_const_value (const string_type& name, rx_simple
 
 bool complex_data_type::register_simple_value (const string_type& name, const rx_simple_value& val)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|simple_values_mask))))
 	{
 		simple_values_.emplace_back(name, val);
 		return true;
@@ -278,7 +315,7 @@ bool complex_data_type::register_simple_value (const string_type& name, const rx
 
 bool complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
 {
-	if (check_name(name))
+	if (check_name(name, (static_cast<int>(structs_.size()|const_values_mask))))
 	{
 		const_values_.emplace_back(name, val);
 		return true;
@@ -291,6 +328,8 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 
 
 // Class rx_platform::meta::def_blocks::const_value_def 
+
+string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
       : created_time_(rx_time::now()),
@@ -426,7 +465,7 @@ bool mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, 
 
 bool mapped_data_type::register_mapper (const mapper_attribute& item, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name(), (static_cast<int>(mappers_.size()&complex_data_type::mappings_mask))))
 	{
 		mappers_.emplace_back(item);
 		return true;
@@ -470,6 +509,8 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
+string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
+
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value)
       : read_only_(true),
         created_time_(rx_time::now()),
@@ -503,9 +544,9 @@ bool simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t
 	return false;
 }
 
-rx_simple_value simple_value_def::get_value (rx_time now) const
+rx_timed_value simple_value_def::get_value (rx_time now) const
 {
-	return storage_;
+	return rx_timed_value::from_simple(storage_, now);
 }
 
 
@@ -659,7 +700,7 @@ variable_data_type::~variable_data_type()
 
 bool variable_data_type::register_source (const source_attribute& item, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name(), (static_cast<int>(sources_.size()&complex_data_type::sources_mask))))
 	{
 		sources_.emplace_back(item);
 		return true;
@@ -672,7 +713,7 @@ bool variable_data_type::register_source (const source_attribute& item, complex_
 
 bool variable_data_type::register_filter (const filter_attribute& item, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name(), (static_cast<int>(filters_.size()&complex_data_type::filters_mask))))
 	{
 		filters_.emplace_back(item);
 		return true;
@@ -685,7 +726,7 @@ bool variable_data_type::register_filter (const filter_attribute& item, complex_
 
 bool variable_data_type::register_event (const event_attribute& item, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(item.get_name()))
+	if (complex_data.check_name(item.get_name(), (static_cast<int>(events_.size()&complex_data_type::events_mask))))
 	{
 		events_.emplace_back(item);
 		return true;

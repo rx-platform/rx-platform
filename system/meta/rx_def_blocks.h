@@ -233,6 +233,15 @@ public:
       }
 
 
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+      static string_type type_name;
+
 
   protected:
 
@@ -357,7 +366,7 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      rx_simple_value get_value (rx_time now) const;
+      rx_timed_value get_value (rx_time now) const;
 
 
       const bool get_read_only () const
@@ -383,6 +392,15 @@ public:
         return modified_time_;
       }
 
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+      static string_type type_name;
 
 
   protected:
@@ -419,7 +437,7 @@ class complex_data_type
 	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
 
 
-	typedef std::set<string_type> names_cahce_type;
+	typedef std::map<string_type, int> names_cahce_type;
 
   public:
       complex_data_type();
@@ -435,7 +453,7 @@ class complex_data_type
 
       bool register_variable (const string_type& name, const rx_node_id& id);
 
-      bool check_name (const string_type& name);
+      bool check_name (const string_type& name, int rt_index);
 
       void construct (complex_runtime_ptr what);
 
@@ -471,6 +489,20 @@ class complex_data_type
 	  bool register_const_value_static(const string_type& name, constT&& value);
 	  template <typename valT>
 	  bool register_simple_value_static(const string_type& name, valT&& value);
+
+	  
+	  static constexpr const int structs_mask =			0x01000000;
+	  static constexpr const int simple_values_mask =	0x02000000;
+	  static constexpr const int const_values_mask =	0x03000000;
+	  static constexpr const int variables_mask =		0x04000000;
+	  static constexpr const int mappings_mask =		0x05000000;
+	  static constexpr const int sources_mask =			0x06000000;
+	  static constexpr const int events_mask =			0x07000000;
+	  static constexpr const int filters_mask =			0x08000000;
+
+	  static constexpr const int type_mask =			0xff000000;
+	  static constexpr const int index_mask =			0x00ffffff;
+
   protected:
 
   private:

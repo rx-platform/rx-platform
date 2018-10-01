@@ -1148,10 +1148,19 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value&& value)
+rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = value.get_storage();
+	ret.time_ = ts;
+	return ret;
+}
+
+rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
+{
+	rx_timed_value ret;
+	ret.storage_ = std::move(value.get_storage());
+	ret.time_ = ts;
 	return ret;
 }
 

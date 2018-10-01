@@ -31,12 +31,12 @@
 
 
 
-// rx_blocks
-#include "system/meta/rx_blocks.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
+// rx_blocks
+#include "system/meta/rx_blocks.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
 // rx_ptr
@@ -45,8 +45,8 @@
 namespace rx_platform {
 namespace objects {
 namespace object_types {
-class application_runtime;
 class domain_runtime;
+class application_runtime;
 
 } // namespace object_types
 } // namespace objects
@@ -134,6 +134,8 @@ public:
 
       blocks::complex_runtime_item_ptr get_complex_item ();
 
+      meta::checkable_data& meta_data ();
+
 
       blocks::complex_runtime_item& get_runtime_item ()
       {
@@ -141,11 +143,7 @@ public:
       }
 
 
-      meta::checkable_data& get_meta_data ()
-      {
-        return meta_data_;
-      }
-
+      const meta::checkable_data& meta_data () const;
 
 
       const rx_mode_type& get_mode () const

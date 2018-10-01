@@ -218,13 +218,13 @@ public:
 
 	rx_node_id(const rx_node_id &right);
 
-	rx_node_id(const uint32_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(const char* id, const uint16_t& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(const rx_uuid_t& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(rx_uuid_t id, uint16_t namesp = DEFAULT_NAMESPACE);
 
-	rx_node_id(const byte_string& id, const uint16_t& namesp = DEFAULT_NAMESPACE);
+	rx_node_id(const byte_string& id, uint16_t namesp = DEFAULT_NAMESPACE);
 
 	rx_node_id(rx_node_id&& right)  noexcept;
 
@@ -242,6 +242,8 @@ public:
 	void to_string(string_type& val) const;
 
 	static rx_node_id from_string(const char* value);
+
+	static rx_node_id generate_new(uint16_t namesp);
 
 	bool is_null() const;
 

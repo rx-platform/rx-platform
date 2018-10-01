@@ -94,8 +94,6 @@ class object_data_type
 
       bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
-      void construct (complex_runtime_ptr what);
-
       void construct (objects::object_runtime_ptr what);
 
 

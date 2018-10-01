@@ -29,10 +29,10 @@
 #include "stdafx.h"
 
 
-// rx_blocks
-#include "system/meta/rx_blocks.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
+// rx_blocks
+#include "system/meta/rx_blocks.h"
 
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
@@ -47,112 +47,11 @@ namespace objects {
 
 namespace blocks {
 
-// Class rx_platform::objects::blocks::const_value_item 
-
-const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
-
-
-bool const_value_item::serialize_definition (base_meta_writer& stream, uint8_t type, const object_state_data& data) const
-{
-	if (!get_value(data).serialize(stream))
-		return false;
-	return true;
-}
-
-bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode)
-{
-	return false;
-}
-
-bool const_value_item::has_own_time () const
-{
-  return false;
-
-}
-
-namespace_item_attributes const_value_item::get_attributes () const
-{
-	return namespace_item_attributes::namespace_item_system_const_value;
-}
-
-void const_value_item::item_lock ()
-{
-}
-
-void const_value_item::item_unlock ()
-{
-}
-
-void const_value_item::item_lock () const
-{
-}
-
-void const_value_item::item_unlock () const
-{
-}
-
-void const_value_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-string_type const_value_item::get_type_name () const
-{
-	return "";
-}
-
-rx_value const_value_item::get_value (const object_state_data& data) const
-{
-	rx_value temp;
-	temp.assign_static(0);
-	return temp;
-}
-
-uint32_t const_value_item::register_value (const string_type& name, const rx_value& val)
-{
-	return 0;
-}
-
-
-// Class rx_platform::objects::blocks::value_item 
-
-const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
-
-
-bool value_item::serialize_definition (base_meta_writer& stream, uint8_t type, const object_state_data& data) const
-{
-	if (!get_value(data).serialize(stream))
-		return false;
-	return true;
-}
-
-bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_mode_type& mode)
-{
-	return false;
-}
-
-rx_value value_item::get_value (const object_state_data& data) const
-{
-	rx_value val;
-	storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
-	return val;
-}
-
-
-// Class rx_platform::objects::blocks::filter_runtime 
-
-filter_runtime::filter_runtime()
-	: my_item_(std::make_unique<complex_runtime_item>("_unnamed", rx_node_id::null_id, false))
-{
-}
-
-
-filter_runtime::~filter_runtime()
-{
-}
-
-
-
 // Class rx_platform::objects::blocks::complex_runtime_item 
+
+complex_runtime_item::complex_runtime_item()
+{
+}
 
 complex_runtime_item::complex_runtime_item (const string_type& name, const rx_node_id& id, bool system)
 	: parent_(id)
@@ -197,6 +96,11 @@ rx_value complex_runtime_item::get_value (const string_type path) const
 			{// const value
 				RX_ASSERT((it->second&RT_INDEX_MASK) < const_values_.size());
 				return const_values_[(it->second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(),my_object_->get_mode() });
+			}
+			else if ((it->second&RT_VALUE_IDX_MASK) == RT_VALUE_IDX_MASK)
+			{// const value
+				RX_ASSERT((it->second&RT_INDEX_MASK) < values_.size());
+				return values_[(it->second&RT_INDEX_MASK)].get_value({ my_object_->get_change_time(),my_object_->get_mode() });
 			}
 			else if ((it->second&RT_COMPLEX_IDX_MASK) == RT_COMPLEX_IDX_MASK)
 			{// has to be but?!?, it's fast so lets do it
@@ -348,7 +252,7 @@ bool complex_runtime_item::serialize_definition (base_meta_writer& stream, uint8
 				return false;
 			if (!stream.write_string("Name", one.first.c_str()))
 				return false;
-			if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
+			if (!stream.write_string("Type", const_value_item::get_type_name().c_str()))
 				return false;
 			if (!stream.start_object("Val"))
 				return false;
@@ -365,7 +269,7 @@ bool complex_runtime_item::serialize_definition (base_meta_writer& stream, uint8
 				return false;
 			if (!stream.write_string("Name", one.first.c_str()))
 				return false;
-			if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
+			if (!stream.write_string("Type", value_item::get_type_name().c_str()))
 				return false;
 			if (!stream.start_object("Val"))
 				return false;
@@ -382,12 +286,9 @@ bool complex_runtime_item::serialize_definition (base_meta_writer& stream, uint8
 				return false;
 			if (!stream.write_string("Name", one.first.c_str()))
 				return false;
-			if (!stream.write_uint("ItemType", one.second&RT_TYPE_MASK))
+			if (!stream.write_string("Type", sub_items_[one.second&RT_INDEX_MASK]->get_type_name().c_str()))
 				return false;
-			if (!stream.start_object("Val"))
-				return false;
-			sub_items_[one.second&RT_INDEX_MASK]->serialize_definition(stream, type, rx_time::now(), mode);
-			if (!stream.end_object())//Val
+			if(!sub_items_[one.second&RT_INDEX_MASK]->serialize_definition(stream,type,ts,mode))
 				return false;
 			if (!stream.end_object())//Item
 				return false;
@@ -483,43 +384,93 @@ uint32_t complex_runtime_item::register_value (const string_type& name, rx_timed
 	return RX_ERROR;
 }
 
-
-// Class rx_platform::objects::blocks::struct_runtime 
-
-string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
-
-struct_runtime::struct_runtime()
+string_type complex_runtime_item::get_type_name () const
 {
-}
-
-struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
-{
+	return RX_NULL_ITEM_NAME;
 }
 
 
-struct_runtime::~struct_runtime()
+// Class rx_platform::objects::blocks::const_value_item 
+
+const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
+
+
+bool const_value_item::serialize_definition (base_meta_writer& stream, uint8_t type, const object_state_data& data) const
 {
-}
-
-
-
-bool struct_runtime::serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
-{
-	if (!stream.start_object(struct_runtime::type_name.c_str()))
+	if (!storage_.serialize(stream))
 		return false;
-	if (!my_item_->serialize_definition(stream, type, ts, mode))
-		return false;
-	if (!stream.end_object())
-		return false;
-
 	return true;
 }
 
-bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool const_value_item::deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode)
 {
-	RX_ASSERT(false);//
-	return true;
+	return false;
+}
+
+bool const_value_item::has_own_time () const
+{
+  return false;
+
+}
+
+namespace_item_attributes const_value_item::get_attributes () const
+{
+	return namespace_item_attributes::namespace_item_system_const_value;
+}
+
+void const_value_item::item_lock ()
+{
+}
+
+void const_value_item::item_unlock ()
+{
+}
+
+void const_value_item::item_lock () const
+{
+}
+
+void const_value_item::item_unlock () const
+{
+}
+
+void const_value_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+string_type const_value_item::get_type_name ()
+{
+	return RX_CONST_VALUE_TYPE_NAME;
+}
+
+rx_value const_value_item::get_value (const object_state_data& data) const
+{
+	rx_value temp;
+	temp.assign_static(0);
+	return temp;
+}
+
+uint32_t const_value_item::register_value (const string_type& name, const rx_value& val)
+{
+	return 0;
+}
+
+
+// Class rx_platform::objects::blocks::filter_runtime 
+
+string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
+
+filter_runtime::filter_runtime()
+	: my_item_(std::make_unique<complex_runtime_item>("_unnamed", rx_node_id::null_id, false))
+{
+}
+
+
+
+string_type filter_runtime::get_type_name () const
+{
+  return type_name;
+
 }
 
 
@@ -538,6 +489,8 @@ mapper_runtime::~mapper_runtime()
 
 // Class rx_platform::objects::blocks::source_runtime 
 
+string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
+
 source_runtime::source_runtime()
 {
 }
@@ -547,6 +500,89 @@ source_runtime::~source_runtime()
 {
 }
 
+
+
+// Class rx_platform::objects::blocks::struct_runtime 
+
+string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
+
+struct_runtime::struct_runtime()
+{
+}
+
+struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
+	: complex_runtime_item(name, id, system)
+{
+}
+
+
+
+bool struct_runtime::serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
+{
+	if (!stream.start_object(struct_runtime::type_name.c_str()))
+		return false;
+	if (!meta_data_.serialize_checkable_definition(stream, type))
+		return false;
+	if (!complex_runtime_item::serialize_definition(stream, type, ts, mode))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	RX_ASSERT(false);//
+	return true;
+}
+
+meta::checkable_data& struct_runtime::meta_data ()
+{
+  return meta_data_;
+
+}
+
+string_type struct_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+
+const meta::checkable_data& struct_runtime::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::objects::blocks::value_item 
+
+const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
+
+
+bool value_item::serialize_definition (base_meta_writer& stream, uint8_t type, const object_state_data& data) const
+{
+	if (!storage_.serialize(stream))
+		return false;
+	return true;
+}
+
+bool value_item::deserialize_definition (base_meta_reader& stream, uint8_t type, const rx_mode_type& mode)
+{
+	return false;
+}
+
+rx_value value_item::get_value (const object_state_data& data) const
+{
+	rx_value val;
+	storage_.get_value(val, std::max(get_change_time(), data.ts), data.mode);
+	return val;
+}
+
+string_type value_item::get_type_name ()
+{
+	return RX_VALUE_TYPE_NAME;
+}
 
 
 // Class rx_platform::objects::blocks::variable_runtime 
