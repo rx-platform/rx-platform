@@ -36,6 +36,7 @@
 #include "terminal/rx_telnet.h"
 #include "terminal/rx_general_commands.h"
 #include "testing/rx_test.h"
+#include "classes/rx_meta_commands.h"
 
 
 namespace terminal {
@@ -126,6 +127,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
 	register_command(rx_create_reference<testing::test_command>());
+	register_command(rx_create_reference<model::meta_commands::create_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
