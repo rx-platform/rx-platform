@@ -4,7 +4,7 @@
 *
 *  os_itf\windows\rx_win.h
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -33,6 +33,7 @@
 
 #include "targetver.h"
 
+#define SOURCE_CODE_PATH "d:\\rx\\native\\source\\"
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS

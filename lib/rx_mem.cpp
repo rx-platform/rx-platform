@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_mem
@@ -101,11 +101,6 @@ double rx_byte_swap(double val)
 
 // Class rx::memory::std_vector_allocator 
 
-
-byte_order_type get_platform_byte_order()
-{
-	return rx_big_endian == 0 ? intel_byte_order : network_byte_order;
-}
 ref_counting_type std_vector_allocator::g_memory_consuption;
 
 std_vector_allocator::std_vector_allocator()

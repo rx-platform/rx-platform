@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "lib/rx_lib_version.h"
 

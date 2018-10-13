@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "rx_win32_console_version.h"
 
@@ -335,7 +335,7 @@ bool win32_console_host::break_host (const string_type& msg)
 bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
 	DWORD read = 0;
-	bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
+	bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, NULL));
 	count = read;
 	return ret;
 }

@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "rx_configuration.h"
 
@@ -81,6 +81,113 @@ public:
 		return false;
 	}
 };
+
+// Class rx_platform::meta::checkable_data 
+
+checkable_data::checkable_data()
+      : version_(RX_INITIAL_ITEM_VERSION),
+        created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
+{
+}
+
+checkable_data::checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system)
+      : version_(RX_INITIAL_ITEM_VERSION),
+        created_time_(rx_time::now()),
+        modified_time_(rx_time::now())
+	, name_(name)
+	, id_(id)
+	, system_(system)
+{
+}
+
+
+
+bool checkable_data::serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const
+{
+	if (!stream.write_header(type, 0))
+		return false;
+
+	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
+	func(stream, type);*/
+	/*if(!ret)
+		return false;
+*/
+	if (!stream.write_footer())
+		return false;
+
+	return true;
+}
+
+bool checkable_data::deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value)
+{
+	return false;
+}
+
+bool checkable_data::check_in (base_meta_reader& stream)
+{
+	return false;
+}
+
+bool checkable_data::check_out (base_meta_writer& stream) const
+{
+	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
+		return false;
+
+	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
+	func(stream, STREAMING_TYPE_CHECKOUT);
+*/
+
+	if (!stream.write_footer())
+		return false;
+
+	return true;
+}
+
+bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const
+{
+	if (!stream.write_id("NodeId", id_))
+		return false;
+	if (!stream.write_bool("System", system_))
+		return false;
+	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+	if (!stream.write_id("SuperId", parent_))
+		return false;
+	if (!stream.write_version("Ver", version_))
+		return false;
+	return true;
+}
+
+bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.read_id("NodeId", id_))
+		return false;
+	if (!stream.read_bool("System", system_))
+		return false;
+	return true;
+	if (!stream.read_string("Name", name_))
+		return false;
+	return true;
+	if (!stream.read_id("Parent", parent_))
+		return false;
+	return true;
+}
+
+values::rx_value checkable_data::get_value () const
+{
+	values::rx_value temp;
+	temp.assign_static(version_, modified_time_);
+	return temp;
+}
+
+void checkable_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
+{
+	name_ = name;
+	id_ = id;
+	parent_ = type_id;
+}
+
 
 namespace basic_defs {
 
@@ -465,114 +572,6 @@ const def_blocks::complex_data_type& variable_class::complex_data () const
 
 
 } // namespace basic_defs
-
-// Class rx_platform::meta::checkable_data 
-
-checkable_data::checkable_data()
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-{
-}
-
-checkable_data::checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system)
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
-	, id_(id)
-	, system_(system)
-{
-}
-
-
-
-bool checkable_data::serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const
-{
-	if (!stream.write_header(type, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, type);*/
-	/*if(!ret)
-		return false;
-*/
-	if (!stream.write_footer())
-		return false;
-
-	return true;
-}
-
-bool checkable_data::deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value)
-{
-	return false;
-}
-
-bool checkable_data::check_in (base_meta_reader& stream)
-{
-	return false;
-}
-
-bool checkable_data::check_out (base_meta_writer& stream) const
-{
-	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, STREAMING_TYPE_CHECKOUT);
-*/
-
-	if (!stream.write_footer())
-		return false;
-
-	return true;
-}
-
-bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.write_id("NodeId", id_))
-		return false;
-	if (!stream.write_bool("System", system_))
-		return false;
-	if (!stream.write_string("Name", name_.c_str()))
-		return false;
-	if (!stream.write_id("SuperId", parent_))
-		return false;
-	if (!stream.write_version("Ver", version_))
-		return false;
-	return true;
-}
-
-bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.read_id("NodeId", id_))
-		return false;
-	if (!stream.read_bool("System", system_))
-		return false;
-	return true;
-	if (!stream.read_string("Name", name_))
-		return false;
-	return true;
-	if (!stream.read_id("Parent", parent_))
-		return false;
-	return true;
-}
-
-values::rx_value checkable_data::get_value () const
-{
-	values::rx_value temp;
-	temp.assign_static(version_, modified_time_);
-	return temp;
-}
-
-void checkable_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
-{
-	name_ = name;
-	id_ = id;
-	parent_ = type_id;
-}
-
-
 } // namespace meta
 } // namespace rx_platform
 

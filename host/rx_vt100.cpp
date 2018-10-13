@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_vt100
@@ -46,7 +46,8 @@ vt100_transport::vt100_transport()
         current_idx_(string_type::npos),
         password_mode_(false),
         history_it_(history_.begin()),
-        had_first_(false)
+        had_first_(false),
+        opened_brackets_(0)
 {
 }
 
@@ -130,12 +131,18 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 	case '\r':
 		to_echo += "\r\n";
 
-		received_line_callback(current_line_);
+		if (opened_brackets_ <= 0)
+		{
+			opened_brackets_ = 0;
+			received_line_callback(current_line_);
 
-		current_line_.clear();
-		current_idx_ = string_type::npos;
-		if(!eof)
-			state_ = parser_in_end_line;
+			current_line_.clear();
+			current_idx_ = string_type::npos;
+			if (!eof)
+				state_ = parser_in_end_line;
+		}
+		else
+			current_line_ = current_line_ + ch;
 		break;
 	case '\t':
 	{
@@ -163,6 +170,14 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 			}
 			else
 			{
+				if (ch == '{')
+				{
+					opened_brackets_++;
+				}
+				else if (ch == '}')
+				{
+					opened_brackets_--;
+				}
 				current_line_ = current_line_ + ch;
 				to_echo = to_echo + (password_mode_ ? '*' : ch);
 			}

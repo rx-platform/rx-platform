@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "terminal/rx_terminal_version.h"
 
@@ -480,10 +480,9 @@ console_client::~console_client()
 
 
 
-bool console_client::do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+bool console_client::do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-
-	string_type captured_line(line);
+	string_type captured_line(std::move(line));
 	rx_post_function<smart_ptr>(
 		[captured_line,out_buffer, err_buffer, ctx](smart_ptr sended_this)
 		{
@@ -675,6 +674,21 @@ void console_client::get_security_error (string_type& txt, sec_error_num_t err_n
 	{
 		txt = g_console_unauthorized;
 	}
+}
+
+bool console_client::do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
+	string_array captured_lines(std::move(lines));
+	rx_post_function<smart_ptr>(
+		[captured_lines, out_buffer, err_buffer, ctx](smart_ptr sended_this)
+		{
+			for(const auto& captured_line : captured_lines)
+				sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
+		}
+		, smart_this()
+		, executer_
+		);
+	return true;
 }
 
 

@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 using namespace std::string_literals;
 
@@ -307,7 +307,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 
 
-			do_command(temp, out_buffer, err_buffer,security_context_);
+	//		do_command(temp, out_buffer, err_buffer,security_context_);
 
 
 		}
@@ -503,30 +503,48 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 	{
 		// our buffer
 		string_type to_send;
+		std::vector<string_type> lines;
 
 		if (count > 1)
 		{
 			for (size_t i = idx; i < count - 1; i++)
 			{
-				vt100_parser_.char_received(buff[i], false, to_send
-					, [this](const string_type& line)
+				if (buff[i] == 0x3)
 				{
-					line_received(line);
-				});
-				//printf("%d ", (int)data[i]);
+					cancel_current();
+				}
+				else
+				{
+					vt100_parser_.char_received(buff[i], false, to_send
+						, [&](const string_type& line)
+					{
+						lines.emplace_back(line);
+					});
+				}
 			}
 		}
-		vt100_parser_.char_received(buff[count - 1], true, to_send
-			, [this](const string_type& line)
+		if (buff[count - 1] == 0x3)
 		{
-			line_received(line);
-		});
+			cancel_current();
+		}
+		else
+		{
+			vt100_parser_.char_received(buff[count - 1], true, to_send
+				, [&](const string_type& line)
+			{
+				lines.emplace_back(line);
+			});
+		}
 
 		if (!to_send.empty())
 		{
 			auto buff = get_free_buffer();
 			buff->push_string(to_send);
 			send(buff);
+		}
+		if (!lines.empty())
+		{			
+			lines_received(std::move(lines));
 		}
 	}
 	else //if (buff[0] == IAC)!!!
@@ -672,52 +690,55 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 	}
 }
 
-void telnet_client::line_received (const string_type& line)
+void telnet_client::lines_received (string_array&& lines)
 {
 
 	if (!verified_)
 	{
-		string_type captured_line(line);
+		string_array captured_lines(std::move(lines));
 		rx_post_function<smart_ptr>(
-			[captured_line](smart_ptr sended_this)
+			[captured_lines](smart_ptr sended_this)
 		{
 			sended_this->verified_ = true;
 			sended_this->vt100_parser_.set_password_mode(false);
 
-			if (captured_line == MY_PASSWORD)
+			for (auto&& captured_line : captured_lines)
 			{
-				sended_this->security_context_->login();
+				if (captured_line == MY_PASSWORD)
+				{
+					sended_this->security_context_->login();
 
-				security::security_auto_context dummy(sended_this->security_context_);
+					security::security_auto_context dummy(sended_this->security_context_);
 
-				buffer_ptr buff = sended_this->get_free_buffer();
+					buffer_ptr buff = sended_this->get_free_buffer();
 
-				string_type wellcome;
-				sended_this->get_wellcome(wellcome);
-				buff->push_line(ANSI_CLS ANSI_CUR_HOME);
-				buff->push_line(wellcome);
-				string_type prompt;
-				sended_this->get_prompt(prompt);
-				buff->push_string(prompt);
+					string_type wellcome;
+					sended_this->get_wellcome(wellcome);
+					buff->push_line(ANSI_CLS ANSI_CUR_HOME);
+					buff->push_line(wellcome);
+					string_type prompt;
+					sended_this->get_prompt(prompt);
+					buff->push_string(prompt);
 
-				sended_this->send(buff);
+					sended_this->send(buff);
 
-			}
-			else
-			{
-				buffer_ptr buff = sended_this->get_free_buffer();
+				}
+				else
+				{
+					buffer_ptr buff = sended_this->get_free_buffer();
 
-				string_type temp_str;
-				sended_this->get_wellcome(temp_str);
-				buff->push_line(ANSI_CLS ANSI_CUR_HOME);
-				buff->push_line(temp_str);
-				sended_this->get_security_error(temp_str, 0);
-				buff->push_line(temp_str);
-				string_type prompt;
-				sended_this->get_prompt(prompt);
-				buff->push_string(prompt);
+					string_type temp_str;
+					sended_this->get_wellcome(temp_str);
+					buff->push_line(ANSI_CLS ANSI_CUR_HOME);
+					buff->push_line(temp_str);
+					sended_this->get_security_error(temp_str, 0);
+					buff->push_line(temp_str);
+					string_type prompt;
+					sended_this->get_prompt(prompt);
+					buff->push_string(prompt);
 
-				sended_this->send(buff);
+					sended_this->send(buff);
+				}
 			}
 		}
 		, smart_this()
@@ -732,8 +753,19 @@ void telnet_client::line_received (const string_type& line)
 		buffer_ptr out_buffer = get_free_buffer();
 		buffer_ptr err_buffer = get_free_buffer();
 
-		do_command(line, out_buffer, err_buffer, security_context_);
+		do_commands(std::move(lines), out_buffer, err_buffer, security_context_);
 	}
+}
+
+void telnet_client::cancel_current ()
+{
+	
+	security::security_auto_context dummy(security_context_);
+
+	buffer_ptr out_buffer = get_free_buffer();
+	buffer_ptr err_buffer = get_free_buffer();
+
+	cancel_command(out_buffer, err_buffer, security_context_);
 }
 
 

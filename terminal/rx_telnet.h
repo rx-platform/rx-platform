@@ -39,18 +39,16 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 
 
@@ -68,12 +66,9 @@ namespace console {
 
 
 
-class telnet_security_context : public rx::security::security_context, 
-                                	public rx::pointers::reference_object  
+class telnet_security_context : public rx::security::security_context  
 {
 	DECLARE_REFERENCE_PTR(telnet_security_context);
-
-	DECLARE_DERIVED_FROM_INTERFACE;
 
   public:
       telnet_security_context();
@@ -125,8 +120,6 @@ class telnet_client : public rx_platform::prog::console_client,
 
       bool get_next_line (string_type& line);
 
-      void line_received (const string_type& line);
-
 
   protected:
 
@@ -146,6 +139,10 @@ class telnet_client : public rx_platform::prog::console_client,
       bool new_recive (const char* buff, size_t& idx);
 
       void send_string_response (const string_type& line, bool with_prompt = true);
+
+      void lines_received (string_array&& lines);
+
+      void cancel_current ();
 
 
 

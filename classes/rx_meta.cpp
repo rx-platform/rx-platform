@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_meta
@@ -77,6 +77,16 @@ uint32_t internal_classes_manager::stop ()
 {
 	worker_.end();
 	return RX_OK;
+}
+
+platform_item_ptr internal_classes_manager::create_type (base_meta_reader& stream)
+{
+	return platform_item_ptr::null_ptr;
+}
+
+platform_item_ptr internal_classes_manager::create_object (base_meta_reader& stream)
+{
+	return platform_item_ptr::null_ptr;
 }
 
 

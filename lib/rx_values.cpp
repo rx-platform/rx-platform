@@ -6,27 +6,27 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "lib/rx_lib.h"
 
@@ -105,7 +105,7 @@ rx_value_t inner_get_type(tl::type2type<typename std::string>)
 }
 
 
-// Class rx::values::rx_value 
+// Class rx::values::rx_value
 
 bool rx_value::operator==(const rx_value &right) const
 {
@@ -272,7 +272,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value 
+// Class rx::values::rx_simple_value
 
 bool rx_simple_value::operator==(const rx_simple_value &right) const
 {
@@ -377,7 +377,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage 
+// Class rx::values::rx_value_storage
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -541,141 +541,141 @@ void rx_value_storage::assign(bool val)
 	destory_value(value_, value_type_);
 	value_type_ = RX_BOOL_TYPE;
 	value_.bool_value = val;
-	
+
 }
 void rx_value_storage::assign(int8_t val)
 {
-	
+
 	value_.int8_value = val;
-	
+
 }
 void rx_value_storage::assign(uint8_t val)
 {
-	
+
 	value_.uint8_value = val;
-	
+
 }
 void rx_value_storage::assign(int16_t val)
 {
-	
+
 	value_.int16_value = val;
-	
+
 }
 void rx_value_storage::assign(uint16_t val)
 {
-	
+
 	value_.uint16_value = val;
-	
+
 }
 void rx_value_storage::assign(int32_t val)
 {
-	
+
 	value_.int32_value = val;
-	
+
 }
 void rx_value_storage::assign(uint32_t val)
 {
-	
+
 	value_.uint32_value = val;
-	
+
 }
 void rx_value_storage::assign(int64_t val)
 {
-	
+
 	value_.int64_value = val;
-	
+
 }
 void rx_value_storage::assign(uint64_t val)
 {
-	
+
 	value_.uint64_value = val;
-	
+
 }
 void rx_value_storage::assign(float val)
 {
-	
+
 	value_.float_value = val;
-	
+
 }
 void rx_value_storage::assign(double val)
 {
-	
+
 	value_.double_value = val;
-	
+
 }
 void rx_value_storage::assign(std::complex<double> val)
 {
-	
+
 #ifdef RX_SIZE_16
 	value_.complex_value = complex_value_struct{ val.real(), val.imag() };
 #else
 	value_.complex_value = new complex_value_struct{ val.real(), val.imag() };
 #endif
-	
+
 }
 void rx_value_storage::assign(rx_time_struct val)
 {
-	
+
 	value_.time_value = val;
-	
+
 }
 void rx_value_storage::assign(rx_uuid val)
 {
-	
+
 #ifdef RX_SIZE_16
 	uuid_value = val;
 #else
 	value_.uuid_value = new rx_uuid(val);
 #endif
-	
+
 }
 void rx_value_storage::assign(string_type&& val)
 {
-	
+
 	value_.string_value = new string_type(std::move(val));
-	
+
 }
 void rx_value_storage::assign(const string_type& val)
 {
-	
+
 	value_.string_value = new string_type(val);
-	
+
 }
 void rx_value_storage::assign(byte_string&& val)
 {
-	
+
 	value_.bytes_value = new byte_string(std::move(val));
-	
+
 }
 void rx_value_storage::assign(const byte_string& val)
 {
-	
+
 	value_.bytes_value = new byte_string(val);
-	
+
 }
 void rx_value_storage::assign(bit_string&& val)
 {
-	
+
 	value_.bits_value = new bit_string(std::move(val));
-	
+
 }
 void rx_value_storage::assign(const bit_string& val)
 {
-	
+
 	value_.bits_value = new bit_string(val);
-	
+
 }
 void rx_value_storage::assign(std::vector<rx_value_union>&& val)
 {
-	
+
 	value_.array_value = new std::vector<rx_value_union>(std::move(val));
-	
+
 }
 void rx_value_storage::assign(const std::vector<rx_value_union>& val)
 {
-	
+
 	value_.array_value = new std::vector<rx_value_union>(val);
-	
+
 }
 void rx_value_storage::assign_value(rx_value_union& left, const rx_value_union& right, rx_value_t type)
 {
@@ -1026,7 +1026,7 @@ rx_value_storage& rx_value_storage::operator==(rx_value_storage&& right) noexcep
 	assign_value(value_, std::move(right.value_), value_type_);
 	return *this;
 }
-// Class rx::values::rx_timed_value 
+// Class rx::values::rx_timed_value
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {
@@ -1148,7 +1148,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = value.get_storage();
@@ -1156,7 +1156,7 @@ rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& v
 	return ret;
 }
 
-rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = std::move(value.get_storage());

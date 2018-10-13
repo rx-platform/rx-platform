@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_lib
@@ -423,10 +423,10 @@ rx_node_id::rx_node_id(rx_node_id&& right) noexcept
 		switch (node_type_)
 		{
 		case string_rx_node_id:
-			value_.string_value = right.value_.string_value;
+			value_.string_value = std::move(right.value_.string_value);
 			break;
 		case bytes_rx_node_id:
-			value_.bstring_value = right.value_.bstring_value;
+			value_.bstring_value = std::move(right.value_.bstring_value);
 			break;
 		default:;
 		}

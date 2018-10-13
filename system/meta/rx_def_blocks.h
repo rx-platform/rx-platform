@@ -45,7 +45,7 @@ class mapper_attribute;
 
 
 #include "system/server/rx_ns.h"
-#include "system/json/rx_ser.h"
+#include "system/serialization/rx_ser.h"
 #include "system/callbacks/rx_callback.h"
 
 using namespace rx;
@@ -423,7 +423,6 @@ public:
 
 
 class struct_attribute;
-typedef std::unique_ptr<struct_attribute> struct_type_unique_ptr;
 
 
 

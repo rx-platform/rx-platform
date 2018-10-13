@@ -116,6 +116,8 @@ class vt100_transport
 
       bool had_first_;
 
+      int opened_brackets_;
+
 
 };
 

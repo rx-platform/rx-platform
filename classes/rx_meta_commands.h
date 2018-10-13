@@ -68,6 +68,8 @@ command for creating various objects in platform\r\n\
 
       bool create_object (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
+      bool create_type (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
 
 
 };

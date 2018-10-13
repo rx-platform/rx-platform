@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -86,7 +86,7 @@ typedef struct_runtime* struct_runtime_ptr;
 
 
 
-class const_value_item
+class const_value_item 
 {
 public:
 	const_value_item(const const_value_item& right) = default;
@@ -144,7 +144,7 @@ public:
 
 
 
-class filter_runtime
+class filter_runtime 
 {
 public:
 	typedef std::unique_ptr<filter_runtime> smart_ptr;
@@ -174,7 +174,7 @@ public:
 
 
 
-class mapper_runtime
+class mapper_runtime 
 {
 
   public:
@@ -198,7 +198,7 @@ class mapper_runtime
 
 
 
-class source_runtime
+class source_runtime 
 {
 public:
 	typedef std::unique_ptr<source_runtime> smart_ptr;
@@ -234,7 +234,7 @@ public:
 
 
 
-class value_item
+class value_item 
 {
 public:
 	value_item(const value_item& right) = default;
@@ -303,7 +303,7 @@ public:
 
 
 
-class complex_runtime_item
+class complex_runtime_item 
 {
 public:
 	typedef std::unique_ptr<complex_runtime_item > smart_ptr;
@@ -481,7 +481,7 @@ public:
 
 
 
-class variable_runtime
+class variable_runtime 
 {
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source_runtime::smart_ptr> sources_type;

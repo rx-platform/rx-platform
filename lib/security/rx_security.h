@@ -59,9 +59,9 @@ class security_context;
 
 
 
-class security_context : public pointers::interface_object  
+class security_context : public pointers::reference_object  
 {
-	DECLARE_INTERFACE_PTR(security_context);
+	DECLARE_REFERENCE_PTR(security_context);
 
 	//DECLARE_INTERFACE_PTR(security_context);
 
@@ -136,7 +136,8 @@ class security_context : public pointers::interface_object
 
 };
 
-typedef pointers::interface_reference<security_context> security_context_ptr;
+typedef pointers::reference<security_context> security_context_ptr;
+typedef pointers::reference<security_context> execute_context_ptr;
 
 
 security_context_ptr active_security();
@@ -265,12 +266,9 @@ class security_auto_context
 
 
 
-class built_in_security_context : public security_context, 
-                                  	public pointers::reference_object  
+class built_in_security_context : public security_context  
 {
 	DECLARE_REFERENCE_PTR(built_in_security_context);
-
-	DECLARE_DERIVED_FROM_INTERFACE;
 
   public:
       built_in_security_context();
@@ -290,8 +288,7 @@ class built_in_security_context : public security_context,
 
 
 
-class unathorized_security_context : public security_context, 
-                                     	public pointers::reference_object  
+class unathorized_security_context : public security_context  
 {
 	DECLARE_REFERENCE_PTR(unathorized_security_context);
 

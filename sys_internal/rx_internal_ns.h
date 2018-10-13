@@ -31,12 +31,12 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
 #include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;
@@ -433,9 +433,13 @@ bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostre
 
 	writer.write_header(STREAMING_TYPE_CLASS, 0);
 
-	writer.start_object(impl_->get_type_name().c_str());
+	writer.start_object(RX_SER_ITEM_HEADER_NAME);
 	{
-		impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+
+		writer.start_object(impl_->get_type_name().c_str());
+		{
+			impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+		}
 	}
 	writer.end_object();
 

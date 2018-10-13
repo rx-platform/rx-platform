@@ -336,7 +336,7 @@ class console_client : public rx::pointers::virtual_reference_object
 
   protected:
 
-      bool do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+      bool do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       void get_prompt (string_type& prompt);
 
@@ -349,6 +349,8 @@ class console_client : public rx::pointers::virtual_reference_object
       bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       void get_security_error (string_type& txt, sec_error_num_t err_number);
+
+      bool do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
   private:

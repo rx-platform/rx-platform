@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_internal_ns
@@ -417,5 +417,3 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::stru
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class_ptr>;
-
-

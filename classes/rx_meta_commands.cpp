@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_meta_commands
@@ -64,6 +64,10 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 			{
 				return create_object(in, out, err, ctx);
 			}
+			if (what == "type")
+			{
+				return create_type(in, out, err, ctx);
+			}
 			else
 			{
 				err << "Unknown type:" << what << "\r\n";
@@ -79,6 +83,16 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 
 bool create_command::create_object (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
+	string_type def;
+	std::getline(in, def, '\0');
+	out << "Hello from create object!!!\r\n";
+	return true;
+}
+
+bool create_command::create_type (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type def;
+	std::getline(in, def, '\0');
 	out << "Hello from create object!!!\r\n";
 	return true;
 }

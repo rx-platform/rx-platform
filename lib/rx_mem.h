@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -234,7 +234,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator
+class std_vector_allocator 
 {
 
   public:
@@ -409,7 +409,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator
+class backward_simple_allocator 
 {
 
   public:
@@ -452,7 +452,7 @@ class backward_simple_allocator
 typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
-// Parameterized Class rx::memory::memory_buffer_base
+// Parameterized Class rx::memory::memory_buffer_base 
 
 template <class allocT, bool swap_bytes>
 memory_buffer_base<allocT,swap_bytes>::memory_buffer_base()
@@ -614,7 +614,7 @@ void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 }
 
 
-// Parameterized Class rx::memory::std_strbuff
+// Parameterized Class rx::memory::std_strbuff 
 
 template <class allocT, bool swap_bytes>
 std_strbuff<allocT,swap_bytes>::std_strbuff()
@@ -668,7 +668,7 @@ char* std_strbuff<allocT,swap_bytes>::egptr () const
 }
 
 
-// Parameterized Class rx::memory::backward_memory_buffer_base
+// Parameterized Class rx::memory::backward_memory_buffer_base 
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)

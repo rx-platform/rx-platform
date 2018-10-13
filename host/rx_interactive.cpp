@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "rx_interactive_version.h"
 
@@ -306,7 +306,7 @@ under certain conditions; type `license' for details.\r\n\
 				memory::buffer_ptr out_buffer(pointers::_create_new);
 				memory::buffer_ptr err_buffer(pointers::_create_new);
 
-				do_command(line, out_buffer, err_buffer, security_context_);
+				do_command(string_type(line), out_buffer, err_buffer, security_context_);
 			});
 		}
 		if (!temp.empty() && 

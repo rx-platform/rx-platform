@@ -4,7 +4,7 @@
 *
 *  os_itf\windows\rx_win.c
 *
-*  Copyright (c) 2017 Dusan Ciric
+*  Copyright (c) 2018 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -26,7 +26,6 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
 
 
 // rx_win
@@ -935,8 +934,8 @@ void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)
 
 	GlobalMemoryStatusEx(&statex);
 
-	*total = statex.ullTotalPhys;
-	*free = statex.ullAvailPhys;
+	*total = (size_t)statex.ullTotalPhys;
+	*free = (size_t)statex.ullAvailPhys;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

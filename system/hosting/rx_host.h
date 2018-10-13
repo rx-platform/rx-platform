@@ -47,12 +47,6 @@
 
 
 
-namespace rx {
-namespace security
-{
-typedef rx::pointers::reference<security_context> execute_context_ptr;
-}
-}
 
 
 namespace rx_platform {

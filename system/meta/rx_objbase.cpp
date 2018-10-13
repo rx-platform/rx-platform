@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_objbase
@@ -35,7 +35,7 @@
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "lib/rx_ser_lib.h"
-#include "system/json/rx_ser.h"
+#include "system/serialization/rx_ser.h"
 #include "sys_internal/rx_internal_ns.h"
 
 
@@ -222,7 +222,7 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 
 	if (!runtime_item_.deserialize_definition(stream, type))
 		return false;
-
+		
 	if (!stream.start_array("Programs"))
 		return false;
 

@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 // rx_objbase
@@ -37,7 +37,7 @@
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "lib/rx_ser_lib.h"
-#include "system/json/rx_ser.h"
+#include "system/serialization/rx_ser.h"
 #include "sys_internal/rx_internal_ns.h"
 
 

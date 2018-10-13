@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_crypto.cpp
+*  rx_errors.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -29,73 +29,18 @@
 #include "pch.h"
 
 
-// rx_crypto
-#include "lib/rx_crypto.h"
+// rx_errors
+#include "rx_errors.h"
 
-
-
-namespace rx {
-
-namespace crypto {
-
-// Class rx::crypto::cryptography_key 
-
-cryptography_key::cryptography_key()
-      : hkey_(0)
+const char* rx_get_error_text(uint32_t code)
 {
+	switch (code)
+	{
+		case RX_INTERNAL_ERROR_NO_REGISTERED_NAME:
+			return "Internal platform_error. No Constant Value registered name in parent (1001)";
+		default:
+			return "jebiga";
+	}
 }
 
-
-cryptography_key::~cryptography_key()
-{
-	if (hkey_)
-		rx_crypt_destroy_key(hkey_);
-}
-
-
-
-bool cryptography_key::is_valid () const
-{
-	return hkey_ != 0;
-}
-
-
-// Class rx::crypto::cryptography_hash 
-
-cryptography_hash::cryptography_hash()
-      : hhash_(0)
-{
-}
-
-
-cryptography_hash::~cryptography_hash()
-{
-	if (hhash_)
-		rx_crypt_destroy_hash(hhash_);
-}
-
-
-
-bool cryptography_hash::is_valid () const
-{
-	return hhash_ != 0;
-}
-
-
-// Class rx::crypto::symetric_key 
-
-symetric_key::symetric_key (const void* data, size_t size, int alg, int mode)
-{
-	hkey_ = rx_crypt_create_symetric_key(data, size, alg, mode);
-}
-
-
-symetric_key::~symetric_key()
-{
-}
-
-
-
-} // namespace crypto
-} // namespace rx
 
