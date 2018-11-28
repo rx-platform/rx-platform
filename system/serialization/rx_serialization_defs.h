@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  rx_errors.c
+*  system\serialization\rx_serialization_defs.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,21 +26,23 @@
 ****************************************************************************/
 
 
-#include <stdint.h>
+#ifndef rx_serialization_defs_h
+#define rx_serialization_defs_h 1
 
 
-// rx_errors
-#include "rx_errors.h"
-
-const char* rx_get_error_text(uint32_t code)
-{
-	switch (code)
-	{
-		case RX_INTERNAL_ERROR_NO_REGISTERED_NAME:
-			return "Internal platform_error. No Constant Value registered name in parent (1001)";
-		default:
-			return "jebiga";
-	}
-}
 
 
+
+// serialization 
+#define RX_SER_ITEM_HEADER_NAME "meta"
+#define RX_SER_ITEM_TYPE_NAME "type"
+#define RX_SER_ITEM_ID_NAME "id"
+#define RX_SER_ITEM_NAME_NAME "name"
+#define RX_SER_ITEM_ORIGIN_NAME "origin"
+#define RX_SER_ITEM_SUPER_NAME ""
+
+
+
+
+
+#endif

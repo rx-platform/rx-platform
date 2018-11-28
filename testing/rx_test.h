@@ -37,6 +37,8 @@
 #include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_classes
+#include "system/meta/rx_classes.h"
 
 using namespace rx;
 
@@ -99,12 +101,13 @@ struct test_context_data
 
 
 
-class test_program_context : public rx_platform::prog::program_context_base  
+class test_program_context : public rx_platform::prog::console_program_context  
 {
-	DECLARE_REFERENCE_PTR(test_program_context);
-
   public:
-      test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program);
+	typedef test_program_context* smart_ptr;
+	
+  public:
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
 
       virtual ~test_program_context();
 
@@ -167,11 +170,11 @@ public:
       virtual ~test_case();
 
 
-      virtual bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx) = 0;
+      virtual bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx) = 0;
 
-      bool test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+      bool test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx);
 
-      void test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+      void test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx);
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -200,6 +203,9 @@ public:
       size_t get_size () const;
 
 
+      const rx_platform::meta::checkable_data& meta_data () const;
+
+
       const rx_time get_modified_time () const
       {
         return modified_time_;
@@ -220,6 +226,9 @@ public:
 
       test_case & operator=(const test_case &right);
 
+
+
+      rx_platform::meta::checkable_data meta_data_;
 
 
       uint64_t start_tick_;
@@ -313,7 +322,7 @@ public:
 
       test_case::smart_ptr get_test_case (const string_type& test_name);
 
-      test_program_context::smart_ptr create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx);
+      test_program_context* create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx);
 
 
   protected:

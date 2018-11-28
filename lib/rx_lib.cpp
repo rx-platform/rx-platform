@@ -350,6 +350,13 @@ void rx_uuid::to_string(string_type& str) const
 	}
 }
 
+string_type rx_uuid::to_string() const
+{
+	string_type temp;
+	to_string(temp);
+	return temp;
+}
+
 
 const rx_node_id rx_node_id::null_id;
 
@@ -423,10 +430,10 @@ rx_node_id::rx_node_id(rx_node_id&& right) noexcept
 		switch (node_type_)
 		{
 		case string_rx_node_id:
-			value_.string_value = std::move(right.value_.string_value);
+			*value_.string_value = std::move(*right.value_.string_value);
 			break;
 		case bytes_rx_node_id:
-			value_.bstring_value = std::move(right.value_.bstring_value);
+			*value_.bstring_value = std::move(*right.value_.bstring_value);
 			break;
 		default:;
 		}
@@ -462,6 +469,26 @@ rx_node_id & rx_node_id::operator=(const rx_node_id &right)
 	return *this;
 }
 
+rx_node_id & rx_node_id::operator=(rx_node_id &&right) noexcept
+{
+	clear_content();
+	memcpy(this, &right, sizeof(right));
+	if (!right.is_simple())
+	{
+		switch (node_type_)
+		{
+		case string_rx_node_id:
+			*value_.string_value = std::move(*right.value_.string_value);
+			break;
+		case bytes_rx_node_id:
+			*value_.bstring_value = std::move(*right.value_.bstring_value);
+			break;
+		default:;
+		}
+	}
+	right.node_type_ = numeric_rx_node_id;
+	return *this;
+}
 
 bool rx_node_id::operator==(const rx_node_id &right) const
 {

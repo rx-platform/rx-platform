@@ -49,6 +49,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_endpoints
+#include "system/server/rx_endpoints.h"
 
 
 #include "lib/rx_log.h"
@@ -78,6 +80,7 @@ struct configuration_data_t
 	mngt::managment_data_t managment_data;
 	ns::namespace_data_t namespace_data;
 	meta::meta_data_t meta_data;
+	io_endpoints::io_manager_data_t io_manager_data;
 };
 
 
@@ -125,6 +128,12 @@ class rx_gate
       hosting::rx_platform_host * get_host ()
       {
         return host_;
+      }
+
+
+      io_endpoints::rx_io_manager& get_io_manager ()
+      {
+        return io_manager_;
       }
 
 
@@ -208,6 +217,8 @@ class rx_gate
 
       scripts_type scripts_;
 
+      io_endpoints::rx_io_manager io_manager_;
+
 
       static rx_gate* g_instance;
 
@@ -239,6 +250,12 @@ void rx_post_function(std::function<void(argT)> f, argT arg, rx_thread_handle_t 
 {
     typedef jobs::lambda_job<argT> lambda_t;
 	rx_gate::instance().get_runtime().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
+}
+template<typename argT>
+void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, argT arg, rx_thread_handle_t whome)
+{
+	typedef jobs::lambda_timer_job<argT> lambda_t;
+	rx_gate::instance().get_runtime().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
 
 } // namespace rx_platform

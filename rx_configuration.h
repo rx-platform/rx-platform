@@ -17,28 +17,68 @@
 
 // objects stuff
 #define RX_NS_SYSTEM_APP_NAME "system_app"
-#define RX_NS_SYSTEM_APP_ID 1000
-#define RX_NS_SERVER_RT_NAME "runtime"
-#define RX_NS_SERVER_RT_ID 1
+#define RX_NS_SYSTEM_APP_ID 0x00000001
+#define RX_NS_SYSTEM_DOM_NAME "system"
+#define RX_NS_SYSTEM_DOM_ID 0x00000002
+
 #define NS_RX_COMMANDS_MANAGER_NAME "cmd_manager"
-#define RX_COMMANDS_MANAGER_ID 2
+#define RX_COMMANDS_MANAGER_ID 0x80000001
+#define NS_RX_INTERACTIVE_NAME "interactive"
+#define RX_INTERACTIVE_ID 0x80000001
+
+
+#define RX_NS_SERVER_RT_NAME "runtime"
+#define RX_NS_SERVER_RT_ID 0x80000002
+#define RX_IO_MANAGER_NAME "io_manager"
+#define RX_IO_MANAGER_ID 0x80000003
 
 
 #define IO_POOL_NAME "io_pool"
-#define IO_POOL_ID 1001
+#define IO_POOL_ID 0x80000004
 #define GENERAL_POOL_NAME "general_pool"
-#define GENERAL_POOL_ID 1002
+#define GENERAL_POOL_ID 0x80000005
 #define WORKER_POOL_NAME "worker_pool"
-#define WORKER_POOL_ID 1003
+#define WORKER_POOL_ID 0x80000006
 #define IO_LOG_NAME "log"
-#define IO_LOG_ID 1004
-#define RX_NS_SYSTEM_DOM_NAME "system"
-#define RX_NS_SYSTEM_DOM_ID 1005
+#define IO_LOG_ID 0x80000007
 
 #define RX_NS_SYSTEM_UNASS_NAME "unassigned"
-#define RX_NS_SYSTEM_UNASS_ID 1006
+#define RX_NS_SYSTEM_UNASS_ID 0x80000009
 #define RX_NS_SYSTEM_UNASS_APP_NAME "unassigned_app"
-#define RX_NS_SYSTEM_UNASS_APP_ID 1006
+#define RX_NS_SYSTEM_UNASS_APP_ID 0x8000000a
+
+
+// system objects type stuff
+#define RX_NS_SYSTEM_APP_TYPE_NAME "system_app_type"
+#define RX_NS_SYSTEM_APP_TYPE_ID 0xc0000000
+#define RX_NS_SYSTEM_DOM_TYPE_NAME "system_type"
+#define RX_NS_SYSTEM_DOM_TYPE_ID 0xc0000001
+
+
+#define NS_RX_COMMANDS_MANAGER_TYPE_NAME "cmd_manager_type"
+#define RX_COMMANDS_MANAGER_TYPE_ID 0xc0000002
+#define NS_RX_CONSOLE_TYPE_NAME "console_type"
+#define RX_CONSOLE_TYPE_ID 0xc0000003
+
+
+#define RX_NS_SERVER_RT_TYPE_NAME "runtime_type"
+#define RX_NS_SERVER_RT_TYPE_ID 0xc0000004
+#define RX_IO_MANAGER_TYPE_NAME "io_manager_type"
+#define RX_IO_MANAGER_TYPE_ID 0xc0000005
+
+
+#define IO_POOL_TYPE_NAME "io_pool_type"
+#define IO_POOL_TYPE_ID 0xc0000006
+#define GENERAL_POOL_TYPE_NAME "general_pool_type"
+#define GENERAL_POOL_TYPE_ID 0xc0000007
+#define WORKER_POOL_TYPE_NAME "worker_pool_type"
+#define WORKER_POOL_TYPE_ID 0xc0000008
+#define IO_LOG_TYPE_NAME "log_type"
+#define IO_LOG_TYPE_ID 0xc0000009
+#define RX_NS_SYSTEM_UNASS_TYPE_NAME "unassigned_type"
+#define RX_NS_SYSTEM_UNASS_TYPE_ID 0xc000000a
+#define RX_NS_SYSTEM_UNASS_APP_TYPE_NAME "unassigned_app_type"
+#define RX_NS_SYSTEM_UNASS_APP_TYPE_ID 0xc000000b
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
@@ -92,12 +132,4 @@
 
 //Storage related stuff
 #define RX_FILE_STORAGE_FOLDER "storage"
-
-
-
-// serialization 
-#define RX_SER_ITEM_HEADER_NAME "meta"
-#define RX_SER_ITEM_TYPE_NAME "type"
-#define RX_SER_ITEM_ID_NAME "id"
-#define RX_SER_ITEM_SUPER_NAME ""
 

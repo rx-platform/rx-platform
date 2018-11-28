@@ -182,13 +182,13 @@ namespace
 	}
 
 
-	size_t list_ip_adapters(IP_interfaces** interfaces)
+	size_t list_ip_adapters(IP_interface** interfaces)
 	{
 		size_t ret_count = 0;
 		size_t count;
 		dword ret;
 		size_t i;
-		IP_interfaces* padapters;
+		IP_interface* padapters;
 		char** names;
 		char** addresses;
 		ip_addr_ctx_t* ctxs;
@@ -200,7 +200,7 @@ namespace
 		{
 			if (count > 0)
 			{
-				padapters = (IP_interfaces*)malloc(sizeof(IP_interfaces)*count);
+				padapters = (IP_interface*)malloc(sizeof(IP_interface)*count);
 				for (i = 0; i <count; i++)
 				{
 					padapters[i].name = names[i];
@@ -346,16 +346,16 @@ bool win32_console_host::write_stdout (const void* data, size_t size)
 	return FALSE != WriteFile(out_handle_, data, (DWORD)size, &written, NULL);
 }
 
-std::vector<ETH_interfaces> win32_console_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<ETH_interface> win32_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<ETH_interfaces> ret;
+	std::vector<ETH_interface> ret;
 	return ret;
 }
 
-std::vector<IP_interfaces> win32_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<IP_interface> win32_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<IP_interfaces> ret;
-	IP_interfaces* itfs;
+	std::vector<IP_interface> ret;
+	IP_interface* itfs;
 
 	size_t count = list_ip_adapters(&itfs);
 	for (size_t i = 0; i < count; i++)

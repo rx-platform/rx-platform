@@ -83,7 +83,7 @@ namespace_item_attributes system_domain::get_attributes () const
 // Class sys_internal::sys_objects::unassigned_application 
 
 unassigned_application::unassigned_application()
-	: application_runtime(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID)
+	: application_runtime(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID)
 {
 	init_object();
 }
@@ -104,7 +104,7 @@ namespace_item_attributes unassigned_application::get_attributes () const
 // Class sys_internal::sys_objects::unssigned_domain 
 
 unssigned_domain::unssigned_domain()
-	: domain_runtime(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID)
+	: domain_runtime(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID)
 {
 	init_object();
 }

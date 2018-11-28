@@ -32,18 +32,20 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_mngt
-#include "system/server/rx_mngt.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
+// rx_objbase
+#include "system/meta/rx_objbase.h"
+// sl_script
+#include "soft_logic/sl_script.h"
 
 namespace rx_platform {
 namespace prog {
-class program_context_base;
-class server_program_holder;
-class server_program_base;
+class console_program_context;
+class console_client;
+class server_console_program;
 
 } // namespace prog
 } // namespace rx_platform
@@ -57,34 +59,31 @@ namespace rx_platform {
 
 namespace prog {
 typedef std::uint_fast16_t sec_error_num_t;
-class program_executer_base;
-class server_program_base;
 class server_command_base;
 typedef pointers::reference<server_command_base> command_ptr;
-typedef pointers::reference<program_context_base> program_context_ptr;
-typedef pointers::reference<server_program_base> server_program_ptr;
-typedef pointers::virtual_reference<program_executer_base> program_executer_ptr;
-typedef pointers::reference<server_program_holder> server_program_holder_ptr;
-typedef pointers::reference<program_context_base> program_context_base_ptr;
 
 
 
 
 
 
-class program_context_base : public rx::pointers::reference_object  
+class console_program_context : public sl_runtime::sl_script::script_program_context  
 {
-	DECLARE_REFERENCE_PTR(program_context_base);
 public:
+	typedef console_program_context* smart_ptr;
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 	typedef std::map<size_t, rx_struct_ptr > instructions_data_type;
 	typedef int pending_jobs_type;
 
   public:
-      program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program);
+      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
 
-      virtual ~program_context_base();
+      virtual ~console_program_context();
 
+
+      std::ostream& get_stdout ();
+
+      std::ostream& get_stderr ();
 
       bool is_postponed () const;
 
@@ -94,20 +93,12 @@ public:
 
       bool is_canceled ();
 
-      void cancel_execution ();
-
-      bool should_run_again ();
+      void postpone_done ();
 
 
-      const rx_reference<server_program_holder> get_holder () const
+      rx_reference<console_client> get_client ()
       {
-        return holder_;
-      }
-
-
-      rx_reference<server_program_base> get_program ()
-      {
-        return program_;
+        return client_;
       }
 
 
@@ -157,6 +148,12 @@ public:
       }
 
 
+      bool get_result () const
+      {
+        return result_;
+      }
+
+
 	  template<typename T>
 	  pointers::reference<T> get_instruction_data()
 	  {
@@ -172,248 +169,6 @@ public:
 	  }
   protected:
 
-      virtual void send_results (bool result);
-
-      virtual size_t get_possition () const = 0;
-
-
-  private:
-
-      bool return_control (bool done = true);
-
-
-
-      rx_reference<program_context_base> root_;
-
-      rx_reference<server_program_holder> holder_;
-
-      rx_reference<server_program_base> program_;
-
-
-      server_directory_ptr current_directory_;
-
-      buffer_ptr out_;
-
-      buffer_ptr err_;
-
-      bool postponed_;
-
-      instructions_data_type instructions_data_;
-
-      std::atomic_bool canceled_;
-
-      pending_jobs_type pending_jobs_;
-
-      platform_item_ptr current_object_;
-
-      platform_item_ptr current_item_;
-
-
-};
-
-
-
-
-
-
-
-class server_program_base : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(server_program_base);
-
-  public:
-      server_program_base();
-
-      virtual ~server_program_base();
-
-
-      virtual bool process_program (program_context_ptr context, const rx_time& now, bool debug) = 0;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class program_executer_base : public rx::pointers::virtual_reference_object  
-{
-	DECLARE_VIRTUAL_REFERENCE_PTR(program_executer_base);
-
-  public:
-      program_executer_base();
-
-      virtual ~program_executer_base();
-
-
-  protected:
-
-  private:
-
-
-      rx_reference<server_program_holder> holder_;
-
-
-    friend class server_program_holder;
-};
-
-
-
-
-
-
-
-class server_program_holder : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(server_program_holder);
-	typedef std::map<string_type, server_program_ptr> sub_programs_type;
-
-  public:
-      server_program_holder (program_executer_ptr executer);
-
-      virtual ~server_program_holder();
-
-
-      rx_virtual<program_executer_base> get_executer ()
-      {
-        return executer_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      rx_reference<server_program_base> main_program_;
-
-      sub_programs_type sub_programs_;
-
-      rx_virtual<program_executer_base> executer_;
-
-      rx_reference<program_context_base> main_context_;
-
-
-};
-
-
-
-
-
-
-class console_client : public rx::pointers::virtual_reference_object  
-{
-	DECLARE_VIRTUAL_REFERENCE_PTR(console_client);
-
-  public:
-      console_client (rx_thread_handle_t executer);
-
-      virtual ~console_client();
-
-
-      virtual const string_type& get_console_name () = 0;
-
-      bool is_postponed () const;
-
-      const string_type& get_console_terminal ();
-
-      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
-
-
-      rx_thread_handle_t get_executer () const
-      {
-        return executer_;
-      }
-
-
-
-  protected:
-
-      bool do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void get_prompt (string_type& prompt);
-
-      void get_wellcome (string_type& wellcome);
-
-      virtual void exit_console () = 0;
-
-      virtual void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer) = 0;
-
-      bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void get_security_error (string_type& txt, sec_error_num_t err_number);
-
-      bool do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-
-  private:
-
-      void synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-
-      server_directory_ptr current_directory_;
-
-
-
-      rx_reference<program_context_base> current_;
-
-
-      string_type line_;
-
-      string_type name_;
-
-      rx_thread_handle_t executer_;
-
-      platform_item_ptr current_object_;
-
-      platform_item_ptr current_item_;
-
-
-};
-
-
-
-
-
-
-
-class console_program_context : public program_context_base  
-{
-	DECLARE_REFERENCE_PTR(console_program_context);
-
-  public:
-      console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program, rx_virtual<console_client> client);
-
-      virtual ~console_program_context();
-
-
-      size_t next_line ();
-
-      std::ostream& get_stdout ();
-
-      std::ostream& get_stderr ();
-
-      console_program_context::smart_ptr create_console_sub_context ();
-
-
-      const size_t get_current_line () const
-      {
-        return current_line_;
-      }
-
-
-
-  protected:
-
       void send_results (bool result);
 
       size_t get_possition () const;
@@ -422,14 +177,30 @@ class console_program_context : public program_context_base
   private:
 
 
-      rx_virtual<console_client> client_;
+      rx_reference<console_client> client_;
 
-
-      size_t current_line_;
 
       std::ostream out_std_;
 
       std::ostream err_std_;
+
+      server_directory_ptr current_directory_;
+
+      buffer_ptr out_;
+
+      buffer_ptr err_;
+
+      std::atomic<int> postponed_;
+
+      instructions_data_type instructions_data_;
+
+      std::atomic_bool canceled_;
+
+      platform_item_ptr current_object_;
+
+      platform_item_ptr current_item_;
+
+      bool result_;
 
 
 };
@@ -440,12 +211,11 @@ class console_program_context : public program_context_base
 
 
 
-class server_command_base : public rx::pointers::reference_object  
+class server_command_base : public logic::program_runtime  
 {
-	DECLARE_REFERENCE_PTR(server_command_base);
 
   public:
-      server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes);
+      server_command_base (const string_type& name, const rx_node_id& id);
 
       virtual ~server_command_base();
 
@@ -525,66 +295,67 @@ class server_command_base : public rx::pointers::reference_object
 
 
 
-
-class server_console_program : public server_program_base  
+class console_client : public objects::object_types::port_runtime  
 {
-	DECLARE_REFERENCE_PTR(server_console_program);
-	
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+	DECLARE_REFERENCE_PTR(console_client);
 
   public:
-      server_console_program (std::istream& in);
+      console_client (rx_thread_handle_t executer, const string_type& name, const rx_node_id& id, const rx_node_id& type_id);
 
-      server_console_program (const string_vector& lines);
-
-      server_console_program (const string_type& line);
-
-      virtual ~server_console_program();
+      virtual ~console_client();
 
 
-      bool process_program (prog::program_context_ptr context, const rx_time& now, bool debug);
+      virtual const string_type& get_console_name () = 0;
 
-      prog::program_context_ptr create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_virtual<console_client> client);
+      bool is_postponed () const;
+
+      const string_type& get_console_terminal ();
+
+      virtual void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer) = 0;
+
+      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
 
 
   protected:
 
+      bool do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void get_prompt (string_type& prompt);
+
+      void get_wellcome (string_type& wellcome);
+
+      virtual void exit_console () = 0;
+
+      bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void get_security_error (string_type& txt, sec_error_num_t err_number);
+
+      bool do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+
   private:
 
+      void synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      string_vector lines_;
-
-
-};
+      void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
-
+      server_directory_ptr current_directory_;
 
 
 
-class server_script_program : public server_program_base  
-{
-	DECLARE_REFERENCE_PTR(server_script_program);
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+      rx_reference<server_console_program> current_program_;
 
-  public:
-      server_script_program (std::istream& in);
-
-      server_script_program (const string_vector& lines);
-
-      server_script_program (const string_type& line);
-
-      virtual ~server_script_program();
+      console_program_context *current_context_;
 
 
-      bool process_program (prog::program_context_ptr context, const rx_time& now, bool debug);
+      string_type line_;
 
-      prog::program_context_ptr create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err);
+      string_type name_;
 
+      platform_item_ptr current_object_;
 
-  protected:
-
-  private:
+      platform_item_ptr current_item_;
 
 
 };
@@ -596,7 +367,6 @@ struct script_def_t
 	string_type user_name;
 	string_type version;
 };
-
 
 
 
@@ -636,6 +406,70 @@ class server_script_host
 
 
       script_def_t definition_;
+
+
+};
+
+
+
+
+
+
+
+class console_program : public sl_runtime::sl_script::sl_script_program  
+{
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
+  public:
+      console_program();
+
+      virtual ~console_program();
+
+
+      sl_runtime::program_context* create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder);
+
+
+  protected:
+
+      bool parse_line (const string_type& line, std::ostream& out, std::ostream& err, sl_runtime::program_context* context);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class server_console_program : public logic::program_runtime  
+{
+	DECLARE_REFERENCE_PTR(server_console_program);
+	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
+  public:
+      server_console_program (console_client::smart_ptr client, const string_type& name, const rx_node_id& id, bool system = false);
+
+      virtual ~server_console_program();
+
+
+      void cancel_execution ();
+
+
+  protected:
+
+  private:
+
+
+      console_program program_;
+
+      rx_reference<console_client> console_;
+
+
+      string_vector lines_;
 
 
 };

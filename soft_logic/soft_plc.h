@@ -33,8 +33,8 @@
 
 
 namespace sl_runtime {
-class program_context;
 class sl_program_holder;
+class program_context;
 namespace builders {
 class module_chanels_factory;
 
@@ -1242,7 +1242,7 @@ class sl_program_holder
 
       void set_debug_context (program_context* context);
 
-      void set_main_program (sl_program* main);
+      void set_main_program (sl_program* main, program_context* context = nullptr);
 
       void add_sub_program (const string_type& name, sl_program* prog);
 

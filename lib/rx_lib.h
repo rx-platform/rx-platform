@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -100,7 +100,7 @@ enum interface_status_type
 	status_active
 };
 #define MAC_ADDR_SIZE 6
-struct ETH_interfaces
+struct ETH_interface
 {
 	uint8_t mac_address[MAC_ADDR_SIZE];
 	string_type name;
@@ -116,7 +116,7 @@ struct ETH_interfaces
 
 
 
-struct IP_interfaces
+struct IP_interface
 {
 	string_type ip_address;
 	string_type name;
@@ -185,6 +185,7 @@ public:
 	bool is_null() const;
 
 	void to_string(string_type& buff) const;
+	string_type to_string() const;
 
 };
 
@@ -231,6 +232,8 @@ public:
 	~rx_node_id();
 
 	rx_node_id & operator=(const rx_node_id &right);
+
+	rx_node_id & operator=(rx_node_id &&right) noexcept;
 
 	bool operator==(const rx_node_id &right) const;
 

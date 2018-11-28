@@ -148,13 +148,15 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 rx_security_handle_t security_manager::context_deactivated (security_context::smart_ptr who)
 {
 	char buff[0x100];
-	snprintf(buff, sizeof(buff), "User %s, security context destroying.", who->get_full_name().c_str());
+	snprintf(buff, sizeof(buff), "User %s, security context destroying...", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
 	locks::auto_lock dummy(&active_lock_);
 	auto it = active_contexts_.find(who->get_handle());
 	if (it != active_contexts_.end())
 	{
 		active_contexts_.erase(it);
+		snprintf(buff, sizeof(buff), "User %s, security context destroyed.", who->get_full_name().c_str());
+		SECURITY_LOG_INFO("manager", 900, buff);
 		return 0;
 	}
 	else

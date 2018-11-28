@@ -51,8 +51,6 @@ namespace logic {
 class program_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(program_runtime);
-
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 public:
 	typedef program_runtime RType;
 
@@ -87,6 +85,11 @@ public:
       string_type get_name () const;
 
       size_t get_size () const;
+
+
+      sl_runtime::sl_program_holder& my_program ();
+
+      const meta::checkable_data& meta_data () const;
 
 
       static string_type type_name;

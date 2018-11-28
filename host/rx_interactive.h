@@ -95,7 +95,7 @@ class interactive_security_context : public rx::security::built_in_security_cont
 
 class interactive_console_client : public rx_platform::prog::console_client  
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(interactive_console_client);
+	DECLARE_REFERENCE_PTR(interactive_console_client);
 
 
   public:
@@ -113,13 +113,11 @@ class interactive_console_client : public rx_platform::prog::console_client
 
   protected:
 
-      void virtual_bind ();
-
-      void virtual_release ();
-
       void exit_console ();
 
       void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+
+      bool readed (const void* data, size_t count, rx_thread_handle_t destination);
 
 
   private:
@@ -176,9 +174,9 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       string_type get_startup_script ();
 
-      std::vector<ETH_interfaces> get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+      std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      std::vector<IP_interfaces> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+      std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
   protected:

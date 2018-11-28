@@ -329,7 +329,7 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 
 // Class rx_platform::meta::def_blocks::const_value_def 
 
-string_type const_value_def::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
+string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
       : created_time_(rx_time::now()),
@@ -509,7 +509,7 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
-string_type simple_value_def::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
+string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value)
       : read_only_(true),

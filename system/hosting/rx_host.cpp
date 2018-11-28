@@ -108,15 +108,15 @@ string_type rx_platform_host::get_startup_script ()
 	return "nop/r/n";
 }
 
-std::vector<ETH_interfaces> rx_platform_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<ETH_interface> rx_platform_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<ETH_interfaces> ret;
+	std::vector<ETH_interface> ret;
 	return ret;
 }
 
-std::vector<IP_interfaces> rx_platform_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<IP_interfaces> ret;
+	std::vector<IP_interface> ret;
 	return ret;
 }
 
@@ -230,6 +230,12 @@ platform_item_ptr rx_platform_file::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 
+}
+
+
+const meta::checkable_data& rx_platform_file::meta_data () const
+{
+  return meta_data_;
 }
 
 

@@ -31,6 +31,8 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
@@ -39,8 +41,6 @@
 #include "system/meta/rx_blocks.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace objects {
@@ -63,7 +63,12 @@ using rx::values::rx_simple_value;
 
 namespace rx_platform {
 
+typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
+
 namespace objects {
+typedef rx_reference<object_types::domain_runtime> rx_domain_ptr;
+typedef rx_reference<object_types::domain_runtime> rx_application_ptr;
 
 namespace object_types {
 
@@ -91,7 +96,7 @@ public:
 	typedef objects::object_types::object_runtime RType;
 
   public:
-      object_runtime (const string_type& name, const rx_node_id& id, bool system = false);
+      object_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
 
       virtual ~object_runtime();
 
@@ -114,6 +119,8 @@ public:
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
+      virtual bool connect_domain (rx_domain_ptr&& domain);
+
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -135,6 +142,10 @@ public:
       blocks::complex_runtime_item_ptr get_complex_item ();
 
       meta::checkable_data& meta_data ();
+
+      virtual rx_thread_handle_t get_executer () const;
+
+      virtual bool connect_application (rx_application_ptr&& app);
 
 
       blocks::complex_runtime_item& get_runtime_item ()
@@ -175,9 +186,9 @@ public:
       bool init_object ();
 
 
-      rx_reference<application_runtime> my_application_;
+      rx_application_ptr my_application_;
 
-      rx_reference<domain_runtime> my_domain_;
+      rx_domain_ptr my_domain_;
 
 
   private:
@@ -270,7 +281,7 @@ system domain class. basic implementation of a domain");
 	typedef std::vector<object_runtime::smart_ptr> objects_type;
 
   public:
-      domain_runtime (const string_type& name, const rx_node_id& id, bool system = false);
+      domain_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
 
       virtual ~domain_runtime();
 
@@ -278,6 +289,10 @@ system domain class. basic implementation of a domain");
       string_type get_type_name () const;
 
       namespace_item_attributes get_attributes () const;
+
+      rx_thread_handle_t get_executer () const;
+
+      bool connect_domain (rx_domain_ptr&& domain);
 
 
       static string_type type_name;
@@ -291,6 +306,9 @@ system domain class. basic implementation of a domain");
 
 
       objects_type objects_;
+
+
+      rx_thread_handle_t executer_;
 
 
 };
@@ -308,7 +326,7 @@ system port class. basic implementation of a port");
 	DECLARE_REFERENCE_PTR(port_runtime);
 
   public:
-      port_runtime (const string_type& name, const rx_node_id& id);
+      port_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
 
       virtual ~port_runtime();
 
@@ -317,11 +335,16 @@ system port class. basic implementation of a port");
 
       namespace_item_attributes get_attributes () const;
 
+      bool write (buffer_ptr what);
+
 
       static string_type type_name;
 
 
   protected:
+
+      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination) = 0;
+
 
   private:
       port_runtime();
@@ -345,7 +368,7 @@ system application class. contains system default application");
 	typedef std::vector<port_runtime::smart_ptr> ports_type;
 
   public:
-      application_runtime (const string_type& name, const rx_node_id& id, bool system = false);
+      application_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
 
       virtual ~application_runtime();
 
@@ -353,6 +376,10 @@ system application class. contains system default application");
       string_type get_type_name () const;
 
       namespace_item_attributes get_attributes () const;
+
+      bool connect_application (rx_application_ptr&& app);
+
+      bool connect_domain (rx_domain_ptr&& domain);
 
 
       static string_type type_name;

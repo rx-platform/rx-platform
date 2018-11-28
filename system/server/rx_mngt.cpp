@@ -94,8 +94,9 @@ uint32_t server_manager::start (hosting::rx_platform_host* host, const managment
 {
 	if (telnet_port_)
 	{
-		telnet_listener_ = rx_create_reference<terminal::console::server_telnet_socket>();
-		telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
+		//TODOIO
+		//telnet_listener_ = rx_create_reference<terminal::console::server_telnet_socket>();
+		//telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{
@@ -108,8 +109,9 @@ uint32_t server_manager::stop ()
 {
 	if (telnet_listener_)
 	{
-		telnet_listener_->stop();
-		telnet_listener_ = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
+		//TODOIO
+		//telnet_listener_->stop();
+		//telnet_listener_ = terminal::console::server_telnet_socket::smart_ptr::null_ptr;
 	}
 	return RX_OK;
 }

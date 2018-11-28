@@ -149,6 +149,7 @@ class full_duplex_comm : public dispatcher_subscriber
 	DECLARE_REFERENCE_PTR(full_duplex_comm<buffT>);
 
 protected:
+	typedef std::function<bool(const void*, size_t, rx_thread_handle_t)> readed_function_t;
 	typedef typename buffT::smart_ptr buffer_ptr;
 	typedef std::queue<buffer_ptr> queue_type;
 
@@ -170,8 +171,6 @@ protected:
 
       bool write (buffer_ptr what);
 
-      bool send (buffer_ptr what);
-
       bool start_loops ();
 
 
@@ -186,9 +185,9 @@ protected:
 
       bool read_loop ();
 
-      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination) = 0;
-
       virtual void release_buffer (buffer_ptr what) = 0;
+
+      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination) = 0;
 
 
       bool sending_;
@@ -272,9 +271,10 @@ class tcp_listen_socket : public dispatcher_subscriber
 	DECLARE_REFERENCE_PTR(tcp_listen_socket<buffT>);
 protected:
 	typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
+	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, threads::dispatcher_pool::smart_ptr&, rx_thread_handle_t)> make_function_t;
 
   public:
-      tcp_listen_socket();
+      tcp_listen_socket (make_function_t make_function);
 
       virtual ~tcp_listen_socket();
 
@@ -288,9 +288,6 @@ protected:
 
   protected:
 
-      virtual result_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination) = 0;
-
-
   private:
 
       int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
@@ -302,6 +299,10 @@ protected:
 
 
       uint8_t buffer_[ACCEPT_BUFFER_SIZE];
+
+      bool connected_;
+
+      make_function_t make_function_;
 
 	  friend int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
 	  friend int listen_dispatcher_shutdown_callback(void* data, uint32_t status);
@@ -685,19 +686,6 @@ void full_duplex_comm<buffT>::initiate_shutdown ()
 template <class buffT>
 bool full_duplex_comm<buffT>::write (buffer_ptr what)
 {
-	if (what->empty())
-		return true;
-	write_lock_.lock();
-	sending_queue_.push(what);
-	write_lock_.unlock();
-	write_loop();
-	return true;
-}
-
-template <class buffT>
-bool full_duplex_comm<buffT>::send (buffer_ptr what)
-{
-	// same code as previous, hope the compiler will figure it out :)
 	if (what && what->empty())
 		return true;
 	write_lock_.lock();
@@ -759,13 +747,13 @@ tcp_socket<buffT>::~tcp_socket()
 // Parameterized Class rx::io::tcp_listen_socket 
 
 template <class buffT>
-tcp_listen_socket<buffT>::tcp_listen_socket()
+tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
+      : connected_(false),
+        make_function_(make_function)
 {
-
 	dispatcher_data_.read_buffer = buffer_;
 	dispatcher_data_.read_buffer_size = ACCEPT_BUFFER_SIZE;
 	dispatcher_data_.data = this;
-
 }
 
 
@@ -780,8 +768,10 @@ tcp_listen_socket<buffT>::~tcp_listen_socket()
 template <class buffT>
 int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
+	if (!connected_)
+		return 0;
     typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
-	target_ptr created = make_client(handle, addr, local_addr, disptacher_,get_destination_context());
+	target_ptr created = make_function_(handle, addr, local_addr, disptacher_,get_destination_context());
 	if (created)
 	{
 		if (created->start_loops())

@@ -134,6 +134,17 @@ size_t program_runtime::get_size () const
 }
 
 
+sl_runtime::sl_program_holder& program_runtime::my_program ()
+{
+  return my_program_;
+}
+
+const meta::checkable_data& program_runtime::meta_data () const
+{
+  return meta_data_;
+}
+
+
 // Class rx_platform::logic::ladder_program 
 
 ladder_program::ladder_program()
@@ -141,6 +152,7 @@ ladder_program::ladder_program()
 }
 
 ladder_program::ladder_program (const string_type& name, const rx_node_id& id, bool system)
+	: program_runtime(name,id,system)
 {
 }
 

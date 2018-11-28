@@ -44,6 +44,8 @@
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_classes
+#include "system/meta/rx_classes.h"
 
 
 
@@ -123,9 +125,15 @@ file class. basic implementation of a file");
       platform_item_ptr get_item_ptr ();
 
 
+      const meta::checkable_data& meta_data () const;
+
+
   protected:
 
   private:
+
+
+      meta::checkable_data meta_data_;
 
 
 };
@@ -210,9 +218,9 @@ class rx_platform_host
 
       virtual string_type get_startup_script ();
 
-      virtual std::vector<ETH_interfaces> get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+      virtual std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      virtual std::vector<IP_interfaces> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+      virtual std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
       rx_platform_host * get_parent ()

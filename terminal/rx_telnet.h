@@ -39,16 +39,18 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 
 
 
@@ -95,15 +97,9 @@ class telnet_security_context : public rx::security::security_context
 
 
 
-class telnet_client : public rx_platform::prog::console_client, 
-                      	public rx::io::tcp_socket_std_buffer  
+class telnet_client : public rx_platform::prog::console_client  
 {
 	DECLARE_REFERENCE_PTR(telnet_client);
-
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
-
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
-	typedef std::stack<buffer_ptr,std::vector<buffer_ptr> > buffers_type;
 	typedef std::queue<buffer_ptr> running_buffers_type;
 
   public:
@@ -121,6 +117,13 @@ class telnet_client : public rx_platform::prog::console_client,
       bool get_next_line (string_type& line);
 
 
+      rx_reference<rx::io::tcp_socket_std_buffer> socket ()
+      {
+        return my_socket_;
+      }
+
+
+
   protected:
 
       void exit_console ();
@@ -134,7 +137,7 @@ class telnet_client : public rx_platform::prog::console_client,
 
   private:
 
-      telnet_client::buffer_ptr get_free_buffer ();
+      buffer_ptr get_free_buffer ();
 
       bool new_recive (const char* buff, size_t& idx);
 
@@ -149,6 +152,8 @@ class telnet_client : public rx_platform::prog::console_client,
       rx_reference<telnet_security_context> security_context_;
 
       host::rx_vt100::vt100_transport vt100_parser_;
+
+      rx_reference<rx::io::tcp_socket_std_buffer> my_socket_;
 
 
       locks::slim_lock buffers_lock_;
@@ -174,7 +179,7 @@ class telnet_client : public rx_platform::prog::console_client,
 
 
 
-class server_telnet_socket : public rx::io::tcp_listent_std_buffer  
+class server_telnet_socket : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(server_telnet_socket);
 
@@ -190,6 +195,9 @@ class server_telnet_socket : public rx::io::tcp_listent_std_buffer
 
 
   private:
+
+
+      rx_reference<rx::io::tcp_listent_std_buffer> my_socket_;
 
 
 };

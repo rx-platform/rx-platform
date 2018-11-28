@@ -311,7 +311,7 @@ test_case & test_case::operator=(const test_case &right)
 
 
 
-bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
 {
 	bool ret = false;
 	string_type start_message("Test Case started by :");
@@ -334,7 +334,7 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 	return ret;
 }
 
-void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
 {
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	TEST_LOG_INFO(get_name(), 500, "Test Case Ended");
@@ -408,7 +408,7 @@ test_context_data test_case::get_data (test_context_data* data) const
 
 bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
 {
-	rx_reference<test_program_context> test_ctx = testing_enviroment::instance().create_test_context(ctx);
+	auto test_ctx = testing_enviroment::instance().create_test_context(ctx);
 	if (test_start(in, out, err, test_ctx))
 	{
 		bool ret = run_test(in, out, err, test_ctx);
@@ -450,6 +450,12 @@ bool test_case::deserialize_definition (base_meta_reader& stream, uint8_t type)
 size_t test_case::get_size () const
 {
 	return 0;
+}
+
+
+const rx_platform::meta::checkable_data& test_case::meta_data () const
+{
+  return meta_data_;
 }
 
 
@@ -529,24 +535,24 @@ test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_
 	return test_case::smart_ptr::null_ptr;
 }
 
-test_program_context::smart_ptr testing_enviroment::create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx)
+test_program_context* testing_enviroment::create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx)
 {
-	return rx_create_reference<test_program_context>(
-		prog::server_program_holder_ptr::null_ptr,
-		prog::program_context_base_ptr::null_ptr,
+	return new test_program_context(
+		console_ctx,
+		console_ctx->get_program_holder(),
 		console_ctx->get_current_directory(),
 		console_ctx->get_out(),
 		console_ctx->get_err(),
-		console_ctx->get_program()
+		console_ctx->get_client()
 		);
 }
 
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : status_(RX_TEST_STATUS_UNKNOWN)
-	, rx_platform::prog::program_context_base(holder, root_context, current_directory, out, err,program)
+	, console_program_context(parent, holder,  current_directory, out, err, client)
 {
 }
 

@@ -71,9 +71,27 @@ void platform_root::initialize (hosting::rx_platform_host* host, namespace_data_
 	server_items_type items;
 	server_items_type sub_items;
 
+	auto system_application = rx_gate::instance().get_manager().get_system_app();
+	auto system_domain = rx_gate::instance().get_manager().get_system_domain();
+
+
+	sub_items.emplace_back(system_application->get_item_ptr());
+	sub_items.emplace_back(system_domain->get_item_ptr());
+	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
+	//io_pool(IO_POOL_NAME, IO_POOL_ID, true);
+	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_item_ptr());
+	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool()->get_item_ptr();
+	if (general_pool)
+		sub_items.emplace_back(general_pool);
+	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers()->get_item_ptr();
+	if (workers)
+		sub_items.emplace_back(workers);
+	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);
+
 
 	dirs.clear();
 	items.clear();
+	sub_items.clear();
 
 	world_directory::smart_ptr world(RX_NS_WORLD_NAME, dirs, items);
 	root_directories_.push_back(world);
@@ -124,18 +142,6 @@ void platform_root::initialize (hosting::rx_platform_host* host, namespace_data_
 	dirs.clear();
 	items.clear();
 	sub_items.clear();// just in case
-	sub_items.emplace_back(rx_gate::instance().get_manager().get_system_app()->get_item_ptr());
-	sub_items.emplace_back(rx_gate::instance().get_manager().get_system_domain()->get_item_ptr());
-	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
-	 //io_pool(IO_POOL_NAME, IO_POOL_ID, true);
-	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_item_ptr());
-	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool()->get_item_ptr();
-	if(general_pool)
-		sub_items.emplace_back(general_pool);
-	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers()->get_item_ptr();
-	if(workers)
-		sub_items.emplace_back(workers);
-	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);
 
 
 	dirs.clear();

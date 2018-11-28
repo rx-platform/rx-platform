@@ -86,7 +86,7 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
 		{
 			interactive_console_client interactive(this);
-
+			
 			interactive.run_interactive();
 
 			rx_platform::rx_gate::instance().stop();
@@ -207,15 +207,15 @@ string_type interactive_console_host::get_startup_script ()
 	return startup_script_;
 }
 
-std::vector<ETH_interfaces> interactive_console_host::get_ETH_interfacesf (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<ETH_interfaces> ret;
+	std::vector<ETH_interface> ret;
 	return ret;
 }
 
-std::vector<IP_interfaces> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	std::vector<IP_interfaces> ret;
+	std::vector<IP_interface> ret;
 	return ret;
 }
 
@@ -226,9 +226,13 @@ interactive_console_client::interactive_console_client (interactive_console_host
       : host_(host),
         exit_(false)
 	, security_context_(pointers::_create_new)
-	, console_client(0)
+	, console_client(0, NS_RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID)//TODOIO
 {
 	security_context_->login();
+	connect_domain(rx_gate::instance().get_manager().get_system_domain());
+	connect_application(rx_gate::instance().get_manager().get_system_app());
+	auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);
+	directory->add_item(smart_this()->get_item_ptr());
 }
 
 
@@ -317,14 +321,6 @@ under certain conditions; type `license' for details.\r\n\
 	security_context_->logout();
 }
 
-void interactive_console_client::virtual_bind ()
-{
-}
-
-void interactive_console_client::virtual_release ()
-{
-}
-
 security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
 {
 	return security_context_;
@@ -365,6 +361,11 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 		host_->write_stdout(temp);
 	}
 	//rx_gate::instance().get_host()->break_host("");
+}
+
+bool interactive_console_client::readed (const void* data, size_t count, rx_thread_handle_t destination)
+{
+	return false;
 }
 
 

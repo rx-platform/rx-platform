@@ -102,9 +102,9 @@ object_runtime::object_runtime()
 {
 }
 
-object_runtime::object_runtime (const string_type& name, const rx_node_id& id, bool system)
+object_runtime::object_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
       : change_time_(rx_time::now())
-	, meta_data_(name,id,rx_node_id::null_id,system)
+	, meta_data_(name,id,type_id,system)
 	, runtime_item_(name, id, system)
 {
 }
@@ -190,6 +190,12 @@ bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
 		def << "Error in JSON deserialization.";
 
 	return out;
+}
+
+bool object_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	my_domain_ = std::move(domain);
+	return true;
 }
 
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
@@ -288,6 +294,20 @@ meta::checkable_data& object_runtime::meta_data ()
 
 }
 
+rx_thread_handle_t object_runtime::get_executer () const
+{
+	if (my_domain_)
+		return my_domain_->get_executer();
+	else
+		return RX_DOMAIN_GENERAL;
+}
+
+bool object_runtime::connect_application (rx_application_ptr&& app)
+{
+	my_application_ = std::move(app);
+	return true;
+}
+
 
 const meta::checkable_data& object_runtime::meta_data () const
 {
@@ -305,7 +325,7 @@ application_runtime::application_runtime()
 	my_domain_ = smart_this();
 }
 
-application_runtime::application_runtime (const string_type& name, const rx_node_id& id, bool system)
+application_runtime::application_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
 	: domain_runtime(name,id,system)
 {
 	my_application_ = smart_this();
@@ -330,6 +350,16 @@ namespace_item_attributes application_runtime::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
 }
 
+bool application_runtime::connect_application (rx_application_ptr&& app)
+{
+	return false;
+}
+
+bool application_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	return false;
+}
+
 
 // Class rx_platform::objects::object_types::domain_runtime 
 
@@ -340,7 +370,7 @@ domain_runtime::domain_runtime()
 	my_domain_ = smart_this();
 }
 
-domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, bool system)
+domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
 	: object_runtime(name,id,system)
 {
 	my_domain_ = smart_this();
@@ -364,6 +394,16 @@ namespace_item_attributes domain_runtime::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
 }
 
+rx_thread_handle_t domain_runtime::get_executer () const
+{
+	return executer_;
+}
+
+bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	return false;
+}
+
 
 // Class rx_platform::objects::object_types::port_runtime 
 
@@ -373,7 +413,7 @@ port_runtime::port_runtime()
 {
 }
 
-port_runtime::port_runtime (const string_type& name, const rx_node_id& id)
+port_runtime::port_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
 	: object_runtime(name,id,true)// every port is system objects
 {
 }
@@ -394,6 +434,11 @@ string_type port_runtime::get_type_name () const
 namespace_item_attributes port_runtime::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
+}
+
+bool port_runtime::write (buffer_ptr what)
+{
+	return false;
 }
 
 

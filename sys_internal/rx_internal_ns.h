@@ -38,6 +38,7 @@
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 
+#include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_classes.h"
 using namespace rx_platform::ns;
 
@@ -435,7 +436,10 @@ bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostre
 
 	writer.start_object(RX_SER_ITEM_HEADER_NAME);
 	{
-
+		writer.write_string(RX_SER_ITEM_TYPE_NAME, impl_->get_type_name().c_str());
+		writer.write_id(RX_SER_ITEM_ID_NAME, impl_->meta_data().get_id());
+		writer.write_id(RX_SER_ITEM_ORIGIN_NAME, impl_->meta_data().get_parent());
+		writer.write_string(RX_SER_ITEM_NAME_NAME, impl_->get_name().c_str());
 		writer.start_object(impl_->get_type_name().c_str());
 		{
 			impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);

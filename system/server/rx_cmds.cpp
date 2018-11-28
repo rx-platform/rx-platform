@@ -30,10 +30,10 @@
 
 #include "terminal/rx_terminal_version.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 #include "system/server/rx_server.h"
 #include "terminal/rx_telnet.h"
@@ -79,104 +79,14 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 
 char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
 
-// Class rx_platform::prog::program_context_base 
-
-program_context_base::program_context_base (server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program)
-      : root_(root_context),
-        holder_(holder),
-        program_(program),
-        current_directory_(current_directory),
-        out_(out),
-        err_(err),
-        postponed_(false),
-        canceled_(false)
-{
-}
-
-
-program_context_base::~program_context_base()
-{
-}
-
-
-
-bool program_context_base::is_postponed () const
-{
-	return postponed_;
-}
-
-bool program_context_base::postpone (uint32_t interval)
-{
-	postponed_ = true;
-	if (interval)
-	{
-		rx_platform::rx_gate::instance().get_runtime().append_timer_job(
-			jobs::lambda_timer_job<rx_reference<program_context_base> >::smart_ptr(
-				[](rx_platform::prog::program_context_base_ptr context) mutable
-				{
-					if(!context->is_canceled())
-						context->return_control();
-				},
-				smart_this()), interval);
-	}
-	else
-		rx_platform::rx_gate::instance().get_runtime().append_job(
-			jobs::lambda_job<rx_reference<program_context_base> >::smart_ptr(
-				[](rx_platform::prog::program_context_base_ptr context) mutable
-				{
-					if (!context->is_canceled())
-						context->return_control();
-				},
-				smart_this()));
-	return true;
-}
-
-bool program_context_base::return_control (bool done)
-{
-	postponed_ = false;
-	bool ret = program_->process_program(smart_this(), rx_time::now(), false);
-	if (!postponed_)
-	{
-		send_results(ret);
-	}
-	return ret;
-}
-
-void program_context_base::send_results (bool result)
-{
-}
-
-void program_context_base::set_instruction_data (rx_struct_ptr data)
-{
-	instructions_data_.emplace(get_possition(), data);
-}
-
-bool program_context_base::is_canceled ()
-{
-	return canceled_.exchange(false, std::memory_order_relaxed);
-}
-
-void program_context_base::cancel_execution ()
-{
-	canceled_.store(true, std::memory_order_relaxed);
-	return_control(false);
-}
-
-bool program_context_base::should_run_again ()
-{
-	return !is_postponed();
-}
-
-
 // Class rx_platform::prog::server_command_base 
 
-server_command_base::server_command_base (const string_type& console_name, ns::namespace_item_attributes attributes)
+server_command_base::server_command_base (const string_type& name, const rx_node_id& id)
       : time_stamp_(rx_time::now()),
-        console_name_(console_name),
+        console_name_(name),
         security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
-
-  //!!, rx_server_item(console_name, (ns::namespace_item_attributes)(attributes | ns::namespace_item_execute), "COMMAND   ",rx_time::now())
+	, program_runtime(name, id, true)
 {
 }
 
@@ -262,7 +172,7 @@ bool server_command_base::generate_json (std::ostream& def, std::ostream& err) c
 
 platform_item_ptr server_command_base::get_item_ptr ()
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<server_command_base*> >(this);
 }
 
 string_type server_command_base::get_name () const
@@ -286,55 +196,19 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 }
 
 
-// Class rx_platform::prog::server_program_base 
-
-server_program_base::server_program_base()
-{
-}
-
-
-server_program_base::~server_program_base()
-{
-}
-
-
-
-// Class rx_platform::prog::program_executer_base 
-
-program_executer_base::program_executer_base()
-{
-}
-
-
-program_executer_base::~program_executer_base()
-{
-}
-
-
-
-// Class rx_platform::prog::server_program_holder 
-
-server_program_holder::server_program_holder (program_executer_ptr executer)
-      : executer_(executer)
-{
-}
-
-
-server_program_holder::~server_program_holder()
-{
-}
-
-
-
 // Class rx_platform::prog::console_program_context 
 
-console_program_context::console_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<server_program_base> program, rx_virtual<console_client> client)
+console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : client_(client),
-        current_line_(0),
         out_std_(out.unsafe_ptr()),
-        err_std_(err.unsafe_ptr())
-  , prog::program_context_base(holder, root_context,current_directory,out,err, program)
-
+        err_std_(err.unsafe_ptr()),
+        current_directory_(current_directory),
+        out_(out),
+        err_(err),
+        postponed_(0),
+        canceled_(false),
+        result_(false)
+	, sl_runtime::sl_script::script_program_context(parent,holder, out.unsafe_ptr(), err.unsafe_ptr())
 {
 }
 
@@ -344,12 +218,6 @@ console_program_context::~console_program_context()
 }
 
 
-
-size_t console_program_context::next_line ()
-{
-	current_line_++;
-	return current_line_;
-}
 
 std::ostream& console_program_context::get_stdout ()
 {
@@ -361,13 +229,6 @@ std::ostream& console_program_context::get_stderr ()
 	return err_std_;
 }
 
-console_program_context::smart_ptr console_program_context::create_console_sub_context ()
-{
-	console_program_context::smart_ptr ctx_ret = console_program_context::smart_ptr(get_holder(),smart_this()
-		, get_current_directory(), get_out(), get_err(),get_program(),client_);
-	return ctx_ret;
-}
-
 void console_program_context::send_results (bool result)
 {
 	if (client_)
@@ -376,30 +237,70 @@ void console_program_context::send_results (bool result)
 
 size_t console_program_context::get_possition () const
 {
-	return current_line_;
+	return get_current_line();
+}
+
+bool console_program_context::is_postponed () const
+{
+	return postponed_ > 0;
+}
+
+bool console_program_context::postpone (uint32_t interval)
+{
+	postponed_++;
+	stop_execution();
+	if (interval)
+	{
+		buffer_ptr out_ptr = out_;
+		buffer_ptr err_ptr = err_;
+		rx_post_delayed_function<decltype(client_)>(
+			[out_ptr, err_ptr](decltype(client_) client)
+			{
+				client->process_event(true, out_ptr, err_ptr, true);
+			}
+			, interval
+			, client_
+			, client_->get_executer()
+			);
+	}
+	else
+	{
+		buffer_ptr out_ptr = out_;
+		buffer_ptr err_ptr = err_;
+		rx_post_function<decltype(client_)>(
+			[out_ptr, err_ptr](decltype(client_) client)
+			{
+				client->process_event(true, out_ptr, err_ptr, true);
+			}
+			, client_
+			, client_->get_executer()
+		);
+	}
+	return true;
+}
+
+void console_program_context::set_instruction_data (rx_struct_ptr data)
+{
+	instructions_data_.emplace(get_possition(), data);
+}
+
+bool console_program_context::is_canceled ()
+{
+	return canceled_.exchange(false, std::memory_order_relaxed);
+}
+
+void console_program_context::postpone_done ()
+{
+	postponed_--;
 }
 
 
 // Class rx_platform::prog::server_console_program 
 
-server_console_program::server_console_program (std::istream& in)
+server_console_program::server_console_program (console_client::smart_ptr client, const string_type& name, const rx_node_id& id, bool system)
+	: program_runtime(name, id, system)
+	, console_(client)
 {
-	while (!in.eof())
-	{
-		char temp[SCRIPT_LINE_LENGTH];
-		in.getline(temp, SCRIPT_LINE_LENGTH);
-		lines_.emplace_back(temp);
-	}
-}
-
-server_console_program::server_console_program (const string_vector& lines)
-  : lines_(lines)
-{
-}
-
-server_console_program::server_console_program (const string_type& line)
-{
-	lines_.emplace_back(line);
 }
 
 
@@ -409,62 +310,16 @@ server_console_program::~server_console_program()
 
 
 
-bool server_console_program::process_program (prog::program_context_ptr context, const rx_time& now, bool debug)
+void server_console_program::cancel_execution ()
 {
-
-	console_program_context::smart_ptr ctx = context.cast_to<console_program_context::smart_ptr>();
-	size_t total_lines = lines_.size();
-	size_t current_line = ctx->get_current_line();
-	string_type label;
-
-	std::ostream& out(ctx->get_stdout());
-	std::ostream& err(ctx->get_stderr());
-
-	while (current_line < total_lines && ctx->should_run_again())
-	{		
-		label.clear();
-		std::istringstream in(lines_[current_line]);
-		string_type name;
-		in >> name;
-		if (!name.empty())
-		{
-			server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(name);
-			if (command)
-			{
-				if (!command->console_execute(in, out, err,ctx))
-					return false;
-			}
-			else
-			{
-				err << "Syntax Error!\r\nCommand:" << name << " not existing!";
-				err.flush();
-				return false;
-			}
-		}
-		if (ctx->is_canceled())
-		{
-			err << "Pending cancel for the current command:\r\n";
-			err << lines_[current_line];
-			return false;
-		}
-		if(!ctx->is_postponed())
-			current_line = ctx->next_line();
-
-		
-	}
-	return true;
-}
-
-prog::program_context_ptr server_console_program::create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_virtual<console_client> client)
-{
-	return console_program_context::smart_ptr(holder, root_context, current_directory,out,err,smart_this(),client);
 }
 
 
 // Class rx_platform::prog::console_client 
 
-console_client::console_client (rx_thread_handle_t executer)
-      : executer_(executer)
+console_client::console_client (rx_thread_handle_t executer, const string_type& name, const rx_node_id& id, const rx_node_id& type_id)
+      : current_context_(nullptr)
+	, objects::object_types::port_runtime(name,id, type_id, true)
 {
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys");
@@ -489,7 +344,7 @@ bool console_client::do_command (string_type&& line, memory::buffer_ptr out_buff
 			sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
-		,executer_
+		, get_executer()
 	);
 	return true;
 }
@@ -522,7 +377,7 @@ void console_client::get_wellcome (string_type& wellcome)
 
 bool console_client::is_postponed () const
 {
-	if (current_)
+	if (current_program_)
 		return true;
 	else
 		return false;
@@ -541,7 +396,7 @@ const string_type& console_client::get_console_terminal ()
 void console_client::synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	bool ret = false;
-	RX_ASSERT(!current_);
+	RX_ASSERT(!current_program_);
 	if (line.empty())
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
@@ -598,45 +453,55 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 	}
 	else
 	{
-		prog::server_console_program::smart_ptr temp_prog(line);
-
+		rx_uuid id = rx_uuid::create_new();
+		server_console_program::smart_ptr prog(smart_this(), id.to_string(), rx_node_id(id.uuid()), true);
+		// create main program
+		console_program* temp_prog = new console_program;
+		auto context = new console_program_context(nullptr, &prog->my_program(), current_directory_, out_buffer, err_buffer, smart_this());
+		temp_prog->load(line);
+		prog->my_program().set_main_program(temp_prog, context);
+		// set security context
 		security::security_auto_context dummy(ctx);
 
-		prog::program_context_base_ptr ctx = temp_prog->create_program_context(
-			prog::server_program_holder_ptr::null_ptr,
-			prog::program_context_base_ptr::null_ptr,
-			current_directory_,
-			out_buffer,
-			err_buffer,
-			smart_this());
-		ctx->set_current_directory(current_directory_);
-		ctx->set_current_object(current_object_);
-		ctx->set_current_item(current_item_);
-		ret = temp_prog->process_program(ctx, rx_time::now(), false);
+
+		context->set_current_object(current_object_);
+		context->set_current_item(current_item_);
+
+		prog->my_program().process_program(context, rx_time::now(), false);
+		ret = !context->has_error();
 		if (ret)
 		{
-			if (ctx->is_postponed())
+			if (context->is_postponed())
 			{
-				current_ = ctx;
+				current_program_ = prog;
+				current_context_ = context;
 			}
 			else
 			{
-				current_directory_ = ctx->get_current_directory();
-				current_item_ = ctx->get_current_item();
-				current_object_ = ctx->get_current_object();
+				current_directory_ = context->get_current_directory();
+				current_item_ = context->get_current_item();
+				current_object_ = context->get_current_object();
 			}
 		}
 	}
-	if(!current_)
+	if(!is_postponed())
 		process_result(ret, out_buffer, err_buffer);
 }
 
 void console_client::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	if (current_)
+	if (current_program_)
 	{
-		current_ = program_context_ptr::null_ptr;
-		process_result(result, out_buffer, err_buffer);
+		current_context_->postpone_done();
+		auto context = current_context_;
+		auto program = current_program_;
+		program->my_program().process_program(current_context_, rx_time::now(), false);
+		if (!context->is_postponed())
+		{
+			current_context_ = nullptr;
+			current_program_ = server_console_program::smart_ptr::null_ptr;
+			process_result(result, out_buffer, err_buffer);
+		}
 	}
 }
 
@@ -648,17 +513,18 @@ bool console_client::cancel_command (memory::buffer_ptr out_buffer, memory::buff
 			sended_this->synchronized_cancel_command(out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
-		, executer_
+		, get_executer()
 		);
 	return true;
 }
 
 void console_client::synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (current_)
+	if (current_program_)
 	{// we are in a command
-		current_->cancel_execution();
-		current_ = program_context_ptr::null_ptr;
+		current_program_->cancel_execution();
+		current_program_ = server_console_program::smart_ptr::null_ptr;
+		current_context_ = nullptr;
 	}
 	else
 	{// nothing to cancel!!!
@@ -686,43 +552,9 @@ bool console_client::do_commands (string_array&& lines, memory::buffer_ptr out_b
 				sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
 		}
 		, smart_this()
-		, executer_
+		, get_executer()
 		);
 	return true;
-}
-
-
-// Class rx_platform::prog::server_script_program 
-
-server_script_program::server_script_program (std::istream& in)
-{
-}
-
-server_script_program::server_script_program (const string_vector& lines)
-{
-}
-
-server_script_program::server_script_program (const string_type& line)
-{
-}
-
-
-server_script_program::~server_script_program()
-{
-}
-
-
-
-bool server_script_program::process_program (prog::program_context_ptr context, const rx_time& now, bool debug)
-{
-	console_program_context::smart_ptr ctx = context.cast_to<console_program_context::smart_ptr>();
-	ctx->get_stderr() << "Nema nicega ovde...";
-	return false;
-}
-
-prog::program_context_ptr server_script_program::create_program_context (prog::server_program_holder_ptr holder, prog::program_context_ptr root_context, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err)
-{
-	return console_program_context::smart_ptr(holder, root_context, current_directory, out, err,smart_this(),prog::console_client::smart_ptr::null_ptr);
 }
 
 
@@ -737,6 +569,59 @@ server_script_host::~server_script_host()
 {
 }
 
+
+
+// Class rx_platform::prog::console_program 
+
+console_program::console_program()
+{
+}
+
+
+console_program::~console_program()
+{
+}
+
+
+
+bool console_program::parse_line (const string_type& line, std::ostream& out, std::ostream& err, sl_runtime::program_context* context)
+{
+	console_program_context* ctx = static_cast<console_program_context*>(context);
+	std::istringstream in(line);
+	string_type first;
+	in >> first;
+	if (!first.empty())
+	{
+		server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
+		if (command)
+		{
+			if (!command->console_execute(in, out, err, ctx))
+				return false;
+		}
+		else
+		{
+			err << "Syntax Error!\r\nCommand:" << first << " not existing!";
+			err.flush();
+			return false;
+		}
+	}
+	if (ctx->is_canceled())
+	{
+		err << "Pending cancel for the current command:\r\n";
+		err <<line;
+		return false;
+	}
+	if (!ctx->is_postponed())
+		ctx->next_line();
+
+	return true;
+
+}
+
+sl_runtime::program_context* console_program::create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder)
+{
+	return new console_program_context(parent_context, holder, server_directory_ptr::null_ptr, buffer_ptr::null_ptr, buffer_ptr::null_ptr, console_client::smart_ptr::null_ptr);
+}
 
 
 } // namespace prog

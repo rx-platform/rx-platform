@@ -159,7 +159,8 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 						buffer->read_line(line);
 						out << "\r\n" << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
 
-						prog::server_console_program temp_prog(line);
+						//TODOIO
+						/*prog::server_console_program temp_prog(line);
 
 						prog::program_context_base_ptr ctx_script = temp_prog.create_program_context(
 							prog::server_program_holder_ptr::null_ptr,
@@ -174,7 +175,7 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 						{
 							ret = false;
 							break;
-						}
+						}*/
 						ret = true;
 					}
 

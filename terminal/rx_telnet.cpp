@@ -162,9 +162,12 @@ server_telnet_socket::~server_telnet_socket()
 
 io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination)
 {
-	telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
-	ret->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
-	return ret;
+	//TODOIO
+	//telnet_client::smart_ptr ret = telnet_client::smart_ptr(handle, addr,local_addr, dispatcher);
+	//ret->socket()->set_receive_timeout(TELENET_RECIVE_TIMEOUT);
+	//return ret;
+
+	return io::tcp_socket_std_buffer::smart_ptr::null_ptr;
 }
 
 
@@ -176,8 +179,9 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
         cancel_current_(false),
         verified_(false),
         exit_(false)
-  , io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
-  , console_client(0)
+	//TODOIO
+  //, io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
+  , console_client(RX_DOMAIN_GENERAL, "telnet_stuff",55,56)
 {
 	vt100_parser_.set_password_mode(true);
 }
@@ -203,7 +207,7 @@ void telnet_client::on_shutdown (rx_thread_handle_t destination)
 	security_context_->logout();
 }
 
-telnet_client::buffer_ptr telnet_client::get_free_buffer ()
+buffer_ptr telnet_client::get_free_buffer ()
 {
 	locks::auto_slim_lock dummy(&buffers_lock_);
 	if (buffers_.empty())
@@ -226,7 +230,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		{
 			buffer_ptr buff = get_free_buffer();
 			buff->push_data("\r\n", 2);
-			send(buff);
+			write(buff);
 		}
 		std::string temp = receiving_string_;
 		receiving_string_.clear();
@@ -251,7 +255,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				get_prompt(prompt);
 				buff->push_string(prompt);
 
-				send(buff);
+				write(buff);
 
 			}
 			else
@@ -268,7 +272,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				get_prompt(prompt);
 				buff->push_string(prompt);
 
-				send(buff);
+				write(buff);
 			}
 
 		}
@@ -287,8 +291,8 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 			 // cancel current stuff
 				cancel_command(out_buffer, err_buffer, security_context_);
 
-				send(err_buffer);
-				send(out_buffer);
+				write(err_buffer);
+				write(out_buffer);
 
 				return true;
 			}
@@ -299,8 +303,8 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 				get_prompt(prompt);
 				out << prompt;
 
-				send(err_buffer);
-				send(out_buffer);
+				write(err_buffer);
+				write(out_buffer);
 
 				return true;
 			}
@@ -334,7 +338,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 
-						send(buff);
+						write(buff);
 					}
 				}
 				else if (buff[1] == DO)
@@ -345,7 +349,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 						char resp[] = { IAC, WILL, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
-						send(buff);
+						write(buff);
 					}
 				}
 			}
@@ -419,8 +423,8 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 				cancel_command(out_buffer, err_buffer, security_context_);
 
-				send(err_buffer);
-				send(out_buffer);
+				write(err_buffer);
+				write(out_buffer);
 			}
 		}
 		else if (buff[0] >= 0x20)// no special characters
@@ -455,7 +459,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 		{
 			buffer_ptr buff = get_free_buffer();
 			buff->push_data(echo_buff, size_of_echo_buff);
-			send(buff);
+			write(buff);
 		}
 	}
 
@@ -472,7 +476,7 @@ void telnet_client::send_string_response (const string_type& line, bool with_pro
 		get_prompt(prompt);
 		buff->push_string(prompt);
 	}
-	send(buff);
+	write(buff);
 }
 
 const string_type& telnet_client::get_console_name ()
@@ -540,7 +544,7 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 		{
 			auto buff = get_free_buffer();
 			buff->push_string(to_send);
-			send(buff);
+			write(buff);
 		}
 		if (!lines.empty())
 		{			
@@ -562,7 +566,7 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
 
-						send(buff);
+						write(buff);
 					}
 				}
 				else if (buff[1] == DO)
@@ -573,7 +577,7 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 						char resp[] = { IAC, WILL, TELNET_ECHO };
 						buffer_ptr buff = get_free_buffer();
 						buff->push_data(resp, 3);
-						send(buff);
+						write(buff);
 					}
 				}
 				idx += 3;
@@ -617,7 +621,7 @@ bool telnet_client::readed (const void* data, size_t count, rx_thread_handle_t d
 		{
 			buffer_ptr buff = get_free_buffer();
 			buff->push_data(echo_buff, size_of_echo_buff);
-			send(buff);
+			write(buff);
 		}
 
 		return true;
@@ -657,8 +661,8 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 		{
 			if (exit_)
 			{
-				send(out_buffer);
-				send(buffer_ptr::null_ptr);// exit the loop
+				write(out_buffer);
+				write(buffer_ptr::null_ptr);// exit the loop
 			}
 			else
 			{
@@ -666,8 +670,8 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 				get_prompt(prompt);
 				out << prompt;
 
-				send(err_buffer);
-				send(out_buffer);
+				write(err_buffer);
+				write(out_buffer);
 			}
 		}
 	}
@@ -675,7 +679,7 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 	{// error
 		if (exit_ || err_buffer->empty())
 		{// exit command, close socket
-			send(buffer_ptr::null_ptr);
+			write(buffer_ptr::null_ptr);
 		}
 		else
 		{
@@ -684,8 +688,8 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 			get_prompt(prompt);
 			out << prompt;
 
-			send(err_buffer);
-			send(out_buffer);
+			write(err_buffer);
+			write(out_buffer);
 		}
 	}
 }
@@ -720,7 +724,7 @@ void telnet_client::lines_received (string_array&& lines)
 					sended_this->get_prompt(prompt);
 					buff->push_string(prompt);
 
-					sended_this->send(buff);
+					sended_this->write(buff);
 
 				}
 				else
@@ -737,7 +741,7 @@ void telnet_client::lines_received (string_array&& lines)
 					sended_this->get_prompt(prompt);
 					buff->push_string(prompt);
 
-					sended_this->send(buff);
+					sended_this->write(buff);
 				}
 			}
 		}

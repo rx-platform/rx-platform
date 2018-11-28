@@ -107,15 +107,22 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 	{
 		if (manager_.initialize(host, data.managment_data))
 		{
-			sys_internal::internal_ns::platform_root::initialize(host,data.namespace_data);
-			root_ = rx_create_reference<sys_internal::internal_ns::platform_root>();
+			if (io_manager_.initialize(host, data.io_manager_data))
+			{
+				sys_internal::internal_ns::platform_root::initialize(host, data.namespace_data);
+				root_ = rx_create_reference<sys_internal::internal_ns::platform_root>();
 
-			for (auto one : scripts_)
-				one.second->initialize();
+				for (auto one : scripts_)
+					one.second->initialize();
 
-			model::internal_classes_manager::instance().initialize(host, data.meta_data);
-			
-			return RX_OK;
+				model::internal_classes_manager::instance().initialize(host, data.meta_data);
+
+				return RX_OK;
+			}
+			else
+			{
+				manager_.deinitialize();
+			}
 		}
 		else
 		{
