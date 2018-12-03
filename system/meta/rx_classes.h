@@ -31,12 +31,12 @@
 
 
 
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 
 namespace rx_platform {
 namespace objects {
@@ -55,6 +55,17 @@ class complex_runtime_item;
 
 
 namespace rx_platform {
+	// This section here is the forward runtime classes declarations
+	namespace objects
+	{
+		namespace blocks
+		{
+			class event_runtime;
+			class source_runtime;
+			class filter_runtime;
+			class mapper_runtime;
+		}
+	}
 
 namespace meta {
 // had to do forward declaration because of back template pattern
@@ -187,9 +198,19 @@ namespace basic_defs {
 class event_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(event_class);
-	friend class meta_helpers;
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic event class.\r\n\
+basic implementation of event object");
+public:
+	typedef typename objects::blocks::event_runtime RType;
+	typedef objects::blocks::event_runtime* RTypePtr;
+	typedef objects::blocks::complex_runtime_item CType;
+
+	friend class obj_meta_helpers;
 
   public:
+      event_class (const string_type& name, const rx_node_id& id, bool system = false);
+
       virtual ~event_class();
 
 
@@ -241,9 +262,18 @@ class event_class : public rx::pointers::reference_object
 class filter_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(filter_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic filter class.\r\n\
+basic implementation inside object class");
+public:
+	typedef objects::blocks::filter_runtime RType;
+	typedef RType CType;
+	typedef objects::blocks::filter_runtime* RTypePtr;
 	friend class meta_helpers;
 
   public:
+      filter_class (const string_type& name, const rx_node_id& id, bool system = false);
+
       virtual ~filter_class();
 
 
@@ -294,11 +324,20 @@ class filter_class : public rx::pointers::reference_object
 
 class mapper_class : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(mapper_class);
+	DECLARE_REFERENCE_PTR(mapper_class); 
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic mapper class.\r\n\
+basic implementation inside object class");
+public:
+	typedef objects::blocks::mapper_runtime RType;
+	typedef RType CType;
+	typedef objects::blocks::mapper_runtime* RTypePtr;
 	friend class meta_helpers;
 
   public:
       mapper_class();
+
+      mapper_class (const string_type& name, const rx_node_id& id, bool system = false);
 
 
       platform_item_ptr get_item_ptr ();
@@ -347,9 +386,18 @@ class mapper_class : public rx::pointers::reference_object
 class source_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(source_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic struct class.\r\n\
+basic implementation inside object class");
+public:
+	typedef objects::blocks::source_runtime RType;
+	typedef RType CType;
+	typedef objects::blocks::source_runtime* RTypePtr;
 	friend class meta_helpers;
 
   public:
+      source_class (const string_type& name, const rx_node_id& id, bool system = false);
+
       virtual ~source_class();
 
 

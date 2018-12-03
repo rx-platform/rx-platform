@@ -31,12 +31,12 @@
 
 
 
-// rx_objbase
-#include "system/meta/rx_objbase.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_objbase
+#include "system/meta/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;

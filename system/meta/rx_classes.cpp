@@ -199,6 +199,11 @@ event_class::event_class()
 {
 }
 
+event_class::event_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
+{
+}
+
 
 event_class::~event_class()
 {
@@ -251,6 +256,11 @@ const checkable_data& event_class::meta_data () const
 string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
 filter_class::filter_class()
+{
+}
+
+filter_class::filter_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
 {
 }
 
@@ -309,6 +319,11 @@ mapper_class::mapper_class()
 {
 }
 
+mapper_class::mapper_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
+{
+}
+
 
 
 platform_item_ptr mapper_class::get_item_ptr ()
@@ -356,6 +371,11 @@ const def_blocks::complex_data_type& mapper_class::complex_data () const
 string_type source_class::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
 
 source_class::source_class()
+{
+}
+
+source_class::source_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
 {
 }
 

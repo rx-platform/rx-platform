@@ -31,12 +31,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_classes.h"
@@ -67,21 +67,12 @@ contains root server folders\
       virtual ~platform_root();
 
 
-      static void initialize (hosting::rx_platform_host* host, namespace_data_t& data);
-
-      static void deinitialize ();
-
       namespace_item_attributes get_attributes () const;
 
 
   protected:
 
   private:
-
-
-      static server_directories_type root_directories_;
-
-      static server_items_type root_items_;
 
 
 };
@@ -102,7 +93,7 @@ used to create system defined folders...\
 ");
 
   public:
-      namespace_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
+      namespace_directory (const string_type& name);
 
       virtual ~namespace_directory();
 
@@ -133,7 +124,7 @@ All objects here are with unassigned state and hawing a bad quality\
 ");
 
   public:
-      unassigned_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
+      unassigned_directory();
 
       virtual ~unassigned_directory();
 
@@ -164,7 +155,7 @@ used to create user defined folders...\
 ");
 
   public:
-      world_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
+      world_directory();
 
       virtual ~world_directory();
 
@@ -334,7 +325,7 @@ used to interface storage objects...\
 ");
 
   public:
-      storage_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
+      storage_directory();
 
       virtual ~storage_directory();
 

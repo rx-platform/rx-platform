@@ -200,7 +200,7 @@ bool complex_data_type::register_struct (const string_type& name, const rx_node_
 
 bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|variables_mask))))
+	if (check_name(name, (static_cast<int>(variables_.size()|variables_mask))))
 	{
 		variables_.emplace_back(std::make_unique<variable_attribute>(name, id));
 		return true;
@@ -227,11 +227,11 @@ bool complex_data_type::check_name (const string_type& name, int rt_index)
 
 void complex_data_type::construct (complex_runtime_ptr what)
 {
-	// constant values
 	for (const auto& one : names_cache_)
 	{
 		switch (one.second&type_mask)
 		{
+		// structures
 		case structs_mask:
 		{
 			struct_runtime_ptr temp= model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_runtime("test_object", rx_node_id::null_id, structs_[one.second&index_mask]->get_target_id());
@@ -239,10 +239,12 @@ void complex_data_type::construct (complex_runtime_ptr what)
 			what->register_sub_item(structs_[one.second&index_mask]->get_name(), temp);
 		}
 		break;
+		// variables
 		case variables_mask:
 		{
 		}
 		break;
+		// constant values
 		case const_values_mask:
 		{
 			what->register_const_value(
@@ -259,24 +261,11 @@ void complex_data_type::construct (complex_runtime_ptr what)
 		break;
 		}
 	}
-	for (auto& one : const_values_)
-	{
-		what->register_const_value(one.get_name(), one.get_value());
-	}
-
-	for (auto& one : simple_values_)
-	{
-		what->register_value(one.get_name(), one.get_value(rx_time::now()));
-	}
-	//for (auto& one : structs_)
-	//{
-		//!!!what->register_sub_item(one->get_name(),one->construct().cast_to<objects::struct_runtime_ptr>());
-	//}
 }
 
 bool complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|simple_values_mask))))
+	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
 	{
 		simple_values_.emplace_back(name, std::move(val));
 		return true;
@@ -289,7 +278,7 @@ bool complex_data_type::register_simple_value (const string_type& name, rx_simpl
 
 bool complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|const_values_mask))))
+	if (check_name(name, (static_cast<int>(const_values_.size()|const_values_mask))))
 	{
 		const_values_.emplace_back(name, std::move(val));
 		return true;
@@ -302,7 +291,7 @@ bool complex_data_type::register_const_value (const string_type& name, rx_simple
 
 bool complex_data_type::register_simple_value (const string_type& name, const rx_simple_value& val)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|simple_values_mask))))
+	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
 	{
 		simple_values_.emplace_back(name, val);
 		return true;
@@ -315,7 +304,7 @@ bool complex_data_type::register_simple_value (const string_type& name, const rx
 
 bool complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|const_values_mask))))
+	if (check_name(name, (static_cast<int>(const_values_.size()|const_values_mask))))
 	{
 		const_values_.emplace_back(name, val);
 		return true;

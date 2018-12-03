@@ -34,11 +34,30 @@
 #include "system/server/rx_server.h"
 
 #include "sys_internal/rx_internal_ns.h"
+#include "sys_internal/rx_internal_builders.h"
 #include "system/python/py_support.h"
 #include "classes/rx_meta.h"
 
 
 namespace rx_platform {
+
+objects::domain_runtime_ptr rx_system_domain()
+{
+	return rx_gate::instance().get_manager().get_system_domain();
+}
+objects::application_runtime_ptr rx_system_application()
+{
+	return rx_gate::instance().get_manager().get_system_app();
+}
+
+objects::domain_runtime_ptr rx_unassigned_domain()
+{
+	return rx_gate::instance().get_manager().get_unassigned_domain();
+}
+objects::application_runtime_ptr rx_unassigned_application()
+{
+	return rx_gate::instance().get_manager().get_unassigned_app();
+}
 
 // Class rx_platform::rx_gate 
 
@@ -109,8 +128,7 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 		{
 			if (io_manager_.initialize(host, data.io_manager_data))
 			{
-				sys_internal::internal_ns::platform_root::initialize(host, data.namespace_data);
-				root_ = rx_create_reference<sys_internal::internal_ns::platform_root>();
+				root_ =	sys_internal::builders::rx_platform_builder::buid_platform_system(host, data.namespace_data);
 
 				for (auto one : scripts_)
 					one.second->initialize();

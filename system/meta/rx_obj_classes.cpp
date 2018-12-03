@@ -72,6 +72,7 @@ application_class::application_class()
 }
 
 application_class::application_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
 {
 }
 
@@ -341,6 +342,7 @@ port_class::port_class()
 }
 
 port_class::port_class (const string_type& name, const rx_node_id& id, bool system)
+	: meta_data_(name, id, system)
 {
 }
 

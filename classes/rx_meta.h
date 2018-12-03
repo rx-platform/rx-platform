@@ -72,8 +72,8 @@ private:\
 
 void init_compiled_meta_types();
 
-typedef TYPELIST_9(object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_rx_types;
-typedef TYPELIST_10(reference_type, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
+typedef TYPELIST_10(object_class, port_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_rx_types;
+typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
 
 

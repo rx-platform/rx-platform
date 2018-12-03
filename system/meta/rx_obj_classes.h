@@ -117,6 +117,7 @@ class application_class : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(application_class);
 public:
 	typedef objects::object_types::application_runtime RType;
+	typedef objects::application_runtime_ptr RTypePtr;
 	typedef objects::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
@@ -189,6 +190,7 @@ class domain_class : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(domain_class);
 public:
 	typedef objects::object_types::domain_runtime RType;
+	typedef objects::domain_runtime_ptr RTypePtr;
 	typedef objects::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
@@ -337,8 +339,12 @@ public:
 class port_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(port_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+basic port class.\r\n\
+basic implementation of port class");
 public:
 	typedef objects::object_types::port_runtime RType;
+	typedef objects::port_runtime_ptr RTypePtr;
 	typedef objects::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;

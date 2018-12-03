@@ -258,6 +258,12 @@ void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, ar
 	rx_gate::instance().get_runtime().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
 
+objects::domain_runtime_ptr rx_system_domain();
+objects::application_runtime_ptr rx_system_application();
+
+objects::domain_runtime_ptr rx_unassigned_domain();
+objects::application_runtime_ptr rx_unassigned_application();
+
 } // namespace rx_platform
 
 

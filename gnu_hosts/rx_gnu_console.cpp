@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -59,7 +59,7 @@ void sig_handler(int s)
 
 namespace gnu {
 
-// Class gnu::gnu_console_host 
+// Class gnu::gnu_console_host
 
 gnu_console_host::gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
 	: host::interactive::interactive_console_host(storage)
@@ -200,10 +200,14 @@ bool gnu_console_host::write_stdout (const void* data, size_t size)
 
 std::vector<ETH_interface> gnu_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
+  std::vector<ETH_interface> ret;
+  return ret;
 }
 
 std::vector<IP_interface> gnu_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
+  std::vector<IP_interface> ret;
+  return ret;
 }
 
 

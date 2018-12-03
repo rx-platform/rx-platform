@@ -641,6 +641,12 @@ void rx_value_storage::assign(const string_type& val)
 	value_.string_value = new string_type(val);
 
 }
+void rx_value_storage::assign(const char* val)
+{
+
+	value_.string_value = new string_type(val);
+
+}
 void rx_value_storage::assign(byte_string&& val)
 {
 

@@ -52,8 +52,8 @@ user_object::user_object()
 {
 }
 
-user_object::user_object (const string_type& name, const rx_node_id& id)
-	: object_runtime(name, id, true)
+user_object::user_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
 {
 	init_object();
 }
@@ -73,8 +73,8 @@ namespace_item_attributes user_object::get_attributes () const
 
 // Class rx_platform::objects::object_types::server_object 
 
-server_object::server_object (const string_type& name, const rx_node_id& id)
-	: object_runtime(name,id,true)
+server_object::server_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
 {
 	init_object();
 }
@@ -102,10 +102,12 @@ object_runtime::object_runtime()
 {
 }
 
-object_runtime::object_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
+object_runtime::object_runtime (object_creation_data&& data)
       : change_time_(rx_time::now())
-	, meta_data_(name,id,type_id,system)
-	, runtime_item_(name, id, system)
+	, meta_data_(data.name, data.id, data.type_id, data.system)
+	, runtime_item_(data.name, data.id, data.system)
+	, my_application_(data.application)
+	, my_domain_(data.domain)
 {
 }
 
@@ -325,11 +327,10 @@ application_runtime::application_runtime()
 	my_domain_ = smart_this();
 }
 
-application_runtime::application_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
-	: domain_runtime(name,id,system)
+application_runtime::application_runtime (application_creation_data&& data)
+	: domain_runtime(domain_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), data.system, rx_application_ptr::null_ptr })
 {
 	my_application_ = smart_this();
-	my_domain_ = smart_this();
 }
 
 
@@ -370,8 +371,8 @@ domain_runtime::domain_runtime()
 	my_domain_ = smart_this();
 }
 
-domain_runtime::domain_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
-	: object_runtime(name,id,system)
+domain_runtime::domain_runtime (domain_creation_data&& data)
+	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
 {
 	my_domain_ = smart_this();
 }
@@ -413,8 +414,8 @@ port_runtime::port_runtime()
 {
 }
 
-port_runtime::port_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
-	: object_runtime(name,id,true)// every port is system objects
+port_runtime::port_runtime (port_creation_data&& data)
+	: object_runtime(object_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), true, std::move(data.application), std::move(data.application) })// every port is system objects
 {
 }
 
@@ -441,8 +442,26 @@ bool port_runtime::write (buffer_ptr what)
 	return false;
 }
 
+bool port_runtime::readed (const void* data, size_t count, rx_thread_handle_t destination)
+{
+	return true;
+}
+
 
 } // namespace object_types
+
+// Class rx_platform::objects::application_creation_data 
+
+
+// Class rx_platform::objects::domain_creation_data 
+
+
+// Class rx_platform::objects::port_creation_data 
+
+
+// Class rx_platform::objects::object_creation_data 
+
+
 } // namespace objects
 } // namespace rx_platform
 

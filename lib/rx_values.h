@@ -324,6 +324,7 @@ public:
 
 	  void assign(string_type&& val);
 	  void assign(const string_type& val);
+	  void assign(const char* val);
 
 	  void assign(byte_string&& val);
 	  void assign(const byte_string& val);

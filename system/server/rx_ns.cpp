@@ -243,31 +243,6 @@ rx_server_directory::rx_server_directory (const string_type& name)
 {
 }
 
-rx_server_directory::rx_server_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-      : created_(rx_time::now())
-	, name_(name)
-{
-	for (auto one : sub_directories)
-	{
-		auto it = sub_directories_.find(one->get_name());
-		if (it == sub_directories_.end())
-		{
-			one->set_parent(smart_this());
-			sub_directories_.emplace(one->get_name(), one);
-		}
-	}
-	for (auto one : items)
-	{
-		auto it = sub_items_.find(one->get_name());
-		if (it == sub_items_.end())
-		{
-			one->set_parent(smart_this());
-			string_type name(one->get_name());
-			sub_items_.emplace(name, one);
-		}
-	}
-}
-
 
 rx_server_directory::~rx_server_directory()
 {
@@ -478,7 +453,12 @@ void rx_server_directory::get_value (const string_type& name, rx_value& value)
 
 bool rx_server_directory::add_sub_directory (server_directory_ptr who)
 {
-	////!!!!
+	structure_lock();
+	sub_directories_.emplace(who->name_, who);
+	who->structure_lock();
+	who->parent_ = smart_this();
+	who->structure_unlock();
+	structure_unlock();
 	return false;
 }
 
@@ -486,6 +466,7 @@ bool rx_server_directory::add_item (platform_item_ptr who)
 {
 	structure_lock();
 	auto ret = sub_items_.emplace(who->get_name(), who);
+	who->set_parent(smart_this());
 	structure_unlock();
 	return ret.second;
 }
@@ -497,4 +478,6 @@ void rx_server_directory::add_item(TImpl who)
 }
 } // namespace ns
 } // namespace rx_platform
+
+
 

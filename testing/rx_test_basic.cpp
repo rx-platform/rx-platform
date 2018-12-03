@@ -472,8 +472,8 @@ namespace meta_test {
 				 {
 					 out << "Creating test_object\r\n";
 
-					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > mapa;
-					 mapa.emplace(55, [] {
+					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > map;
+					 map.emplace(55, [] {
 						 return rx_create_reference<objects::object_types::user_object>();
 					 });
 

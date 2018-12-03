@@ -43,9 +43,9 @@
 
 namespace rx_platform {
 namespace prog {
+class server_console_program;
 class console_program_context;
 class console_client;
-class server_console_program;
 
 } // namespace prog
 } // namespace rx_platform
@@ -300,7 +300,7 @@ class console_client : public objects::object_types::port_runtime
 	DECLARE_REFERENCE_PTR(console_client);
 
   public:
-      console_client (rx_thread_handle_t executer, const string_type& name, const rx_node_id& id, const rx_node_id& type_id);
+      console_client (objects::port_creation_data&& data);
 
       virtual ~console_client();
 

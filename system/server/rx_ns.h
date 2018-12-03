@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -126,8 +126,6 @@ class rx_server_directory : public rx::pointers::reference_object
       rx_server_directory();
 
       rx_server_directory (const string_type& name);
-
-      rx_server_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items);
 
       virtual ~rx_server_directory();
 

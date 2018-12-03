@@ -8,18 +8,43 @@
 #define RX_NS_UNASSIGNED_NAME "_unassigned"
 #define RX_NS_BIN_NAME "bin"
 #define RX_NS_OBJ_NAME "objects"
-#define RX_NS_CLASS_NAME "classes"
+#define RX_NS_CLASSES_NAME "classes"
+#define RX_NS_BASE_CLASSES_NAME "base"
+#define RX_NS_SYSTEM_CLASSES_NAME "system"
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
 #define RX_NULL_ITEM_NAME "<nullptr>"
 
+// basic classes
+#define RX_CLASS_OBJECT_BASE_NAME "object_base"
+#define RX_CLASS_OBJECT_BASE_ID 0x00000001
+#define RX_CLASS_DOMAIN_BASE_NAME "domain_base"
+#define RX_CLASS_DOMAIN_BASE_ID 0x00000002
+#define RX_CLASS_APPLICATION_BASE_NAME "application_base"
+#define RX_CLASS_APPLICATION_BASE_ID 0x00000003
+#define RX_CLASS_PORT_BASE_NAME "port_base"
+#define RX_CLASS_PORT_BASE_ID 0x00000004
+
+#define RX_CLASS_STRUCT_BASE_NAME "struct_base"
+#define RX_CLASS_STRUCT_BASE_ID 0x00000005
+#define RX_CLASS_VARIABLE_BASE_NAME "variable_base"
+#define RX_CLASS_VARIABLE_BASE_ID 0x00000006
+#define RX_CLASS_EVENT_BASE_NAME "event_base"
+#define RX_CLASS_EVENT_BASE_ID 0x00000007
+#define RX_CLASS_SOURCE_BASE_NAME "source_base"
+#define RX_CLASS_SOURCE_BASE_ID 0x00000008
+#define RX_CLASS_MAPPER_BASE_NAME "mapper_base"
+#define RX_CLASS_MAPPER_BASE_ID 0x00000009
+#define RX_CLASS_FILTER_BASE_NAME "filter_base"
+#define RX_CLASS_FILTER_BASE_ID 0x0000000a
+
 
 // objects stuff
 #define RX_NS_SYSTEM_APP_NAME "system_app"
-#define RX_NS_SYSTEM_APP_ID 0x00000001
+#define RX_NS_SYSTEM_APP_ID 0x0000000b
 #define RX_NS_SYSTEM_DOM_NAME "system"
-#define RX_NS_SYSTEM_DOM_ID 0x00000002
+#define RX_NS_SYSTEM_DOM_ID 0x0000000c
 
 #define NS_RX_COMMANDS_MANAGER_NAME "cmd_manager"
 #define RX_COMMANDS_MANAGER_ID 0x80000001
@@ -66,9 +91,6 @@
 #define RX_IO_MANAGER_TYPE_NAME "io_manager_type"
 #define RX_IO_MANAGER_TYPE_ID 0xc0000005
 
-
-#define IO_POOL_TYPE_NAME "io_pool_type"
-#define IO_POOL_TYPE_ID 0xc0000006
 #define GENERAL_POOL_TYPE_NAME "general_pool_type"
 #define GENERAL_POOL_TYPE_ID 0xc0000007
 #define WORKER_POOL_TYPE_NAME "worker_pool_type"

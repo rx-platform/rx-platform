@@ -605,6 +605,23 @@ variable_runtime::~variable_runtime()
 
 
 
+// Class rx_platform::objects::blocks::event_runtime 
+
+string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
+
+event_runtime::event_runtime()
+{
+}
+
+
+
+string_type event_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+
 } // namespace blocks
 } // namespace objects
 } // namespace rx_platform

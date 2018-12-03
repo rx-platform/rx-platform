@@ -33,6 +33,7 @@
 // rx_endpoints
 #include "system/server/rx_endpoints.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace rx_platform {
@@ -42,7 +43,7 @@ namespace io_endpoints {
 // Class rx_platform::io_endpoints::rx_io_manager 
 
 rx_io_manager::rx_io_manager()
-	: server_object(RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID)
+	: server_object(objects::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
 {
 }
 

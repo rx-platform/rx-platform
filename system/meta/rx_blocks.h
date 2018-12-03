@@ -31,10 +31,10 @@
 
 
 
-// rx_classes
-#include "system/meta/rx_classes.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_classes
+#include "system/meta/rx_classes.h"
 
 namespace rx_platform {
 namespace objects {
@@ -66,6 +66,9 @@ struct object_state_data
 	rx_mode_type mode;
 };
 typedef rx::pointers::reference<object_types::object_runtime> object_runtime_ptr;
+typedef rx::pointers::reference<object_types::application_runtime> application_runtime_ptr;
+typedef rx::pointers::reference<object_types::domain_runtime> domain_runtime_ptr;
+typedef rx::pointers::reference<object_types::port_runtime> port_runtime_ptr;
 typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
 
 namespace blocks {
@@ -146,6 +149,9 @@ public:
 
 class filter_runtime 
 {
+	typedef rx_platform::meta::basic_defs::struct_class definition_t;
+	typedef objects::blocks::struct_runtime RType;
+	typedef objects::blocks::struct_runtime* RTypePtr;
 public:
 	typedef std::unique_ptr<filter_runtime> smart_ptr;
 
@@ -176,6 +182,12 @@ public:
 
 class mapper_runtime 
 {
+	friend class meta::def_blocks::complex_data_type;
+public:
+	typedef rx_platform::meta::basic_defs::mapper_class definition_t;
+	typedef objects::blocks::mapper_runtime RType;
+	typedef objects::blocks::mapper_runtime* RTypePtr;
+	typedef std::unique_ptr<mapper_runtime> smart_ptr;
 
   public:
       mapper_runtime();
@@ -200,7 +212,11 @@ class mapper_runtime
 
 class source_runtime 
 {
+	friend class meta::def_blocks::complex_data_type;
 public:
+	typedef rx_platform::meta::basic_defs::source_class definition_t;
+	typedef objects::blocks::source_runtime RType;
+	typedef objects::blocks::source_runtime* RTypePtr;
 	typedef std::unique_ptr<source_runtime> smart_ptr;
 
   public:
@@ -480,11 +496,46 @@ public:
 
 
 
+class event_runtime 
+{
+	friend class meta::def_blocks::complex_data_type;
+public:
+	typedef rx_platform::meta::basic_defs::event_class definition_t;
+	typedef objects::blocks::event_runtime RType;
+	typedef objects::blocks::event_runtime* RTypePtr;
+	typedef std::unique_ptr<event_runtime> smart_ptr;
+
+  public:
+      event_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<complex_runtime_item> my_item_;
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
 
 class variable_runtime 
 {
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source_runtime::smart_ptr> sources_type;
+	typedef std::vector<event_runtime::smart_ptr> events_type;
 
 
 	friend class meta::def_blocks::complex_data_type;
@@ -516,6 +567,8 @@ public:
       sources_type output_sources_;
 
       std::unique_ptr<complex_runtime_item> my_item_;
+
+      events_type events_;
 
 
 };

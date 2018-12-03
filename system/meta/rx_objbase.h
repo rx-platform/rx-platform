@@ -70,6 +70,116 @@ namespace objects {
 typedef rx_reference<object_types::domain_runtime> rx_domain_ptr;
 typedef rx_reference<object_types::domain_runtime> rx_application_ptr;
 
+
+
+
+
+struct application_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct domain_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+      rx_application_ptr application;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct port_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      rx_application_ptr application;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct object_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+      rx_application_ptr application;
+
+      rx_domain_ptr domain;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
 namespace object_types {
 
 
@@ -96,7 +206,7 @@ public:
 	typedef objects::object_types::object_runtime RType;
 
   public:
-      object_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+      object_runtime (object_creation_data&& data);
 
       virtual ~object_runtime();
 
@@ -223,7 +333,7 @@ user object class. basic implementation of a user object");
   public:
       user_object();
 
-      user_object (const string_type& name, const rx_node_id& id);
+      user_object (object_creation_data&& data);
 
       virtual ~user_object();
 
@@ -251,7 +361,7 @@ system object class. basic implementation of a system object");
 	DECLARE_REFERENCE_PTR(server_object);
 
   public:
-      server_object (const string_type& name, const rx_node_id& id);
+      server_object (object_creation_data&& data);
 
       virtual ~server_object();
 
@@ -271,6 +381,7 @@ system object class. basic implementation of a system object");
 
 
 
+
 class domain_runtime : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
@@ -281,7 +392,7 @@ system domain class. basic implementation of a domain");
 	typedef std::vector<object_runtime::smart_ptr> objects_type;
 
   public:
-      domain_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+      domain_runtime (domain_creation_data&& data);
 
       virtual ~domain_runtime();
 
@@ -318,6 +429,7 @@ system domain class. basic implementation of a domain");
 
 
 
+
 class port_runtime : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
@@ -325,8 +437,14 @@ system port class. basic implementation of a port");
 
 	DECLARE_REFERENCE_PTR(port_runtime);
 
+	friend class meta::checkable_data;
+
+public:
+	typedef rx_platform::meta::object_defs::port_class definition_t;
+	typedef objects::object_types::port_runtime RType;
+
   public:
-      port_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+      port_runtime (port_creation_data&& data);
 
       virtual ~port_runtime();
 
@@ -343,7 +461,7 @@ system port class. basic implementation of a port");
 
   protected:
 
-      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination) = 0;
+      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination);
 
 
   private:
@@ -352,6 +470,7 @@ system port class. basic implementation of a port");
 
 
 };
+
 
 
 
@@ -368,7 +487,7 @@ system application class. contains system default application");
 	typedef std::vector<port_runtime::smart_ptr> ports_type;
 
   public:
-      application_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+      application_runtime (application_creation_data&& data);
 
       virtual ~application_runtime();
 
@@ -409,10 +528,10 @@ namespace rx_platform
 {
 namespace objects 
 {
-typedef reference<object_types::object_runtime> object_runtime_ptr;
-typedef reference<object_types::port_runtime> port_runtime_ptr;
-typedef reference<object_types::domain_runtime> domain_runtime_ptr;
-typedef reference<object_types::application_runtime> application_runtime_ptr;
+//typedef reference<object_types::object_runtime> object_runtime_ptr;
+//typedef reference<object_types::port_runtime> port_runtime_ptr;
+//typedef reference<object_types::domain_runtime> domain_runtime_ptr;
+//typedef reference<object_types::application_runtime> application_runtime_ptr;
 }
 }
 

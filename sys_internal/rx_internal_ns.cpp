@@ -32,15 +32,8 @@
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
 
-#include "system/server/rx_server.h"
-#include "terminal/rx_commands.h"
-#include "system/server/rx_inf.h"
-#include "system/meta/rx_classes.h"
-#include "system/meta/rx_obj_classes.h"
 #include "testing/rx_test.h"
-#include "classes/rx_meta.h"
-#include "rx_configuration.h"
-
+#include "sys_internal/rx_internal_builders.h"
 
 
 namespace sys_internal {
@@ -49,12 +42,8 @@ namespace internal_ns {
 
 // Class sys_internal::internal_ns::platform_root 
 
-server_directories_type platform_root::root_directories_;
-
-server_items_type platform_root::root_items_;
-
 platform_root::platform_root()
-	: rx_server_directory("",root_directories_,root_items_)
+	: rx_server_directory("")
 {
 }
 
@@ -65,134 +54,6 @@ platform_root::~platform_root()
 
 
 
-void platform_root::initialize (hosting::rx_platform_host* host, namespace_data_t& data)
-{
-	server_directories_type dirs;
-	server_items_type items;
-	server_items_type sub_items;
-
-	auto system_application = rx_gate::instance().get_manager().get_system_app();
-	auto system_domain = rx_gate::instance().get_manager().get_system_domain();
-
-
-	sub_items.emplace_back(system_application->get_item_ptr());
-	sub_items.emplace_back(system_domain->get_item_ptr());
-	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_item_ptr());
-	//io_pool(IO_POOL_NAME, IO_POOL_ID, true);
-	sub_items.emplace_back(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_item_ptr());
-	ns::rx_platform_item::smart_ptr general_pool = rx_platform::rx_gate::instance().get_runtime().get_general_pool()->get_item_ptr();
-	if (general_pool)
-		sub_items.emplace_back(general_pool);
-	ns::rx_platform_item::smart_ptr workers = rx_platform::rx_gate::instance().get_runtime().get_workers()->get_item_ptr();
-	if (workers)
-		sub_items.emplace_back(workers);
-	namespace_directory::smart_ptr objects(RX_NS_OBJ_NAME, dirs, sub_items);
-
-
-	dirs.clear();
-	items.clear();
-	sub_items.clear();
-
-	world_directory::smart_ptr world(RX_NS_WORLD_NAME, dirs, items);
-	root_directories_.push_back(world);
-
-
-	dirs.clear();
-	items.clear();
-
-	storage_directory::smart_ptr storage(RX_NS_STORAGE_NAME, dirs, items);
-	root_directories_.push_back(storage);
-
-	dirs.clear();
-	items.clear();
-	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_app()->get_item_ptr());
-	items.emplace_back(rx_gate::instance().get_manager().get_unassigned_domain()->get_item_ptr());
-	unassigned_directory::smart_ptr unassigned(RX_NS_UNASSIGNED_NAME, dirs, items);
-	root_directories_.push_back(unassigned);
-
-	dirs.clear();
-	items.clear();
-	std::vector<prog::command_ptr> commands;
-	terminal::commands::server_command_manager::instance()->get_commands(commands);
-	for (auto one : commands)
-		items.push_back(one->get_item_ptr());
-	items.emplace_back(terminal::commands::server_command_manager::instance()->get_item_ptr());
-	namespace_directory::smart_ptr bin(RX_NS_BIN_NAME, dirs, items);
-
-	dirs.clear();
-	items.clear();
-
-	server_directories_type dummy_empty;
-	string_array categories;
-	testing::testing_enviroment::instance().get_categories(categories);
-	for (const auto& one : categories)
-	{
-		items.clear();
-		std::vector<testing::test_case::smart_ptr> cases;
-		testing::testing_enviroment::instance().collect_test_cases(one, cases);
-		for (auto tcase : cases)
-		{
-			items.emplace_back(tcase->get_item_ptr());
-		}
-		dirs.push_back(namespace_directory::smart_ptr(one, dummy_empty, items));
-	}
-	items.clear();
-	namespace_directory::smart_ptr test(RX_NS_TEST_NAME, dirs, items);
-
-	dirs.clear();
-	items.clear();
-	sub_items.clear();// just in case
-
-
-	dirs.clear();
-	items.clear();
-	namespace_directory::smart_ptr classes(RX_NS_CLASS_NAME, dirs, items);
-
-
-	dirs.clear();
-	items.clear();
-
-	std::vector<meta::object_class_ptr> host_classes;
-	std::vector<objects::object_runtime_ptr> host_objects;
-
-	host->get_host_classes(host_classes);
-	for (auto one : host_classes)
-		model::internal_classes_manager::instance().get_type_cache<object_class>().register_class(one);
-	host->get_host_objects(host_objects);
-
-	for (auto one : host_classes)
-		items.emplace_back(one->get_item_ptr());
-
-	for (auto one : host_objects)
-		items.emplace_back(one->get_item_ptr());
-
-	namespace_directory::smart_ptr host_dir(RX_NS_HOST_NAME, dirs, items);
-
-	dirs.clear();
-	items.clear();
-	dirs.push_back(host_dir);
-
-	namespace_directory::smart_ptr plugins(RX_NS_PLUGINS_NAME, dirs, items);
-
-
-	dirs.clear();
-	items.clear();
-
-	dirs.push_back(objects);
-	dirs.push_back(bin);
-	dirs.push_back(classes);
-	dirs.push_back(plugins);
-
-	namespace_directory::smart_ptr sys(RX_NS_SYS_NAME, dirs, items);
-
-	root_directories_.push_back(sys);
-	root_directories_.push_back(test);
-}
-
-void platform_root::deinitialize ()
-{
-}
-
 namespace_item_attributes platform_root::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
@@ -201,8 +62,8 @@ namespace_item_attributes platform_root::get_attributes () const
 
 // Class sys_internal::internal_ns::namespace_directory 
 
-namespace_directory::namespace_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-	: rx_server_directory(name,sub_directories,items)
+namespace_directory::namespace_directory (const string_type& name)
+	: rx_server_directory(name)
 {
 }
 
@@ -221,8 +82,8 @@ namespace_item_attributes namespace_directory::get_attributes () const
 
 // Class sys_internal::internal_ns::unassigned_directory 
 
-unassigned_directory::unassigned_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-	: rx_server_directory(name,sub_directories,items)
+unassigned_directory::unassigned_directory()
+	: rx_server_directory(RX_NS_UNASSIGNED_NAME)
 {
 }
 
@@ -241,8 +102,8 @@ namespace_item_attributes unassigned_directory::get_attributes () const
 
 // Class sys_internal::internal_ns::world_directory 
 
-world_directory::world_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-	: rx_server_directory(name, sub_directories, items)
+world_directory::world_directory()
+	: rx_server_directory(RX_NS_WORLD_NAME)
 {
 }
 
@@ -383,8 +244,8 @@ size_t runtime_simple_platform_item<T,class_name_idx>::get_size () const
 
 // Class sys_internal::internal_ns::storage_directory 
 
-storage_directory::storage_directory (const string_type& name, const server_directories_type& sub_directories, const server_items_type& items)
-	: rx_server_directory(name, sub_directories, items)
+storage_directory::storage_directory()
+	: rx_server_directory(RX_NS_STORAGE_NAME)
 {
 }
 
@@ -423,3 +284,5 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::stru
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class_ptr>;
+
+
