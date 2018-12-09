@@ -820,7 +820,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	values::rx_value val(item->get_value());
 	ns::fill_quality_string(val, quality_string);
 	string_type attrs;
-	ns::fill_namepsace_string(item->get_attributes(), attrs);
+	ns::fill_attributes_string(item->get_attributes(), attrs);
 	string_type cls_name;
 	bool has_code = false;
 	string_type console;
@@ -851,7 +851,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 
 bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
 {
-	if ((one->get_attributes()&namespace_item_browsable) != 0)
+	if ((one->get_attributes()&namespace_item_execute_access) != 0)
 		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 	else
 		row.emplace_back(one->get_name());
@@ -862,7 +862,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 	if (options.list_attributes)
 	{
 		string_type attrs;
-		ns::fill_namepsace_string(one->get_attributes(), attrs);
+		ns::fill_attributes_string(one->get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
 	if (options.list_qualities || options.list_timestamps)
@@ -904,7 +904,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 	if (options.list_attributes)
 	{
 		string_type attrs;
-		ns::fill_namepsace_string(one->get_attributes(), attrs);
+		ns::fill_attributes_string(one->get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
 	if (options.list_qualities || options.list_timestamps)
@@ -1152,7 +1152,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 			}
 			for (auto& one : items)
 			{
-				if ((one->get_attributes()&namespace_item_browsable) != 0)
+				if ((one->get_attributes()&namespace_item_execute_access) != 0)
 					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 				else
 					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
@@ -1263,7 +1263,7 @@ bool info_command::dump_dir_info (std::ostream& out, server_directory_ptr direct
 	directory->get_value(val);
 	ns::fill_quality_string(val, quality_stirng);
 	string_type attrs;
-	ns::fill_namepsace_string(directory->get_attributes(), attrs);
+	ns::fill_attributes_string(directory->get_attributes(), attrs);
 	string_type cls_name;
 	bool has_code = false;
 	string_type console;

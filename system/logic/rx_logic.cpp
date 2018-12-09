@@ -82,7 +82,6 @@ namespace_item_attributes program_runtime::get_attributes () const
 		namespace_item_write_access
 		| namespace_item_system
 		| namespace_item_execute_access
-		| namespace_item_program
 		| namespace_item_read_access);
 }
 

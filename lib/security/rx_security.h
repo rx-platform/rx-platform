@@ -46,6 +46,7 @@
 #define SECURITY_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Security",src,lvl,msg)
 #define SECURITY_LOG_TRACE(src,lvl,msg) RX_TRACE("Security",src,lvl,msg)
 
+#define ANSI_RX_USER ANSI_COLOR_GREEN
 
 using namespace rx;
 

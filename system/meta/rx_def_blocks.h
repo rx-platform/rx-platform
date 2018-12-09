@@ -96,10 +96,6 @@ namespace basic_defs
 	class struct_class;
 }
 
-class meta_helpers;
-
-
-
 }
 
 namespace objects

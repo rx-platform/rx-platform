@@ -47,16 +47,11 @@ namespace_item_read_access = 1,
 namespace_item_write_access = 2,
 namespace_item_delete_access = 4,
 namespace_item_execute = 8,
-namespace_item_system = 0x10,
-namespace_item_command = 0x20,
-namespace_item_script = 0x40,
-namespace_item_class = 0x80,
-namespace_item_object = 0x100,
-namespace_item_point = 0x200
+namespace_item_system = 0x10
 */
-void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
+void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 {
-	str.assign(15, '-');
+	str.assign(6, '-');
 	str[4] = ' ';
 	if (attr&namespace_item_read_access)
 		str[0] = 'r';
@@ -69,33 +64,16 @@ void fill_namepsace_string(namespace_item_attributes attr, string_type& str)
 	//////////////////////////
 	if (attr&namespace_item_system)
 		str[5] = 's';
-	if (attr&namespace_item_command)
-		str[6] = 'c';
-	if (attr&namespace_item_script)
-		str[7] = 's';
-	if (attr&namespace_item_class)
-		str[8] = 'c';
-	if (attr&namespace_item_object)
-		str[9] = 'o';
-	if (attr&namespace_item_variable)
-		str[10] = 'v';
-	if (attr&namespace_item_application)
-		str[11] = 'a';
-	if (attr&namespace_item_domain)
-		str[12] = 'd';
-	if (attr&namespace_item_program)
-		str[13] = 'p';
-	if (attr&namespace_item_test_case)
-		str[14] = 't';
 }
 
 void fill_quality_string(values::rx_value val, string_type& str)
 {
 	str = "-";
 	str += " - - ";
-	str += "--------------- --";
-	//hi,lo stuff
-	str += "--";
+	//if(is dtailed quality)
+	//	str += "--------------- --";
+	//if(is high lo quality)
+	//	str += "--";
 	if (val.is_good())
 		str[0] = 'g';
 	else if (val.is_uncertain())

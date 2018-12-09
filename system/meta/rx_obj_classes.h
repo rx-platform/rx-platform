@@ -31,6 +31,8 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_def_blocks
@@ -39,8 +41,6 @@
 #include "system/meta/rx_classes.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 
 
@@ -115,6 +115,8 @@ class object_data_type
 class application_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(application_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of application type");
 public:
 	typedef objects::object_types::application_runtime RType;
 	typedef objects::application_runtime_ptr RTypePtr;
@@ -123,7 +125,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      application_class (const string_type& name, const rx_node_id& id, bool system = false);
+      application_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
       virtual ~application_class();
 
@@ -188,6 +190,8 @@ public:
 class domain_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(domain_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of domain type");
 public:
 	typedef objects::object_types::domain_runtime RType;
 	typedef objects::domain_runtime_ptr RTypePtr;
@@ -196,7 +200,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      domain_class (const string_type& name, const rx_node_id& id, bool system = false);
+      domain_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
       virtual ~domain_class();
 
@@ -261,9 +265,8 @@ public:
 class object_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(object_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic object class.\r\n\
-basic implementation of object class");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of object type");
 public:
 	typedef objects::object_types::object_runtime RType;
 	typedef objects::object_runtime_ptr RTypePtr;
@@ -272,14 +275,12 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      object_class (const string_type& name, const rx_node_id& id, bool system = false);
+      object_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
       virtual ~object_class();
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      namespace_item_attributes get_attributes () const;
 
       void construct (objects::object_runtime_ptr what);
 
@@ -339,9 +340,8 @@ public:
 class port_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(port_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic port class.\r\n\
-basic implementation of port class");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of port type");
 public:
 	typedef objects::object_types::port_runtime RType;
 	typedef objects::port_runtime_ptr RTypePtr;
@@ -350,7 +350,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      port_class (const string_type& name, const rx_node_id& id, bool system = false);
+      port_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
       virtual ~port_class();
 

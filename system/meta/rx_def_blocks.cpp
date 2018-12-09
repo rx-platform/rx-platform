@@ -732,7 +732,46 @@ void variable_data_type::construct (complex_runtime_ptr what)
 
 bool variable_data_type::serialize_variable_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return false;
+	if (!stream.start_array("Sources", sources_.size()))
+		return false;
+	for (const auto& one : sources_)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	if (!stream.start_array("Events", events_.size()))
+		return false;
+	for (const auto& one : events_)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	if (!stream.start_array("Filters", filters_.size()))
+		return false;
+	for (const auto& one : filters_)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	return true;
 }
 
 bool variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)

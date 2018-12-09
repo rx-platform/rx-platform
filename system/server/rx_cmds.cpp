@@ -134,7 +134,7 @@ void server_command_base::item_unlock () const
 
 namespace_item_attributes server_command_base::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_system_const_value | namespace_item_execute_access | namespace_item_test_case);
+	return (namespace_item_attributes)(namespace_item_execute_access);
 }
 
 bool server_command_base::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx)
@@ -360,7 +360,7 @@ void console_client::get_prompt (string_type& prompt)
 		prompt += current_object_->get_name();
 		prompt += ANSI_COLOR_RESET;
 	}
-	prompt += "\r\n" ANSI_COLOR_GREEN;
+	prompt += "\r\n" ANSI_RX_USER;
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;
 	prompt += ">";

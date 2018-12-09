@@ -177,7 +177,7 @@ void server_rt::get_value (values::rx_value& val, const rx_time& ts, const rx_mo
 
 namespace_item_attributes server_rt::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system | namespace_item_object);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 void server_rt::append_job (rx::jobs::job_ptr job)

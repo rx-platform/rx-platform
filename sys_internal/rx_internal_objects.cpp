@@ -56,7 +56,7 @@ system_application::~system_application()
 
 namespace_item_attributes system_application::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -77,7 +77,7 @@ system_domain::~system_domain()
 
 namespace_item_attributes system_domain::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -98,7 +98,7 @@ unassigned_application::~unassigned_application()
 
 namespace_item_attributes unassigned_application::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain| namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -120,7 +120,7 @@ unssigned_domain::~unssigned_domain()
 
 namespace_item_attributes unssigned_domain::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 

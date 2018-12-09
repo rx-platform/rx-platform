@@ -31,12 +31,12 @@
 
 
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 namespace rx_platform {
 namespace objects {
@@ -89,8 +89,6 @@ struct meta_data_t
 
 class checkable_data 
 {
-	template <class T1, bool T2>
-	friend class checkable_type;
 
   public:
       checkable_data();
@@ -198,9 +196,8 @@ namespace basic_defs {
 class event_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(event_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic event class.\r\n\
-basic implementation of event object");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of event type");
 public:
 	typedef typename objects::blocks::event_runtime RType;
 	typedef objects::blocks::event_runtime* RTypePtr;
@@ -209,9 +206,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      event_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~event_class();
+      event_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       platform_item_ptr get_item_ptr ();
@@ -262,9 +257,8 @@ public:
 class filter_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(filter_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic filter class.\r\n\
-basic implementation inside object class");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of filter type");
 public:
 	typedef objects::blocks::filter_runtime RType;
 	typedef RType CType;
@@ -272,9 +266,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      filter_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~filter_class();
+      filter_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       platform_item_ptr get_item_ptr ();
@@ -324,10 +316,9 @@ public:
 
 class mapper_class : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(mapper_class); 
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic mapper class.\r\n\
-basic implementation inside object class");
+	DECLARE_REFERENCE_PTR(mapper_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of mapper type");
 public:
 	typedef objects::blocks::mapper_runtime RType;
 	typedef RType CType;
@@ -337,7 +328,7 @@ public:
   public:
       mapper_class();
 
-      mapper_class (const string_type& name, const rx_node_id& id, bool system = false);
+      mapper_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       platform_item_ptr get_item_ptr ();
@@ -386,9 +377,8 @@ public:
 class source_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(source_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic struct class.\r\n\
-basic implementation inside object class");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of source type");
 public:
 	typedef objects::blocks::source_runtime RType;
 	typedef RType CType;
@@ -396,9 +386,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      source_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~source_class();
+      source_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       platform_item_ptr get_item_ptr ();
@@ -449,9 +437,8 @@ public:
 class struct_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(struct_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-basic struct class.\r\n\
-basic implementation inside object class");
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of struct type");
 public:
 	typedef objects::blocks::struct_runtime RType;
 	typedef RType CType;
@@ -459,9 +446,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      struct_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~struct_class();
+      struct_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
@@ -524,15 +509,15 @@ public:
 class variable_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(variable_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of variable type");
 public:
 	typedef objects::blocks::variable_runtime RType;
 	typedef RType CType;
 	typedef objects::blocks::variable_runtime* RTypePtr;
 
   public:
-      variable_class (const string_type& name, const rx_node_id& id, bool system = false);
-
-      virtual ~variable_class();
+      variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
       void construct (variable_runtime_ptr what);

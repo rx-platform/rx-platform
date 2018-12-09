@@ -39,6 +39,7 @@
 ********************************************************************/
 
 #include "rx_library.h"
+#include "version/rx_code_macros.h"
 #include "system/meta/rx_obj_classes.h"
 
 

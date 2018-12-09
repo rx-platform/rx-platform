@@ -67,7 +67,7 @@ user_object::~user_object()
 
 namespace_item_attributes user_object::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access | namespace_item_object);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access);
 }
 
 
@@ -88,7 +88,7 @@ server_object::~server_object()
 
 namespace_item_attributes server_object::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system | namespace_item_object);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 
@@ -165,7 +165,7 @@ values::rx_value object_runtime::get_value () const
 
 namespace_item_attributes object_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_object| namespace_item_read_access);
+	return (namespace_item_attributes)(namespace_item_read_access);
 }
 
 void object_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -348,7 +348,7 @@ string_type application_runtime::get_type_name () const
 
 namespace_item_attributes application_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_application | namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 bool application_runtime::connect_application (rx_application_ptr&& app)
@@ -392,7 +392,7 @@ string_type domain_runtime::get_type_name () const
 
 namespace_item_attributes domain_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_domain | namespace_item_object | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 rx_thread_handle_t domain_runtime::get_executer () const
@@ -434,7 +434,7 @@ string_type port_runtime::get_type_name () const
 
 namespace_item_attributes port_runtime::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_port | namespace_item_read_access);
+	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_read_access);
 }
 
 bool port_runtime::write (buffer_ptr what)

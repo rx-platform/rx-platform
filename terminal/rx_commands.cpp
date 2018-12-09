@@ -71,7 +71,7 @@ void server_command::virtual_release ()
 
 namespace_item_attributes server_command::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_command | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
 }
 
 bool server_command::generate_json (std::ostream& def, std::ostream& err) const
@@ -148,7 +148,7 @@ server_command_manager::smart_ptr server_command_manager::instance ()
 
 namespace_item_attributes server_command_manager::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system | namespace_item_object);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
 void server_command_manager::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)

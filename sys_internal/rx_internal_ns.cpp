@@ -278,11 +278,17 @@ template class sys_internal::internal_ns::rx_item_implementation<testing::test_c
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
+
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
+
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::mapper_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_class_ptr>;
 
 

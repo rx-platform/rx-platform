@@ -52,6 +52,8 @@ public:
 			return false;
 		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
+		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
+			return false;
 		return true;
 	}
 
@@ -71,8 +73,8 @@ application_class::application_class()
 {
 }
 
-application_class::application_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
+application_class::application_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -99,12 +101,16 @@ platform_item_ptr application_class::get_item_ptr ()
 
 bool application_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return obj_meta_helpers::serialize_object_class<application_class>(*this, stream, type);
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool application_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return obj_meta_helpers::deserialize_object_class<application_class>(*this, stream, type);
+	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& application_class::meta_data ()
@@ -149,8 +155,8 @@ domain_class::domain_class()
 {
 }
 
-domain_class::domain_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id,system)
+domain_class::domain_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -177,12 +183,16 @@ platform_item_ptr domain_class::get_item_ptr ()
 
 bool domain_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return obj_meta_helpers::serialize_object_class<domain_class>(*this, stream, type);
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool domain_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return obj_meta_helpers::deserialize_object_class<domain_class>(*this, stream, type);
+	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& domain_class::meta_data ()
@@ -227,8 +237,8 @@ object_class::object_class()
 {
 }
 
-object_class::object_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
+object_class::object_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -241,11 +251,6 @@ object_class::~object_class()
 
 void object_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
-}
-
-namespace_item_attributes object_class::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_class | namespace_item_attributes::namespace_item_execute_access | namespace_item_attributes::namespace_item_read_access | (meta_data_.get_system() ?  namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null) );
 }
 
 void object_class::construct (objects::object_runtime_ptr what)
@@ -262,12 +267,16 @@ platform_item_ptr object_class::get_item_ptr ()
 
 bool object_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return obj_meta_helpers::serialize_object_class<object_class>(*this, stream, type);
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return obj_meta_helpers::deserialize_object_class<object_class>(*this, stream, type);
+	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 objects::object_runtime_ptr object_class::create_runtime_ptr ()
@@ -341,8 +350,8 @@ port_class::port_class()
 {
 }
 
-port_class::port_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
+port_class::port_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -369,12 +378,16 @@ platform_item_ptr port_class::get_item_ptr ()
 
 bool port_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return obj_meta_helpers::serialize_object_class<port_class>(*this, stream, type);
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool port_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return obj_meta_helpers::deserialize_object_class<port_class>(*this, stream, type);
+	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& port_class::meta_data ()

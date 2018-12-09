@@ -373,6 +373,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       size_t get_size () const;
 
+      void fill_code_info (std::ostream& info, const string_type& name);
+
 
   protected:
 
@@ -506,7 +508,7 @@ values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 template <class TImpl>
 namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () const
 {
-	return impl_->meta_data().get_attributes();
+	return impl_->meta_data().get_system() ? (namespace_item_attributes)(namespace_item_read_access | namespace_item_system) : (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access);
 }
 
 template <class TImpl>
@@ -562,6 +564,12 @@ template <class TImpl>
 size_t rx_meta_item_implementation<TImpl>::get_size () const
 {
 	return sizeof(*this);
+}
+
+template <class TImpl>
+void rx_meta_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
+{
+	impl_->fill_code_info(info, name);
 }
 
 

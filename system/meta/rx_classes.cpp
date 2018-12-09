@@ -44,44 +44,6 @@ namespace rx_platform {
 
 namespace meta {
 
-
-class meta_helpers
-{
-public:
-	template<class complexT>
-	static bool serialize_complex_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
-	{
-		if (!whose.meta_data().serialize_checkable_definition(stream, type))
-			return false;
-		if (!whose.complex_data().serialize_complex_definition(stream, type))
-			return false;
-		return true;
-	}
-
-	template<class complexT>
-	static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		return false;
-	}
-
-
-	template<class complexT>
-	static bool serialize_struct_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
-	{
-		if (!whose.meta_data().serialize_checkable_definition(stream, type))
-			return false;
-		if (!whose.complex_data().serialize_complex_definition(stream, type))
-			return false;
-		return true;
-	}
-
-	template<class complexT>
-	static bool deserialize_struct_class(complexT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		return false;
-	}
-};
-
 // Class rx_platform::meta::checkable_data 
 
 checkable_data::checkable_data()
@@ -171,6 +133,8 @@ bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream,
 	return true;
 	if (!stream.read_id("Parent", parent_))
 		return false;
+	if (!stream.read_version("Ver", version_))
+		return false;
 	return true;
 }
 
@@ -190,6 +154,58 @@ void checkable_data::construct (const string_type& name, const rx_node_id& id, r
 
 
 namespace basic_defs {
+	class meta_helpers
+	{
+	public:
+		template<class complexT>
+		static bool serialize_complex_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+		{
+			if (!whose.meta_data().serialize_checkable_definition(stream, type))
+				return false;
+			if (!whose.complex_data().serialize_complex_definition(stream, type))
+				return false;
+			return true;
+		}
+
+		template<class complexT>
+		static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+		{
+			return false;
+		}
+
+
+		template<class complexT>
+		static bool serialize_mapped_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+		{
+			if (!serialize_complex_class(whose, stream, type))
+				return false;
+			if (!whose.mapping_data().serialize_mapped_definition(stream, type))
+				return false;
+			return true;
+		}
+
+		template<class complexT>
+		static bool deserialize_mapped_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+		{
+			return false;
+		}
+
+		template<class complexT>
+		static bool serialize_variable_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+		{
+			if (!serialize_mapped_class(whose, stream, type))
+				return false;
+			if (!whose.variable_data().serialize_variable_definition(stream, type))
+				return false;
+			return true;
+		}
+
+		template<class complexT>
+		static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+		{
+			return false;
+		}
+	};
 
 // Class rx_platform::meta::basic_defs::event_class 
 
@@ -199,13 +215,8 @@ event_class::event_class()
 {
 }
 
-event_class::event_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
-{
-}
-
-
-event_class::~event_class()
+event_class::event_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -219,12 +230,16 @@ platform_item_ptr event_class::get_item_ptr ()
 
 bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_complex_class<event_class>(*this, stream, type);
+	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_complex_class<event_class>(*this, stream, type);
+	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& event_class::meta_data ()
@@ -259,13 +274,8 @@ filter_class::filter_class()
 {
 }
 
-filter_class::filter_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
-{
-}
-
-
-filter_class::~filter_class()
+filter_class::filter_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -279,12 +289,16 @@ platform_item_ptr filter_class::get_item_ptr ()
 
 bool filter_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_complex_class<filter_class>(*this, stream, type);
+	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_complex_class<filter_class>(*this, stream, type);
+	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& filter_class::meta_data ()
@@ -319,8 +333,8 @@ mapper_class::mapper_class()
 {
 }
 
-mapper_class::mapper_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
+mapper_class::mapper_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -334,12 +348,16 @@ platform_item_ptr mapper_class::get_item_ptr ()
 
 bool mapper_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_complex_class(*this, stream, type);
+	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_complex_class(*this, stream, type);
+	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& mapper_class::meta_data ()
@@ -374,13 +392,8 @@ source_class::source_class()
 {
 }
 
-source_class::source_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, system)
-{
-}
-
-
-source_class::~source_class()
+source_class::source_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -394,7 +407,9 @@ platform_item_ptr source_class::get_item_ptr ()
 
 bool source_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_complex_class<source_class>(*this, stream, type);
+	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
@@ -434,13 +449,8 @@ struct_class::struct_class()
 {
 }
 
-struct_class::struct_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id, system)
-{
-}
-
-
-struct_class::~struct_class()
+struct_class::struct_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -468,12 +478,16 @@ platform_item_ptr struct_class::get_item_ptr ()
 
 bool struct_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return meta_helpers::serialize_struct_class<struct_class>(*this, stream, type);
+	if (!meta_helpers::serialize_mapped_class<struct_class>(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!meta_helpers::deserialize_mapped_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 struct_runtime_ptr struct_class::create_runtime_ptr ()
@@ -518,13 +532,8 @@ variable_class::variable_class()
 {
 }
 
-variable_class::variable_class (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id,system)
-{
-}
-
-
-variable_class::~variable_class()
+variable_class::variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
+	: meta_data_(name, id, base_id, system)
 {
 }
 
@@ -536,12 +545,16 @@ void variable_class::construct (variable_runtime_ptr what)
 
 bool variable_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return variable_data_.serialize_variable_definition(stream, type);
+	if (!meta_helpers::serialize_variable_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 bool variable_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return variable_data_.deserialize_variable_definition(stream, type);
+	if (!meta_helpers::deserialize_variable_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 platform_item_ptr variable_class::get_item_ptr ()

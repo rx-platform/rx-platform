@@ -415,7 +415,7 @@ bool const_value_item::has_own_time () const
 
 namespace_item_attributes const_value_item::get_attributes () const
 {
-	return namespace_item_attributes::namespace_item_system_const_value;
+	return namespace_item_attributes::namespace_item_read_access;
 }
 
 void const_value_item::item_lock ()

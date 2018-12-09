@@ -28,6 +28,8 @@
 
 #include "pch.h"
 
+#define ANSI_RX_TEST_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
+#include <sstream>
 
 // rx_test
 #include "testing/rx_test.h"
@@ -96,7 +98,7 @@ bool test_command::do_info_command (std::istream& in, std::ostream& out, std::os
 		return true;
 	}
 
-	err << temp_str << " is unknown Test Case.\r\n";
+	err << temp_str << " is unknown Test case.\r\n";
 
 	return false;
 }
@@ -113,7 +115,7 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 		testing_enviroment::instance().collect_test_cases("", cases);
 		for (auto one : cases)
 		{
-			out << "Test Case " << one->get_name() << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+			out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 			ret = one->do_console_test(in, out, err, ctx);
 			out << RX_CONSOLE_HEADER_LINE "\r\n";
 			if (!ret)
@@ -128,7 +130,7 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 	{
 		return test->do_console_test(in, out, err, ctx);
 	}
-	err << temp_str << " is unknown Test Case.\r\n";
+	err << temp_str << " is unknown Test case.\r\n";
 
 	return false;
 }
@@ -314,18 +316,16 @@ test_case & test_case::operator=(const test_case &right)
 bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
 {
 	bool ret = false;
-	string_type start_message("Test Case started by :");
-	out << start_message;
+	out << "Test case " ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET " started." RX_TESTING_CON_LINE "\r\n";
+
 	security::security_context_ptr active = security::active_security();
-	out << ANSI_COLOR_CYAN;
-	start_message += active->get_full_name();
-	out << active->get_user_name();
-	out << ANSI_COLOR_RESET "\r\n";
 	if (active->is_interactive())
 	{
 		ret = true;
-		start_tick_ = rx_get_us_ticks();
-		TEST_LOG_INFO(start_message.c_str(), 500, "Test Case Started");
+		std::stringstream stream;
+		stream << "Test case " << get_name() << " started by " << active->get_full_name();
+		start_tick_ = rx_get_us_ticks();		
+		TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
 	}
 	else
 	{
@@ -337,8 +337,11 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
 {
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	TEST_LOG_INFO(get_name(), 500, "Test Case Ended");
 	out << "Result:";
+
+
+	std::stringstream stream;
+	stream << "Test case " << get_name() << " ended with result ";
 
 	status_lock_.lock();
 	data_ = ctx->get_data();
@@ -350,20 +353,28 @@ void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err
 	{
 	case RX_TEST_STATUS_OK:
 		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
+		stream << RX_TEST_STATUS_OK_NAME;
 		break;
 	case RX_TEST_STATUS_FAILED:
 		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
+		stream << RX_TEST_STATUS_FAILED_NAME;
 		break;
 	case RX_TEST_STATUS_UNKNOWN:
 		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
+		stream << RX_TEST_STATUS_UNKNOWN_NAME;
 		break;
 	default:
 		RX_ASSERT(false);
 		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
 	}
 	out << ANSI_COLOR_RESET "\r\n";
-	uint64_t ellapsed = rx_get_us_ticks() - start_tick_;
-	out << "Test lasted " << (double)(ellapsed / 1000.0) << "ms.\r\n";
+	uint64_t ellapsed_ticks = rx_get_us_ticks() - start_tick_;
+	double ellapsed = (double)ellapsed_ticks / 1000.0;
+	out << "Test lasted " << ellapsed << "ms.\r\n";
+
+	stream << ", lasted " << ellapsed << "ms.";
+	TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
+
 	modified_time_ = rx_time::now();
 }
 
@@ -391,7 +402,7 @@ values::rx_value test_case::get_value () const
 
 namespace_item_attributes test_case::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_test_case | namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
 }
 
 test_status_t test_case::get_status (test_context_data* data)
@@ -417,7 +428,7 @@ bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostre
 	}
 	else
 	{
-		err << "Error starting test case:" << get_name() << "\r\n";
+		err << "Error starting test case:" << ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET "\r\n";
 		return false;
 	}
 }

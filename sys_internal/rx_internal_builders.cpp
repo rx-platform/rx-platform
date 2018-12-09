@@ -242,28 +242,28 @@ void basic_types_builder::build (platform_root::smart_ptr root)
 	if (dir)
 	{
 		//build base object types
-		auto obj = rx_create_reference<object_class>(RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, true);
+		auto obj = rx_create_reference<object_class>(RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, true);
 		build_basic_object_type<object_class>(dir, obj);
 
-		auto app = rx_create_reference<application_class>(RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, true);
+		auto app = rx_create_reference<application_class>(RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, true);
 		build_basic_application_type<application_class>(dir, app);
-		auto domain = rx_create_reference<domain_class>(RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, true);
+		auto domain = rx_create_reference<domain_class>(RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, true);
 		build_basic_domain_type<domain_class>(dir, domain);
-		auto port = rx_create_reference<port_class>(RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, true);
+		auto port = rx_create_reference<port_class>(RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, true);
 		build_basic_port_type<port_class>(dir, port);
 
 		//build base types
-		auto str = rx_create_reference<basic_defs::struct_class>(RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, true);
+		auto str = rx_create_reference<basic_defs::struct_class>(RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::struct_class>(dir, str);
-		auto map = rx_create_reference<basic_defs::mapper_class>(RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, true);
+		auto map = rx_create_reference<basic_defs::mapper_class>(RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::mapper_class>(dir, map);
-		auto var = rx_create_reference<basic_defs::variable_class>(RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, true);
+		auto var = rx_create_reference<basic_defs::variable_class>(RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::variable_class>(dir, var);
-		auto evnt = rx_create_reference<basic_defs::event_class>(RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, true);
+		auto evnt = rx_create_reference<basic_defs::event_class>(RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::event_class>(dir, evnt);
-		auto filt = rx_create_reference<basic_defs::filter_class>(RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, true);
+		auto filt = rx_create_reference<basic_defs::filter_class>(RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::filter_class>(dir, filt);
-		auto src = rx_create_reference<basic_defs::source_class>(RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, true);
+		auto src = rx_create_reference<basic_defs::source_class>(RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::source_class>(dir, src);
 	}
 }

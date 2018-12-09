@@ -80,32 +80,16 @@ struct namespace_data_t
 	}
 };
 
-enum namespace_item_attributes : std::uint_fast32_t
+enum namespace_item_attributes
 {
 	namespace_item_null = 0,
 	namespace_item_read_access = 1,
 	namespace_item_write_access = 2,
 	namespace_item_delete_access = 4,
 	namespace_item_execute_access = 8,
-	namespace_item_system = 0x10,
-	namespace_item_command = 0x20,
-	namespace_item_script = 0x40,
-	namespace_item_class = 0x80,
-	namespace_item_object = 0x100,
-	namespace_item_variable = 0x200,
-	namespace_item_application = 0x400,
-	namespace_item_domain = 0x800,
-	namespace_item_port = 0x1000,
-	namespace_item_test_case = 0x2000,
-	namespace_item_program = 0x4000,
-
-	namespace_item_system_const_value = 0xfffff211,
-	namespace_item_system_value = 0xfffff111,
-
-	namespace_item_browsable = (namespace_item_object | namespace_item_application | namespace_item_domain| namespace_item_port)
+	namespace_item_system = 0x10
 };
-
-void fill_namepsace_string(namespace_item_attributes attr, string_type& str);
+void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
 void fill_quality_string(values::rx_value val, string_type& q);
 
