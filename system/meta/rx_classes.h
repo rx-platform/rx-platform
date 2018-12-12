@@ -31,12 +31,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace objects {
@@ -467,6 +467,8 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
+      def_blocks::mapped_data_type& mapping_data ();
+
 
       const def_blocks::complex_data_type& complex_data () const;
 
@@ -533,6 +535,10 @@ public:
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
+
+      def_blocks::mapped_data_type& mapping_data ();
+
+      def_blocks::variable_data_type& variable_data ();
 
 
       const checkable_data& meta_data () const;

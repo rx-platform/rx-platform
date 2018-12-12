@@ -370,7 +370,7 @@ void rx_server_directory::get_class_info (string_type& class_name, string_type& 
 const string_type& rx_server_directory::get_type_name () const
 {
   // generated from ROSE!!!
-  static string_type type_name = "DIR";
+  static string_type type_name = RX_CPP_DIRECORY_TYPE_NAME;
   return type_name;
 
 

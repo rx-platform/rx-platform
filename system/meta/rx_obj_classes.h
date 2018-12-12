@@ -31,8 +31,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_def_blocks
@@ -41,6 +39,8 @@
 #include "system/meta/rx_classes.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -97,12 +97,22 @@ class object_data_type
       void construct (objects::object_runtime_ptr what);
 
 
+      const bool is_creatable () const
+      {
+        return creatable_;
+      }
+
+
+
   protected:
 
   private:
 
 
       programs_type programs_;
+
+
+      bool creatable_;
 
 
 };

@@ -8,99 +8,127 @@
 #define RX_NS_UNASSIGNED_NAME "_unassigned"
 #define RX_NS_BIN_NAME "bin"
 #define RX_NS_OBJ_NAME "objects"
-#define RX_NS_CLASSES_NAME "classes"
+#define RX_NS_CLASSES_NAME "types"
 #define RX_NS_BASE_CLASSES_NAME "base"
 #define RX_NS_SYSTEM_CLASSES_NAME "system"
+#define RX_NS_PORT_CLASSES_NAME "ports"
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
 #define RX_NULL_ITEM_NAME "<nullptr>"
 
 // basic classes
-#define RX_CLASS_OBJECT_BASE_NAME "object_base"
+#define RX_CLASS_OBJECT_BASE_NAME "ObjectBase"
 #define RX_CLASS_OBJECT_BASE_ID 0x00000001
-#define RX_CLASS_DOMAIN_BASE_NAME "domain_base"
+#define RX_CLASS_DOMAIN_BASE_NAME "DomainBase"
 #define RX_CLASS_DOMAIN_BASE_ID 0x00000002
-#define RX_CLASS_APPLICATION_BASE_NAME "application_base"
+#define RX_CLASS_APPLICATION_BASE_NAME "ApplicationBase"
 #define RX_CLASS_APPLICATION_BASE_ID 0x00000003
-#define RX_CLASS_PORT_BASE_NAME "port_base"
+#define RX_CLASS_PORT_BASE_NAME "PortBase"
 #define RX_CLASS_PORT_BASE_ID 0x00000004
 
-#define RX_CLASS_STRUCT_BASE_NAME "struct_base"
+#define RX_CLASS_STRUCT_BASE_NAME "StructBase"
 #define RX_CLASS_STRUCT_BASE_ID 0x00000005
-#define RX_CLASS_VARIABLE_BASE_NAME "variable_base"
+#define RX_CLASS_VARIABLE_BASE_NAME "VariableBase"
 #define RX_CLASS_VARIABLE_BASE_ID 0x00000006
-#define RX_CLASS_EVENT_BASE_NAME "event_base"
+#define RX_CLASS_EVENT_BASE_NAME "EventBase"
 #define RX_CLASS_EVENT_BASE_ID 0x00000007
-#define RX_CLASS_SOURCE_BASE_NAME "source_base"
+#define RX_CLASS_SOURCE_BASE_NAME "SourceBase"
 #define RX_CLASS_SOURCE_BASE_ID 0x00000008
-#define RX_CLASS_MAPPER_BASE_NAME "mapper_base"
+#define RX_CLASS_MAPPER_BASE_NAME "MapperBase"
 #define RX_CLASS_MAPPER_BASE_ID 0x00000009
-#define RX_CLASS_FILTER_BASE_NAME "filter_base"
+#define RX_CLASS_FILTER_BASE_NAME "FilterBase"
 #define RX_CLASS_FILTER_BASE_ID 0x0000000a
 
 
 // objects stuff
-#define RX_NS_SYSTEM_APP_NAME "system_app"
+#define RX_NS_SYSTEM_APP_NAME "SystemApp"
 #define RX_NS_SYSTEM_APP_ID 0x0000000b
-#define RX_NS_SYSTEM_DOM_NAME "system"
+#define RX_NS_SYSTEM_DOM_NAME "SystemDomain"
 #define RX_NS_SYSTEM_DOM_ID 0x0000000c
 
-#define NS_RX_COMMANDS_MANAGER_NAME "cmd_manager"
-#define RX_COMMANDS_MANAGER_ID 0x80000001
-#define NS_RX_INTERACTIVE_NAME "interactive"
-#define RX_INTERACTIVE_ID 0x80000001
+#define NS_RX_COMMANDS_MANAGER_NAME "CmdManager"
+#define RX_COMMANDS_MANAGER_ID 0x8000001
+#define NS_RX_INTERACTIVE_NAME "Interactive"
+#define RX_INTERACTIVE_ID 0x8000001
 
 
-#define RX_NS_SERVER_RT_NAME "runtime"
-#define RX_NS_SERVER_RT_ID 0x80000002
-#define RX_IO_MANAGER_NAME "io_manager"
-#define RX_IO_MANAGER_ID 0x80000003
+#define RX_NS_SERVER_RT_NAME "Runtime"
+#define RX_NS_SERVER_RT_ID 0x8000002
+#define RX_IO_MANAGER_NAME "IoManager"
+#define RX_IO_MANAGER_ID 0x8000003
 
 
-#define IO_POOL_NAME "io_pool"
-#define IO_POOL_ID 0x80000004
-#define GENERAL_POOL_NAME "general_pool"
-#define GENERAL_POOL_ID 0x80000005
-#define WORKER_POOL_NAME "worker_pool"
-#define WORKER_POOL_ID 0x80000006
-#define IO_LOG_NAME "log"
-#define IO_LOG_ID 0x80000007
+#define IO_POOL_NAME "IoPool"
+#define IO_POOL_ID 0x8000004
+#define GENERAL_POOL_NAME "GeneralPool"
+#define GENERAL_POOL_ID 0x8000005
+#define WORKER_POOL_NAME "WorkerPool"
+#define WORKER_POOL_ID 0x8000006
+#define IO_LOG_NAME "Log"
+#define IO_LOG_ID 0x8000007
 
-#define RX_NS_SYSTEM_UNASS_NAME "unassigned"
-#define RX_NS_SYSTEM_UNASS_ID 0x80000009
-#define RX_NS_SYSTEM_UNASS_APP_NAME "unassigned_app"
-#define RX_NS_SYSTEM_UNASS_APP_ID 0x8000000a
+#define RX_NS_SYSTEM_UNASS_NAME "UnassignedDomain"
+#define RX_NS_SYSTEM_UNASS_ID 0x8000009
+#define RX_NS_SYSTEM_UNASS_APP_NAME "UnassignedApp"
+#define RX_NS_SYSTEM_UNASS_APP_ID 0x800000a
 
 
 // system objects type stuff
-#define RX_NS_SYSTEM_APP_TYPE_NAME "system_app_type"
-#define RX_NS_SYSTEM_APP_TYPE_ID 0xc0000000
-#define RX_NS_SYSTEM_DOM_TYPE_NAME "system_type"
-#define RX_NS_SYSTEM_DOM_TYPE_ID 0xc0000001
+#define RX_NS_SYSTEM_APP_TYPE_NAME "SystemAppType"
+#define RX_NS_SYSTEM_APP_TYPE_ID 0xc000000
+#define RX_NS_SYSTEM_DOM_TYPE_NAME "SystemDomainType"
+#define RX_NS_SYSTEM_DOM_TYPE_ID 0xc000001
 
 
-#define NS_RX_COMMANDS_MANAGER_TYPE_NAME "cmd_manager_type"
-#define RX_COMMANDS_MANAGER_TYPE_ID 0xc0000002
-#define NS_RX_CONSOLE_TYPE_NAME "console_type"
-#define RX_CONSOLE_TYPE_ID 0xc0000003
+#define RX_COMMANDS_MANAGER_TYPE_NAME "CmdManagerType"
+#define RX_COMMANDS_MANAGER_TYPE_ID 0xc000002
+#define RX_CONSOLE_TYPE_NAME "ConsoleType"
+#define RX_CONSOLE_TYPE_ID 0xc000003
 
 
-#define RX_NS_SERVER_RT_TYPE_NAME "runtime_type"
-#define RX_NS_SERVER_RT_TYPE_ID 0xc0000004
-#define RX_IO_MANAGER_TYPE_NAME "io_manager_type"
-#define RX_IO_MANAGER_TYPE_ID 0xc0000005
+#define RX_NS_SERVER_RT_TYPE_NAME "RuntimeType"
+#define RX_NS_SERVER_RT_TYPE_ID 0xc000004
+#define RX_IO_MANAGER_TYPE_NAME "IoManagerType"
+#define RX_IO_MANAGER_TYPE_ID 0xc000005
 
-#define GENERAL_POOL_TYPE_NAME "general_pool_type"
-#define GENERAL_POOL_TYPE_ID 0xc0000007
-#define WORKER_POOL_TYPE_NAME "worker_pool_type"
-#define WORKER_POOL_TYPE_ID 0xc0000008
-#define IO_LOG_TYPE_NAME "log_type"
-#define IO_LOG_TYPE_ID 0xc0000009
-#define RX_NS_SYSTEM_UNASS_TYPE_NAME "unassigned_type"
-#define RX_NS_SYSTEM_UNASS_TYPE_ID 0xc000000a
-#define RX_NS_SYSTEM_UNASS_APP_TYPE_NAME "unassigned_app_type"
-#define RX_NS_SYSTEM_UNASS_APP_TYPE_ID 0xc000000b
+#define GENERAL_POOL_TYPE_NAME "GeneralPoolType"
+#define GENERAL_POOL_TYPE_ID 0xc000007
+#define WORKER_POOL_TYPE_NAME "WorkerPoolType"
+#define WORKER_POOL_TYPE_ID 0xc000008
+#define IO_LOG_TYPE_NAME "LogType"
+#define IO_LOG_TYPE_ID 0xc000009
+#define RX_NS_SYSTEM_UNASS_TYPE_NAME "UnassignedDomainType"
+#define RX_NS_SYSTEM_UNASS_TYPE_ID 0xc00000a
+#define RX_NS_SYSTEM_UNASS_APP_TYPE_NAME "UnassignedAppType"
+#define RX_NS_SYSTEM_UNASS_APP_TYPE_ID 0xc00000b
+
+// port classes and releated structs
+#define RX_PHYSICAL_PORT_TYPE_NAME "PhysicalPort"
+#define RX_PHYSICAL_PORT_TYPE_ID 0xc00000c
+#define RX_TRANSPORT_PORT_TYPE_NAME "TransportPort"
+#define RX_TRANSPORT_PORT_TYPE_ID 0xc00000d
+#define RX_PROTOCOL_PORT_TYPE_NAME "ProtocolPort"
+#define RX_PROTOCOL_PORT_TYPE_ID 0xc00000e
+
+#define RX_TTY_PORT_TYPE_NAME "TTYPort"
+#define RX_TTY_PORT_TYPE_ID 0xc000010
+#define RX_UDP_PORT_TYPE_NAME "UDPPort"
+#define RX_UDP_PORT_TYPE_ID 0xc000011
+#define RX_TCP_PORT_TYPE_NAME "TCPPort"
+#define RX_TCP_PORT_TYPE_ID 0xc000012
+#define RX_TCP_LISTEN_PORT_TYPE_NAME "TCPListenPort"
+#define RX_TCP_LISTEN_PORT_TYPE_ID 0xc000013
+#define RX_TCP_SERVER_PORT_TYPE_NAME "TCPServerPort"
+#define RX_TCP_SERVER_PORT_TYPE_ID 0xc000014
+#define RX_TCP_CLIENT_PORT_TYPE_NAME "TCPClientPort"
+#define RX_TCP_CLIENT_PORT_TYPE_ID 0xc000015
+#define RX_ETHERNET_PORT_TYPE_NAME "EthernetPort"
+#define RX_ETHENERT_PORT_TYPE_ID 0xc000016
+
+#define RX_VT00_TYPE_NAME "VT100"
+#define RX_VT00_TYPE_ID 0xc000017
+
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
@@ -113,6 +141,7 @@
 #define RX_CPP_PORT_TYPE_NAME "port"
 #define RX_TEST_CASE_TYPE_NAME "test_case"
 
+#define RX_CPP_DIRECORY_TYPE_NAME "directory"
 #define RX_CPP_COMMAND_TYPE_NAME "command"
 #define RX_CPP_PROGRAM_TYPE_NAME "program"
 

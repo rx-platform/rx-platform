@@ -50,6 +50,8 @@ public:
 	{
 		if (!whose.meta_data_.serialize_checkable_definition(stream, type))
 			return false;
+		if (!whose.object_data_.serialize_object_definition(stream, type))
+			return false;
 		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
 		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
@@ -60,7 +62,15 @@ public:
 	template<class objectT>
 	static bool deserialize_object_class(objectT& whose, base_meta_reader& stream, uint8_t type)
 	{
-		return false;
+		if (!whose.meta_data_.deserialize_checkable_definition(stream, type))
+			return false;
+		if (!whose.object_data_.deserialize_object_definition(stream, type))
+			return false;
+		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
+			return false;
+		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
+			return false;
+		return true;
 	}
 
 };
@@ -327,13 +337,15 @@ object_data_type::object_data_type (const string_type& name, const rx_node_id& i
 
 bool object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
 {
-	
+	if (!stream.write_bool("Creatable", creatable_))
+		return false;
 	return true;
 }
 
 bool object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
-	
+	if (!stream.read_bool("Creatable", creatable_))
+		return false;
 	return true;
 }
 

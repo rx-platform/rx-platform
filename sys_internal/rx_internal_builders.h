@@ -120,6 +120,44 @@ class basic_types_builder : public rx_platform_builder
 		template<class T>
 		void build_basic_type(server_directory_ptr dir, rx_reference<T> what);
 
+};
+
+
+
+
+
+
+class system_classes_builder : public rx_platform_builder  
+{
+
+  public:
+
+      void build (platform_root::smart_ptr root);
+
+
+  protected:
+
+  private:
+
+};
+
+
+
+
+
+
+class port_classes_builder : public rx_platform_builder  
+{
+
+  public:
+
+      void build (platform_root::smart_ptr root);
+
+
+  protected:
+
+  private:
+
 
 };
 

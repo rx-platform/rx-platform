@@ -60,6 +60,7 @@ checkable_data::checkable_data (const string_type& name, const rx_node_id& id, c
 	, name_(name)
 	, id_(id)
 	, system_(system)
+	, parent_(parent)
 {
 }
 
@@ -170,7 +171,11 @@ namespace basic_defs {
 		template<class complexT>
 		static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 		{
-			return false;
+			if (!whose.meta_data().deserialize_checkable_definition(stream, type))
+				return false;
+			if (!whose.complex_data().deserialize_complex_definition(stream, type))
+				return false;
+			return true;
 		}
 
 
@@ -187,7 +192,11 @@ namespace basic_defs {
 		template<class complexT>
 		static bool deserialize_mapped_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 		{
-			return false;
+			if (!deserialize_complex_class(whose, stream, type))
+				return false;
+			if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
+				return false;
+			return true;
 		}
 
 		template<class complexT>
@@ -203,7 +212,11 @@ namespace basic_defs {
 		template<class complexT>
 		static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 		{
-			return false;
+			if (!deserialize_mapped_class(whose, stream, type))
+				return false;
+			if (!whose.variable_data().deserialize_variable_definition(stream, type))
+				return false;
+			return true;
 		}
 	};
 
@@ -507,6 +520,12 @@ def_blocks::complex_data_type& struct_class::complex_data ()
 
 }
 
+def_blocks::mapped_data_type& struct_class::mapping_data ()
+{
+  return mapping_data_;
+
+}
+
 
 const def_blocks::complex_data_type& struct_class::complex_data () const
 {
@@ -579,6 +598,18 @@ checkable_data& variable_class::meta_data ()
 def_blocks::complex_data_type& variable_class::complex_data ()
 {
   return complex_data_;
+
+}
+
+def_blocks::mapped_data_type& variable_class::mapping_data ()
+{
+  return mapping_data_;
+
+}
+
+def_blocks::variable_data_type& variable_class::variable_data ()
+{
+  return variable_data_;
 
 }
 
