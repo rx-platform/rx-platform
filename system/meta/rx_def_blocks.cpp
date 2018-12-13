@@ -263,11 +263,11 @@ void complex_data_type::construct (complex_runtime_ptr what)
 	}
 }
 
-bool complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val)
+bool complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
 {
 	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
 	{
-		simple_values_.emplace_back(name, std::move(val));
+		simple_values_.emplace_back(name, read_only, std::move(val));
 		return true;
 	}
 	else
@@ -289,11 +289,11 @@ bool complex_data_type::register_const_value (const string_type& name, rx_simple
 	}
 }
 
-bool complex_data_type::register_simple_value (const string_type& name, const rx_simple_value& val)
+bool complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
 {
 	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
 	{
-		simple_values_.emplace_back(name, val);
+		simple_values_.emplace_back(name, read_only, val);
 		return true;
 	}
 	else
@@ -321,17 +321,13 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
+	: name_(name)
 	, storage_(std::move(value))
 {
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_simple_value& value)
-      : created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
+	: name_(name)
 	, storage_(value)
 {
 }
@@ -500,21 +496,17 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 
 string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
 
-simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value)
-      : read_only_(true),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
+simple_value_def::simple_value_def (const string_type& name, bool read_only, rx_simple_value&& value)
+	: name_(name)
 	, storage_(std::move(value))
+	, read_only_(read_only)
 {
 }
 
-simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value)
-      : read_only_(true),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
+simple_value_def::simple_value_def (const string_type& name, bool read_only, const rx_simple_value& value)
+	: name_(name)
 	, storage_(value)
+	, read_only_(read_only)
 {
 }
 
@@ -523,6 +515,7 @@ simple_value_def::simple_value_def (const string_type& name, const rx_simple_val
 bool simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	stream.write_string("Name", name_.c_str());
+	stream.write_bool("RO", read_only_);
 	if (!storage_.serialize(stream))
 		return false;
 	return true;

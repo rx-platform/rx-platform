@@ -255,7 +255,7 @@ rx_time server_rt::get_created_time (values::rx_value& val) const
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
       : threads_count_(count)
-	, pool_(count, name, rx_thread_id), server_object(objects::object_creation_data{ name,id, GENERAL_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	, pool_(count, name, rx_thread_id), server_object(objects::object_creation_data{ name,id, RX_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
 {
 	//register_const_value("count", count);
 }
@@ -296,7 +296,7 @@ void dispatcher_subscribers_job::process ()
 
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
-	, server_object(objects::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, WORKER_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	, server_object(objects::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, RX_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
 {
 	//register_const_value("count", (uint32_t)pool_size);
 }

@@ -87,7 +87,8 @@ enum namespace_item_attributes
 	namespace_item_write_access = 2,
 	namespace_item_delete_access = 4,
 	namespace_item_execute_access = 8,
-	namespace_item_system = 0x10
+	namespace_item_system = 0x10,
+	namespace_item_internal = 0x20
 };
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 

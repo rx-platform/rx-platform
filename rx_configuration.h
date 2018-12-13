@@ -83,7 +83,7 @@
 
 #define RX_COMMANDS_MANAGER_TYPE_NAME "CmdManagerType"
 #define RX_COMMANDS_MANAGER_TYPE_ID 0xc000002
-#define RX_CONSOLE_TYPE_NAME "ConsoleType"
+#define RX_CONSOLE_TYPE_NAME "ConsolePort"
 #define RX_CONSOLE_TYPE_ID 0xc000003
 
 
@@ -92,12 +92,10 @@
 #define RX_IO_MANAGER_TYPE_NAME "IoManagerType"
 #define RX_IO_MANAGER_TYPE_ID 0xc000005
 
-#define GENERAL_POOL_TYPE_NAME "GeneralPoolType"
-#define GENERAL_POOL_TYPE_ID 0xc000007
-#define WORKER_POOL_TYPE_NAME "WorkerPoolType"
-#define WORKER_POOL_TYPE_ID 0xc000008
-#define IO_LOG_TYPE_NAME "LogType"
-#define IO_LOG_TYPE_ID 0xc000009
+#define RX_POOL_TYPE_NAME "PoolType"
+#define RX_POOL_TYPE_ID 0xc000007
+#define RX_LOG_TYPE_NAME "LogType"
+#define RX_LOG_TYPE_ID 0xc000009
 #define RX_NS_SYSTEM_UNASS_TYPE_NAME "UnassignedDomainType"
 #define RX_NS_SYSTEM_UNASS_TYPE_ID 0xc00000a
 #define RX_NS_SYSTEM_UNASS_APP_TYPE_NAME "UnassignedAppType"
@@ -126,7 +124,7 @@
 #define RX_ETHERNET_PORT_TYPE_NAME "EthernetPort"
 #define RX_ETHENERT_PORT_TYPE_ID 0xc000016
 
-#define RX_VT00_TYPE_NAME "VT100"
+#define RX_VT00_TYPE_NAME "VT100Port"
 #define RX_VT00_TYPE_ID 0xc000017
 
 
@@ -145,9 +143,7 @@
 #define RX_CPP_COMMAND_TYPE_NAME "command"
 #define RX_CPP_PROGRAM_TYPE_NAME "program"
 
-#define RX_CONST_VALUE_TYPE_IDX 1
 #define RX_CONST_VALUE_TYPE_NAME "const_value"
-#define RX_VALUE_TYPE_IDX 1
 #define RX_VALUE_TYPE_NAME "value"
 
 #define RX_CPP_VARIABLE_CLASS_TYPE_NAME "variable_type"

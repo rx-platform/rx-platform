@@ -64,13 +64,15 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 	//////////////////////////
 	if (attr&namespace_item_system)
 		str[5] = 's';
+	if (attr&namespace_item_internal)
+		str[5] = 'i';
 }
 
 void fill_quality_string(values::rx_value val, string_type& str)
 {
 	str = "-";
 	str += " - - ";
-	//if(is dtailed quality)
+	//if(is detailed quality)
 	//	str += "--------------- --";
 	//if(is high lo quality)
 	//	str += "--";

@@ -443,10 +443,10 @@ namespace meta_test {
 
 	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
 	 test_class->complex_data().register_const_value_static("testBool", true);
-	 test_class->complex_data().register_simple_value_static("testVal", 158);
+	 test_class->complex_data().register_simple_value_static("testVal", false, 158);
 
 	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
-	 test_struct->complex_data().register_simple_value_static("structVal", false);
+	 test_struct->complex_data().register_simple_value_static("structVal", false, false);
 
 	 test_class->complex_data().register_struct("structName", 41);
 

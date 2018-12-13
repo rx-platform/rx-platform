@@ -217,18 +217,6 @@ public:
       }
 
 
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
-
-
       static string_type get_type_name ()
       {
         return type_name;
@@ -245,10 +233,6 @@ public:
 
 
       string_type name_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
 
       values::rx_simple_value storage_;
 
@@ -353,9 +337,9 @@ public:
 	~simple_value_def() = default;
 
   public:
-      simple_value_def (const string_type& name, rx_simple_value&& value);
+      simple_value_def (const string_type& name, bool read_only, rx_simple_value&& value);
 
-      simple_value_def (const string_type& name, const rx_simple_value& value);
+      simple_value_def (const string_type& name, bool read_only, const rx_simple_value& value);
 
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
@@ -377,18 +361,6 @@ public:
       }
 
 
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
-
-
       static string_type get_type_name ()
       {
         return type_name;
@@ -407,10 +379,6 @@ public:
       bool read_only_;
 
       string_type name_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
 
       values::rx_simple_value storage_;
 
@@ -452,11 +420,11 @@ class complex_data_type
 
       void construct (complex_runtime_ptr what);
 
-      bool register_simple_value (const string_type& name, rx_simple_value&& val);
+      bool register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
 
       bool register_const_value (const string_type& name, rx_simple_value&& val);
 
-      bool register_simple_value (const string_type& name, const rx_simple_value& val);
+      bool register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val);
 
       bool register_const_value (const string_type& name, const rx_simple_value& val);
 
@@ -483,7 +451,7 @@ class complex_data_type
 	  template <typename constT>
 	  bool register_const_value_static(const string_type& name, constT&& value);
 	  template <typename valT>
-	  bool register_simple_value_static(const string_type& name, valT&& value);
+	  bool register_simple_value_static(const string_type& name, bool read_only, valT&& value);
 
 	  
 	  static constexpr const int structs_mask =			0x01000000;
@@ -704,11 +672,11 @@ bool complex_data_type::register_const_value_static(const string_type& name, val
 
 
 template <typename valT>
-bool complex_data_type::register_simple_value_static(const string_type& name, valT&& value)
+bool complex_data_type::register_simple_value_static(const string_type& name, bool read_only, valT&& value)
 {
 	rx_simple_value temp;
 	temp.assign_static<valT>(std::forward<valT>(value));
-	return register_simple_value(name, temp);
+	return register_simple_value(name, read_only, temp);
 }
 
 } // namespace def_blocks
