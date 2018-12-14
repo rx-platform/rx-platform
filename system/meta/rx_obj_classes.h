@@ -31,12 +31,12 @@
 
 
 
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 // rx_ptr
@@ -122,6 +122,33 @@ class object_data_type
 
 
 
+struct object_type_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id base_id;
+
+      bool system;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
 class application_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(application_class);
@@ -135,7 +162,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      application_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      application_class (const object_type_creation_data& data);
 
       virtual ~application_class();
 
@@ -197,6 +224,7 @@ public:
 
 
 
+
 class domain_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(domain_class);
@@ -210,7 +238,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      domain_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      domain_class (const object_type_creation_data& data);
 
       virtual ~domain_class();
 
@@ -272,6 +300,7 @@ public:
 
 
 
+
 class object_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(object_class);
@@ -285,7 +314,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      object_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      object_class (const object_type_creation_data& data);
 
       virtual ~object_class();
 
@@ -347,6 +376,7 @@ public:
 
 
 
+
 class port_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(port_class);
@@ -360,7 +390,7 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      port_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      port_class (const object_type_creation_data& data);
 
       virtual ~port_class();
 

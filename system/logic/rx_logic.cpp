@@ -49,7 +49,7 @@ program_runtime::program_runtime()
 }
 
 program_runtime::program_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name,id,system)
+	: meta_data_(name, id, rx_node_id::null_id, create_attributes_from_flags(system))
 {
 }
 
@@ -130,6 +130,18 @@ string_type program_runtime::get_name () const
 size_t program_runtime::get_size () const
 {
 	return sizeof(*this);
+}
+
+namespace_item_attributes program_runtime::create_attributes_from_flags (bool system)
+{
+	if (system)
+	{
+		return namespace_item_system_access | namespace_item_execute_access;
+	}
+	else
+	{
+		return namespace_item_full_access | namespace_item_execute_access;
+	}
 }
 
 

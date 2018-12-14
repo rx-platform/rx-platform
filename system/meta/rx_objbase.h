@@ -31,16 +31,16 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_blocks
 #include "system/meta/rx_blocks.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace objects {

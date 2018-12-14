@@ -441,11 +441,11 @@ namespace meta_test {
 	 out << "Creating test_class\r\n";
 	 server_directory_ptr dir = ctx->get_current_directory();
 
-	 rx_platform::meta::object_class_ptr test_class("test_class", 55, false);
+	 rx_platform::meta::object_class_ptr test_class(object_defs::object_type_creation_data{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, false });
 	 test_class->complex_data().register_const_value_static("testBool", true);
 	 test_class->complex_data().register_simple_value_static("testVal", false, 158);
 
-	 rx_platform::meta::struct_class_ptr test_struct("test_struct_type",41,false);
+	 rx_platform::meta::struct_class_ptr test_struct(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_struct_type",41, RX_CLASS_STRUCT_BASE_ID,  false }));
 	 test_struct->complex_data().register_simple_value_static("structVal", false, false);
 
 	 test_class->complex_data().register_struct("structName", 41);

@@ -206,7 +206,7 @@ bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 	RX_ASSERT(!queue_.empty());
 	while (!queue_.empty())
 	{
-		queued.emplace_back(queue_.front());
+		queued.emplace_back(std::move(queue_.front()));
 		queue_.pop();
 	}
 

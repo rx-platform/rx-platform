@@ -274,7 +274,7 @@ void test_thread()
 
 void test_classes()
 {
-	rx_platform::meta::object_class_ptr obj("test_class", 55, true);
+	rx_platform::meta::object_class_ptr obj(rx_platform::meta::object_defs::object_type_creation_data{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, true });
 }
 
 

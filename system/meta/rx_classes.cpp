@@ -30,10 +30,6 @@
 
 #include "rx_configuration.h"
 
-// rx_blocks
-#include "system/meta/rx_blocks.h"
-// rx_objbase
-#include "system/meta/rx_objbase.h"
 // rx_classes
 #include "system/meta/rx_classes.h"
 
@@ -44,181 +40,83 @@ namespace rx_platform {
 
 namespace meta {
 
-// Class rx_platform::meta::checkable_data 
-
-checkable_data::checkable_data()
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-{
-}
-
-checkable_data::checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system)
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-	, name_(name)
-	, id_(id)
-	, system_(system)
-	, parent_(parent)
-{
-}
-
-
-
-bool checkable_data::serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const
-{
-	if (!stream.write_header(type, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, type);*/
-	/*if(!ret)
-		return false;
-*/
-	if (!stream.write_footer())
-		return false;
-
-	return true;
-}
-
-bool checkable_data::deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value)
-{
-	return false;
-}
-
-bool checkable_data::check_in (base_meta_reader& stream)
-{
-	return false;
-}
-
-bool checkable_data::check_out (base_meta_writer& stream) const
-{
-	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, STREAMING_TYPE_CHECKOUT);
-*/
-
-	if (!stream.write_footer())
-		return false;
-
-	return true;
-}
-
-bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.write_id("NodeId", id_))
-		return false;
-	if (!stream.write_bool("System", system_))
-		return false;
-	if (!stream.write_string("Name", name_.c_str()))
-		return false;
-	if (!stream.write_id("SuperId", parent_))
-		return false;
-	if (!stream.write_version("Ver", version_))
-		return false;
-	return true;
-}
-
-bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.read_id("NodeId", id_))
-		return false;
-	if (!stream.read_bool("System", system_))
-		return false;
-	return true;
-	if (!stream.read_string("Name", name_))
-		return false;
-	return true;
-	if (!stream.read_id("Parent", parent_))
-		return false;
-	if (!stream.read_version("Ver", version_))
-		return false;
-	return true;
-}
-
-values::rx_value checkable_data::get_value () const
-{
-	values::rx_value temp;
-	temp.assign_static(version_, modified_time_);
-	return temp;
-}
-
-void checkable_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
-{
-	name_ = name;
-	id_ = id;
-	parent_ = type_id;
-}
-
-
 namespace basic_defs {
-	class meta_helpers
+
+namespace_item_attributes create_attributes_for_basic_types_from_flags(bool system)
+{
+	if (system)
 	{
-	public:
-		template<class complexT>
-		static bool serialize_complex_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
-		{
-			if (!whose.meta_data().serialize_checkable_definition(stream, type))
-				return false;
-			if (!whose.complex_data().serialize_complex_definition(stream, type))
-				return false;
-			return true;
-		}
+		return namespace_item_system_access;
+	}
+	else
+	{
+		return namespace_item_full_access;
+	}
+}
+class meta_helpers
+{
+public:
+	template<class complexT>
+	static bool serialize_complex_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+	{
+		if (!whose.meta_data().serialize_checkable_definition(stream, type))
+			return false;
+		if (!whose.complex_data().serialize_complex_definition(stream, type))
+			return false;
+		return true;
+	}
 
-		template<class complexT>
-		static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
-		{
-			if (!whose.meta_data().deserialize_checkable_definition(stream, type))
-				return false;
-			if (!whose.complex_data().deserialize_complex_definition(stream, type))
-				return false;
-			return true;
-		}
+	template<class complexT>
+	static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	{
+		if (!whose.meta_data().deserialize_checkable_definition(stream, type))
+			return false;
+		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+			return false;
+		return true;
+	}
 
 
-		template<class complexT>
-		static bool serialize_mapped_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
-		{
-			if (!serialize_complex_class(whose, stream, type))
-				return false;
-			if (!whose.mapping_data().serialize_mapped_definition(stream, type))
-				return false;
-			return true;
-		}
+	template<class complexT>
+	static bool serialize_mapped_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+	{
+		if (!serialize_complex_class(whose, stream, type))
+			return false;
+		if (!whose.mapping_data().serialize_mapped_definition(stream, type))
+			return false;
+		return true;
+	}
 
-		template<class complexT>
-		static bool deserialize_mapped_class(complexT& whose, base_meta_reader& stream, uint8_t type)
-		{
-			if (!deserialize_complex_class(whose, stream, type))
-				return false;
-			if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
-				return false;
-			return true;
-		}
+	template<class complexT>
+	static bool deserialize_mapped_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	{
+		if (!deserialize_complex_class(whose, stream, type))
+			return false;
+		if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
+			return false;
+		return true;
+	}
 
-		template<class complexT>
-		static bool serialize_variable_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
-		{
-			if (!serialize_mapped_class(whose, stream, type))
-				return false;
-			if (!whose.variable_data().serialize_variable_definition(stream, type))
-				return false;
-			return true;
-		}
+	template<class complexT>
+	static bool serialize_variable_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+	{
+		if (!serialize_mapped_class(whose, stream, type))
+			return false;
+		if (!whose.variable_data().serialize_variable_definition(stream, type))
+			return false;
+		return true;
+	}
 
-		template<class complexT>
-		static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
-		{
-			if (!deserialize_mapped_class(whose, stream, type))
-				return false;
-			if (!whose.variable_data().deserialize_variable_definition(stream, type))
-				return false;
-			return true;
-		}
-	};
+	template<class complexT>
+	static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	{
+		if (!deserialize_mapped_class(whose, stream, type))
+			return false;
+		if (!whose.variable_data().deserialize_variable_definition(stream, type))
+			return false;
+		return true;
+	}
+};
 
 // Class rx_platform::meta::basic_defs::event_class 
 
@@ -229,7 +127,7 @@ event_class::event_class()
 }
 
 event_class::event_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
 {
 }
 
@@ -288,7 +186,7 @@ filter_class::filter_class()
 }
 
 filter_class::filter_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
 {
 }
 
@@ -347,7 +245,7 @@ mapper_class::mapper_class()
 }
 
 mapper_class::mapper_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
 {
 }
 
@@ -406,7 +304,7 @@ source_class::source_class()
 }
 
 source_class::source_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
 {
 }
 
@@ -462,8 +360,8 @@ struct_class::struct_class()
 {
 }
 
-struct_class::struct_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+struct_class::struct_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
@@ -552,7 +450,7 @@ variable_class::variable_class()
 }
 
 variable_class::variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
 {
 }
 
@@ -633,6 +531,9 @@ const def_blocks::complex_data_type& variable_class::complex_data () const
 {
   return complex_data_;
 }
+
+
+// Class rx_platform::meta::basic_defs::type_creation_data 
 
 
 } // namespace basic_defs

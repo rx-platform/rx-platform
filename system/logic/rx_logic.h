@@ -31,12 +31,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -100,6 +100,9 @@ public:
 
 
   private:
+
+      static namespace_item_attributes create_attributes_from_flags (bool system);
+
 
 
       sl_runtime::sl_program_holder my_program_;

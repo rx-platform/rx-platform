@@ -31,26 +31,12 @@
 
 
 
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-
-namespace rx_platform {
-namespace objects {
-namespace object_types {
-class object_runtime;
-} // namespace object_types
-
-namespace blocks {
-class complex_runtime_item;
-
-} // namespace blocks
-} // namespace objects
-} // namespace rx_platform
-
 
 
 
@@ -82,112 +68,34 @@ struct meta_data_t
 
 
 
+namespace basic_defs {
 
 
 
 
 
-class checkable_data 
+struct type_creation_data 
 {
 
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id base_id;
+
+      bool system;
+
   public:
-      checkable_data();
-
-      checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false);
-
-
-      bool serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const;
-
-      bool deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value);
-
-      bool check_in (base_meta_reader& stream);
-
-      bool check_out (base_meta_writer& stream) const;
-
-      bool serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type);
-
-      values::rx_value get_value () const;
-
-      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system = false);
-
-
-      const rx_node_id& get_parent () const
-      {
-        return parent_;
-      }
-
-
-      uint32_t get_version () const
-      {
-        return version_;
-      }
-
-
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
-
-
-      string_type get_name () const
-      {
-        return name_;
-      }
-
-
-      const rx_node_id& get_id () const
-      {
-        return id_;
-      }
-
-
-      bool get_system () const
-      {
-        return system_;
-      }
-
-
-      namespace_item_attributes get_attributes () const
-      {
-        return attributes_;
-      }
-
-
 
   protected:
 
   private:
 
 
-      rx_node_id parent_;
-
-      uint32_t version_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
-
-      string_type name_;
-
-      rx_node_id id_;
-
-      bool system_;
-
-      namespace_item_attributes attributes_;
-
-
 };
 
 
-namespace basic_defs {
 
 
 
@@ -254,6 +162,7 @@ public:
 
 
 
+
 class filter_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(filter_class);
@@ -308,6 +217,7 @@ public:
 
 
 };
+
 
 
 
@@ -374,6 +284,7 @@ public:
 
 
 
+
 class source_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(source_class);
@@ -434,6 +345,7 @@ public:
 
 
 
+
 class struct_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(struct_class);
@@ -446,7 +358,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      struct_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      struct_class (const type_creation_data& data);
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
@@ -502,6 +414,7 @@ public:
 
 
 };
+
 
 
 

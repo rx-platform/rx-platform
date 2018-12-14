@@ -42,6 +42,19 @@ namespace rx_platform {
 namespace meta {
 
 namespace object_defs {
+
+namespace_item_attributes create_attributes_for_object_types_from_flags(const object_type_creation_data& data)
+{
+	if (data.system)
+	{
+		return namespace_item_system_access;
+	}
+	else
+	{
+		return namespace_item_full_access;
+	}
+}
+
 class obj_meta_helpers
 {
 public:
@@ -83,8 +96,8 @@ application_class::application_class()
 {
 }
 
-application_class::application_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+application_class::application_class (const object_type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
 {
 }
 
@@ -165,8 +178,8 @@ domain_class::domain_class()
 {
 }
 
-domain_class::domain_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+domain_class::domain_class (const object_type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
 {
 }
 
@@ -247,8 +260,8 @@ object_class::object_class()
 {
 }
 
-object_class::object_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+object_class::object_class (const object_type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
 {
 }
 
@@ -362,8 +375,8 @@ port_class::port_class()
 {
 }
 
-port_class::port_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, system)
+port_class::port_class (const object_type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
 {
 }
 
@@ -434,6 +447,9 @@ const def_blocks::mapped_data_type& port_class::mapping_data () const
 {
   return mapping_data_;
 }
+
+
+// Class rx_platform::meta::object_defs::object_type_creation_data 
 
 
 } // namespace object_defs

@@ -899,9 +899,9 @@ class interface_object
 //helper functions for creating concrete classes
 // for standard references
 template<class T, typename... Args>
-reference<T> create_reference(Args... args)
+reference<T> create_reference(Args&&... args)
 {
-	return reference<T>(args...);
+	return reference<T>(std::forward<Args>(args)...);
 }
 template<class T>
 reference<T> create_reference()
@@ -931,9 +931,9 @@ using rx_virtual = pointers::virtual_reference<Tptr>;
 
 // for standard references
 template<class T, typename... Args>
-pointers::reference<T> rx_create_reference(Args... args)
+pointers::reference<T> rx_create_reference(Args&&... args)
 {
-	return pointers::reference<T>(args...);
+	return pointers::reference<T>(std::forward<Args>(args)...);
 }
 template<class T>
 pointers::reference<T> rx_create_reference()

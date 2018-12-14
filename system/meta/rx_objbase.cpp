@@ -42,9 +42,32 @@
 namespace rx_platform {
 
 namespace objects {
-const char* g_const_simple_class_name = "CONST_SIMPLE";
+
+// Class rx_platform::objects::application_creation_data 
+
+
+// Class rx_platform::objects::domain_creation_data 
+
+
+// Class rx_platform::objects::port_creation_data 
+
+
+// Class rx_platform::objects::object_creation_data 
+
 
 namespace object_types {
+template<typename CT>
+namespace_item_attributes create_attributes_from_creation_data(const object_creation_data& data)
+{
+	if (data.system)
+	{
+		return namespace_item_system_access;
+	}
+	else
+	{
+		return namespace_item_full_access;
+	}
+}
 
 // Class rx_platform::objects::object_types::user_object 
 
@@ -104,7 +127,7 @@ object_runtime::object_runtime()
 
 object_runtime::object_runtime (object_creation_data&& data)
       : change_time_(rx_time::now())
-	, meta_data_(data.name, data.id, data.type_id, data.system)
+	, meta_data_(data.name, data.id, data.type_id, create_attributes_from_creation_data<object_creation_data>(data))
 	, runtime_item_(data.name, data.id, data.system)
 	, my_application_(data.application)
 	, my_domain_(data.domain)
@@ -449,19 +472,6 @@ bool port_runtime::readed (const void* data, size_t count, rx_thread_handle_t de
 
 
 } // namespace object_types
-
-// Class rx_platform::objects::application_creation_data 
-
-
-// Class rx_platform::objects::domain_creation_data 
-
-
-// Class rx_platform::objects::port_creation_data 
-
-
-// Class rx_platform::objects::object_creation_data 
-
-
 } // namespace objects
 } // namespace rx_platform
 

@@ -257,19 +257,19 @@ void basic_types_builder::build (platform_root::smart_ptr root)
 	if (dir)
 	{
 		//build base object type
-		auto obj = rx_create_reference<object_class>(RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, true);
+		auto obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, true });
 		build_basic_object_type<object_class>(dir, obj);
 
 		//build derived object types
-		auto app = rx_create_reference<application_class>(RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, true);
+		auto app = rx_create_reference<application_class>(object_defs::object_type_creation_data{ RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, true });
 		build_basic_application_type<application_class>(dir, app);
-		auto domain = rx_create_reference<domain_class>(RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, true);
+		auto domain = rx_create_reference<domain_class>(object_defs::object_type_creation_data{ RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, true });
 		build_basic_domain_type<domain_class>(dir, domain);
-		auto port = rx_create_reference<port_class>(RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, true);
+		auto port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, true });
 		build_basic_port_type<port_class>(dir, port);
 
 		//build base types, user extensible
-		auto str = rx_create_reference<basic_defs::struct_class>(RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, true);
+		auto str = rx_create_reference<basic_defs::struct_class>(basic_defs::type_creation_data { RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::struct_class>(dir, str);
 		auto var = rx_create_reference<basic_defs::variable_class>(RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, true);
 		build_basic_type<basic_defs::variable_class>(dir, var);
@@ -328,31 +328,31 @@ void system_classes_builder::build (platform_root::smart_ptr root)
 	if (dir)
 	{
 		// system application and domain types
-		auto app = rx_create_reference<application_class>(RX_NS_SYSTEM_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true);
+		auto app = rx_create_reference<application_class>(object_defs::object_type_creation_data{ RX_NS_SYSTEM_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true });
 		add_to_configuration(dir, app);
-		auto dom = rx_create_reference<domain_class>(RX_NS_SYSTEM_DOM_TYPE_NAME, RX_NS_SYSTEM_DOM_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true);
+		auto dom = rx_create_reference<domain_class>(object_defs::object_type_creation_data{ RX_NS_SYSTEM_DOM_TYPE_NAME, RX_NS_SYSTEM_DOM_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true });
 		add_to_configuration(dir, dom);
 		// unassigned application and domain types
-		app = rx_create_reference<application_class>(RX_NS_SYSTEM_UNASS_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true);
+		app = rx_create_reference<application_class>(object_defs::object_type_creation_data{ RX_NS_SYSTEM_UNASS_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true });
 		add_to_configuration(dir, app);
-		dom = rx_create_reference<domain_class>(RX_NS_SYSTEM_UNASS_TYPE_NAME, RX_NS_SYSTEM_UNASS_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true);
+		dom = rx_create_reference<domain_class>(object_defs::object_type_creation_data{ RX_NS_SYSTEM_UNASS_TYPE_NAME, RX_NS_SYSTEM_UNASS_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true });
 		add_to_configuration(dir, dom);
 		// other system object types
-		auto obj = rx_create_reference<object_class>(RX_COMMANDS_MANAGER_TYPE_NAME, RX_COMMANDS_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true);
+		auto obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_COMMANDS_MANAGER_TYPE_NAME, RX_COMMANDS_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
 		add_to_configuration(dir, obj);
-		obj = rx_create_reference<object_class>(RX_NS_SERVER_RT_TYPE_NAME, RX_NS_SERVER_RT_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true);
+		obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_NS_SERVER_RT_TYPE_NAME, RX_NS_SERVER_RT_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
 		add_to_configuration(dir, obj);
 		// pool type
-		obj = rx_create_reference<object_class>(RX_POOL_TYPE_NAME, RX_POOL_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true);
+		obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_POOL_TYPE_NAME, RX_POOL_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
 		obj->complex_data().register_const_value_static("IOPool", false);
 		obj->complex_data().register_const_value_static("Threads", (uint8_t)1);
 		obj->complex_data().register_simple_value_static("Queue", true, (uint8_t)0);
 		obj->complex_data().register_simple_value_static("CPUTime", true, rx_time());
 		obj->complex_data().register_simple_value_static("CPU", true, (uint8_t)0);
 		add_to_configuration(dir, obj);
-		obj = rx_create_reference<object_class>(RX_LOG_TYPE_NAME, RX_LOG_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true);
+		obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_LOG_TYPE_NAME, RX_LOG_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
 		add_to_configuration(dir, obj);
-		obj = rx_create_reference<object_class>(RX_IO_MANAGER_TYPE_NAME, RX_IO_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true);
+		obj = rx_create_reference<object_class>(object_defs::object_type_creation_data{ RX_IO_MANAGER_TYPE_NAME, RX_IO_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
 		add_to_configuration(dir, obj);
 	}
 }
@@ -366,32 +366,32 @@ void port_classes_builder::build (platform_root::smart_ptr root)
 	if (dir)
 	{
 		// transport ports
-		auto port = rx_create_reference<port_class>(RX_TRANSPORT_PORT_TYPE_NAME, RX_TRANSPORT_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true);
+		auto port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TRANSPORT_PORT_TYPE_NAME, RX_TRANSPORT_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_VT00_TYPE_NAME, RX_VT00_TYPE_ID, RX_TRANSPORT_PORT_TYPE_NAME, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_VT00_TYPE_NAME, RX_VT00_TYPE_ID, RX_TRANSPORT_PORT_TYPE_NAME, true} );
 		add_to_configuration(dir, port);
 		// protocol ports
-		port = rx_create_reference<port_class>(RX_PROTOCOL_PORT_TYPE_NAME, RX_PROTOCOL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_PROTOCOL_PORT_TYPE_NAME, RX_PROTOCOL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_CONSOLE_TYPE_NAME, RX_CONSOLE_TYPE_ID, RX_PROTOCOL_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_CONSOLE_TYPE_NAME, RX_CONSOLE_TYPE_ID, RX_PROTOCOL_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
 		// physical ports
-		port = rx_create_reference<port_class>(RX_PHYSICAL_PORT_TYPE_NAME, RX_PHYSICAL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_PHYSICAL_PORT_TYPE_NAME, RX_PHYSICAL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_NAME, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_TTY_PORT_TYPE_NAME, RX_TTY_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TTY_PORT_TYPE_NAME, RX_TTY_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_ETHERNET_PORT_TYPE_NAME, RX_ETHENERT_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_ETHERNET_PORT_TYPE_NAME, RX_ETHENERT_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_UDP_PORT_TYPE_NAME, RX_UDP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_UDP_PORT_TYPE_NAME, RX_UDP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_TCP_PORT_TYPE_NAME, RX_TCP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TCP_PORT_TYPE_NAME, RX_TCP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
 		// tcp/ip port types
-		port = rx_create_reference<port_class>(RX_TCP_LISTEN_PORT_TYPE_NAME, RX_TCP_LISTEN_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TCP_LISTEN_PORT_TYPE_NAME, RX_TCP_LISTEN_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_TCP_SERVER_PORT_TYPE_NAME, RX_TCP_SERVER_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TCP_SERVER_PORT_TYPE_NAME, RX_TCP_SERVER_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
-		port = rx_create_reference<port_class>(RX_TCP_CLIENT_PORT_TYPE_NAME, RX_TCP_CLIENT_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true);
+		port = rx_create_reference<port_class>(object_defs::object_type_creation_data{ RX_TCP_CLIENT_PORT_TYPE_NAME, RX_TCP_CLIENT_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true} );
 		add_to_configuration(dir, port);
 	}
 }

@@ -100,8 +100,6 @@ namespace basic_defs
 
 namespace objects
 {
-template<typename T>
-class server_const_value_item;
 
 namespace object_types
 {

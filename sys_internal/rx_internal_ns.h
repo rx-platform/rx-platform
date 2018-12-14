@@ -508,7 +508,7 @@ values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 template <class TImpl>
 namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () const
 {
-	return impl_->meta_data().get_system() ? (namespace_item_attributes)(namespace_item_read_access | namespace_item_system) : (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access);
+	return impl_->meta_data().get_attributes();
 }
 
 template <class TImpl>

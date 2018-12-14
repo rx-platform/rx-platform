@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  rx_library.h
+*  lib\rx_enum_operators.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,39 +26,36 @@
 ****************************************************************************/
 
 
-#ifndef rx_library_h
-#define rx_library_h 1
+#ifndef rx_enum_operators_h
+#define rx_enum_operators_h 1
 
 
 
 
+namespace rx {
 
-// platform specific definitions
-#include "os_itf/rx_ositf.h"
+template<typename ET, typename std::enable_if_t<std::is_enum<ET>::value, int> = 0>
+constexpr inline ET& operator~(ET& value)
+{
+	value = static_cast<ET>(~static_cast<std::underlying_type_t<ET> >(value));
+	return value;
+}
 
-// C++ standard library and some mcro definitions
-#include "lib/rx_std.h"
+template<typename ET, typename std::enable_if_t<std::is_enum<ET>::value, int> = 0>
+constexpr inline ET operator|(ET left, ET right)
+{
+	return static_cast<ET>(static_cast<std::underlying_type_t<ET>>(left) | static_cast<std::underlying_type_t<ET>>(right));
+}
 
-// enum bitwise helpers
-#include "lib/rx_enum_operators.h"
+template<typename ET, typename std::enable_if_t<std::is_enum<ET>::value, int> = 0>
+constexpr inline ET operator&(ET left, ET right)
+{
+	return static_cast<ET>(static_cast<std::underlying_type_t<ET>>(left) & static_cast<std::underlying_type_t<ET>>(right));
+}
 
-// log related stuff
-#include "lib/rx_log.h"
-
-//library it self
-#include "lib/rx_lib.h"
-
-// smart pointers
-#include "lib/rx_ptr.h"
-
-// memory buffers
-#include "lib/rx_mem.h"
-
-
-
+}
 
 
-using namespace rx;
 
 
 #endif
