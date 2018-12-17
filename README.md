@@ -30,8 +30,8 @@ On GNU/Linux machines this is the main function example:
  int main(int argc, char* argv[])
  {
 	// create the storage
-	auto storage = rx_create_reference<win32::gnu_file_system_storage>();
-  // create the host
+	auto storage = rx_create_reference<gnu::gnu_file_system_storage>();
+  	// create the host
  	host::gnu::gnu_console_host host(storage);
  	// run console
  	return host.console_main(argc,argv);
@@ -53,7 +53,7 @@ On Windows machines this is the main function example:
  {
 	// create the storage
 	auto storage = rx_create_reference<win32::win32_file_system_storage>();
-  // create the host
+  	// create the host
 	win32::win32_console_host host(storage);
  	// run console
  	return host.console_main(argc, argv);
