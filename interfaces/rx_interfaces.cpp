@@ -36,7 +36,9 @@
 
 namespace interfaces {
 
-// Class interfaces::rx_ethernet_card 
+namespace ip_endpoints {
+
+// Class interfaces::ip_endpoints::rx_ethernet_card 
 
 rx_ethernet_card::rx_ethernet_card()
 {
@@ -64,7 +66,7 @@ rx_ethernet_card & rx_ethernet_card::operator=(rx_ethernet_card &&right)
 	assert(false);
 	return *this;
 }
-// Class interfaces::rx_ip_address 
+// Class interfaces::ip_endpoints::rx_ip_address 
 
 rx_ip_address::rx_ip_address()
 {
@@ -94,5 +96,6 @@ rx_ip_address & rx_ip_address::operator=(rx_ip_address &&right)
 	assert(false);
 	return *this;
 }
+} // namespace ip_endpoints
 } // namespace interfaces
 

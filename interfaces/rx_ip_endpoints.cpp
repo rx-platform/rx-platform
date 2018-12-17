@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  terminal\rx_general_commands.cpp
+*  interfaces\rx_ip_endpoints.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -29,8 +29,8 @@
 #include "pch.h"
 
 
-// rx_general_commands
-#include "terminal/rx_general_commands.h"
+// rx_ip_endpoints
+#include "interfaces/rx_ip_endpoints.h"
 
 
 

@@ -49,8 +49,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_endpoints
-#include "system/server/rx_endpoints.h"
 
 
 #include "lib/rx_log.h"
@@ -74,13 +72,22 @@ using namespace rx;
 
 namespace rx_platform {
 
+
+struct io_manager_data_t
+{
+	io_manager_data_t()
+	{
+		memzero(this, sizeof(io_manager_data_t));
+	}
+};
+
 struct configuration_data_t
 {
 	runtime::runtime_data_t runtime_data;
 	mngt::managment_data_t managment_data;
 	ns::namespace_data_t namespace_data;
 	meta::meta_data_t meta_data;
-	io_endpoints::io_manager_data_t io_manager_data;
+	io_manager_data_t io_manager_data;
 };
 
 
@@ -128,12 +135,6 @@ class rx_gate
       hosting::rx_platform_host * get_host ()
       {
         return host_;
-      }
-
-
-      io_endpoints::rx_io_manager& get_io_manager ()
-      {
-        return io_manager_;
       }
 
 
@@ -216,8 +217,6 @@ class rx_gate
       hosting::rx_platform_host *host_;
 
       scripts_type scripts_;
-
-      io_endpoints::rx_io_manager io_manager_;
 
 
       static rx_gate* g_instance;

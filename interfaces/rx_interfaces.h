@@ -36,6 +36,8 @@
 
 namespace interfaces {
 
+namespace ip_endpoints {
+
 
 
 
@@ -86,10 +88,13 @@ class rx_ethernet_card
 
       rx_ip_address *addresses_;
 
+      rx_ip_address the_rx_ip_address_;
+
 
 };
 
 
+} // namespace ip_endpoints
 } // namespace interfaces
 
 

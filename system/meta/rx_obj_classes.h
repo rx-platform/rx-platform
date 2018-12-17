@@ -31,10 +31,10 @@
 
 
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_objbase
@@ -180,6 +180,8 @@ public:
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
+
+      static objects::application_runtime_ptr create_runtime_ptr ();
 
 
       const object_data_type& object_data () const;

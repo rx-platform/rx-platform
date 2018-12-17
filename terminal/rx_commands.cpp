@@ -33,8 +33,7 @@
 #include "terminal/rx_commands.h"
 
 #include "system/server/rx_server.h"
-#include "terminal/rx_telnet.h"
-#include "terminal/rx_general_commands.h"
+#include "terminal/rx_con_commands.h"
 #include "testing/rx_test.h"
 #include "classes/rx_meta_commands.h"
 

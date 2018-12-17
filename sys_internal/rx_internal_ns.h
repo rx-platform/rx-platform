@@ -417,7 +417,7 @@ values::rx_value rx_item_implementation<TImpl>::get_value () const
 template <class TImpl>
 namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
 {
-	return impl_->get_attributes();
+	return impl_->meta_data().get_attributes();
 }
 
 template <class TImpl>

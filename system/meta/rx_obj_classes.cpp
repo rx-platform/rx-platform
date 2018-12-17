@@ -148,6 +148,11 @@ def_blocks::complex_data_type& application_class::complex_data ()
 
 }
 
+objects::application_runtime_ptr application_class::create_runtime_ptr ()
+{
+	return rx_create_reference<objects::object_types::application_runtime>();
+}
+
 
 const object_data_type& application_class::object_data () const
 {

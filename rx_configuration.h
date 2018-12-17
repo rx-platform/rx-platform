@@ -8,6 +8,8 @@
 #define RX_NS_UNASSIGNED_NAME "_unassigned"
 #define RX_NS_BIN_NAME "bin"
 #define RX_NS_OBJ_NAME "objects"
+#define RX_NS_SYSTEM_OBJ_NAME "system"
+#define RX_NS_PORT_OBJ_NAME "ports"
 #define RX_NS_CLASSES_NAME "types"
 #define RX_NS_BASE_CLASSES_NAME "base"
 #define RX_NS_SYSTEM_CLASSES_NAME "system"
@@ -49,9 +51,6 @@
 
 #define NS_RX_COMMANDS_MANAGER_NAME "CmdManager"
 #define RX_COMMANDS_MANAGER_ID 0x8000001
-#define NS_RX_INTERACTIVE_NAME "Interactive"
-#define RX_INTERACTIVE_ID 0x8000001
-
 
 #define RX_NS_SERVER_RT_NAME "Runtime"
 #define RX_NS_SERVER_RT_ID 0x8000002
@@ -72,6 +71,35 @@
 #define RX_NS_SYSTEM_UNASS_ID 0x8000009
 #define RX_NS_SYSTEM_UNASS_APP_NAME "UnassignedApp"
 #define RX_NS_SYSTEM_UNASS_APP_ID 0x800000a
+
+
+// port runtime objects
+#define RX_PHYSICAL_PORT_NAME "PhysicalPort"
+#define RX_PHYSICAL_PORT_ID 0x800000c
+#define RX_TRANSPORT_PORT_NAME "TransportPort"
+#define RX_TRANSPORT_PORT_ID 0x800000d
+#define RX_PROTOCOL_PORT_NAME "ProtocolPort"
+#define RX_PROTOCOL_PORT_ID 0x800000e
+
+#define RX_TTY_PORT_NAME "TTYPort"
+#define RX_TTY_PORT_ID 0x8000010
+#define RX_UDP_PORT_NAME "UDPPort"
+#define RX_UDP_PORT_ID 0x8000011
+#define RX_TCP_PORT_NAME "TCPPort"
+#define RX_TCP_PORT_ID 0x8000012
+#define RX_TCP_LISTEN_PORT_NAME "TCPListenPort"
+#define RX_TCP_LISTEN_PORT_ID 0x8000013
+#define RX_TCP_SERVER_PORT_NAME "TCPServerPort"
+#define RX_TCP_SERVER_PORT_ID 0x8000014
+#define RX_TCP_CLIENT_PORT_NAME "TCPClientPort"
+#define RX_TCP_CLIENT_PORT_ID 0x8000015
+#define RX_ETHERNET_PORT_NAME "EthernetPort"
+#define RX_ETHENERT_PORT_ID 0x8000016
+
+#define RX_VT00_NAME "VT100Port"
+#define RX_VT00_ID 0x8000017
+#define RX_INTERACTIVE_NAME "Interactive"
+#define RX_INTERACTIVE_ID 0x8000018
 
 
 // system objects type stuff
@@ -101,6 +129,8 @@
 #define RX_NS_SYSTEM_UNASS_APP_TYPE_NAME "UnassignedAppType"
 #define RX_NS_SYSTEM_UNASS_APP_TYPE_ID 0xc00000b
 
+
+
 // port classes and releated structs
 #define RX_PHYSICAL_PORT_TYPE_NAME "PhysicalPort"
 #define RX_PHYSICAL_PORT_TYPE_ID 0xc00000c
@@ -126,6 +156,8 @@
 
 #define RX_VT00_TYPE_NAME "VT100Port"
 #define RX_VT00_TYPE_ID 0xc000017
+#define RX_INTERACTIVE_TYPE_NAME "InteractivePort"
+#define RX_INTERACTIVE_TYPE_ID 0xc000018
 
 
 // cpp classes stuff

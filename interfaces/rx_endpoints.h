@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_endpoints.h
+*  interfaces\rx_endpoints.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -31,15 +31,17 @@
 
 
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_objbase
 #include "system/meta/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
+#include "system/server/rx_server.h"
+
+using namespace rx_platform;
+using namespace rx_platform::objects;
 
 
-namespace rx_platform {
+namespace interfaces {
 
 namespace io_endpoints {
 
@@ -47,9 +49,11 @@ namespace io_endpoints {
 
 
 
-class rx_io_endpoint : public rx::io::dispatcher_subscriber  
+class rx_io_endpoint 
 {
-	DECLARE_REFERENCE_PTR(rx_io_endpoint);
+public:
+
+	typedef rx_io_endpoint* smart_ptr;
 
   public:
       rx_io_endpoint();
@@ -65,20 +69,41 @@ class rx_io_endpoint : public rx::io::dispatcher_subscriber
 };
 
 
-struct io_manager_data_t
+
+
+
+
+class physical_port : public rx_platform::objects::object_types::port_runtime  
 {
-	io_manager_data_t()
-	{
-		memzero(this, sizeof(io_manager_data_t));
-	}
+	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+physical port class. basic implementation of a port");
+
+	DECLARE_REFERENCE_PTR(physical_port);
+
+
+  public:
+      physical_port (port_creation_data&& data);
+
+
+  protected:
+
+  private:
+
+
+      rx_io_endpoint *my_endpoint_;
+
+
 };
 
 
 
 
-class rx_io_manager : public objects::object_types::server_object  
+
+
+class rx_io_manager : public rx_platform::objects::object_types::server_object  
 {
 	typedef std::map<string_type, rx_io_endpoint::smart_ptr> endpoints_type;
+	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;
 
   public:
       rx_io_manager();
@@ -100,14 +125,18 @@ class rx_io_manager : public objects::object_types::server_object
   private:
 
 
+      //	These endpoints include COM ports, Console and UDP
+      //	communications
       endpoints_type endpoints_;
+
+      physical_ports_type physical_ports_;
 
 
 };
 
 
 } // namespace io_endpoints
-} // namespace rx_platform
+} // namespace interfaces
 
 
 

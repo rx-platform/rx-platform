@@ -139,6 +139,7 @@ class system_classes_builder : public rx_platform_builder
 
   private:
 
+
 };
 
 
@@ -147,6 +148,26 @@ class system_classes_builder : public rx_platform_builder
 
 
 class port_classes_builder : public rx_platform_builder  
+{
+
+  public:
+
+      void build (platform_root::smart_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_objects_builder : public rx_platform_builder  
 {
 
   public:

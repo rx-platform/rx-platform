@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  terminal\rx_general_commands.h
+*  interfaces\rx_ip_endpoints.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -26,8 +26,8 @@
 ****************************************************************************/
 
 
-#ifndef rx_general_commands_h
-#define rx_general_commands_h 1
+#ifndef rx_ip_endpoints_h
+#define rx_ip_endpoints_h 1
 
 
 

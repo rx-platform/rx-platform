@@ -88,12 +88,6 @@ user_object::~user_object()
 
 
 
-namespace_item_attributes user_object::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_execute_access);
-}
-
-
 // Class rx_platform::objects::object_types::server_object 
 
 server_object::server_object (object_creation_data&& data)
@@ -107,12 +101,6 @@ server_object::~server_object()
 {
 }
 
-
-
-namespace_item_attributes server_object::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
-}
 
 
 // Class rx_platform::objects::object_types::object_runtime 
@@ -184,11 +172,6 @@ values::rx_value object_runtime::get_value () const
 	rx_value temp;
 	temp.assign_static(meta_data_.get_version(), meta_data_.get_modified_time());
 	return temp;
-}
-
-namespace_item_attributes object_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access);
 }
 
 void object_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -369,11 +352,6 @@ string_type application_runtime::get_type_name () const
 
 }
 
-namespace_item_attributes application_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
-}
-
 bool application_runtime::connect_application (rx_application_ptr&& app)
 {
 	return false;
@@ -382,6 +360,11 @@ bool application_runtime::connect_application (rx_application_ptr&& app)
 bool application_runtime::connect_domain (rx_domain_ptr&& domain)
 {
 	return false;
+}
+
+platform_item_ptr application_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 
@@ -413,11 +396,6 @@ string_type domain_runtime::get_type_name () const
 
 }
 
-namespace_item_attributes domain_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
-}
-
 rx_thread_handle_t domain_runtime::get_executer () const
 {
 	return executer_;
@@ -426,6 +404,11 @@ rx_thread_handle_t domain_runtime::get_executer () const
 bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
 {
 	return false;
+}
+
+platform_item_ptr domain_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 
@@ -455,23 +438,24 @@ string_type port_runtime::get_type_name () const
 
 }
 
-namespace_item_attributes port_runtime::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_write_access|namespace_item_system|namespace_item_read_access);
-}
-
 bool port_runtime::write (buffer_ptr what)
 {
 	return false;
 }
 
-bool port_runtime::readed (const void* data, size_t count, rx_thread_handle_t destination)
+bool port_runtime::readed (buffer_ptr what, rx_thread_handle_t destination)
 {
 	return true;
+}
+
+platform_item_ptr port_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 
 } // namespace object_types
 } // namespace objects
 } // namespace rx_platform
+
 

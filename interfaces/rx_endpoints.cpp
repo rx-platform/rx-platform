@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_endpoints.cpp
+*  interfaces\rx_endpoints.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -31,16 +31,16 @@
 #include "rx_configuration.h"
 
 // rx_endpoints
-#include "system/server/rx_endpoints.h"
+#include "interfaces/rx_endpoints.h"
 
 #include "system/server/rx_server.h"
 
 
-namespace rx_platform {
+namespace interfaces {
 
 namespace io_endpoints {
 
-// Class rx_platform::io_endpoints::rx_io_manager 
+// Class interfaces::io_endpoints::rx_io_manager 
 
 rx_io_manager::rx_io_manager()
 	: server_object(objects::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
@@ -75,7 +75,17 @@ uint32_t rx_io_manager::stop ()
 }
 
 
-// Class rx_platform::io_endpoints::rx_io_endpoint 
+// Class interfaces::io_endpoints::physical_port 
+
+physical_port::physical_port (port_creation_data&& data)
+      : my_endpoint_(nullptr)
+	, port_runtime(std::move(data))
+{
+}
+
+
+
+// Class interfaces::io_endpoints::rx_io_endpoint 
 
 rx_io_endpoint::rx_io_endpoint()
 {
@@ -89,5 +99,5 @@ rx_io_endpoint::~rx_io_endpoint()
 
 
 } // namespace io_endpoints
-} // namespace rx_platform
+} // namespace interfaces
 

@@ -31,12 +31,12 @@
 
 
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_blocks
 #include "system/meta/rx_blocks.h"
 // rx_ptr
@@ -223,8 +223,6 @@ public:
 
       values::rx_value get_value () const;
 
-      namespace_item_attributes get_attributes () const;
-
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
@@ -338,9 +336,6 @@ user object class. basic implementation of a user object");
       virtual ~user_object();
 
 
-      namespace_item_attributes get_attributes () const;
-
-
   protected:
 
   private:
@@ -366,9 +361,6 @@ system object class. basic implementation of a system object");
       virtual ~server_object();
 
 
-      namespace_item_attributes get_attributes () const;
-
-
   protected:
 
   private:
@@ -388,8 +380,12 @@ class domain_runtime : public object_runtime
 system domain class. basic implementation of a domain");
 
 	DECLARE_REFERENCE_PTR(domain_runtime);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 	typedef std::vector<object_runtime::smart_ptr> objects_type;
+
+
+public:
+	typedef rx_platform::meta::object_defs::domain_class definition_t;
+	typedef objects::object_types::domain_runtime RType;
 
   public:
       domain_runtime (domain_creation_data&& data);
@@ -399,11 +395,11 @@ system domain class. basic implementation of a domain");
 
       string_type get_type_name () const;
 
-      namespace_item_attributes get_attributes () const;
-
       rx_thread_handle_t get_executer () const;
 
       bool connect_domain (rx_domain_ptr&& domain);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;
@@ -451,9 +447,9 @@ public:
 
       string_type get_type_name () const;
 
-      namespace_item_attributes get_attributes () const;
-
       bool write (buffer_ptr what);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;
@@ -461,7 +457,7 @@ public:
 
   protected:
 
-      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination);
+      virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
 
 
   private:
@@ -482,9 +478,15 @@ class application_runtime : public domain_runtime
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 system application class. contains system default application");
 
-	DECLARE_VIRTUAL_REFERENCE_PTR(application_runtime);
+	DECLARE_REFERENCE_PTR(application_runtime);
 	typedef std::vector<domain_runtime::smart_ptr> domains_type;
 	typedef std::vector<port_runtime::smart_ptr> ports_type;
+
+	friend class meta::checkable_data;
+
+public:
+	typedef rx_platform::meta::object_defs::application_class definition_t;
+	typedef objects::object_types::application_runtime RType;
 
   public:
       application_runtime (application_creation_data&& data);
@@ -494,11 +496,11 @@ system application class. contains system default application");
 
       string_type get_type_name () const;
 
-      namespace_item_attributes get_attributes () const;
-
       bool connect_application (rx_application_ptr&& app);
 
       bool connect_domain (rx_domain_ptr&& domain);
+
+      platform_item_ptr get_item_ptr ();
 
 
       static string_type type_name;

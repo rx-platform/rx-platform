@@ -126,7 +126,7 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 	{
 		if (manager_.initialize(host, data.managment_data))
 		{
-			if (io_manager_.initialize(host, data.io_manager_data))
+			if (true)//io_manager_.initialize(host, data.io_manager_data))
 			{
 				root_ =	sys_internal::builders::rx_platform_builder::buid_platform_system(host, data.namespace_data);
 

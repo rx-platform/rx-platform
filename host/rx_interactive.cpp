@@ -40,107 +40,107 @@
 
 namespace host {
 
-	namespace interactive {
+namespace interactive {
 
-		// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host 
 
-		interactive_console_host::interactive_console_host(rx_platform::hosting::rx_platform_storage::smart_ptr storage)
-			: exit_(false)
-			, hosting::rx_platform_host(storage)
+interactive_console_host::interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
+      : exit_(false)
+	, hosting::rx_platform_host(storage)
+{
+	startup_script_ = "test run lib/values/r/n";
+}
+
+
+interactive_console_host::~interactive_console_host()
+{
+}
+
+
+
+void interactive_console_host::console_loop (configuration_data_t& config)
+{
+
+	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
+	sec_ctx->login();
+
+	security::security_auto_context dummy(sec_ctx);
+
+	if (!config.managment_data.telnet_port)// set to the last default if not set
+		config.managment_data.telnet_port = 12345;
+	if (config.runtime_data.genereal_pool_size < 0)
+		config.runtime_data.genereal_pool_size = 2;
+	if (config.runtime_data.io_pool_size <= 0)// has to have at least one
+		config.runtime_data.io_pool_size = 1;
+	if (config.runtime_data.workers_pool_size < 0)
+		config.runtime_data.workers_pool_size = 2;
+
+
+	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
+
+	if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
+	{
+
+		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
+
+		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
 		{
-			startup_script_ = "test run lib/values/r/n";
+			interactive_console_client interactive(this);
+
+			interactive.run_interactive();
+
+			rx_platform::rx_gate::instance().stop();
 		}
+		rx_platform::rx_gate::instance().deinitialize();
+	}
 
+	HOST_LOG_INFO("Main", 999, "Closing console...");
+}
 
-		interactive_console_host::~interactive_console_host()
-		{
-		}
+void interactive_console_host::get_host_info (string_array& hosts)
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
+	}
+	hosts.emplace_back(ret);
+	rx_platform_host::get_host_info(hosts);
+}
 
+void interactive_console_host::server_started_event ()
+{
+	printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
+}
 
+bool interactive_console_host::shutdown (const string_type& msg)
+{
+	security::security_context_ptr ctx = security::active_security();
+	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
+	std::cout << ANSI_COLOR_RESET "\r\n";
+	std::cout << "Message:" << msg << "\r\n";
+	std::cout.flush();
+	exit_ = true;
+	rx_gate::instance().get_host()->break_host("");
+return true;
+}
 
-		void interactive_console_host::console_loop(configuration_data_t& config)
-		{
+bool interactive_console_host::exit () const
+{
+	return exit_;
+}
 
-			rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-			sec_ctx->login();
+void interactive_console_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
+{
+}
 
-			security::security_auto_context dummy(sec_ctx);
+void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
+{
+	//items.push_back(rx_create_reference<meta::object_defs::port_class>(meta::object_defs::object_type_creation_data{ RX_INTERACTIVE_TYPE_NAME, RX_INTERACTIVE_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true }));
+}
 
-			if (!config.managment_data.telnet_port)// set to the last default if not set
-				config.managment_data.telnet_port = 12345;
-			if (config.runtime_data.genereal_pool_size < 0)
-				config.runtime_data.genereal_pool_size = 2;
-			if (config.runtime_data.io_pool_size <= 0)// has to have at least one
-				config.runtime_data.io_pool_size = 1;
-			if (config.runtime_data.workers_pool_size < 0)
-				config.runtime_data.workers_pool_size = 2;
-
-
-			HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-
-			if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
-			{
-
-				HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-
-				if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
-				{
-					interactive_console_client interactive(this);
-
-					interactive.run_interactive();
-
-					rx_platform::rx_gate::instance().stop();
-				}
-				rx_platform::rx_gate::instance().deinitialize();
-			}
-
-			HOST_LOG_INFO("Main", 999, "Closing console...");
-
-		}
-
-		void interactive_console_host::get_host_info(string_array& hosts)
-		{
-			static string_type ret;
-			if (ret.empty())
-			{
-				ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
-			}
-			hosts.emplace_back(ret);
-			rx_platform_host::get_host_info(hosts);
-		}
-
-		void interactive_console_host::server_started_event()
-		{
-			printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
-		}
-
-		bool interactive_console_host::shutdown(const string_type& msg)
-		{
-			security::security_context_ptr ctx = security::active_security();
-			std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
-			std::cout << ANSI_COLOR_RESET "\r\n";
-			std::cout << "Message:" << msg << "\r\n";
-			std::cout.flush();
-			exit_ = true;
-			rx_gate::instance().get_host()->break_host("");
-			return true;
-		}
-
-		bool interactive_console_host::exit() const
-		{
-			return exit_;
-		}
-
-		void interactive_console_host::get_host_objects(std::vector<rx_platform::objects::object_runtime_ptr>& items)
-		{
-		}
-
-		void interactive_console_host::get_host_classes(std::vector<rx_platform::meta::object_class_ptr>& items)
-		{
-		}
-
-		bool interactive_console_host::do_host_command(const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
-		{
+bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+{
 			std::ostream out(out_buffer.unsafe_ptr());
 			std::stringstream in(line);
 			std::ostream err(err_buffer.unsafe_ptr());
@@ -195,38 +195,38 @@ namespace host {
 				err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
 			}
 			return ret;
-		}
+}
 
-		bool interactive_console_host::write_stdout(const string_type& lines)
-		{
+bool interactive_console_host::write_stdout (const string_type& lines)
+{
 			return write_stdout(lines.c_str(), lines.size());
-		}
+}
 
-		string_type interactive_console_host::get_startup_script()
-		{
+string_type interactive_console_host::get_startup_script ()
+{
 			return startup_script_;
-		}
+}
 
-		std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces(const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-		{
+std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
 			std::vector<ETH_interface> ret;
 			return ret;
-		}
+}
 
-		std::vector<IP_interface> interactive_console_host::get_IP_interfaces(const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-		{
+std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
+{
 			std::vector<IP_interface> ret;
 			return ret;
-		}
+}
 
 
-		// Class host::interactive::interactive_console_client 
+// Class host::interactive::interactive_console_client 
 
-		interactive_console_client::interactive_console_client(interactive_console_host* host)
-			: host_(host),
-			exit_(false)
+interactive_console_client::interactive_console_client (interactive_console_host* host)
+      : host_(host),
+        exit_(false)
 			, security_context_(pointers::_create_new)
-			, console_client(objects::port_creation_data {NS_RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID, rx_system_application() })
+			, console_client(objects::port_creation_data { RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID, rx_system_application() })
 {
 	security_context_->login();
 	auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);
