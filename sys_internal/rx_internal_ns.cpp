@@ -179,6 +179,11 @@ size_t simple_platform_item::get_size () const
 	return sizeof(*this);
 }
 
+rx_node_id simple_platform_item::get_node_id () const
+{
+	return rx_node_id::null_id;
+}
+
 //template simple_platform_item< rx_platform::objects::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
 // Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
 
@@ -241,6 +246,12 @@ size_t runtime_simple_platform_item<T,class_name_idx>::get_size () const
   return 0;
 }
 
+template <class T, int class_name_idx>
+rx_node_id runtime_simple_platform_item<T,class_name_idx>::get_node_id () const
+{
+	return rx_node_id::null_id;
+}
+
 
 // Class sys_internal::internal_ns::storage_directory 
 
@@ -290,5 +301,3 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::vari
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_class_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_class_ptr>;
-
-

@@ -250,6 +250,8 @@ public:
 
       virtual size_t get_size () const = 0;
 
+      virtual rx_node_id get_node_id () const = 0;
+
 
       const rx_reference<rx_platform_item> get_runtime_parent () const
       {

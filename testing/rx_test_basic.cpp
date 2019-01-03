@@ -32,7 +32,7 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
-#include "classes/rx_meta.h"
+#include "model/rx_meta.h"
 #include "sys_internal/rx_internal_ns.h"
 using namespace std::string_literals;
 
@@ -450,7 +450,7 @@ namespace meta_test {
 
 	 test_class->complex_data().register_struct("structName", 41);
 
-	 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().register_class(test_class))
+	 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().register_class(test_class))
 	 {
 		 out << "test_class created\r\n";
 
@@ -459,7 +459,7 @@ namespace meta_test {
 		 if (rx_class_item->generate_json(out, err))
 		 {
 
-			 if (model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
+			 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
 			 {
 
 				 out << "test_struct created\r\n";
@@ -477,7 +477,7 @@ namespace meta_test {
 						 return rx_create_reference<objects::object_types::user_object>();
 					 });
 
-					 auto test_object = model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 59, 55);
+					 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 55);
 					 if (test_object)
 					 {
 						 out << "test_class test_object\r\n";

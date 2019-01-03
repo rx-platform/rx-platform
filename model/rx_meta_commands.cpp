@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  classes\rx_meta_commands.cpp
+*  model\rx_meta_commands.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -30,8 +30,9 @@
 
 
 // rx_meta_commands
-#include "classes/rx_meta_commands.h"
+#include "model/rx_meta_commands.h"
 
+#include "model/rx_meta.h"
 
 
 namespace model {
@@ -98,6 +99,69 @@ bool create_command::create_type (std::istream& in, std::ostream& out, std::ostr
 }
 
 
+// Class model::meta_commands::dump_types_command 
+
+dump_types_command::dump_types_command()
+	: server_command("dump-types")
+{
+}
+
+
+dump_types_command::~dump_types_command()
+{
+}
+
+
+
+bool dump_types_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type item_type;
+	in >> item_type;
+	if (item_type == "objects")
+	{
+		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::object_class>(),
+			in, out, err, ctx);
+	}
+	if (item_type == "ports")
+	{
+		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::port_class>(),
+			in, out, err, ctx);
+	}
+	return true;
+}
+
+
+template<typename T>
+bool dump_types_command::dump_types_to_console(model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type where_from;
+	in >> where_from;
+	rx_node_id start;
+	if (!where_from.empty())
+	{
+		start = rx_node_id::from_string(where_from.c_str());
+	}
+	out << "Listing of " << T::get_type_name() << "s\r\n";
+	out << RX_CONSOLE_HEADER_LINE << "\r\n";
+	out << "Starting from id " << start.to_string() << "\r\n";
+
+	dump_types_recursive(start, 0, hash, in, out, err, ctx);
+
+	return true;
+}
+
+template<typename T>
+bool dump_types_command::dump_types_recursive(rx_node_id start, int indent, model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type indent_str(indent * 4, ' ');
+	auto result = hash.get_derived_types(start);
+	for (auto one : result.details)
+	{
+		out << indent_str << one.name << " [" << one.id.to_string() << "]\r\n";
+		dump_types_recursive(one.id, indent + 1, hash, in, out, err, ctx);
+	}
+	return true;
+}
 } // namespace meta_commands
 } // namespace model
 

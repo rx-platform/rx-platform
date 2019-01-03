@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  classes\rx_meta_commands.h
+*  model\rx_meta_commands.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -34,6 +34,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
+#include "model/rx_meta.h"
 
 
 namespace model {
@@ -71,6 +72,39 @@ command for creating various objects in platform\r\n\
       bool create_type (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
+
+};
+
+
+
+
+
+
+class dump_types_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(dump_types_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for dumping types data\r\n\
+\
+");
+
+  public:
+      dump_types_command();
+
+      virtual ~dump_types_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+	  template<typename T>
+	  bool dump_types_to_console(model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+	  
+	  template<typename T>
+	  bool dump_types_recursive(rx_node_id start, int indent, model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 };
 

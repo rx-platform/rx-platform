@@ -31,12 +31,12 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_classes.h"
@@ -201,6 +201,8 @@ class simple_platform_item : public rx_platform::ns::rx_platform_item
 
       size_t get_size () const;
 
+      rx_node_id get_node_id () const;
+
 
       rx_time get_created_time () const
       {
@@ -259,6 +261,8 @@ class runtime_simple_platform_item : public rx_platform::ns::rx_platform_item
 
       size_t get_size () const;
 
+      rx_node_id get_node_id () const;
+
 
   protected:
 
@@ -298,6 +302,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       string_type get_name () const;
 
       size_t get_size () const;
+
+      rx_node_id get_node_id () const;
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -374,6 +380,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       size_t get_size () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
+
+      rx_node_id get_node_id () const;
 
 
   protected:
@@ -477,6 +485,12 @@ size_t rx_item_implementation<TImpl>::get_size () const
 	return impl_->get_size();
 }
 
+template <class TImpl>
+rx_node_id rx_item_implementation<TImpl>::get_node_id () const
+{
+	return impl_->meta_data().get_id();
+}
+
 
 // Parameterized Class sys_internal::internal_ns::rx_meta_item_implementation 
 
@@ -570,6 +584,12 @@ template <class TImpl>
 void rx_meta_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
 {
 	impl_->fill_code_info(info, name);
+}
+
+template <class TImpl>
+rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
+{
+	return impl_->meta_data().get_id();
 }
 
 

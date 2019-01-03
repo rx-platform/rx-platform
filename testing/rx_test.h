@@ -31,14 +31,14 @@
 
 
 
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
 
 using namespace rx;
 
@@ -105,7 +105,7 @@ class test_program_context : public rx_platform::prog::console_program_context
 {
   public:
 	typedef test_program_context* smart_ptr;
-	
+
   public:
       test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
 

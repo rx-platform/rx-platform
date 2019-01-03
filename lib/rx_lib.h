@@ -244,6 +244,8 @@ public:
 
 	void to_string(string_type& val) const;
 
+	string_type to_string() const;
+
 	static rx_node_id from_string(const char* value);
 
 	static rx_node_id generate_new(uint16_t namesp);
@@ -279,6 +281,8 @@ private:
 	rx_node_id_union value_;
 
 };
+
+typedef std::vector<rx_node_id> rx_node_ids;
 ///////////////////////////////////////////////////////////////
 //
 

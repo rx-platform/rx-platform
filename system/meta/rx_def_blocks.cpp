@@ -34,7 +34,7 @@
 
 #include "system/meta/rx_obj_classes.h"
 #include "sys_internal/rx_internal_ns.h"
-#include "classes/rx_meta.h"
+#include "model/rx_meta.h"
 #include "system/constructors/rx_construct.h"
 #include "rx_objbase.h"
 using namespace rx;
@@ -234,7 +234,7 @@ void complex_data_type::construct (complex_runtime_ptr what)
 		// structures
 		case structs_mask:
 		{
-			struct_runtime_ptr temp= model::internal_classes_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_runtime("test_object", rx_node_id::null_id, structs_[one.second&index_mask]->get_target_id());
+			struct_runtime_ptr temp= model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_runtime("test_object", structs_[one.second&index_mask]->get_target_id());
 			
 			what->register_sub_item(structs_[one.second&index_mask]->get_name(), temp);
 		}
@@ -579,7 +579,7 @@ struct_attribute::~struct_attribute()
 struct_runtime_ptr struct_attribute::construct ()
 {
 	auto what = new objects::blocks::struct_runtime();
-	auto cls = model::internal_classes_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
+	auto cls = model::internal_types_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
 	if (cls)
 	{
 		cls->construct(what);
@@ -634,7 +634,7 @@ variable_attribute::~variable_attribute()
 variable_runtime_ptr variable_attribute::construct ()
 {
 	auto what = new objects::blocks::variable_runtime();
-	auto cls = model::internal_classes_manager::instance().get_type_cache<variable_class>().get_class_definition(get_target_id());
+	auto cls = model::internal_types_manager::instance().get_type_cache<variable_class>().get_class_definition(get_target_id());
 	if (cls)
 	{
 		cls->construct(what);

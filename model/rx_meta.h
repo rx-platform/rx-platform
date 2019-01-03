@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  classes\rx_meta.h
+*  model\rx_meta.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -76,6 +76,18 @@ typedef TYPELIST_10(object_class, port_class, variable_class, source_class, even
 typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
 
+struct query_result_detail
+{
+	rx_node_id id;
+	string_type name;
+};
+
+struct query_result
+{
+	uint32_t error_code;
+	std::vector<query_result_detail> details;
+};
+
 
 
 
@@ -88,6 +100,12 @@ class relations_hash_data
 	relations_hash_data(relations_hash_data&&) = delete;
 	void operator=(const relations_hash_data&) = delete;
 	void operator=(relations_hash_data&&) = delete;
+
+	struct relation_elements_data
+	{
+		std::set<rx_node_id> unordered;
+		std::vector<rx_node_id> ordered;
+	};
 
 	// these are mostly static data, so we keep it ordered to find quickly
 	typedef std::set<rx_node_id> relation_elements_type;
@@ -109,9 +127,13 @@ class relations_hash_data
 
       bool is_backward_from (const rx_node_id& id, const rx_node_id& parent);
 
-      void get_full_forward (const rx_node_id& id, std::vector< rx_node_id>& result);
+      void get_full_forward (const rx_node_id& id, std::vector< rx_node_id>& result) const;
 
-      void get_full_backward (const rx_node_id& id, std::vector< rx_node_id>& result);
+      void get_full_backward (const rx_node_id& id, std::vector< rx_node_id>& result) const;
+
+      void get_first_forward (const rx_node_id& id, std::vector< rx_node_id>& result) const;
+
+      void get_first_backward (const rx_node_id& id, std::vector< rx_node_id>& result) const;
 
 
   protected:
@@ -126,6 +148,97 @@ class relations_hash_data
       relation_map_type first_forward_hash_;
 
       relation_map_type first_backward_hash_;
+
+
+};
+
+
+
+
+
+
+class inheritance_hash 
+{
+	inheritance_hash(const inheritance_hash&) = delete;
+	inheritance_hash(inheritance_hash&&) = delete;
+	void operator=(const inheritance_hash&) = delete;
+	void operator=(inheritance_hash&&) = delete;
+
+	struct relation_elements_data
+	{
+		std::set<rx_node_id> unordered;
+		rx_node_ids ordered;
+	};
+
+	// these are mostly static data, so we keep it ordered to find quickly
+	typedef std::set<rx_node_id> hash_elements_type;
+	// this here is pointer type so we don't have copying of whole set just pointer
+	typedef std::map<rx_node_id, std::unique_ptr<relation_elements_data> > relation_map_type;
+
+	typedef std::map<rx_node_id, std::unique_ptr<hash_elements_type> > relation_hash_type;
+
+  public:
+      inheritance_hash();
+
+
+      bool add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
+
+      void get_base_types (const rx_node_id& id, rx_node_ids& result) const;
+
+      void get_derived_from (const rx_node_id& id, rx_node_ids& result) const;
+
+      void get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const;
+
+      bool remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
+
+
+  protected:
+
+  private:
+
+
+      relation_map_type hash_data_;
+
+      relation_hash_type derived_hash_;
+
+      relation_hash_type derived_first_hash_;
+
+
+};
+
+
+
+
+
+
+
+class instance_hash 
+{
+	instance_hash(const instance_hash&) = delete;
+	instance_hash(instance_hash&&) = delete;
+	void operator=(const instance_hash&) = delete;
+	void operator=(instance_hash&&) = delete;
+
+	typedef std::set<rx_node_id> hash_elements_type;
+	typedef std::map<rx_node_id, std::unique_ptr<hash_elements_type> > relation_hash_type;
+
+  public:
+      instance_hash();
+
+
+      bool add_to_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids);
+
+      bool remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids);
+
+
+  protected:
+
+  private:
+
+
+      relation_hash_type instance_hash_;
+
+      relation_hash_type instance_first_hash_;
 
 
 };
@@ -150,7 +263,7 @@ public:
 	typedef typename constructors::object_constructor_base<RType,RType> constructorType;
 
 	typedef typename std::map<rx_node_id, RType> registered_objects_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_classes_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > object_constructors_type;
 
 
@@ -166,9 +279,11 @@ public:
 
       bool register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, rx_node_id&& id, rx_node_id&& type_id, bool system = false);
+      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system = false);
+      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& type_id);
+
+      query_result get_derived_types (const rx_node_id& id) const;
 
 
   protected:
@@ -178,12 +293,14 @@ public:
 
       object_constructors_type object_constructors_;
 
-      relations_hash_data hash_;
+      inheritance_hash inheritance_hash_;
+
+      instance_hash instance_hash_;
 
 
       registered_objects_type registered_objects_;
 
-      registered_classes_type registered_classes_;
+      registered_types_type registered_types_;
 
 
 };
@@ -222,7 +339,7 @@ struct ids_hash_element
 
 
 
-class internal_classes_manager 
+class internal_types_manager 
 {
 	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
 	typedef std::map<string_type, names_hash_element> names_hash_type;
@@ -248,7 +365,7 @@ class internal_classes_manager
 	{
 	public:
 		template<class T>
-		type_hash<T>& get_internal(internal_classes_manager* manager, tl::type2type<T>)
+		type_hash<T>& get_internal(internal_types_manager* manager, tl::type2type<T>)
 		{
 			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
@@ -277,10 +394,10 @@ public:
 	}
 
   public:
-      virtual ~internal_classes_manager();
+      virtual ~internal_types_manager();
 
 
-      static internal_classes_manager& instance ();
+      static internal_types_manager& instance ();
 
       uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
 
@@ -307,7 +424,7 @@ public:
   protected:
 
   private:
-      internal_classes_manager();
+      internal_types_manager();
 
 
 
@@ -335,8 +452,8 @@ type_hash<typeT>::~type_hash()
 template <class typeT>
 typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx_node_id& id)
 {
-	auto it = registered_classes_.find(id);
-	if (it != registered_classes_.end())
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
 	{
 		return it->second;
 	}
@@ -349,10 +466,12 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx
 template <class typeT>
 bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
 {
-	auto it = registered_classes_.find(what->meta_data().get_id());
-	if (it == registered_classes_.end())
+	const auto& id = what->meta_data().get_id();
+	auto it = registered_types_.find(id);
+	if (it == registered_types_.end())
 	{
-		registered_classes_.emplace(what->meta_data().get_id(), what);
+		registered_types_.emplace(what->meta_data().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_data().get_parent());
 		return true;
 	}
 	else
@@ -369,44 +488,9 @@ bool type_hash<typeT>::register_constructor (const rx_node_id& id, std::function
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, rx_node_id&& id, rx_node_id&& type_id, bool system)
-{
-	rx_node_id to_create;
-	if (id.is_null())
-		to_create = rx_node_id::generate_new(RX_USER_NAMESPACE);
-	else
-		to_create = std::move(id);
-
-	auto ret = typeT::create_runtime_ptr();
-
-	std::vector<rx_node_id> base;
-	base.emplace_back(type_id);
-	hash_.get_full_backward(type_id,base);
-	for(const auto& one : base)
-	{
-
-		auto it = object_constructors_.find(one);
-		if (it != object_constructors_.end())
-		{
-			ret = (it->second)();
-			break;
-		}
-
-	}
-	auto my_class = rx_gate::instance().get_manager().get_class<typename RType::definition_t>(type_id);
-	if (my_class)
-	{
-		ret->meta_data().construct(name, to_create, std::move(type_id), system);
-		my_class->construct(ret);
-
-	}
-	return ret;
-}
-
-template <class typeT>
 typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
 {
-	rx_node_id to_create(rx_uuid::create_new().uuid());
+	rx_node_id to_create;
 	if (id.is_null())
 		to_create = rx_node_id::generate_new(RX_USER_NAMESPACE);
 	else
@@ -414,26 +498,51 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 
 	auto ret = typeT::create_runtime_ptr();
 
-	std::vector<rx_node_id> base;
+	rx_node_ids base;
+	inheritance_hash_.get_base_types(type_id,base);
 	base.emplace_back(type_id);
-	hash_.get_full_backward(type_id, base);
-	for (const auto& one : base)
+	for(const auto& one : base)
 	{
-
 		auto it = object_constructors_.find(one);
 		if (it != object_constructors_.end())
 		{
 			ret = (it->second)();
 			break;
 		}
-
 	}
-	auto my_class = rx_gate::instance().get_manager().get_class<typename RType::definition_t>(type_id);
-	if (my_class)
+	ret->meta_data().construct(name, to_create, std::move(type_id), system);
+	for (auto one_id : base)
 	{
-		ret->meta_data().construct(name, to_create, type_id, system);
-		my_class->construct(ret);
+		auto my_class = rx_gate::instance().get_manager().get_class<typename RType::definition_t>(one_id);
+		if (my_class)
+		{
+			my_class->construct(ret);
 
+		}
+	}
+	return ret;
+}
+
+template <class typeT>
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id)
+{
+	return create_runtime(name, rx_node_id::null_id, type_id, false);
+}
+
+template <class typeT>
+query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
+{
+	query_result ret;
+	std::vector<rx_node_id> temp;
+	inheritance_hash_.get_derived_from(id, temp);
+	for (auto one : temp)
+	{
+		auto type = registered_types_.find(one);
+
+		if (type!=registered_types_.end())
+		{
+			ret.details.emplace_back(query_result_detail { one, type->second->meta_data().get_name() });
+		}
 	}
 	return ret;
 }

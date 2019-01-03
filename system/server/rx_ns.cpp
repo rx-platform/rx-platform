@@ -140,13 +140,17 @@ string_type rx_platform_item::get_path () const
 {
 	string_type ret;
 	locks::auto_lock_t<rx_platform_item> dummy(const_cast<rx_platform_item*>(this));
+	if (parent_)
+	{
+		parent_->fill_path(ret);
+	}
 	if (runtime_parent_)
 	{
-		return runtime_parent_->get_path() + "."s + get_name();
+		return ret + runtime_parent_->get_path() + "."s + get_name();
 	}
 	else
 	{
-		return get_name();
+		return ret + get_name();
 	}
 }
 

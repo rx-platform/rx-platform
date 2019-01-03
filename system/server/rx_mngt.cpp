@@ -39,7 +39,7 @@
 #include "terminal/rx_telnet.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
-#include "classes/rx_meta.h"
+#include "model/rx_meta.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -122,7 +122,7 @@ void server_manager::get_directories (server_directories_type& dirs)
 
 meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
 {
-	auto& cache = model::internal_classes_manager::instance().get_type_cache<meta::object_defs::object_class>();
+	auto& cache = model::internal_types_manager::instance().get_type_cache<meta::object_defs::object_class>();
 	auto def = cache.get_class_definition(id);
 	//model::relations_hash_data data;
 	return def;
@@ -131,7 +131,7 @@ meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
 template<class clsT>
 typename clsT::smart_ptr server_manager::get_class(const rx_node_id& id)
 {
-	auto& cache = model::internal_classes_manager::instance().get_type_cache<clsT>();
+	auto& cache = model::internal_types_manager::instance().get_type_cache<clsT>();
 	auto def = cache.get_class_definition(id);
 	return def;
 }

@@ -362,6 +362,7 @@ const rx_node_id rx_node_id::null_id;
 
 rx_node_id::rx_node_id()
 {
+	namespace_ = 0;
 	value_.int_value = 0;
 	node_type_ = numeric_rx_node_id;
 }
@@ -611,6 +612,12 @@ void rx_node_id::to_string(string_type& val) const
 		val += value;
 	}
 }
+string_type rx_node_id::to_string() const
+{
+	string_type temp;
+	to_string(temp);
+	return temp;
+}
 rx_node_id rx_node_id::generate_new(uint16_t namesp)
 {
 	return rx_node_id(rx_uuid::create_new().uuid(), namesp);
@@ -632,7 +639,7 @@ rx_node_id rx_node_id::from_string(const char* value)
 		}
 		else
 		{
-			ret.namespace_ = 0;
+			ret.namespace_ = DEFAULT_NAMESPACE;
 			type = strid.substr(0, idx);
 			idx2 = idx;
 		}
