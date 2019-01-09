@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -36,7 +36,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "model/rx_meta.h"
 #include "system/constructors/rx_construct.h"
-#include "rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 using namespace rx;
 
 
@@ -45,42 +45,26 @@ namespace rx_platform {
 namespace meta {
 
 namespace def_blocks {
-
-// Class rx_platform::meta::def_blocks::complex_class_attribute 
-
-complex_class_attribute::complex_class_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+template<typename T>
+bool serialize_complex_attribute(const T& whose, base_meta_writer& stream)
 {
-}
-
-
-complex_class_attribute::~complex_class_attribute()
-{
-}
-
-
-
-bool complex_class_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.write_string("Name", name_.c_str()))
+	if (!stream.write_id("Id", whose.target_id_))
 		return false;
-	if (!stream.write_id("Id", target_id_))
+	if (!stream.write_string("Name", whose.name_.c_str()))
+		return false;
+	return true;
+}
+template<typename T>
+bool deserialize_complex_attribute(const T& whose, base_meta_reader& stream)
+{
+	if (!stream.read_id("Id", whose.target_id_))
+		return false;
+	if (!stream.read_string("Name", whose.name_.c_str()))
 		return false;
 	return true;
 }
 
-bool complex_class_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.read_string("Name", name_))
-		return false;
-	if (!stream.read_id("Id", target_id_))
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::meta::def_blocks::complex_data_type 
+// Class rx_platform::meta::def_blocks::complex_data_type
 
 complex_data_type::complex_data_type()
 {
@@ -161,7 +145,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 	}
 	if (!stream.end_array())
 		return false;
-	
+
 	return true;
 }
 
@@ -225,7 +209,7 @@ bool complex_data_type::check_name (const string_type& name, int rt_index)
 	}
 }
 
-void complex_data_type::construct (complex_runtime_ptr what)
+void complex_data_type::construct (runtime::blocks::complex_runtime_item& what, construct_context& ctx)
 {
 	for (const auto& one : names_cache_)
 	{
@@ -234,27 +218,30 @@ void complex_data_type::construct (complex_runtime_ptr what)
 		// structures
 		case structs_mask:
 		{
-			struct_runtime_ptr temp= model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_runtime("test_object", structs_[one.second&index_mask]->get_target_id());
-			
-			what->register_sub_item(structs_[one.second&index_mask]->get_name(), temp);
+			const auto& data = structs_[one.second&index_mask];
+			runtime::blocks::struct_runtime::smart_ptr temp= model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_simple_runtime(data->get_target_id());
+			what.register_sub_item(data->get_name(), std::move(temp));
 		}
 		break;
 		// variables
 		case variables_mask:
 		{
+			const auto& data = variables_[one.second&index_mask];
+			runtime::blocks::variable_runtime::smart_ptr temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::variable_class>().create_simple_runtime(data->get_target_id());
+			what.register_sub_item(data->get_name(), std::move(temp));
 		}
 		break;
 		// constant values
 		case const_values_mask:
 		{
-			what->register_const_value(
+			what.register_const_value(
 				const_values_[one.second&index_mask].get_name(),
 				const_values_[one.second&index_mask].get_value());
 		}
 		break;
 		case simple_values_mask:
 		{
-			what->register_value(
+			what.register_value(
 				simple_values_[one.second&index_mask].get_name(),
 				simple_values_[one.second&index_mask].get_value((rx_time::now())));
 		}
@@ -316,7 +303,7 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 }
 
 
-// Class rx_platform::meta::def_blocks::const_value_def 
+// Class rx_platform::meta::def_blocks::const_value_def
 
 string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
@@ -353,24 +340,15 @@ rx_simple_value const_value_def::get_value () const
 }
 
 
-// Class rx_platform::meta::def_blocks::event_attribute 
+// Class rx_platform::meta::def_blocks::event_attribute
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-event_attribute::~event_attribute()
-{
-}
-
-
-
-complex_runtime_ptr event_attribute::construct ()
-{
-	return nullptr;
-}
 
 bool event_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
@@ -383,24 +361,15 @@ bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t 
 }
 
 
-// Class rx_platform::meta::def_blocks::filter_attribute 
+// Class rx_platform::meta::def_blocks::filter_attribute
 
 filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-filter_attribute::~filter_attribute()
-{
-}
-
-
-
-complex_runtime_ptr filter_attribute::construct ()
-{
-	return nullptr;
-}
 
 bool filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
@@ -413,7 +382,7 @@ bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::mapped_data_type 
+// Class rx_platform::meta::def_blocks::mapped_data_type
 
 mapped_data_type::mapped_data_type()
 {
@@ -461,25 +430,43 @@ bool mapped_data_type::register_mapper (const mapper_attribute& item, complex_da
 	}
 }
 
+void mapped_data_type::construct (runtime::blocks::struct_runtime& what, const names_cahce_type& names, construct_context& ctx)
+{
+	construct_internal(what, names, ctx);
+}
 
-// Class rx_platform::meta::def_blocks::mapper_attribute 
+void mapped_data_type::construct (runtime::blocks::variable_runtime& what, const names_cahce_type& names, construct_context& ctx)
+{
+	construct_internal(what, names, ctx);
+}
+
+template<typename T>
+void mapped_data_type::construct_internal(T& what, const names_cahce_type& names, construct_context& ctx)
+{
+	for (const auto& one : names)
+	{
+		switch (one.second&complex_data_type::type_mask)
+		{
+			// mappers
+		case complex_data_type::mappings_mask:
+		{
+			const auto& data = mappers_[one.second&complex_data_type::index_mask];
+			auto temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::mapper_class>().create_simple_runtime(data.get_target_id());
+			what.register_sub_item(data.get_name(), std::move(temp));
+		}
+		break;
+		}
+	}
+}
+// Class rx_platform::meta::def_blocks::mapper_attribute
 
 mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-mapper_attribute::~mapper_attribute()
-{
-}
-
-
-
-complex_runtime_ptr mapper_attribute::construct ()
-{
-	return nullptr;
-}
 
 bool mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
@@ -492,7 +479,7 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::simple_value_def 
+// Class rx_platform::meta::def_blocks::simple_value_def
 
 string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
 
@@ -532,24 +519,15 @@ rx_timed_value simple_value_def::get_value (rx_time now) const
 }
 
 
-// Class rx_platform::meta::def_blocks::source_attribute 
+// Class rx_platform::meta::def_blocks::source_attribute
 
 source_attribute::source_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-source_attribute::~source_attribute()
-{
-}
-
-
-
-complex_runtime_ptr source_attribute::construct ()
-{
-	return nullptr;
-}
 
 bool source_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
@@ -562,39 +540,23 @@ bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::struct_attribute 
+// Class rx_platform::meta::def_blocks::struct_attribute
 
 struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-struct_attribute::~struct_attribute()
-{
-}
-
-
-
-struct_runtime_ptr struct_attribute::construct ()
-{
-	auto what = new objects::blocks::struct_runtime();
-	auto cls = model::internal_types_manager::instance().get_type_cache<struct_class>().get_class_definition(get_target_id());
-	if (cls)
-	{
-		cls->construct(what);
-	}
-	return what;
-}
 
 bool struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(objects::blocks::struct_runtime::type_name.c_str()))
+	if (!stream.start_object(runtime::blocks::struct_runtime::type_name.c_str()))
 		return false;
 
-	if (!complex_class_attribute::serialize_definition(stream, type))
+	if (!serialize_complex_attribute(*this, stream))
 		return false;
-
 
 	if (!stream.end_object())
 		return false;
@@ -604,7 +566,7 @@ bool struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t t
 
 bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	/*if (!stream.start_object(objects::struct_runtime::type_name.c_str()))
+	/*if (!stream.start_object(runtime::struct_runtime::type_name.c_str()))
 		return false;
 
 	if (!complex_class_attribute::deserialize_definition(stream, type))
@@ -617,39 +579,23 @@ bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::variable_attribute 
+// Class rx_platform::meta::def_blocks::variable_attribute
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id)
-	: complex_class_attribute(name, id)
+      : name_(name),
+        target_id_(id)
 {
 }
 
 
-variable_attribute::~variable_attribute()
-{
-}
-
-
-
-variable_runtime_ptr variable_attribute::construct ()
-{
-	auto what = new objects::blocks::variable_runtime();
-	auto cls = model::internal_types_manager::instance().get_type_cache<variable_class>().get_class_definition(get_target_id());
-	if (cls)
-	{
-		cls->construct(what);
-	}
-	return what;
-}
 
 bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(objects::blocks::variable_runtime::type_name.c_str()))
+	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
 		return false;
 
-	if (!complex_class_attribute::serialize_definition(stream, type))
+	if (!serialize_complex_attribute(*this, stream))
 		return false;
-
 
 	if (!stream.end_object())
 		return false;
@@ -663,7 +609,7 @@ bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8
 }
 
 
-// Class rx_platform::meta::def_blocks::variable_data_type 
+// Class rx_platform::meta::def_blocks::variable_data_type
 
 variable_data_type::variable_data_type()
 {
@@ -719,7 +665,7 @@ bool variable_data_type::register_event (const event_attribute& item, complex_da
 	}
 }
 
-void variable_data_type::construct (complex_runtime_ptr what)
+void variable_data_type::construct (runtime::blocks::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx)
 {
 }
 
@@ -771,6 +717,15 @@ bool variable_data_type::deserialize_variable_definition (base_meta_reader& stre
 {
 	return false;
 }
+
+
+// Class rx_platform::meta::def_blocks::construct_context
+
+construct_context::construct_context()
+      : now(rx_time::now())
+{
+}
+
 
 
 } // namespace def_blocks

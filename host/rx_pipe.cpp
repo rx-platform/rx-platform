@@ -79,7 +79,7 @@ bool rx_pipe_host::exit () const
 	return exit_;
 }
 
-void rx_pipe_host::get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items)
+void rx_pipe_host::get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items)
 {
 }
 

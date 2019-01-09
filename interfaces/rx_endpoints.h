@@ -32,13 +32,13 @@
 
 
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
 
 using namespace rx_platform;
-using namespace rx_platform::objects;
+using namespace rx_platform::runtime;
 
 
 namespace interfaces {
@@ -73,7 +73,7 @@ public:
 
 
 
-class physical_port : public rx_platform::objects::object_types::port_runtime  
+class physical_port : public rx_platform::runtime::object_types::port_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 physical port class. basic implementation of a port");
@@ -100,7 +100,7 @@ physical port class. basic implementation of a port");
 
 
 
-class rx_io_manager : public rx_platform::objects::object_types::server_object  
+class rx_io_manager : public rx_platform::runtime::object_types::server_object  
 {
 	typedef std::map<string_type, rx_io_endpoint::smart_ptr> endpoints_type;
 	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;

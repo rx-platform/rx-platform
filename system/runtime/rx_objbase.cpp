@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_objbase.cpp
+*  system\runtime\rx_objbase.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -30,7 +30,7 @@
 
 
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
@@ -41,18 +41,18 @@
 
 namespace rx_platform {
 
-namespace objects {
+namespace runtime {
 
-// Class rx_platform::objects::application_creation_data 
-
-
-// Class rx_platform::objects::domain_creation_data 
+// Class rx_platform::runtime::application_creation_data 
 
 
-// Class rx_platform::objects::port_creation_data 
+// Class rx_platform::runtime::domain_creation_data 
 
 
-// Class rx_platform::objects::object_creation_data 
+// Class rx_platform::runtime::port_creation_data 
+
+
+// Class rx_platform::runtime::object_creation_data 
 
 
 namespace object_types {
@@ -69,7 +69,7 @@ namespace_item_attributes create_attributes_from_creation_data(const object_crea
 	}
 }
 
-// Class rx_platform::objects::object_types::user_object 
+// Class rx_platform::runtime::object_types::user_object 
 
 user_object::user_object()
 {
@@ -88,7 +88,7 @@ user_object::~user_object()
 
 
 
-// Class rx_platform::objects::object_types::server_object 
+// Class rx_platform::runtime::object_types::server_object 
 
 server_object::server_object (object_creation_data&& data)
 	: object_runtime(std::move(data))
@@ -103,7 +103,7 @@ server_object::~server_object()
 
 
 
-// Class rx_platform::objects::object_types::object_runtime 
+// Class rx_platform::runtime::object_types::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
@@ -178,28 +178,6 @@ void object_runtime::get_class_info (string_type& class_name, string_type& conso
 {
 }
 
-bool object_runtime::generate_json (std::ostream& def, std::ostream& err) const
-{
-
-	rx_platform::serialization::json_writer writer;
-
-	writer.write_header(STREAMING_TYPE_OBJECT, 0);
-
-	serialize_definition(writer, STREAMING_TYPE_OBJECT);
-
-	writer.write_footer();
-
-	string_type result;
-	bool out = writer.get_string(result, true);
-
-	if (out)
-		def << result;
-	else
-		def << "Error in JSON deserialization.";
-
-	return out;
-}
-
 bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 {
 	my_domain_ = std::move(domain);
@@ -209,6 +187,9 @@ bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_data_.serialize_checkable_definition(stream, type))
+		return false;
+
+	if (!stream.start_object("Def"))
 		return false;
 
 	if (!runtime_item_.serialize_definition(stream, type,get_modified_time(),mode_))
@@ -224,6 +205,9 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 	}
 
 	if (!stream.end_array())
+		return false;
+
+	if (!stream.end_object())
 		return false;
 
 	return true;
@@ -291,9 +275,9 @@ size_t object_runtime::get_size () const
 	return sizeof(*this);
 }
 
-blocks::complex_runtime_item_ptr object_runtime::get_complex_item ()
+blocks::complex_runtime_item& object_runtime::get_complex_item ()
 {
-	return &runtime_item_;
+	return runtime_item_;
 }
 
 meta::checkable_data& object_runtime::meta_data ()
@@ -323,7 +307,7 @@ const meta::checkable_data& object_runtime::meta_data () const
 }
 
 
-// Class rx_platform::objects::object_types::application_runtime 
+// Class rx_platform::runtime::object_types::application_runtime 
 
 string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
 
@@ -368,7 +352,7 @@ platform_item_ptr application_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::objects::object_types::domain_runtime 
+// Class rx_platform::runtime::object_types::domain_runtime 
 
 string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
 
@@ -412,7 +396,7 @@ platform_item_ptr domain_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::objects::object_types::port_runtime 
+// Class rx_platform::runtime::object_types::port_runtime 
 
 string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
 
@@ -455,7 +439,6 @@ platform_item_ptr port_runtime::get_item_ptr ()
 
 
 } // namespace object_types
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
-
 

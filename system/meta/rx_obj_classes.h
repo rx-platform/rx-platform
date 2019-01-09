@@ -31,17 +31,18 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_objbase
-#include "system/meta/rx_objbase.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+using rx_platform::meta::def_blocks::construct_context;
 
 
 namespace rx_platform {
@@ -94,7 +95,7 @@ class object_data_type
 
       bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
-      void construct (objects::object_runtime_ptr what);
+      void construct (runtime::object_runtime_ptr what, construct_context& ctx);
 
 
       const bool is_creatable () const
@@ -155,9 +156,9 @@ class application_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of application type");
 public:
-	typedef objects::object_types::application_runtime RType;
-	typedef objects::application_runtime_ptr RTypePtr;
-	typedef objects::blocks::complex_runtime_item CType;
+	typedef runtime::object_types::application_runtime RType;
+	typedef runtime::rx_application_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
 
@@ -167,9 +168,7 @@ public:
       virtual ~application_class();
 
 
-      void construct (objects::object_runtime_ptr what);
-
-      void construct (complex_runtime_ptr what);
+      void construct (runtime::rx_application_ptr& what, construct_context& ctx);
 
       platform_item_ptr get_item_ptr ();
 
@@ -181,7 +180,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static objects::application_runtime_ptr create_runtime_ptr ();
+      static runtime::rx_application_ptr create_runtime_ptr ();
 
 
       const object_data_type& object_data () const;
@@ -233,9 +232,9 @@ class domain_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of domain type");
 public:
-	typedef objects::object_types::domain_runtime RType;
-	typedef objects::domain_runtime_ptr RTypePtr;
-	typedef objects::blocks::complex_runtime_item CType;
+	typedef runtime::object_types::domain_runtime RType;
+	typedef typename runtime::object_types::domain_runtime::smart_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
 
@@ -245,9 +244,7 @@ public:
       virtual ~domain_class();
 
 
-      void construct (objects::object_runtime_ptr what);
-
-      void construct (complex_runtime_ptr what);
+      void construct (runtime::rx_domain_ptr what, construct_context& ctx);
 
       platform_item_ptr get_item_ptr ();
 
@@ -309,9 +306,9 @@ class object_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of object type");
 public:
-	typedef objects::object_types::object_runtime RType;
-	typedef objects::object_runtime_ptr RTypePtr;
-	typedef objects::blocks::complex_runtime_item CType;
+	typedef runtime::object_types::object_runtime RType;
+	typedef runtime::object_runtime_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
 
@@ -323,7 +320,7 @@ public:
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      void construct (objects::object_runtime_ptr what);
+      void construct (runtime::object_runtime_ptr what, construct_context& ctx);
 
       platform_item_ptr get_item_ptr ();
 
@@ -331,7 +328,7 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      static objects::object_runtime_ptr create_runtime_ptr ();
+      static runtime::object_runtime_ptr create_runtime_ptr ();
 
       checkable_data& meta_data ();
 
@@ -385,9 +382,9 @@ class port_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of port type");
 public:
-	typedef objects::object_types::port_runtime RType;
-	typedef objects::port_runtime_ptr RTypePtr;
-	typedef objects::blocks::complex_runtime_item CType;
+	typedef runtime::object_types::port_runtime RType;
+	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
 
@@ -397,9 +394,7 @@ public:
       virtual ~port_class();
 
 
-      void construct (objects::object_runtime_ptr what);
-
-      void construct (complex_runtime_ptr what);
+      void construct (runtime::rx_port_ptr what, construct_context& ctx);
 
       platform_item_ptr get_item_ptr ();
 

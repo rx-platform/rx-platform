@@ -35,11 +35,11 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_objbase
-#include "system/meta/rx_objbase.h"
-// sl_script
-#include "soft_logic/sl_script.h"
+#include "system/runtime/rx_objbase.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// sl_script
+#include "soft_logic/sl_script.h"
 
 namespace rx_platform {
 namespace prog {
@@ -295,12 +295,12 @@ class server_command_base : public logic::program_runtime
 
 
 
-class console_client : public objects::object_types::port_runtime  
+class console_client : public runtime::object_types::port_runtime  
 {
 	DECLARE_REFERENCE_PTR(console_client);
 
   public:
-      console_client (objects::port_creation_data&& data);
+      console_client (runtime::port_creation_data&& data);
 
       virtual ~console_client();
 

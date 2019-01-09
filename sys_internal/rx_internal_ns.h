@@ -433,20 +433,11 @@ bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostre
 {
 	rx_platform::serialization::json_writer writer;
 
-	writer.write_header(STREAMING_TYPE_CLASS, 0);
+	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
-	writer.start_object(RX_SER_ITEM_HEADER_NAME);
-	{
-		writer.write_string(RX_SER_ITEM_TYPE_NAME, impl_->get_type_name().c_str());
-		writer.write_id(RX_SER_ITEM_ID_NAME, impl_->meta_data().get_id());
-		writer.write_id(RX_SER_ITEM_ORIGIN_NAME, impl_->meta_data().get_parent());
-		writer.write_string(RX_SER_ITEM_NAME_NAME, impl_->get_name().c_str());
-		writer.start_object(impl_->get_type_name().c_str());
-		{
-			impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
-		}
-	}
-	writer.end_object();
+
+	writer.write_string("Type", impl_->get_type_name().c_str());
+	impl_->serialize_definition(writer, STREAMING_TYPE_OBJECT);
 
 	writer.write_footer();
 
@@ -534,11 +525,8 @@ bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 
 	bool out = false;
 
-	writer.start_object(impl_->get_type_name().c_str());
-	{
-		out = impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
-	}
-	writer.end_object();
+	writer.write_string("Type", impl_->get_type_name().c_str());
+	out = impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
 
 	writer.write_footer();
 

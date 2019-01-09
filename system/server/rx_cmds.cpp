@@ -317,9 +317,9 @@ void server_console_program::cancel_execution ()
 
 // Class rx_platform::prog::console_client 
 
-console_client::console_client (objects::port_creation_data&& data)
+console_client::console_client (runtime::port_creation_data&& data)
       : current_context_(nullptr)
-	, objects::object_types::port_runtime(std::move(data))
+	, runtime::object_types::port_runtime(std::move(data))
 {
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys");

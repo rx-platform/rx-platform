@@ -472,9 +472,9 @@ namespace meta_test {
 				 {
 					 out << "Creating test_object\r\n";
 
-					 std::map<rx_node_id, std::function<rx_platform::objects::object_runtime_ptr()> > map;
+					 std::map<rx_node_id, std::function<rx_platform::runtime::object_runtime_ptr()> > map;
 					 map.emplace(55, [] {
-						 return rx_create_reference<objects::object_types::user_object>();
+						 return rx_create_reference<runtime::object_types::user_object>();
 					 });
 
 					 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 55);
@@ -483,7 +483,7 @@ namespace meta_test {
 						 out << "test_class test_object\r\n";
 
 						 dir->add_item(test_object->get_item_ptr());
-						 if (test_object->generate_json(out, err))
+						 if (test_object->get_item_ptr()->generate_json(out, err))
 							 ctx->set_passed();
 						 return true;
 					 }

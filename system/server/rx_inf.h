@@ -32,7 +32,7 @@
 
 
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
@@ -49,13 +49,13 @@ using rx_platform::ns::namespace_item_attributes;
 
 namespace rx_platform {
 
-namespace runtime {
+namespace infrastructure {
 
 
 
 
 
-class server_dispatcher_object : public objects::object_types::server_object  
+class server_dispatcher_object : public runtime::object_types::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
@@ -124,7 +124,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 class domains_pool : public rx::threads::job_thread, 
-                     	public objects::object_types::server_object  
+                     	public runtime::object_types::server_object  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
@@ -195,7 +195,7 @@ struct runtime_data_t
 
 
 
-class server_rt : public objects::object_types::server_object  
+class server_rt : public runtime::object_types::server_object  
 {
 	DECLARE_CODE_INFO("rx",1,0,0, "\
 class managing runtime resources:\r\n\
@@ -296,7 +296,7 @@ callculation ( normal priority)");
 };
 
 
-} // namespace runtime
+} // namespace infrastructure
 } // namespace rx_platform
 
 

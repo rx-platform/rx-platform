@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -110,7 +110,7 @@ rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>)
 	return RX_TIME_TYPE;
 }
 
-// Class rx::values::rx_value
+// Class rx::values::rx_value 
 
 bool rx_value::operator==(const rx_value &right) const
 {
@@ -277,7 +277,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value
+// Class rx::values::rx_simple_value 
 
 bool rx_simple_value::operator==(const rx_simple_value &right) const
 {
@@ -382,7 +382,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage
+// Class rx::values::rx_value_storage 
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -1022,6 +1022,7 @@ rx_value_storage::rx_value_storage(rx_value_storage&& right) noexcept
 	: value_type_(right.value_type_)
 {
 	assign_value(value_, std::move(right.value_), value_type_);
+	right.value_type_ = RX_NULL_TYPE;
 }
 rx_value_storage& rx_value_storage::operator=(const rx_value_storage& right)
 {
@@ -1030,14 +1031,15 @@ rx_value_storage& rx_value_storage::operator=(const rx_value_storage& right)
 	assign_value(value_, right.value_, value_type_);
 	return *this;
 }
-rx_value_storage& rx_value_storage::operator==(rx_value_storage&& right) noexcept
+rx_value_storage& rx_value_storage::operator=(rx_value_storage&& right) noexcept
 {
 	destory_value(value_, value_type_);
 	value_type_ = right.value_type_;
 	assign_value(value_, std::move(right.value_), value_type_);
+	right.value_type_ = RX_NULL_TYPE;
 	return *this;
 }
-// Class rx::values::rx_timed_value
+// Class rx::values::rx_timed_value 
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {

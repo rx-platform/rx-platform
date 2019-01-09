@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_blocks.cpp
+*  system\runtime\rx_blocks.cpp
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -30,9 +30,9 @@
 
 
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 // rx_blocks
-#include "system/meta/rx_blocks.h"
+#include "system/runtime/rx_blocks.h"
 
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
@@ -43,11 +43,11 @@
 
 namespace rx_platform {
 
-namespace objects {
+namespace runtime {
 
 namespace blocks {
 
-// Class rx_platform::objects::blocks::complex_runtime_item 
+// Class rx_platform::runtime::blocks::complex_runtime_item 
 
 complex_runtime_item::complex_runtime_item()
 {
@@ -182,7 +182,6 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 			{// this here should never happend
 				RX_ASSERT(false);
 			}
-
 		}
 	}
 	else// its' ours
@@ -205,7 +204,6 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 						const_values_callbacks_.resize(idx + 1);
 					const_values_callbacks_[idx] = ret;
 					return ret;
-
 				}
 			}
 
@@ -214,16 +212,16 @@ value_callback_t* complex_runtime_item::get_callback (const string_type& path, r
 	return nullptr;
 }
 
-uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item* val)
+uint32_t complex_runtime_item::register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val)
 {
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
 	{
 		uint32_t idx = (uint32_t)(sub_items_.size());
 		idx |= RT_COMPLEX_IDX_MASK;
-		sub_items_.emplace_back(val);
-		names_cache_.emplace(name, idx);
 		val->set_hosting_object(my_object_);
+		sub_items_.emplace_back(std::move(val));
+		names_cache_.emplace(name, idx);
 		names_cache_.emplace(name, idx);
 		return RX_OK;
 	}
@@ -390,7 +388,7 @@ string_type complex_runtime_item::get_type_name () const
 }
 
 
-// Class rx_platform::objects::blocks::const_value_item 
+// Class rx_platform::runtime::blocks::const_value_item 
 
 const uint32_t const_value_item::type_id_ = RT_TYPE_ID_CONST_VALUE;
 
@@ -456,12 +454,11 @@ uint32_t const_value_item::register_value (const string_type& name, const rx_val
 }
 
 
-// Class rx_platform::objects::blocks::filter_runtime 
+// Class rx_platform::runtime::blocks::filter_runtime 
 
 string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
 
 filter_runtime::filter_runtime()
-	: my_item_(std::make_unique<complex_runtime_item>("_unnamed", rx_node_id::null_id, false))
 {
 }
 
@@ -474,7 +471,9 @@ string_type filter_runtime::get_type_name () const
 }
 
 
-// Class rx_platform::objects::blocks::mapper_runtime 
+// Class rx_platform::runtime::blocks::mapper_runtime 
+
+string_type mapper_runtime::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
 mapper_runtime::mapper_runtime()
 {
@@ -487,7 +486,14 @@ mapper_runtime::~mapper_runtime()
 
 
 
-// Class rx_platform::objects::blocks::source_runtime 
+string_type mapper_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+
+// Class rx_platform::runtime::blocks::source_runtime 
 
 string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
@@ -502,7 +508,14 @@ source_runtime::~source_runtime()
 
 
 
-// Class rx_platform::objects::blocks::struct_runtime 
+string_type source_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+
+// Class rx_platform::runtime::blocks::struct_runtime 
 
 string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -511,7 +524,6 @@ struct_runtime::struct_runtime()
 }
 
 struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: complex_runtime_item(name, id, system)
 {
 }
 
@@ -520,8 +532,6 @@ struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, b
 bool struct_runtime::serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
 {
 	if (!stream.start_object(struct_runtime::type_name.c_str()))
-		return false;
-	if (!meta_data_.serialize_checkable_definition(stream, type))
 		return false;
 	if (!complex_runtime_item::serialize_definition(stream, type, ts, mode))
 		return false;
@@ -536,12 +546,6 @@ bool struct_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 	return true;
 }
 
-meta::checkable_data& struct_runtime::meta_data ()
-{
-  return meta_data_;
-
-}
-
 string_type struct_runtime::get_type_name () const
 {
   return type_name;
@@ -549,13 +553,7 @@ string_type struct_runtime::get_type_name () const
 }
 
 
-const meta::checkable_data& struct_runtime::meta_data () const
-{
-  return meta_data_;
-}
-
-
-// Class rx_platform::objects::blocks::value_item 
+// Class rx_platform::runtime::blocks::value_item 
 
 const uint32_t value_item::type_id_ = RT_TYPE_ID_VALUE;
 
@@ -585,7 +583,7 @@ string_type value_item::get_type_name ()
 }
 
 
-// Class rx_platform::objects::blocks::variable_runtime 
+// Class rx_platform::runtime::blocks::variable_runtime 
 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -594,7 +592,6 @@ variable_runtime::variable_runtime()
 }
 
 variable_runtime::variable_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: my_item_(std::make_unique<complex_runtime_item>(name, id, system))
 {
 }
 
@@ -605,7 +602,14 @@ variable_runtime::~variable_runtime()
 
 
 
-// Class rx_platform::objects::blocks::event_runtime 
+string_type variable_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+
+// Class rx_platform::runtime::blocks::event_runtime 
 
 string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
 
@@ -623,6 +627,6 @@ string_type event_runtime::get_type_name () const
 
 
 } // namespace blocks
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 

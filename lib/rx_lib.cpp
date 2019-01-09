@@ -486,8 +486,8 @@ rx_node_id & rx_node_id::operator=(rx_node_id &&right) noexcept
 			break;
 		default:;
 		}
+		right.node_type_ = numeric_rx_node_id;
 	}
-	right.node_type_ = numeric_rx_node_id;
 	return *this;
 }
 

@@ -184,7 +184,7 @@ rx_node_id simple_platform_item::get_node_id () const
 	return rx_node_id::null_id;
 }
 
-//template simple_platform_item< rx_platform::objects::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
+//template simple_platform_item< rx_platform::runtime::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
 // Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
 
 template <class T, int class_name_idx>
@@ -282,9 +282,9 @@ void storage_directory::get_content (server_directories_type& sub_directories, s
 } // namespace internal_ns
 } // namespace sys_internal
 
-template class sys_internal::internal_ns::rx_item_implementation<objects::domain_runtime_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<objects::application_runtime_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<objects::object_runtime_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<runtime::rx_domain_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<runtime::rx_application_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<runtime::object_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<testing::test_case::smart_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;

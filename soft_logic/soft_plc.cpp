@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -42,7 +42,7 @@ namespace sl_runtime {
 #define CHANELS_NUMBER		32
 #define SPACE_PER_MODULE	(CHANELS_NUMBER*SPACE_PER_CHANEL)
 
-// Class sl_runtime::sl_program
+// Class sl_runtime::sl_program 
 
 sl_program::sl_program()
 {
@@ -86,7 +86,7 @@ void sl_program::load (FILE* file, dword version)
 }
 
 
-// Class sl_runtime::sl_module_base
+// Class sl_runtime::sl_module_base 
 
 sl_module_base::sl_module_base(const sl_module_base &right)
       : order_(0)
@@ -135,7 +135,7 @@ void sl_module_base::process_outputs (program_context* context, const rx_time& n
 }
 
 
-// Class sl_runtime::sl_scheme
+// Class sl_runtime::sl_scheme 
 
 sl_scheme::sl_scheme(const sl_scheme &right)
 {
@@ -355,7 +355,7 @@ void sl_scheme::set_instruction (int x, int y, sl_instruction_base* inst)
 }
 
 
-// Class sl_runtime::sl_ladder_program
+// Class sl_runtime::sl_ladder_program 
 
 sl_ladder_program::sl_ladder_program()
 {
@@ -430,7 +430,7 @@ void sl_ladder_program::add_schema (sl_scheme* sch)
 }
 
 
-// Class sl_runtime::program_context
+// Class sl_runtime::program_context 
 
 program_context::program_context(const program_context &right)
       : watch_base_(NULL),
@@ -633,7 +633,7 @@ bool program_context::get_out_register_written (dword reg)
 }
 
 
-// Class sl_runtime::ladder_program_context
+// Class sl_runtime::ladder_program_context 
 
 ladder_program_context::ladder_program_context (program_context* parent, sl_program_holder* holder)
   : program_context(parent,holder)
@@ -657,7 +657,7 @@ void ladder_program_context::deinitialize (deinitialize_context* ctx)
 }
 
 
-// Class sl_runtime::sl_programs_collection
+// Class sl_runtime::sl_programs_collection 
 
 sl_programs_collection::sl_programs_collection()
 {
@@ -719,7 +719,7 @@ program_executer* sl_programs_collection::get_executer (sl_program_holder* holde
 }
 
 
-// Class sl_runtime::sl_di_module
+// Class sl_runtime::sl_di_module 
 
 sl_di_module::sl_di_module (int order)
   : sl_module_base(order)
@@ -743,7 +743,7 @@ void sl_di_module::create_chanels (module_chanels_factory* builder)
 }
 
 
-// Class sl_runtime::sl_chanel_base
+// Class sl_runtime::sl_chanel_base 
 
 sl_chanel_base::sl_chanel_base(const sl_chanel_base &right)
       : order_(0)
@@ -834,7 +834,7 @@ bool sl_chanel_base::get_out_register_written (int num, int module, program_cont
 }
 
 
-// Class sl_runtime::sl_di_chanel
+// Class sl_runtime::sl_di_chanel 
 
 sl_di_chanel::sl_di_chanel (int order)
   : sl_chanel_base(order)
@@ -859,7 +859,7 @@ void sl_di_chanel::set_input_status (bool status, int module, program_context* c
 }
 
 
-// Class sl_runtime::program_executer
+// Class sl_runtime::program_executer 
 
 program_executer::program_executer (sl_program_holder* program)
       : program_(program)
@@ -879,7 +879,7 @@ void program_executer::program_scan ()
 }
 
 
-// Class sl_runtime::address_space
+// Class sl_runtime::address_space 
 
 address_space::address_space()
 {
@@ -1068,7 +1068,7 @@ void address_space::init_changes (adr_type type)
 }
 
 
-// Class sl_runtime::sl_instruction_base
+// Class sl_runtime::sl_instruction_base 
 
 sl_instruction_base::sl_instruction_base()
 {
@@ -1102,7 +1102,7 @@ void sl_instruction_base::deinitialize (sl_program_holder* holder, deinitialize_
 }
 
 
-// Class sl_runtime::sl_do_module
+// Class sl_runtime::sl_do_module 
 
 sl_do_module::sl_do_module (int order)
   : sl_module_base(order)
@@ -1126,7 +1126,7 @@ void sl_do_module::create_chanels (module_chanels_factory* builder)
 }
 
 
-// Class sl_runtime::sl_do_chanel
+// Class sl_runtime::sl_do_chanel 
 
 sl_do_chanel::sl_do_chanel (int order)
   : sl_chanel_base(order)
@@ -1161,7 +1161,7 @@ bool sl_do_chanel::get_out_bit_written (int module, program_context* context)
 }
 
 
-// Class sl_runtime::sl_program_holder
+// Class sl_runtime::sl_program_holder 
 
 sl_program_holder::sl_program_holder()
       : executer_(NULL),
@@ -1414,7 +1414,7 @@ void sl_program_holder::deinitialize_sub (sl_instruction_base* inst, deinitializ
 }
 
 
-// Class sl_runtime::argument_value
+// Class sl_runtime::argument_value 
 
 argument_value::argument_value()
 {
@@ -1488,7 +1488,7 @@ double argument_value::get_double (program_context* context)
 }
 
 
-// Class sl_runtime::register_value
+// Class sl_runtime::register_value 
 
 register_value::register_value()
 {
@@ -1565,7 +1565,7 @@ void register_value::set_double (program_context* context, double val)
 }
 
 
-// Class sl_runtime::bit_value
+// Class sl_runtime::bit_value 
 
 bit_value::bit_value()
       : addr_(0),
@@ -1643,7 +1643,7 @@ bool bit_value::get_negative_transact (program_context* context) const
 }
 
 
-// Class sl_runtime::sl_ai_module
+// Class sl_runtime::sl_ai_module 
 
 sl_ai_module::sl_ai_module (int order)
   : sl_module_base(order)
@@ -1667,7 +1667,7 @@ void sl_ai_module::create_chanels (module_chanels_factory* builder)
 }
 
 
-// Class sl_runtime::sl_ao_module
+// Class sl_runtime::sl_ao_module 
 
 sl_ao_module::sl_ao_module (int order)
   : sl_module_base(order)
@@ -1691,7 +1691,7 @@ void sl_ao_module::create_chanels (module_chanels_factory* builder)
 }
 
 
-// Class sl_runtime::sl_ai_chanel
+// Class sl_runtime::sl_ai_chanel 
 
 sl_ai_chanel::sl_ai_chanel (int order)
   : sl_chanel_base(order)
@@ -1721,7 +1721,7 @@ void sl_ai_chanel::set_input_float (float value, int module, program_context* co
 }
 
 
-// Class sl_runtime::sl_ao_chanel
+// Class sl_runtime::sl_ao_chanel 
 
 sl_ao_chanel::sl_ao_chanel (int order)
   : sl_chanel_base(order)
@@ -1761,7 +1761,7 @@ void sl_ao_chanel::set_error_status (bool status, int module, program_context* c
 }
 
 
-// Class sl_runtime::watch_base
+// Class sl_runtime::watch_base 
 
 watch_base::watch_base(const watch_base &right)
 {
@@ -1793,7 +1793,7 @@ program_context* watch_base::get_context ()
 }
 
 
-// Class sl_runtime::debug_segment_base
+// Class sl_runtime::debug_segment_base 
 
 debug_segment_base::debug_segment_base (program_context* context)
       : context_(context)
@@ -1813,7 +1813,7 @@ program_context* debug_segment_base::get_context ()
 }
 
 
-// Class sl_runtime::initialize_context
+// Class sl_runtime::initialize_context 
 
 initialize_context::initialize_context()
 {
@@ -1838,7 +1838,7 @@ initialize_context & initialize_context::operator=(const initialize_context &rig
 
 
 
-// Class sl_runtime::custom_program_step
+// Class sl_runtime::custom_program_step 
 
 custom_program_step::custom_program_step()
 {
@@ -1880,7 +1880,7 @@ void custom_program_step::deinitialize ()
 }
 
 
-// Class sl_runtime::deinitialize_context
+// Class sl_runtime::deinitialize_context 
 
 deinitialize_context::deinitialize_context()
 {
@@ -1893,7 +1893,7 @@ deinitialize_context::~deinitialize_context()
 
 
 
-// Class sl_runtime::io_program_data
+// Class sl_runtime::io_program_data 
 
 io_program_data::io_program_data()
 {
@@ -1906,7 +1906,7 @@ io_program_data::~io_program_data()
 
 
 
-// Class sl_runtime::laddder_io_program_data
+// Class sl_runtime::laddder_io_program_data 
 
 laddder_io_program_data::laddder_io_program_data (schema_type& schema, int& row, int& col, int inputs, int outputs)
       : schema_(schema),
@@ -1948,7 +1948,7 @@ void laddder_io_program_data::set_instruction_active (bool val)
 
 namespace builders {
 
-// Class sl_runtime::builders::program_holder_bulder
+// Class sl_runtime::builders::program_holder_bulder 
 
 program_holder_bulder::program_holder_bulder(const program_holder_bulder &right)
 {
@@ -2002,7 +2002,7 @@ sl_program_holder* program_holder_bulder::build_program_holder ()
 }
 
 
-// Class sl_runtime::builders::module_chanels_factory
+// Class sl_runtime::builders::module_chanels_factory 
 
 module_chanels_factory::module_chanels_factory()
 {
@@ -2027,7 +2027,7 @@ module_chanels_factory & module_chanels_factory::operator=(const module_chanels_
 
 
 
-// Class sl_runtime::builders::program_builder
+// Class sl_runtime::builders::program_builder 
 
 program_builder::program_builder()
 {
@@ -2052,7 +2052,7 @@ program_builder & program_builder::operator=(const program_builder &right)
 
 
 
-// Class sl_runtime::builders::ladder_program_builder
+// Class sl_runtime::builders::ladder_program_builder 
 
 ladder_program_builder::ladder_program_builder()
 {

@@ -55,6 +55,7 @@ class json_reader : public rx::base_meta_reader
 	public:
 		json_read_stack_data(Json::Value& vval)
 			: value(vval)
+			, index(0)
 		{
 		}
 		Json::Value& value;

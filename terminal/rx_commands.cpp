@@ -87,7 +87,7 @@ bool server_command::is_browsable () const
 // Class terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
-	: objects::object_types::server_object(objects::object_creation_data{ NS_RX_COMMANDS_MANAGER_NAME, RX_COMMANDS_MANAGER_ID, RX_COMMANDS_MANAGER_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	: runtime::object_types::server_object(runtime::object_creation_data{ NS_RX_COMMANDS_MANAGER_NAME, RX_COMMANDS_MANAGER_ID, RX_COMMANDS_MANAGER_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_application_ptr::null_ptr })
 {
 }
 

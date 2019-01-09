@@ -42,7 +42,7 @@ namespace win32 {
 
 
 
-	
+
 
 
 class win32_console_host : public host::interactive::interactive_console_host  

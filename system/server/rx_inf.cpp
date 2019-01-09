@@ -38,12 +38,12 @@
 
 namespace rx_platform {
 
-namespace runtime {
+namespace infrastructure {
 
-// Class rx_platform::runtime::server_rt 
+// Class rx_platform::infrastructure::server_rt 
 
 server_rt::server_rt()
-	: server_object(objects::object_creation_data{ RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID, RX_NS_SERVER_RT_TYPE_ID, true, objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	: server_object(runtime::object_creation_data{ RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID, RX_NS_SERVER_RT_TYPE_ID, true, runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
 {
 }
 
@@ -251,11 +251,11 @@ rx_time server_rt::get_created_time (values::rx_value& val) const
 }
 
 
-// Class rx_platform::runtime::server_dispatcher_object 
+// Class rx_platform::infrastructure::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
       : threads_count_(count)
-	, pool_(count, name, rx_thread_id), server_object(objects::object_creation_data{ name,id, RX_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	, pool_(count, name, rx_thread_id), server_object(runtime::object_creation_data{ name,id, RX_POOL_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
 {
 	//register_const_value("count", count);
 }
@@ -273,7 +273,7 @@ void server_dispatcher_object::get_items (server_items_type& sub_items, const st
 }
 
 
-// Class rx_platform::runtime::dispatcher_subscribers_job 
+// Class rx_platform::infrastructure::dispatcher_subscribers_job 
 
 dispatcher_subscribers_job::dispatcher_subscribers_job()
 {
@@ -292,11 +292,11 @@ void dispatcher_subscribers_job::process ()
 }
 
 
-// Class rx_platform::runtime::domains_pool 
+// Class rx_platform::infrastructure::domains_pool 
 
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
-	, server_object(objects::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, RX_POOL_TYPE_ID, true,  objects::application_runtime_ptr::null_ptr, objects::domain_runtime_ptr::null_ptr })
+	, server_object(runtime::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, RX_POOL_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
 {
 	//register_const_value("count", (uint32_t)pool_size);
 }
@@ -360,6 +360,6 @@ rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 }
 
 
-} // namespace runtime
+} // namespace infrastructure
 } // namespace rx_platform
 

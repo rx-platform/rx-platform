@@ -47,6 +47,7 @@ class mapper_attribute;
 #include "system/server/rx_ns.h"
 #include "system/serialization/rx_ser.h"
 #include "system/callbacks/rx_callback.h"
+#include "system/runtime/rx_blocks.h"
 
 using namespace rx;
 using namespace rx::values;
@@ -56,7 +57,6 @@ using namespace rx_platform::ns;
 #define RT_TYPE_ID_VALUE 2
 #define RT_TYPE_ID_FULL_VALUE 4
 
-#define RX_INITIAL_ITEM_VERSION 0x10000
 
 #define RX_TYPE_UNKNOWN		0x0
 #define RX_TYPE_OBJ			0x01
@@ -98,23 +98,17 @@ namespace basic_defs
 
 }
 
-namespace objects
+namespace runtime
 {
-
-namespace object_types
-{
-class object_runtime;
-class domain_runtime;
-class port_runtime;
-class application_runtime;
-
-
-}
 
 namespace blocks
 {
 class struct_runtime;
 class variable_runtime;
+class event_runtime;
+class filter_runtime;
+class mapper_runtime;
+class source_runtime;
 
 class const_value_item;
 class value_item;
@@ -122,11 +116,6 @@ class complex_runtime_item;
 }
 
 }
-
-typedef objects::blocks::complex_runtime_item* complex_runtime_ptr;
-typedef objects::blocks::struct_runtime* struct_runtime_ptr;
-typedef objects::blocks::variable_runtime* variable_runtime_ptr;
-typedef rx_reference<pointers::reference_object> runtime_ptr_t;
 
 }//namespace server
 
@@ -139,50 +128,6 @@ namespace rx_platform {
 namespace meta {
 
 namespace def_blocks {
-
-
-
-
-
-class complex_class_attribute 
-{
-
-  public:
-      complex_class_attribute (const string_type& name, const rx_node_id& id);
-
-      virtual ~complex_class_attribute();
-
-
-      virtual bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      virtual bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_node_id target_id_;
-
-
-};
-
 
 
 
@@ -242,25 +187,39 @@ public:
 
 
 
-class event_attribute : public complex_class_attribute  
+class event_attribute 
 {
 
   public:
       event_attribute (const string_type& name, const rx_node_id& id);
 
-      virtual ~event_attribute();
-
-
-      complex_runtime_ptr construct ();
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
   protected:
 
   private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
 
 
 };
@@ -270,25 +229,39 @@ class event_attribute : public complex_class_attribute
 
 
 
-class filter_attribute : public complex_class_attribute  
+class filter_attribute 
 {
 
   public:
       filter_attribute (const string_type& name, const rx_node_id& id);
 
-      virtual ~filter_attribute();
-
-
-      complex_runtime_ptr construct ();
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
   protected:
 
   private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
 
 
 };
@@ -298,25 +271,39 @@ class filter_attribute : public complex_class_attribute
 
 
 
-class mapper_attribute : public complex_class_attribute  
+class mapper_attribute 
 {
 
   public:
       mapper_attribute (const string_type& name, const rx_node_id& id);
 
-      virtual ~mapper_attribute();
-
-
-      complex_runtime_ptr construct ();
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
 
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
   protected:
 
   private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
 
 
 };
@@ -384,7 +371,166 @@ public:
 };
 
 
+
+
+
+
+class source_attribute 
+{
+
+  public:
+      source_attribute (const string_type& name, const rx_node_id& id);
+
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
+
+
+};
+
+
+
+
+
+
+class struct_attribute 
+{
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
+
+  public:
+      struct_attribute (const string_type& name, const rx_node_id& id);
+
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
+
+
+};
+
+
+
+
+
+
+class variable_attribute 
+{
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
+
+  public:
+      variable_attribute (const string_type& name, const rx_node_id& id);
+
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_node_id get_target_id () const
+      {
+        return target_id_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_node_id target_id_;
+
+
+};
+
+
+
+
+
+
+class construct_context 
+{
+
+  public:
+      construct_context();
+
+
+      rx_time now;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 class struct_attribute;
+
+typedef std::map<string_type, int> names_cahce_type;
+
 
 
 
@@ -397,8 +543,6 @@ class complex_data_type
 	typedef std::vector<std::unique_ptr<struct_attribute> > structs_type;
 	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
 
-
-	typedef std::map<string_type, int> names_cahce_type;
 
   public:
       complex_data_type();
@@ -416,7 +560,7 @@ class complex_data_type
 
       bool check_name (const string_type& name, int rt_index);
 
-      void construct (complex_runtime_ptr what);
+      void construct (runtime::blocks::complex_runtime_item& what, construct_context& ctx);
 
       bool register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
 
@@ -437,6 +581,12 @@ class complex_data_type
       const bool is_sealed () const
       {
         return sealed_;
+      }
+
+
+      const names_cahce_type& get_names_cache () const
+      {
+        return names_cache_;
       }
 
 
@@ -509,97 +659,18 @@ class mapped_data_type
 
       bool register_mapper (const mapper_attribute& item, complex_data_type& complex_data);
 
+      void construct (runtime::blocks::struct_runtime& what, const names_cahce_type& names, construct_context& ctx);
+
+      void construct (runtime::blocks::variable_runtime& what, const names_cahce_type& names, construct_context& ctx);
+
 
   protected:
 
   private:
-
+	  template<typename T>
+	  void construct_internal(T& what, const names_cahce_type& names, construct_context& ctx);
 
       mappers_type mappers_;
-
-
-};
-
-
-
-
-
-
-class source_attribute : public complex_class_attribute  
-{
-
-  public:
-      source_attribute (const string_type& name, const rx_node_id& id);
-
-      virtual ~source_attribute();
-
-
-      complex_runtime_ptr construct ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class struct_attribute : public complex_class_attribute  
-{
-
-  public:
-      struct_attribute (const string_type& name, const rx_node_id& id);
-
-      virtual ~struct_attribute();
-
-
-      struct_runtime_ptr construct ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class variable_attribute : public complex_class_attribute  
-{
-
-  public:
-      variable_attribute (const string_type& name, const rx_node_id& id);
-
-      virtual ~variable_attribute();
-
-
-      variable_runtime_ptr construct ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-
-  protected:
-
-  private:
 
 
 };
@@ -630,7 +701,7 @@ class variable_data_type
 
       bool register_event (const event_attribute& item, complex_data_type& complex_data);
 
-      void construct (complex_runtime_ptr what);
+      void construct (runtime::blocks::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx);
 
       bool serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 

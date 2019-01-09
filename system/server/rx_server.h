@@ -83,7 +83,7 @@ struct io_manager_data_t
 
 struct configuration_data_t
 {
-	runtime::runtime_data_t runtime_data;
+	infrastructure::runtime_data_t runtime_data;
 	mngt::managment_data_t managment_data;
 	ns::namespace_data_t namespace_data;
 	meta::meta_data_t meta_data;
@@ -120,7 +120,7 @@ class rx_gate
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
-      runtime::server_rt& get_runtime ()
+      infrastructure::server_rt& get_runtime ()
       {
         return runtime_;
       }
@@ -208,7 +208,7 @@ class rx_gate
 
 
 
-      runtime::server_rt runtime_;
+      infrastructure::server_rt runtime_;
 
       rx_reference<ns::rx_server_directory> root_;
 
@@ -257,11 +257,11 @@ void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, ar
 	rx_gate::instance().get_runtime().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
 
-objects::domain_runtime_ptr rx_system_domain();
-objects::application_runtime_ptr rx_system_application();
+runtime::rx_domain_ptr rx_system_domain();
+runtime::rx_application_ptr rx_system_application();
 
-objects::domain_runtime_ptr rx_unassigned_domain();
-objects::application_runtime_ptr rx_unassigned_application();
+runtime::rx_domain_ptr rx_unassigned_domain();
+runtime::rx_application_ptr rx_unassigned_application();
 
 } // namespace rx_platform
 

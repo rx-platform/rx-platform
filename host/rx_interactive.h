@@ -158,7 +158,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       bool exit () const;
 
-      void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items);
+      void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items);
 
       void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items);
 

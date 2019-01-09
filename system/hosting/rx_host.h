@@ -30,7 +30,7 @@
 #define rx_host_h 1
 
 
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_classes.h"
 /////////////////////////////////////////////////////////////
 // logging macros for host library
@@ -40,12 +40,12 @@
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
 
 
 
@@ -204,7 +204,7 @@ class rx_platform_host
 
       virtual bool shutdown (const string_type& msg) = 0;
 
-      virtual void get_host_objects (std::vector<rx_platform::objects::object_runtime_ptr>& items) = 0;
+      virtual void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items) = 0;
 
       virtual void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items) = 0;
 

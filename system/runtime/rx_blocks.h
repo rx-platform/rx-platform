@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_blocks.h
+*  system\runtime\rx_blocks.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -31,45 +31,52 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// rx_classes
-#include "system/meta/rx_classes.h"
 
 namespace rx_platform {
-namespace objects {
+namespace runtime {
 namespace object_types {
 class object_runtime;
+
 } // namespace object_types
-
-namespace blocks {
-class complex_runtime_item;
-
-} // namespace blocks
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
-#include "system/meta/rx_def_blocks.h"
 using namespace rx_platform::ns;
 using namespace rx::values;
 
 
 namespace rx_platform {
+namespace meta
+{
+namespace def_blocks
+{
+	class complex_data_type;
+}
+namespace basic_defs
+{
+	class struct_class;
+}
+}
 
-namespace objects {
+namespace runtime {
 struct object_state_data
 {
 	rx_time ts;
 	rx_mode_type mode;
 };
-typedef rx::pointers::reference<object_types::object_runtime> object_runtime_ptr;
-typedef rx::pointers::reference<object_types::application_runtime> application_runtime_ptr;
-typedef rx::pointers::reference<object_types::domain_runtime> domain_runtime_ptr;
-typedef rx::pointers::reference<object_types::port_runtime> port_runtime_ptr;
 typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
+namespace object_types
+{
+	class object_runtime;
+}
+typedef rx_reference<object_types::object_runtime> object_runtime_ptr;
 
 namespace blocks {
 
@@ -77,10 +84,13 @@ extern const char* g_const_simple_class_name;
 typedef uint32_t runtime_item_id_t;
 class variable_runtime;
 class struct_runtime;
+class mapper_runtime;
 class complex_runtime_item;
 
-typedef complex_runtime_item* complex_runtime_item_ptr;
-typedef struct_runtime* struct_runtime_ptr;
+typedef rx::pointers::reference<complex_runtime_item> complex_runtime_item_ptr;
+typedef rx::pointers::reference<struct_runtime> struct_runtime_ptr;
+typedef rx::pointers::reference<variable_runtime> variable_runtime_ptr;
+typedef rx::pointers::reference<mapper_runtime> mapper_runtime_ptr;
 
 
 
@@ -138,109 +148,6 @@ public:
 
 
       static const uint32_t type_id_;
-
-
-};
-
-
-
-
-
-
-class filter_runtime 
-{
-	typedef rx_platform::meta::basic_defs::struct_class definition_t;
-	typedef objects::blocks::struct_runtime RType;
-	typedef objects::blocks::struct_runtime* RTypePtr;
-public:
-	typedef std::unique_ptr<filter_runtime> smart_ptr;
-
-  public:
-      filter_runtime();
-
-
-      string_type get_type_name () const;
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-      static string_type type_name;
-
-
-};
-
-
-
-
-
-
-class mapper_runtime 
-{
-	friend class meta::def_blocks::complex_data_type;
-public:
-	typedef rx_platform::meta::basic_defs::mapper_class definition_t;
-	typedef objects::blocks::mapper_runtime RType;
-	typedef objects::blocks::mapper_runtime* RTypePtr;
-	typedef std::unique_ptr<mapper_runtime> smart_ptr;
-
-  public:
-      mapper_runtime();
-
-      virtual ~mapper_runtime();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-};
-
-
-
-
-
-
-class source_runtime 
-{
-	friend class meta::def_blocks::complex_data_type;
-public:
-	typedef rx_platform::meta::basic_defs::source_class definition_t;
-	typedef objects::blocks::source_runtime RType;
-	typedef objects::blocks::source_runtime* RTypePtr;
-	typedef std::unique_ptr<source_runtime> smart_ptr;
-
-  public:
-      source_runtime();
-
-      virtual ~source_runtime();
-
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
-      static string_type type_name;
 
 
 };
@@ -319,10 +226,11 @@ public:
 
 
 
-class complex_runtime_item 
+class complex_runtime_item : public rx::pointers::reference_object  
 {
+	DECLARE_REFERENCE_PTR(complex_runtime_item);
+
 public:
-	typedef std::unique_ptr<complex_runtime_item > smart_ptr;
 
 	typedef std::vector<smart_ptr> sub_items_type;
 	typedef std::vector<value_item> values_type;
@@ -348,7 +256,7 @@ public:
 
       virtual void object_state_changed (const rx_time& now);
 
-      uint32_t register_sub_item (const string_type& name, complex_runtime_item* val);
+      uint32_t register_sub_item (const string_type& name, complex_runtime_item::smart_ptr val);
 
       virtual rx_value get_value ();
 
@@ -450,15 +358,112 @@ public:
 
 
 
-class struct_runtime : public complex_runtime_item  
+class filter_runtime : public complex_runtime_item  
 {
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+filter runtime. basic implementation of an filter runtime");
+
+	DECLARE_REFERENCE_PTR(filter_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
 
-public:
-	typedef rx_platform::meta::basic_defs::struct_class definition_t;
-	typedef objects::blocks::struct_runtime RType;
-	typedef objects::blocks::struct_runtime* RTypePtr;
+  public:
+      filter_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class mapper_runtime : public complex_runtime_item  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+mapper runtime. basic implementation of an mapper runtime");
+
+	DECLARE_REFERENCE_PTR(mapper_runtime);
+	friend class meta::def_blocks::complex_data_type;
+
+  public:
+      mapper_runtime();
+
+      virtual ~mapper_runtime();
+
+
+      string_type get_type_name () const;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class source_runtime : public complex_runtime_item  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+source runtime. basic implementation of an source runtime");
+
+	DECLARE_REFERENCE_PTR(source_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+
+  public:
+      source_runtime();
+
+      virtual ~source_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class struct_runtime : public complex_runtime_item  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+struct runtime. basic implementation of an struct runtime");
+
+	DECLARE_REFERENCE_PTR(struct_runtime);
+
+	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
+	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::struct_class;
 
   public:
       struct_runtime();
@@ -470,12 +475,7 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      meta::checkable_data& meta_data ();
-
       string_type get_type_name () const;
-
-
-      const meta::checkable_data& meta_data () const;
 
 
       static string_type type_name;
@@ -486,7 +486,7 @@ public:
   private:
 
 
-      meta::checkable_data meta_data_;
+      mappers_type mappers_;
 
 
 };
@@ -496,14 +496,14 @@ public:
 
 
 
-class event_runtime 
+class event_runtime : public complex_runtime_item  
 {
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+event runtime. basic implementation of an event runtime");
+
+	DECLARE_REFERENCE_PTR(event_runtime);
+
 	friend class meta::def_blocks::complex_data_type;
-public:
-	typedef rx_platform::meta::basic_defs::event_class definition_t;
-	typedef objects::blocks::event_runtime RType;
-	typedef objects::blocks::event_runtime* RTypePtr;
-	typedef std::unique_ptr<event_runtime> smart_ptr;
 
   public:
       event_runtime();
@@ -517,9 +517,6 @@ public:
   private:
 
 
-      std::unique_ptr<complex_runtime_item> my_item_;
-
-
       static string_type type_name;
 
 
@@ -530,19 +527,18 @@ public:
 
 
 
-
-class variable_runtime 
+class variable_runtime : public complex_runtime_item  
 {
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+variable runtime. basic implementation of an variable runtime");
+
+	DECLARE_REFERENCE_PTR(variable_runtime);
+
 	typedef std::vector<filter_runtime::smart_ptr> filters_type;
 	typedef std::vector<source_runtime::smart_ptr> sources_type;
 	typedef std::vector<event_runtime::smart_ptr> events_type;
-
-
+	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
 	friend class meta::def_blocks::complex_data_type;
-
-public:
-	typedef rx_platform::meta::basic_defs::variable_class definition_t;
-	typedef objects::blocks::variable_runtime RType;
 
   public:
       variable_runtime();
@@ -550,6 +546,9 @@ public:
       variable_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
       virtual ~variable_runtime();
+
+
+      string_type get_type_name () const;
 
 
       static string_type type_name;
@@ -566,16 +565,16 @@ public:
 
       sources_type output_sources_;
 
-      std::unique_ptr<complex_runtime_item> my_item_;
-
       events_type events_;
+
+      mappers_type mappers_;
 
 
 };
 
 
 } // namespace blocks
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 
 

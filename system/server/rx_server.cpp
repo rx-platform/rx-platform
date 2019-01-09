@@ -41,20 +41,20 @@
 
 namespace rx_platform {
 
-objects::domain_runtime_ptr rx_system_domain()
+runtime::rx_domain_ptr rx_system_domain()
 {
 	return rx_gate::instance().get_manager().get_system_domain();
 }
-objects::application_runtime_ptr rx_system_application()
+runtime::rx_application_ptr rx_system_application()
 {
 	return rx_gate::instance().get_manager().get_system_app();
 }
 
-objects::domain_runtime_ptr rx_unassigned_domain()
+runtime::rx_domain_ptr rx_unassigned_domain()
 {
 	return rx_gate::instance().get_manager().get_unassigned_domain();
 }
-objects::application_runtime_ptr rx_unassigned_application()
+runtime::rx_application_ptr rx_unassigned_application()
 {
 	return rx_gate::instance().get_manager().get_unassigned_app();
 }

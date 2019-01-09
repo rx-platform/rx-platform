@@ -33,7 +33,7 @@
 #include "system/meta/rx_obj_classes.h"
 
 #include "rx_configuration.h"
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 #include "sys_internal/rx_internal_ns.h"
 
 
@@ -63,11 +63,15 @@ public:
 	{
 		if (!whose.meta_data_.serialize_checkable_definition(stream, type))
 			return false;
+		if (!stream.start_object("Def"))
+			return false;
 		if (!whose.object_data_.serialize_object_definition(stream, type))
 			return false;
 		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
 		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
@@ -108,12 +112,10 @@ application_class::~application_class()
 
 
 
-void application_class::construct (objects::object_runtime_ptr what)
+void application_class::construct (runtime::rx_application_ptr& what, construct_context& ctx)
 {
-}
-
-void application_class::construct (complex_runtime_ptr what)
-{
+	complex_data_.construct(what->get_complex_item(), ctx);
+	object_data_.construct(what, ctx);
 }
 
 platform_item_ptr application_class::get_item_ptr ()
@@ -148,9 +150,9 @@ def_blocks::complex_data_type& application_class::complex_data ()
 
 }
 
-objects::application_runtime_ptr application_class::create_runtime_ptr ()
+runtime::rx_application_ptr application_class::create_runtime_ptr ()
 {
-	return rx_create_reference<objects::object_types::application_runtime>();
+	return rx_create_reference<runtime::object_types::application_runtime>();
 }
 
 
@@ -195,12 +197,10 @@ domain_class::~domain_class()
 
 
 
-void domain_class::construct (objects::object_runtime_ptr what)
+void domain_class::construct (runtime::rx_domain_ptr what, construct_context& ctx)
 {
-}
-
-void domain_class::construct (complex_runtime_ptr what)
-{
+	complex_data_.construct(what->get_complex_item(), ctx);
+	object_data_.construct(what, ctx);
 }
 
 platform_item_ptr domain_class::get_item_ptr ()
@@ -281,10 +281,10 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 {
 }
 
-void object_class::construct (objects::object_runtime_ptr what)
+void object_class::construct (runtime::object_runtime_ptr what, construct_context& ctx)
 {
-	complex_data_.construct(what->get_complex_item());
-	object_data_.construct(what);
+	complex_data_.construct(what->get_complex_item(), ctx);
+	object_data_.construct(what, ctx);
 }
 
 platform_item_ptr object_class::get_item_ptr ()
@@ -307,9 +307,9 @@ bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 	return true;
 }
 
-objects::object_runtime_ptr object_class::create_runtime_ptr ()
+runtime::object_runtime_ptr object_class::create_runtime_ptr ()
 {
-	return rx_create_reference<objects::object_types::object_runtime>();
+	return rx_create_reference<runtime::object_types::object_runtime>();
 }
 
 checkable_data& object_class::meta_data ()
@@ -367,7 +367,7 @@ bool object_data_type::deserialize_object_definition (base_meta_reader& stream, 
 	return true;
 }
 
-void object_data_type::construct (objects::object_runtime_ptr what)
+void object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx)
 {
 }
 
@@ -392,12 +392,10 @@ port_class::~port_class()
 
 
 
-void port_class::construct (objects::object_runtime_ptr what)
+void port_class::construct (runtime::rx_port_ptr what, construct_context& ctx)
 {
-}
-
-void port_class::construct (complex_runtime_ptr what)
-{
+	complex_data_.construct(what->get_complex_item(), ctx);
+	object_data_.construct(what, ctx);
 }
 
 platform_item_ptr port_class::get_item_ptr ()

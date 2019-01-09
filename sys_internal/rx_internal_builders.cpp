@@ -197,7 +197,7 @@ server_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_plat
 	items.clear();
 
 	std::vector<meta::object_class_ptr> host_classes;
-	std::vector<objects::object_runtime_ptr> host_objects;
+	std::vector<runtime::object_runtime_ptr> host_objects;
 
 	host->get_host_classes(host_classes);
 	for (auto one : host_classes)

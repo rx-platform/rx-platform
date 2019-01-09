@@ -31,8 +31,6 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_cmds
@@ -43,6 +41,8 @@
 #include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 
 

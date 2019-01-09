@@ -30,13 +30,17 @@
 #define rx_checkable_h 1
 
 
+
+// initial version of an item
+#define RX_INITIAL_ITEM_VERSION 0x10000
+
 #include "system/server/rx_ns.h"
 
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 
 namespace rx_platform {
-namespace objects {
+namespace runtime {
 namespace object_types {
 class object_runtime;
 } // namespace object_types
@@ -45,7 +49,7 @@ namespace blocks {
 class complex_runtime_item;
 
 } // namespace blocks
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 
 

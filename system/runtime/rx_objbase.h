@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_objbase.h
+*  system\runtime\rx_objbase.h
 *
 *  Copyright (c) 2018 Dusan Ciric
 *
@@ -31,29 +31,28 @@
 
 
 
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
-// rx_blocks
-#include "system/meta/rx_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
 namespace rx_platform {
-namespace objects {
+namespace runtime {
 namespace object_types {
 class domain_runtime;
 class application_runtime;
 
 } // namespace object_types
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 
 
-#include "system/meta/rx_obj_classes.h"
 #include "system/callbacks/rx_callback.h"
 using namespace rx;
 using namespace rx_platform::ns;
@@ -66,9 +65,11 @@ namespace rx_platform {
 typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 
-namespace objects {
+namespace runtime {
 typedef rx_reference<object_types::domain_runtime> rx_domain_ptr;
-typedef rx_reference<object_types::domain_runtime> rx_application_ptr;
+typedef rx_reference<object_types::domain_runtime> rx_port_ptr;
+typedef rx_reference<object_types::domain_runtime> rx_object_ptr;
+typedef rx_reference<object_types::application_runtime> rx_application_ptr;
 
 
 
@@ -201,10 +202,6 @@ object class. basic implementation of an object");
 
 	friend class meta::checkable_data;
 
-public:
-	typedef rx_platform::meta::object_defs::object_class definition_t;
-	typedef objects::object_types::object_runtime RType;
-
   public:
       object_runtime (object_creation_data&& data);
 
@@ -224,8 +221,6 @@ public:
       values::rx_value get_value () const;
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
 
       virtual bool connect_domain (rx_domain_ptr&& domain);
 
@@ -247,7 +242,7 @@ public:
 
       size_t get_size () const;
 
-      blocks::complex_runtime_item_ptr get_complex_item ();
+      blocks::complex_runtime_item& get_complex_item ();
 
       meta::checkable_data& meta_data ();
 
@@ -382,10 +377,7 @@ system domain class. basic implementation of a domain");
 	DECLARE_REFERENCE_PTR(domain_runtime);
 	typedef std::vector<object_runtime::smart_ptr> objects_type;
 
-
 public:
-	typedef rx_platform::meta::object_defs::domain_class definition_t;
-	typedef objects::object_types::domain_runtime RType;
 
   public:
       domain_runtime (domain_creation_data&& data);
@@ -435,10 +427,6 @@ system port class. basic implementation of a port");
 
 	friend class meta::checkable_data;
 
-public:
-	typedef rx_platform::meta::object_defs::port_class definition_t;
-	typedef objects::object_types::port_runtime RType;
-
   public:
       port_runtime (port_creation_data&& data);
 
@@ -484,10 +472,6 @@ system application class. contains system default application");
 
 	friend class meta::checkable_data;
 
-public:
-	typedef rx_platform::meta::object_defs::application_class definition_t;
-	typedef objects::object_types::application_runtime RType;
-
   public:
       application_runtime (application_creation_data&& data);
 
@@ -522,20 +506,9 @@ public:
 
 
 } // namespace object_types
-} // namespace objects
+} // namespace runtime
 } // namespace rx_platform
 
-
-namespace rx_platform 
-{
-namespace objects 
-{
-//typedef reference<object_types::object_runtime> object_runtime_ptr;
-//typedef reference<object_types::port_runtime> port_runtime_ptr;
-//typedef reference<object_types::domain_runtime> domain_runtime_ptr;
-//typedef reference<object_types::application_runtime> application_runtime_ptr;
-}
-}
 
 
 #endif

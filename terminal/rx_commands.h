@@ -32,7 +32,7 @@
 
 
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 
@@ -89,7 +89,7 @@ class server_command : public rx_platform::prog::server_command_base
 
 
 
-class server_command_manager : public rx_platform::objects::object_types::server_object  
+class server_command_manager : public rx_platform::runtime::object_types::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\

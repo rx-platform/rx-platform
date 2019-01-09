@@ -57,42 +57,62 @@ class meta_helpers
 {
 public:
 	template<class complexT>
-	static bool serialize_complex_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+	static bool serialize_simple_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
 	{
 		if (!whose.meta_data().serialize_checkable_definition(stream, type))
 			return false;
+		if (!stream.start_object("Def"))
+			return false;
 		if (!whose.complex_data().serialize_complex_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
 
 	template<class complexT>
-	static bool deserialize_complex_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_simple_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
 		if (!whose.meta_data().deserialize_checkable_definition(stream, type))
 			return false;
+		if (!stream.start_object("Def"))
+			return false;
 		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
 
 
 	template<class complexT>
-	static bool serialize_mapped_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
+	static bool serialize_struct_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
 	{
-		if (!serialize_complex_class(whose, stream, type))
+		if (!whose.meta_data().serialize_checkable_definition(stream, type))
+			return false;
+		if (!stream.start_object("Def"))
+			return false;
+		if (!whose.complex_data().serialize_complex_definition(stream, type))
 			return false;
 		if (!whose.mapping_data().serialize_mapped_definition(stream, type))
 			return false;
+		if (!stream.end_object())
+			return false;
 		return true;
 	}
 
 	template<class complexT>
-	static bool deserialize_mapped_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_struct_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
-		if (!deserialize_complex_class(whose, stream, type))
+		if (!whose.meta_data().deserialize_checkable_definition(stream, type))
+			return false;
+		if (!stream.start_object("Def"))
+			return false;
+		if (!whose.complex_data().deserialize_complex_definition(stream, type))
 			return false;
 		if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
@@ -100,9 +120,17 @@ public:
 	template<class complexT>
 	static bool serialize_variable_class(const complexT& whose, base_meta_writer& stream, uint8_t type)
 	{
-		if (!serialize_mapped_class(whose, stream, type))
+		if (!whose.meta_data().serialize_checkable_definition(stream, type))
+			return false;
+		if (!stream.start_object("Def"))
+			return false;
+		if (!whose.complex_data().serialize_complex_definition(stream, type))
+			return false;
+		if (!whose.mapping_data().serialize_mapped_definition(stream, type))
 			return false;
 		if (!whose.variable_data().serialize_variable_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
@@ -110,9 +138,17 @@ public:
 	template<class complexT>
 	static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
-		if (!deserialize_mapped_class(whose, stream, type))
+		if (!whose.meta_data().deserialize_checkable_definition(stream, type))
+			return false;
+		if (!stream.start_object("Def"))
+			return false;
+		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+			return false;
+		if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
 			return false;
 		if (!whose.variable_data().deserialize_variable_definition(stream, type))
+			return false;
+		if (!stream.end_object())
 			return false;
 		return true;
 	}
@@ -141,14 +177,14 @@ platform_item_ptr event_class::get_item_ptr ()
 
 bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+	if (!meta_helpers::serialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
 bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
@@ -163,6 +199,16 @@ def_blocks::complex_data_type& event_class::complex_data ()
 {
   return complex_data_;
 
+}
+
+event_class::RTypePtr event_class::create_runtime_ptr ()
+{
+	return std::make_unique<RType>();
+}
+
+void event_class::construct (RType& what, construct_context& ctx)
+{
+	complex_data_.construct(what, ctx);
 }
 
 
@@ -200,14 +246,14 @@ platform_item_ptr filter_class::get_item_ptr ()
 
 bool filter_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+	if (!meta_helpers::serialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
 bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
@@ -222,6 +268,16 @@ def_blocks::complex_data_type& filter_class::complex_data ()
 {
   return complex_data_;
 
+}
+
+filter_class::RTypePtr filter_class::create_runtime_ptr ()
+{
+	return rx_create_reference<runtime::blocks::filter_runtime>();
+}
+
+void filter_class::construct (RType& what, construct_context& ctx)
+{
+	complex_data_.construct(what, ctx);
 }
 
 
@@ -259,14 +315,14 @@ platform_item_ptr mapper_class::get_item_ptr ()
 
 bool mapper_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+	if (!meta_helpers::serialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
 bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_complex_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
@@ -281,6 +337,15 @@ def_blocks::complex_data_type& mapper_class::complex_data ()
 {
   return complex_data_;
 
+}
+
+mapper_class::RTypePtr mapper_class::create_runtime_ptr ()
+{
+	return rx_create_reference<runtime::blocks::mapper_runtime>();
+}
+
+void mapper_class::construct (RType& what, construct_context& ctx)
+{
 }
 
 
@@ -318,14 +383,16 @@ platform_item_ptr source_class::get_item_ptr ()
 
 bool source_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_complex_class(*this, stream, type))
+	if (!meta_helpers::serialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
 bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return meta_helpers::deserialize_complex_class<source_class>(*this, stream, type);
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+		return false;
+	return true;
 }
 
 checkable_data& source_class::meta_data ()
@@ -338,6 +405,15 @@ def_blocks::complex_data_type& source_class::complex_data ()
 {
   return complex_data_;
 
+}
+
+source_class::RTypePtr source_class::create_runtime_ptr ()
+{
+	return rx_create_reference<runtime::blocks::source_runtime>();
+}
+
+void source_class::construct (RType& what, construct_context& ctx)
+{
 }
 
 
@@ -367,18 +443,10 @@ struct_class::struct_class (const type_creation_data& data)
 
 
 
-void struct_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+void struct_class::construct (RType& what, construct_context& ctx)
 {
-}
-
-namespace_item_attributes struct_class::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_attributes::namespace_item_read_access | (meta_data_.get_system() ? namespace_item_attributes::namespace_item_system : namespace_item_attributes::namespace_item_null));
-}
-
-void struct_class::construct (struct_runtime_ptr what)
-{
-	complex_data_.construct(what);
+	complex_data_.construct(what, ctx);
+	mapping_data_.construct(what, complex_data_.get_names_cache(), ctx);
 }
 
 platform_item_ptr struct_class::get_item_ptr ()
@@ -389,21 +457,21 @@ platform_item_ptr struct_class::get_item_ptr ()
 
 bool struct_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_mapped_class<struct_class>(*this, stream, type))
+	if (!meta_helpers::serialize_struct_class(*this, stream, type))
 		return false;
 	return true;
 }
 
 bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_mapped_class(*this, stream, type))
+	if (!meta_helpers::deserialize_struct_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-struct_runtime_ptr struct_class::create_runtime_ptr ()
+struct_class::RTypePtr struct_class::create_runtime_ptr ()
 {
-	return new objects::blocks::struct_runtime;
+	return rx_create_reference<runtime::blocks::struct_runtime>();
 }
 
 checkable_data& struct_class::meta_data ()
@@ -456,7 +524,7 @@ variable_class::variable_class (const string_type& name, const rx_node_id& id, c
 
 
 
-void variable_class::construct (variable_runtime_ptr what)
+void variable_class::construct (RType& what, construct_context& ctx)
 {
 }
 
@@ -511,6 +579,11 @@ def_blocks::variable_data_type& variable_class::variable_data ()
 
 }
 
+variable_class::RTypePtr variable_class::create_runtime_ptr ()
+{
+	return rx_create_reference<runtime::blocks::variable_runtime>();
+}
+
 
 const checkable_data& variable_class::meta_data () const
 {
@@ -556,6 +629,6 @@ const def_blocks::complex_data_type& variable_class::complex_data () const
 //#define RX_TEMPLATE_INST_SIMPLE(typeArg, brwArg) \
 //template class rx_platform::meta::checkable_type<typeArg, brwArg>;\
 //
-//RX_TEMPLATE_INST_SIMPLE(rx_platform::objects::object_runtime, true);
+//RX_TEMPLATE_INST_SIMPLE(rx_platform::runtime::object_runtime, true);
 //RX_TEMPLATE_INST_SIMPLE(rx_platform::logic::program_runtime, false);
 

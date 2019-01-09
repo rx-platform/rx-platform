@@ -30,9 +30,9 @@
 
 
 // rx_blocks
-#include "system/meta/rx_blocks.h"
+#include "system/runtime/rx_blocks.h"
 // rx_objbase
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 
@@ -107,6 +107,8 @@ bool checkable_data::check_out (base_meta_writer& stream) const
 
 bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const
 {
+	if (!stream.start_object("Meta"))
+		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
 	if (!stream.write_byte("Attrs", (uint8_t)attributes_))
@@ -116,6 +118,8 @@ bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, u
 	if (!stream.write_id("SuperId", parent_))
 		return false;
 	if (!stream.write_version("Ver", version_))
+		return false;
+	if (!stream.end_object())
 		return false;
 	return true;
 }

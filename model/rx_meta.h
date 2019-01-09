@@ -38,7 +38,7 @@
 
 #include "system/meta/rx_classes.h"
 #include "system/meta/rx_obj_classes.h"
-#include "system/meta/rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 using namespace rx_platform::meta;
 using namespace rx_platform::meta::basic_defs;
 using namespace rx_platform::meta::object_defs;
@@ -285,6 +285,8 @@ public:
 
       query_result get_derived_types (const rx_node_id& id) const;
 
+      typename type_hash<typeT>::RTypePtr create_simple_runtime (const rx_node_id& type_id);
+
 
   protected:
 
@@ -510,13 +512,14 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 			break;
 		}
 	}
+	construct_context ctx;
 	ret->meta_data().construct(name, to_create, std::move(type_id), system);
 	for (auto one_id : base)
 	{
-		auto my_class = rx_gate::instance().get_manager().get_class<typename RType::definition_t>(one_id);
+		auto my_class = get_class_definition(one_id);
 		if (my_class)
 		{
-			my_class->construct(ret);
+			my_class->construct(ret, ctx);
 
 		}
 	}
@@ -542,6 +545,36 @@ query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 		if (type!=registered_types_.end())
 		{
 			ret.details.emplace_back(query_result_detail { one, type->second->meta_data().get_name() });
+		}
+	}
+	return ret;
+}
+
+template <class typeT>
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id)
+{
+	auto ret = typeT::create_runtime_ptr();
+
+	rx_node_ids base;
+	inheritance_hash_.get_base_types(type_id, base);
+	base.emplace_back(type_id);
+	for (const auto& one : base)
+	{
+		auto it = object_constructors_.find(one);
+		if (it != object_constructors_.end())
+		{
+			ret = (it->second)();
+			break;
+		}
+	}
+	construct_context ctx;
+	for (auto one_id : base)
+	{
+		auto my_class = get_class_definition(one_id);
+		if (my_class)
+		{
+			my_class->construct(*ret, ctx);
+
 		}
 	}
 	return ret;
