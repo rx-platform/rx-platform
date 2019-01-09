@@ -4,7 +4,7 @@
 *
 *  system\server\rx_cmds.h
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -32,10 +32,10 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // sl_script
@@ -43,9 +43,9 @@
 
 namespace rx_platform {
 namespace prog {
+class console_client;
 class server_console_program;
 class console_program_context;
-class console_client;
 
 } // namespace prog
 } // namespace rx_platform

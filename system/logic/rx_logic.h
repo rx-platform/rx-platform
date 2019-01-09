@@ -4,7 +4,7 @@
 *
 *  system\logic\rx_logic.h
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -33,10 +33,10 @@
 
 // rx_checkable
 #include "system/meta/rx_checkable.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

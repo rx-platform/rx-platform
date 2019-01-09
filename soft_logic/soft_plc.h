@@ -4,7 +4,7 @@
 *
 *  soft_logic\soft_plc.h
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -33,8 +33,8 @@
 
 
 namespace sl_runtime {
-class sl_program_holder;
 class program_context;
+class sl_program_holder;
 namespace builders {
 class module_chanels_factory;
 

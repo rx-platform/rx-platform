@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_ns.h
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -31,12 +31,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_classes.h"

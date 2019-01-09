@@ -4,7 +4,7 @@
 *
 *  terminal\rx_con_commands.cpp
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
@@ -1098,5 +1098,4 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
-
 

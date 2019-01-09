@@ -4,7 +4,7 @@
 *
 *  system\server\rx_mngt.cpp
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform

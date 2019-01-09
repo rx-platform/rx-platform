@@ -4,25 +4,25 @@
 *
 *  system\meta\rx_def_blocks.cpp
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -64,7 +64,7 @@ bool deserialize_complex_attribute(const T& whose, base_meta_reader& stream)
 	return true;
 }
 
-// Class rx_platform::meta::def_blocks::complex_data_type
+// Class rx_platform::meta::def_blocks::complex_data_type 
 
 complex_data_type::complex_data_type()
 {
@@ -303,7 +303,7 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 }
 
 
-// Class rx_platform::meta::def_blocks::const_value_def
+// Class rx_platform::meta::def_blocks::const_value_def 
 
 string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
@@ -340,7 +340,7 @@ rx_simple_value const_value_def::get_value () const
 }
 
 
-// Class rx_platform::meta::def_blocks::event_attribute
+// Class rx_platform::meta::def_blocks::event_attribute 
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -361,7 +361,7 @@ bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t 
 }
 
 
-// Class rx_platform::meta::def_blocks::filter_attribute
+// Class rx_platform::meta::def_blocks::filter_attribute 
 
 filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -382,7 +382,7 @@ bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::mapped_data_type
+// Class rx_platform::meta::def_blocks::mapped_data_type 
 
 mapped_data_type::mapped_data_type()
 {
@@ -458,7 +458,7 @@ void mapped_data_type::construct_internal(T& what, const names_cahce_type& names
 		}
 	}
 }
-// Class rx_platform::meta::def_blocks::mapper_attribute
+// Class rx_platform::meta::def_blocks::mapper_attribute 
 
 mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -479,7 +479,7 @@ bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::simple_value_def
+// Class rx_platform::meta::def_blocks::simple_value_def 
 
 string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
 
@@ -519,7 +519,7 @@ rx_timed_value simple_value_def::get_value (rx_time now) const
 }
 
 
-// Class rx_platform::meta::def_blocks::source_attribute
+// Class rx_platform::meta::def_blocks::source_attribute 
 
 source_attribute::source_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -540,7 +540,7 @@ bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::struct_attribute
+// Class rx_platform::meta::def_blocks::struct_attribute 
 
 struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -579,7 +579,7 @@ bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 }
 
 
-// Class rx_platform::meta::def_blocks::variable_attribute
+// Class rx_platform::meta::def_blocks::variable_attribute 
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id)
       : name_(name),
@@ -609,7 +609,7 @@ bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8
 }
 
 
-// Class rx_platform::meta::def_blocks::variable_data_type
+// Class rx_platform::meta::def_blocks::variable_data_type 
 
 variable_data_type::variable_data_type()
 {
@@ -719,7 +719,7 @@ bool variable_data_type::deserialize_variable_definition (base_meta_reader& stre
 }
 
 
-// Class rx_platform::meta::def_blocks::construct_context
+// Class rx_platform::meta::def_blocks::construct_context 
 
 construct_context::construct_context()
       : now(rx_time::now())

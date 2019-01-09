@@ -4,7 +4,7 @@
 *
 *  system\constructors\rx_construct.h
 *
-*  Copyright (c) 2018 Dusan Ciric
+*  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
 *  This file is part of rx-platform
