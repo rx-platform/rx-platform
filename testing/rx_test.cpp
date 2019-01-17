@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@
 
 namespace testing {
 
-// Class testing::test_command 
+// Class testing::test_command
 
 test_command::test_command()
 	: server_command("test")
@@ -227,7 +227,7 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 }
 
 
-// Class testing::test_category 
+// Class testing::test_category
 
 test_category::test_category(const test_category &right)
 {
@@ -281,7 +281,7 @@ test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
 }
 
 
-// Class testing::test_case 
+// Class testing::test_case
 
 test_case::test_case(const test_case &right)
       : start_tick_(0),
@@ -324,7 +324,7 @@ bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& e
 		ret = true;
 		std::stringstream stream;
 		stream << "Test case " << get_name() << " started by " << active->get_full_name();
-		start_tick_ = rx_get_us_ticks();		
+		start_tick_ = rx_get_us_ticks();
 		TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
 	}
 	else
@@ -470,7 +470,7 @@ const rx_platform::meta::checkable_data& test_case::meta_data () const
 }
 
 
-// Class testing::testing_enviroment 
+// Class testing::testing_enviroment
 
 testing_enviroment::testing_enviroment()
 {
@@ -559,7 +559,7 @@ test_program_context* testing_enviroment::create_test_context (rx_platform::prog
 }
 
 
-// Class testing::test_program_context 
+// Class testing::test_program_context
 
 test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : status_(RX_TEST_STATUS_UNKNOWN)
@@ -598,7 +598,7 @@ size_t test_program_context::get_possition () const
 }
 
 
-// Class testing::basic_test_case_test 
+// Class testing::basic_test_case_test
 
 basic_test_case_test::basic_test_case_test()
 	: test_case("test")
@@ -614,14 +614,13 @@ basic_test_case_test::~basic_test_case_test()
 
 bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-
 	bool pass = true;
 	if (!in.eof())
 	{
 		in >> pass;
 	}
 
-	out << "Testing Test Category apstract....\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+	out << "Testing Test Category abstract....\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
 
 	if (pass)
@@ -633,7 +632,7 @@ bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class testing::test_test 
+// Class testing::test_test
 
 test_test::test_test()
 	: test_category("test")

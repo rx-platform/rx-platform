@@ -114,7 +114,7 @@ application_class::~application_class()
 
 void application_class::construct (runtime::rx_application_ptr& what, construct_context& ctx)
 {
-	complex_data_.construct(what->get_complex_item(), ctx);
+	complex_data_.construct(ctx);
 	object_data_.construct(what, ctx);
 }
 
@@ -199,7 +199,7 @@ domain_class::~domain_class()
 
 void domain_class::construct (runtime::rx_domain_ptr what, construct_context& ctx)
 {
-	complex_data_.construct(what->get_complex_item(), ctx);
+	complex_data_.construct(ctx);
 	object_data_.construct(what, ctx);
 }
 
@@ -283,7 +283,7 @@ void object_class::get_class_info (string_type& class_name, string_type& console
 
 void object_class::construct (runtime::object_runtime_ptr what, construct_context& ctx)
 {
-	complex_data_.construct(what->get_complex_item(), ctx);
+	complex_data_.construct(ctx);
 	object_data_.construct(what, ctx);
 }
 
@@ -394,7 +394,7 @@ port_class::~port_class()
 
 void port_class::construct (runtime::rx_port_ptr what, construct_context& ctx)
 {
-	complex_data_.construct(what->get_complex_item(), ctx);
+	complex_data_.construct(ctx);
 	object_data_.construct(what, ctx);
 }
 

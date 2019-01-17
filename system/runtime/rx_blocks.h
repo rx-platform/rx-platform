@@ -157,6 +157,144 @@ public:
 
 
 
+class filter_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+filter runtime. basic implementation of an filter runtime");
+
+	DECLARE_REFERENCE_PTR(filter_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+
+  public:
+      filter_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class mapper_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+mapper runtime. basic implementation of an mapper runtime");
+
+	DECLARE_REFERENCE_PTR(mapper_runtime);
+	friend class meta::def_blocks::complex_data_type;
+
+  public:
+      mapper_runtime();
+
+      virtual ~mapper_runtime();
+
+
+      string_type get_type_name () const;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class source_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+source runtime. basic implementation of an source runtime");
+
+	DECLARE_REFERENCE_PTR(source_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+
+  public:
+      source_runtime();
+
+      virtual ~source_runtime();
+
+
+      string_type get_type_name () const;
+
+
+  protected:
+
+  private:
+
+
+      static string_type type_name;
+
+
+};
+
+
+
+
+
+
+class struct_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+struct runtime. basic implementation of an struct runtime");
+
+	DECLARE_REFERENCE_PTR(struct_runtime);
+
+	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
+	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::struct_class;
+
+  public:
+      struct_runtime();
+
+      struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
+
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      string_type get_type_name () const;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+      mappers_type mappers_;
+
+
+};
+
+
+
+
+
+
 class value_item 
 {
 public:
@@ -358,145 +496,7 @@ public:
 
 
 
-class filter_runtime : public complex_runtime_item  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-filter runtime. basic implementation of an filter runtime");
-
-	DECLARE_REFERENCE_PTR(filter_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-
-  public:
-      filter_runtime();
-
-
-      string_type get_type_name () const;
-
-
-  protected:
-
-  private:
-
-
-      static string_type type_name;
-
-
-};
-
-
-
-
-
-
-class mapper_runtime : public complex_runtime_item  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-mapper runtime. basic implementation of an mapper runtime");
-
-	DECLARE_REFERENCE_PTR(mapper_runtime);
-	friend class meta::def_blocks::complex_data_type;
-
-  public:
-      mapper_runtime();
-
-      virtual ~mapper_runtime();
-
-
-      string_type get_type_name () const;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class source_runtime : public complex_runtime_item  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-source runtime. basic implementation of an source runtime");
-
-	DECLARE_REFERENCE_PTR(source_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-
-  public:
-      source_runtime();
-
-      virtual ~source_runtime();
-
-
-      string_type get_type_name () const;
-
-
-  protected:
-
-  private:
-
-
-      static string_type type_name;
-
-
-};
-
-
-
-
-
-
-class struct_runtime : public complex_runtime_item  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-struct runtime. basic implementation of an struct runtime");
-
-	DECLARE_REFERENCE_PTR(struct_runtime);
-
-	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::struct_class;
-
-  public:
-      struct_runtime();
-
-      struct_runtime (const string_type& name, const rx_node_id& id, bool system = false);
-
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      string_type get_type_name () const;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-      mappers_type mappers_;
-
-
-};
-
-
-
-
-
-
-class event_runtime : public complex_runtime_item  
+class event_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 event runtime. basic implementation of an event runtime");
@@ -527,7 +527,7 @@ event runtime. basic implementation of an event runtime");
 
 
 
-class variable_runtime : public complex_runtime_item  
+class variable_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 variable runtime. basic implementation of an variable runtime");

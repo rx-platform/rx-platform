@@ -201,14 +201,19 @@ def_blocks::complex_data_type& event_class::complex_data ()
 
 }
 
-event_class::RTypePtr event_class::create_runtime_ptr ()
+event_class::RType event_class::create_runtime ()
 {
-	return std::make_unique<RType>();
+	return RType();
 }
 
 void event_class::construct (RType& what, construct_context& ctx)
 {
-	complex_data_.construct(what, ctx);
+	complex_data_.construct(ctx);
+}
+
+uint_fast8_t event_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type();
 }
 
 
@@ -270,14 +275,19 @@ def_blocks::complex_data_type& filter_class::complex_data ()
 
 }
 
-filter_class::RTypePtr filter_class::create_runtime_ptr ()
+filter_class::RType filter_class::create_runtime ()
 {
-	return rx_create_reference<runtime::blocks::filter_runtime>();
+	return RType();
 }
 
 void filter_class::construct (RType& what, construct_context& ctx)
 {
-	complex_data_.construct(what, ctx);
+	complex_data_.construct(ctx);
+}
+
+uint_fast8_t filter_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type();
 }
 
 
@@ -339,13 +349,19 @@ def_blocks::complex_data_type& mapper_class::complex_data ()
 
 }
 
-mapper_class::RTypePtr mapper_class::create_runtime_ptr ()
+mapper_class::RType mapper_class::create_runtime ()
 {
-	return rx_create_reference<runtime::blocks::mapper_runtime>();
+	return RType();
 }
 
 void mapper_class::construct (RType& what, construct_context& ctx)
 {
+	complex_data_.construct(ctx);
+}
+
+uint_fast8_t mapper_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type();
 }
 
 
@@ -407,13 +423,19 @@ def_blocks::complex_data_type& source_class::complex_data ()
 
 }
 
-source_class::RTypePtr source_class::create_runtime_ptr ()
+source_class::RType source_class::create_runtime ()
 {
-	return rx_create_reference<runtime::blocks::source_runtime>();
+	return RType();
 }
 
 void source_class::construct (RType& what, construct_context& ctx)
 {
+	complex_data_.construct(ctx);
+}
+
+uint_fast8_t source_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type();
 }
 
 
@@ -445,8 +467,8 @@ struct_class::struct_class (const type_creation_data& data)
 
 void struct_class::construct (RType& what, construct_context& ctx)
 {
-	complex_data_.construct(what, ctx);
-	mapping_data_.construct(what, complex_data_.get_names_cache(), ctx);
+	complex_data_.construct(ctx);
+	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
 }
 
 platform_item_ptr struct_class::get_item_ptr ()
@@ -469,9 +491,9 @@ bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 	return true;
 }
 
-struct_class::RTypePtr struct_class::create_runtime_ptr ()
+struct_class::RType struct_class::create_runtime ()
 {
-	return rx_create_reference<runtime::blocks::struct_runtime>();
+	return RType();
 }
 
 checkable_data& struct_class::meta_data ()
@@ -490,6 +512,11 @@ def_blocks::mapped_data_type& struct_class::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+uint_fast8_t struct_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type() | mapping_data_.get_runtime_data_type();
 }
 
 
@@ -526,6 +553,8 @@ variable_class::variable_class (const string_type& name, const rx_node_id& id, c
 
 void variable_class::construct (RType& what, construct_context& ctx)
 {
+	complex_data_.construct(ctx);
+	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
 }
 
 bool variable_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
@@ -579,9 +608,14 @@ def_blocks::variable_data_type& variable_class::variable_data ()
 
 }
 
-variable_class::RTypePtr variable_class::create_runtime_ptr ()
+variable_class::RType variable_class::create_runtime ()
 {
-	return rx_create_reference<runtime::blocks::variable_runtime>();
+	return RType();
+}
+
+uint_fast8_t variable_class::get_runtime_data_type ()
+{
+	return complex_data_.get_runtime_data_type() | mapping_data_.get_runtime_data_type() | variable_data_.get_runtime_data_type();
 }
 
 

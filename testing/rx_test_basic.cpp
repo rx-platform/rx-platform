@@ -408,7 +408,8 @@ namespace meta_test {
  meta_model_test_category::meta_model_test_category()
 	 : test_category("meta")
  {
-	 register_test_case(rx_create_reference<object_creation_test>());
+	 register_test_case(rx_create_reference<object_creation_test>()); 
+	 register_test_case(rx_create_reference<runtime_structure_test>());
  }
 
 
@@ -434,7 +435,6 @@ namespace meta_test {
 
  bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
-
 	 auto one = rx_platform::rx_gate::instance().get_root_directory();
 
 

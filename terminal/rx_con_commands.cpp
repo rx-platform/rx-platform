@@ -90,7 +90,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
 {
 	if ((one->get_attributes()&namespace_item_execute_access) != 0)
-		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+		row.emplace_back(rx_table_cell_struct { one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET } );
 	else
 		row.emplace_back(one->get_name());
 	if (options.list_type)

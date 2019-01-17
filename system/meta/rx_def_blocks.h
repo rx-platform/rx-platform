@@ -31,6 +31,8 @@
 
 
 
+// rx_rt_data
+#include "system/runtime/rx_rt_data.h"
 
 namespace rx_platform {
 namespace meta {
@@ -509,6 +511,7 @@ class variable_attribute
 
 
 
+
 class construct_context 
 {
 
@@ -517,6 +520,8 @@ class construct_context
 
 
       rx_time now;
+
+      runtime::blocks::data::runtime_data_prototype runtime_data;
 
 
   protected:
@@ -540,8 +545,8 @@ class complex_data_type
 
 	typedef std::vector<const_value_def> const_values_type;
 	typedef std::vector<simple_value_def> simple_values_type;
-	typedef std::vector<std::unique_ptr<struct_attribute> > structs_type;
-	typedef std::vector<std::unique_ptr<variable_attribute> > variables_type;
+	typedef std::vector<struct_attribute> structs_type;
+	typedef std::vector<variable_attribute> variables_type;
 
 
   public:
@@ -560,7 +565,7 @@ class complex_data_type
 
       bool check_name (const string_type& name, int rt_index);
 
-      void construct (runtime::blocks::complex_runtime_item& what, construct_context& ctx);
+      void construct (construct_context& ctx);
 
       bool register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
 
@@ -569,6 +574,8 @@ class complex_data_type
       bool register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val);
 
       bool register_const_value (const string_type& name, const rx_simple_value& val);
+
+      uint_fast8_t get_runtime_data_type ();
 
 
       const const_values_type& get_const_values () const
@@ -659,16 +666,15 @@ class mapped_data_type
 
       bool register_mapper (const mapper_attribute& item, complex_data_type& complex_data);
 
-      void construct (runtime::blocks::struct_runtime& what, const names_cahce_type& names, construct_context& ctx);
+      void construct (const names_cahce_type& names, construct_context& ctx);
 
-      void construct (runtime::blocks::variable_runtime& what, const names_cahce_type& names, construct_context& ctx);
+      uint_fast8_t get_runtime_data_type ();
 
 
   protected:
 
   private:
-	  template<typename T>
-	  void construct_internal(T& what, const names_cahce_type& names, construct_context& ctx);
+
 
       mappers_type mappers_;
 
@@ -706,6 +712,8 @@ class variable_data_type
       bool serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+
+      uint_fast8_t get_runtime_data_type ();
 
 
   protected:

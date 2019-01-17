@@ -140,8 +140,8 @@ public:
 	basic_smart_ptr(const basic_smart_ptr &right) = delete;
 	basic_smart_ptr & operator=(const basic_smart_ptr &right) = delete;
 	// use 'memmove' to move object around
-	basic_smart_ptr(basic_smart_ptr &&right) = default;
-	basic_smart_ptr & operator=(basic_smart_ptr &&right) = default;
+	basic_smart_ptr(basic_smart_ptr &&right) noexcept = default;
+	basic_smart_ptr & operator=(basic_smart_ptr &&right) noexcept = default;
 
   public:
 

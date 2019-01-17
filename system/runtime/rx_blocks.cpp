@@ -532,9 +532,9 @@ struct_runtime::struct_runtime (const string_type& name, const rx_node_id& id, b
 bool struct_runtime::serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const
 {
 	if (!stream.start_object(struct_runtime::type_name.c_str()))
-		return false;
+		return false;/*
 	if (!complex_runtime_item::serialize_definition(stream, type, ts, mode))
-		return false;
+		return false;*/
 	if (!stream.end_object())
 		return false;
 	return true;

@@ -33,6 +33,8 @@
 
 // rx_test
 #include "testing/rx_test.h"
+// rx_test_runtime
+#include "testing/rx_test_runtime.h"
 
 
 
@@ -161,7 +163,7 @@ namespace meta_test {
  {
 	 DECLARE_REFERENCE_PTR(object_creation_test)
 	 DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-basic testing of callback capabilities.");
+basic testing object creation.");
 
    public:
        object_creation_test();

@@ -254,7 +254,7 @@ void interactive_console_client::run_interactive ()
 
 	host_->write_stdout("\
 \r\n\
-Copyright(C) 2018  Dusan Ciric\r\n\r\n\
+Copyright(C) 2018-2019  Dusan Ciric\r\n\r\n\
 This program comes with ABSOLUTELY NO WARRANTY.\r\n\
 This is free software, and you are welcome to redistribute it\r\n\
 under certain conditions; type `license' for details.\r\n\

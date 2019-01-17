@@ -37,6 +37,7 @@
 #include "model/rx_meta.h"
 #include "system/constructors/rx_construct.h"
 #include "system/runtime/rx_objbase.h"
+#include "system/runtime/rx_rt_data.h"
 using namespace rx;
 
 
@@ -97,7 +98,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 				return false;
 			if (!stream.write_string("Type",struct_class::type_name.c_str()))
 				return false;
-			if (!structs_[one.second&index_mask]->serialize_definition(stream,type))
+			if (!structs_[one.second&index_mask].serialize_definition(stream,type))
 				return false;
 			if (!stream.end_object())
 				return false;
@@ -110,7 +111,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 				return false;
 			if (!stream.write_string("Type", variable_class::type_name.c_str()))
 				return false;
-			if (!variables_[one.second&index_mask]->serialize_definition(stream, type))
+			if (!variables_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
 			if (!stream.end_object())
 				return false;
@@ -173,7 +174,7 @@ bool complex_data_type::register_struct (const string_type& name, const rx_node_
 {
 	if (check_name(name, (static_cast<int>(structs_.size()|structs_mask))))
 	{
-		structs_.emplace_back(std::make_unique<struct_attribute>(name, id));
+		structs_.emplace_back(struct_attribute(name, id));
 		return true;
 	}
 	else
@@ -186,7 +187,7 @@ bool complex_data_type::register_variable (const string_type& name, const rx_nod
 {
 	if (check_name(name, (static_cast<int>(variables_.size()|variables_mask))))
 	{
-		variables_.emplace_back(std::make_unique<variable_attribute>(name, id));
+		variables_.emplace_back(variable_attribute(name, id));
 		return true;
 	}
 	else
@@ -209,7 +210,7 @@ bool complex_data_type::check_name (const string_type& name, int rt_index)
 	}
 }
 
-void complex_data_type::construct (runtime::blocks::complex_runtime_item& what, construct_context& ctx)
+void complex_data_type::construct (construct_context& ctx)
 {
 	for (const auto& one : names_cache_)
 	{
@@ -219,31 +220,31 @@ void complex_data_type::construct (runtime::blocks::complex_runtime_item& what, 
 		case structs_mask:
 		{
 			const auto& data = structs_[one.second&index_mask];
-			runtime::blocks::struct_runtime::smart_ptr temp= model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_simple_runtime(data->get_target_id());
-			what.register_sub_item(data->get_name(), std::move(temp));
+			auto temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().create_simple_runtime(data.get_target_id());
+			ctx.runtime_data.add_sub_item(data.get_name(), std::move(temp));
 		}
 		break;
 		// variables
 		case variables_mask:
 		{
 			const auto& data = variables_[one.second&index_mask];
-			runtime::blocks::variable_runtime::smart_ptr temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::variable_class>().create_simple_runtime(data->get_target_id());
-			what.register_sub_item(data->get_name(), std::move(temp));
+			auto temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::variable_class>().create_simple_runtime(data.get_target_id());
+			ctx.runtime_data.add_sub_item(data.get_name(), std::move(temp));
 		}
 		break;
 		// constant values
 		case const_values_mask:
 		{
-			what.register_const_value(
+			ctx.runtime_data.add_const_value(
 				const_values_[one.second&index_mask].get_name(),
 				const_values_[one.second&index_mask].get_value());
 		}
 		break;
 		case simple_values_mask:
 		{
-			what.register_value(
+			ctx.runtime_data.add_value(
 				simple_values_[one.second&index_mask].get_name(),
-				simple_values_[one.second&index_mask].get_value((rx_time::now())));
+				simple_values_[one.second&index_mask].get_value((ctx.now)));
 		}
 		break;
 		}
@@ -300,6 +301,12 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 	{
 		return false;
 	}
+}
+
+uint_fast8_t complex_data_type::get_runtime_data_type ()
+{
+	return (variables_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_variables)
+		| (structs_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_structs);
 }
 
 
@@ -430,18 +437,7 @@ bool mapped_data_type::register_mapper (const mapper_attribute& item, complex_da
 	}
 }
 
-void mapped_data_type::construct (runtime::blocks::struct_runtime& what, const names_cahce_type& names, construct_context& ctx)
-{
-	construct_internal(what, names, ctx);
-}
-
-void mapped_data_type::construct (runtime::blocks::variable_runtime& what, const names_cahce_type& names, construct_context& ctx)
-{
-	construct_internal(what, names, ctx);
-}
-
-template<typename T>
-void mapped_data_type::construct_internal(T& what, const names_cahce_type& names, construct_context& ctx)
+void mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx)
 {
 	for (const auto& one : names)
 	{
@@ -452,12 +448,19 @@ void mapped_data_type::construct_internal(T& what, const names_cahce_type& names
 		{
 			const auto& data = mappers_[one.second&complex_data_type::index_mask];
 			auto temp = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::mapper_class>().create_simple_runtime(data.get_target_id());
-			what.register_sub_item(data.get_name(), std::move(temp));
+			ctx.runtime_data.add_sub_item(data.get_name(), std::move(temp));
 		}
 		break;
 		}
 	}
 }
+
+uint_fast8_t mapped_data_type::get_runtime_data_type ()
+{
+	return (mappers_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_mappers);
+}
+
+
 // Class rx_platform::meta::def_blocks::mapper_attribute 
 
 mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
@@ -716,6 +719,13 @@ bool variable_data_type::serialize_variable_definition (base_meta_writer& stream
 bool variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
+}
+
+uint_fast8_t variable_data_type::get_runtime_data_type ()
+{
+	return (sources_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_sources)
+		| (filters_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_filters)
+		| (events_.empty() ? runtime::blocks::data::rt_bit_none : runtime::blocks::data::rt_bit_has_events);
 }
 
 

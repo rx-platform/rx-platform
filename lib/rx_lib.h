@@ -49,6 +49,8 @@ struct rx_table_cell_struct
 		: prefix(vprefix), value(vvalue), postfix(vpostfix)
 	{
 	}
+	rx_table_cell_struct(const rx_table_cell_struct& right) = default;
+	rx_table_cell_struct(rx_table_cell_struct&& right) noexcept = default;
 	string_type prefix;
 	string_type value;
 	string_type postfix;

@@ -39,6 +39,7 @@
 #include "system/meta/rx_classes.h"
 #include "system/meta/rx_obj_classes.h"
 #include "system/runtime/rx_objbase.h"
+
 using namespace rx_platform::meta;
 using namespace rx_platform::meta::basic_defs;
 using namespace rx_platform::meta::object_defs;
@@ -265,6 +266,7 @@ public:
 	typedef typename std::map<rx_node_id, RType> registered_objects_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > object_constructors_type;
+	typedef typename std::map<rx_node_id, std::function<RType()> > item_constructors_type;
 
 
   public:
@@ -285,7 +287,7 @@ public:
 
       query_result get_derived_types (const rx_node_id& id) const;
 
-      typename type_hash<typeT>::RTypePtr create_simple_runtime (const rx_node_id& type_id);
+      typename type_hash<typeT>::RType create_simple_runtime (const rx_node_id& type_id);
 
 
   protected:
@@ -303,6 +305,8 @@ public:
       registered_objects_type registered_objects_;
 
       registered_types_type registered_types_;
+
+      item_constructors_type item_constructors_;
 
 
 };
@@ -501,8 +505,8 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 	auto ret = typeT::create_runtime_ptr();
 
 	rx_node_ids base;
-	inheritance_hash_.get_base_types(type_id,base);
 	base.emplace_back(type_id);
+	inheritance_hash_.get_base_types(type_id,base);
 	for(const auto& one : base)
 	{
 		auto it = object_constructors_.find(one);
@@ -512,6 +516,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 			break;
 		}
 	}
+
 	construct_context ctx;
 	ret->meta_data().construct(name, to_create, std::move(type_id), system);
 	for (auto one_id : base)
@@ -523,6 +528,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 
 		}
 	}
+	auto rt_ptr = create_runtime_data(ctx.runtime_data);
 	return ret;
 }
 
@@ -551,17 +557,17 @@ query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id)
+typename type_hash<typeT>::RType type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id)
 {
-	auto ret = typeT::create_runtime_ptr();
+	auto ret = typeT::create_runtime();
 
 	rx_node_ids base;
-	inheritance_hash_.get_base_types(type_id, base);
 	base.emplace_back(type_id);
+	inheritance_hash_.get_base_types(type_id, base);
 	for (const auto& one : base)
 	{
-		auto it = object_constructors_.find(one);
-		if (it != object_constructors_.end())
+		auto it = item_constructors_.find(one);
+		if (it != item_constructors_.end())
 		{
 			ret = (it->second)();
 			break;
@@ -573,10 +579,11 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_simple_runtime (con
 		auto my_class = get_class_definition(one_id);
 		if (my_class)
 		{
-			my_class->construct(*ret, ctx);
+			my_class->construct(ret, ctx);
 
 		}
 	}
+	auto rt_ptr = create_runtime_data(ctx.runtime_data);
 	return ret;
 }
 

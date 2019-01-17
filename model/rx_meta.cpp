@@ -326,7 +326,7 @@ void inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& result
 	auto it = hash_data_.find(id);
 	if (it != hash_data_.end())
 	{
-		result = it->second->ordered;
+		std::copy(it->second->ordered.begin(), it->second->ordered.end(), std::back_inserter(result));
 	}
 }
 
