@@ -139,8 +139,14 @@ template object_class_ptr server_manager::get_class<object_class>(const rx_node_
 template application_class_ptr server_manager::get_class<application_class>(const rx_node_id& id);
 
 
-
-template struct_class_ptr server_manager::get_class<struct_class>(const rx_node_id& id);
+template<class clsT>
+typename clsT::smart_ptr server_manager::get_simple_class(const rx_node_id& id)
+{
+	auto& cache = model::internal_types_manager::instance().get_simple_type_cache<clsT>();
+	auto def = cache.get_class_definition(id);
+	return def;
+}
+template struct_class_ptr server_manager::get_simple_class<struct_class>(const rx_node_id& id);
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()

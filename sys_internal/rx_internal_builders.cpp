@@ -335,7 +335,7 @@ void basic_types_builder::build_basic_type(server_directory_ptr dir, rx_referenc
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	dir->add_item(what->get_item_ptr());
-	model::internal_types_manager::instance().get_type_cache<T>().register_class(what);
+	model::internal_types_manager::instance().get_simple_type_cache<T>().register_class(what);
 }
 
 // Class sys_internal::builders::system_classes_builder 

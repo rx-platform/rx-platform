@@ -28,7 +28,6 @@
 
 #include "pch.h"
 
-using namespace std::string_literals;
 
 // rx_con_commands
 #include "terminal/rx_con_commands.h"

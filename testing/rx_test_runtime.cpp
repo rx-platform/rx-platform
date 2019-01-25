@@ -37,6 +37,7 @@
 #include "system/runtime/rx_rt_data.h"
 #include <valarray>
 #include "lib/rx_const_size_vector.h"
+#include "system/server/rx_server.h"
 #define ANSI_RX_OBJECT_SIZE ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 #define ANSI_RX_OBJECT_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 
@@ -66,24 +67,24 @@ namespace meta_test {
 	 out << "Calculating runtime sizes:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 
 	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::object_types::object_runtime) << ANSI_COLOR_RESET "\r\n";
-	 out << "complex_runtime_item:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::blocks::complex_runtime_item) << ANSI_COLOR_RESET << "\r\n";
 	 out << "variable_runtime:" ANSI_RX_OBJECT_SIZE  << sizeof(runtime::blocks::variable_runtime) << ANSI_COLOR_RESET << "\r\n";
 	
 	 out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-	 out << "empty_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::blocks::data::empty_item_data) << ANSI_COLOR_RESET "\r\n";
-	 out << "basic_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::blocks::data::basic_item_data) << ANSI_COLOR_RESET "\r\n";
-	 out << "full_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::blocks::data::full_item_data) << ANSI_COLOR_RESET "\r\n";
+	 out << "empty_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::empty_item_data) << ANSI_COLOR_RESET "\r\n";
+	 out << "basic_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::basic_item_data) << ANSI_COLOR_RESET "\r\n";
+	 out << "full_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::full_item_data) << ANSI_COLOR_RESET "\r\n";
 
-	 std::vector< runtime::blocks::data::variable_data> stuff;
-	 std::valarray<runtime::blocks::data::variable_data> testing;
+	 std::vector< runtime::structure::variable_data> stuff;
+	 std::valarray<runtime::structure::variable_data> testing;
 
 	 rx::const_size_vector<size_t> perica({ 56, 38, 38 });
 
 	 for (auto rr : perica)
 		 out << "Element:" << rr << "\r\n";
 
-	 out << "const_size_vector:" ANSI_RX_OBJECT_SIZE << sizeof(rx::const_size_vector<runtime::blocks::data::variable_data>) << ANSI_COLOR_RESET "\r\n";
-	 out << "valarray:" ANSI_RX_OBJECT_SIZE << sizeof(std::valarray<runtime::blocks::data::variable_data>) << ANSI_COLOR_RESET "\r\n";
+	 out << "const_size_vector:" ANSI_RX_OBJECT_SIZE << sizeof(rx::const_size_vector<runtime::structure::variable_data>) << ANSI_COLOR_RESET "\r\n";
+	 out << "array:" ANSI_RX_OBJECT_SIZE << sizeof(std::array<runtime::structure::variable_data, 0>) << ANSI_COLOR_RESET "\r\n";
+	 out << "empty:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::empty<runtime::structure::variable_data>) << ANSI_COLOR_RESET "\r\n";
 
 	 ctx->set_failed();
 	 return true;

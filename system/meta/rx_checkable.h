@@ -43,12 +43,8 @@ namespace rx_platform {
 namespace runtime {
 namespace object_types {
 class object_runtime;
+
 } // namespace object_types
-
-namespace blocks {
-class complex_runtime_item;
-
-} // namespace blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -73,19 +69,15 @@ class checkable_data
       checkable_data();
 
       checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs);
-
-
-      bool serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const;
-
-      bool deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value);
+	  
 
       bool check_in (base_meta_reader& stream);
 
       bool check_out (base_meta_writer& stream) const;
 
-      bool serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const;
+      bool serialize_checkable_definition (base_meta_writer& stream, uint8_t type, const string_type& object_type) const;
 
-      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type);
+      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type, string_type& object_type);
 
       values::rx_value get_value () const;
 

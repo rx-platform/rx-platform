@@ -35,8 +35,6 @@
 using namespace rx;
 using namespace rx_platform;
 using namespace rx_platform::ns;
-using namespace std::string_literals;
-
 
 #include "system/server/rx_server.h"
 
@@ -180,7 +178,7 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
         exit_(false)
 	//TODOIO
   //, io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
-	, console_client(runtime::port_creation_data{ "telnet_stuff",55,56, rx_system_application() })
+	, console_client(runtime::object_types::port_creation_data{ "telnet_stuff",55,56, rx_system_application() })
 {
 	vt100_parser_.set_password_mode(true);
 }

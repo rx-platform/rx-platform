@@ -32,12 +32,12 @@
 
 #include "lib/security/rx_security.h"
 
+// rx_mem
+#include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_mem
-#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -300,7 +300,7 @@ class console_client : public runtime::object_types::port_runtime
 	DECLARE_REFERENCE_PTR(console_client);
 
   public:
-      console_client (runtime::port_creation_data&& data);
+      console_client (runtime::object_types::port_creation_data&& data);
 
       virtual ~console_client();
 

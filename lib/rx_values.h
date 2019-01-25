@@ -296,6 +296,10 @@ public:
 
       bool exact_equality (const rx_value_storage& right) const;
 
+      bool serialize_value (base_meta_writer& writer, const string_type& name) const;
+
+      bool deserialize_value (base_meta_reader& reader, const string_type& name);
+
 	  template<typename T>
 	  void assign_static(T&& right)
 	  {
@@ -343,12 +347,85 @@ public:
 
 	  static bool exact_equality(const rx_value_union& left, const rx_value_union& right, rx_value_t type);
 
-	  static bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_value_t type);
+	  static bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_value_t type, const string_type& name);
 	  static bool deserialize_value(base_meta_reader& reader, rx_value_union& who, rx_value_t type);
 
       rx_value_t value_type_;
 
       rx_value_union value_;
+
+
+};
+
+
+
+
+
+
+class rx_simple_value 
+{
+  public:template<typename typeT>
+	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
+	  {
+		  storage_.assign_static(std::forward<typeT>(val));
+	  }
+	  ~rx_simple_value() = default;
+	  rx_simple_value() = default;
+	  rx_simple_value(const rx_simple_value &right);
+	  rx_simple_value(rx_simple_value&& right) noexcept;
+	  rx_simple_value& operator=(rx_simple_value&& right) noexcept;
+	  rx_simple_value & operator=(const rx_simple_value &right);
+
+  public:
+      rx_simple_value (const rx_value_storage& storage);
+
+      bool operator==(const rx_simple_value &right) const;
+
+      bool operator!=(const rx_simple_value &right) const;
+
+
+      bool is_bad () const;
+
+      bool is_uncertain () const;
+
+      bool is_test () const;
+
+      bool is_substituted () const;
+
+      bool is_array () const;
+
+      bool is_good () const;
+
+      bool can_operate (bool test_mode) const;
+
+      bool serialize (base_meta_writer& writter) const;
+
+      bool deserialize (base_meta_reader& reader);
+
+      void dump_to_stream (std::ostream& out) const;
+
+      void parse_from_stream (std::istream& in);
+
+      void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
+
+      bool serialize_value (base_meta_writer& writer, const string_type& name) const;
+
+      bool deserialize_value (base_meta_reader& reader, const string_type& name);
+
+
+      const rx_value_storage& get_storage () const
+      {
+        return storage_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      rx_value_storage storage_;
 
 
 };
@@ -410,6 +487,12 @@ public:
 
       rx_time set_time (rx_time time);
 
+      static rx_value from_simple (const rx_simple_value& value, rx_time ts);
+
+      static rx_value from_simple (rx_simple_value&& value, rx_time ts);
+
+      rx::values::rx_simple_value to_simple () const;
+
 
       const rx_value_storage& get_storage () const
       {
@@ -457,75 +540,6 @@ public:
       uint32_t origin_;
 
       time_compare_type default_time_compare_;
-
-
-};
-
-
-
-
-
-
-class rx_simple_value 
-{
-  public:template<typename typeT>
-	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
-	  {
-		  storage_.assign_static(std::forward<typeT>(val));
-	  }
-	  ~rx_simple_value() = default;
-	  rx_simple_value() = default;
-	  rx_simple_value(const rx_simple_value &right);
-	  rx_simple_value(rx_simple_value&& right) noexcept;
-	  rx_simple_value& operator=(rx_simple_value&& right) noexcept;
-	  rx_simple_value & operator=(const rx_simple_value &right);
-
-  public:
-      bool operator==(const rx_simple_value &right) const;
-
-      bool operator!=(const rx_simple_value &right) const;
-
-
-      bool is_bad () const;
-
-      bool is_uncertain () const;
-
-      bool is_test () const;
-
-      bool is_substituted () const;
-
-      bool is_array () const;
-
-      bool is_good () const;
-
-      bool can_operate (bool test_mode) const;
-
-      void get_full_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
-
-      bool serialize (base_meta_writer& writter) const;
-
-      bool deserialize (base_meta_reader& reader);
-
-      void dump_to_stream (std::ostream& out) const;
-
-      void parse_from_stream (std::istream& in);
-
-      void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
-
-
-      const rx_value_storage& get_storage () const
-      {
-        return storage_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      rx_value_storage storage_;
 
 
 };
@@ -589,6 +603,8 @@ public:
       static rx_timed_value from_simple (const rx_simple_value& value, rx_time ts);
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
+
+      rx::values::rx_simple_value to_simple () const;
 
 
       const rx_value_storage& get_storage () const

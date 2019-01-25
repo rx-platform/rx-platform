@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Atom" 
 #define RX_SERVER_MAJOR_VERSION 0
 #define RX_SERVER_MINOR_VERSION 14
-#define RX_SERVER_BUILD_NUMBER 0
+#define RX_SERVER_BUILD_NUMBER 1
 
 // version 0.14.0
 // introduced runtime_data< >

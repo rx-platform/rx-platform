@@ -31,16 +31,16 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 
 using rx_platform::meta::def_blocks::construct_context;
 
@@ -180,8 +180,6 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static runtime::rx_application_ptr create_runtime_ptr ();
-
 
       const object_data_type& object_data () const;
 
@@ -308,7 +306,6 @@ implementation of object type");
 public:
 	typedef runtime::object_types::object_runtime RType;
 	typedef runtime::object_runtime_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
 
 	friend class obj_meta_helpers;
 
@@ -328,11 +325,11 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      static runtime::object_runtime_ptr create_runtime_ptr ();
-
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
+
+      static void set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where);
 
 
       const object_data_type& object_data () const;

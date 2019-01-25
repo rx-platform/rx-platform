@@ -288,7 +288,7 @@ bool win32_console_host::start (const string_array& args)
 	in_bits.set(9);
 
 	out_bits.set(2);
-	//out_bits.reset(0);
+	out_bits.set(0);
 	//out_bits.reset(3);
 
 	SetConsoleMode(in_handle_, in_bits.to_ulong());
@@ -335,7 +335,7 @@ bool win32_console_host::break_host (const string_type& msg)
 bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
 	DWORD read = 0;
-	bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, NULL));
+	bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
 	count = read;
 	return ret;
 }

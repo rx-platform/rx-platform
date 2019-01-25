@@ -43,18 +43,6 @@ namespace rx_platform {
 
 namespace runtime {
 
-// Class rx_platform::runtime::application_creation_data 
-
-
-// Class rx_platform::runtime::domain_creation_data 
-
-
-// Class rx_platform::runtime::port_creation_data 
-
-
-// Class rx_platform::runtime::object_creation_data 
-
-
 namespace object_types {
 template<typename CT>
 namespace_item_attributes create_attributes_from_creation_data(const object_creation_data& data)
@@ -69,38 +57,7 @@ namespace_item_attributes create_attributes_from_creation_data(const object_crea
 	}
 }
 
-// Class rx_platform::runtime::object_types::user_object 
-
-user_object::user_object()
-{
-}
-
-user_object::user_object (object_creation_data&& data)
-	: object_runtime(std::move(data))
-{
-	init_object();
-}
-
-
-user_object::~user_object()
-{
-}
-
-
-
-// Class rx_platform::runtime::object_types::server_object 
-
-server_object::server_object (object_creation_data&& data)
-	: object_runtime(std::move(data))
-{
-	init_object();
-}
-
-
-server_object::~server_object()
-{
-}
-
+// Class rx_platform::runtime::object_types::object_creation_data 
 
 
 // Class rx_platform::runtime::object_types::object_runtime 
@@ -109,14 +66,12 @@ string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
       : change_time_(rx_time::now())
-	, runtime_item_("_unnamed", rx_node_id::null_id, false)
 {
 }
 
 object_runtime::object_runtime (object_creation_data&& data)
       : change_time_(rx_time::now())
 	, meta_data_(data.name, data.id, data.type_id, create_attributes_from_creation_data<object_creation_data>(data))
-	, runtime_item_(data.name, data.id, data.system)
 	, my_application_(data.application)
 	, my_domain_(data.domain)
 {
@@ -140,30 +95,32 @@ rx_value object_runtime::get_value (const string_type path) const
 	}
 	else
 	{
-		return runtime_item_.get_value(path);
+		return item_->get_value({ mode_, get_modified_time(), smart_this() }, path);
 	}
 }
 
 void object_runtime::turn_on ()
 {
 	if (mode_.turn_on())
-		runtime_item_.object_state_changed(rx_time::now());
+		item_->object_state_changed({mode_, rx_time::now(), smart_this()});
 }
 
 void object_runtime::turn_off ()
 {
 	if (mode_.turn_off())
-		runtime_item_.object_state_changed(rx_time::now());
+		item_->object_state_changed({ mode_, rx_time::now(), smart_this() });
 }
 
 void object_runtime::set_blocked ()
 {
-	mode_.set_blocked();
+	if (mode_.set_blocked())
+		item_->object_state_changed({ mode_, rx_time::now(), smart_this() });
 }
 
 void object_runtime::set_test ()
 {
-	mode_.set_test();
+	if (mode_.set_test())
+		item_->object_state_changed({ mode_, rx_time::now(), smart_this() });
 }
 
 values::rx_value object_runtime::get_value () const
@@ -186,14 +143,16 @@ bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_data_.serialize_checkable_definition(stream, type))
+	if (!meta_data_.serialize_checkable_definition(stream, type, RX_CPP_OBJECT_TYPE_NAME))
+		return false;
+	
+	data::runtime_values_data temp_data;
+
+	item_->collect_data(temp_data);
+
+	if (!temp_data.serialize(stream, "Values"))
 		return false;
 
-	if (!stream.start_object("Def"))
-		return false;
-
-	if (!runtime_item_.serialize_definition(stream, type,get_modified_time(),mode_))
-		return false;
 
 	if (!stream.start_array("Programs", programs_.size()))
 		return false;
@@ -207,20 +166,12 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.end_object())
-		return false;
-
 	return true;
 }
 
 bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_data_.deserialize_checkable_definition(stream, type))
-		return false;
-
-	if (!runtime_item_.deserialize_definition(stream, type))
-		return false;
-		
+			
 	if (!stream.start_array("Programs"))
 		return false;
 
@@ -247,7 +198,8 @@ bool object_runtime::is_browsable () const
 
 void object_runtime::get_content (server_items_type& sub_items, const string_type& pattern) const
 {
-	runtime_item_.get_sub_items(sub_items,pattern);
+	// TODO!!!!
+  //runtime_item_.get_sub_items(sub_items,pattern);
 }
 
 platform_item_ptr object_runtime::get_item_ptr ()
@@ -275,11 +227,6 @@ size_t object_runtime::get_size () const
 	return sizeof(*this);
 }
 
-blocks::complex_runtime_item& object_runtime::get_complex_item ()
-{
-	return runtime_item_;
-}
-
 meta::checkable_data& object_runtime::meta_data ()
 {
   return meta_data_;
@@ -304,6 +251,50 @@ bool object_runtime::connect_application (rx_application_ptr&& app)
 const meta::checkable_data& object_runtime::meta_data () const
 {
   return meta_data_;
+}
+
+
+// Class rx_platform::runtime::object_types::domain_runtime 
+
+string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
+
+domain_runtime::domain_runtime()
+{
+	my_domain_ = smart_this();
+}
+
+domain_runtime::domain_runtime (domain_creation_data&& data)
+	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
+{
+	my_domain_ = smart_this();
+}
+
+
+domain_runtime::~domain_runtime()
+{
+}
+
+
+
+string_type domain_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_thread_handle_t domain_runtime::get_executer () const
+{
+	return executer_;
+}
+
+bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	return false;
+}
+
+platform_item_ptr domain_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 
@@ -352,48 +343,19 @@ platform_item_ptr application_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::domain_runtime 
+// Class rx_platform::runtime::object_types::server_object 
 
-string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
-
-domain_runtime::domain_runtime()
+server_object::server_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
 {
-	my_domain_ = smart_this();
-}
-
-domain_runtime::domain_runtime (domain_creation_data&& data)
-	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
-{
-	my_domain_ = smart_this();
+	init_object();
 }
 
 
-domain_runtime::~domain_runtime()
+server_object::~server_object()
 {
 }
 
-
-
-string_type domain_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_thread_handle_t domain_runtime::get_executer () const
-{
-	return executer_;
-}
-
-bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
-{
-	return false;
-}
-
-platform_item_ptr domain_runtime::get_item_ptr ()
-{
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
-}
 
 
 // Class rx_platform::runtime::object_types::port_runtime 
@@ -436,6 +398,34 @@ platform_item_ptr port_runtime::get_item_ptr ()
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
+
+
+// Class rx_platform::runtime::object_types::user_object 
+
+user_object::user_object()
+{
+}
+
+user_object::user_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
+{
+	init_object();
+}
+
+
+user_object::~user_object()
+{
+}
+
+
+
+// Class rx_platform::runtime::object_types::application_creation_data 
+
+
+// Class rx_platform::runtime::object_types::domain_creation_data 
+
+
+// Class rx_platform::runtime::object_types::port_creation_data 
 
 
 } // namespace object_types

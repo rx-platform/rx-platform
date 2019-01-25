@@ -31,16 +31,16 @@
 
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -65,11 +65,229 @@ namespace rx_platform {
 typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 
+namespace meta
+{
+namespace object_defs
+{
+	class object_class;
+}
+}
+
 namespace runtime {
+namespace object_types {
+	class port_runtime;
+	class object_runtime;
+
+} // namespace object_types
 typedef rx_reference<object_types::domain_runtime> rx_domain_ptr;
-typedef rx_reference<object_types::domain_runtime> rx_port_ptr;
-typedef rx_reference<object_types::domain_runtime> rx_object_ptr;
+typedef rx_reference<object_types::port_runtime> rx_port_ptr;
+typedef rx_reference<object_types::object_runtime> rx_object_ptr;
 typedef rx_reference<object_types::application_runtime> rx_application_ptr;
+
+namespace object_types {
+
+
+
+
+
+struct object_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+      rx_application_ptr application;
+
+      rx_domain_ptr domain;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class object_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+object class. basic implementation of an object");
+
+	DECLARE_REFERENCE_PTR(object_runtime);
+
+	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
+	typedef std::map<string_type, size_t> items_cache_type;
+	typedef std::vector<logic::program_runtime_ptr> programs_type;
+
+	friend class meta::checkable_data;
+	friend class meta::object_defs::object_class;
+
+  public:
+      object_runtime (object_creation_data&& data);
+
+      virtual ~object_runtime();
+
+
+      rx_value get_value (const string_type path) const;
+
+      void turn_on ();
+
+      void turn_off ();
+
+      void set_blocked ();
+
+      void set_test ();
+
+      values::rx_value get_value () const;
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
+
+      virtual bool connect_domain (rx_domain_ptr&& domain);
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      bool is_browsable () const;
+
+      virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
+
+      platform_item_ptr get_item_ptr ();
+
+      rx_time get_created_time () const;
+
+      rx_time get_modified_time () const;
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+      meta::checkable_data& meta_data ();
+
+      virtual rx_thread_handle_t get_executer () const;
+
+      virtual bool connect_application (rx_application_ptr&& app);
+
+
+      const meta::checkable_data& meta_data () const;
+
+
+      const rx_mode_type& get_mode () const
+      {
+        return mode_;
+      }
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+      const rx_time get_change_time () const
+      {
+        return change_time_;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+      object_runtime();
+
+
+      bool init_object ();
+
+
+      rx_application_ptr my_application_;
+
+      rx_domain_ptr my_domain_;
+
+
+  private:
+
+
+      programs_type programs_;
+
+      meta::checkable_data meta_data_;
+
+      structure::runtime_item::smart_ptr item_;
+
+
+      rx_mode_type mode_;
+
+      rx_time change_time_;
+
+
+};
+
+
+
+
+
+
+class server_object : public object_runtime  
+{
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+system object class. basic implementation of a system object");
+
+	DECLARE_REFERENCE_PTR(server_object);
+
+  public:
+      server_object (object_creation_data&& data);
+
+      virtual ~server_object();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class user_object : public object_runtime  
+{
+	DECLARE_CODE_INFO("rx", 0,1,0, "\
+user object class. basic implementation of a user object");
+
+	DECLARE_REFERENCE_PTR(user_object);
+
+  public:
+      user_object();
+
+      user_object (object_creation_data&& data);
+
+      virtual ~user_object();
+
+
+  protected:
+
+  private:
+
+
+};
+
 
 
 
@@ -129,245 +347,6 @@ struct domain_creation_data
 
 
 
-struct port_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      rx_application_ptr application;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct object_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
-
-      rx_application_ptr application;
-
-      rx_domain_ptr domain;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-namespace object_types {
-
-
-
-
-
-
-class object_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-object class. basic implementation of an object");
-
-	DECLARE_REFERENCE_PTR(object_runtime);
-
-	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
-	typedef std::map<string_type, size_t> items_cache_type;
-	typedef blocks::complex_runtime_item_ptr items_type;
-	typedef std::vector<logic::program_runtime_ptr> programs_type;
-
-	friend class meta::checkable_data;
-
-  public:
-      object_runtime (object_creation_data&& data);
-
-      virtual ~object_runtime();
-
-
-      rx_value get_value (const string_type path) const;
-
-      void turn_on ();
-
-      void turn_off ();
-
-      void set_blocked ();
-
-      void set_test ();
-
-      values::rx_value get_value () const;
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      virtual bool connect_domain (rx_domain_ptr&& domain);
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      bool is_browsable () const;
-
-      virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
-
-      platform_item_ptr get_item_ptr ();
-
-      rx_time get_created_time () const;
-
-      rx_time get_modified_time () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      blocks::complex_runtime_item& get_complex_item ();
-
-      meta::checkable_data& meta_data ();
-
-      virtual rx_thread_handle_t get_executer () const;
-
-      virtual bool connect_application (rx_application_ptr&& app);
-
-
-      blocks::complex_runtime_item& get_runtime_item ()
-      {
-        return runtime_item_;
-      }
-
-
-      const meta::checkable_data& meta_data () const;
-
-
-      const rx_mode_type& get_mode () const
-      {
-        return mode_;
-      }
-
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-      const rx_time get_change_time () const
-      {
-        return change_time_;
-      }
-
-
-
-      static string_type type_name;
-
-
-  protected:
-      object_runtime();
-
-
-      bool init_object ();
-
-
-      rx_application_ptr my_application_;
-
-      rx_domain_ptr my_domain_;
-
-
-  private:
-
-
-      blocks::complex_runtime_item runtime_item_;
-
-      programs_type programs_;
-
-      meta::checkable_data meta_data_;
-
-
-      rx_mode_type mode_;
-
-      rx_time change_time_;
-
-
-};
-
-
-
-
-
-
-class user_object : public object_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0,1,0, "\
-user object class. basic implementation of a user object");
-
-	DECLARE_REFERENCE_PTR(user_object);
-
-  public:
-      user_object();
-
-      user_object (object_creation_data&& data);
-
-      virtual ~user_object();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class server_object : public object_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-system object class. basic implementation of a system object");
-
-	DECLARE_REFERENCE_PTR(server_object);
-
-  public:
-      server_object (object_creation_data&& data);
-
-      virtual ~server_object();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class domain_runtime : public object_runtime  
 {
@@ -408,6 +387,32 @@ public:
 
 
       rx_thread_handle_t executer_;
+
+
+};
+
+
+
+
+
+
+struct port_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      rx_application_ptr application;
+
+  public:
+
+  protected:
+
+  private:
 
 
 };

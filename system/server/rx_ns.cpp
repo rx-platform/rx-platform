@@ -28,7 +28,6 @@
 
 #include "pch.h"
 
-using namespace std::string_literals;
 
 // rx_ns
 #include "system/server/rx_ns.h"

@@ -59,9 +59,9 @@ class obj_meta_helpers
 {
 public:
 	template<class objectT>
-	static bool serialize_object_class(const objectT& whose, base_meta_writer& stream, uint8_t type)
+	static bool serialize_object_class(const objectT& whose, base_meta_writer& stream, uint8_t type, const string_type object_type)
 	{
-		if (!whose.meta_data_.serialize_checkable_definition(stream, type))
+		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
 			return false;
 		if (!stream.start_object("Def"))
 			return false;
@@ -79,8 +79,6 @@ public:
 	template<class objectT>
 	static bool deserialize_object_class(objectT& whose, base_meta_reader& stream, uint8_t type)
 	{
-		if (!whose.meta_data_.deserialize_checkable_definition(stream, type))
-			return false;
 		if (!whose.object_data_.deserialize_object_definition(stream, type))
 			return false;
 		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
@@ -126,7 +124,7 @@ platform_item_ptr application_class::get_item_ptr ()
 
 bool application_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
@@ -148,11 +146,6 @@ def_blocks::complex_data_type& application_class::complex_data ()
 {
   return complex_data_;
 
-}
-
-runtime::rx_application_ptr application_class::create_runtime_ptr ()
-{
-	return rx_create_reference<runtime::object_types::application_runtime>();
 }
 
 
@@ -211,7 +204,7 @@ platform_item_ptr domain_class::get_item_ptr ()
 
 bool domain_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
@@ -295,7 +288,7 @@ platform_item_ptr object_class::get_item_ptr ()
 
 bool object_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
@@ -305,11 +298,6 @@ bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t typ
 	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
 		return false;
 	return true;
-}
-
-runtime::object_runtime_ptr object_class::create_runtime_ptr ()
-{
-	return rx_create_reference<runtime::object_types::object_runtime>();
 }
 
 checkable_data& object_class::meta_data ()
@@ -322,6 +310,11 @@ def_blocks::complex_data_type& object_class::complex_data ()
 {
   return complex_data_;
 
+}
+
+void object_class::set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where)
+{
+	where->item_ = std::move(create_runtime_data(prototype));
 }
 
 
@@ -406,7 +399,7 @@ platform_item_ptr port_class::get_item_ptr ()
 
 bool port_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }

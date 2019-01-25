@@ -31,12 +31,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 using rx_platform::meta::def_blocks::construct_context;
 
@@ -97,8 +97,9 @@ class event_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of event type");
 public:
-	typedef runtime::blocks::data::event_data RType;
-	typedef runtime::blocks::data::event_data::smart_ptr RTypePtr;
+	typedef runtime::structure::event_data RDataType;
+	typedef runtime::blocks::event_runtime RType;
+	typedef runtime::event_runtime_ptr RTypePtr;
 
 	friend class obj_meta_helpers;
 
@@ -116,11 +117,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static event_class::RType create_runtime ();
-
-      void construct (RType& what, construct_context& ctx);
-
-      uint_fast8_t get_runtime_data_type ();
+      void construct (RTypePtr& what, construct_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -164,8 +161,9 @@ class filter_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of filter type");
 public:
-	typedef runtime::blocks::data::filter_data RType;
-	typedef runtime::blocks::data::filter_data::smart_ptr RTypePtr;
+	typedef runtime::structure::filter_data RDataType;
+	typedef runtime::blocks::filter_runtime RType;
+	typedef runtime::filter_runtime_ptr RTypePtr;
 
 	friend class meta_helpers;
 
@@ -183,11 +181,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static filter_class::RType create_runtime ();
-
-      void construct (RType& what, construct_context& ctx);
-
-      uint_fast8_t get_runtime_data_type ();
+      void construct (RTypePtr& what, construct_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -231,8 +225,9 @@ class mapper_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of mapper type");
 public:
-	typedef runtime::blocks::data::mapper_data RType;
-	typedef runtime::blocks::data::mapper_data::smart_ptr RTypePtr;
+	typedef runtime::structure::mapper_data RDataType;
+	typedef runtime::blocks::mapper_runtime RType;
+	typedef runtime::mapper_runtime_ptr RTypePtr;
 
 	friend class meta_helpers;
 
@@ -252,11 +247,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static mapper_class::RType create_runtime ();
-
-      void construct (RType& what, construct_context& ctx);
-
-      uint_fast8_t get_runtime_data_type ();
+      void construct (RTypePtr& what, construct_context& ctx);
 
 
       const checkable_data& meta_data () const;
@@ -298,8 +289,9 @@ class source_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of source type");
 public:
-	typedef runtime::blocks::data::source_data RType;
-	typedef runtime::blocks::data::source_data::smart_ptr RTypePtr;
+	typedef runtime::structure::source_data RDataType;
+	typedef runtime::blocks::source_runtime RType;
+	typedef runtime::source_runtime_ptr RTypePtr;
 
 	friend class meta_helpers;
 
@@ -317,11 +309,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static source_class::RType create_runtime ();
-
-      void construct (RType& what, construct_context& ctx);
-
-      uint_fast8_t get_runtime_data_type ();
+      void construct (RTypePtr& what, construct_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -365,8 +353,9 @@ class struct_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of struct type");
 public:
-	typedef runtime::blocks::data::struct_data RType;
-	typedef runtime::blocks::data::struct_data::smart_ptr RTypePtr;
+	typedef runtime::structure::struct_data RDataType;
+	typedef runtime::blocks::struct_runtime RType;
+	typedef runtime::struct_runtime_ptr RTypePtr;
 
 	friend class meta_helpers;
 
@@ -374,7 +363,7 @@ public:
       struct_class (const type_creation_data& data);
 
 
-      void construct (RType& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx);
 
       platform_item_ptr get_item_ptr ();
 
@@ -382,15 +371,11 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      static struct_class::RType create_runtime ();
-
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
 
       def_blocks::mapped_data_type& mapping_data ();
-
-      uint_fast8_t get_runtime_data_type ();
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -438,8 +423,9 @@ class variable_class : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of variable type");
 public:
-	typedef runtime::blocks::data::variable_data RType;
-	typedef runtime::blocks::data::variable_data::smart_ptr RTypePtr;
+	typedef runtime::structure::variable_data RDataType;
+	typedef runtime::blocks::variable_runtime RType;
+	typedef runtime::variable_runtime_ptr RTypePtr;
 
 	friend class meta_helpers;
 
@@ -447,7 +433,7 @@ public:
       variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
 
 
-      void construct (RType& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx);
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -464,10 +450,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       def_blocks::variable_data_type& variable_data ();
-
-      static variable_class::RType create_runtime ();
-
-      uint_fast8_t get_runtime_data_type ();
 
 
       const checkable_data& meta_data () const;

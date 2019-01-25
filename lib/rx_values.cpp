@@ -234,6 +234,27 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
+rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+{
+	rx_value ret;
+	ret.storage_ = value.get_storage();
+	ret.time_ = ts;
+	return ret;
+}
+
+rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+{
+	rx_value ret;
+	ret.storage_ = std::move(value.get_storage());
+	ret.time_ = ts;
+	return ret;
+}
+
+rx::values::rx_simple_value rx_value::to_simple () const
+{
+	return rx_simple_value(storage_);
+}
+
 
 rx_value::rx_value()
 	: default_time_compare_(time_compare_skip)
@@ -277,111 +298,6 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value 
-
-bool rx_simple_value::operator==(const rx_simple_value &right) const
-{
-	return storage_.exact_equality(right.storage_);
-}
-
-bool rx_simple_value::operator!=(const rx_simple_value &right) const
-{
-	return !operator==(right);
-}
-
-
-
-bool rx_simple_value::is_bad () const
-{
-	return false;
-}
-
-bool rx_simple_value::is_uncertain () const
-{
-	return false;
-}
-
-bool rx_simple_value::is_test () const
-{
-	return false;
-}
-
-bool rx_simple_value::is_substituted () const
-{
-	return false;
-}
-
-bool rx_simple_value::is_array () const
-{
-	return false;
-}
-
-bool rx_simple_value::is_good () const
-{
-	return true;
-}
-
-bool rx_simple_value::can_operate (bool test_mode) const
-{
-	return true;
-}
-
-void rx_simple_value::get_full_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
-{
-	//TODONOW
-	//storage_.g
-	val.set_time(ts);
-	if (mode.is_off())
-		val.set_quality(RX_BAD_QUALITY_OFFLINE);
-	else
-		val.set_good_locally();
-	if (mode.is_test())
-		val.set_test();
-}
-
-bool rx_simple_value::serialize (base_meta_writer& writter) const
-{
-	return storage_.serialize(writter);
-}
-
-bool rx_simple_value::deserialize (base_meta_reader& reader)
-{
-	return storage_.deserialize(reader);
-}
-
-void rx_simple_value::dump_to_stream (std::ostream& out) const
-{
-	storage_.dump_to_stream(out);
-}
-
-void rx_simple_value::parse_from_stream (std::istream& in)
-{
-	storage_.parse_from_stream(in);
-}
-
-void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
-{
-}
-
-rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
-	: storage_(std::move(right.storage_))
-{
-}
-
-rx_simple_value& rx_simple_value::operator=(rx_simple_value&& right) noexcept
-{
-	storage_ = std::move(right.storage_);
-	return *this;
-}
-rx_simple_value::rx_simple_value(const rx_simple_value &right)
-	: storage_(right.storage_)
-{
-}
-rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
-{
-	storage_ = right.storage_;
-	return *this;
-}
 // Class rx::values::rx_value_storage 
 
 rx_value_storage::rx_value_storage()
@@ -403,7 +319,7 @@ bool rx_value_storage::serialize (base_meta_writer& writer) const
 		return false;
 	if (!writer.write_byte("Type", value_type_))
 		return false;
-	if (!serialize_value(writer, value_, value_type_))
+	if (!serialize_value(writer, value_, value_type_, "Val"))
 		return false;
 	if (!writer.end_object())
 		return false;
@@ -539,6 +455,18 @@ bool rx_value_storage::exact_equality (const rx_value_storage& right) const
 	if (value_type_ != right.value_type_)
 		return false;
 	return exact_equality(value_, right.value_, value_type_);
+}
+
+bool rx_value_storage::serialize_value (base_meta_writer& writer, const string_type& name) const
+{
+	if (!serialize_value(writer, value_, value_type_, name))
+		return false;
+	return true;
+}
+
+bool rx_value_storage::deserialize_value (base_meta_reader& reader, const string_type& name)
+{
+	return false;
 }
 
 void rx_value_storage::assign(bool val)
@@ -737,7 +665,7 @@ void rx_value_storage::assign_value(rx_value_union& left, const rx_value_union& 
 				break;
 			default:
 				RX_ASSERT(false);
-				// shouldn't happend
+				// shouldn't happened
 			}
 		}
 		break;
@@ -811,15 +739,15 @@ bool rx_value_storage::exact_equality(const rx_value_union& left, const rx_value
 {
 	return true;
 }
-bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_value_t type)
+bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_value_t type, const string_type& name)
 {
 	if (type&RX_ARRAY_VALUE_MASK)
 	{// array of values
-		writer.start_array("Vals", who.array_value->size());
+		writer.start_array(name.c_str(), who.array_value->size());
 		for (const auto& one : *who.array_value)
 		{
 			writer.start_object("Item");
-			serialize_value(writer, one, type&RX_STRIP_ARRAY_MASK);
+			serialize_value(writer, one, type&RX_STRIP_ARRAY_MASK, "Val");
 			writer.end_object();
 		}
 		writer.end_array();
@@ -831,65 +759,69 @@ bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_
 		case RX_NULL_TYPE:
 			break;
 		case RX_BOOL_TYPE:
-			writer.write_bool("Val", who.bool_value);
+			writer.write_bool(name.c_str(), who.bool_value);
 			break;
 		case RX_INT8_TYPE:
-			writer.write_byte("Val", who.int8_value);
+			writer.write_byte(name.c_str(), who.int8_value);
 			break;
 		case RX_UINT8_TYPE:
-			writer.write_byte("Val", who.uint8_value);
+			writer.write_byte(name.c_str(), who.uint8_value);
 			break;
 		case RX_INT16_TYPE:
-			writer.write_int("Val", who.int16_value);
+			writer.write_int(name.c_str(), who.int16_value);
 			break;
 		case RX_UINT16_TYPE:
-			writer.write_uint("Val", who.uint16_value);
+			writer.write_uint(name.c_str(), who.uint16_value);
 			break;
 		case RX_INT32_TYPE:
-			writer.write_int("Val", who.int32_value);
+			writer.write_int(name.c_str(), who.int32_value);
 			break;
 		case RX_UINT32_TYPE:
-			writer.write_uint("Val", who.uint32_value);
+			writer.write_uint(name.c_str(), who.uint32_value);
 			break;
 		case RX_INT64_TYPE:
-			writer.write_int64("Val", who.int64_value);
+			writer.write_int64(name.c_str(), who.int64_value);
 			break;
 		case RX_UINT64_TYPE:
-			writer.write_uint64("Val", who.uint64_value);
+			writer.write_uint64(name.c_str(), who.uint64_value);
 			break;
 		case RX_FLOAT_TYPE:
-			writer.write_double("Val", who.float_value);
+			writer.write_double(name.c_str(), who.float_value);
 			break;
 		case RX_DOUBLE_TYPE:
-			writer.write_double("Val", who.double_value);
+			writer.write_double(name.c_str(), who.double_value);
 			break;
 		case RX_STRING_TYPE:
-			writer.write_string("Val", who.string_value->c_str());
+			writer.write_string(name.c_str(), who.string_value->c_str());
 			break;
 		case RX_TIME_TYPE:
-			writer.write_time("Val", who.time_value);
+			writer.write_time(name.c_str(), who.time_value);
 			break;
 		case RX_UUID_TYPE:
-			writer.write_uuid("Val", who.uuid_value->uuid());
+			writer.write_uuid(name.c_str(), who.uuid_value->uuid());
 			break;
 		case RX_BYTES_TYPE:
-			writer.write_bytes("Val", &who.bytes_value->at(0),who.bytes_value->size());
+			writer.write_bytes(name.c_str(), &who.bytes_value->at(0),who.bytes_value->size());
 			break;
 		case RX_COMPLEX_TYPE:
+		{
+			writer.start_object(name.c_str());
 			writer.write_double("Real", who.complex_value->real);
 			writer.write_double("Imag", who.complex_value->imag);
-			break;
+			writer.end_object();
+		}
+		break;
 		case RX_OBJECT_TYPE:
 		case RX_CLASS_TYPE:
 		{
 			switch (type&RX_DEFINITION_TYPE_MASK)
 			{
 			case RX_BINARY_VALUE:
-				writer.write_bytes("Val", &who.bytes_value->at(0), who.bytes_value->size());
+				writer.write_bytes(name.c_str(), &who.bytes_value->at(0), who.bytes_value->size());
 				break;
 			case RX_JSON_VALUE:
 			case RX_SCRIPT_VALUE:
-				writer.write_string("Val", who.string_value->c_str());
+				writer.write_string(name.c_str(), who.string_value->c_str());
 				break;
 			default:
 				RX_ASSERT(false);
@@ -1177,6 +1109,11 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
+rx::values::rx_simple_value rx_timed_value::to_simple () const
+{
+	return rx_simple_value(storage_);
+}
+
 
 rx_timed_value::rx_timed_value()
 	: default_time_compare_(time_compare_skip)
@@ -1208,6 +1145,125 @@ rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 	return *this;
 }
 
+// Class rx::values::rx_simple_value 
+
+rx_simple_value::rx_simple_value (const rx_value_storage& storage)
+	: storage_(storage)
+{
+}
+
+
+bool rx_simple_value::operator==(const rx_simple_value &right) const
+{
+	return storage_.exact_equality(right.storage_);
+}
+
+bool rx_simple_value::operator!=(const rx_simple_value &right) const
+{
+	return !operator==(right);
+}
+
+
+
+bool rx_simple_value::is_bad () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_uncertain () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_test () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_substituted () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_array () const
+{
+	return false;
+}
+
+bool rx_simple_value::is_good () const
+{
+	return true;
+}
+
+bool rx_simple_value::can_operate (bool test_mode) const
+{
+	return true;
+}
+
+bool rx_simple_value::serialize (base_meta_writer& writter) const
+{
+	return storage_.serialize(writter);
+}
+
+bool rx_simple_value::deserialize (base_meta_reader& reader)
+{
+	return storage_.deserialize(reader);
+}
+
+void rx_simple_value::dump_to_stream (std::ostream& out) const
+{
+	storage_.dump_to_stream(out);
+}
+
+void rx_simple_value::parse_from_stream (std::istream& in)
+{
+	storage_.parse_from_stream(in);
+}
+
+void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
+{
+	val.set_time(ts);
+	if (mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else
+		val.set_good_locally();
+	if (mode.is_test())
+		val.set_test();
+}
+
+bool rx_simple_value::serialize_value (base_meta_writer& writer, const string_type& name) const
+{
+	if (!storage_.serialize_value(writer, name))
+		return false;
+	return true;
+}
+
+bool rx_simple_value::deserialize_value (base_meta_reader& reader, const string_type& name)
+{
+	if (!storage_.deserialize_value(reader, name))
+		return false;
+	return true;
+}
+
+rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
+	: storage_(std::move(right.storage_))
+{
+}
+
+rx_simple_value& rx_simple_value::operator=(rx_simple_value&& right) noexcept
+{
+	storage_ = std::move(right.storage_);
+	return *this;
+}
+rx_simple_value::rx_simple_value(const rx_simple_value &right)
+	: storage_(right.storage_)
+{
+}
+rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
+{
+	storage_ = right.storage_;
+	return *this;
+}
 } // namespace values
 } // namespace rx
 

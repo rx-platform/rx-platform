@@ -82,7 +82,7 @@ physical port class. basic implementation of a port");
 
 
   public:
-      physical_port (port_creation_data&& data);
+      physical_port (object_types::port_creation_data&& data);
 
 
   protected:

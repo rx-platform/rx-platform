@@ -31,8 +31,8 @@
 
 
 
-// rx_rt_data
-#include "system/runtime/rx_rt_data.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 namespace rx_platform {
 namespace meta {
@@ -54,6 +54,7 @@ class mapper_attribute;
 using namespace rx;
 using namespace rx::values;
 using namespace rx_platform::ns;
+using namespace rx_platform::runtime::structure;
 
 #define RT_TYPE_ID_CONST_VALUE 1
 #define RT_TYPE_ID_VALUE 2
@@ -512,6 +513,73 @@ class variable_attribute
 
 
 
+class runtime_data_prototype 
+{
+	typedef std::vector<const_value_data> const_values_type;
+	typedef std::vector<value_data> values_type;
+	typedef std::vector<variable_data> variables_type;
+	typedef std::vector<struct_data> structs_type;
+	typedef std::vector<source_data> sources_type;
+	typedef std::vector<mapper_data> mappers_type;
+	typedef std::vector<filter_data> filters_type;
+	typedef std::vector<event_data> events_type;
+
+	typedef std::vector<index_data> items_type;
+
+  public:
+
+      void add_const_value (const string_type& name, rx_simple_value value);
+
+      void add_value (const string_type& name, rx_timed_value value);
+
+      void add_mapper (const string_type& name, mapper_data&& value);
+
+      void add_struct (const string_type& name, struct_data&& value);
+
+      void add_variable (const string_type& name, variable_data&& value);
+
+      void add_source (const string_type& name, source_data&& value);
+
+      void add_filter (const string_type& name, filter_data&& value);
+
+      void add_event (const string_type& name, event_data&& value);
+
+
+      items_type items;
+
+      const_values_type const_values;
+
+      values_type values;
+
+      variables_type variables;
+
+      structs_type structs;
+
+      sources_type sources;
+
+      mappers_type mappers;
+
+      filters_type filters;
+
+      events_type events;
+
+
+  protected:
+
+  private:
+
+      bool check_name (const string_type& name) const;
+
+
+
+};
+
+
+
+
+
+
+
 class construct_context 
 {
 
@@ -519,9 +587,10 @@ class construct_context
       construct_context();
 
 
-      rx_time now;
+      runtime_data_prototype runtime_data;
 
-      runtime::blocks::data::runtime_data_prototype runtime_data;
+
+      rx_time now;
 
 
   protected:
@@ -574,8 +643,6 @@ class complex_data_type
       bool register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val);
 
       bool register_const_value (const string_type& name, const rx_simple_value& val);
-
-      uint_fast8_t get_runtime_data_type ();
 
 
       const const_values_type& get_const_values () const
@@ -668,8 +735,6 @@ class mapped_data_type
 
       void construct (const names_cahce_type& names, construct_context& ctx);
 
-      uint_fast8_t get_runtime_data_type ();
-
 
   protected:
 
@@ -707,13 +772,11 @@ class variable_data_type
 
       bool register_event (const event_attribute& item, complex_data_type& complex_data);
 
-      void construct (runtime::blocks::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx);
+      void construct (runtime::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx);
 
       bool serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
-
-      uint_fast8_t get_runtime_data_type ();
 
 
   protected:
@@ -755,6 +818,10 @@ bool complex_data_type::register_simple_value_static(const string_type& name, bo
 	temp.assign_static<valT>(std::forward<valT>(value));
 	return register_simple_value(name, read_only, temp);
 }
+
+
+
+runtime::structure::runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype);
 
 } // namespace def_blocks
 } // namespace meta

@@ -65,8 +65,6 @@
 #define ANSI_CLS "\x1b[2J"
 #define ANSI_CUR_HOME "\033[0;0H"
 
-#define RX_DIR_DELIMETER '/'
-#define RX_OBJECT_DELIMETER '.'
 using namespace rx;
 
 

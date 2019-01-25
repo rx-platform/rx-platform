@@ -317,7 +317,7 @@ void server_console_program::cancel_execution ()
 
 // Class rx_platform::prog::console_client 
 
-console_client::console_client (runtime::port_creation_data&& data)
+console_client::console_client (runtime::object_types::port_creation_data&& data)
       : current_context_(nullptr)
 	, runtime::object_types::port_runtime(std::move(data))
 {

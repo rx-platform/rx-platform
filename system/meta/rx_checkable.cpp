@@ -29,8 +29,6 @@
 #include "pch.h"
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_checkable
@@ -64,27 +62,6 @@ checkable_data::checkable_data (const string_type& name, const rx_node_id& id, c
 
 
 
-bool checkable_data::serialize_node (base_meta_writer& stream, uint8_t type, const rx_value_union& value) const
-{
-	if (!stream.write_header(type, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, type);*/
-	/*if(!ret)
-		return false;
-*/
-	if (!stream.write_footer())
-		return false;
-
-	return true;
-}
-
-bool checkable_data::deserialize_node (base_meta_reader& stream, uint8_t type, rx_value_union& value)
-{
-	return false;
-}
-
 bool checkable_data::check_in (base_meta_reader& stream)
 {
 	return false;
@@ -105,9 +82,13 @@ bool checkable_data::check_out (base_meta_writer& stream) const
 	return true;
 }
 
-bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type) const
+bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, uint8_t type, const string_type& object_type) const
 {
 	if (!stream.start_object("Meta"))
+		return false;
+	if (!stream.write_string("Type", object_type.c_str()))
+		return false;
+	if (!stream.write_id("NodeId", id_))
 		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
@@ -124,7 +105,7 @@ bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, u
 	return true;
 }
 
-bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type)
+bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type, string_type& object_type)
 {
 	if (!stream.read_id("NodeId", id_))
 		return false;

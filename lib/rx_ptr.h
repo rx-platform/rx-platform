@@ -59,6 +59,7 @@ public:\
 	friend class rx::pointers::reference;\
 private:\
 	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }\
+	const smart_ptr smart_this() const { return smart_ptr::create_from_pointer(const_cast<class_name*>(this)); }\
 
 
 #define DECLARE_DERIVED_FROM_INTERFACE \
@@ -407,8 +408,8 @@ public:
 	template<class Tother>
 	friend class rx::pointers::reference;
 private:
-	smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
-	const smart_ptr smart_this() const { return smart_ptr::create_from_pointer(this); }
+	//smart_ptr smart_this() { return smart_ptr::create_from_pointer(this); }
+	//smart_ptr smart_this() const { return smart_ptr::create_from_pointer(this); }
 };
 
 

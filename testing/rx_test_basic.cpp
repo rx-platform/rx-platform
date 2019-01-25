@@ -34,7 +34,7 @@
 
 #include "model/rx_meta.h"
 #include "sys_internal/rx_internal_ns.h"
-using namespace std::string_literals;
+#include "system/server/rx_server.h"
 
 
 namespace testing {
@@ -459,7 +459,7 @@ namespace meta_test {
 		 if (rx_class_item->generate_json(out, err))
 		 {
 
-			 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
+			 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
 			 {
 
 				 out << "test_struct created\r\n";

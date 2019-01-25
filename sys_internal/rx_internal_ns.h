@@ -435,8 +435,6 @@ bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostre
 
 	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
-
-	writer.write_string("Type", impl_->get_type_name().c_str());
 	impl_->serialize_definition(writer, STREAMING_TYPE_OBJECT);
 
 	writer.write_footer();
@@ -525,7 +523,6 @@ bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 
 	bool out = false;
 
-	writer.write_string("Type", impl_->get_type_name().c_str());
 	out = impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
 
 	writer.write_footer();

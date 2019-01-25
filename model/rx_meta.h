@@ -31,14 +31,13 @@
 
 
 
-// rx_construct
-#include "system/constructors/rx_construct.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
 #include "system/meta/rx_classes.h"
 #include "system/meta/rx_obj_classes.h"
 #include "system/runtime/rx_objbase.h"
+#include "system/hosting/rx_host.h"
 
 using namespace rx_platform::meta;
 using namespace rx_platform::meta::basic_defs;
@@ -73,8 +72,9 @@ private:\
 
 void init_compiled_meta_types();
 
-typedef TYPELIST_10(object_class, port_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) regular_rx_types;
-typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
+typedef TYPELIST_6(variable_class, source_class, event_class, filter_class, mapper_class, struct_class) simple_rx_types;
+typedef TYPELIST_4(object_class, port_class, application_class, domain_class) object_rx_types;
+//typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
 
 struct query_result_detail
@@ -261,13 +261,10 @@ public:
 	typedef typename typeT::RType RType;
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
-	typedef typename constructors::object_constructor_base<RType,RType> constructorType;
 
 	typedef typename std::map<rx_node_id, RType> registered_objects_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
-	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > object_constructors_type;
-	typedef typename std::map<rx_node_id, std::function<RType()> > item_constructors_type;
-
+	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
       type_hash();
@@ -287,15 +284,11 @@ public:
 
       query_result get_derived_types (const rx_node_id& id) const;
 
-      typename type_hash<typeT>::RType create_simple_runtime (const rx_node_id& type_id);
-
 
   protected:
 
   private:
 
-
-      object_constructors_type object_constructors_;
 
       inheritance_hash inheritance_hash_;
 
@@ -306,8 +299,66 @@ public:
 
       registered_types_type registered_types_;
 
-      item_constructors_type item_constructors_;
+      constructors_type constructors_;
 
+	  std::function<RTypePtr()> default_constructor_;
+};
+
+
+
+
+
+
+template <class typeT>
+class simple_type_hash 
+{
+	simple_type_hash(const simple_type_hash&) = delete;
+	simple_type_hash(simple_type_hash&&) = delete;
+	void operator=(const simple_type_hash&) = delete;
+	void operator=(simple_type_hash&&) = delete;
+
+public:
+	typedef typename typeT::RDataType RDataType;
+	typedef typename typeT::RType RType;
+	typedef typename typeT::RTypePtr RTypePtr;
+	typedef typename typeT::smart_ptr Tptr;
+
+	typedef typename std::map<rx_node_id, RType> registered_objects_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
+
+  public:
+      simple_type_hash();
+
+      virtual ~simple_type_hash();
+
+
+      typename type_hash<typeT>::Tptr get_class_definition (const rx_node_id& id);
+
+      bool register_class (typename type_hash<typeT>::Tptr what);
+
+      bool register_constructor (const rx_node_id& id, std::function<RType()> f);
+
+      query_result get_derived_types (const rx_node_id& id) const;
+
+      typename simple_type_hash<typeT>::RDataType create_simple_runtime (const rx_node_id& type_id);
+
+
+  protected:
+
+  private:
+
+
+      inheritance_hash inheritance_hash_;
+
+
+      registered_objects_type registered_objects_;
+
+      registered_types_type registered_types_;
+
+      constructors_type constructors_;
+
+	  std::function<RTypePtr()> default_constructor_;
 
 };
 
@@ -367,7 +418,7 @@ class internal_types_manager
 	};
 
 	class type_cache_list_container
-		: public tl::gen_scatter_hierarchy<regular_rx_types, type_cache_holder>
+		: public tl::gen_scatter_hierarchy<object_rx_types, type_cache_holder>
 	{
 	public:
 		template<class T>
@@ -385,18 +436,58 @@ class internal_types_manager
 		}
 	};
 	type_cache_list_container _types_container;
+
+	template<class T>
+	struct simple_type_cache_holder
+	{
+	public:
+		simple_type_hash<T>* value_;
+		simple_type_cache_holder()
+			: value_(NULL)
+		{
+		}
+		~simple_type_cache_holder()
+		{
+		}
+	};
+
+	class simple_type_cache_list_container
+		: public tl::gen_scatter_hierarchy<simple_rx_types, simple_type_cache_holder>
+	{
+	public:
+		template<class T>
+		simple_type_hash<T>& get_internal(internal_types_manager* manager, tl::type2type<T>)
+		{
+			simple_type_hash<T>* ret = (static_cast<simple_type_cache_holder<T>&>(*this)).value_;
+			if (ret == nullptr)
+			{
+				ret = new simple_type_hash<T>();
+				//ret->set_manager(manager);
+				//manager->_cache_types.insert(cache_types_type::value_type(T::type_id, ret));
+				(static_cast<simple_type_cache_holder<T>&>(*this)).value_ = ret;
+			}
+			return *ret;
+		}
+	};
+	simple_type_cache_list_container _simple_types_container;
+
+
 	/*typedef std::map<uint32_t, inheritance_cache_base*> cache_types_type;
 	typedef std::map<uint32_t, inheritance_cache_base*>::iterator cache_types_iterator;
 	typedef std::map<uint32_t, inheritance_cache_base*>::const_iterator const_cache_types_iterator;
 	cache_types_type _cache_types;*/
 
-	friend class type_cache_list_container;
 
 public:
 	template<class T>
 	type_hash<T>& get_type_cache()
 	{
 		return _types_container.get_internal<T>(this, tl::type2type<T>());
+	}
+	template<class T>
+	simple_type_hash<T>& get_simple_type_cache()
+	{
+		return _simple_types_container.get_internal<T>(this, tl::type2type<T>());
 	}
 
   public:
@@ -445,6 +536,10 @@ public:
 template <class typeT>
 type_hash<typeT>::type_hash()
 {
+	default_constructor_ = []()
+	{
+		return rx_create_reference<RType>();
+	};
 }
 
 
@@ -489,7 +584,7 @@ bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
 template <class typeT>
 bool type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RType()> f)
 {
-	object_constructors_.emplace(id, f);
+	constructors_.emplace(id, f);
 	return true;
 }
 
@@ -502,20 +597,22 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 	else
 		to_create = id;
 
-	auto ret = typeT::create_runtime_ptr();
-
+	RTypePtr ret;
+	
 	rx_node_ids base;
 	base.emplace_back(type_id);
 	inheritance_hash_.get_base_types(type_id,base);
 	for(const auto& one : base)
 	{
-		auto it = object_constructors_.find(one);
-		if (it != object_constructors_.end())
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
 		{
 			ret = (it->second)();
 			break;
 		}
 	}
+	if (!ret)
+		ret = default_constructor_();
 
 	construct_context ctx;
 	ret->meta_data().construct(name, to_create, std::move(type_id), system);
@@ -528,7 +625,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 
 		}
 	}
-	auto rt_ptr = create_runtime_data(ctx.runtime_data);
+	object_class::set_object_runtime_data(ctx.runtime_data, ret);
 	return ret;
 }
 
@@ -553,37 +650,6 @@ query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 			ret.details.emplace_back(query_result_detail { one, type->second->meta_data().get_name() });
 		}
 	}
-	return ret;
-}
-
-template <class typeT>
-typename type_hash<typeT>::RType type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id)
-{
-	auto ret = typeT::create_runtime();
-
-	rx_node_ids base;
-	base.emplace_back(type_id);
-	inheritance_hash_.get_base_types(type_id, base);
-	for (const auto& one : base)
-	{
-		auto it = item_constructors_.find(one);
-		if (it != item_constructors_.end())
-		{
-			ret = (it->second)();
-			break;
-		}
-	}
-	construct_context ctx;
-	for (auto one_id : base)
-	{
-		auto my_class = get_class_definition(one_id);
-		if (my_class)
-		{
-			my_class->construct(ret, ctx);
-
-		}
-	}
-	auto rt_ptr = create_runtime_data(ctx.runtime_data);
 	return ret;
 }
 
@@ -652,6 +718,103 @@ public:
 	}
 };
 */
+// Parameterized Class model::simple_type_hash 
+
+template <class typeT>
+simple_type_hash<typeT>::simple_type_hash()
+{
+	default_constructor_ = []()
+	{
+		return rx_create_reference<RType>();
+	};
+}
+
+
+template <class typeT>
+simple_type_hash<typeT>::~simple_type_hash()
+{
+}
+
+
+
+template <class typeT>
+typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_class_definition (const rx_node_id& id)
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return Tptr::null_ptr;
+	}
+}
+
+template <class typeT>
+bool simple_type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
+{
+	const auto& id = what->meta_data().get_id();
+	auto it = registered_types_.find(id);
+	if (it == registered_types_.end())
+	{
+		registered_types_.emplace(what->meta_data().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_data().get_parent());
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class typeT>
+bool simple_type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RType()> f)
+{
+	constructors_.emplace(id, f);
+	return true;
+}
+
+template <class typeT>
+query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) const
+{
+}
+
+template <class typeT>
+typename simple_type_hash<typeT>::RDataType simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id)
+{
+	RTypePtr ret;
+
+	rx_node_ids base;
+	base.emplace_back(type_id);
+	inheritance_hash_.get_base_types(type_id, base);
+	for (const auto& one : base)
+	{
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
+		{
+			ret = (it->second)();
+			break;
+		}
+	}
+	if (!ret)
+		ret = default_constructor_();
+
+	construct_context ctx;
+	for (auto one_id : base)
+	{
+		auto my_class = get_class_definition(one_id);
+		if (my_class)
+		{
+			my_class->construct(ret, ctx);
+
+		}
+	}
+
+	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), ret };
+}
+
+
 } // namespace model
 
 

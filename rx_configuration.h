@@ -1,5 +1,7 @@
 #pragma once
 
+#define RX_DIR_DELIMETER '/'
+#define RX_OBJECT_DELIMETER '.'
 
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
