@@ -154,6 +154,9 @@ class hosting_object_data
 
   public:
 
+      rx_value adapt_value (const rx_value& from) const;
+
+
       rx_mode_type mode;
 
       rx_time time;
@@ -173,6 +176,42 @@ class hosting_object_data
 
 
 
+class init_context 
+{
+
+  public:
+
+      static init_context create_initialization_context (object_runtime_ptr whose);
+
+
+      const string_type& get_current_path () const
+      {
+        return current_path_;
+      }
+
+
+
+      hosting_object_data object_data;
+
+
+      rx_time now;
+
+
+  protected:
+
+  private:
+
+
+      string_type current_path_;
+
+
+};
+
+
+
+
+
+
 
 class const_value_data 
 {
@@ -180,6 +219,8 @@ class const_value_data
   public:
 
       rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
 
 
       rx::values::rx_simple_value value;
@@ -207,6 +248,8 @@ class value_data
   public:
 
       rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
 
 
       rx::values::rx_timed_value value;
@@ -237,7 +280,7 @@ class runtime_item
 
       virtual void collect_data (data::runtime_values_data& data) const = 0;
 
-      virtual void fill_data (const data::runtime_values_data& data) = 0;
+      virtual void fill_data (const data::runtime_values_data& data, init_context& ctx) = 0;
 
       virtual rx_value get_value (const hosting_object_data& state, const string_type& path) const = 0;
 
@@ -260,13 +303,29 @@ class runtime_item
 class variable_data 
 {
   public:
-	  typedef std::unique_ptr<variable_data> smart_ptr;
+	  variable_data() = default;
+	  ~variable_data() = default;
+	  variable_data(const variable_data&) = default;
+	  variable_data(variable_data&&) noexcept = default;
+	  variable_data& operator=(const variable_data&) = default;
+	  variable_data& operator=(variable_data&&) noexcept = default;
 
   public:
+      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
+
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_value&& value);
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
+
+
+      rx::values::rx_value value;
 
 
       runtime_item::smart_ptr item;
@@ -291,12 +350,21 @@ class variable_data
 
 class struct_data 
 {
+  public:
+	  struct_data() = default;
+	  ~struct_data() = default;
+	  struct_data(const struct_data&) = default;
+	  struct_data(struct_data&&) noexcept = default;
+	  struct_data& operator=(const struct_data&) = default;
+	  struct_data& operator=(struct_data&&) noexcept = default;
 
   public:
+      struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var);
+
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -321,12 +389,19 @@ class struct_data
 
 class mapper_data 
 {
+public:
+	mapper_data() = default;
+	~mapper_data() = default;
+	mapper_data(const mapper_data&) = default;
+	mapper_data(mapper_data&&) noexcept = default;
+	mapper_data& operator=(const mapper_data&) = default;
+	mapper_data& operator=(mapper_data&&) noexcept = default;
 
   public:
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -351,12 +426,19 @@ class mapper_data
 
 class source_data 
 {
+  public:
+	source_data() = default;
+	~source_data() = default;
+	source_data(const source_data&) = default;
+	source_data(source_data&&) noexcept = default;
+	source_data& operator=(const source_data&) = default;
+	source_data& operator=(source_data&&) noexcept = default;
 
   public:
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -381,12 +463,19 @@ class source_data
 
 class event_data 
 {
+public:
+	event_data() = default;
+	~event_data() = default;
+	event_data(const event_data&) = default;
+	event_data(event_data&&) noexcept = default;
+	event_data& operator=(const event_data&) = default;
+	event_data& operator=(event_data&&) noexcept = default;
 
   public:
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -411,12 +500,19 @@ class event_data
 
 class filter_data 
 {
+public:
+	filter_data() = default;
+	~filter_data() = default;
+	filter_data(const filter_data&) = default;
+	filter_data(filter_data&&) noexcept = default;
+	filter_data& operator=(const filter_data&) = default;
+	filter_data& operator=(filter_data&&) noexcept = default;
 
   public:
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -482,7 +578,7 @@ class runtime_data : public runtime_item
 
       void collect_data (data::runtime_values_data& data) const;
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
       rx_value get_value (const hosting_object_data& state, const string_type& path) const;
 
@@ -516,6 +612,8 @@ class runtime_data : public runtime_item
       members_index_type internal_get_index (const string_type& name) const;
 
       bool is_value_index (members_index_type idx) const;
+
+      bool is_complex_index (members_index_type idx) const;
 
 
 

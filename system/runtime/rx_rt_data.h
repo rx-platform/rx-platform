@@ -93,6 +93,8 @@ class runtime_values_data
 
       runtime_values_data& add_child (const string_type& name);
 
+      rx_simple_value get_value (const string_type& path) const;
+
 
       values_type values;
 

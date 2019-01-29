@@ -250,90 +250,6 @@ const def_blocks::mapped_data_type& domain_class::mapping_data () const
 }
 
 
-// Class rx_platform::meta::object_defs::object_class 
-
-string_type object_class::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
-
-object_class::object_class()
-{
-}
-
-object_class::object_class (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
-{
-}
-
-
-object_class::~object_class()
-{
-}
-
-
-
-void object_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-void object_class::construct (runtime::object_runtime_ptr what, construct_context& ctx)
-{
-	complex_data_.construct(ctx);
-	object_data_.construct(what, ctx);
-}
-
-platform_item_ptr object_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool object_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
-		return false;
-	return true;
-}
-
-bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
-		return false;
-	return true;
-}
-
-checkable_data& object_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& object_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-void object_class::set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where)
-{
-	where->item_ = std::move(create_runtime_data(prototype));
-}
-
-
-const object_data_type& object_class::object_data () const
-{
-  return object_data_;
-}
-
-const checkable_data& object_class::meta_data () const
-{
-  return meta_data_;
-}
-
-const def_blocks::complex_data_type& object_class::complex_data () const
-{
-  return complex_data_;
-}
-
-
 // Class rx_platform::meta::object_defs::object_data_type 
 
 object_data_type::object_data_type()
@@ -446,6 +362,90 @@ const def_blocks::mapped_data_type& port_class::mapping_data () const
 
 
 // Class rx_platform::meta::object_defs::object_type_creation_data 
+
+
+// Class rx_platform::meta::object_defs::object_class 
+
+string_type object_class::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
+
+object_class::object_class()
+{
+}
+
+object_class::object_class (const object_type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
+{
+}
+
+
+object_class::~object_class()
+{
+}
+
+
+
+void object_class::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+void object_class::construct (runtime::object_runtime_ptr what, construct_context& ctx)
+{
+	complex_data_.construct(ctx);
+	object_data_.construct(what, ctx);
+}
+
+platform_item_ptr object_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool object_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
+		return false;
+	return true;
+}
+
+bool object_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+		return false;
+	return true;
+}
+
+checkable_data& object_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& object_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+void object_class::set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where)
+{
+	where->item_ = std::move(create_runtime_data(prototype));
+}
+
+
+const object_data_type& object_class::object_data () const
+{
+  return object_data_;
+}
+
+const checkable_data& object_class::meta_data () const
+{
+  return meta_data_;
+}
+
+const def_blocks::complex_data_type& object_class::complex_data () const
+{
+  return complex_data_;
+}
 
 
 } // namespace object_defs

@@ -31,12 +31,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using rx_platform::meta::def_blocks::construct_context;
 
@@ -91,70 +91,6 @@ struct type_creation_data
 
 
 
-class event_class : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(event_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
-implementation of event type");
-public:
-	typedef runtime::structure::event_data RDataType;
-	typedef runtime::blocks::event_runtime RType;
-	typedef runtime::event_runtime_ptr RTypePtr;
-
-	friend class obj_meta_helpers;
-
-  public:
-      event_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
-
-
-      platform_item_ptr get_item_ptr ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      checkable_data& meta_data ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      void construct (RTypePtr& what, construct_context& ctx);
-
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const checkable_data& meta_data () const;
-
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      event_class();
-
-
-
-      def_blocks::complex_data_type complex_data_;
-
-      checkable_data meta_data_;
-
-
-};
-
-
-
-
-
-
-
 class filter_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(filter_class);
@@ -168,7 +104,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      filter_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      filter_class (const type_creation_data& data);
 
 
       platform_item_ptr get_item_ptr ();
@@ -234,7 +170,7 @@ public:
   public:
       mapper_class();
 
-      mapper_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      mapper_class (const type_creation_data& data);
 
 
       platform_item_ptr get_item_ptr ();
@@ -296,7 +232,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      source_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      source_class (const type_creation_data& data);
 
 
       platform_item_ptr get_item_ptr ();
@@ -430,7 +366,7 @@ public:
 	friend class meta_helpers;
 
   public:
-      variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system = false);
+      variable_class (const type_creation_data& data);
 
 
       void construct (RTypePtr& what, construct_context& ctx);
@@ -485,6 +421,70 @@ public:
       def_blocks::mapped_data_type mapping_data_;
 
       def_blocks::complex_data_type complex_data_;
+
+
+};
+
+
+
+
+
+
+
+class event_class : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(event_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of event type");
+public:
+	typedef runtime::structure::event_data RDataType;
+	typedef runtime::blocks::event_runtime RType;
+	typedef runtime::event_runtime_ptr RTypePtr;
+
+	friend class obj_meta_helpers;
+
+  public:
+      event_class (const type_creation_data& data);
+
+
+      platform_item_ptr get_item_ptr ();
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      checkable_data& meta_data ();
+
+      def_blocks::complex_data_type& complex_data ();
+
+      void construct (RTypePtr& what, construct_context& ctx);
+
+
+      const def_blocks::complex_data_type& complex_data () const;
+
+      const checkable_data& meta_data () const;
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+      event_class();
+
+
+
+      def_blocks::complex_data_type complex_data_;
+
+      checkable_data meta_data_;
 
 
 };

@@ -2,6 +2,7 @@
 
 #define RX_DIR_DELIMETER '/'
 #define RX_OBJECT_DELIMETER '.'
+#define RX_DEFAULT_VARIABLE_NAME "_"
 
 // directories stuff
 #define RX_NS_WORLD_NAME "world"

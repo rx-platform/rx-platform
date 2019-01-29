@@ -31,8 +31,6 @@
 
 
 
-// rx_callback
-#include "system/callbacks/rx_callback.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_ptr
@@ -41,6 +39,8 @@
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -85,6 +85,60 @@ typedef rx_reference<object_types::object_runtime> rx_object_ptr;
 typedef rx_reference<object_types::application_runtime> rx_application_ptr;
 
 namespace object_types {
+
+
+
+
+
+struct application_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct domain_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id type_id;
+
+      bool system;
+
+      rx_application_ptr application;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
 
 
 
@@ -181,6 +235,10 @@ object class. basic implementation of an object");
 
       virtual bool connect_application (rx_application_ptr&& app);
 
+      void collect_data (data::runtime_values_data& data) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
 
       const meta::checkable_data& meta_data () const;
 
@@ -241,31 +299,6 @@ object class. basic implementation of an object");
 
 
 
-class server_object : public object_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-system object class. basic implementation of a system object");
-
-	DECLARE_REFERENCE_PTR(server_object);
-
-  public:
-      server_object (object_creation_data&& data);
-
-      virtual ~server_object();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class user_object : public object_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,1,0, "\
@@ -293,47 +326,18 @@ user object class. basic implementation of a user object");
 
 
 
-struct application_creation_data 
+class server_object : public object_runtime  
 {
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+system object class. basic implementation of a system object");
 
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
+	DECLARE_REFERENCE_PTR(server_object);
 
   public:
+      server_object (object_creation_data&& data);
 
-  protected:
+      virtual ~server_object();
 
-  private:
-
-
-};
-
-
-
-
-
-
-struct domain_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
-
-      rx_application_ptr application;
-
-  public:
 
   protected:
 

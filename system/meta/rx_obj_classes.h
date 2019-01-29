@@ -298,6 +298,80 @@ public:
 
 
 
+class port_class : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(port_class);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of port type");
+public:
+	typedef runtime::object_types::port_runtime RType;
+	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
+
+	friend class obj_meta_helpers;
+
+  public:
+      port_class (const object_type_creation_data& data);
+
+      virtual ~port_class();
+
+
+      void construct (runtime::rx_port_ptr what, construct_context& ctx);
+
+      platform_item_ptr get_item_ptr ();
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      checkable_data& meta_data ();
+
+      def_blocks::complex_data_type& complex_data ();
+
+
+      const object_data_type& object_data () const;
+
+      const checkable_data& meta_data () const;
+
+      const def_blocks::complex_data_type& complex_data () const;
+
+      const def_blocks::mapped_data_type& mapping_data () const;
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+      port_class();
+
+
+
+      object_data_type object_data_;
+
+      checkable_data meta_data_;
+
+      def_blocks::complex_data_type complex_data_;
+
+      def_blocks::mapped_data_type mapping_data_;
+
+
+};
+
+
+
+
+
+
+
 class object_class : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(object_class);
@@ -363,80 +437,6 @@ public:
 
 
       static string_type type_name;
-
-
-};
-
-
-
-
-
-
-
-class port_class : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(port_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
-implementation of port type");
-public:
-	typedef runtime::object_types::port_runtime RType;
-	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
-
-	friend class obj_meta_helpers;
-
-  public:
-      port_class (const object_type_creation_data& data);
-
-      virtual ~port_class();
-
-
-      void construct (runtime::rx_port_ptr what, construct_context& ctx);
-
-      platform_item_ptr get_item_ptr ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      checkable_data& meta_data ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-
-      const object_data_type& object_data () const;
-
-      const checkable_data& meta_data () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      port_class();
-
-
-
-      object_data_type object_data_;
-
-      checkable_data meta_data_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
 
 
 };

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace basic_tests {
 
 namespace lib_test {
 
-// Class testing::basic_tests::lib_test::library_test_category 
+// Class testing::basic_tests::lib_test::library_test_category
 
 library_test_category::library_test_category()
 	: test_category("lib")
@@ -146,7 +146,7 @@ void test_callbacks(std::ostream& out)
 	out << "\r\n";
 }
 
-// Class testing::basic_tests::lib_test::platform_callback_test 
+// Class testing::basic_tests::lib_test::platform_callback_test
 
 platform_callback_test::platform_callback_test()
 	: test_case("callback")
@@ -168,7 +168,7 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_tests::lib_test::values_test 
+// Class testing::basic_tests::lib_test::values_test
 
 values_test::values_test()
 	: test_case("values")
@@ -187,7 +187,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 
 	{
 		ctx->set_failed();
-		bool failed = false;
+		bool failed = true;
 
 		std::vector<rx::values::rx_simple_value> simples(4);
 		simples[0].assign_static(true);
@@ -243,22 +243,23 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 				}
 			}
 		}
-		memory::std_buffer buffer;
-		serialization::std_buffer_writer bwriter(buffer);
-		if (test_serialization("Binary", simples, timed, fulls, bwriter, out))
+		if (!failed)
 		{
-			out << RX_TESTING_CON_LINE;
-			bwriter.dump_to_stream(out);
-			out << RX_TESTING_CON_LINE;
-			serialization::std_buffer_reader reader(buffer);
-			if (test_deserialization("Binary", simples, timed, fulls, reader, out))
+			memory::std_buffer buffer;
+			serialization::std_buffer_writer bwriter(buffer);
+			if (test_serialization("Binary", simples, timed, fulls, bwriter, out))
 			{
-				failed = false;
+				out << RX_TESTING_CON_LINE;
+				bwriter.dump_to_stream(out);
+				out << RX_TESTING_CON_LINE;
+				serialization::std_buffer_reader reader(buffer);
+				if (test_deserialization("Binary", simples, timed, fulls, reader, out))
+				{
+					failed = false;
+				}
+
 			}
-
 		}
-
-
 		if (!failed)
 			ctx->set_passed();
 	}
@@ -283,10 +284,14 @@ bool values_test::test_serialization (const string_type& name, std::vector<rx::v
 
 	if (writer.write_footer())
 	{
-		out << "\r\n==============================\r\n " ANSI_COLOR_GREEN << name << ANSI_COLOR_RESET " serialization succeeded";
+		out << "\r\n==============================\r\n " ANSI_COLOR_GREEN << name << " serialization succeeded" ANSI_COLOR_RESET "\r\n";
 		return true;
 	}
-	else return false;
+	else
+	{
+		out << "\r\n==============================\r\n " ANSI_COLOR_RED << name << " serialization failed" ANSI_COLOR_RESET "\r\n";
+		return false;
+	}
 }
 
 bool values_test::test_deserialization (const string_type& name, std::vector<rx::values::rx_simple_value>& simples, std::vector<rx::values::rx_timed_value>& timed, std::vector<rx::values::rx_value>& fulls, base_meta_reader& reader, std::ostream& out)
@@ -368,16 +373,22 @@ bool values_test::test_deserialization (const string_type& name, std::vector<rx:
 					out << "\r\ntimed[" << idx << "] - " << (same ? "same" : ANSI_COLOR_RED "different" ANSI_COLOR_RESET);
 				}
 			}
+			else
+			{
+				out << "\r\n==============================\r\n " ANSI_COLOR_RED << name << " deserialization failed" ANSI_COLOR_RESET "\r\n";
+			}
 		}
 	}
 	else
+	{
+		out << "\r\n==============================\r\n " ANSI_COLOR_RED << name << " deserialization failed" ANSI_COLOR_RESET "\r\n";
 		failed = true;
-
+	}
 	return !failed;
 }
 
 
-// Class testing::basic_tests::lib_test::external_interfaces_test 
+// Class testing::basic_tests::lib_test::external_interfaces_test
 
 external_interfaces_test::external_interfaces_test()
 		: test_case("interfaces")
@@ -403,12 +414,12 @@ bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, st
 
 namespace meta_test {
 
- // Class testing::basic_tests::meta_test::meta_model_test_category 
+ // Class testing::basic_tests::meta_test::meta_model_test_category
 
  meta_model_test_category::meta_model_test_category()
 	 : test_category("meta")
  {
-	 register_test_case(rx_create_reference<object_creation_test>()); 
+	 register_test_case(rx_create_reference<object_creation_test>());
 	 register_test_case(rx_create_reference<runtime_structure_test>());
  }
 
@@ -419,7 +430,7 @@ namespace meta_test {
 
 
 
- // Class testing::basic_tests::meta_test::object_creation_test 
+ // Class testing::basic_tests::meta_test::object_creation_test
 
  object_creation_test::object_creation_test()
 	 : test_case("construct")
@@ -448,7 +459,11 @@ namespace meta_test {
 	 rx_platform::meta::struct_class_ptr test_struct(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_struct_type",41, RX_CLASS_STRUCT_BASE_ID,  false }));
 	 test_struct->complex_data().register_simple_value_static("structVal", false, false);
 
+	 rx_platform::meta::variable_class_ptr test_variable(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_variable_type",42, RX_CLASS_VARIABLE_BASE_ID,  false }));
+	 test_variable->complex_data().register_simple_value_static("variableVal", false, 4.7);
+
 	 test_class->complex_data().register_struct("structName", 41);
+	 test_class->complex_data().register_variable_static("variableName", 42, 55, false);
 
 	 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().register_class(test_class))
 	 {
@@ -470,22 +485,43 @@ namespace meta_test {
 
 				 if (rx_struct_item->generate_json(out, err))
 				 {
-					 out << "Creating test_object\r\n";
-
-					 std::map<rx_node_id, std::function<rx_platform::runtime::object_runtime_ptr()> > map;
-					 map.emplace(55, [] {
-						 return rx_create_reference<runtime::object_types::user_object>();
-					 });
-
-					 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 55);
-					 if (test_object)
+					 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_class>().register_class(test_variable))
 					 {
-						 out << "test_class test_object\r\n";
 
-						 dir->add_item(test_object->get_item_ptr());
-						 if (test_object->get_item_ptr()->generate_json(out, err))
-							 ctx->set_passed();
-						 return true;
+						 out << "variable created\r\n";
+
+						 auto rx_variable_item = test_variable->get_item_ptr();
+
+						 dir->add_item(rx_variable_item);
+
+						 if (rx_variable_item->generate_json(out, err))
+						 {
+							 out << "Creating test_object\r\n";
+
+							 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 55);
+							 if (test_object)
+							 {
+								 out << "test_class test_object\r\n";
+
+								 dir->add_item(test_object->get_item_ptr());
+								 if (test_object->get_item_ptr()->generate_json(out, err))
+								 {
+									 out << "changing initialization data for object\r\n";
+									 runtime::data::runtime_values_data init_data;
+									 test_object->collect_data(init_data);
+									 init_data.children["variableName"].values["variableVal"].value.assign_static(113);
+									 init_data.children["variableName"].values["Description"].value.assign_static(114);
+									 test_object->fill_data(init_data);
+
+									 out << "test_class test_object\r\n";
+									 if (test_object->get_item_ptr()->generate_json(out, err))
+									 {
+										 ctx->set_passed();
+										 return true;
+									 }
+								 }
+							 }
+						 }
 					 }
 				 }
 			 }

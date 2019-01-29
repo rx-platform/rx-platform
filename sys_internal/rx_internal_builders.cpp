@@ -290,17 +290,17 @@ void basic_types_builder::build (platform_root::smart_ptr root)
 		//build base types, user extensible
 		auto str = rx_create_reference<basic_defs::struct_class>(basic_defs::type_creation_data { RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::struct_class>(dir, str);
-		auto var = rx_create_reference<basic_defs::variable_class>(RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, true);
+		auto var = rx_create_reference<basic_defs::variable_class>(basic_defs::type_creation_data{ RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::variable_class>(dir, var);
 		
 		// build base types, code only extensible
-		auto map = rx_create_reference<basic_defs::mapper_class>(RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, true);
+		auto map = rx_create_reference<basic_defs::mapper_class>(basic_defs::type_creation_data{ RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::mapper_class>(dir, map);
-		auto evnt = rx_create_reference<basic_defs::event_class>(RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, true);
+		auto evnt = rx_create_reference<basic_defs::event_class>(basic_defs::type_creation_data{ RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::event_class>(dir, evnt);
-		auto filt = rx_create_reference<basic_defs::filter_class>(RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, true);
+		auto filt = rx_create_reference<basic_defs::filter_class>(basic_defs::type_creation_data{ RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::filter_class>(dir, filt);
-		auto src = rx_create_reference<basic_defs::source_class>(RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, true);
+		auto src = rx_create_reference<basic_defs::source_class>(basic_defs::type_creation_data{ RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, true });
 		build_basic_type<basic_defs::source_class>(dir, src);
 	}
 }

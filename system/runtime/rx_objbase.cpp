@@ -57,7 +57,38 @@ namespace_item_attributes create_attributes_from_creation_data(const object_crea
 	}
 }
 
-// Class rx_platform::runtime::object_types::object_creation_data 
+// Class rx_platform::runtime::object_types::user_object 
+
+user_object::user_object()
+{
+}
+
+user_object::user_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
+{
+	init_object();
+}
+
+
+user_object::~user_object()
+{
+}
+
+
+
+// Class rx_platform::runtime::object_types::server_object 
+
+server_object::server_object (object_creation_data&& data)
+	: object_runtime(std::move(data))
+{
+	init_object();
+}
+
+
+server_object::~server_object()
+{
+}
+
 
 
 // Class rx_platform::runtime::object_types::object_runtime 
@@ -153,6 +184,7 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 	if (!temp_data.serialize(stream, "Values"))
 		return false;
 
+	auto test_val = temp_data.get_value("variableName.variableVal");
 
 	if (!stream.start_array("Programs", programs_.size()))
 		return false;
@@ -247,54 +279,21 @@ bool object_runtime::connect_application (rx_application_ptr&& app)
 	return true;
 }
 
+void object_runtime::collect_data (data::runtime_values_data& data) const
+{
+	item_->collect_data(data);
+}
+
+void object_runtime::fill_data (const data::runtime_values_data& data)
+{
+	auto ctx = structure::init_context::create_initialization_context(smart_this());
+	item_->fill_data(data, ctx);
+}
+
 
 const meta::checkable_data& object_runtime::meta_data () const
 {
   return meta_data_;
-}
-
-
-// Class rx_platform::runtime::object_types::domain_runtime 
-
-string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
-
-domain_runtime::domain_runtime()
-{
-	my_domain_ = smart_this();
-}
-
-domain_runtime::domain_runtime (domain_creation_data&& data)
-	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
-{
-	my_domain_ = smart_this();
-}
-
-
-domain_runtime::~domain_runtime()
-{
-}
-
-
-
-string_type domain_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_thread_handle_t domain_runtime::get_executer () const
-{
-	return executer_;
-}
-
-bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
-{
-	return false;
-}
-
-platform_item_ptr domain_runtime::get_item_ptr ()
-{
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 
@@ -343,19 +342,48 @@ platform_item_ptr application_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::server_object 
+// Class rx_platform::runtime::object_types::domain_runtime 
 
-server_object::server_object (object_creation_data&& data)
-	: object_runtime(std::move(data))
+string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
+
+domain_runtime::domain_runtime()
 {
-	init_object();
+	my_domain_ = smart_this();
+}
+
+domain_runtime::domain_runtime (domain_creation_data&& data)
+	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
+{
+	my_domain_ = smart_this();
 }
 
 
-server_object::~server_object()
+domain_runtime::~domain_runtime()
 {
 }
 
+
+
+string_type domain_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_thread_handle_t domain_runtime::get_executer () const
+{
+	return executer_;
+}
+
+bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	return false;
+}
+
+platform_item_ptr domain_runtime::get_item_ptr ()
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
 
 
 // Class rx_platform::runtime::object_types::port_runtime 
@@ -400,29 +428,13 @@ platform_item_ptr port_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::user_object 
-
-user_object::user_object()
-{
-}
-
-user_object::user_object (object_creation_data&& data)
-	: object_runtime(std::move(data))
-{
-	init_object();
-}
-
-
-user_object::~user_object()
-{
-}
-
-
-
 // Class rx_platform::runtime::object_types::application_creation_data 
 
 
 // Class rx_platform::runtime::object_types::domain_creation_data 
+
+
+// Class rx_platform::runtime::object_types::object_creation_data 
 
 
 // Class rx_platform::runtime::object_types::port_creation_data 

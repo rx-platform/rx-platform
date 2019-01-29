@@ -69,7 +69,7 @@ class checkable_data
       checkable_data();
 
       checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs);
-	  
+
 
       bool check_in (base_meta_reader& stream);
 

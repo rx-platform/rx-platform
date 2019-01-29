@@ -148,70 +148,6 @@ public:
 	}
 };
 
-// Class rx_platform::meta::basic_defs::event_class 
-
-string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
-
-event_class::event_class()
-{
-}
-
-event_class::event_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
-{
-}
-
-
-
-platform_item_ptr event_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
-		return false;
-	return true;
-}
-
-bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
-		return false;
-	return true;
-}
-
-checkable_data& event_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& event_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-void event_class::construct (RTypePtr& what, construct_context& ctx)
-{
-	complex_data_.construct(ctx);
-}
-
-
-const def_blocks::complex_data_type& event_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& event_class::meta_data () const
-{
-  return meta_data_;
-}
-
-
 // Class rx_platform::meta::basic_defs::filter_class 
 
 string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
@@ -220,8 +156,8 @@ filter_class::filter_class()
 {
 }
 
-filter_class::filter_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
+filter_class::filter_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
@@ -284,8 +220,8 @@ mapper_class::mapper_class()
 {
 }
 
-mapper_class::mapper_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
+mapper_class::mapper_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
@@ -348,8 +284,8 @@ source_class::source_class()
 {
 }
 
-source_class::source_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
+source_class::source_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
@@ -488,8 +424,8 @@ variable_class::variable_class()
 {
 }
 
-variable_class::variable_class (const string_type& name, const rx_node_id& id, const rx_node_id& base_id, bool system)
-	: meta_data_(name, id, base_id, create_attributes_for_basic_types_from_flags(system))
+variable_class::variable_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
@@ -575,6 +511,70 @@ const def_blocks::complex_data_type& variable_class::complex_data () const
 
 
 // Class rx_platform::meta::basic_defs::type_creation_data 
+
+
+// Class rx_platform::meta::basic_defs::event_class 
+
+string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
+
+event_class::event_class()
+{
+}
+
+event_class::event_class (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+{
+}
+
+
+
+platform_item_ptr event_class::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+		return false;
+	return true;
+}
+
+bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+		return false;
+	return true;
+}
+
+checkable_data& event_class::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& event_class::complex_data ()
+{
+  return complex_data_;
+
+}
+
+void event_class::construct (RTypePtr& what, construct_context& ctx)
+{
+	complex_data_.construct(ctx);
+}
+
+
+const def_blocks::complex_data_type& event_class::complex_data () const
+{
+  return complex_data_;
+}
+
+const checkable_data& event_class::meta_data () const
+{
+  return meta_data_;
+}
 
 
 } // namespace basic_defs

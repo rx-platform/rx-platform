@@ -32,6 +32,7 @@
 // rx_rt_data
 #include "system/runtime/rx_rt_data.h"
 
+#include "rx_configuration.h"
 
 
 namespace rx_platform {
@@ -91,6 +92,31 @@ void runtime_values_data::add_value (const string_type& name, const rx_simple_va
 runtime_values_data& runtime_values_data::add_child (const string_type& name)
 {
 	return children.emplace(name, data::runtime_values_data()).first->second;
+}
+
+rx_simple_value runtime_values_data::get_value (const string_type& path) const
+{
+	if (path.empty())
+		return rx_simple_value();
+	auto idx = path.find(RX_OBJECT_DELIMETER);
+	
+	if (idx == string_type::npos)
+	{// our value
+		auto val_it = values.find(path);
+		if (val_it != values.end())
+		{
+			return val_it->second.value;
+		}
+	}
+	else
+	{
+		auto child_it = children.find(path.substr(0, idx));
+		if (child_it != children.end())
+		{
+			return child_it->second.get_value(path.substr(idx + 1));
+		}
+	}
+	return rx_simple_value();
 }
 
 

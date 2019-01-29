@@ -811,7 +811,7 @@ typename simple_type_hash<typeT>::RDataType simple_type_hash<typeT>::create_simp
 		}
 	}
 
-	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), ret };
+	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), std::move(ret) };
 }
 
 

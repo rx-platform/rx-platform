@@ -182,11 +182,11 @@ bool complex_data_type::register_struct (const string_type& name, const rx_node_
 	}
 }
 
-bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id)
+bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
 {
 	if (check_name(name, (static_cast<int>(variables_.size()|variables_mask))))
 	{
-		variables_.emplace_back(variable_attribute(name, id));
+		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only));
 		return true;
 	}
 	else
@@ -197,6 +197,9 @@ bool complex_data_type::register_variable (const string_type& name, const rx_nod
 
 bool complex_data_type::check_name (const string_type& name, int rt_index)
 {
+	if (name == RX_DEFAULT_VARIABLE_NAME)
+		return false;
+
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
 	{
@@ -228,7 +231,8 @@ void complex_data_type::construct (construct_context& ctx)
 		{
 			const auto& data = variables_[one.second&index_mask];
 			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_class>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_variable(data.get_name(), std::move(temp));
+			temp.set_value(data.get_value(ctx.now));
+			ctx.runtime_data.add_variable(data.get_name(), std::move(temp), data.get_value(ctx.now));
 		}
 		break;
 		// constant values
@@ -243,7 +247,7 @@ void complex_data_type::construct (construct_context& ctx)
 		{
 			ctx.runtime_data.add_value(
 				simple_values_[one.second&index_mask].get_name(),
-				simple_values_[one.second&index_mask].get_value((ctx.now)));
+				simple_values_[one.second&index_mask].get_value(ctx.now));
 		}
 		break;
 		}
@@ -572,9 +576,10 @@ bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t
 
 // Class rx_platform::meta::def_blocks::variable_attribute 
 
-variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id)
+variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
       : name_(name),
         target_id_(id)
+	, storage_(std::move(value))
 {
 }
 
@@ -583,6 +588,10 @@ variable_attribute::variable_attribute (const string_type& name, const rx_node_i
 bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
+		return false;
+
+	stream.write_bool("RO", read_only_);
+	if (!storage_.serialize(stream))
 		return false;
 
 	if (!serialize_complex_attribute(*this, stream))
@@ -597,6 +606,11 @@ bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t
 bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
+}
+
+rx_value variable_attribute::get_value (rx_time now) const
+{
+	return rx_value::from_simple(storage_, now);
 }
 
 
@@ -802,11 +816,12 @@ void runtime_data_prototype::add_struct (const string_type& name, struct_data&& 
 	}
 }
 
-void runtime_data_prototype::add_variable (const string_type& name, variable_data&& value)
+void runtime_data_prototype::add_variable (const string_type& name, variable_data&& value, rx_value val)
 {
 	if (check_name(name))
 	{
 		members_index_type new_idx = static_cast<members_index_type>(variables.size());
+		value.set_value(std::move(val));
 		variables.emplace_back(std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
 	}
@@ -849,7 +864,9 @@ runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototyp
 {
 	std::unique_ptr<runtime_data_type> ret = std::make_unique<runtime_data_type>();
 	if (runtime_data_type::has_variables())
+	{
 		ret->variables.copy_from(std::move(prototype.variables));
+	}
 	if (runtime_data_type::has_structs())
 		ret->structs.copy_from(std::move(prototype.structs));
 	if (runtime_data_type::has_sources())

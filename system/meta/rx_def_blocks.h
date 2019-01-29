@@ -474,12 +474,14 @@ class variable_attribute
 	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
 
   public:
-      variable_attribute (const string_type& name, const rx_node_id& id);
+      variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
 
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      rx_value get_value (rx_time now) const;
 
 
       const string_type& get_name () const
@@ -494,6 +496,12 @@ class variable_attribute
       }
 
 
+      const bool get_read_only () const
+      {
+        return read_only_;
+      }
+
+
 
   protected:
 
@@ -503,6 +511,10 @@ class variable_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      bool read_only_;
+
+      values::rx_simple_value storage_;
 
 
 };
@@ -536,7 +548,7 @@ class runtime_data_prototype
 
       void add_struct (const string_type& name, struct_data&& value);
 
-      void add_variable (const string_type& name, variable_data&& value);
+      void add_variable (const string_type& name, variable_data&& value, rx_value val);
 
       void add_source (const string_type& name, source_data&& value);
 
@@ -630,7 +642,7 @@ class complex_data_type
 
       bool register_struct (const string_type& name, const rx_node_id& id);
 
-      bool register_variable (const string_type& name, const rx_node_id& id);
+      bool register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
 
       bool check_name (const string_type& name, int rt_index);
 
@@ -674,6 +686,8 @@ class complex_data_type
 	  bool register_const_value_static(const string_type& name, constT&& value);
 	  template <typename valT>
 	  bool register_simple_value_static(const string_type& name, bool read_only, valT&& value);
+	  template <typename valT>
+	  bool register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only);
 
 	  
 	  static constexpr const int structs_mask =			0x01000000;
@@ -807,19 +821,23 @@ bool complex_data_type::register_const_value_static(const string_type& name, val
 {
 	rx_simple_value temp;
 	temp.assign_static(std::forward<valT>(value));
-	return register_const_value(name, temp);
+	return register_const_value(name, std::move(temp));
 }
-
 
 template <typename valT>
 bool complex_data_type::register_simple_value_static(const string_type& name, bool read_only, valT&& value)
 {
 	rx_simple_value temp;
 	temp.assign_static<valT>(std::forward<valT>(value));
-	return register_simple_value(name, read_only, temp);
+	return register_simple_value(name, read_only, std::move(temp));
 }
-
-
+template <typename valT>
+bool complex_data_type::register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only)
+{
+	rx_simple_value temp;
+	temp.assign_static<valT>(std::forward<valT>(value));
+	return register_variable(name, id, std::move(temp), read_only);
+}
 
 runtime::structure::runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype);
 

@@ -33,26 +33,27 @@
 #include "rx_ptr.h"
 
 // union's value types
-#define RX_NULL_TYPE		0
-#define RX_BOOL_TYPE		1
-#define RX_INT8_TYPE		2
-#define RX_UINT8_TYPE		3
-#define RX_INT16_TYPE		4
-#define RX_UINT16_TYPE		5
-#define RX_INT32_TYPE		6
-#define RX_UINT32_TYPE		7
-#define RX_INT64_TYPE		8
-#define RX_UINT64_TYPE		9
-#define RX_FLOAT_TYPE		10
-#define RX_DOUBLE_TYPE		11
-#define RX_COMPLEX_TYPE		12
-#define RX_STRING_TYPE		13
-#define RX_TIME_TYPE		14
-#define RX_UUID_TYPE		15
-#define RX_BYTES_TYPE		16
-#define RX_BITS_TYPE		17
-#define RX_OBJECT_TYPE		18
-#define RX_CLASS_TYPE		19
+#define RX_NULL_TYPE			0x00
+#define RX_BOOL_TYPE			0x01
+#define RX_INT8_TYPE			0x02
+#define RX_UINT8_TYPE			0x03
+#define RX_INT16_TYPE			0x04
+#define RX_UINT16_TYPE			0x05
+#define RX_INT32_TYPE			0x06
+#define RX_UINT32_TYPE			0x07
+#define RX_INT64_TYPE			0x08
+#define RX_UINT64_TYPE			0x09
+#define RX_FLOAT_TYPE			0x0a
+#define RX_DOUBLE_TYPE			0x0b
+#define RX_COMPLEX_TYPE			0x0c
+#define RX_STRING_TYPE			0x0d
+#define RX_TIME_TYPE			0x0e
+#define RX_UUID_TYPE			0x0f
+#define RX_BYTES_TYPE			0x10
+#define RX_OBJECT_TYPE			0x11
+#define RX_CLASS_TYPE			0x12
+#define RX_NODE_ID_TYPE			0x13
+
 #define RX_SIMPLE_VALUE_MASK	0x1f
 
 
@@ -219,10 +220,9 @@ struct complex_value_struct
 {
 	double real;
 	double imag;
-	double amplitude() const
-	{
-		return sqrt(real*real + imag*imag);
-	}
+	double amplitude() const;
+	string_type to_string() const;
+	bool parse_string(const string_type& str);
 };
 
 
@@ -255,6 +255,7 @@ union rx_value_union
 	string_type* string_value;
 	byte_string* bytes_value;
 	bit_string* bits_value;
+	rx_node_id* node_id_value;
 
 	std::vector<rx_value_union>* array_value;
 };
@@ -300,10 +301,12 @@ public:
 
       bool deserialize_value (base_meta_reader& reader, const string_type& name);
 
+      bool convert_to (rx_value_t type);
+
 	  template<typename T>
 	  void assign_static(T&& right)
 	  {
-		  destory_value(value_, value_type_);
+		  destroy_value(value_, value_type_);
 		  value_type_ = get_type<T>();
 		  assign(std::forward<T>(right));
 	  }
@@ -343,12 +346,14 @@ public:
 
 	  static void assign_value(rx_value_union& left, const rx_value_union& right, rx_value_t type);
 	  static void assign_value(rx_value_union& left, rx_value_union&& right, rx_value_t type);
-	  static void destory_value(rx_value_union& who, rx_value_t type);
+	  static void destroy_value(rx_value_union& who, rx_value_t type);
 
 	  static bool exact_equality(const rx_value_union& left, const rx_value_union& right, rx_value_t type);
 
 	  static bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_value_t type, const string_type& name);
 	  static bool deserialize_value(base_meta_reader& reader, rx_value_union& who, rx_value_t type);
+
+	  static bool convert_union(rx_value_union& what, rx_value_t source, rx_value_t target);
 
       rx_value_t value_type_;
 
@@ -411,6 +416,10 @@ class rx_simple_value
       bool serialize_value (base_meta_writer& writer, const string_type& name) const;
 
       bool deserialize_value (base_meta_reader& reader, const string_type& name);
+
+      bool convert_to (rx_value_t type);
+
+      rx_value_t get_type () const;
 
 
       const rx_value_storage& get_storage () const
@@ -492,6 +501,10 @@ public:
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
       rx::values::rx_simple_value to_simple () const;
+
+      bool convert_to (rx_value_t type);
+
+      rx_value_t get_type () const;
 
 
       const rx_value_storage& get_storage () const
@@ -605,6 +618,10 @@ public:
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
       rx::values::rx_simple_value to_simple () const;
+
+      bool convert_to (rx_value_t type);
+
+      rx_value_t get_type () const;
 
 
       const rx_value_storage& get_storage () const
