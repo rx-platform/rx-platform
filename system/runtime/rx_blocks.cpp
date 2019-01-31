@@ -32,7 +32,6 @@
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
 
-#include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "lib/rx_ser_lib.h"
 #include "system/serialization/rx_ser.h"

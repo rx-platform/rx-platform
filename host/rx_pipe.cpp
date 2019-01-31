@@ -83,7 +83,7 @@ void rx_pipe_host::get_host_objects (std::vector<rx_platform::runtime::object_ru
 {
 }
 
-void rx_pipe_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
+void rx_pipe_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
 {
 }
 

@@ -32,8 +32,6 @@
 
 #include "lib/rx_lib.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
@@ -42,9 +40,11 @@
 #include "system/server/rx_inf.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "lib/rx_io.h"
-#include "system/meta/rx_classes.h"
+#include "system/meta/rx_types.h"
 
 
 namespace rx_platform {
@@ -115,9 +115,9 @@ class server_manager
 
 public:
 	template<class clsT>
-	typename clsT::smart_ptr get_class(const rx_node_id& id);
+	typename clsT::smart_ptr get_type(const rx_node_id& id);
 	template<class clsT>
-	typename clsT::smart_ptr get_simple_class(const rx_node_id& id);
+	typename clsT::smart_ptr get_simple_type(const rx_node_id& id);
 
   public:
       server_manager();
@@ -134,8 +134,6 @@ public:
       uint32_t stop ();
 
       void get_directories (server_directories_type& dirs);
-
-      meta::object_class_ptr get_object_class (const rx_node_id& id);
 
 
       rx_reference<runtime::object_types::server_object> get_commands_manager ()

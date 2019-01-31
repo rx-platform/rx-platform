@@ -49,7 +49,12 @@ namespace def_blocks
 }
 namespace basic_defs
 {
-	class struct_class;
+	class struct_type;
+	class variable_type;
+	class source_type;
+	class mapper_type;
+	class filter_type;
+	class event_type;
 }
 }
 
@@ -79,6 +84,7 @@ filter runtime. basic implementation of an filter runtime");
 	DECLARE_REFERENCE_PTR(filter_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::filter_type;
 
   public:
       filter_runtime();
@@ -87,12 +93,12 @@ filter runtime. basic implementation of an filter runtime");
       string_type get_type_name () const;
 
 
+      static string_type type_name;
+
+
   protected:
 
   private:
-
-
-      static string_type type_name;
 
 
 };
@@ -109,6 +115,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
 	DECLARE_REFERENCE_PTR(mapper_runtime);
 	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::mapper_type;
 
   public:
       mapper_runtime();
@@ -142,6 +149,7 @@ source runtime. basic implementation of an source runtime");
 	DECLARE_REFERENCE_PTR(source_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::source_type;
 
   public:
       source_runtime();
@@ -152,12 +160,12 @@ source runtime. basic implementation of an source runtime");
       string_type get_type_name () const;
 
 
+      static string_type type_name;
+
+
   protected:
 
   private:
-
-
-      static string_type type_name;
 
 
 };
@@ -176,7 +184,7 @@ struct runtime. basic implementation of an struct runtime");
 
 	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::struct_class;
+	friend class meta::basic_defs::struct_type;
 
   public:
       struct_runtime();
@@ -214,6 +222,7 @@ variable runtime. basic implementation of an variable runtime");
 	DECLARE_REFERENCE_PTR(variable_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::variable_type;
 
   public:
       variable_runtime();
@@ -249,6 +258,7 @@ event runtime. basic implementation of an event runtime");
 	DECLARE_REFERENCE_PTR(event_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_defs::event_type;
 
   public:
       event_runtime();
@@ -257,12 +267,12 @@ event runtime. basic implementation of an event runtime");
       string_type get_type_name () const;
 
 
+      static string_type type_name;
+
+
   protected:
 
   private:
-
-
-      static string_type type_name;
 
 
 };

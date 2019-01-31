@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_classes.cpp
+*  system\meta\rx_types.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,8 +30,8 @@
 
 #include "rx_configuration.h"
 
-// rx_classes
-#include "system/meta/rx_classes.h"
+// rx_types
+#include "system/meta/rx_types.h"
 
 #include "sys_internal/rx_internal_ns.h"
 
@@ -148,433 +148,434 @@ public:
 	}
 };
 
-// Class rx_platform::meta::basic_defs::filter_class 
+// Class rx_platform::meta::basic_defs::event_type 
 
-string_type filter_class::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
+string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
 
-filter_class::filter_class()
+event_type::event_type()
 {
 }
 
-filter_class::filter_class (const type_creation_data& data)
+event_type::event_type (const type_creation_data& data)
 	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
 
 
-platform_item_ptr filter_class::get_item_ptr ()
+platform_item_ptr event_type::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
-bool filter_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool event_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
-bool filter_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool event_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-checkable_data& filter_class::meta_data ()
+checkable_data& event_type::meta_data ()
 {
   return meta_data_;
 
 }
 
-def_blocks::complex_data_type& filter_class::complex_data ()
+def_blocks::complex_data_type& event_type::complex_data ()
 {
   return complex_data_;
 
 }
 
-void filter_class::construct (RTypePtr& what, construct_context& ctx)
+void event_type::construct (RTypePtr& what, construct_context& ctx)
 {
 	complex_data_.construct(ctx);
 }
 
 
-const def_blocks::complex_data_type& filter_class::complex_data () const
+const def_blocks::complex_data_type& event_type::complex_data () const
 {
   return complex_data_;
 }
 
-const checkable_data& filter_class::meta_data () const
+const checkable_data& event_type::meta_data () const
 {
   return meta_data_;
 }
 
 
-// Class rx_platform::meta::basic_defs::mapper_class 
+// Class rx_platform::meta::basic_defs::filter_type 
 
-string_type mapper_class::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
+string_type filter_type::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
-mapper_class::mapper_class()
+filter_type::filter_type()
 {
 }
 
-mapper_class::mapper_class (const type_creation_data& data)
+filter_type::filter_type (const type_creation_data& data)
 	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
 
 
-platform_item_ptr mapper_class::get_item_ptr ()
+platform_item_ptr filter_type::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
-bool mapper_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool filter_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
-bool mapper_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool filter_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-checkable_data& mapper_class::meta_data ()
+checkable_data& filter_type::meta_data ()
 {
   return meta_data_;
 
 }
 
-def_blocks::complex_data_type& mapper_class::complex_data ()
+def_blocks::complex_data_type& filter_type::complex_data ()
 {
   return complex_data_;
 
 }
 
-void mapper_class::construct (RTypePtr& what, construct_context& ctx)
+void filter_type::construct (RTypePtr& what, construct_context& ctx)
 {
 	complex_data_.construct(ctx);
 }
 
 
-const checkable_data& mapper_class::meta_data () const
-{
-  return meta_data_;
-}
-
-const def_blocks::complex_data_type& mapper_class::complex_data () const
+const def_blocks::complex_data_type& filter_type::complex_data () const
 {
   return complex_data_;
 }
 
+const checkable_data& filter_type::meta_data () const
+{
+  return meta_data_;
+}
 
-// Class rx_platform::meta::basic_defs::source_class 
 
-string_type source_class::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
+// Class rx_platform::meta::basic_defs::mapper_type 
 
-source_class::source_class()
+string_type mapper_type::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
+
+mapper_type::mapper_type()
 {
 }
 
-source_class::source_class (const type_creation_data& data)
+mapper_type::mapper_type (const type_creation_data& data)
 	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
 
 
-platform_item_ptr source_class::get_item_ptr ()
+platform_item_ptr mapper_type::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
-bool source_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool mapper_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
-bool source_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-checkable_data& source_class::meta_data ()
+checkable_data& mapper_type::meta_data ()
 {
   return meta_data_;
 
 }
 
-def_blocks::complex_data_type& source_class::complex_data ()
+def_blocks::complex_data_type& mapper_type::complex_data ()
 {
   return complex_data_;
 
 }
 
-void source_class::construct (RTypePtr& what, construct_context& ctx)
+void mapper_type::construct (RTypePtr& what, construct_context& ctx)
 {
 	complex_data_.construct(ctx);
 }
 
 
-const def_blocks::complex_data_type& source_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& source_class::meta_data () const
+const checkable_data& mapper_type::meta_data () const
 {
   return meta_data_;
 }
 
+const def_blocks::complex_data_type& mapper_type::complex_data () const
+{
+  return complex_data_;
+}
 
-// Class rx_platform::meta::basic_defs::struct_class 
 
-string_type struct_class::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
+// Class rx_platform::meta::basic_defs::source_type 
 
-struct_class::struct_class()
+string_type source_type::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
+
+source_type::source_type()
 {
 }
 
-struct_class::struct_class (const type_creation_data& data)
+source_type::source_type (const type_creation_data& data)
 	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
 
 
-void struct_class::construct (RTypePtr& what, construct_context& ctx)
+platform_item_ptr source_type::get_item_ptr ()
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+bool source_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+		return false;
+	return true;
+}
+
+bool source_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+		return false;
+	return true;
+}
+
+checkable_data& source_type::meta_data ()
+{
+  return meta_data_;
+
+}
+
+def_blocks::complex_data_type& source_type::complex_data ()
+{
+  return complex_data_;
+
+}
+
+void source_type::construct (RTypePtr& what, construct_context& ctx)
+{
+	complex_data_.construct(ctx);
+}
+
+
+const def_blocks::complex_data_type& source_type::complex_data () const
+{
+  return complex_data_;
+}
+
+const checkable_data& source_type::meta_data () const
+{
+  return meta_data_;
+}
+
+
+// Class rx_platform::meta::basic_defs::struct_type 
+
+string_type struct_type::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
+
+struct_type::struct_type()
+{
+}
+
+struct_type::struct_type (const type_creation_data& data)
+	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+{
+}
+
+
+
+void struct_type::construct (RTypePtr& what, construct_context& ctx)
 {
 	complex_data_.construct(ctx);
 	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
 }
 
-platform_item_ptr struct_class::get_item_ptr ()
+platform_item_ptr struct_type::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
-bool struct_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool struct_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_helpers::serialize_struct_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
-bool struct_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool struct_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!meta_helpers::deserialize_struct_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-checkable_data& struct_class::meta_data ()
+checkable_data& struct_type::meta_data ()
 {
   return meta_data_;
 
 }
 
-def_blocks::complex_data_type& struct_class::complex_data ()
+def_blocks::complex_data_type& struct_type::complex_data ()
 {
   return complex_data_;
 
 }
 
-def_blocks::mapped_data_type& struct_class::mapping_data ()
+def_blocks::mapped_data_type& struct_type::mapping_data ()
 {
   return mapping_data_;
 
 }
 
 
-const def_blocks::complex_data_type& struct_class::complex_data () const
+const def_blocks::complex_data_type& struct_type::complex_data () const
 {
   return complex_data_;
 }
 
-const def_blocks::mapped_data_type& struct_class::mapping_data () const
+const def_blocks::mapped_data_type& struct_type::mapping_data () const
 {
   return mapping_data_;
 }
 
-const checkable_data& struct_class::meta_data () const
+const checkable_data& struct_type::meta_data () const
 {
   return meta_data_;
 }
 
 
-// Class rx_platform::meta::basic_defs::variable_class 
+// Class rx_platform::meta::basic_defs::variable_type 
 
-string_type variable_class::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
+string_type variable_type::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
 
-variable_class::variable_class()
+variable_type::variable_type()
 {
 }
 
-variable_class::variable_class (const type_creation_data& data)
+variable_type::variable_type (const type_creation_data& data)
 	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
 {
 }
 
 
 
-void variable_class::construct (RTypePtr& what, construct_context& ctx)
+void variable_type::construct (RTypePtr& what, construct_context& ctx)
 {
 	complex_data_.construct(ctx);
 	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
+	variable_data_.construct(what, complex_data_.get_names_cache(), ctx);
 }
 
-bool variable_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool variable_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_helpers::serialize_variable_class(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
-bool variable_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool variable_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!meta_helpers::deserialize_variable_class(*this, stream, type))
 		return false;
 	return true;
 }
 
-platform_item_ptr variable_class::get_item_ptr ()
+platform_item_ptr variable_type::get_item_ptr ()
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
-rx_value variable_class::get_value () const
+rx_value variable_type::get_value () const
 {
 	rx_value temp;
 	temp.assign_static(meta_data_.get_version(), meta_data_.get_created_time());
 	return temp;
 }
 
-checkable_data& variable_class::meta_data ()
+checkable_data& variable_type::meta_data ()
 {
   return meta_data_;
 
 }
 
-def_blocks::complex_data_type& variable_class::complex_data ()
+def_blocks::complex_data_type& variable_type::complex_data ()
 {
   return complex_data_;
 
 }
 
-def_blocks::mapped_data_type& variable_class::mapping_data ()
+def_blocks::mapped_data_type& variable_type::mapping_data ()
 {
   return mapping_data_;
 
 }
 
-def_blocks::variable_data_type& variable_class::variable_data ()
+def_blocks::variable_data_type& variable_type::variable_data ()
 {
   return variable_data_;
 
 }
 
 
-const checkable_data& variable_class::meta_data () const
+const checkable_data& variable_type::meta_data () const
 {
   return meta_data_;
 }
 
-const def_blocks::variable_data_type& variable_class::variable_data () const
+const def_blocks::variable_data_type& variable_type::variable_data () const
 {
   return variable_data_;
 }
 
-const def_blocks::mapped_data_type& variable_class::mapping_data () const
+const def_blocks::mapped_data_type& variable_type::mapping_data () const
 {
   return mapping_data_;
 }
 
-const def_blocks::complex_data_type& variable_class::complex_data () const
+const def_blocks::complex_data_type& variable_type::complex_data () const
 {
   return complex_data_;
 }
 
 
 // Class rx_platform::meta::basic_defs::type_creation_data 
-
-
-// Class rx_platform::meta::basic_defs::event_class 
-
-string_type event_class::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
-
-event_class::event_class()
-{
-}
-
-event_class::event_class (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
-{
-}
-
-
-
-platform_item_ptr event_class::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-
-}
-
-bool event_class::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
-		return false;
-	return true;
-}
-
-bool event_class::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
-		return false;
-	return true;
-}
-
-checkable_data& event_class::meta_data ()
-{
-  return meta_data_;
-
-}
-
-def_blocks::complex_data_type& event_class::complex_data ()
-{
-  return complex_data_;
-
-}
-
-void event_class::construct (RTypePtr& what, construct_context& ctx)
-{
-	complex_data_.construct(ctx);
-}
-
-
-const def_blocks::complex_data_type& event_class::complex_data () const
-{
-  return complex_data_;
-}
-
-const checkable_data& event_class::meta_data () const
-{
-  return meta_data_;
-}
 
 
 } // namespace basic_defs

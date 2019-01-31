@@ -31,10 +31,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 using namespace rx_platform::prog;
 using namespace rx_platform; 
@@ -96,7 +96,7 @@ class server_command_manager : public rx_platform::runtime::object_types::server
 server commands managment object\r\n\
 bin folder in file hierarcyh\
 ")
-	typedef std::map<string_type, server_command_base_ptr > registered_commands_type;
+	typedef std::unordered_map<string_type, server_command_base_ptr > registered_commands_type;
 
   public:
       server_command_manager();

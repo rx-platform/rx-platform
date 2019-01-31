@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -32,8 +32,6 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
-#include "model/rx_meta.h"
-#include "sys_internal/rx_internal_ns.h"
 #include "system/server/rx_server.h"
 
 
@@ -43,7 +41,7 @@ namespace basic_tests {
 
 namespace lib_test {
 
-// Class testing::basic_tests::lib_test::library_test_category
+// Class testing::basic_tests::lib_test::library_test_category 
 
 library_test_category::library_test_category()
 	: test_category("lib")
@@ -146,7 +144,7 @@ void test_callbacks(std::ostream& out)
 	out << "\r\n";
 }
 
-// Class testing::basic_tests::lib_test::platform_callback_test
+// Class testing::basic_tests::lib_test::platform_callback_test 
 
 platform_callback_test::platform_callback_test()
 	: test_case("callback")
@@ -168,7 +166,7 @@ bool platform_callback_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_tests::lib_test::values_test
+// Class testing::basic_tests::lib_test::values_test 
 
 values_test::values_test()
 	: test_case("values")
@@ -208,14 +206,14 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 
 		out << ANSI_COLOR_GREEN "Created four simple values and four timed values in an std::vector\r\n" ANSI_COLOR_RESET;
 
-		out << "\r\nsimple values" RX_TESTING_CON_LINE;
+		out << "\r\nsimple values\r\n" RX_CONSOLE_HEADER_LINE;
 		for (size_t idx = 0; idx < simples.size(); idx++)
 		{
 			out << "\r\nsimple[" << idx << "]=";
 			simples[idx].dump_to_stream(out);
 		}
 
-		out << "\r\ntimed values" RX_TESTING_CON_LINE;
+		out << "\r\ntimed values\r\n" RX_CONSOLE_HEADER_LINE;
 		for (size_t idx = 0; idx < timed.size(); idx++)
 		{
 			out << "\r\ntimed[" << idx << "]=";
@@ -230,9 +228,9 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 			string_type result;
 			if (writter.get_string(result, true))
 			{
-				out << RX_TESTING_CON_LINE;
+				out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 				out << result;
-				out << RX_TESTING_CON_LINE;
+				out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 				serialization::json_reader reader;
 				if (reader.parse_data(result))
 				{
@@ -249,9 +247,9 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 			serialization::std_buffer_writer bwriter(buffer);
 			if (test_serialization("Binary", simples, timed, fulls, bwriter, out))
 			{
-				out << RX_TESTING_CON_LINE;
+				out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 				bwriter.dump_to_stream(out);
-				out << RX_TESTING_CON_LINE;
+				out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 				serialization::std_buffer_reader reader(buffer);
 				if (test_deserialization("Binary", simples, timed, fulls, reader, out))
 				{
@@ -388,7 +386,7 @@ bool values_test::test_deserialization (const string_type& name, std::vector<rx:
 }
 
 
-// Class testing::basic_tests::lib_test::external_interfaces_test
+// Class testing::basic_tests::lib_test::external_interfaces_test 
 
 external_interfaces_test::external_interfaces_test()
 		: test_case("interfaces")
@@ -411,129 +409,7 @@ bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, st
 
 
 } // namespace lib_test
-
-namespace meta_test {
-
- // Class testing::basic_tests::meta_test::meta_model_test_category
-
- meta_model_test_category::meta_model_test_category()
-	 : test_category("meta")
- {
-	 register_test_case(rx_create_reference<object_creation_test>());
-	 register_test_case(rx_create_reference<runtime_structure_test>());
- }
-
-
- meta_model_test_category::~meta_model_test_category()
- {
- }
-
-
-
- // Class testing::basic_tests::meta_test::object_creation_test
-
- object_creation_test::object_creation_test()
-	 : test_case("construct")
- {
- }
-
-
- object_creation_test::~object_creation_test()
- {
- }
-
-
-
- bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
- {
-	 auto one = rx_platform::rx_gate::instance().get_root_directory();
-
-
-	 out << "Creating test_class\r\n";
-	 server_directory_ptr dir = ctx->get_current_directory();
-
-	 rx_platform::meta::object_class_ptr test_class(object_defs::object_type_creation_data{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, false });
-	 test_class->complex_data().register_const_value_static("testBool", true);
-	 test_class->complex_data().register_simple_value_static("testVal", false, 158);
-
-	 rx_platform::meta::struct_class_ptr test_struct(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_struct_type",41, RX_CLASS_STRUCT_BASE_ID,  false }));
-	 test_struct->complex_data().register_simple_value_static("structVal", false, false);
-
-	 rx_platform::meta::variable_class_ptr test_variable(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_variable_type",42, RX_CLASS_VARIABLE_BASE_ID,  false }));
-	 test_variable->complex_data().register_simple_value_static("variableVal", false, 4.7);
-
-	 test_class->complex_data().register_struct("structName", 41);
-	 test_class->complex_data().register_variable_static("variableName", 42, 55, false);
-
-	 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().register_class(test_class))
-	 {
-		 out << "test_class created\r\n";
-
-		 auto rx_class_item = test_class->get_item_ptr();
-		 dir->add_item(rx_class_item);
-		 if (rx_class_item->generate_json(out, err))
-		 {
-
-			 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_class>().register_class(test_struct))
-			 {
-
-				 out << "test_struct created\r\n";
-
-				 auto rx_struct_item = test_struct->get_item_ptr();
-
-				 dir->add_item(rx_struct_item);
-
-				 if (rx_struct_item->generate_json(out, err))
-				 {
-					 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_class>().register_class(test_variable))
-					 {
-
-						 out << "variable created\r\n";
-
-						 auto rx_variable_item = test_variable->get_item_ptr();
-
-						 dir->add_item(rx_variable_item);
-
-						 if (rx_variable_item->generate_json(out, err))
-						 {
-							 out << "Creating test_object\r\n";
-
-							 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_class>().create_runtime("test_object", 55);
-							 if (test_object)
-							 {
-								 out << "test_class test_object\r\n";
-
-								 dir->add_item(test_object->get_item_ptr());
-								 if (test_object->get_item_ptr()->generate_json(out, err))
-								 {
-									 out << "changing initialization data for object\r\n";
-									 runtime::data::runtime_values_data init_data;
-									 test_object->collect_data(init_data);
-									 init_data.children["variableName"].values["variableVal"].value.assign_static(113);
-									 init_data.children["variableName"].values["Description"].value.assign_static(114);
-									 test_object->fill_data(init_data);
-
-									 out << "test_class test_object\r\n";
-									 if (test_object->get_item_ptr()->generate_json(out, err))
-									 {
-										 ctx->set_passed();
-										 return true;
-									 }
-								 }
-							 }
-						 }
-					 }
-				 }
-			 }
-		 }
-	 }
-	 ctx->set_failed();
-
-	 return true;
- }
-
-
-} // namespace meta_test
 } // namespace basic_tests
 } // namespace testing
+
 

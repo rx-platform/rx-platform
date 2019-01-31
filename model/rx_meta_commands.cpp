@@ -119,12 +119,12 @@ bool dump_types_command::do_console_command (std::istream& in, std::ostream& out
 	in >> item_type;
 	if (item_type == "objects")
 	{
-		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::object_class>(),
+		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::object_type>(),
 			in, out, err, ctx);
 	}
 	if (item_type == "ports")
 	{
-		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::port_class>(),
+		return dump_types_to_console(internal_types_manager::instance().get_type_cache<meta::object_defs::port_type>(),
 			in, out, err, ctx);
 	}
 	return true;

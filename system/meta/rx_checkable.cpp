@@ -58,6 +58,8 @@ checkable_data::checkable_data (const string_type& name, const rx_node_id& id, c
 	, attributes_(attrs)
 	, parent_(parent)
 {
+	if (id_.is_null())
+		id_ = rx_node_id(rx_uuid::create_new().uuid());
 }
 
 

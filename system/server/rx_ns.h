@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -199,10 +199,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
 class rx_platform_item : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(rx_platform_item);
-	
-public:
-	typedef std::map<string_type, platform_item_ptr> sub_items_type;
+	DECLARE_REFERENCE_PTR(rx_platform_item);	
 
   public:
       rx_platform_item();
@@ -238,11 +235,7 @@ public:
 
       virtual bool deserialize (base_meta_reader& stream);
 
-      platform_item_ptr get_sub_item (const string_type& path) const;
-
       virtual bool is_browsable () const = 0;
-
-      virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
 
       virtual rx_time get_created_time () const = 0;
 
@@ -253,13 +246,6 @@ public:
       virtual rx_node_id get_node_id () const = 0;
 
 
-      const rx_reference<rx_platform_item> get_runtime_parent () const
-      {
-        return runtime_parent_;
-      }
-
-
-
   protected:
 
   private:
@@ -267,12 +253,31 @@ public:
 
       rx_reference<rx_server_directory> parent_;
 
-      sub_items_type sub_items_;
-
-      rx_reference<rx_platform_item> runtime_parent_;
-
 
       locks::lockable item_lock_;
+
+
+};
+
+
+
+
+
+
+class rx_names_cache 
+{
+	  typedef std::unordered_map<string_type, rx_node_id> name_ids_hash_type;
+
+  public:
+      rx_names_cache();
+
+
+  protected:
+
+  private:
+
+
+      name_ids_hash_type name_ids_hash_;
 
 
 };

@@ -33,8 +33,6 @@
 
 // rx_test
 #include "testing/rx_test.h"
-// rx_test_runtime
-#include "testing/rx_test_runtime.h"
 
 
 
@@ -152,62 +150,10 @@ basic testing for Ethernet and RS232/485 port resources on this staffroom.");
 
 
 } // namespace lib_test
-
-namespace meta_test {
-
-
-
-
-
- class object_creation_test : public test_case  
- {
-	 DECLARE_REFERENCE_PTR(object_creation_test)
-	 DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-basic testing object creation.");
-
-   public:
-       object_creation_test();
-
-       virtual ~object_creation_test();
-
-
-       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-   protected:
-
-   private:
-
-
- };
-
-
-
-
-
-
-
- class meta_model_test_category : public test_category  
- {
-
-   public:
-       meta_model_test_category();
-
-       virtual ~meta_model_test_category();
-
-
-   protected:
-
-   private:
-
-
- };
-
-
-} // namespace meta_test
 } // namespace basic_tests
 } // namespace testing
 
 
 
 #endif
+

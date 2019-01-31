@@ -32,7 +32,7 @@
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 
-#include "system/meta/rx_obj_classes.h"
+#include "system/meta/rx_obj_types.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "model/rx_meta.h"
 #include "system/constructors/rx_construct.h"
@@ -95,7 +95,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 
 			if (!stream.start_object("Item"))
 				return false;
-			if (!stream.write_string("Type",struct_class::type_name.c_str()))
+			if (!stream.write_string("Type",struct_type::type_name.c_str()))
 				return false;
 			if (!structs_[one.second&index_mask].serialize_definition(stream,type))
 				return false;
@@ -108,7 +108,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 
 			if (!stream.start_object("Item"))
 				return false;
-			if (!stream.write_string("Type", variable_class::type_name.c_str()))
+			if (!stream.write_string("Type", variable_type::type_name.c_str()))
 				return false;
 			if (!variables_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
@@ -222,7 +222,7 @@ void complex_data_type::construct (construct_context& ctx)
 		case structs_mask:
 		{
 			const auto& data = structs_[one.second&index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_class>().create_simple_runtime(data.get_target_id());
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_type>().create_simple_runtime(data.get_target_id());
 			ctx.runtime_data.add_struct(data.get_name(), std::move(temp));
 		}
 		break;
@@ -230,7 +230,7 @@ void complex_data_type::construct (construct_context& ctx)
 		case variables_mask:
 		{
 			const auto& data = variables_[one.second&index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_class>().create_simple_runtime(data.get_target_id());
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_type>().create_simple_runtime(data.get_target_id());
 			temp.set_value(data.get_value(ctx.now));
 			ctx.runtime_data.add_variable(data.get_name(), std::move(temp), data.get_value(ctx.now));
 		}
@@ -356,7 +356,16 @@ event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
 
 bool event_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::event_runtime::type_name.c_str()))
+		return false;
+
+	if (!serialize_complex_attribute(*this, stream))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
 }
 
 bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
@@ -377,7 +386,16 @@ filter_attribute::filter_attribute (const string_type& name, const rx_node_id& i
 
 bool filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::filter_runtime::type_name.c_str()))
+		return false;
+
+	if (!serialize_complex_attribute(*this, stream))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
 }
 
 bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
@@ -421,19 +439,6 @@ bool mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, 
 	return false;
 }
 
-bool mapped_data_type::register_mapper (const mapper_attribute& item, complex_data_type& complex_data)
-{
-	if (complex_data.check_name(item.get_name(), (static_cast<int>(mappers_.size()&complex_data_type::mappings_mask))))
-	{
-		mappers_.emplace_back(item);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx)
 {
 	for (const auto& one : names)
@@ -444,11 +449,24 @@ void mapped_data_type::construct (const names_cahce_type& names, construct_conte
 		case complex_data_type::mappings_mask:
 		{
 			const auto& data = mappers_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::mapper_class>().create_simple_runtime(data.get_target_id());
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::mapper_type>().create_simple_runtime(data.get_target_id());
 			ctx.runtime_data.add_mapper(data.get_name(), std::move(temp));
 		}
 		break;
 		}
+	}
+}
+
+bool mapped_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	if (complex_data.check_name(name, (static_cast<int>(mappers_.size()|complex_data_type::mappings_mask))))
+	{
+		mappers_.emplace_back(name, id);
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
@@ -465,7 +483,16 @@ mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& i
 
 bool mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::mapper_runtime::type_name.c_str()))
+		return false;
+
+	if (!serialize_complex_attribute(*this, stream))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
 }
 
 bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
@@ -526,7 +553,16 @@ source_attribute::source_attribute (const string_type& name, const rx_node_id& i
 
 bool source_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::source_runtime::type_name.c_str()))
+		return false;
+
+	if (!serialize_complex_attribute(*this, stream))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
 }
 
 bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
@@ -631,45 +667,6 @@ variable_data_type::~variable_data_type()
 
 
 
-bool variable_data_type::register_source (const source_attribute& item, complex_data_type& complex_data)
-{
-	if (complex_data.check_name(item.get_name(), (static_cast<int>(sources_.size()&complex_data_type::sources_mask))))
-	{
-		sources_.emplace_back(item);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool variable_data_type::register_filter (const filter_attribute& item, complex_data_type& complex_data)
-{
-	if (complex_data.check_name(item.get_name(), (static_cast<int>(filters_.size()&complex_data_type::filters_mask))))
-	{
-		filters_.emplace_back(item);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool variable_data_type::register_event (const event_attribute& item, complex_data_type& complex_data)
-{
-	if (complex_data.check_name(item.get_name(), (static_cast<int>(events_.size()&complex_data_type::events_mask))))
-	{
-		events_.emplace_back(item);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void variable_data_type::construct (runtime::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx)
 {
 	for (const auto& one : names)
@@ -680,23 +677,23 @@ void variable_data_type::construct (runtime::variable_runtime_ptr& what, const n
 		case complex_data_type::sources_mask:
 		{
 			const auto& data = sources_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::source_class>().create_simple_runtime(data.get_target_id());
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::source_type>().create_simple_runtime(data.get_target_id());
 			ctx.runtime_data.add_source(data.get_name(), std::move(temp));
 		}
 		break;
 		// events
 		case complex_data_type::filters_mask:
 		{
-			const auto& data = sources_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::filter_class>().create_simple_runtime(data.get_target_id());
+			const auto& data = filters_[one.second&complex_data_type::index_mask];
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::filter_type>().create_simple_runtime(data.get_target_id());
 			ctx.runtime_data.add_filter(data.get_name(), std::move(temp));
 		}
 		break;
 		// filters
 		case complex_data_type::events_mask:
 		{
-			const auto& data = sources_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::event_class>().create_simple_runtime(data.get_target_id());
+			const auto& data = events_[one.second&complex_data_type::index_mask];
+			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::event_type>().create_simple_runtime(data.get_target_id());
 			ctx.runtime_data.add_event(data.get_name(), std::move(temp));
 		}
 		break;
@@ -751,6 +748,45 @@ bool variable_data_type::serialize_variable_definition (base_meta_writer& stream
 bool variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
+}
+
+bool variable_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	if (complex_data.check_name(name, (static_cast<int>(sources_.size()|complex_data_type::sources_mask))))
+	{
+		sources_.emplace_back(name, id);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool variable_data_type::register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	if (complex_data.check_name(name, (static_cast<int>(filters_.size()|complex_data_type::filters_mask))))
+	{
+		filters_.emplace_back(name, id);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool variable_data_type::register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	if (complex_data.check_name(name, (static_cast<int>(events_.size()|complex_data_type::events_mask))))
+	{
+		events_.emplace_back(name, id);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 

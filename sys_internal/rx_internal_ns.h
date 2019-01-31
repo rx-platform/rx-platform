@@ -31,15 +31,16 @@
 
 
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
+#include "system/server/rx_server.h"
 #include "system/serialization/rx_serialization_defs.h"
-#include "system/meta/rx_classes.h"
+#include "system/meta/rx_types.h"
 using namespace rx_platform::ns;
 
 
@@ -166,65 +167,6 @@ used to create user defined folders...\
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class simple_platform_item : public rx_platform::ns::rx_platform_item  
-{
-	DECLARE_REFERENCE_PTR(simple_platform_item);
-
-  public:
-      simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, rx_time created_time);
-
-      virtual ~simple_platform_item();
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      string_type get_type_name () const;
-
-      values::rx_value get_value () const;
-
-      namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      bool is_browsable () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      rx_node_id get_node_id () const;
-
-
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      rx_value value_;
-
-      namespace_item_attributes attributes_;
-
-      string_type type_name_;
-
-      rx_time created_time_;
-
-      string_type name_;
 
 
 };
@@ -445,7 +387,7 @@ bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostre
 	if (out)
 		def << result;
 	else
-		def << "Error in JSON deserialization.";
+		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
 
 	return true;
 }
@@ -536,7 +478,7 @@ bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 	if (out)
 		def << result;
 	else
-		def << "Error in JSON deserialization.";
+		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
 
 	return out;
 }
@@ -584,3 +526,4 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 
 
 #endif
+

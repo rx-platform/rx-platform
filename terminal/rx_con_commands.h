@@ -81,8 +81,6 @@ list current directory on console ( dir, ls ");
 
       bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, server_directory_ptr& directory);
 
-      bool list_object (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, platform_item_ptr object);
-
 
   protected:
 

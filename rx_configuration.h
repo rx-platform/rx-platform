@@ -211,7 +211,6 @@
 #define RX_TEST_STATUS_UNKNOWN_NAME RX_NULL_ITEM_NAME
 #define RX_TEST_STATUS_OK_NAME "Passed"
 #define RX_TEST_STATUS_FAILED_NAME "*FAILED*"
-#define RX_TESTING_CON_LINE "\r\n=================================="
 
 //Storage related stuff
 #define RX_FILE_STORAGE_FOLDER "storage"

@@ -120,33 +120,25 @@ void server_manager::get_directories (server_directories_type& dirs)
 {
 }
 
-meta::object_class_ptr server_manager::get_object_class (const rx_node_id& id)
-{
-	auto& cache = model::internal_types_manager::instance().get_type_cache<meta::object_defs::object_class>();
-	auto def = cache.get_class_definition(id);
-	//model::relations_hash_data data;
-	return def;
-}
-
 template<class clsT>
-typename clsT::smart_ptr server_manager::get_class(const rx_node_id& id)
+typename clsT::smart_ptr server_manager::get_type(const rx_node_id& id)
 {
 	auto& cache = model::internal_types_manager::instance().get_type_cache<clsT>();
-	auto def = cache.get_class_definition(id);
+	auto def = cache.get_type_definition(id);
 	return def;
 }
-template object_class_ptr server_manager::get_class<object_class>(const rx_node_id& id);
-template application_class_ptr server_manager::get_class<application_class>(const rx_node_id& id);
+template object_type_ptr server_manager::get_type<object_type>(const rx_node_id& id);
+template application_type_ptr server_manager::get_type<application_type>(const rx_node_id& id);
 
 
 template<class clsT>
-typename clsT::smart_ptr server_manager::get_simple_class(const rx_node_id& id)
+typename clsT::smart_ptr server_manager::get_simple_type(const rx_node_id& id)
 {
 	auto& cache = model::internal_types_manager::instance().get_simple_type_cache<clsT>();
-	auto def = cache.get_class_definition(id);
+	auto def = cache.get_type_definition(id);
 	return def;
 }
-template struct_class_ptr server_manager::get_simple_class<struct_class>(const rx_node_id& id);
+template struct_type_ptr server_manager::get_simple_type<struct_type>(const rx_node_id& id);
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()

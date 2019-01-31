@@ -48,7 +48,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
-	startup_script_ = "test run lib/values/r/n";
+	startup_script_ = "test run meta/construct-wide\n";
 }
 
 
@@ -134,83 +134,83 @@ void interactive_console_host::get_host_objects (std::vector<rx_platform::runtim
 {
 }
 
-void interactive_console_host::get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items)
+void interactive_console_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
 {
 	//items.push_back(rx_create_reference<meta::object_defs::port_class>(meta::object_defs::object_type_creation_data{ RX_INTERACTIVE_TYPE_NAME, RX_INTERACTIVE_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true }));
 }
 
 bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
-			std::ostream out(out_buffer.unsafe_ptr());
-			std::stringstream in(line);
-			std::ostream err(err_buffer.unsafe_ptr());
+	std::ostream out(out_buffer.unsafe_ptr());
+	std::stringstream in(line);
+	std::ostream err(err_buffer.unsafe_ptr());
 
-			bool ret = false;
+	bool ret = false;
 
-			string_type command;
-			in >> command;
-			if (command == "frun")
+	string_type command;
+	in >> command;
+	if (command == "frun")
+	{
+		string_type file_name;
+		in >> file_name;
+		file_name = "platform script one.rxs";
+		auto storage = get_storage();
+		if (storage)
+		{
+			sys_handle_t file = storage->get_host_console_script_file(file_name);
+			if (file)
 			{
-				string_type file_name;
-				in >> file_name;
-				file_name = "platform script one.rxs";
-				auto storage = get_storage();
-				if (storage)
+				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
+				if (buffer->fill_with_file_content(file))
 				{
-					sys_handle_t file = storage->get_host_console_script_file(file_name);
-					if (file)
-					{
-						memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-						if (buffer->fill_with_file_content(file))
-						{
-							out << "file loaded in memory...\r\n";
-							out << "Running file script:" << file_name;
-							out << "\r\n=====================================\r\n";
+					out << "file loaded in memory...\r\n";
+					out << "Running file script:" << file_name;
+					out << "\r\n=====================================\r\n";
 
-							while (!buffer->eof())
-							{
-								string_type line;
-								buffer->read_line(line);
-								out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
-							}
-
-							out << "=====================================\r\nScript done.\r\n";
-							ret = true;
-						}
-						else
-						{
-							err << "error reading file content\r\n";
-						}
-						rx_file_close(file);
-						return ret;
-					}
-					else
+					while (!buffer->eof())
 					{
-						err << "error opening file\r\n";
+						string_type line;
+						buffer->read_line(line);
+						out << ANSI_COLOR_GREEN ">>>" ANSI_COLOR_RESET << line << "\r\n";
 					}
+
+					out << "=====================================\r\nScript done.\r\n";
+					ret = true;
 				}
+				else
+				{
+					err << "error reading file content\r\n";
+				}
+				rx_file_close(file);
+				return ret;
 			}
 			else
 			{
-				err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
+				err << "error opening file\r\n";
 			}
-			return ret;
+		}
+	}
+	else
+	{
+		err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
+	}
+	return ret;
 }
 
 bool interactive_console_host::write_stdout (const string_type& lines)
 {
-			return write_stdout(lines.c_str(), lines.size());
+	return write_stdout(lines.c_str(), lines.size());
 }
 
 string_type interactive_console_host::get_startup_script ()
 {
-			return startup_script_;
+	return startup_script_;
 }
 
 std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-			std::vector<ETH_interface> ret;
-			return ret;
+	std::vector<ETH_interface> ret;
+	return ret;
 }
 
 std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
@@ -270,7 +270,7 @@ under certain conditions; type `license' for details.\r\n\
 	get_prompt(temp);
 	host_->write_stdout(temp);
 
-	string_type chars;
+	string_type startup_script(host_->get_startup_script());
 
 	std::array<char, 0x100> buffer;
 
@@ -278,23 +278,41 @@ under certain conditions; type `license' for details.\r\n\
 	
 	while (!exit_ && !host_->exit())
 	{
-		count = 0;
-		host_->read_stdin(buffer, count);
-
-		if (std::cin.fail())
+		if (startup_script.empty())
 		{
-			std::cin.clear();
-			if (host_->is_canceling())
+			count = 0;
+			host_->read_stdin(buffer, count);
+
+			if (std::cin.fail())
 			{
-				memory::buffer_ptr out_buffer(pointers::_create_new);
-				memory::buffer_ptr err_buffer(pointers::_create_new);
+				std::cin.clear();
+				if (host_->is_canceling())
+				{
+					memory::buffer_ptr out_buffer(pointers::_create_new);
+					memory::buffer_ptr err_buffer(pointers::_create_new);
 
-				cancel_command(out_buffer, err_buffer, security_context_);
+					cancel_command(out_buffer, err_buffer, security_context_);
+				}
+				if (rx_gate::instance().is_shutting_down())
+					break;
+
+				continue;
 			}
-			if (rx_gate::instance().is_shutting_down())
-				break;
-
-			continue;
+		}
+		else
+		{
+			count = startup_script.size();
+			if (count > buffer.size())
+			{
+				memcpy(&buffer[0], startup_script.c_str(), buffer.size());
+				count = buffer.size();
+				startup_script = startup_script.substr(count);
+			}
+			else
+			{
+				memcpy(&buffer[0], startup_script.c_str(), count);
+				startup_script.clear();
+			}
 		}
 
 		if (is_postponed())

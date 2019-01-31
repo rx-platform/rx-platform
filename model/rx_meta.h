@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,8 +34,8 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
-#include "system/meta/rx_classes.h"
-#include "system/meta/rx_obj_classes.h"
+#include "system/meta/rx_types.h"
+#include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/hosting/rx_host.h"
 
@@ -72,8 +72,8 @@ private:\
 
 void init_compiled_meta_types();
 
-typedef TYPELIST_6(variable_class, source_class, event_class, filter_class, mapper_class, struct_class) simple_rx_types;
-typedef TYPELIST_4(object_class, port_class, application_class, domain_class) object_rx_types;
+typedef TYPELIST_6(variable_type, source_type, event_type, filter_type, mapper_type, struct_type) simple_rx_types;
+typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object_rx_types;
 //typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
 
@@ -95,7 +95,7 @@ struct query_result
 
 
 
-class relations_hash_data 
+class relations_hash_data
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -158,7 +158,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash 
+class inheritance_hash
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -213,7 +213,7 @@ class inheritance_hash
 
 
 
-class instance_hash 
+class instance_hash
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -250,7 +250,7 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash 
+class type_hash
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -272,9 +272,9 @@ public:
       virtual ~type_hash();
 
 
-      typename type_hash<typeT>::Tptr get_class_definition (const rx_node_id& id);
+      typename type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id);
 
-      bool register_class (typename type_hash<typeT>::Tptr what);
+      bool register_type (typename type_hash<typeT>::Tptr what);
 
       bool register_constructor (const rx_node_id& id, std::function<RType()> f);
 
@@ -310,7 +310,7 @@ public:
 
 
 template <class typeT>
-class simple_type_hash 
+class simple_type_hash
 {
 	simple_type_hash(const simple_type_hash&) = delete;
 	simple_type_hash(simple_type_hash&&) = delete;
@@ -333,9 +333,9 @@ public:
       virtual ~simple_type_hash();
 
 
-      typename type_hash<typeT>::Tptr get_class_definition (const rx_node_id& id);
+      typename type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id);
 
-      bool register_class (typename type_hash<typeT>::Tptr what);
+      bool register_type (typename type_hash<typeT>::Tptr what);
 
       bool register_constructor (const rx_node_id& id, std::function<RType()> f);
 
@@ -359,7 +359,6 @@ public:
       constructors_type constructors_;
 
 	  std::function<RTypePtr()> default_constructor_;
-
 };
 
 
@@ -396,7 +395,7 @@ struct ids_hash_element
 
 
 
-class internal_types_manager 
+class internal_types_manager
 {
 	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
 	typedef std::map<string_type, names_hash_element> names_hash_type;
@@ -531,7 +530,7 @@ public:
 };
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -551,7 +550,7 @@ type_hash<typeT>::~type_hash()
 
 
 template <class typeT>
-typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx_node_id& id)
+typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id)
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -565,7 +564,7 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_class_definition (const rx
 }
 
 template <class typeT>
-bool type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
+bool type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 {
 	const auto& id = what->meta_data().get_id();
 	auto it = registered_types_.find(id);
@@ -598,7 +597,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 		to_create = id;
 
 	RTypePtr ret;
-	
+
 	rx_node_ids base;
 	base.emplace_back(type_id);
 	inheritance_hash_.get_base_types(type_id,base);
@@ -618,14 +617,14 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 	ret->meta_data().construct(name, to_create, std::move(type_id), system);
 	for (auto one_id : base)
 	{
-		auto my_class = get_class_definition(one_id);
+		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
 			my_class->construct(ret, ctx);
 
 		}
 	}
-	object_class::set_object_runtime_data(ctx.runtime_data, ret);
+	object_type::set_object_runtime_data(ctx.runtime_data, ret);
 	return ret;
 }
 
@@ -718,7 +717,7 @@ public:
 	}
 };
 */
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -738,7 +737,7 @@ simple_type_hash<typeT>::~simple_type_hash()
 
 
 template <class typeT>
-typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_class_definition (const rx_node_id& id)
+typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id)
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -752,7 +751,7 @@ typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_class_definition (c
 }
 
 template <class typeT>
-bool simple_type_hash<typeT>::register_class (typename type_hash<typeT>::Tptr what)
+bool simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 {
 	const auto& id = what->meta_data().get_id();
 	auto it = registered_types_.find(id);
@@ -778,6 +777,8 @@ bool simple_type_hash<typeT>::register_constructor (const rx_node_id& id, std::f
 template <class typeT>
 query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 {
+  query_result ret;
+  return ret;
 }
 
 template <class typeT>
@@ -803,7 +804,7 @@ typename simple_type_hash<typeT>::RDataType simple_type_hash<typeT>::create_simp
 	construct_context ctx;
 	for (auto one_id : base)
 	{
-		auto my_class = get_class_definition(one_id);
+		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
 			my_class->construct(ret, ctx);

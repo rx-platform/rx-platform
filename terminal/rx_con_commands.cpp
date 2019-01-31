@@ -273,51 +273,8 @@ bool namespace_command::do_console_command (std::istream& in, std::ostream& out,
 		}
 	}
 
-	if (ctx->get_current_object())
-	{
-		return list_object(out, err, filter, options, ctx->get_current_object());
-	}
-	else
-	{
-        server_directory_ptr dir=ctx->get_current_directory();
-		return list_directory(out, err, filter, options, dir);
-	}
-}
-
-bool namespace_command::list_object (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, platform_item_ptr object)
-{
-	server_items_type items;
-	object->get_content(items,filter);
-
-	size_t count = items.size();
-
-	rx_table_type table(count + 1);
-
-
-	table[0].emplace_back("Name");
-	if (options.list_type)
-		table[0].emplace_back("Type");
-	if (options.list_attributes)
-		table[0].emplace_back("Attributes");
-	if (options.list_qualities)
-		table[0].emplace_back("Quality");
-	if (options.list_timestamps)
-		table[0].emplace_back("Time Stamp");
-	if (options.list_size)
-		table[0].emplace_back("Size");
-	if (options.list_created)
-		table[0].emplace_back("Created Time");
-
-	size_t idx = 1;
-	for (auto& one : items)
-	{
-		dump_items_on_console(table[idx], options, one);
-		idx++;
-	}
-
-	rx_dump_table(table, out, true,false);
-
-	return true;
+	server_directory_ptr dir=ctx->get_current_directory();
+	return list_directory(out, err, filter, options, dir);
 }
 
 
@@ -355,50 +312,31 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	{// dump here
 		string_type filter;
 		auto current_directory = ctx->get_current_directory();
-		auto current_object = ctx->get_current_object();
-		if (current_object)
-		{// we're inside an object itself
 
-			server_items_type items;
-			current_object->get_content(items,string_type());
+		server_directories_type dirs;
+		server_items_type items;
+		current_directory->get_content(dirs, items, filter);
 
-			size_t count = items.size();
-			rx_row_type row;
-			row.reserve(count);
-			for (auto& one : items)
-			{
-				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
-			}
-			rx_dump_large_row(row, out, 60);
-			return true;
+		size_t count = dirs.size() + items.size();
+
+		rx_row_type row;
+		row.reserve(count);
+
+		for (auto& one : dirs)
+		{
+			row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
 		}
-		else
-		{// we're on directories
-			server_directories_type dirs;
-			server_items_type items;
-			current_directory->get_content(dirs, items, filter);
-
-			size_t count = dirs.size() + items.size();
-
-			rx_row_type row;
-			row.reserve(count);
-
-			for (auto& one : dirs)
-			{
-				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
-			}
-			for (auto& one : items)
-			{
-				if ((one->get_attributes()&namespace_item_execute_access) != 0)
-					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
-				else
-					row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
-
-			}
-			rx_dump_large_row(row, out, 60);
-			return true;
+		for (auto& one : items)
+		{
+			if ((one->get_attributes()&namespace_item_execute_access) != 0)
+				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+			else
+				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 
 		}
+		rx_dump_large_row(row, out, 60);
+		return true;
+
 	}
 	else
 	{
@@ -1097,4 +1035,5 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
+
 

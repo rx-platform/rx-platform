@@ -31,7 +31,7 @@
 
 
 /*******************************************************************
- Command Line switches
+ Preprocessor switches
  ======================
 
  #define PYTHON_SUPPORT - includes the python support
@@ -40,7 +40,7 @@
 
 #include "rx_library.h"
 #include "version/rx_code_macros.h"
-#include "system/meta/rx_obj_classes.h"
+#include "system/meta/rx_obj_types.h"
 
 
 

@@ -85,6 +85,11 @@ namespace meta_test {
 	 out << "const_size_vector:" ANSI_RX_OBJECT_SIZE << sizeof(rx::const_size_vector<runtime::structure::variable_data>) << ANSI_COLOR_RESET "\r\n";
 	 out << "array:" ANSI_RX_OBJECT_SIZE << sizeof(std::array<runtime::structure::variable_data, 0>) << ANSI_COLOR_RESET "\r\n";
 	 out << "empty:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::empty<runtime::structure::variable_data>) << ANSI_COLOR_RESET "\r\n";
+	 out << "mixed:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::mixed_item_data) << ANSI_COLOR_RESET "\r\n";
+
+	 out << "bitset<8>:" ANSI_RX_OBJECT_SIZE << sizeof(std::bitset<8>) << ANSI_COLOR_RESET "\r\n";
+	 out << "bitset<32>:" ANSI_RX_OBJECT_SIZE << sizeof(std::bitset<32>) << ANSI_COLOR_RESET "\r\n";
+	 out << "bitset<64>:" ANSI_RX_OBJECT_SIZE << sizeof(std::bitset<64>) << ANSI_COLOR_RESET "\r\n";
 
 	 ctx->set_failed();
 	 return true;

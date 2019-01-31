@@ -218,54 +218,35 @@ class rx_node_id
 
 public:
 	rx_node_id();
-
 	rx_node_id(const rx_node_id &right);
-
 	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
-
 	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
-
 	rx_node_id(rx_uuid_t id, uint16_t namesp = DEFAULT_NAMESPACE);
-
 	rx_node_id(const byte_string& id, uint16_t namesp = DEFAULT_NAMESPACE);
-
 	rx_node_id(rx_node_id&& right)  noexcept;
-
 	~rx_node_id();
 
 	rx_node_id & operator=(const rx_node_id &right);
-
 	rx_node_id & operator=(rx_node_id &&right) noexcept;
 
 	bool operator==(const rx_node_id &right) const;
-
 	bool operator!=(const rx_node_id &right) const;
-
-
 	bool operator < (const rx_node_id& right) const;
 
 	void to_string(string_type& val) const;
-
 	string_type to_string() const;
-
 	static rx_node_id from_string(const char* value);
 
 	static rx_node_id generate_new(uint16_t namesp);
-
 	bool is_null() const;
-
+	operator bool() const;
 	bool is_standard() const;
-
 	bool is_opc() const;
-
 	void set_string_id(const char* strid);
-
 	bool is_guid() const;
 
 	bool get_uuid(rx_uuid_t& id) const;
-
 	bool get_numeric(uint32_t& id) const;
-
 	bool get_string(string_type& id) const;
 
 	const uint16_t get_namespace() const;

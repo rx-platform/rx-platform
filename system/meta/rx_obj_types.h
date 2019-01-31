@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_obj_classes.h
+*  system\meta\rx_obj_types.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,21 +26,21 @@
 ****************************************************************************/
 
 
-#ifndef rx_obj_classes_h
-#define rx_obj_classes_h 1
+#ifndef rx_obj_types_h
+#define rx_obj_types_h 1
 
 
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 
 using rx_platform::meta::def_blocks::construct_context;
 
@@ -150,9 +150,9 @@ struct object_type_creation_data
 
 
 
-class application_class : public rx::pointers::reference_object  
+class application_type : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(application_class);
+	DECLARE_REFERENCE_PTR(application_type);
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of application type");
 public:
@@ -163,9 +163,9 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      application_class (const object_type_creation_data& data);
+      application_type (const object_type_creation_data& data);
 
-      virtual ~application_class();
+      virtual ~application_type();
 
 
       void construct (runtime::rx_application_ptr& what, construct_context& ctx);
@@ -180,6 +180,8 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
+      def_blocks::mapped_data_type& mapping_data ();
+
 
       const object_data_type& object_data () const;
 
@@ -203,7 +205,7 @@ public:
   protected:
 
   private:
-      application_class();
+      application_type();
 
 
 
@@ -224,9 +226,9 @@ public:
 
 
 
-class domain_class : public rx::pointers::reference_object  
+class domain_type : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(domain_class);
+	DECLARE_REFERENCE_PTR(domain_type);
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of domain type");
 public:
@@ -237,9 +239,9 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      domain_class (const object_type_creation_data& data);
+      domain_type (const object_type_creation_data& data);
 
-      virtual ~domain_class();
+      virtual ~domain_type();
 
 
       void construct (runtime::rx_domain_ptr what, construct_context& ctx);
@@ -254,79 +256,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-
-      const object_data_type& object_data () const;
-
-      const checkable_data& meta_data () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-      domain_class();
-
-
-
-      object_data_type object_data_;
-
-      checkable_data meta_data_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-
-};
-
-
-
-
-
-
-
-class port_class : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(port_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
-implementation of port type");
-public:
-	typedef runtime::object_types::port_runtime RType;
-	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
-
-	friend class obj_meta_helpers;
-
-  public:
-      port_class (const object_type_creation_data& data);
-
-      virtual ~port_class();
-
-
-      void construct (runtime::rx_port_ptr what, construct_context& ctx);
-
-      platform_item_ptr get_item_ptr ();
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      checkable_data& meta_data ();
-
-      def_blocks::complex_data_type& complex_data ();
+      def_blocks::mapped_data_type& mapping_data ();
 
 
       const object_data_type& object_data () const;
@@ -351,7 +281,7 @@ public:
   protected:
 
   private:
-      port_class();
+      domain_type();
 
 
 
@@ -372,10 +302,10 @@ public:
 
 
 
-class object_class : public rx::pointers::reference_object  
+class object_type : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(object_class);
-	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+	DECLARE_REFERENCE_PTR(object_type);
+	DECLARE_CODE_INFO("rx", 0, 5, 2, "\
 implementation of object type");
 public:
 	typedef runtime::object_types::object_runtime RType;
@@ -384,9 +314,9 @@ public:
 	friend class obj_meta_helpers;
 
   public:
-      object_class (const object_type_creation_data& data);
+      object_type (const object_type_creation_data& data);
 
-      virtual ~object_class();
+      virtual ~object_type();
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
@@ -405,12 +335,16 @@ public:
 
       static void set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where);
 
+      def_blocks::mapped_data_type& mapping_data ();
+
 
       const object_data_type& object_data () const;
 
       const checkable_data& meta_data () const;
 
       const def_blocks::complex_data_type& complex_data () const;
+
+      const def_blocks::mapped_data_type& mapping_data () const;
 
 
       static string_type get_type_name ()
@@ -423,7 +357,7 @@ public:
   protected:
 
   private:
-      object_class();
+      object_type();
 
 
 
@@ -442,6 +376,82 @@ public:
 };
 
 
+
+
+
+
+
+class port_type : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(port_type);
+	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+implementation of port type");
+public:
+	typedef runtime::object_types::port_runtime RType;
+	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
+	typedef runtime::blocks::complex_runtime_item CType;
+
+	friend class obj_meta_helpers;
+
+  public:
+      port_type (const object_type_creation_data& data);
+
+      virtual ~port_type();
+
+
+      void construct (runtime::rx_port_ptr what, construct_context& ctx);
+
+      platform_item_ptr get_item_ptr ();
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      checkable_data& meta_data ();
+
+      def_blocks::complex_data_type& complex_data ();
+
+      def_blocks::mapped_data_type& mapping_data ();
+
+
+      const object_data_type& object_data () const;
+
+      const checkable_data& meta_data () const;
+
+      const def_blocks::complex_data_type& complex_data () const;
+
+      const def_blocks::mapped_data_type& mapping_data () const;
+
+
+      static string_type get_type_name ()
+      {
+        return type_name;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+      port_type();
+
+
+
+      object_data_type object_data_;
+
+      checkable_data meta_data_;
+
+      def_blocks::complex_data_type complex_data_;
+
+      def_blocks::mapped_data_type mapping_data_;
+
+
+};
+
+
 } // namespace object_defs
 } // namespace meta
 } // namespace rx_platform
@@ -451,10 +461,10 @@ namespace rx_platform
 namespace meta
 {
 
-typedef pointers::reference<object_defs::object_class> object_class_ptr;
-typedef pointers::reference<object_defs::domain_class> domain_class_ptr;
-typedef pointers::reference<object_defs::application_class> application_class_ptr;
-typedef pointers::reference<object_defs::port_class> port_class_ptr;
+typedef pointers::reference<object_defs::object_type> object_type_ptr;
+typedef pointers::reference<object_defs::domain_type> domain_type_ptr;
+typedef pointers::reference<object_defs::application_type> application_type_ptr;
+typedef pointers::reference<object_defs::port_type> port_type_ptr;
 
 }
 }

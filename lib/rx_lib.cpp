@@ -669,7 +669,10 @@ bool rx_node_id::is_null() const
 {
 	return namespace_ == 0 && node_type_ == numeric_rx_node_id && value_.int_value == 0;
 }
-
+rx_node_id::operator bool() const
+{
+	return !is_null();
+}
 bool rx_node_id::is_standard() const
 {
 	return namespace_ == 1 && node_type_ == numeric_rx_node_id;

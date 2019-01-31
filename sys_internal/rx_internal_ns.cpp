@@ -120,71 +120,6 @@ namespace_item_attributes world_directory::get_attributes () const
 }
 
 
-// Class sys_internal::internal_ns::simple_platform_item 
-
-simple_platform_item::simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name, rx_time created_time)
-      : value_(value),
-        attributes_(attributes),
-        type_name_(type_name),
-        created_time_(created_time),
-        name_(name)
-{
-}
-
-
-simple_platform_item::~simple_platform_item()
-{
-}
-
-
-
-void simple_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-	has_own_code_info = false;
-}
-
-string_type simple_platform_item::get_type_name () const
-{
-	return type_name_;
-}
-
-values::rx_value simple_platform_item::get_value () const
-{
-	return value_;
-}
-
-namespace_item_attributes simple_platform_item::get_attributes () const
-{
-	return attributes_;
-}
-
-bool simple_platform_item::generate_json (std::ostream& def, std::ostream& err) const
-{
-	def << "Not implemented for simple item.";
-	return false;
-}
-
-bool simple_platform_item::is_browsable () const
-{
-	return false;
-}
-
-string_type simple_platform_item::get_name () const
-{
-	return name_;
-}
-
-size_t simple_platform_item::get_size () const
-{
-	return sizeof(*this);
-}
-
-rx_node_id simple_platform_item::get_node_id () const
-{
-	return rx_node_id::null_id;
-}
-
-//template simple_platform_item< rx_platform::runtime::const_value_item, RX_CONST_VALUE_TYPE_IDX  >;
 // Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
 
 template <class T, int class_name_idx>
@@ -290,14 +225,15 @@ template class sys_internal::internal_ns::rx_item_implementation<prog::command_p
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_type_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::mapper_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_class_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_class_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::mapper_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_type_ptr>;
+

@@ -82,21 +82,21 @@ namespace meta
 {
 namespace object_defs
 {
-	class object_class;
-	class application_class;
-	class domain_class;
-	class port_class;
+	class object_type;
+	class application_type;
+	class domain_type;
+	class port_type;
 
 }
 namespace basic_defs
 {
-	class variable_class;
-	class event_class;
-	class filter_class;
-	class source_class;
+	class variable_type;
+	class event_type;
+	class filter_type;
+	class source_type;
 	class reference_type;
-	class mapper_class;
-	class struct_class;
+	class mapper_type;
+	class struct_type;
 }
 
 }
@@ -192,6 +192,10 @@ public:
 
 class event_attribute 
 {
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
 
   public:
       event_attribute (const string_type& name, const rx_node_id& id);
@@ -234,6 +238,10 @@ class event_attribute
 
 class filter_attribute 
 {
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
 
   public:
       filter_attribute (const string_type& name, const rx_node_id& id);
@@ -276,6 +284,10 @@ class filter_attribute
 
 class mapper_attribute 
 {
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
 
   public:
       mapper_attribute (const string_type& name, const rx_node_id& id);
@@ -380,6 +392,10 @@ public:
 
 class source_attribute 
 {
+	template<typename T>
+	friend bool serialize_complex_attribute(const T& whose, base_meta_writer& stream);
+	template<typename T>
+	friend bool deserialize_complex_attribute(const T& whose, base_meta_writer& stream);
 
   public:
       source_attribute (const string_type& name, const rx_node_id& id);
@@ -615,7 +631,7 @@ class construct_context
 
 class struct_attribute;
 
-typedef std::map<string_type, int> names_cahce_type;
+typedef std::unordered_map<string_type, int> names_cahce_type;
 
 
 
@@ -745,9 +761,9 @@ class mapped_data_type
 
       bool deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
 
-      bool register_mapper (const mapper_attribute& item, complex_data_type& complex_data);
-
       void construct (const names_cahce_type& names, construct_context& ctx);
+
+      bool register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
 
   protected:
@@ -780,17 +796,17 @@ class variable_data_type
       virtual ~variable_data_type();
 
 
-      bool register_source (const source_attribute& item, complex_data_type& complex_data);
-
-      bool register_filter (const filter_attribute& item, complex_data_type& complex_data);
-
-      bool register_event (const event_attribute& item, complex_data_type& complex_data);
-
       void construct (runtime::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx);
 
       bool serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+
+      bool register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+
+      bool register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+
+      bool register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
 
   protected:

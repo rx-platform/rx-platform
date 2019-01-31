@@ -97,13 +97,11 @@ rx_value_t inner_get_type(tl::type2type<double>)
 {
 	return RX_DOUBLE_TYPE;
 }
-
 template<>
 rx_value_t inner_get_type(tl::type2type<typename std::string>)
 {
 	return RX_STRING_TYPE;
 }
-
 template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>)
 {
@@ -257,7 +255,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -265,7 +263,7 @@ rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_tim
 	return ret;
 }
 
-rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -273,7 +271,7 @@ rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -2693,7 +2691,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = value.get_storage();
@@ -2701,7 +2699,7 @@ rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& v
 	return ret;
 }
 
-rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -2709,7 +2707,7 @@ rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value,
 	return ret;
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

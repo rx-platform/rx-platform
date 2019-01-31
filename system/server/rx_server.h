@@ -39,8 +39,6 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -49,6 +47,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 
 #include "lib/rx_log.h"

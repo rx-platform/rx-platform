@@ -661,6 +661,18 @@ typedef runtime_data<
 	empty<filter_data>,
 	empty<event_data>, 0x03> basic_item_data;
 
+
+// basic item data
+// mixed empty<->has
+typedef runtime_data<
+	has<variable_data>,
+	empty<struct_data>,
+	has<source_data>,
+	empty<mapper_data>,
+	has<filter_data>,
+	empty<event_data>, 0x15> mixed_item_data;
+
+
 // full item data
 // all the sub items are there
 typedef runtime_data<

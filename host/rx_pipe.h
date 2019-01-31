@@ -63,7 +63,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items);
 
-      void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items);
+      void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 

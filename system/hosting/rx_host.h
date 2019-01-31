@@ -31,7 +31,7 @@
 
 
 #include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_classes.h"
+#include "system/meta/rx_obj_types.h"
 /////////////////////////////////////////////////////////////
 // logging macros for host library
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)
@@ -40,12 +40,12 @@
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 
 
 
@@ -206,7 +206,7 @@ class rx_platform_host
 
       virtual void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items) = 0;
 
-      virtual void get_host_classes (std::vector<rx_platform::meta::object_class_ptr>& items) = 0;
+      virtual void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items) = 0;
 
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 

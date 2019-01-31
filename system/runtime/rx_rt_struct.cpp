@@ -622,7 +622,7 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 // Class rx_platform::runtime::structure::init_context 
 
 
-rx_platform::runtime::structure::init_context init_context::create_initialization_context (object_runtime_ptr whose)
+init_context init_context::create_initialization_context (object_runtime_ptr whose)
 {
 	init_context ret;
 	ret.now = rx_time::now();

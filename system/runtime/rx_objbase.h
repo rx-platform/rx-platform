@@ -31,8 +31,6 @@
 
 
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_rt_struct
@@ -41,6 +39,8 @@
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -69,7 +69,7 @@ namespace meta
 {
 namespace object_defs
 {
-	class object_class;
+	class object_type;
 }
 }
 
@@ -187,7 +187,7 @@ object class. basic implementation of an object");
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 
 	friend class meta::checkable_data;
-	friend class meta::object_defs::object_class;
+	friend class meta::object_defs::object_type;
 
   public:
       object_runtime (object_creation_data&& data);
