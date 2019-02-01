@@ -57,94 +57,111 @@ class meta_helpers
 {
 public:
 	template<class complexT>
-	static bool serialize_simple_class(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
+	static bool serialize_simple_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
 	{
-		if (!whose.meta_data().serialize_checkable_definition(stream, type, object_type))
+		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
 			return false;
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().serialize_complex_definition(stream, type))
+		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
 	}
-
 	template<class complexT>
-	static bool deserialize_simple_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_simple_type(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
 	}
-
+	template<class complexT>
+	static bool check_simple_type(complexT& whose, type_check_context& ctx)
+	{
+		bool ret = whose.complex_data_.check_type(ctx);
+		return ret;
+	}
 
 	template<class complexT>
-	static bool serialize_struct_class(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
+	static bool serialize_struct_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
 	{
-		if (!whose.meta_data().serialize_checkable_definition(stream, type, object_type))
+		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
 			return false;
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().serialize_complex_definition(stream, type))
+		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
-		if (!whose.mapping_data().serialize_mapped_definition(stream, type))
+		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
 	}
-
 	template<class complexT>
-	static bool deserialize_struct_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_struct_type(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 			return false;
-		if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
+		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
 	}
+	template<class complexT>
+	static bool check_struct_type(complexT& whose, type_check_context& ctx)
+	{
+		bool ret = whose.complex_data_.check_type(ctx);
+		ret &= whose.mapping_data_.check_type(ctx);
+		return ret;
+	}
 
 	template<class complexT>
-	static bool serialize_variable_class(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
+	static bool serialize_variable_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
 	{
-		if (!whose.meta_data().serialize_checkable_definition(stream, type, object_type))
+		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
 			return false;
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().serialize_complex_definition(stream, type))
+		if (!whose.complex_data_.serialize_complex_definition(stream, type))
 			return false;
-		if (!whose.mapping_data().serialize_mapped_definition(stream, type))
+		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
 			return false;
-		if (!whose.variable_data().serialize_variable_definition(stream, type))
+		if (!whose.variable_data_.serialize_variable_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
 	}
-
 	template<class complexT>
-	static bool deserialize_variable_class(complexT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_variable_type(complexT& whose, base_meta_reader& stream, uint8_t type)
 	{
 		if (!stream.start_object("Def"))
 			return false;
-		if (!whose.complex_data().deserialize_complex_definition(stream, type))
+		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 			return false;
-		if (!whose.mapping_data().deserialize_mapped_definition(stream, type))
+		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
 			return false;
-		if (!whose.variable_data().deserialize_variable_definition(stream, type))
+		if (!whose.variable_data_.deserialize_variable_definition(stream, type))
 			return false;
 		if (!stream.end_object())
 			return false;
 		return true;
+	}
+	template<class complexT>
+	static bool check_variable_type(complexT& whose, type_check_context& ctx)
+	{
+		bool ret = whose.complex_data_.check_type(ctx);
+		ret &= whose.mapping_data_.check_type(ctx);
+		ret &= whose.variable_data_.check_type(ctx);
+		return ret;
 	}
 };
 
@@ -171,14 +188,14 @@ platform_item_ptr event_type::get_item_ptr ()
 
 bool event_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool event_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -195,9 +212,14 @@ def_blocks::complex_data_type& event_type::complex_data ()
 
 }
 
-void event_type::construct (RTypePtr& what, construct_context& ctx)
+void event_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
+}
+
+bool event_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_simple_type(*this, ctx);
 }
 
 
@@ -235,14 +257,14 @@ platform_item_ptr filter_type::get_item_ptr ()
 
 bool filter_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool filter_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -259,9 +281,14 @@ def_blocks::complex_data_type& filter_type::complex_data ()
 
 }
 
-void filter_type::construct (RTypePtr& what, construct_context& ctx)
+void filter_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
+}
+
+bool filter_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_simple_type(*this, ctx);
 }
 
 
@@ -299,14 +326,14 @@ platform_item_ptr mapper_type::get_item_ptr ()
 
 bool mapper_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -323,9 +350,14 @@ def_blocks::complex_data_type& mapper_type::complex_data ()
 
 }
 
-void mapper_type::construct (RTypePtr& what, construct_context& ctx)
+void mapper_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
+}
+
+bool mapper_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_simple_type(*this, ctx);
 }
 
 
@@ -363,14 +395,14 @@ platform_item_ptr source_type::get_item_ptr ()
 
 bool source_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool source_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_class(*this, stream, type))
+	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -387,9 +419,14 @@ def_blocks::complex_data_type& source_type::complex_data ()
 
 }
 
-void source_type::construct (RTypePtr& what, construct_context& ctx)
+void source_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
+}
+
+bool source_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_simple_type(*this, ctx);
 }
 
 
@@ -419,7 +456,7 @@ struct_type::struct_type (const type_creation_data& data)
 
 
 
-void struct_type::construct (RTypePtr& what, construct_context& ctx)
+void struct_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
 	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
@@ -433,14 +470,14 @@ platform_item_ptr struct_type::get_item_ptr ()
 
 bool struct_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_struct_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_struct_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool struct_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_struct_class(*this, stream, type))
+	if (!meta_helpers::deserialize_struct_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -461,6 +498,11 @@ def_blocks::mapped_data_type& struct_type::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+bool struct_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_struct_type(*this, ctx);
 }
 
 
@@ -495,23 +537,23 @@ variable_type::variable_type (const type_creation_data& data)
 
 
 
-void variable_type::construct (RTypePtr& what, construct_context& ctx)
+void variable_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	complex_data_.construct(ctx);
 	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
-	variable_data_.construct(what, complex_data_.get_names_cache(), ctx);
+	variable_data_.construct(complex_data_.get_names_cache(), ctx);
 }
 
 bool variable_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_variable_class(*this, stream, type, type_name))
+	if (!meta_helpers::serialize_variable_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool variable_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_variable_class(*this, stream, type))
+	if (!meta_helpers::deserialize_variable_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -551,6 +593,11 @@ def_blocks::variable_data_type& variable_type::variable_data ()
 {
   return variable_data_;
 
+}
+
+bool variable_type::check_type (type_check_context& ctx)
+{
+	return meta_helpers::check_variable_type(*this, ctx);
 }
 
 

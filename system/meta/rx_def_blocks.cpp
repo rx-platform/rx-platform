@@ -45,24 +45,40 @@ namespace rx_platform {
 namespace meta {
 
 namespace def_blocks {
-template<typename T>
-bool serialize_complex_attribute(const T& whose, base_meta_writer& stream)
+
+class meta_blocks_helpers
 {
-	if (!stream.write_id("Id", whose.target_id_))
-		return false;
-	if (!stream.write_string("Name", whose.name_.c_str()))
-		return false;
-	return true;
-}
-template<typename T>
-bool deserialize_complex_attribute(const T& whose, base_meta_reader& stream)
-{
-	if (!stream.read_id("Id", whose.target_id_))
-		return false;
-	if (!stream.read_string("Name", whose.name_.c_str()))
-		return false;
-	return true;
-}
+public:
+	template<typename T>
+	static bool serialize_complex_attribute(const T& whose, base_meta_writer& stream)
+	{
+		if (!stream.write_id("Id", whose.target_id_))
+			return false;
+		if (!stream.write_string("Name", whose.name_.c_str()))
+			return false;
+		return true;
+	}
+	template<typename T>
+	static bool deserialize_complex_attribute(T& whose, base_meta_reader& stream)
+	{
+		if (!stream.read_id("Id", whose.target_id_))
+			return false;
+		if (!stream.read_string("Name", whose.name_))
+			return false;
+		return true;
+	}
+	template<typename T>
+	static bool check_complex_attribute(T& whose, type_check_context& ctx)
+	{
+		return true;
+	}
+	template<typename T>
+	static void construct_complex_attribute(const T&whose, construct_context& ctx)
+	{
+		auto temp = model::internal_types_manager::instance().get_simple_type_cache<typename T::TargetType>().create_simple_runtime(whose.target_id_);
+		ctx.runtime_data.add(whose.name_, std::move(temp));
+	}
+};
 
 // Class rx_platform::meta::def_blocks::complex_data_type 
 
@@ -212,29 +228,12 @@ bool complex_data_type::check_name (const string_type& name, int rt_index)
 	}
 }
 
-void complex_data_type::construct (construct_context& ctx)
+void complex_data_type::construct (construct_context& ctx) const
 {
 	for (const auto& one : names_cache_)
 	{
 		switch (one.second&type_mask)
 		{
-		// structures
-		case structs_mask:
-		{
-			const auto& data = structs_[one.second&index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_type>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_struct(data.get_name(), std::move(temp));
-		}
-		break;
-		// variables
-		case variables_mask:
-		{
-			const auto& data = variables_[one.second&index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_type>().create_simple_runtime(data.get_target_id());
-			temp.set_value(data.get_value(ctx.now));
-			ctx.runtime_data.add_variable(data.get_name(), std::move(temp), data.get_value(ctx.now));
-		}
-		break;
 		// constant values
 		case const_values_mask:
 		{
@@ -243,6 +242,7 @@ void complex_data_type::construct (construct_context& ctx)
 				const_values_[one.second&index_mask].get_value());
 		}
 		break;
+		// simple values
 		case simple_values_mask:
 		{
 			ctx.runtime_data.add_value(
@@ -250,6 +250,14 @@ void complex_data_type::construct (construct_context& ctx)
 				simple_values_[one.second&index_mask].get_value(ctx.now));
 		}
 		break;
+		// structures
+		case structs_mask:
+			structs_[one.second&index_mask].construct(ctx);
+			break;
+		// variables
+		case variables_mask:
+			variables_[one.second&index_mask].construct(ctx);
+			break;
 		}
 	}
 }
@@ -306,6 +314,16 @@ bool complex_data_type::register_const_value (const string_type& name, const rx_
 	}
 }
 
+bool complex_data_type::check_type (type_check_context& ctx)
+{
+	bool ret = true;
+	for (auto& one : structs_)
+		ret &= one.check(ctx);
+	for (auto& one : variables_)
+		ret &= one.check(ctx);
+	return ret;
+}
+
 
 // Class rx_platform::meta::def_blocks::const_value_def 
 
@@ -358,19 +376,32 @@ bool event_attribute::serialize_definition (base_meta_writer& stream, uint8_t ty
 {
 	if (!stream.start_object(runtime::blocks::event_runtime::type_name.c_str()))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::event_runtime::type_name.c_str()))
+		return false;
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool event_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void event_attribute::construct (construct_context& ctx) const
+{
+	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -388,19 +419,32 @@ bool filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t t
 {
 	if (!stream.start_object(runtime::blocks::filter_runtime::type_name.c_str()))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::filter_runtime::type_name.c_str()))
+		return false;
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool filter_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void filter_attribute::construct (construct_context& ctx) const
+{
+	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -439,20 +483,16 @@ bool mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, 
 	return false;
 }
 
-void mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx)
+void mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
 {
 	for (const auto& one : names)
 	{
 		switch (one.second&complex_data_type::type_mask)
 		{
-			// mappers
+		// mappers
 		case complex_data_type::mappings_mask:
-		{
-			const auto& data = mappers_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::mapper_type>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_mapper(data.get_name(), std::move(temp));
-		}
-		break;
+			mappers_[one.second&complex_data_type::index_mask].construct(ctx);
+			break;
 		}
 	}
 }
@@ -470,6 +510,14 @@ bool mapped_data_type::register_mapper (const string_type& name, const rx_node_i
 	}
 }
 
+bool mapped_data_type::check_type (type_check_context& ctx)
+{
+	bool ret = true;
+	for (auto& one : mappers_)
+		ret &= one.check(ctx);
+	return ret;
+}
+
 
 // Class rx_platform::meta::def_blocks::mapper_attribute 
 
@@ -485,19 +533,32 @@ bool mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t t
 {
 	if (!stream.start_object(runtime::blocks::mapper_runtime::type_name.c_str()))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::mapper_runtime::type_name.c_str()))
+		return false;
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool mapper_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void mapper_attribute::construct (construct_context& ctx) const
+{
+	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -555,19 +616,32 @@ bool source_attribute::serialize_definition (base_meta_writer& stream, uint8_t t
 {
 	if (!stream.start_object(runtime::blocks::source_runtime::type_name.c_str()))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.start_object(runtime::blocks::source_runtime::type_name.c_str()))
+		return false;
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool source_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void source_attribute::construct (construct_context& ctx) const
+{
+	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -585,28 +659,32 @@ bool struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t t
 {
 	if (!stream.start_object(runtime::blocks::struct_runtime::type_name.c_str()))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	/*if (!stream.start_object(runtime::struct_runtime::type_name.c_str()))
+	if (!stream.start_object(runtime::blocks::struct_runtime::type_name.c_str()))
 		return false;
-
-	if (!complex_class_attribute::deserialize_definition(stream, type))
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
-		return false;*/
+		return false;
+	return true;
+}
 
-	return false;
+bool struct_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void struct_attribute::construct (construct_context& ctx) const
+{
+	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -625,28 +703,47 @@ bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t
 {
 	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
 		return false;
-
-	stream.write_bool("RO", read_only_);
+	if (!stream.write_bool("RO", read_only_))
+		return false;	
 	if (!storage_.serialize(stream))
 		return false;
-
-	if (!serialize_complex_attribute(*this, stream))
+	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
 		return false;
-
 	if (!stream.end_object())
 		return false;
-
 	return true;
 }
 
 bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
+	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
+		return false;
+	if (!stream.read_bool("RO", read_only_))
+		return false;
+	if (!storage_.deserialize(stream))
+		return false;
+	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
+		return false;
+	if (!stream.end_object())
+		return false;
 	return false;
 }
 
 rx_value variable_attribute::get_value (rx_time now) const
 {
 	return rx_value::from_simple(storage_, now);
+}
+
+bool variable_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+}
+
+void variable_attribute::construct (construct_context& ctx) const
+{
+	auto temp = model::internal_types_manager::instance().get_simple_type_cache<basic_defs::variable_type>().create_simple_runtime(target_id_);
+	temp.set_value(get_value(ctx.now));
+	ctx.runtime_data.add_variable(name_, std::move(temp), get_value(ctx.now));
 }
 
 
@@ -667,7 +764,7 @@ variable_data_type::~variable_data_type()
 
 
 
-void variable_data_type::construct (runtime::variable_runtime_ptr& what, const names_cahce_type& names, construct_context& ctx)
+void variable_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
 {
 	for (const auto& one : names)
 	{
@@ -675,28 +772,16 @@ void variable_data_type::construct (runtime::variable_runtime_ptr& what, const n
 		{
 		// sources
 		case complex_data_type::sources_mask:
-		{
-			const auto& data = sources_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::source_type>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_source(data.get_name(), std::move(temp));
-		}
-		break;
-		// events
-		case complex_data_type::filters_mask:
-		{
-			const auto& data = filters_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::filter_type>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_filter(data.get_name(), std::move(temp));
-		}
-		break;
+			sources_[one.second&complex_data_type::index_mask].construct(ctx);
+			break;
 		// filters
+		case complex_data_type::filters_mask:
+			filters_[one.second&complex_data_type::index_mask].construct(ctx);
+			break;
+		// events
 		case complex_data_type::events_mask:
-		{
-			const auto& data = events_[one.second&complex_data_type::index_mask];
-			auto temp = model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::event_type>().create_simple_runtime(data.get_target_id());
-			ctx.runtime_data.add_event(data.get_name(), std::move(temp));
-		}
-		break;
+			events_[one.second&complex_data_type::index_mask].construct(ctx);
+			break;
 		}
 	}
 }
@@ -789,283 +874,22 @@ bool variable_data_type::register_event (const string_type& name, const rx_node_
 	}
 }
 
-
-// Class rx_platform::meta::def_blocks::construct_context 
-
-construct_context::construct_context()
-      : now(rx_time::now())
+bool variable_data_type::check_type (type_check_context& ctx)
 {
-}
-
-
-
-// Class rx_platform::meta::def_blocks::runtime_data_prototype 
-
-
-void runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(const_values.size());
-		const_values.push_back({ value });
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
-	}
-}
-
-void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(values.size());
-		values.push_back({ value });
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
-	}
-}
-
-bool runtime_data_prototype::check_name (const string_type& name) const
-{
-	for (const auto& one : items)
-	{
-		if (one.name == name)
-			return false;
-	}
-	return true;
-}
-
-void runtime_data_prototype::add_mapper (const string_type& name, mapper_data&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(mappers.size());
-		mappers.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_mapper_index_type });
-	}
-}
-
-void runtime_data_prototype::add_struct (const string_type& name, struct_data&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(structs.size());
-		structs.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_struct_index_type });
-	}
-}
-
-void runtime_data_prototype::add_variable (const string_type& name, variable_data&& value, rx_value val)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(variables.size());
-		value.set_value(std::move(val));
-		variables.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
-	}
-}
-
-void runtime_data_prototype::add_source (const string_type& name, source_data&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(sources.size());
-		sources.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_source_index_type });
-	}
-}
-
-void runtime_data_prototype::add_filter (const string_type& name, filter_data&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(filters.size());
-		filters.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_filter_index_type });
-	}
-}
-
-void runtime_data_prototype::add_event (const string_type& name, event_data&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(events.size());
-		events.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_event_index_type });
-	}
-}
-
-
-
-template <class runtime_data_type>
-runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototype& prototype)
-{
-	std::unique_ptr<runtime_data_type> ret = std::make_unique<runtime_data_type>();
-	if (runtime_data_type::has_variables())
-	{
-		ret->variables.copy_from(std::move(prototype.variables));
-	}
-	if (runtime_data_type::has_structs())
-		ret->structs.copy_from(std::move(prototype.structs));
-	if (runtime_data_type::has_sources())
-		ret->sources.copy_from(std::move(prototype.sources));
-	if (runtime_data_type::has_mappers())
-		ret->mappers.copy_from(std::move(prototype.mappers));
-	if (runtime_data_type::has_filters())
-		ret->filters.copy_from(std::move(prototype.filters));
-	if (runtime_data_type::has_events())
-		ret->events.copy_from(std::move(prototype.events));
-
-	ret->values = const_size_vector<value_data>(std::move(prototype.values));
-	ret->const_values = const_size_vector<const_value_data>(std::move(prototype.const_values));
-	ret->items = const_size_vector<index_data>(std::move(prototype.items));
-
+	bool ret = true;
+	for (auto& one : sources_)
+		ret &= one.check(ctx);
+	for (auto& one : filters_)
+		ret &= one.check(ctx);
+	for (auto& one : events_)
+		ret &= one.check(ctx);
 	return ret;
 }
 
 
-runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
-{
-	uint_fast8_t effective_type = (prototype.variables.empty() ? rt_bit_none : rt_bit_has_variables)
-		| (prototype.structs.empty() ? rt_bit_none : rt_bit_has_structs)
-		| (prototype.sources.empty() ? rt_bit_none : rt_bit_has_sources)
-		| (prototype.mappers.empty() ? rt_bit_none : rt_bit_has_mappers)
-		| (prototype.filters.empty() ? rt_bit_none : rt_bit_has_filters)
-		| (prototype.events.empty() ? rt_bit_none : rt_bit_has_events);
-
-	switch (effective_type)
-	{
-	case 0x00:
-		return create_runtime_data_from_prototype<runtime_data_type00>(prototype);
-	case 0x01:
-		return create_runtime_data_from_prototype<runtime_data_type01>(prototype);
-	case 0x02:
-		return create_runtime_data_from_prototype<runtime_data_type02>(prototype);
-	case 0x03:
-		return create_runtime_data_from_prototype<runtime_data_type03>(prototype);
-	case 0x04:
-		return create_runtime_data_from_prototype<runtime_data_type04>(prototype);
-	case 0x05:
-		return create_runtime_data_from_prototype<runtime_data_type05>(prototype);
-	case 0x06:
-		return create_runtime_data_from_prototype<runtime_data_type06>(prototype);
-	case 0x07:
-		return create_runtime_data_from_prototype<runtime_data_type07>(prototype);
-	case 0x08:
-		return create_runtime_data_from_prototype<runtime_data_type08>(prototype);
-	case 0x09:
-		return create_runtime_data_from_prototype<runtime_data_type09>(prototype);
-	case 0x0a:
-		return create_runtime_data_from_prototype<runtime_data_type0a>(prototype);
-	case 0x0b:
-		return create_runtime_data_from_prototype<runtime_data_type0b>(prototype);
-	case 0x0c:
-		return create_runtime_data_from_prototype<runtime_data_type0c>(prototype);
-	case 0x0d:
-		return create_runtime_data_from_prototype<runtime_data_type0d>(prototype);
-	case 0x0e:
-		return create_runtime_data_from_prototype<runtime_data_type0e>(prototype);
-	case 0x0f:
-		return create_runtime_data_from_prototype<runtime_data_type0f>(prototype);
-	case 0x10:
-		return create_runtime_data_from_prototype<runtime_data_type10>(prototype);
-	case 0x11:
-		return create_runtime_data_from_prototype<runtime_data_type11>(prototype);
-	case 0x12:
-		return create_runtime_data_from_prototype<runtime_data_type12>(prototype);
-	case 0x13:
-		return create_runtime_data_from_prototype<runtime_data_type13>(prototype);
-	case 0x14:
-		return create_runtime_data_from_prototype<runtime_data_type14>(prototype);
-	case 0x15:
-		return create_runtime_data_from_prototype<runtime_data_type15>(prototype);
-	case 0x16:
-		return create_runtime_data_from_prototype<runtime_data_type16>(prototype);
-	case 0x17:
-		return create_runtime_data_from_prototype<runtime_data_type17>(prototype);
-	case 0x18:
-		return create_runtime_data_from_prototype<runtime_data_type18>(prototype);
-	case 0x19:
-		return create_runtime_data_from_prototype<runtime_data_type19>(prototype);
-	case 0x1a:
-		return create_runtime_data_from_prototype<runtime_data_type1a>(prototype);
-	case 0x1b:
-		return create_runtime_data_from_prototype<runtime_data_type1b>(prototype);
-	case 0x1c:
-		return create_runtime_data_from_prototype<runtime_data_type1c>(prototype);
-	case 0x1d:
-		return create_runtime_data_from_prototype<runtime_data_type1d>(prototype);
-	case 0x1e:
-		return create_runtime_data_from_prototype<runtime_data_type1e>(prototype);
-	case 0x1f:
-		return create_runtime_data_from_prototype<runtime_data_type1f>(prototype);
-	case 0x20:
-		return create_runtime_data_from_prototype<runtime_data_type20>(prototype);
-	case 0x21:
-		return create_runtime_data_from_prototype<runtime_data_type21>(prototype);
-	case 0x22:
-		return create_runtime_data_from_prototype<runtime_data_type22>(prototype);
-	case 0x23:
-		return create_runtime_data_from_prototype<runtime_data_type23>(prototype);
-	case 0x24:
-		return create_runtime_data_from_prototype<runtime_data_type24>(prototype);
-	case 0x25:
-		return create_runtime_data_from_prototype<runtime_data_type25>(prototype);
-	case 0x26:
-		return create_runtime_data_from_prototype<runtime_data_type26>(prototype);
-	case 0x27:
-		return create_runtime_data_from_prototype<runtime_data_type27>(prototype);
-	case 0x28:
-		return create_runtime_data_from_prototype<runtime_data_type28>(prototype);
-	case 0x29:
-		return create_runtime_data_from_prototype<runtime_data_type29>(prototype);
-	case 0x2a:
-		return create_runtime_data_from_prototype<runtime_data_type2a>(prototype);
-	case 0x2b:
-		return create_runtime_data_from_prototype<runtime_data_type2b>(prototype);
-	case 0x2c:
-		return create_runtime_data_from_prototype<runtime_data_type2c>(prototype);
-	case 0x2d:
-		return create_runtime_data_from_prototype<runtime_data_type2d>(prototype);
-	case 0x2e:
-		return create_runtime_data_from_prototype<runtime_data_type2e>(prototype);
-	case 0x2f:
-		return create_runtime_data_from_prototype<runtime_data_type2f>(prototype);
-	case 0x30:
-		return create_runtime_data_from_prototype<runtime_data_type30>(prototype);
-	case 0x31:
-		return create_runtime_data_from_prototype<runtime_data_type31>(prototype);
-	case 0x32:
-		return create_runtime_data_from_prototype<runtime_data_type32>(prototype);
-	case 0x33:
-		return create_runtime_data_from_prototype<runtime_data_type33>(prototype);
-	case 0x34:
-		return create_runtime_data_from_prototype<runtime_data_type34>(prototype);
-	case 0x35:
-		return create_runtime_data_from_prototype<runtime_data_type35>(prototype);
-	case 0x36:
-		return create_runtime_data_from_prototype<runtime_data_type36>(prototype);
-	case 0x37:
-		return create_runtime_data_from_prototype<runtime_data_type37>(prototype);
-	case 0x38:
-		return create_runtime_data_from_prototype<runtime_data_type38>(prototype);
-	case 0x39:
-		return create_runtime_data_from_prototype<runtime_data_type39>(prototype);
-	case 0x3a:
-		return create_runtime_data_from_prototype<runtime_data_type3a>(prototype);
-	case 0x3b:
-		return create_runtime_data_from_prototype<runtime_data_type3b>(prototype);
-	case 0x3c:
-		return create_runtime_data_from_prototype<runtime_data_type3c>(prototype);
-	case 0x3d:
-		return create_runtime_data_from_prototype<runtime_data_type3d>(prototype);
-	case 0x3e:
-		return create_runtime_data_from_prototype<runtime_data_type3e>(prototype);
-	case 0x3f:
-		return create_runtime_data_from_prototype<runtime_data_type3f>(prototype);
-	}
-	return runtime_item::smart_ptr();
-
-}
 } // namespace def_blocks
 } // namespace meta
 } // namespace rx_platform
+
+
 

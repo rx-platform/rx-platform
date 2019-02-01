@@ -41,8 +41,10 @@
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 
-using rx_platform::meta::def_blocks::construct_context;
+using rx_platform::meta::construct_context;
 
 
 namespace rx_platform {
@@ -97,10 +99,12 @@ class object_data_type
 
       void construct (runtime::object_runtime_ptr what, construct_context& ctx);
 
+      bool check_type (type_check_context& ctx);
 
-      const bool is_creatable () const
+
+      const bool is_constructible () const
       {
-        return creatable_;
+        return constructible_;
       }
 
 
@@ -113,7 +117,7 @@ class object_data_type
       programs_type programs_;
 
 
-      bool creatable_;
+      bool constructible_;
 
 
 };
@@ -181,6 +185,8 @@ public:
       def_blocks::complex_data_type& complex_data ();
 
       def_blocks::mapped_data_type& mapping_data ();
+
+      bool check_type (type_check_context& ctx);
 
 
       const object_data_type& object_data () const;
@@ -258,6 +264,8 @@ public:
 
       def_blocks::mapped_data_type& mapping_data ();
 
+      bool check_type (type_check_context& ctx);
+
 
       const object_data_type& object_data () const;
 
@@ -333,9 +341,11 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static void set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where);
+      static void set_object_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
       def_blocks::mapped_data_type& mapping_data ();
+
+      bool check_type (type_check_context& ctx);
 
 
       const object_data_type& object_data () const;
@@ -412,6 +422,8 @@ public:
       def_blocks::complex_data_type& complex_data ();
 
       def_blocks::mapped_data_type& mapping_data ();
+
+      bool check_type (type_check_context& ctx);
 
 
       const object_data_type& object_data () const;

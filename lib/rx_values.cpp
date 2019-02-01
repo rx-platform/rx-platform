@@ -2650,7 +2650,7 @@ bool rx_timed_value::deserialize (base_meta_reader& reader)
 		return false;
 	if (!storage_.deserialize(reader))
 		return false;
-	if (!reader.read_time("time", time_))
+	if (!reader.read_time("TS", time_))
 		return false;
 	if (!reader.end_object())
 		return false;

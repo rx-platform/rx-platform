@@ -45,11 +45,6 @@ internal_types_manager::internal_types_manager()
 }
 
 
-internal_types_manager::~internal_types_manager()
-{
-}
-
-
 
 internal_types_manager& internal_types_manager::instance ()
 {

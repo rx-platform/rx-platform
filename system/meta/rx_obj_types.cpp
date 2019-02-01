@@ -59,7 +59,7 @@ class obj_meta_helpers
 {
 public:
 	template<class objectT>
-	static bool serialize_object_class(const objectT& whose, base_meta_writer& stream, uint8_t type, const string_type object_type)
+	static bool serialize_object_type(const objectT& whose, base_meta_writer& stream, uint8_t type, const string_type object_type)
 	{
 		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
 			return false;
@@ -75,9 +75,8 @@ public:
 			return false;
 		return true;
 	}
-
 	template<class objectT>
-	static bool deserialize_object_class(objectT& whose, base_meta_reader& stream, uint8_t type)
+	static bool deserialize_object_type(objectT& whose, base_meta_reader& stream, uint8_t type)
 	{
 		if (!stream.start_object("Def"))
 			return false;
@@ -91,7 +90,14 @@ public:
 			return false;
 		return true;
 	}
-
+	template<class objectT>
+	static bool check_object_type(objectT& whose, type_check_context& ctx)
+	{
+		bool ret = whose.complex_data_.check_type(ctx);
+		ret &= whose.mapping_data_.check_type(ctx);
+		ret &= whose.object_data_.check_type(ctx);
+		return ret;
+	}
 	template<class objectT>
 	static void construct_object_runtime(objectT& whose, typename objectT::RTypePtr what, construct_context& ctx)
 	{
@@ -99,7 +105,6 @@ public:
 		whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
 		whose.object_data_.construct(what, ctx);
 	}
-
 };
 
 // Class rx_platform::meta::object_defs::application_type 
@@ -135,14 +140,14 @@ platform_item_ptr application_type::get_item_ptr ()
 
 bool application_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
+	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool application_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -163,6 +168,11 @@ def_blocks::mapped_data_type& application_type::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+bool application_type::check_type (type_check_context& ctx)
+{
+	return obj_meta_helpers::check_object_type(*this, ctx);
 }
 
 
@@ -220,14 +230,14 @@ platform_item_ptr domain_type::get_item_ptr ()
 
 bool domain_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
+	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool domain_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -248,6 +258,11 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+bool domain_type::check_type (type_check_context& ctx)
+{
+	return obj_meta_helpers::check_object_type(*this, ctx);
 }
 
 
@@ -309,14 +324,14 @@ platform_item_ptr object_type::get_item_ptr ()
 
 bool object_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
+	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool object_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -333,7 +348,7 @@ def_blocks::complex_data_type& object_type::complex_data ()
 
 }
 
-void object_type::set_object_runtime_data (def_blocks::runtime_data_prototype& prototype, RTypePtr where)
+void object_type::set_object_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
 	where->item_ = std::move(create_runtime_data(prototype));
 }
@@ -342,6 +357,11 @@ def_blocks::mapped_data_type& object_type::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+bool object_type::check_type (type_check_context& ctx)
+{
+	return obj_meta_helpers::check_object_type(*this, ctx);
 }
 
 
@@ -380,20 +400,25 @@ object_data_type::object_data_type (const string_type& name, const rx_node_id& i
 
 bool object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.write_bool("Creatable", creatable_))
+	if (!stream.write_bool("Constructible", constructible_))
 		return false;
 	return true;
 }
 
 bool object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.read_bool("Creatable", creatable_))
+	if (!stream.read_bool("Constructible", constructible_))
 		return false;
 	return true;
 }
 
 void object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx)
 {
+}
+
+bool object_data_type::check_type (type_check_context& ctx)
+{
+	return true;
 }
 
 
@@ -431,14 +456,14 @@ platform_item_ptr port_type::get_item_ptr ()
 
 bool port_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_class(*this, stream, type, type_name))
+	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
 		return false;
 	return true;
 }
 
 bool port_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_class(*this, stream, type))
+	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
 		return false;
 	return true;
 }
@@ -459,6 +484,11 @@ def_blocks::mapped_data_type& port_type::mapping_data ()
 {
   return mapping_data_;
 
+}
+
+bool port_type::check_type (type_check_context& ctx)
+{
+	return obj_meta_helpers::check_object_type(*this, ctx);
 }
 
 

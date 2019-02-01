@@ -37,8 +37,10 @@
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 
-using rx_platform::meta::def_blocks::construct_context;
+using rx_platform::meta::construct_context;
 
 
 namespace rx_platform {
@@ -101,6 +103,7 @@ public:
 	typedef runtime::blocks::event_runtime RType;
 	typedef runtime::event_runtime_ptr RTypePtr;
 
+	friend class meta_helpers;
 
   public:
       event_type (const type_creation_data& data);
@@ -116,7 +119,9 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
+
+      bool check_type (type_check_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -180,7 +185,9 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
+
+      bool check_type (type_check_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -246,7 +253,9 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
+
+      bool check_type (type_check_context& ctx);
 
 
       const checkable_data& meta_data () const;
@@ -308,7 +317,9 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
+
+      bool check_type (type_check_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -362,7 +373,7 @@ public:
       struct_type (const type_creation_data& data);
 
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -375,6 +386,8 @@ public:
       def_blocks::complex_data_type& complex_data ();
 
       def_blocks::mapped_data_type& mapping_data ();
+
+      bool check_type (type_check_context& ctx);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -432,7 +445,7 @@ public:
       variable_type (const type_creation_data& data);
 
 
-      void construct (RTypePtr& what, construct_context& ctx);
+      void construct (RTypePtr& what, construct_context& ctx) const;
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -449,6 +462,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       def_blocks::variable_data_type& variable_data ();
+
+      bool check_type (type_check_context& ctx);
 
 
       const checkable_data& meta_data () const;
