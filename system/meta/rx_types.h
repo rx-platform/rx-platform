@@ -31,14 +31,16 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using rx_platform::meta::construct_context;
 
@@ -60,33 +62,7 @@ struct meta_data_t
 
 
 
-namespace basic_defs {
-
-
-
-
-
-struct type_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id base_id;
-
-      bool system;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
+namespace basic_types {
 
 
 
@@ -102,8 +78,8 @@ public:
 	typedef runtime::structure::event_data RDataType;
 	typedef runtime::blocks::event_runtime RType;
 	typedef runtime::event_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       event_type (const type_creation_data& data);
@@ -168,8 +144,8 @@ public:
 	typedef runtime::structure::filter_data RDataType;
 	typedef runtime::blocks::filter_runtime RType;
 	typedef runtime::filter_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       filter_type (const type_creation_data& data);
@@ -234,8 +210,8 @@ public:
 	typedef runtime::structure::mapper_data RDataType;
 	typedef runtime::blocks::mapper_runtime RType;
 	typedef runtime::mapper_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       mapper_type();
@@ -300,8 +276,8 @@ public:
 	typedef runtime::structure::source_data RDataType;
 	typedef runtime::blocks::source_runtime RType;
 	typedef runtime::source_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       source_type (const type_creation_data& data);
@@ -366,8 +342,8 @@ public:
 	typedef runtime::structure::struct_data RDataType;
 	typedef runtime::blocks::struct_runtime RType;
 	typedef runtime::struct_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       struct_type (const type_creation_data& data);
@@ -438,8 +414,8 @@ public:
 	typedef runtime::structure::variable_data RDataType;
 	typedef runtime::blocks::variable_runtime RType;
 	typedef runtime::variable_runtime_ptr RTypePtr;
-
-	friend class meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::basic_types_algorithm;
 
   public:
       variable_type (const type_creation_data& data);
@@ -504,19 +480,19 @@ public:
 };
 
 
-} // namespace basic_defs
+} // namespace basic_types
 } // namespace meta
 } // namespace rx_platform
 
 namespace rx_platform {
 namespace meta {
 	
-typedef pointers::reference<basic_defs::mapper_type> mapper_type_ptr;
-typedef pointers::reference<basic_defs::struct_type> struct_type_ptr;
-typedef pointers::reference<basic_defs::variable_type> variable_type_ptr;
-typedef pointers::reference<basic_defs::source_type> source_type_ptr;
-typedef pointers::reference<basic_defs::event_type> event_type_ptr;
-typedef pointers::reference<basic_defs::filter_type> filter_type_ptr;
+typedef pointers::reference<basic_types::mapper_type> mapper_type_ptr;
+typedef pointers::reference<basic_types::struct_type> struct_type_ptr;
+typedef pointers::reference<basic_types::variable_type> variable_type_ptr;
+typedef pointers::reference<basic_types::source_type> source_type_ptr;
+typedef pointers::reference<basic_types::event_type> event_type_ptr;
+typedef pointers::reference<basic_types::filter_type> filter_type_ptr;
 
 } // namespace meta
 } // namespace server rx_platform

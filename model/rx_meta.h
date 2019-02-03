@@ -40,8 +40,8 @@
 #include "system/hosting/rx_host.h"
 
 using namespace rx_platform::meta;
-using namespace rx_platform::meta::basic_defs;
-using namespace rx_platform::meta::object_defs;
+using namespace rx_platform::meta::basic_types;
+using namespace rx_platform::meta::object_types;
 
 
 namespace model {
@@ -391,7 +391,7 @@ struct ids_hash_element
 
 
 
-class internal_types_manager 
+class platform_types_manager 
 {
 	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
 	typedef std::map<string_type, names_hash_element> names_hash_type;
@@ -417,7 +417,7 @@ class internal_types_manager
 	{
 	public:
 		template<class T>
-		type_hash<T>& get_internal(internal_types_manager* manager, tl::type2type<T>)
+		type_hash<T>& get_internal(platform_types_manager* manager, tl::type2type<T>)
 		{
 			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
@@ -451,7 +451,7 @@ class internal_types_manager
 	{
 	public:
 		template<class T>
-		simple_type_hash<T>& get_internal(internal_types_manager* manager, tl::type2type<T>)
+		simple_type_hash<T>& get_internal(platform_types_manager* manager, tl::type2type<T>)
 		{
 			simple_type_hash<T>* ret = (static_cast<simple_type_cache_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
@@ -487,7 +487,7 @@ public:
 
   public:
 
-      static internal_types_manager& instance ();
+      static platform_types_manager& instance ();
 
       uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
 
@@ -514,7 +514,7 @@ public:
   protected:
 
   private:
-      internal_types_manager();
+      platform_types_manager();
 
 
 

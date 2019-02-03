@@ -37,49 +37,49 @@ using namespace rx;
 
 namespace model {
 
-// Class model::internal_types_manager 
+// Class model::platform_types_manager 
 
-internal_types_manager::internal_types_manager()
+platform_types_manager::platform_types_manager()
 	: worker_("config",0)
 {
 }
 
 
 
-internal_types_manager& internal_types_manager::instance ()
+platform_types_manager& platform_types_manager::instance ()
 {
-	static internal_types_manager g_instance;
+	static platform_types_manager g_instance;
 	return g_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-uint32_t internal_types_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
+uint32_t platform_types_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
 {
 	return RX_OK;
 }
 
-uint32_t internal_types_manager::deinitialize ()
+uint32_t platform_types_manager::deinitialize ()
 {
 	return RX_OK;
 }
 
-uint32_t internal_types_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
+uint32_t platform_types_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
 {
 	worker_.start(RX_PRIORITY_IDLE);
 	return RX_OK;
 }
 
-uint32_t internal_types_manager::stop ()
+uint32_t platform_types_manager::stop ()
 {
 	worker_.end();
 	return RX_OK;
 }
 
-platform_item_ptr internal_types_manager::create_type (base_meta_reader& stream)
+platform_item_ptr platform_types_manager::create_type (base_meta_reader& stream)
 {
 	return platform_item_ptr::null_ptr;
 }
 
-platform_item_ptr internal_types_manager::create_object (base_meta_reader& stream)
+platform_item_ptr platform_types_manager::create_object (base_meta_reader& stream)
 {
 	return platform_item_ptr::null_ptr;
 }

@@ -41,11 +41,11 @@ using namespace rx;
 namespace rx_platform {
 
 namespace runtime {
-namespace object_types
+namespace objects
 {
 	class object_runtime;
 }
-typedef rx_reference<object_types::object_runtime> object_runtime_ptr;
+typedef rx_reference<objects::object_runtime> object_runtime_ptr;
 
 namespace data {
 

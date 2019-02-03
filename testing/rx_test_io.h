@@ -30,11 +30,12 @@
 #define rx_test_io_h 1
 
 
+#ifndef EXCLUDE_TEST_CODE
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 
@@ -127,6 +128,7 @@ class tcp_test : public test_category
 } // namespace io_test
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

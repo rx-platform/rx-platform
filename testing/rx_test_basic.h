@@ -30,6 +30,7 @@
 #define rx_test_basic_h 1
 
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test
 #include "testing/rx_test.h"
@@ -153,6 +154,7 @@ basic testing for Ethernet and RS232/485 port resources on this staffroom.");
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

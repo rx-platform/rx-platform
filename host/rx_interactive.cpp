@@ -136,7 +136,7 @@ void interactive_console_host::get_host_objects (std::vector<rx_platform::runtim
 
 void interactive_console_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
 {
-	//items.push_back(rx_create_reference<meta::object_defs::port_class>(meta::object_defs::object_type_creation_data{ RX_INTERACTIVE_TYPE_NAME, RX_INTERACTIVE_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true }));
+	//items.push_back(rx_create_reference<meta::object_types::port_class>(meta::object_types::object_type_creation_data{ RX_INTERACTIVE_TYPE_NAME, RX_INTERACTIVE_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true }));
 }
 
 bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
@@ -226,7 +226,7 @@ interactive_console_client::interactive_console_client (interactive_console_host
       : host_(host),
         exit_(false)
 		, security_context_(pointers::_create_new)
-		, console_client(runtime::object_types::port_creation_data { RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID, rx_system_application() })
+		, console_client(runtime::objects::port_creation_data { RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID, rx_system_application() })
 {
 	security_context_->login();
 	auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);

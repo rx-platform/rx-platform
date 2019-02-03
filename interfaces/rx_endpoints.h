@@ -73,7 +73,7 @@ public:
 
 
 
-class physical_port : public rx_platform::runtime::object_types::port_runtime  
+class physical_port : public rx_platform::runtime::objects::port_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 physical port class. basic implementation of a port");
@@ -82,7 +82,7 @@ physical port class. basic implementation of a port");
 
 
   public:
-      physical_port (object_types::port_creation_data&& data);
+      physical_port (objects::port_creation_data&& data);
 
 
   protected:
@@ -100,7 +100,7 @@ physical port class. basic implementation of a port");
 
 
 
-class rx_io_manager : public rx_platform::runtime::object_types::server_object  
+class rx_io_manager : public rx_platform::runtime::objects::server_object  
 {
 	typedef std::map<string_type, rx_io_endpoint::smart_ptr> endpoints_type;
 	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;

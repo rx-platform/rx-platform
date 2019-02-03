@@ -30,6 +30,7 @@
 #define rx_test_script_h 1
 
 
+#ifndef EXCLUDE_TEST_CODE
 #include "lib/rx_lib.h"
 
 // rx_test
@@ -151,6 +152,7 @@ class rx_script_category : public test_category
 } // namespace script_test
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

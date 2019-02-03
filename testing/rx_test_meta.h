@@ -30,6 +30,7 @@
 #define rx_test_meta_h 1
 
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_runtime
 #include "testing/rx_test_runtime.h"
@@ -46,7 +47,7 @@ namespace meta_test {
 
 
 
-	
+
 
  class object_creation_test : public test_case  
  {
@@ -110,7 +111,7 @@ basic testing object creation (all sub-types are created).");
 
 
 
-
+ 
 
  class inheritance_creation_test : public test_case  
  {
@@ -135,10 +136,35 @@ basic testing object creation (inheritance test).");
  };
 
 
+
+
+
+
+ class type_check_test : public test_case  
+ {
+
+   public:
+       type_check_test();
+
+       virtual ~type_check_test();
+
+
+       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+   protected:
+
+   private:
+
+
+ };
+
+
 } // namespace meta_test
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

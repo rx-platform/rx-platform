@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_runtime
 #include "testing/rx_test_runtime.h"
@@ -66,7 +67,7 @@ namespace meta_test {
  {
 	 out << "Calculating runtime sizes:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 
-	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::object_types::object_runtime) << ANSI_COLOR_RESET "\r\n";
+	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::objects::object_runtime) << ANSI_COLOR_RESET "\r\n";
 	 out << "variable_runtime:" ANSI_RX_OBJECT_SIZE  << sizeof(runtime::blocks::variable_runtime) << ANSI_COLOR_RESET << "\r\n";
 	
 	 out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
@@ -100,3 +101,4 @@ namespace meta_test {
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE

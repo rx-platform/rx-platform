@@ -123,7 +123,7 @@ void server_manager::get_directories (server_directories_type& dirs)
 template<class clsT>
 typename clsT::smart_ptr server_manager::get_type(const rx_node_id& id)
 {
-	auto& cache = model::internal_types_manager::instance().get_type_cache<clsT>();
+	auto& cache = model::platform_types_manager::instance().get_type_cache<clsT>();
 	auto def = cache.get_type_definition(id);
 	return def;
 }
@@ -134,7 +134,7 @@ template application_type_ptr server_manager::get_type<application_type>(const r
 template<class clsT>
 typename clsT::smart_ptr server_manager::get_simple_type(const rx_node_id& id)
 {
-	auto& cache = model::internal_types_manager::instance().get_simple_type_cache<clsT>();
+	auto& cache = model::platform_types_manager::instance().get_simple_type_cache<clsT>();
 	auto def = cache.get_type_definition(id);
 	return def;
 }

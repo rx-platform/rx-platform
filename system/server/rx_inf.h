@@ -31,12 +31,12 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
@@ -55,7 +55,7 @@ namespace infrastructure {
 
 
 
-class server_dispatcher_object : public runtime::object_types::server_object  
+class server_dispatcher_object : public runtime::objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
@@ -124,7 +124,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 class domains_pool : public rx::threads::job_thread, 
-                     	public runtime::object_types::server_object  
+                     	public runtime::objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
@@ -195,7 +195,7 @@ struct runtime_data_t
 
 
 
-class server_rt : public runtime::object_types::server_object  
+class server_rt : public runtime::objects::server_object  
 {
 	DECLARE_CODE_INFO("rx",1,0,0, "\
 class managing runtime resources:\r\n\

@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_meta
 #include "testing/rx_test_meta.h"
@@ -50,7 +51,8 @@ namespace meta_test {
  {
 	 register_test_case(rx_create_reference<object_creation_test>());
 	 register_test_case(rx_create_reference<runtime_structure_test>());
-	 register_test_case(rx_create_reference< inheritance_creation_test>());
+	 register_test_case(rx_create_reference<inheritance_creation_test>());
+	 register_test_case(rx_create_reference<type_check_test>());
  }
 
 
@@ -66,7 +68,7 @@ namespace meta_test {
 	 : test_case("construct-wide")
  {
  }
-
+ 
 
  object_creation_test::~object_creation_test()
  {
@@ -110,7 +112,7 @@ namespace meta_test {
 	 if (object_type_id)
 	 {
 		 out << "\r\nCreating test object!\r\n";
-		 auto test_object = model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_type>().create_runtime("test_object", object_type_id);
+		 auto test_object = model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().create_runtime("test_object", object_type_id);
 		 if (test_object)
 		 {
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
@@ -142,14 +144,14 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating variable type\r\n";
-	 rx_platform::meta::variable_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_variable", rx_node_id::null_id, RX_CLASS_VARIABLE_BASE_ID,  false }));
+	 rx_platform::meta::variable_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_variable", rx_node_id::null_id, RX_CLASS_VARIABLE_BASE_ID,  false }));
 	 
 	 test_type->complex_data().register_simple_value_static("variableVal", false, 66.9);
 	 test_type->variable_data().register_source("sourceName", source_id, test_type->complex_data());
 	 test_type->variable_data().register_filter("filterName", filter_id, test_type->complex_data());
 	 test_type->variable_data().register_event("eventName", event_id, test_type->complex_data());
 
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::variable_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::variable_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -166,10 +168,10 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating struct type\r\n";
-	 rx_platform::meta::struct_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_struct", rx_node_id::null_id, RX_CLASS_STRUCT_BASE_ID,  false }));
+	 rx_platform::meta::struct_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_struct", rx_node_id::null_id, RX_CLASS_STRUCT_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("structVal", false, false);
 	 test_type->complex_data().register_variable_static("variableName", variable_id, 456u, true);
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::struct_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::struct_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -186,12 +188,12 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating object type\r\n";
-	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_defs::object_type_creation_data{ "test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
+	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
 	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
 	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
-	 if (model::internal_types_manager::instance().get_type_cache<rx_platform::meta::object_defs::object_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -208,9 +210,9 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating filter type\r\n";
-	 rx_platform::meta::filter_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_filter", rx_node_id::null_id, RX_CLASS_FILTER_BASE_ID,  false }));
+	 rx_platform::meta::filter_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_filter", rx_node_id::null_id, RX_CLASS_FILTER_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("filterVal", false, false);
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::filter_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::filter_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -227,9 +229,9 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating event type\r\n";
-	 rx_platform::meta::event_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_event", rx_node_id::null_id, RX_CLASS_EVENT_BASE_ID,  false }));
+	 rx_platform::meta::event_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_event", rx_node_id::null_id, RX_CLASS_EVENT_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("eventVal", false, false);
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::event_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::event_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -246,9 +248,9 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating source type\r\n";
-	 rx_platform::meta::source_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_source", rx_node_id::null_id, RX_CLASS_SOURCE_BASE_ID,  false }));
+	 rx_platform::meta::source_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_source", rx_node_id::null_id, RX_CLASS_SOURCE_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("sourceVal", false, false);
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::source_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::source_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -265,9 +267,9 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating mapper type\r\n";
-	 rx_platform::meta::mapper_type_ptr test_type(std::move(rx_platform::meta::basic_defs::type_creation_data{ "test_mapper", rx_node_id::null_id, RX_CLASS_MAPPER_BASE_ID,  false }));
+	 rx_platform::meta::mapper_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_mapper", rx_node_id::null_id, RX_CLASS_MAPPER_BASE_ID,  false }));
 	 test_type->complex_data().register_simple_value_static("mapperVal", false, "Test"s);
-	 if (model::internal_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_defs::mapper_type>().register_type(test_type))
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::mapper_type>().register_type(test_type))
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 ctx->get_current_directory()->add_item(rx_type_item);
@@ -302,7 +304,29 @@ namespace meta_test {
  }
 
 
+ // Class testing::basic_tests::meta_test::type_check_test 
+
+ type_check_test::type_check_test()
+	 : test_case("type-check")
+ {
+ }
+
+
+ type_check_test::~type_check_test()
+ {
+ }
+
+
+
+ bool type_check_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+ {
+	 ctx->set_failed();
+	 return true;
+ }
+
+
 } // namespace meta_test
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE

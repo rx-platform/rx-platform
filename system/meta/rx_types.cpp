@@ -34,13 +34,14 @@
 #include "system/meta/rx_types.h"
 
 #include "sys_internal/rx_internal_ns.h"
+using namespace rx_platform::meta::meta_algorithm;
 
 
 namespace rx_platform {
 
 namespace meta {
 
-namespace basic_defs {
+namespace basic_types {
 
 namespace_item_attributes create_attributes_for_basic_types_from_flags(bool system)
 {
@@ -53,119 +54,8 @@ namespace_item_attributes create_attributes_for_basic_types_from_flags(bool syst
 		return namespace_item_full_access;
 	}
 }
-class meta_helpers
-{
-public:
-	template<class complexT>
-	static bool serialize_simple_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
-	{
-		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
-			return false;
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.serialize_complex_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool deserialize_simple_type(complexT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool check_simple_type(complexT& whose, type_check_context& ctx)
-	{
-		bool ret = whose.complex_data_.check_type(ctx);
-		return ret;
-	}
 
-	template<class complexT>
-	static bool serialize_struct_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
-	{
-		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
-			return false;
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.serialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool deserialize_struct_type(complexT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool check_struct_type(complexT& whose, type_check_context& ctx)
-	{
-		bool ret = whose.complex_data_.check_type(ctx);
-		ret &= whose.mapping_data_.check_type(ctx);
-		return ret;
-	}
-
-	template<class complexT>
-	static bool serialize_variable_type(const complexT& whose, base_meta_writer& stream, uint8_t type, const string_type& object_type)
-	{
-		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
-			return false;
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.serialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-			return false;
-		if (!whose.variable_data_.serialize_variable_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool deserialize_variable_type(complexT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
-			return false;
-		if (!whose.variable_data_.deserialize_variable_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class complexT>
-	static bool check_variable_type(complexT& whose, type_check_context& ctx)
-	{
-		bool ret = whose.complex_data_.check_type(ctx);
-		ret &= whose.mapping_data_.check_type(ctx);
-		ret &= whose.variable_data_.check_type(ctx);
-		return ret;
-	}
-};
-
-// Class rx_platform::meta::basic_defs::event_type 
+// Class rx_platform::meta::basic_types::event_type 
 
 string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
 
@@ -188,16 +78,12 @@ platform_item_ptr event_type::get_item_ptr ()
 
 bool event_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<event_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool event_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<event_type>::deserialize_basic_type(*this, stream, type);
 }
 
 checkable_data& event_type::meta_data ()
@@ -214,12 +100,12 @@ def_blocks::complex_data_type& event_type::complex_data ()
 
 void event_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
+	return basic_types_algorithm<event_type>::construct_basic_type(*this, ctx);
 }
 
 bool event_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_simple_type(*this, ctx);
+	return basic_types_algorithm<event_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -234,7 +120,7 @@ const checkable_data& event_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::filter_type 
+// Class rx_platform::meta::basic_types::filter_type 
 
 string_type filter_type::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
@@ -257,16 +143,12 @@ platform_item_ptr filter_type::get_item_ptr ()
 
 bool filter_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<filter_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool filter_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<filter_type>::deserialize_basic_type(*this, stream, type);
 }
 
 checkable_data& filter_type::meta_data ()
@@ -283,12 +165,12 @@ def_blocks::complex_data_type& filter_type::complex_data ()
 
 void filter_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
+	return basic_types_algorithm<filter_type>::construct_basic_type(*this, ctx);
 }
 
 bool filter_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_simple_type(*this, ctx);
+	return basic_types_algorithm<filter_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -303,7 +185,7 @@ const checkable_data& filter_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::mapper_type 
+// Class rx_platform::meta::basic_types::mapper_type 
 
 string_type mapper_type::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
 
@@ -326,16 +208,12 @@ platform_item_ptr mapper_type::get_item_ptr ()
 
 bool mapper_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<mapper_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<mapper_type>::deserialize_basic_type(*this, stream, type);
 }
 
 checkable_data& mapper_type::meta_data ()
@@ -352,12 +230,12 @@ def_blocks::complex_data_type& mapper_type::complex_data ()
 
 void mapper_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
+	return basic_types_algorithm<mapper_type>::construct_basic_type(*this, ctx);
 }
 
 bool mapper_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_simple_type(*this, ctx);
+	return basic_types_algorithm<mapper_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -372,7 +250,7 @@ const def_blocks::complex_data_type& mapper_type::complex_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::source_type 
+// Class rx_platform::meta::basic_types::source_type 
 
 string_type source_type::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
 
@@ -395,16 +273,12 @@ platform_item_ptr source_type::get_item_ptr ()
 
 bool source_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_simple_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<source_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool source_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_simple_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<source_type>::deserialize_basic_type(*this, stream, type);
 }
 
 checkable_data& source_type::meta_data ()
@@ -421,12 +295,12 @@ def_blocks::complex_data_type& source_type::complex_data ()
 
 void source_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
+	return basic_types_algorithm<source_type>::construct_basic_type(*this, ctx);
 }
 
 bool source_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_simple_type(*this, ctx);
+	return basic_types_algorithm<source_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -441,7 +315,7 @@ const checkable_data& source_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::struct_type 
+// Class rx_platform::meta::basic_types::struct_type 
 
 string_type struct_type::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
 
@@ -458,8 +332,7 @@ struct_type::struct_type (const type_creation_data& data)
 
 void struct_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
-	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
+	return basic_types_algorithm<struct_type>::construct_basic_type(*this, ctx);
 }
 
 platform_item_ptr struct_type::get_item_ptr ()
@@ -470,16 +343,12 @@ platform_item_ptr struct_type::get_item_ptr ()
 
 bool struct_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_struct_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<struct_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool struct_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_struct_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<struct_type>::deserialize_basic_type(*this, stream, type);
 }
 
 checkable_data& struct_type::meta_data ()
@@ -502,7 +371,7 @@ def_blocks::mapped_data_type& struct_type::mapping_data ()
 
 bool struct_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_struct_type(*this, ctx);
+	return basic_types_algorithm<struct_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -522,7 +391,7 @@ const checkable_data& struct_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::variable_type 
+// Class rx_platform::meta::basic_types::variable_type 
 
 string_type variable_type::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
 
@@ -539,23 +408,17 @@ variable_type::variable_type (const type_creation_data& data)
 
 void variable_type::construct (RTypePtr& what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
-	mapping_data_.construct(complex_data_.get_names_cache(), ctx);
-	variable_data_.construct(complex_data_.get_names_cache(), ctx);
+	return basic_types_algorithm<variable_type>::construct_basic_type(*this, ctx);
 }
 
 bool variable_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_helpers::serialize_variable_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return basic_types_algorithm<variable_type>::serialize_basic_type(*this, stream, type);
 }
 
 bool variable_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!meta_helpers::deserialize_variable_type(*this, stream, type))
-		return false;
-	return true;
+	return basic_types_algorithm<variable_type>::deserialize_basic_type(*this, stream, type);
 }
 
 platform_item_ptr variable_type::get_item_ptr ()
@@ -597,7 +460,7 @@ def_blocks::variable_data_type& variable_type::variable_data ()
 
 bool variable_type::check_type (type_check_context& ctx)
 {
-	return meta_helpers::check_variable_type(*this, ctx);
+	return basic_types_algorithm<variable_type>::check_basic_type(*this, ctx);
 }
 
 
@@ -622,10 +485,7 @@ const def_blocks::complex_data_type& variable_type::complex_data () const
 }
 
 
-// Class rx_platform::meta::basic_defs::type_creation_data 
-
-
-} // namespace basic_defs
+} // namespace basic_types
 } // namespace meta
 } // namespace rx_platform
 

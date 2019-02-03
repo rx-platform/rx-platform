@@ -43,7 +43,7 @@ namespace io_endpoints {
 // Class interfaces::io_endpoints::rx_io_manager 
 
 rx_io_manager::rx_io_manager()
-	: server_object(runtime::object_types::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
+	: server_object(runtime::objects::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
 {
 }
 
@@ -90,7 +90,7 @@ rx_io_endpoint::~rx_io_endpoint()
 
 // Class interfaces::io_endpoints::physical_port 
 
-physical_port::physical_port (object_types::port_creation_data&& data)
+physical_port::physical_port (objects::port_creation_data&& data)
       : my_endpoint_(nullptr)
 	, port_runtime(std::move(data))
 {

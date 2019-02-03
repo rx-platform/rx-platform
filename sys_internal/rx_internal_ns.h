@@ -31,12 +31,12 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 #include "system/server/rx_server.h"
 #include "system/serialization/rx_serialization_defs.h"
@@ -526,4 +526,3 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 
 
 #endif
-

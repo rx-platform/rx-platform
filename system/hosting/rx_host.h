@@ -40,12 +40,12 @@
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
+// rx_checkable
+#include "system/meta/rx_checkable.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 
 
 

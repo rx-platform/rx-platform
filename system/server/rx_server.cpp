@@ -133,7 +133,7 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 				for (auto one : scripts_)
 					one.second->initialize();
 
-				model::internal_types_manager::instance().initialize(host, data.meta_data);
+				model::platform_types_manager::instance().initialize(host, data.meta_data);
 
 				return RX_OK;
 			}
@@ -156,7 +156,7 @@ uint32_t rx_gate::deinitialize ()
 	for (auto one : scripts_)
 		one.second->deinitialize();
 
-	model::internal_types_manager::instance().deinitialize();
+	model::platform_types_manager::instance().deinitialize();
 
 	manager_.deinitialize();
 	runtime_.deinitialize();
@@ -169,7 +169,7 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 	{
 		if (manager_.start(host, data.managment_data))
 		{
-			model::internal_types_manager::instance().start(host, data.meta_data);
+			model::platform_types_manager::instance().start(host, data.meta_data);
 
 			host->server_started_event();
 
@@ -185,7 +185,7 @@ uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_da
 
 uint32_t rx_gate::stop ()
 {
-	model::internal_types_manager::instance().stop();
+	model::platform_types_manager::instance().stop();
 	manager_.stop();
 	runtime_.stop();
 	return RX_OK;

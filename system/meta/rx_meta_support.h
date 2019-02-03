@@ -54,12 +54,26 @@ class type_check_context
 
   public:
 
-      string_array errors;
+      bool is_check_ok () const;
+
+      void add_error (const string_type& error);
+
+
+      const string_array& get_errors () const
+      {
+        return errors_;
+      }
+
 
 
   protected:
 
   private:
+
+
+      string_array errors_;
+
+      bool type_ok_;
 
 
 };
@@ -149,6 +163,58 @@ class construct_context
 
       rx_time now;
 
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct object_type_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id base_id;
+
+      bool system;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct type_creation_data 
+{
+
+
+      string_type name;
+
+      rx_node_id id;
+
+      rx_node_id base_id;
+
+      bool system;
+
+  public:
 
   protected:
 

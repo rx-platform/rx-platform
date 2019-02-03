@@ -41,10 +41,10 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace object_types {
+namespace objects {
 class object_runtime;
 
-} // namespace object_types
+} // namespace objects
 } // namespace runtime
 } // namespace rx_platform
 

@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_basic
 #include "testing/rx_test_basic.h"
@@ -412,4 +413,5 @@ bool external_interfaces_test::run_test (std::istream& in, std::ostream& out, st
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 

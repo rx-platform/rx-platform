@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_io
 #include "testing/rx_test_io.h"
@@ -161,3 +162,4 @@ bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ost
 } // namespace io_test
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE

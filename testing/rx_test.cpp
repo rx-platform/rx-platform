@@ -474,12 +474,14 @@ const rx_platform::meta::checkable_data& test_case::meta_data () const
 
 testing_enviroment::testing_enviroment()
 {
-	register_code_test(std::make_unique<io_test::ip_test::tcp_test>());
-	register_code_test(std::make_unique<script_test::py_test::python_test>());
 	register_code_test(std::make_unique<test_test>());
+#ifndef EXCLUDE_TEST_CODE
 	register_code_test(std::make_unique<script_test::rxs::rx_script_category>());
 	register_code_test(std::make_unique<basic_tests::lib_test::library_test_category>());
 	register_code_test(std::make_unique<basic_tests::meta_test::meta_model_test_category>());
+	register_code_test(std::make_unique<io_test::ip_test::tcp_test>());
+	register_code_test(std::make_unique<script_test::py_test::python_test>());
+#endif // EXCLUDE_TEST_CODE
 }
 
 

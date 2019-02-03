@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test_script
 #include "testing/rx_test_script.h"
@@ -199,3 +200,4 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 } // namespace script_test
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE

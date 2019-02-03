@@ -38,6 +38,7 @@
 #include "system/constructors/rx_construct.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/runtime/rx_rt_data.h"
+using namespace rx_platform::meta::meta_algorithm;
 
 
 namespace rx_platform {
@@ -45,40 +46,6 @@ namespace rx_platform {
 namespace meta {
 
 namespace def_blocks {
-
-class meta_blocks_helpers
-{
-public:
-	template<typename T>
-	static bool serialize_complex_attribute(const T& whose, base_meta_writer& stream)
-	{
-		if (!stream.write_id("Id", whose.target_id_))
-			return false;
-		if (!stream.write_string("Name", whose.name_.c_str()))
-			return false;
-		return true;
-	}
-	template<typename T>
-	static bool deserialize_complex_attribute(T& whose, base_meta_reader& stream)
-	{
-		if (!stream.read_id("Id", whose.target_id_))
-			return false;
-		if (!stream.read_string("Name", whose.name_))
-			return false;
-		return true;
-	}
-	template<typename T>
-	static bool check_complex_attribute(T& whose, type_check_context& ctx)
-	{
-		return true;
-	}
-	template<typename T>
-	static void construct_complex_attribute(const T&whose, construct_context& ctx)
-	{
-		auto temp = model::internal_types_manager::instance().get_simple_type_cache<typename T::TargetType>().create_simple_runtime(whose.target_id_);
-		ctx.runtime_data.add(whose.name_, std::move(temp));
-	}
-};
 
 // Class rx_platform::meta::def_blocks::complex_data_type 
 
@@ -374,34 +341,25 @@ event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
 
 bool event_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::event_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	auto temp = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(*this, stream);
+	return temp;
 }
 
 bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::event_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	auto temp = meta_blocks_algorithm<event_attribute>::deserialize_complex_attribute(*this, stream);
+	return temp;
 }
 
 bool event_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	auto temp = meta_blocks_algorithm<event_attribute>::check_complex_attribute(*this, ctx);
+	return temp;
 }
 
 void event_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
+	meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -417,34 +375,22 @@ filter_attribute::filter_attribute (const string_type& name, const rx_node_id& i
 
 bool filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::filter_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
 }
 
 bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::filter_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
 bool filter_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
 }
 
 void filter_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
+	meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -531,34 +477,22 @@ mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& i
 
 bool mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::mapper_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<mapper_attribute>::serialize_complex_attribute(*this, stream);
 }
 
 bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::mapper_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<mapper_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
 bool mapper_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<mapper_attribute>::check_complex_attribute(*this, ctx);
 }
 
 void mapper_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
+	meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -614,34 +548,22 @@ source_attribute::source_attribute (const string_type& name, const rx_node_id& i
 
 bool source_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::source_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<source_attribute>::serialize_complex_attribute(*this, stream);
 }
 
 bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::source_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<source_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
 bool source_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<source_attribute>::check_complex_attribute(*this, ctx);
 }
 
 void source_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
+	meta_blocks_algorithm<source_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -657,34 +579,22 @@ struct_attribute::struct_attribute (const string_type& name, const rx_node_id& i
 
 bool struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::struct_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<struct_attribute>::serialize_complex_attribute(*this, stream);
 }
 
 bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::struct_runtime::type_name.c_str()))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	return meta_blocks_algorithm<struct_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
 bool struct_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<struct_attribute>::check_complex_attribute(*this, ctx);
 }
 
 void struct_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_helpers::construct_complex_attribute(*this, ctx);
+	meta_blocks_algorithm<struct_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -701,32 +611,14 @@ variable_attribute::variable_attribute (const string_type& name, const rx_node_i
 
 bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
-		return false;
-	if (!stream.write_bool("RO", read_only_))
-		return false;	
-	if (!storage_.serialize(stream))
-		return false;
-	if (!meta_blocks_helpers::serialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
+	auto temp = meta_blocks_algorithm<variable_attribute>::serialize_complex_attribute(*this, stream);
+	return temp;
 }
 
 bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object(runtime::blocks::variable_runtime::type_name.c_str()))
-		return false;
-	if (!stream.read_bool("RO", read_only_))
-		return false;
-	if (!storage_.deserialize(stream))
-		return false;
-	if (!meta_blocks_helpers::deserialize_complex_attribute(*this, stream))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return false;
+	auto temp = meta_blocks_algorithm<variable_attribute>::deserialize_complex_attribute(*this, stream);
+	return temp;
 }
 
 rx_value variable_attribute::get_value (rx_time now) const
@@ -736,14 +628,12 @@ rx_value variable_attribute::get_value (rx_time now) const
 
 bool variable_attribute::check (type_check_context& ctx)
 {
-	return meta_blocks_helpers::check_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<variable_attribute>::check_complex_attribute(*this, ctx);
 }
 
 void variable_attribute::construct (construct_context& ctx) const
 {
-	auto temp = model::internal_types_manager::instance().get_simple_type_cache<basic_defs::variable_type>().create_simple_runtime(target_id_);
-	temp.set_value(get_value(ctx.now));
-	ctx.runtime_data.add_variable(name_, std::move(temp), get_value(ctx.now));
+	meta_blocks_algorithm<variable_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -890,6 +780,4 @@ bool variable_data_type::check_type (type_check_context& ctx)
 } // namespace def_blocks
 } // namespace meta
 } // namespace rx_platform
-
-
 

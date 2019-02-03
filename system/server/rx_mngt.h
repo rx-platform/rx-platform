@@ -32,6 +32,8 @@
 
 #include "lib/rx_lib.h"
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
@@ -40,8 +42,6 @@
 #include "system/server/rx_inf.h"
 // rx_io
 #include "lib/rx_io.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_types.h"
@@ -136,31 +136,31 @@ public:
       void get_directories (server_directories_type& dirs);
 
 
-      rx_reference<runtime::object_types::server_object> get_commands_manager ()
+      rx_reference<runtime::objects::server_object> get_commands_manager ()
       {
         return commands_manager_;
       }
 
 
-      rx_reference<runtime::object_types::domain_runtime> get_unassigned_domain ()
+      rx_reference<runtime::objects::domain_runtime> get_unassigned_domain ()
       {
         return unassigned_domain_;
       }
 
 
-      rx_reference<runtime::object_types::application_runtime> get_unassigned_app ()
+      rx_reference<runtime::objects::application_runtime> get_unassigned_app ()
       {
         return unassigned_app_;
       }
 
 
-      rx_reference<runtime::object_types::application_runtime> get_system_app ()
+      rx_reference<runtime::objects::application_runtime> get_system_app ()
       {
         return system_app_;
       }
 
 
-      rx_reference<runtime::object_types::domain_runtime> get_system_domain ()
+      rx_reference<runtime::objects::domain_runtime> get_system_domain ()
       {
         return system_domain_;
       }
@@ -179,15 +179,15 @@ public:
 
       rx_reference<rx::io::tcp_listent_std_buffer> telnet_listener_;
 
-      rx_reference<runtime::object_types::server_object> commands_manager_;
+      rx_reference<runtime::objects::server_object> commands_manager_;
 
-      rx_reference<runtime::object_types::domain_runtime> unassigned_domain_;
+      rx_reference<runtime::objects::domain_runtime> unassigned_domain_;
 
-      rx_reference<runtime::object_types::application_runtime> unassigned_app_;
+      rx_reference<runtime::objects::application_runtime> unassigned_app_;
 
-      rx_reference<runtime::object_types::application_runtime> system_app_;
+      rx_reference<runtime::objects::application_runtime> system_app_;
 
-      rx_reference<runtime::object_types::domain_runtime> system_domain_;
+      rx_reference<runtime::objects::domain_runtime> system_domain_;
 
 
       uint16_t telnet_port_;

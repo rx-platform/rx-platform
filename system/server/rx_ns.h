@@ -32,12 +32,12 @@
 
 #include "lib/rx_lock.h"
 
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {

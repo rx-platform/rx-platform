@@ -30,6 +30,7 @@
 #define rx_test_runtime_h 1
 
 
+#ifndef EXCLUDE_TEST_CODE
 
 // rx_test
 #include "testing/rx_test.h"
@@ -73,6 +74,7 @@ basic testing runtime capabilities.");
 } // namespace basic_tests
 } // namespace testing
 
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

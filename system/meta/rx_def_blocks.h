@@ -31,6 +31,8 @@
 
 
 
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
@@ -54,7 +56,6 @@ class mapper_attribute;
 using namespace rx;
 using namespace rx::values;
 using namespace rx_platform::ns;
-using namespace rx_platform::runtime::structure;
 
 #define RT_TYPE_ID_CONST_VALUE 1
 #define RT_TYPE_ID_VALUE 2
@@ -80,7 +81,7 @@ namespace rx_platform {
 
 namespace meta
 {
-namespace object_defs
+namespace object_types
 {
 	class object_type;
 	class application_type;
@@ -88,7 +89,7 @@ namespace object_defs
 	class port_type;
 
 }
-namespace basic_defs
+namespace basic_types
 {
 	class variable_type;
 	class event_type;
@@ -98,6 +99,7 @@ namespace basic_defs
 	class mapper_type;
 	class struct_type;
 }
+
 
 }
 
@@ -194,8 +196,9 @@ public:
 class event_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::event_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::event_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       event_attribute (const string_type& name, const rx_node_id& id);
@@ -243,8 +246,9 @@ class event_attribute
 class filter_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::filter_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::filter_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       filter_attribute (const string_type& name, const rx_node_id& id);
@@ -292,8 +296,9 @@ class filter_attribute
 class mapper_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::mapper_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::mapper_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       mapper_attribute (const string_type& name, const rx_node_id& id);
@@ -555,8 +560,9 @@ class mapped_data_type
 class source_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::source_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::source_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       source_attribute (const string_type& name, const rx_node_id& id);
@@ -604,8 +610,9 @@ class source_attribute
 class struct_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::struct_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::struct_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       struct_attribute (const string_type& name, const rx_node_id& id);
@@ -653,8 +660,9 @@ class struct_attribute
 class variable_attribute 
 {
   public:
-	  typedef rx_platform::meta::basic_defs::variable_type TargetType;
-	  friend class meta_blocks_helpers;
+	  typedef rx_platform::meta::basic_types::variable_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
 
   public:
       variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);

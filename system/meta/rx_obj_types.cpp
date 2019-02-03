@@ -35,14 +35,14 @@
 #include "rx_configuration.h"
 #include "system/runtime/rx_objbase.h"
 #include "sys_internal/rx_internal_ns.h"
+using namespace rx_platform::meta::meta_algorithm;
 
 
 namespace rx_platform {
 
 namespace meta {
 
-namespace object_defs {
-
+namespace object_types {
 namespace_item_attributes create_attributes_for_object_types_from_flags(const object_type_creation_data& data)
 {
 	if (data.system)
@@ -55,59 +55,7 @@ namespace_item_attributes create_attributes_for_object_types_from_flags(const ob
 	}
 }
 
-class obj_meta_helpers
-{
-public:
-	template<class objectT>
-	static bool serialize_object_type(const objectT& whose, base_meta_writer& stream, uint8_t type, const string_type object_type)
-	{
-		if (!whose.meta_data_.serialize_checkable_definition(stream, type, object_type))
-			return false;
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.serialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-			return false;
-		if (!whose.object_data_.serialize_object_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class objectT>
-	static bool deserialize_object_type(objectT& whose, base_meta_reader& stream, uint8_t type)
-	{
-		if (!stream.start_object("Def"))
-			return false;
-		if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-			return false;
-		if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
-			return false;
-		if (!whose.object_data_.deserialize_object_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-		return true;
-	}
-	template<class objectT>
-	static bool check_object_type(objectT& whose, type_check_context& ctx)
-	{
-		bool ret = whose.complex_data_.check_type(ctx);
-		ret &= whose.mapping_data_.check_type(ctx);
-		ret &= whose.object_data_.check_type(ctx);
-		return ret;
-	}
-	template<class objectT>
-	static void construct_object_runtime(objectT& whose, typename objectT::RTypePtr what, construct_context& ctx)
-	{
-		whose.complex_data_.construct(ctx);
-		whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-		whose.object_data_.construct(what, ctx);
-	}
-};
-
-// Class rx_platform::meta::object_defs::application_type 
+// Class rx_platform::meta::object_types::application_type 
 
 string_type application_type::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
 
@@ -127,9 +75,9 @@ application_type::~application_type()
 
 
 
-void application_type::construct (runtime::rx_application_ptr& what, construct_context& ctx)
+void application_type::construct (runtime::rx_application_ptr& what, construct_context& ctx) const
 {
-	obj_meta_helpers::construct_object_runtime(*this, what, ctx);
+	object_types_algorithm<application_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr application_type::get_item_ptr ()
@@ -140,16 +88,12 @@ platform_item_ptr application_type::get_item_ptr ()
 
 bool application_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return object_types_algorithm<application_type>::serialize_object_type(*this, stream, type);
 }
 
 bool application_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
-		return false;
-	return true;
+	return object_types_algorithm<application_type>::deserialize_object_type(*this, stream, type);
 }
 
 checkable_data& application_type::meta_data ()
@@ -172,7 +116,7 @@ def_blocks::mapped_data_type& application_type::mapping_data ()
 
 bool application_type::check_type (type_check_context& ctx)
 {
-	return obj_meta_helpers::check_object_type(*this, ctx);
+	return object_types_algorithm<application_type>::check_object_type(*this, ctx);
 }
 
 
@@ -197,7 +141,7 @@ const def_blocks::mapped_data_type& application_type::mapping_data () const
 }
 
 
-// Class rx_platform::meta::object_defs::domain_type 
+// Class rx_platform::meta::object_types::domain_type 
 
 string_type domain_type::type_name = RX_CPP_DOMAIN_CLASS_TYPE_NAME;
 
@@ -217,9 +161,9 @@ domain_type::~domain_type()
 
 
 
-void domain_type::construct (runtime::rx_domain_ptr what, construct_context& ctx)
+void domain_type::construct (runtime::rx_domain_ptr what, construct_context& ctx) const
 {
-	obj_meta_helpers::construct_object_runtime(*this, what, ctx);
+	object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr domain_type::get_item_ptr ()
@@ -230,16 +174,12 @@ platform_item_ptr domain_type::get_item_ptr ()
 
 bool domain_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return object_types_algorithm<domain_type>::serialize_object_type(*this, stream, type);
 }
 
 bool domain_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
-		return false;
-	return true;
+	return object_types_algorithm<domain_type>::deserialize_object_type(*this, stream, type);
 }
 
 checkable_data& domain_type::meta_data ()
@@ -262,7 +202,7 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 
 bool domain_type::check_type (type_check_context& ctx)
 {
-	return obj_meta_helpers::check_object_type(*this, ctx);
+	return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
 }
 
 
@@ -287,7 +227,7 @@ const def_blocks::mapped_data_type& domain_type::mapping_data () const
 }
 
 
-// Class rx_platform::meta::object_defs::object_type 
+// Class rx_platform::meta::object_types::object_type 
 
 string_type object_type::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
 
@@ -311,9 +251,9 @@ void object_type::get_class_info (string_type& class_name, string_type& console,
 {
 }
 
-void object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx)
+void object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
-	obj_meta_helpers::construct_object_runtime(*this, what, ctx);
+	object_types_algorithm<object_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr object_type::get_item_ptr ()
@@ -324,16 +264,12 @@ platform_item_ptr object_type::get_item_ptr ()
 
 bool object_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return object_types_algorithm<object_type>::serialize_object_type(*this, stream, type);
 }
 
 bool object_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
-		return false;
-	return true;
+	return object_types_algorithm<object_type>::deserialize_object_type(*this, stream, type);
 }
 
 checkable_data& object_type::meta_data ()
@@ -361,7 +297,7 @@ def_blocks::mapped_data_type& object_type::mapping_data ()
 
 bool object_type::check_type (type_check_context& ctx)
 {
-	return obj_meta_helpers::check_object_type(*this, ctx);
+	return object_types_algorithm<object_type>::check_object_type(*this, ctx);
 }
 
 
@@ -386,7 +322,7 @@ const def_blocks::mapped_data_type& object_type::mapping_data () const
 }
 
 
-// Class rx_platform::meta::object_defs::object_data_type 
+// Class rx_platform::meta::object_types::object_data_type 
 
 object_data_type::object_data_type()
 {
@@ -412,7 +348,7 @@ bool object_data_type::deserialize_object_definition (base_meta_reader& stream, 
 	return true;
 }
 
-void object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx)
+void object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
 }
 
@@ -422,7 +358,7 @@ bool object_data_type::check_type (type_check_context& ctx)
 }
 
 
-// Class rx_platform::meta::object_defs::port_type 
+// Class rx_platform::meta::object_types::port_type 
 
 string_type port_type::type_name = RX_CPP_PORT_CLASS_TYPE_NAME;
 
@@ -442,10 +378,9 @@ port_type::~port_type()
 
 
 
-void port_type::construct (runtime::rx_port_ptr what, construct_context& ctx)
+void port_type::construct (runtime::rx_port_ptr what, construct_context& ctx) const
 {
-	complex_data_.construct(ctx);
-	object_data_.construct(what, ctx);
+	object_types_algorithm<port_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr port_type::get_item_ptr ()
@@ -456,16 +391,12 @@ platform_item_ptr port_type::get_item_ptr ()
 
 bool port_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!obj_meta_helpers::serialize_object_type(*this, stream, type, type_name))
-		return false;
-	return true;
+	return object_types_algorithm<port_type>::serialize_object_type(*this, stream, type);
 }
 
 bool port_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!obj_meta_helpers::deserialize_object_type(*this, stream, type))
-		return false;
-	return true;
+	return object_types_algorithm<port_type>::deserialize_object_type(*this, stream, type);
 }
 
 checkable_data& port_type::meta_data ()
@@ -488,7 +419,7 @@ def_blocks::mapped_data_type& port_type::mapping_data ()
 
 bool port_type::check_type (type_check_context& ctx)
 {
-	return obj_meta_helpers::check_object_type(*this, ctx);
+	return object_types_algorithm<port_type>::check_object_type(*this, ctx);
 }
 
 
@@ -513,10 +444,7 @@ const def_blocks::mapped_data_type& port_type::mapping_data () const
 }
 
 
-// Class rx_platform::meta::object_defs::object_type_creation_data 
-
-
-} // namespace object_defs
+} // namespace object_types
 } // namespace meta
 } // namespace rx_platform
 

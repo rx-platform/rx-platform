@@ -33,8 +33,8 @@
 
 
 namespace sl_runtime {
-class sl_program_holder;
 class program_context;
+class sl_program_holder;
 namespace builders {
 class module_chanels_factory;
 

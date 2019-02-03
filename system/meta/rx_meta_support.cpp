@@ -44,6 +44,19 @@ namespace meta {
 // Class rx_platform::meta::type_check_context 
 
 
+bool type_check_context::is_check_ok () const
+{
+	return type_ok_;
+}
+
+void type_check_context::add_error (const string_type& error)
+{
+	if (type_ok_)// avoid unnecessary write
+		type_ok_ = false;
+	errors_.emplace_back(error);
+}
+
+
 // Class rx_platform::meta::construct_context 
 
 construct_context::construct_context()
@@ -317,6 +330,12 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 	return runtime_item::smart_ptr();
 
 }
+// Class rx_platform::meta::object_type_creation_data 
+
+
+// Class rx_platform::meta::type_creation_data 
+
+
 } // namespace meta
 } // namespace rx_platform
 

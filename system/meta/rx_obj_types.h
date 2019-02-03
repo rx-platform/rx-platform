@@ -31,18 +31,20 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using rx_platform::meta::construct_context;
 
@@ -51,7 +53,7 @@ namespace rx_platform {
 
 namespace meta {
 
-namespace object_defs {
+namespace object_types {
 
 template<class T>
 bool generate_json(T whose, std::ostream& def, std::ostream& err)
@@ -97,7 +99,7 @@ class object_data_type
 
       bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
-      void construct (runtime::object_runtime_ptr what, construct_context& ctx);
+      void construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -127,32 +129,6 @@ class object_data_type
 
 
 
-struct object_type_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id base_id;
-
-      bool system;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class application_type : public rx::pointers::reference_object  
 {
@@ -160,11 +136,10 @@ class application_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of application type");
 public:
-	typedef runtime::object_types::application_runtime RType;
+	typedef runtime::objects::application_runtime RType;
 	typedef runtime::rx_application_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
-
-	friend class obj_meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::object_types_algorithm;
 
   public:
       application_type (const object_type_creation_data& data);
@@ -172,7 +147,7 @@ public:
       virtual ~application_type();
 
 
-      void construct (runtime::rx_application_ptr& what, construct_context& ctx);
+      void construct (runtime::rx_application_ptr& what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -238,11 +213,10 @@ class domain_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of domain type");
 public:
-	typedef runtime::object_types::domain_runtime RType;
-	typedef typename runtime::object_types::domain_runtime::smart_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
-
-	friend class obj_meta_helpers;
+	typedef runtime::objects::domain_runtime RType;
+	typedef typename runtime::objects::domain_runtime::smart_ptr RTypePtr;
+	template<class typeT>
+	friend class meta_algorithm::object_types_algorithm;
 
   public:
       domain_type (const object_type_creation_data& data);
@@ -250,7 +224,7 @@ public:
       virtual ~domain_type();
 
 
-      void construct (runtime::rx_domain_ptr what, construct_context& ctx);
+      void construct (runtime::rx_domain_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -316,10 +290,10 @@ class object_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 2, "\
 implementation of object type");
 public:
-	typedef runtime::object_types::object_runtime RType;
+	typedef runtime::objects::object_runtime RType;
 	typedef runtime::object_runtime_ptr RTypePtr;
-
-	friend class obj_meta_helpers;
+	template<class typeT>
+	friend class meta_algorithm::object_types_algorithm;
 
   public:
       object_type (const object_type_creation_data& data);
@@ -329,7 +303,7 @@ public:
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      void construct (runtime::object_runtime_ptr what, construct_context& ctx);
+      void construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -397,11 +371,10 @@ class port_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of port type");
 public:
-	typedef runtime::object_types::port_runtime RType;
-	typedef runtime::object_types::port_runtime::smart_ptr RTypePtr;
-	typedef runtime::blocks::complex_runtime_item CType;
-
-	friend class obj_meta_helpers;
+	typedef runtime::objects::port_runtime RType;
+	typedef runtime::objects::port_runtime::smart_ptr RTypePtr;
+	template<class typeT>
+	friend class meta_algorithm::object_types_algorithm;
 
   public:
       port_type (const object_type_creation_data& data);
@@ -409,7 +382,7 @@ public:
       virtual ~port_type();
 
 
-      void construct (runtime::rx_port_ptr what, construct_context& ctx);
+      void construct (runtime::rx_port_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -464,7 +437,7 @@ public:
 };
 
 
-} // namespace object_defs
+} // namespace object_types
 } // namespace meta
 } // namespace rx_platform
 
@@ -473,10 +446,10 @@ namespace rx_platform
 namespace meta
 {
 
-typedef pointers::reference<object_defs::object_type> object_type_ptr;
-typedef pointers::reference<object_defs::domain_type> domain_type_ptr;
-typedef pointers::reference<object_defs::application_type> application_type_ptr;
-typedef pointers::reference<object_defs::port_type> port_type_ptr;
+typedef pointers::reference<object_types::object_type> object_type_ptr;
+typedef pointers::reference<object_types::domain_type> domain_type_ptr;
+typedef pointers::reference<object_types::application_type> application_type_ptr;
+typedef pointers::reference<object_types::port_type> port_type_ptr;
 
 }
 }

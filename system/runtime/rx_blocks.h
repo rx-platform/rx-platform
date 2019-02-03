@@ -47,7 +47,7 @@ namespace def_blocks
 {
 	class complex_data_type;
 }
-namespace basic_defs
+namespace basic_types
 {
 	class struct_type;
 	class variable_type;
@@ -60,11 +60,11 @@ namespace basic_defs
 
 namespace runtime {
 typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
-namespace object_types
+namespace objects
 {
 	class object_runtime;
 }
-typedef rx_reference<object_types::object_runtime> object_runtime_ptr;
+typedef rx_reference<objects::object_runtime> object_runtime_ptr;
 
 namespace blocks {
 
@@ -84,7 +84,7 @@ filter runtime. basic implementation of an filter runtime");
 	DECLARE_REFERENCE_PTR(filter_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::filter_type;
+	friend class meta::basic_types::filter_type;
 
   public:
       filter_runtime();
@@ -115,7 +115,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
 	DECLARE_REFERENCE_PTR(mapper_runtime);
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::mapper_type;
+	friend class meta::basic_types::mapper_type;
 
   public:
       mapper_runtime();
@@ -149,7 +149,7 @@ source runtime. basic implementation of an source runtime");
 	DECLARE_REFERENCE_PTR(source_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::source_type;
+	friend class meta::basic_types::source_type;
 
   public:
       source_runtime();
@@ -184,7 +184,7 @@ struct runtime. basic implementation of an struct runtime");
 
 	typedef std::vector<mapper_runtime::smart_ptr> mappers_type;
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::struct_type;
+	friend class meta::basic_types::struct_type;
 
   public:
       struct_runtime();
@@ -222,7 +222,7 @@ variable runtime. basic implementation of an variable runtime");
 	DECLARE_REFERENCE_PTR(variable_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::variable_type;
+	friend class meta::basic_types::variable_type;
 
   public:
       variable_runtime();
@@ -258,7 +258,7 @@ event runtime. basic implementation of an event runtime");
 	DECLARE_REFERENCE_PTR(event_runtime);
 
 	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_defs::event_type;
+	friend class meta::basic_types::event_type;
 
   public:
       event_runtime();

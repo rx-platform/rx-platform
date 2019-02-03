@@ -31,8 +31,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
@@ -41,14 +39,16 @@
 #include "system/callbacks/rx_callback.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
-namespace object_types {
+namespace objects {
 class domain_runtime;
 class application_runtime;
 
-} // namespace object_types
+} // namespace objects
 } // namespace runtime
 } // namespace rx_platform
 
@@ -67,24 +67,24 @@ typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 
 namespace meta
 {
-namespace object_defs
+namespace object_types
 {
 	class object_type;
 }
 }
 
 namespace runtime {
-namespace object_types {
+namespace objects {
 	class port_runtime;
 	class object_runtime;
 
 } // namespace object_types
-typedef rx_reference<object_types::domain_runtime> rx_domain_ptr;
-typedef rx_reference<object_types::port_runtime> rx_port_ptr;
-typedef rx_reference<object_types::object_runtime> rx_object_ptr;
-typedef rx_reference<object_types::application_runtime> rx_application_ptr;
+typedef rx_reference<objects::domain_runtime> rx_domain_ptr;
+typedef rx_reference<objects::port_runtime> rx_port_ptr;
+typedef rx_reference<objects::object_runtime> rx_object_ptr;
+typedef rx_reference<objects::application_runtime> rx_application_ptr;
 
-namespace object_types {
+namespace objects {
 
 
 
@@ -187,7 +187,7 @@ object class. basic implementation of an object");
 	typedef std::vector<logic::program_runtime_ptr> programs_type;
 
 	friend class meta::checkable_data;
-	friend class meta::object_defs::object_type;
+	friend class meta::object_types::object_type;
 
   public:
       object_runtime (object_creation_data&& data);
@@ -514,7 +514,7 @@ system application class. contains system default application");
 };
 
 
-} // namespace object_types
+} // namespace objects
 } // namespace runtime
 } // namespace rx_platform
 

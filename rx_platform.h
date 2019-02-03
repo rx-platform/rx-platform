@@ -35,6 +35,7 @@
  ======================
 
  #define PYTHON_SUPPORT - includes the python support
+ #define EXCLUDE_TEST_CODE - exclude testing code in build
  
 ********************************************************************/
 

@@ -43,7 +43,7 @@ namespace rx_platform {
 
 namespace runtime {
 
-namespace object_types {
+namespace objects {
 template<typename CT>
 namespace_item_attributes create_attributes_from_creation_data(const object_creation_data& data)
 {
@@ -57,7 +57,7 @@ namespace_item_attributes create_attributes_from_creation_data(const object_crea
 	}
 }
 
-// Class rx_platform::runtime::object_types::user_object 
+// Class rx_platform::runtime::objects::user_object 
 
 user_object::user_object()
 {
@@ -76,7 +76,7 @@ user_object::~user_object()
 
 
 
-// Class rx_platform::runtime::object_types::server_object 
+// Class rx_platform::runtime::objects::server_object 
 
 server_object::server_object (object_creation_data&& data)
 	: object_runtime(std::move(data))
@@ -91,7 +91,7 @@ server_object::~server_object()
 
 
 
-// Class rx_platform::runtime::object_types::object_runtime 
+// Class rx_platform::runtime::objects::object_runtime 
 
 string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
@@ -297,7 +297,7 @@ const meta::checkable_data& object_runtime::meta_data () const
 }
 
 
-// Class rx_platform::runtime::object_types::application_runtime 
+// Class rx_platform::runtime::objects::application_runtime 
 
 string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
 
@@ -342,7 +342,7 @@ platform_item_ptr application_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::domain_runtime 
+// Class rx_platform::runtime::objects::domain_runtime 
 
 string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
 
@@ -386,7 +386,7 @@ platform_item_ptr domain_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::port_runtime 
+// Class rx_platform::runtime::objects::port_runtime 
 
 string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
 
@@ -428,19 +428,19 @@ platform_item_ptr port_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::object_types::application_creation_data 
+// Class rx_platform::runtime::objects::application_creation_data 
 
 
-// Class rx_platform::runtime::object_types::domain_creation_data 
+// Class rx_platform::runtime::objects::domain_creation_data 
 
 
-// Class rx_platform::runtime::object_types::object_creation_data 
+// Class rx_platform::runtime::objects::object_creation_data 
 
 
-// Class rx_platform::runtime::object_types::port_creation_data 
+// Class rx_platform::runtime::objects::port_creation_data 
 
 
-} // namespace object_types
+} // namespace objects
 } // namespace runtime
 } // namespace rx_platform
 
