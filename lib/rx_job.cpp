@@ -46,8 +46,12 @@ namespace jobs {
 
 job::job()
       : canceled_(false)
+	, security_context_(rx_security_context())
+	, criticalness_(rx_criticalness::medium)
+	, value_factor_(rx_default_value_factor)
+	, complexity_(rx_default_complextiy)
+	, access_type_(rx_access::full)
 {
-	security_context_ = rx_security_context();
 }
 
 

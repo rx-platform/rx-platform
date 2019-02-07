@@ -203,7 +203,7 @@ security_context_ptr active_security()
 		return dummy_ctx;
 	}
 	else
-	{// try to ge from handle
+	{// try to get from handle
 		security_context_ptr ret = security_manager::instance().get_context(handle);
 		if (!ret)
 		{// context not active any more

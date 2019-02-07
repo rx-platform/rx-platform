@@ -82,7 +82,9 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 		std::ostringstream ss;
 		ss << "Not existing "
 			<< typeT::TargetType::type_name
-			<< " in ";
+			<< " in attribute "
+			<< whose.name_;
+		
 		ctx.add_error(ss.str());
 	}
 	return ctx.is_check_ok();
@@ -131,11 +133,6 @@ bool meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_
 	return true;
 }
 template<>
-bool meta_blocks_algorithm<def_blocks::variable_attribute>::check_complex_attribute(def_blocks::variable_attribute& whose, type_check_context& ctx)
-{
-	return true;
-}
-template<>
 void meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_attribute(const def_blocks::variable_attribute& whose, construct_context& ctx)
 {
 	auto temp = model::platform_types_manager::instance().get_simple_type_cache<def_blocks::variable_attribute::TargetType>().create_simple_runtime(whose.target_id_);
@@ -143,6 +140,7 @@ void meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_at
 	ctx.runtime_data.add_variable(whose.name_, std::move(temp), whose.get_value(ctx.now));
 }
 // explicit templates initialization
+template class meta_blocks_algorithm<variable_attribute>;
 template class meta_blocks_algorithm<struct_attribute>;
 template class meta_blocks_algorithm<event_attribute>;
 template class meta_blocks_algorithm<filter_attribute>;

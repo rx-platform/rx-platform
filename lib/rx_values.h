@@ -186,6 +186,8 @@ rx_value_t inner_get_type(tl::type2type<bool>);
 template<>
 rx_value_t inner_get_type(tl::type2type<int8_t>);
 template<>
+rx_value_t inner_get_type(tl::type2type<char>);
+template<>
 rx_value_t inner_get_type(tl::type2type<uint8_t>);
 template<>
 rx_value_t inner_get_type(tl::type2type<int16_t>);

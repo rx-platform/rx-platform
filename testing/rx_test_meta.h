@@ -111,7 +111,7 @@ basic testing object creation (all sub-types are created).");
 
 
 
- 
+
 
  class inheritance_creation_test : public test_case  
  {
@@ -155,6 +155,11 @@ basic testing object creation (inheritance test).");
    protected:
 
    private:
+
+       rx_node_id create_object_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id struct_id, rx_node_id mapper_id);
+
+       rx_node_id create_struct_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id variable_id);
+
 
 
  };

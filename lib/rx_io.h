@@ -271,6 +271,7 @@ class tcp_listen_socket : public dispatcher_subscriber
 	DECLARE_REFERENCE_PTR(tcp_listen_socket<buffT>);
 protected:
 	typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
+public:
 	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, threads::dispatcher_pool::smart_ptr&, rx_thread_handle_t)> make_function_t;
 
   public:

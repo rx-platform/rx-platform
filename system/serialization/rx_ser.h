@@ -748,7 +748,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 		buffer_.push_data(val);
 	}
 	break;
-	case guid_rx_node_id:
+	case uuid_rx_node_id:
 	{
 		uint16_t namesp = id.get_namespace();
 		rx_uuid_t val;

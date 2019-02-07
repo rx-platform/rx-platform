@@ -338,6 +338,9 @@ public:
 
 
 
+      static string_type type_name;
+
+
   protected:
 
   private:
@@ -352,9 +355,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       def_blocks::mapped_data_type mapping_data_;
-
-
-      static string_type type_name;
 
 
 };

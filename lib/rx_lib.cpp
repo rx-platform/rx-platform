@@ -360,6 +360,13 @@ string_type rx_uuid::to_string() const
 
 const rx_node_id rx_node_id::null_id;
 
+
+std::ostream & operator << (std::ostream &out, const rx_node_id &val)
+{
+	out << val.to_string();
+	return out;
+}
+
 rx_node_id::rx_node_id()
 {
 	namespace_ = 0;
@@ -403,14 +410,14 @@ rx_node_id::rx_node_id(const char* id, uint16_t namesp)
 rx_node_id::rx_node_id(const rx_uuid_t& id, uint16_t namesp)
 {
 	value_.uuid_value = id;
-	node_type_ = guid_rx_node_id;
+	node_type_ = uuid_rx_node_id;
 	namespace_ = namesp;
 }
 */
 rx_node_id::rx_node_id(rx_uuid_t id, uint16_t namesp)
 {
 	value_.uuid_value = id;
-	node_type_ = guid_rx_node_id;
+	node_type_ = uuid_rx_node_id;
 	namespace_ = namesp;
 }
 
@@ -501,7 +508,7 @@ bool rx_node_id::operator==(const rx_node_id &right) const
 	{
 	case numeric_rx_node_id:
 		return value_.int_value == right.value_.int_value;
-	case guid_rx_node_id:
+	case uuid_rx_node_id:
 		return memcmp(&value_.uuid_value, &right.value_.uuid_value, sizeof(value_.uuid_value)) == 0;
 	case string_rx_node_id:
 		return (*(value_.string_value)) == (*(right.value_.string_value));
@@ -540,7 +547,7 @@ bool rx_node_id::operator < (const rx_node_id& right) const
 	{
 	case numeric_rx_node_id:
 		return value_.int_value<right.value_.int_value;
-	case guid_rx_node_id:
+	case uuid_rx_node_id:
 		return memcmp(&value_.uuid_value, &right.value_.uuid_value, sizeof(value_.uuid_value))<0;
 	case string_rx_node_id:
 		return (*(value_.string_value))<(*(right.value_.string_value));
@@ -564,7 +571,7 @@ void rx_node_id::to_string(string_type& val) const
 	case string_rx_node_id:
 		type = "s";
 		break;
-	case guid_rx_node_id:
+	case uuid_rx_node_id:
 		type = "g";
 		break;
 	case bytes_rx_node_id:
@@ -583,7 +590,7 @@ void rx_node_id::to_string(string_type& val) const
 	case string_rx_node_id:
 		value = *value_.string_value;
 		break;
-	case guid_rx_node_id:
+	case uuid_rx_node_id:
 		rx_uuid(value_.uuid_value).to_string(value);
 		break;
 	case bytes_rx_node_id:
@@ -655,7 +662,7 @@ rx_node_id rx_node_id::from_string(const char* value)
 		}
 		else if (type == "g")
 		{
-			ret.node_type_ = guid_rx_node_id;
+			ret.node_type_ = uuid_rx_node_id;
 			rx_string_to_uuid(strid.substr(idx2 + 1).c_str(), &ret.value_.uuid_value);
 		}
 		else if (type == "b")
@@ -684,7 +691,7 @@ bool rx_node_id::is_opc() const
 
 bool rx_node_id::is_simple() const
 {
-	return node_type_ == numeric_rx_node_id || node_type_ == guid_rx_node_id;
+	return node_type_ == numeric_rx_node_id || node_type_ == uuid_rx_node_id;
 }
 
 void rx_node_id::clear_content()
@@ -713,12 +720,12 @@ void rx_node_id::set_string_id(const char* strid)
 
 bool rx_node_id::is_guid() const
 {
-	return node_type_ == guid_rx_node_id;
+	return node_type_ == uuid_rx_node_id;
 }
 
 bool rx_node_id::get_uuid(rx_uuid_t& id) const
 {
-	if (node_type_ == guid_rx_node_id)
+	if (node_type_ == uuid_rx_node_id)
 	{
 		id = value_.uuid_value;
 		return true;
@@ -743,11 +750,51 @@ bool rx_node_id::get_string(string_type& id) const
 	if (node_type_ == string_rx_node_id)
 	{
 		if (value_.string_value)
-			id = value_.string_value->c_str();
+			id = *value_.string_value;
 		return true;
 	}
 	else
 		return false;
+}
+bool rx_node_id::get_bytes(byte_string& id) const
+{
+	if (node_type_ == bytes_rx_node_id)
+	{
+		if (value_.bstring_value)
+			id = *value_.bstring_value;
+		return true;
+	}
+	else
+		return false;
+}
+
+const rx_uuid_t& rx_node_id::get_uuid() const
+{
+	if (node_type_ == uuid_rx_node_id)
+		return value_.uuid_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
+}
+uint32_t rx_node_id::get_numeric() const
+{
+	if (node_type_ == numeric_rx_node_id)
+		return value_.int_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
+}
+const string_type& rx_node_id::get_string() const
+{
+	if (node_type_ == string_rx_node_id)
+		return *value_.string_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
+}
+const byte_string& rx_node_id::get_bytes() const
+{
+	if (node_type_ == bytes_rx_node_id)
+		return *value_.bstring_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
 }
 
 const uint16_t rx_node_id::get_namespace() const
@@ -784,6 +831,7 @@ namespace
 		char version_buffer[0x100];
 		dummy_starter()
 		{
+			static_assert(sizeof(rx_uuid_t) == 16);
 			create_module_compile_time_string(__DATE__, __TIME__, compile_buffer);
 			g_complie_time = compile_buffer;
 			create_module_version_string("", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER,__DATE__, __TIME__, version_buffer);

@@ -41,7 +41,7 @@ namespace rx_platform {
 namespace meta {
 
 
-
+	
 
 
 class type_check_context 
@@ -53,10 +53,14 @@ class type_check_context
    	  type_check_context& operator=(type_check_context&&) = delete;
 
   public:
+      type_check_context();
+
 
       bool is_check_ok () const;
 
       void add_error (const string_type& error);
+
+      void reinit ();
 
 
       const string_array& get_errors () const
@@ -156,6 +160,9 @@ class construct_context
 
   public:
       construct_context();
+
+
+      void reinit ();
 
 
       runtime_data_prototype runtime_data;

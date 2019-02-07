@@ -208,14 +208,13 @@ enum rx_node_id_type
 {
 	numeric_rx_node_id = 0,
 	string_rx_node_id = 1,
-	guid_rx_node_id = 2,
+	uuid_rx_node_id = 2,
 	bytes_rx_node_id = 3
 };
 
 
 class rx_node_id
 {
-
 public:
 	rx_node_id();
 	rx_node_id(const rx_node_id &right);
@@ -237,7 +236,7 @@ public:
 	string_type to_string() const;
 	static rx_node_id from_string(const char* value);
 
-	static rx_node_id generate_new(uint16_t namesp);
+	static rx_node_id generate_new(uint16_t namesp = RX_USER_NAMESPACE);
 	bool is_null() const;
 	operator bool() const;
 	bool is_standard() const;
@@ -248,6 +247,13 @@ public:
 	bool get_uuid(rx_uuid_t& id) const;
 	bool get_numeric(uint32_t& id) const;
 	bool get_string(string_type& id) const;
+	bool get_bytes(byte_string& id) const;
+	
+	const rx_uuid_t& get_uuid() const;
+	uint32_t get_numeric() const;
+	const string_type& get_string() const;
+	const byte_string& get_bytes() const;
+
 
 	const uint16_t get_namespace() const;
 	void set_namespace(uint16_t value);
@@ -264,6 +270,8 @@ private:
 	rx_node_id_union value_;
 
 };
+
+std::ostream & operator << (std::ostream &out, const rx_node_id &val);
 
 typedef std::vector<rx_node_id> rx_node_ids;
 ///////////////////////////////////////////////////////////////
@@ -480,6 +488,18 @@ void rx_dump_ticks_to_stream(std::ostream& out, rx_timer_ticks_t ticks);
 // security related basics for stuff
 typedef intptr_t rx_security_handle_t;
 typedef intptr_t rx_thread_handle_t;
+enum rx_criticalness
+{
+	soft,
+	medium,
+	hard
+};
+enum rx_access
+{
+	read	= 0x01,
+	write	= 0x02,
+	full	= 0xff
+};
 
 void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
@@ -494,6 +514,41 @@ void extract_next(const string_type& path, string_type& name, string_type& rest,
 }// namespace rx
 
 
+namespace std
+{
+template<>
+struct hash<rx::rx_node_id>
+{
+	size_t operator()(const rx::rx_node_id& id) const
+	{
+		switch (id.get_node_type())
+		{
+		case rx::numeric_rx_node_id:
+			return (hash<int32_t>()(id.get_numeric())
+				^ (hash<uint16_t>()(id.get_namespace()) << 1));
+		case rx::string_rx_node_id:
+			return (hash<string_type>()(id.get_string())
+				^ (hash<uint16_t>()(id.get_namespace()) << 1));
+		case rx::uuid_rx_node_id:
+			return (hash<uint64_t>()(*((int64_t*)(&id.get_uuid()))))
+				^ (hash<uint64_t>()(((int64_t*)(&id.get_uuid()))[1] << 1))
+				^ (hash<uint16_t>()(id.get_namespace()) << 2);
+		case rx::bytes_rx_node_id:
+		{
+			size_t ret = 0;
+			size_t count = id.get_bytes().size();
+			for (size_t i = 0; i < count; i++)
+			{
+				ret ^= ((hash<uint8_t>()(id.get_bytes()[i])) << i & 0xffff);
+			}
+			return ret;
+		}
+		default:
+			throw std::invalid_argument("Invalid node id type!");
+		}
+	}
+};
+}
 
 
 #endif

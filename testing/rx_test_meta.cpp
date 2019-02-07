@@ -68,7 +68,7 @@ namespace meta_test {
 	 : test_case("construct-wide")
  {
  }
- 
+
 
  object_creation_test::~object_creation_test()
  {
@@ -81,7 +81,7 @@ namespace meta_test {
 	 auto one = rx_platform::rx_gate::instance().get_root_directory();
 	 rx_node_id object_type_id;
 
-	 out << "Creating simple variable sub-types!\r\n";
+	 out << ANSI_COLOR_YELLOW "Creating simple variable sub-types!\r\n" ANSI_COLOR_RESET;
 	 auto source_id = create_source_type(in, out, err, ctx);
 	 if (source_id)
 	 {
@@ -91,7 +91,7 @@ namespace meta_test {
 			 auto event_id = create_event_type(in, out, err, ctx);
 			 if (event_id)
 			 {
-				 out << "Creating other simple sub-types!\r\n";
+				 out << ANSI_COLOR_YELLOW "Creating other simple sub-types!\r\n" ANSI_COLOR_RESET;
 				 auto mapper_id = create_mapper_type(in, out, err, ctx);
 				 if (mapper_id)
 				 {
@@ -101,7 +101,7 @@ namespace meta_test {
 						 auto struct_id = create_struct_type(in, out, err, ctx, variable_id);
 						 if (struct_id)
 						 {
-							 out << "Creating object type!\r\n";
+							 out << ANSI_COLOR_YELLOW "Creating object type!\r\n" ANSI_COLOR_RESET;
 							 object_type_id = create_object_type(in, out, err, ctx, struct_id, mapper_id);
 						 }
 					 }
@@ -111,22 +111,21 @@ namespace meta_test {
 	 }
 	 if (object_type_id)
 	 {
-		 out << "\r\nCreating test object!\r\n";
+		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_object = model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().create_runtime("test_object", object_type_id);
 		 if (test_object)
 		 {
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
-			 out << "Test object created!!!\r\n";
+			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 if (test_object->get_item_ptr()->generate_json(out, err))
 			 {
-				 out << "changing initialization data for object\r\n";
+				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 runtime::data::runtime_values_data init_data;
 				 test_object->collect_data(init_data);
-				 init_data.children["variableName"].values["variableVal"].value.assign_static(113);
-				 init_data.children["variableName"].values["Description"].value.assign_static(114);
+				 init_data.children["structName"].values["structVal"].value.assign_static(113);
 				 test_object->fill_data(init_data);
 
-				 out << "test_class test_object\r\n";
+				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
 				 if (test_object->get_item_ptr()->generate_json(out, err))
 				 {
 					 ctx->set_passed();
@@ -320,8 +319,81 @@ namespace meta_test {
 
  bool type_check_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
+	 auto fake_mapper_id = rx_node_id::generate_new();
+	 auto fake_variable_id = rx_node_id::generate_new();
+	 out << ANSI_COLOR_YELLOW "Generated non-existing node ids:\r\n" ANSI_COLOR_RESET;
+	 out << "Mapper Id:" << fake_mapper_id << "\r\n";
+	 out << "Variable Id:" << fake_variable_id << "\r\n";
+	 out << ANSI_COLOR_YELLOW "Registering Struct and Object Type\r\n" ANSI_COLOR_RESET;
+	 auto struct_id = create_struct_type(in, out, err, ctx, fake_variable_id);
+	 auto object_id = create_object_type(in, out, err, ctx, struct_id, fake_mapper_id);
+
+	 out << ANSI_COLOR_YELLOW "Checking invalid Object Type\r\n" ANSI_COLOR_RESET;
+	 meta::type_check_context check_ctx;
+	 if (!model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().check_type(object_id, check_ctx))
+	 {
+		 out << "check returned following errors:\r\n";
+		 for (const auto& one : check_ctx.get_errors())
+		 {
+			 out << one << "\r\n";
+		 }
+		 out << ANSI_COLOR_YELLOW "Checking invalid Struct Type\r\n" ANSI_COLOR_RESET;
+		 check_ctx.reinit();
+		 if (!model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::struct_type>().check_type(struct_id, check_ctx))
+		 {
+			 out << "check returned following errors:\r\n";
+			 for (const auto& one : check_ctx.get_errors())
+			 {
+				 out << one << "\r\n";
+			 }
+			 ctx->set_passed();
+			 return true;
+		 }
+	 }
 	 ctx->set_failed();
 	 return true;
+ }
+
+ rx_node_id type_check_test::create_object_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id struct_id, rx_node_id mapper_id)
+ {
+	 rx_node_id id;
+	 out << "Creating object type\r\n";
+	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "check_test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
+	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
+	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
+	 test_type->complex_data().register_struct("structName", struct_id);
+	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
+	 if (model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().register_type(test_type))
+	 {
+		 auto rx_type_item = test_type->get_item_ptr();
+		 ctx->get_current_directory()->add_item(rx_type_item);
+		 if (rx_type_item->generate_json(out, err))
+		 {
+			 id = test_type->meta_data().get_id();
+			 out << "Object type created\r\n";
+		 }
+	 }
+	 return id;
+ }
+
+ rx_node_id type_check_test::create_struct_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id variable_id)
+ {
+	 rx_node_id id;
+	 out << "Creating struct type\r\n";
+	 rx_platform::meta::struct_type_ptr test_type(std::move(rx_platform::meta::type_creation_data{ "test_struct", rx_node_id::null_id, RX_CLASS_STRUCT_BASE_ID,  false }));
+	 test_type->complex_data().register_simple_value_static("structVal", false, false);
+	 test_type->complex_data().register_variable_static("variableName", variable_id, 'a', true);
+	 if (model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::struct_type>().register_type(test_type))
+	 {
+		 auto rx_type_item = test_type->get_item_ptr();
+		 ctx->get_current_directory()->add_item(rx_type_item);
+		 if (rx_type_item->generate_json(out, err))
+		 {
+			 id = test_type->meta_data().get_id();
+			 out << "Struct type created\r\n";
+		 }
+	 }
+	 return id;
  }
 
 

@@ -148,6 +148,7 @@ namespace console {
 
 server_telnet_socket::server_telnet_socket()
 {
+	//my_socket_ = rx::rx_create_reference<rx::io::tcp_listent_std_buffer>(std::bind(&server_telnet_socket::make_client, this));
 }
 
 

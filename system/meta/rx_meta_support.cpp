@@ -43,6 +43,12 @@ namespace meta {
 
 // Class rx_platform::meta::type_check_context 
 
+type_check_context::type_check_context()
+      : type_ok_(true)
+{
+}
+
+
 
 bool type_check_context::is_check_ok () const
 {
@@ -56,6 +62,12 @@ void type_check_context::add_error (const string_type& error)
 	errors_.emplace_back(error);
 }
 
+void type_check_context::reinit ()
+{
+	type_ok_ = true;
+	errors_.clear();
+}
+
 
 // Class rx_platform::meta::construct_context 
 
@@ -64,6 +76,11 @@ construct_context::construct_context()
 {
 }
 
+
+
+void construct_context::reinit ()
+{
+}
 
 
 // Class rx_platform::meta::runtime_data_prototype 

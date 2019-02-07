@@ -40,8 +40,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_io
-#include "lib/rx_io.h"
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_types.h"
@@ -177,7 +175,7 @@ public:
   private:
 
 
-      rx_reference<rx::io::tcp_listent_std_buffer> telnet_listener_;
+      rx_reference<runtime::objects::port_runtime> telnet_listener_;
 
       rx_reference<runtime::objects::server_object> commands_manager_;
 

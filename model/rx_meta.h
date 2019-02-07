@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -95,7 +95,7 @@ struct query_result
 
 
 
-class relations_hash_data 
+class relations_hash_data
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -158,7 +158,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash 
+class inheritance_hash
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -213,7 +213,7 @@ class inheritance_hash
 
 
 
-class instance_hash 
+class instance_hash
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -250,7 +250,7 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash 
+class type_hash
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -262,15 +262,15 @@ public:
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 
-	typedef typename std::map<rx_node_id, RType> registered_objects_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::unordered_map<rx_node_id, RType> registered_objects_type;
+	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
       type_hash();
 
 
-      typename type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id);
+      typename type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id) const;
 
       bool register_type (typename type_hash<typeT>::Tptr what);
 
@@ -281,6 +281,10 @@ public:
       typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& type_id);
 
       query_result get_derived_types (const rx_node_id& id) const;
+
+      bool check_type (const rx_node_id& id, type_check_context& ctx);
+
+      typename type_hash<typeT>::RTypePtr get_runtime (const rx_node_id& id) const;
 
 
   protected:
@@ -308,7 +312,7 @@ public:
 
 
 template <class typeT>
-class simple_type_hash 
+class simple_type_hash
 {
 	simple_type_hash(const simple_type_hash&) = delete;
 	simple_type_hash(simple_type_hash&&) = delete;
@@ -321,8 +325,7 @@ public:
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 
-	typedef typename std::map<rx_node_id, RType> registered_objects_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
@@ -339,6 +342,8 @@ public:
 
       query_result get_derived_types (const rx_node_id& id) const;
 
+      bool check_type (const rx_node_id& id, type_check_context& ctx);
+
 
   protected:
 
@@ -347,8 +352,6 @@ public:
 
       inheritance_hash inheritance_hash_;
 
-
-      registered_objects_type registered_objects_;
 
       registered_types_type registered_types_;
 
@@ -391,7 +394,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager 
+class platform_types_manager
 {
 	typedef std::map<rx_node_id, ids_hash_element> ids_hash_type;
 	typedef std::map<string_type, names_hash_element> names_hash_type;
@@ -423,8 +426,6 @@ class platform_types_manager
 			if (ret == nullptr)
 			{
 				ret = new type_hash<T>();
-				//ret->set_manager(manager);
-				//manager->_cache_types.insert(cache_types_type::value_type(T::type_id, ret));
 				(static_cast<type_cache_holder<T>&>(*this)).value_ = ret;
 			}
 			return *ret;
@@ -457,8 +458,6 @@ class platform_types_manager
 			if (ret == nullptr)
 			{
 				ret = new simple_type_hash<T>();
-				//ret->set_manager(manager);
-				//manager->_cache_types.insert(cache_types_type::value_type(T::type_id, ret));
 				(static_cast<simple_type_cache_holder<T>&>(*this)).value_ = ret;
 			}
 			return *ret;
@@ -484,6 +483,26 @@ public:
 	{
 		return _simple_types_container.get_internal<T>(this, tl::type2type<T>());
 	}
+	template<class T>
+	typename T::RTypePtr get_runtime(const string_type& path, ns::rx_server_directory::smart_ptr dir)
+	{
+		rx_platform_item::smart_ptr item = dir->get_sub_item(path);
+		if (!item)
+		{// TODO error, item does not exists
+			return T::RTypePtr::smart_ptr::null_ptr;
+		}
+		auto id = item->get_node_id();
+		if (id.is_null())
+		{// TODO error, item does not have id
+			return T::RTypePtr::smart_ptr::null_ptr;
+		}
+		auto ret = get_type_cache<T>().get_runtime(std::move(id));
+		if (!ret)
+		{// TODO error, invalid node id
+			return T::RTypePtr::smart_ptr::null_ptr;
+		}
+		return ret;
+	}
 
   public:
 
@@ -501,16 +520,6 @@ public:
 
       platform_item_ptr create_object (base_meta_reader& stream);
 
-	  template<class T>
-	  struct get_arg_data
-	  {
-		  T data;
-	  };
-	  //template<class T>
-	  //void get_class(std::function<void(T))
-	  //{
-		 // //worker_.append();
-	  //}
   protected:
 
   private:
@@ -524,7 +533,7 @@ public:
 };
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -538,7 +547,7 @@ type_hash<typeT>::type_hash()
 
 
 template <class typeT>
-typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id)
+typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id) const
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -640,6 +649,40 @@ query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 	return ret;
 }
 
+template <class typeT>
+bool type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx)
+{
+	auto temp = get_type_definition(id);
+	if (temp)
+	{
+		return temp->check_type(ctx);
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		ctx.add_error(ss.str());
+		return false;
+	}
+}
+
+template <class typeT>
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node_id& id) const
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return Tptr::null_ptr;
+	}
+}
+
 /*
 class type_safe_class
 {
@@ -705,7 +748,7 @@ public:
 	}
 };
 */
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -795,6 +838,26 @@ query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) c
 {
 	query_result ret;
 	return ret;
+}
+
+template <class typeT>
+bool simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx)
+{
+	auto temp = get_type_definition(id);
+	if (temp)
+	{
+		return temp->check_type(ctx);
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		ctx.add_error(ss.str());
+		return false;
+	}
 }
 
 

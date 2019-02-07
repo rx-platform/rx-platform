@@ -48,6 +48,11 @@ rx_value_t inner_get_type(tl::type2type<bool>)
 }
 
 template<>
+rx_value_t inner_get_type(tl::type2type<char>)
+{
+	return RX_INT8_TYPE;
+}
+template<>
 rx_value_t inner_get_type(tl::type2type<int8_t>)
 {
 	return RX_INT8_TYPE;

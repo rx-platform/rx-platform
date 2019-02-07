@@ -48,7 +48,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
-	startup_script_ = "test run meta/construct-wide\n";
+	startup_script_ = "test run meta/type-check\n";
 }
 
 

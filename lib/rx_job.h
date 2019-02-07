@@ -48,7 +48,11 @@ void execute_job(void* arg);
 }
 
 namespace jobs {
+typedef int rx_complexity_t;
+const rx_complexity_t rx_default_complextiy = 0x10000;
 
+typedef int job_value_factor_t;
+const job_value_factor_t rx_default_value_factor = 0x10000;
 
 //	basic job class
 
@@ -83,6 +87,30 @@ class job : private pointers::reference_object
       }
 
 
+      const rx_criticalness get_criticalness () const
+      {
+        return criticalness_;
+      }
+
+
+      const job_value_factor_t get_value_factor () const
+      {
+        return value_factor_;
+      }
+
+
+      const rx_complexity_t get_complexity () const
+      {
+        return complexity_;
+      }
+
+
+      const rx_access get_access_type () const
+      {
+        return access_type_;
+      }
+
+
 
   protected:
 
@@ -102,6 +130,14 @@ class job : private pointers::reference_object
       rx_security_handle_t security_context_;
 
       rx_thread_handle_t destination_;
+
+      rx_criticalness criticalness_;
+
+      job_value_factor_t value_factor_;
+
+      rx_complexity_t complexity_;
+
+      rx_access access_type_;
 
 	  friend void threads::execute_job(void*);
     friend class threads::dispatcher_pool;
