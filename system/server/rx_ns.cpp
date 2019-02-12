@@ -407,6 +407,47 @@ bool rx_server_directory::add_item (platform_item_ptr who)
 	return ret.second;
 }
 
+bool rx_server_directory::delete_item (platform_item_ptr who)
+{
+	bool ret = false;
+	structure_lock();
+	auto it = sub_items_.find(who->get_name());
+	if (it != sub_items_.end())
+	{
+		sub_items_.erase(it);
+		ret = true;
+	}
+	structure_unlock();
+	return ret;
+}
+
+bool rx_server_directory::delete_item (const string_type& path)
+{
+	bool ret = false;
+	size_t idx = path.rfind(RX_DIR_DELIMETER);
+	if (idx == string_type::npos)
+	{// plain item
+		locks::const_auto_slim_lock dummy(&structure_lock_);
+		auto it = sub_items_.find(path);
+		if (it != sub_items_.end())
+		{
+			sub_items_.erase(it);
+			return true;
+		}
+	}
+	else
+	{// dir + item
+		string_type dir_path = path.substr(0, idx);
+		string_type item_name = path.substr(idx + 1);
+		server_directory_ptr dir = get_sub_directory(dir_path);
+		if (dir)
+		{
+			return dir->delete_item(item_name);
+		}
+	}
+	return false;
+}
+
 template<class TImpl>
 void rx_server_directory::add_item(TImpl who)
 {

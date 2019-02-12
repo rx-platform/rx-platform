@@ -28,6 +28,7 @@
 
 #include "pch.h"
 
+#include "terminal/rx_terminal_style.h"
 
 // rx_telnet
 #include "terminal/rx_telnet.h"

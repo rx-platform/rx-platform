@@ -38,7 +38,7 @@
 #define RELEASE_CODE_INFO ""
 
 /* if*/
-#ifdef _DEBUG
+#ifdef RX_LOG_SOURCE_INFO
 
 #define LOG_CODE_INFO ___code_name.c_str()
 #define LOG_CODE_PREFIX { std::string ___code_name(_rx_func_);___code_name+="@" __FILE__"\r\n";

@@ -74,16 +74,6 @@ uint32_t platform_types_manager::stop ()
 	return RX_OK;
 }
 
-platform_item_ptr platform_types_manager::create_type (base_meta_reader& stream)
-{
-	return platform_item_ptr::null_ptr;
-}
-
-platform_item_ptr platform_types_manager::create_object (base_meta_reader& stream)
-{
-	return platform_item_ptr::null_ptr;
-}
-
 
 // Class model::relations_hash_data 
 
@@ -402,4 +392,6 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 
 
 } // namespace model
+
+
 

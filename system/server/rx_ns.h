@@ -86,13 +86,14 @@ enum namespace_item_attributes
 	namespace_item_read_access = 1,
 	namespace_item_write_access = 2,
 	namespace_item_delete_access = 4,
-	namespace_item_execute_access = 8,
+	namespace_item_pull_access = 8,
+	namespace_item_execute_access = 0x10,
 	// type of item
-	namespace_item_system = 0x10,
-	namespace_item_internal = 0x20,
+	namespace_item_system = 0x20,
+	namespace_item_internal = 0x40,
 	// combinations
 	namespace_item_full_access = 7,
-	namespace_item_system_access = 0x11
+	namespace_item_system_access = 0x21
 };
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
@@ -160,6 +161,10 @@ class rx_server_directory : public rx::pointers::reference_object
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
       bool add_item (platform_item_ptr who);
+
+      bool delete_item (platform_item_ptr who);
+
+      virtual bool delete_item (const string_type& path);
 
 
       const rx_time get_created () const

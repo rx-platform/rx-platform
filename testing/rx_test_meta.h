@@ -132,6 +132,15 @@ basic testing object creation (inheritance test).");
 
    private:
 
+       rx_node_id create_base_object_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id struct_id);
+
+       rx_node_id create_struct_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id variable_id);
+
+       rx_node_id create_variable_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+       rx_node_id create_derived_object_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id base_id, rx_node_id variable_id);
+
+
 
  };
 

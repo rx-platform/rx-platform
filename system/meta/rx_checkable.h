@@ -66,9 +66,9 @@ class checkable_data
 {
 
   public:
-      checkable_data();
+      checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, rx_time now = rx_time::now());
 
-      checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs);
+      checkable_data (namespace_item_attributes attrs = namespace_item_null, rx_time now = rx_time::now());
 
 
       bool check_in (base_meta_reader& stream);

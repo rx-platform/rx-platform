@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  rx_platform.h
+*  terminal\rx_terminal_style.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,24 +26,31 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_h
-#define rx_platform_h 1
+#ifndef rx_terminal_style_h
+#define rx_terminal_style_h 1
 
 
-/*******************************************************************
- Preprocessor switches
- ======================
 
- #define PYTHON_SUPPORT			- includes the python support
- #define EXCLUDE_TEST_CODE		- exclude testing code in build
- #define RX_LOG_SOURCE_INFO		- log full source code in log
- 
-********************************************************************/
 
-#include "rx_library.h"
-#include "version/rx_code_macros.h"
-#include "system/meta/rx_obj_types.h"
 
+
+#define ANSI_COLOR_BOLD	   "\x1b[1m"
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+#define ANSI_CLS "\x1b[2J"
+#define ANSI_CUR_HOME "\033[0;0H"
+
+
+#define ANSI_RX_PULL_COLOR ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
+#define ANSI_RX_EXECUTE_COLOR ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+
+#define ANSI_RX_OBJECT_COLOR ANSI_RX_PULL_COLOR
 
 
 

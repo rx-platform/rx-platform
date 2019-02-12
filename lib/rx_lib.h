@@ -215,6 +215,7 @@ enum rx_node_id_type
 
 class rx_node_id
 {
+	friend struct std::hash<rx::rx_node_id>;
 public:
 	rx_node_id();
 	rx_node_id(const rx_node_id &right);
@@ -519,32 +520,33 @@ namespace std
 template<>
 struct hash<rx::rx_node_id>
 {
-	size_t operator()(const rx::rx_node_id& id) const
+	size_t operator()(const rx::rx_node_id& id) const noexcept
 	{
-		switch (id.get_node_type())
+		switch (id.node_type_)
 		{
 		case rx::numeric_rx_node_id:
-			return (hash<int32_t>()(id.get_numeric())
-				^ (hash<uint16_t>()(id.get_namespace()) << 1));
+			return (hash<int32_t>()(id.value_.int_value)
+				^ (hash<uint16_t>()(id.namespace_) << 1));
 		case rx::string_rx_node_id:
-			return (hash<string_type>()(id.get_string())
-				^ (hash<uint16_t>()(id.get_namespace()) << 1));
+			return (hash<string_type>()(*id.value_.string_value)
+				^ (hash<uint16_t>()(id.namespace_) << 1));
 		case rx::uuid_rx_node_id:
-			return (hash<uint64_t>()(*((int64_t*)(&id.get_uuid()))))
-				^ (hash<uint64_t>()(((int64_t*)(&id.get_uuid()))[1] << 1))
-				^ (hash<uint16_t>()(id.get_namespace()) << 2);
+			return (hash<uint64_t>()(*((int64_t*)(&id.value_.uuid_value))))
+				^ (hash<uint64_t>()(((int64_t*)(&id.value_.uuid_value))[1] << 1))
+				^ (hash<uint16_t>()(id.namespace_) << 2);
 		case rx::bytes_rx_node_id:
 		{
 			size_t ret = 0;
-			size_t count = id.get_bytes().size();
+			size_t count = id.value_.bstring_value->size();
 			for (size_t i = 0; i < count; i++)
 			{
-				ret ^= ((hash<uint8_t>()(id.get_bytes()[i])) << i & 0xffff);
+				ret ^= ((hash<uint8_t>()((*(id.value_.bstring_value))[i])) << i & 0xffff);
 			}
 			return ret;
 		}
 		default:
-			throw std::invalid_argument("Invalid node id type!");
+			RX_ASSERT(false);
+			return 0;
 		}
 	}
 };

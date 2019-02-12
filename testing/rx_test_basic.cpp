@@ -33,6 +33,7 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
+#include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 
 

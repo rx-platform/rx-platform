@@ -44,6 +44,15 @@ using namespace rx_platform::meta::basic_types;
 using namespace rx_platform::meta::object_types;
 
 
+/////////////////////////////////////////////////////////////
+// logging macros for console library
+#define META_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Meta",src,lvl,msg)
+#define META_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Meta",src,lvl,msg)
+#define META_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Meta",src,lvl,msg)
+#define META_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Meta",src,lvl,msg)
+#define META_LOG_TRACE(src,lvl,msg) RX_TRACE("Meta",src,lvl,msg)
+
+
 namespace model {
 
 
@@ -262,7 +271,7 @@ public:
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 
-	typedef typename std::unordered_map<rx_node_id, RType> registered_objects_type;
+	typedef typename std::unordered_map<rx_node_id, RTypePtr> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
@@ -276,15 +285,19 @@ public:
 
       bool register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system);
+      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const runtime::data::runtime_values_data* init_data = nullptr);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& type_id);
+      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& type_id, const runtime::data::runtime_values_data* init_data = nullptr);
 
       query_result get_derived_types (const rx_node_id& id) const;
 
       bool check_type (const rx_node_id& id, type_check_context& ctx);
 
       typename type_hash<typeT>::RTypePtr get_runtime (const rx_node_id& id) const;
+
+      bool delete_runtime (rx_node_id id);
+
+      bool delete_type (rx_node_id id);
 
 
   protected:
@@ -465,45 +478,6 @@ class platform_types_manager
 	};
 	simple_type_cache_list_container _simple_types_container;
 
-
-	/*typedef std::map<uint32_t, inheritance_cache_base*> cache_types_type;
-	typedef std::map<uint32_t, inheritance_cache_base*>::iterator cache_types_iterator;
-	typedef std::map<uint32_t, inheritance_cache_base*>::const_iterator const_cache_types_iterator;
-	cache_types_type _cache_types;*/
-
-
-public:
-	template<class T>
-	type_hash<T>& get_type_cache()
-	{
-		return _types_container.get_internal<T>(this, tl::type2type<T>());
-	}
-	template<class T>
-	simple_type_hash<T>& get_simple_type_cache()
-	{
-		return _simple_types_container.get_internal<T>(this, tl::type2type<T>());
-	}
-	template<class T>
-	typename T::RTypePtr get_runtime(const string_type& path, ns::rx_server_directory::smart_ptr dir)
-	{
-		rx_platform_item::smart_ptr item = dir->get_sub_item(path);
-		if (!item)
-		{// TODO error, item does not exists
-			return T::RTypePtr::smart_ptr::null_ptr;
-		}
-		auto id = item->get_node_id();
-		if (id.is_null())
-		{// TODO error, item does not have id
-			return T::RTypePtr::smart_ptr::null_ptr;
-		}
-		auto ret = get_type_cache<T>().get_runtime(std::move(id));
-		if (!ret)
-		{// TODO error, invalid node id
-			return T::RTypePtr::smart_ptr::null_ptr;
-		}
-		return ret;
-	}
-
   public:
 
       static platform_types_manager& instance ();
@@ -516,16 +490,139 @@ public:
 
       uint32_t stop ();
 
-      platform_item_ptr create_type (base_meta_reader& stream);
-
-      platform_item_ptr create_object (base_meta_reader& stream);
-
+	  template<class T>
+	  type_hash<T>& get_type_cache()
+	  {
+		  return _types_container.get_internal<T>(this, tl::type2type<T>());
+	  }
+	  template<class T>
+	  simple_type_hash<T>& get_simple_type_cache()
+	  {
+		  return _simple_types_container.get_internal<T>(this, tl::type2type<T>());
+	  }
+	  template<class T>
+	  typename T::smart_ptr get_type(const string_type& path, ns::rx_server_directory::smart_ptr dir)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
+		  if (!item)
+		  {// TODO error, item does not exists
+			  return T::smart_ptr::null_ptr;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  return T::smart_ptr::null_ptr;
+		  }
+		  auto ret = get_type_cache<T>().get_type_definition(std::move(id));
+		  if (!ret)
+		  {// TODO error, invalid node id
+			  return T::smart_ptr::null_ptr;
+		  }
+		  return ret;
+	  }
+	  template<class T>
+	  typename T::RTypePtr get_runtime(const string_type& path, ns::rx_server_directory::smart_ptr dir)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
+		  if (!item)
+		  {// TODO error, item does not exists
+			  return T::RTypePtr::null_ptr;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  return T::RTypePtr::null_ptr;
+		  }
+		  auto ret = get_type_cache<T>().get_runtime(std::move(id));
+		  if (!ret)
+		  {// TODO error, invalid node id
+			  return T::RTypePtr::null_ptr;
+		  }
+		  return ret;
+	  }
+	  template<class T>
+	  typename T::RTypePtr create_runtime(const string_type& name, const string_type& path, const runtime::data::runtime_values_data* init_data, ns::rx_server_directory::smart_ptr dir)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
+		  if (!item)
+		  {// TODO error, type does not exists
+			  return T::RTypePtr::null_ptr;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  return T::RTypePtr::null_ptr;
+		  }
+		  auto ret = get_type_cache<T>().create_runtime(name, id, init_data);
+		  if (!ret)
+		  {// TODO error, didn't created runtime
+			  return T::RTypePtr::null_ptr;
+		  }
+		  if (!dir->add_item(ret->get_item_ptr()))
+		  {
+			  get_type_cache<T>().delete_runtime(id);
+			  // TODO error, can't add this name
+			  return T::RTypePtr::null_ptr;
+		  }
+		  return ret;
+	  }
+	  template<class T>
+	  bool delete_runtime(const string_type& name, ns::rx_server_directory::smart_ptr dir)
+	  {
+		  return delete_runtime_helper(name, dir, tl::type2type<T>());
+	  }
+	  template<class T>
+	  bool delete_type(const string_type& name, ns::rx_server_directory::smart_ptr dir)
+	  {
+		  return delete_type_helper(name, dir, tl::type2type<T>());
+	  }
   protected:
 
   private:
       platform_types_manager();
 
-
+	  template<class T>
+	  bool delete_runtime_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+		  if (!item)
+		  {// TODO error, item does not exists
+			  return false;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  return false;
+		  }
+		  auto ret = get_type_cache<T>().delete_runtime(id);
+		  if (!ret)
+		  {// TODO error, didn't deleted runtime
+			  return false;
+		  }
+		  dir->delete_item(name);
+		  return true;
+	  }
+	  template<class T>
+	  bool delete_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+		  if (!item)
+		  {// TODO error, item does not exists
+			  return false;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  return false;
+		  }
+		  auto ret = get_type_cache<T>().delete_type(id);
+		  if (!ret)
+		  {// TODO error, didn't deleted runtime
+			  return false;
+		  }
+		  dir->delete_item(name);
+		  return true;
+	  }
 
       rx::threads::physical_job_thread worker_;
 
@@ -585,7 +682,7 @@ bool type_hash<typeT>::register_constructor (const rx_node_id& id, std::function
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system)
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const runtime::data::runtime_values_data* init_data)
 {
 	rx_node_id to_create;
 	if (id.is_null())
@@ -611,7 +708,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 		ret = default_constructor_();
 
 	construct_context ctx;
-	ret->meta_data().construct(name, to_create, std::move(type_id), system);
+	ret->meta_data().construct(name, to_create, type_id, system);
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -622,13 +719,19 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 		}
 	}
 	object_type::set_object_runtime_data(ctx.runtime_data, ret);
+	if (init_data)
+	{
+		ret->fill_data(*init_data);
+	}
+	registered_objects_.emplace(to_create, ret);
+	instance_hash_.add_to_hash_data(to_create, type_id, base);
 	return ret;
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id)
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, const runtime::data::runtime_values_data* init_data)
 {
-	return create_runtime(name, rx_node_id::null_id, type_id, false);
+	return create_runtime(name, rx_node_id::null_id, type_id, false, init_data);
 }
 
 template <class typeT>
@@ -680,6 +783,46 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node
 	else
 	{
 		return Tptr::null_ptr;
+	}
+}
+
+template <class typeT>
+bool type_hash<typeT>::delete_runtime (rx_node_id id)
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		auto type_id = it->second->meta_data().get_parent();
+		rx_node_ids base;
+		base.emplace_back(type_id);
+		inheritance_hash_.get_base_types(type_id, base);
+		registered_objects_.erase(it);
+		instance_hash_.remove_from_hash_data(id, type_id, base);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class typeT>
+bool type_hash<typeT>::delete_type (rx_node_id id)
+{
+    auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		auto type_id = it->second->meta_data().get_parent();
+		rx_node_ids base;
+		base.emplace_back(type_id);
+		inheritance_hash_.get_base_types(type_id, base);
+		registered_types_.erase(it);
+		inheritance_hash_.remove_from_hash_data(id, type_id);
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 

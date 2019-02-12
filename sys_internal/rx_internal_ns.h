@@ -38,6 +38,7 @@
 // rx_ns
 #include "system/server/rx_ns.h"
 
+#include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_types.h"

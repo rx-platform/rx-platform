@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace_item_attributes create_attributes_for_basic_types_from_flags(bool syst
 	}
 }
 
-// Class rx_platform::meta::basic_types::event_type 
+// Class rx_platform::meta::basic_types::event_type
 
 string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
 
@@ -120,7 +120,7 @@ const checkable_data& event_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::filter_type 
+// Class rx_platform::meta::basic_types::filter_type
 
 string_type filter_type::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
@@ -185,7 +185,7 @@ const checkable_data& filter_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::mapper_type 
+// Class rx_platform::meta::basic_types::mapper_type
 
 string_type mapper_type::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
 
@@ -250,7 +250,7 @@ const def_blocks::complex_data_type& mapper_type::complex_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::source_type 
+// Class rx_platform::meta::basic_types::source_type
 
 string_type source_type::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
 
@@ -315,7 +315,7 @@ const checkable_data& source_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::struct_type 
+// Class rx_platform::meta::basic_types::struct_type
 
 string_type struct_type::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
 
@@ -391,7 +391,7 @@ const checkable_data& struct_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::variable_type 
+// Class rx_platform::meta::basic_types::variable_type
 
 string_type variable_type::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
 
@@ -489,22 +489,4 @@ const def_blocks::complex_data_type& variable_type::complex_data () const
 } // namespace meta
 } // namespace rx_platform
 
-//#define RX_TEMPLATE_INST(typeArg, brwArg) \
-//template class rx_platform::meta::checkable_type<typeArg, brwArg>;\
-//
-//RX_TEMPLATE_INST(rx_platform::meta::object_class, false);
-//RX_TEMPLATE_INST(rx_platform::meta::domain_class, false);
-//RX_TEMPLATE_INST(rx_platform::meta::application_class, false);
-//RX_TEMPLATE_INST(rx_platform::meta::port_class, false);
-//RX_TEMPLATE_INST(rx_platform::meta::struct_class, false);
-//
-//
-//template class rx_platform::meta::variable_data_type<rx_platform::meta::complex_data_type>;
-//RX_TEMPLATE_INST(rx_platform::meta::variable_class, false);
-//
-//#define RX_TEMPLATE_INST_SIMPLE(typeArg, brwArg) \
-//template class rx_platform::meta::checkable_type<typeArg, brwArg>;\
-//
-//RX_TEMPLATE_INST_SIMPLE(rx_platform::runtime::object_runtime, true);
-//RX_TEMPLATE_INST_SIMPLE(rx_platform::logic::program_runtime, false);
 

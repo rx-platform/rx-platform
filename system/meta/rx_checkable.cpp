@@ -42,24 +42,25 @@ namespace meta {
 
 // Class rx_platform::meta::checkable_data 
 
-checkable_data::checkable_data()
+checkable_data::checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, rx_time now)
       : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
-{
-}
-
-checkable_data::checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs)
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(rx_time::now()),
-        modified_time_(rx_time::now())
+        created_time_(now),
+        modified_time_(now),
+        attributes_(attrs)
 	, name_(name)
 	, id_(id)
-	, attributes_(attrs)
 	, parent_(parent)
 {
 	if (id_.is_null())
 		id_ = rx_node_id(rx_uuid::create_new().uuid());
+}
+
+checkable_data::checkable_data (namespace_item_attributes attrs, rx_time now)
+      : version_(RX_INITIAL_ITEM_VERSION),
+        created_time_(now),
+        modified_time_(now),
+        attributes_(attrs)
+{
 }
 
 

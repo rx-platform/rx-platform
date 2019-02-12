@@ -66,12 +66,10 @@ command for creating various objects in platform\r\n\
 
 
   private:
-
-      bool create_object (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-      bool create_type (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
+	  template<class T>
+	  bool create_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
+	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -105,6 +103,81 @@ command for dumping types data\r\n\
 	  
 	  template<typename T>
 	  bool dump_types_recursive(rx_node_id start, int indent, model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+};
+
+
+
+
+
+
+class delete_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(delete_command);
+
+  public:
+      delete_command (const string_type& console_name);
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+	  template<class T>
+	  bool delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
+	  bool delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+
+
+};
+
+
+
+
+
+
+class rm_command : public delete_command  
+{
+	DECLARE_REFERENCE_PTR(rm_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for deleting objects and types\r\n\
+\
+");
+
+  public:
+      rm_command();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class del_command : public delete_command  
+{
+	DECLARE_REFERENCE_PTR(del_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for deleting objects and types\r\n\
+\
+");
+
+  public:
+      del_command();
+
+
+  protected:
+
+  private:
+
 
 };
 

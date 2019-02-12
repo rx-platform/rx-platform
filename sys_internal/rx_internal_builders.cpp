@@ -336,7 +336,6 @@ void basic_types_builder::build_basic_type(server_directory_ptr dir, rx_referenc
 	dir->add_item(what->get_item_ptr());
 	model::platform_types_manager::instance().get_simple_type_cache<T>().register_type(what);
 }
-
 // Class sys_internal::builders::system_classes_builder 
 
 

@@ -97,12 +97,13 @@ string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
       : change_time_(rx_time::now())
+	, meta_data_(namespace_item_pull_access)
 {
 }
 
 object_runtime::object_runtime (object_creation_data&& data)
       : change_time_(rx_time::now())
-	, meta_data_(data.name, data.id, data.type_id, create_attributes_from_creation_data<object_creation_data>(data))
+	, meta_data_(data.name, data.id, data.type_id, create_attributes_from_creation_data<object_creation_data>(data) | namespace_item_pull_access)
 	, my_application_(data.application)
 	, my_domain_(data.domain)
 {

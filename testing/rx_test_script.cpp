@@ -33,6 +33,7 @@
 // rx_test_script
 #include "testing/rx_test_script.h"
 
+#include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 
 

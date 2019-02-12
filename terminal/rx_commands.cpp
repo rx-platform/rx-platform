@@ -32,6 +32,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
+#include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 #include "terminal/rx_con_commands.h"
 #include "testing/rx_test.h"
@@ -126,6 +127,9 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
 	register_command(rx_create_reference<testing::test_command>());
+	// meta commands
+	register_command(rx_create_reference<model::meta_commands::del_command>());
+	register_command(rx_create_reference<model::meta_commands::rm_command>());
 	register_command(rx_create_reference<model::meta_commands::create_command>());
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 }

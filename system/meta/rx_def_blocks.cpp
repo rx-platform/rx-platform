@@ -98,7 +98,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 			if (!stream.end_object())
 				return false;
 		}
-
+		break;
 		case simple_values_mask:
 		{
 			if (!stream.start_object("Item"))

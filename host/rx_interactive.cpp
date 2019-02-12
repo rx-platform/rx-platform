@@ -29,6 +29,7 @@
 #include "pch.h"
 
 #include "rx_interactive_version.h"
+#include "terminal/rx_terminal_style.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -48,7 +49,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
-	startup_script_ = "test run meta/type-check\n";
+	startup_script_ = "test run meta/construct-inheritance\n";
 }
 
 
