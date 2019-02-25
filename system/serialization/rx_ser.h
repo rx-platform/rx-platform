@@ -111,6 +111,8 @@ class json_reader : public rx::base_meta_reader
 
       bool read_version (const char* name, uint32_t& val);
 
+      bool read_init_values (const char* name, data::runtime_values_data& values);
+
 
   protected:
 
@@ -123,6 +125,8 @@ class json_reader : public rx::base_meta_reader
       bool safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object);
 
       bool parse_version_string (uint32_t& result, const string_type& version);
+
+      bool internal_read_init_values (data::runtime_values_data& values, Json::Value& val);
 
 
 
@@ -149,7 +153,7 @@ class json_writer : public rx::base_meta_writer
 		bool is_array;
 		std::string name;
 	};
-	typedef std::stack<json_write_stack_data> stack_type;
+	typedef std::stack<json_write_stack_data, std::vector<json_write_stack_data> > stack_type;
 
   public:
       json_writer (int version = RX_CURRENT_SERIALIZE_VERSION);
@@ -198,6 +202,8 @@ class json_writer : public rx::base_meta_writer
       bool get_string (string_type& result, bool decorated);
 
       bool write_version (const char* name, uint32_t val);
+
+      bool write_init_values (const char* name, const data::runtime_values_data& values);
 
 
   protected:
@@ -287,6 +293,8 @@ class binary_reader : public rx::base_meta_reader
 
       void dump_to_stream (std::ostream& out);
 
+      bool read_init_values (const char* name, data::runtime_values_data& values);
+
 
   protected:
 
@@ -370,6 +378,8 @@ class binary_writer : public rx::base_meta_writer
       bool write_version (const char* name, uint32_t val);
 
       void dump_to_stream (std::ostream& out);
+
+      bool write_init_values (const char* name, const data::runtime_values_data& values);
 
 		bool is_string()
 		{
@@ -686,6 +696,12 @@ void binary_reader<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 	buffer_.dump_to_stream(out);
 }
 
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_init_values (const char* name, data::runtime_values_data& values)
+{
+	return false;
+}
+
 
 // Parameterized Class rx_platform::serialization::binary_writer 
 
@@ -905,6 +921,12 @@ template <typename allocT, bool swap_bytes>
 void binary_writer<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 {
 	buffer_.dump_to_stream(out);
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::write_init_values (const char* name, const data::runtime_values_data& values)
+{
+	return false;
 }
 
 

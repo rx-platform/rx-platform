@@ -36,7 +36,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_builders.h"
 #include "system/python/py_support.h"
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 
 
 namespace rx_platform {

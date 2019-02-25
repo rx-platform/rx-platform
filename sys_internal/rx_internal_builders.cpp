@@ -37,8 +37,10 @@
 #include "system/server/rx_inf.h"
 #include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 #include "rx_configuration.h"
+#include "model/rx_meta_api.h"
+using namespace rx_platform::meta::object_types;
 
 
 namespace sys_internal {
@@ -48,15 +50,9 @@ namespace builders {
 template<class T>
 void add_type_to_configuration(server_directory_ptr dir, rx_reference<T> what)
 {
-	dir->add_item(what->get_item_ptr());
-	model::platform_types_manager::instance().get_type_cache<T>().register_type(what);
+	model::platform_types_manager::instance().create_type<T>(what, dir);
 }
 
-template<class T>
-void add_object_to_configuration(server_directory_ptr dir, rx_reference<T> what)
-{
-	dir->add_item(what->get_item_ptr());
-}
 
 // Class sys_internal::builders::rx_platform_builder 
 
@@ -243,22 +239,22 @@ void root_folder_builder::build (platform_root::smart_ptr root)
 	root->add_sub_directory(rx_create_reference<storage_directory>());
 	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
-	auto sys_dir = rx_create_reference<namespace_directory>(RX_NS_SYS_NAME);
-	sys_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_BIN_NAME));
+	auto sys_dir = rx_create_reference<internal_directory>(RX_NS_SYS_NAME);
+	sys_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BIN_NAME));
 
-	auto classes_dir = rx_create_reference<namespace_directory>(RX_NS_CLASSES_NAME);
-	classes_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_BASE_CLASSES_NAME));
-	classes_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_SYSTEM_CLASSES_NAME));
-	classes_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_PORT_CLASSES_NAME));
+	auto classes_dir = rx_create_reference<internal_directory>(RX_NS_CLASSES_NAME);
+	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BASE_CLASSES_NAME));
+	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_CLASSES_NAME));
+	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_CLASSES_NAME));
 	sys_dir->add_sub_directory(classes_dir);
 
-	auto objects_dir = rx_create_reference<namespace_directory>(RX_NS_OBJ_NAME);
-	objects_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_SYSTEM_OBJ_NAME));
-	objects_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_PORT_OBJ_NAME));
+	auto objects_dir = rx_create_reference<internal_directory>(RX_NS_OBJ_NAME);
+	objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_OBJ_NAME));
+	objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_OBJ_NAME));
 	sys_dir->add_sub_directory(objects_dir);
 
-	auto plugins_dir = rx_create_reference<namespace_directory>(RX_NS_PLUGINS_NAME);
-	plugins_dir->add_sub_directory(rx_create_reference<namespace_directory>(RX_NS_HOST_NAME));
+	auto plugins_dir = rx_create_reference<internal_directory>(RX_NS_PLUGINS_NAME);
+	plugins_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_HOST_NAME));
 
 	sys_dir->add_sub_directory(plugins_dir);
 
@@ -309,8 +305,7 @@ void basic_types_builder::build_basic_object_type(server_directory_ptr dir, rx_r
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
-	dir->add_item(what->get_item_ptr());
-	model::platform_types_manager::instance().get_type_cache<T>().register_type(what);
+	model::platform_types_manager::instance().create_type<T>(what, dir);
 }
 template<class T>
 void basic_types_builder::build_basic_domain_type(server_directory_ptr dir, rx_reference<T> what)
@@ -333,8 +328,7 @@ template<class T>
 void basic_types_builder::build_basic_type(server_directory_ptr dir, rx_reference<T> what)
 {
 	what->complex_data().register_const_value_static("Description", ""s);
-	dir->add_item(what->get_item_ptr());
-	model::platform_types_manager::instance().get_simple_type_cache<T>().register_type(what);
+	model::platform_types_manager::instance().create_simple_type<T>(what, dir);
 }
 // Class sys_internal::builders::system_classes_builder 
 
@@ -419,13 +413,13 @@ void port_classes_builder::build (platform_root::smart_ptr root)
 
 void system_objects_builder::build (platform_root::smart_ptr root)
 {
-	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
-	if (dir)
-	{
-		// system application and domain
-		auto app = model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::application_type>().create_runtime(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, true);
-		add_object_to_configuration(dir, app);
-	}
+	//auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
+	//if (dir)
+	//{
+	//	// system application and domain
+	//	auto app = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::application_type>(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, true);
+	//	//add_object_to_configuration(dir, app);
+	//}
 }
 
 

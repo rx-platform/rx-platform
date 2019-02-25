@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -78,7 +78,7 @@ struct configuration_data_t
 
 
 
-class rx_gate 
+class rx_gate
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;
 
@@ -232,16 +232,38 @@ class rx_gate
 template<typename argT>
 void rx_post_function(std::function<void(argT)> f, argT arg, rx_thread_handle_t whome)
 {
-    typedef jobs::lambda_job<argT> lambda_t;
+    typedef jobs::lambda_job<argT, argT> lambda_t;
 	rx_gate::instance().get_runtime().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
 }
 template<typename argT>
 void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, argT arg, rx_thread_handle_t whome)
 {
-	typedef jobs::lambda_timer_job<argT> lambda_t;
+	typedef jobs::lambda_period_job<argT> lambda_t;
 	rx_gate::instance().get_runtime().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
-
+template<class resultT, class refT, class... Args>
+void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_t where, std::function<void(resultT)> callback, refT ref, Args... args)
+{
+	auto et = rx_gate::instance().get_runtime().get_executer(where);
+	auto ret_thread = rx_thread_context();
+	et->append(
+		rx_create_reference<jobs::lambda_job<decltype(ret_thread), refT> >(
+			[=](decltype(ret_thread) dummy)
+			{
+				resultT ret = what(args...);
+				auto jt = rx_gate::instance().get_runtime().get_executer(dummy);
+				jt->append(
+					rx_create_reference<jobs::lambda_job<resultT, refT> >(
+						[=](resultT&& ret_val)
+						{
+							callback(std::move(ret_val));
+						},
+						std::move(ret), ref)
+				);
+			},
+			ret_thread, ref)
+	);
+}
 runtime::rx_domain_ptr rx_system_domain();
 runtime::rx_application_ptr rx_system_application();
 

@@ -32,7 +32,7 @@
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 #include "rx_def_blocks.h"
 
 

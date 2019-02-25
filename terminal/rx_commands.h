@@ -62,7 +62,7 @@ class server_command : public rx_platform::prog::server_command_base
   public:
       server_command (const string_type& console_name);
 
-      virtual ~server_command();
+      ~server_command();
 
 
       namespace_item_attributes get_attributes () const;
@@ -74,9 +74,7 @@ class server_command : public rx_platform::prog::server_command_base
 
   protected:
 
-      void virtual_bind ();
-
-      void virtual_release ();
+      void dump_error_result (std::ostream& err, rx_result result) const;
 
 
   private:
@@ -101,7 +99,7 @@ bin folder in file hierarcyh\
   public:
       server_command_manager();
 
-      virtual ~server_command_manager();
+      ~server_command_manager();
 
 
       void register_command (server_command_base_ptr cmd);
@@ -149,7 +147,7 @@ acctualiy first command class good for testing.)");
   public:
       echo_server_command();
 
-      virtual ~echo_server_command();
+      ~echo_server_command();
 
 
   protected:

@@ -55,6 +55,8 @@ using namespace rx_platform;
 
 namespace rx_platform {
 
+bool rx_is_valid_namespace_name(const string_type& name);
+
 namespace ns
 {
 class rx_server_directory;
@@ -72,6 +74,7 @@ typedef std::vector<server_directory_ptr> server_directories_type;
 
 
 namespace ns {
+
 
 struct namespace_data_t
 {
@@ -93,7 +96,8 @@ enum namespace_item_attributes
 	namespace_item_internal = 0x40,
 	// combinations
 	namespace_item_full_access = 7,
-	namespace_item_system_access = 0x21
+	namespace_item_system_access = 0x21,
+	namespace_item_internal_access = 0x61
 };
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
@@ -117,7 +121,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       rx_server_directory (const string_type& name);
 
-      virtual ~rx_server_directory();
+      ~rx_server_directory();
 
 
       virtual void get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const;
@@ -156,15 +160,21 @@ class rx_server_directory : public rx::pointers::reference_object
 
       virtual void get_value (const string_type& name, rx_value& value);
 
-      bool add_sub_directory (server_directory_ptr who);
+      rx_result add_sub_directory (server_directory_ptr who);
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
-      bool add_item (platform_item_ptr who);
+      rx_result add_item (platform_item_ptr who);
 
-      bool delete_item (platform_item_ptr who);
+      rx_result delete_item (platform_item_ptr who);
 
-      virtual bool delete_item (const string_type& path);
+      virtual rx_result delete_item (const string_type& path);
+
+      rx_result add_sub_directory (const string_type& path);
+
+      rx_result delete_sub_directory (const string_type& path);
+
+      bool empty () const;
 
 
       const rx_time get_created () const
@@ -174,7 +184,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
 
 	  template<class TImpl>
-	  void add_item(TImpl who);
+	  rx_result add_item(TImpl who);
   protected:
 
   private:
@@ -209,7 +219,7 @@ class rx_platform_item : public rx::pointers::reference_object
   public:
       rx_platform_item();
 
-      virtual ~rx_platform_item();
+      ~rx_platform_item();
 
 
       virtual void code_info_to_string (string_type& info);
@@ -234,11 +244,11 @@ class rx_platform_item : public rx::pointers::reference_object
 
       string_type get_path () const;
 
-      virtual bool generate_json (std::ostream& def, std::ostream& err) const = 0;
+      virtual rx_result generate_json (std::ostream& def, std::ostream& err) const = 0;
 
-      virtual bool serialize (base_meta_writer& stream) const;
+      virtual rx_result serialize (base_meta_writer& stream) const;
 
-      virtual bool deserialize (base_meta_reader& stream);
+      virtual rx_result deserialize (base_meta_reader& stream);
 
       virtual bool is_browsable () const = 0;
 

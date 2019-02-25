@@ -35,9 +35,9 @@
 // rx_values
 #include "lib/rx_values.h"
 
+#include "rx_rt_data.h"
 using namespace rx::values;
-
-
+using namespace rx;
 
 // streaming version
 
@@ -122,6 +122,8 @@ public:
 
       virtual bool write_version (const char* name, uint32_t val) = 0;
 
+      virtual bool write_init_values (const char* name, const rx::data::runtime_values_data& values) = 0;
+
 
       const size_t get_version () const
       {
@@ -203,6 +205,8 @@ class base_meta_reader
       virtual bool read_bytes (const char* name, byte_string& val) = 0;
 
       virtual bool read_version (const char* name, uint32_t& val) = 0;
+
+      virtual bool read_init_values (const char* name, data::runtime_values_data& values) = 0;
 
 
       const uint32_t get_version () const

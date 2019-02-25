@@ -38,6 +38,7 @@
 #include "system/server/rx_server.h"
 #include "system/python/py_support.h"
 #include "system/server/rx_cmds.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace terminal {
@@ -1037,8 +1038,67 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
+// Class terminal::console::console_commands::mkdir_command 
+
+mkdir_command::mkdir_command()
+	: server_command("mkdir")
+{
+}
+
+
+mkdir_command::~mkdir_command()
+{
+}
+
+
+
+bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type path;
+	in >> path;
+
+	auto ret = ctx->get_current_directory()->add_sub_directory(path);
+	if (!ret)
+	{
+		err << "Error adding directory!\r\n";
+		dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
+}
+
+
+// Class terminal::console::console_commands::rmdir_command 
+
+rmdir_command::rmdir_command()
+	: server_command("rmdir")
+{
+}
+
+
+rmdir_command::~rmdir_command()
+{
+}
+
+
+
+bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type path;
+	in >> path;
+
+	auto ret = ctx->get_current_directory()->delete_sub_directory(path);
+	if (!ret)
+	{
+		err << "Error deleting directory!\r\n";
+		dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
+}
+
+
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
-
 

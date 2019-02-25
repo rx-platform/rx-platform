@@ -183,7 +183,7 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove
 }
 
 
-// Parameterized Class rx::jobs::lambda_timer_job 
+// Parameterized Class rx::jobs::lambda_period_job 
 
 
 } // namespace jobs

@@ -41,6 +41,7 @@
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
 
+#define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
 #define RX_DOMAIN_GENERAL 0xffff

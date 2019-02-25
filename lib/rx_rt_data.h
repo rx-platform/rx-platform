@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_rt_data.h
+*  lib\rx_rt_data.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -34,18 +34,11 @@
 // rx_values
 #include "lib/rx_values.h"
 
-#include "lib/rx_ser_lib.h"
 using namespace rx;
+using namespace rx::values;
 
 
-namespace rx_platform {
-
-namespace runtime {
-namespace objects
-{
-	class object_runtime;
-}
-typedef rx_reference<objects::object_runtime> object_runtime_ptr;
+namespace rx {
 
 namespace data {
 
@@ -58,12 +51,7 @@ class runtime_value
 
   public:
 
-      bool serialize (base_meta_writer& stream, const string_type& name) const;
-
-      bool deserialize (base_meta_reader& stream);
-
-
-      rx::values::rx_simple_value value;
+      values::rx_simple_value value;
 
 
   protected:
@@ -85,10 +73,6 @@ class runtime_values_data
 
   public:
 
-      bool serialize (base_meta_writer& stream, const string_type& name) const;
-
-      bool deserialize (base_meta_reader& stream);
-
       void add_value (const string_type& name, const rx_simple_value& value);
 
       runtime_values_data& add_child (const string_type& name);
@@ -100,6 +84,13 @@ class runtime_values_data
 
       children_type children;
 
+	  template<typename T>
+	  void add_value_static(const string_type& name, T&& value)
+	  {
+		  rx_simple_value temp;
+		  temp.assign_static(std::forward<T>(value));
+		  add_value(name, temp);
+	  }
 
   protected:
 
@@ -110,8 +101,7 @@ class runtime_values_data
 
 
 } // namespace data
-} // namespace runtime
-} // namespace rx_platform
+} // namespace rx
 
 
 

@@ -34,7 +34,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 
 
 namespace model {
@@ -99,10 +99,10 @@ command for dumping types data\r\n\
 
   private:
 	  template<typename T>
-	  bool dump_types_to_console(model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+	  bool dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 	  
 	  template<typename T>
-	  bool dump_types_recursive(rx_node_id start, int indent, model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+	  bool dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 };
 
@@ -129,7 +129,6 @@ class delete_command : public terminal::commands::server_command
 	  bool delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
-
 
 };
 

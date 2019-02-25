@@ -60,11 +60,6 @@ namespace basic_types
 
 namespace runtime {
 typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
-namespace objects
-{
-	class object_runtime;
-}
-typedef rx_reference<objects::object_runtime> object_runtime_ptr;
 
 namespace blocks {
 

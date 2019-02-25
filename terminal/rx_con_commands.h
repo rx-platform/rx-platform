@@ -76,7 +76,7 @@ list current directory on console ( dir, ls ");
   public:
       namespace_command (const string_type& console_name);
 
-      virtual ~namespace_command();
+      ~namespace_command();
 
 
       bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, server_directory_ptr& directory);
@@ -104,7 +104,7 @@ class dir_command : public namespace_command
   public:
       dir_command();
 
-      virtual ~dir_command();
+      ~dir_command();
 
 
   protected:
@@ -126,7 +126,7 @@ class ls_command : public namespace_command
   public:
       ls_command();
 
-      virtual ~ls_command();
+      ~ls_command();
 
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
@@ -153,7 +153,7 @@ changes current active directory");
   public:
       cd_command();
 
-      virtual ~cd_command();
+      ~cd_command();
 
 
   protected:
@@ -182,7 +182,7 @@ displays details of software and system information");
   public:
       rx_name_command();
 
-      virtual ~rx_name_command();
+      ~rx_name_command();
 
 
   protected:
@@ -211,7 +211,7 @@ clears the console screen");
   public:
       cls_command();
 
-      virtual ~cls_command();
+      ~cls_command();
 
 
   protected:
@@ -239,7 +239,7 @@ all about shutdown of a server");
   public:
       shutdown_command();
 
-      virtual ~shutdown_command();
+      ~shutdown_command();
 
 
   protected:
@@ -268,7 +268,7 @@ all about doing stuff with log");
   public:
       log_command();
 
-      virtual ~log_command();
+      ~log_command();
 
 
   protected:
@@ -301,7 +301,7 @@ all about doing stuff with security");
   public:
       sec_command();
 
-      virtual ~sec_command();
+      ~sec_command();
 
 
   protected:
@@ -332,7 +332,7 @@ time related stuff ( start time, current time... )");
   public:
       time_command();
 
-      virtual ~time_command();
+      ~time_command();
 
 
   protected:
@@ -365,7 +365,7 @@ sleeps for the amaount of time specified in miliseconds");
   public:
       sleep_command();
 
-      virtual ~sleep_command();
+      ~sleep_command();
 
 
   protected:
@@ -389,7 +389,7 @@ class directory_aware_command : public commands::server_command
   public:
       directory_aware_command (const string_type& console_name);
 
-      virtual ~directory_aware_command();
+      ~directory_aware_command();
 
 
   protected:
@@ -414,7 +414,7 @@ displays details of selected item");
   public:
       info_command();
 
-      virtual ~info_command();
+      ~info_command();
 
 
       bool dump_dir_info (std::ostream& out, server_directory_ptr directory);
@@ -446,7 +446,7 @@ uses fill_server_info function");
   public:
       code_command();
 
-      virtual ~code_command();
+      ~code_command();
 
 
   protected:
@@ -474,7 +474,7 @@ command that dumps specified object into a Json stream and write it on a console
   public:
       def_command();
 
-      virtual ~def_command();
+      ~def_command();
 
 
       bool dump_object_definition (std::ostream& out, std::ostream& err, platform_item_ptr item);
@@ -505,7 +505,7 @@ pyhton command for interfacing python scripting");
   public:
       phyton_command();
 
-      virtual ~phyton_command();
+      ~phyton_command();
 
 
   protected:
@@ -525,16 +525,68 @@ pyhton command for interfacing python scripting");
 
 class license_command : public commands::server_command  
 {
-
 	DECLARE_REFERENCE_PTR(license_command);
-
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 displays license info");
 
   public:
       license_command();
 
-      virtual ~license_command();
+      ~license_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class mkdir_command : public commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(mkdir_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+creates new directory in namespace");
+
+  public:
+      mkdir_command();
+
+      ~mkdir_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rmdir_command : public commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(rmdir_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+removes directory from namespace");
+
+  public:
+      rmdir_command();
+
+      ~rmdir_command();
 
 
   protected:

@@ -29,11 +29,13 @@
 #include "pch.h"
 
 #include "rx_configuration.h"
+#include "system/runtime/rx_objbase.h"
 
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
 
 #include "system/server/rx_server.h"
+#include "system/runtime/rx_blocks.h"
 
 
 namespace interfaces {

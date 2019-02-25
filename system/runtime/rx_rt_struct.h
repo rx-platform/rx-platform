@@ -34,9 +34,10 @@
 // rx_values
 #include "lib/rx_values.h"
 
-#include "rx_rt_data.h"
+#include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
+using namespace rx;
 using namespace rx::values;
 
 
@@ -52,12 +53,17 @@ namespace blocks
 	class filter_runtime;
 	class event_runtime;
 }
+namespace objects
+{
+	class object_runtime;
+}
 typedef rx::pointers::reference<blocks::struct_runtime> struct_runtime_ptr;
 typedef rx::pointers::reference<blocks::variable_runtime> variable_runtime_ptr;
 typedef rx::pointers::reference<blocks::source_runtime> source_runtime_ptr;
 typedef rx::pointers::reference<blocks::mapper_runtime> mapper_runtime_ptr;
 typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
 typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
+typedef rx::pointers::reference<objects::object_runtime> object_runtime_ptr;
 
 namespace structure {
 
@@ -161,7 +167,7 @@ class hosting_object_data
 
       rx_time time;
 
-      object_runtime_ptr object;
+      runtime::object_runtime_ptr object;
 
 
   protected:

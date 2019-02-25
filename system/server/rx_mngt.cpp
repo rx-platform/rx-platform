@@ -39,7 +39,7 @@
 #include "terminal/rx_telnet.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;

@@ -266,6 +266,53 @@ bool file_exist(const std::string& file)
 }
 
 
+//rx_result::rx_result(const rx_result& right)// because of the unique_ptr!
+//{
+//	OutputDebugStringA("****Called move constructor\n");
+//	if(right.result_value_)
+//		result_value_ = std::make_unique<result_erros_t>((*right.result_value_));
+//}
+rx_result::rx_result(bool value)
+{
+	if (!value)
+		result_value_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+}
+rx_result::rx_result(const string_vector& errors)
+	: result_value_(std::make_unique<result_erros_t>(errors))
+{
+}
+rx_result::rx_result(string_vector&& errors)
+	: result_value_ (std::make_unique<result_erros_t>(std::move(errors)))
+{
+}
+rx_result::rx_result(const char* error)
+	: result_value_(std::make_unique<result_erros_t>(string_vector{ error }))
+{
+}
+rx_result::rx_result(const string_type& error)
+	: result_value_(std::make_unique<result_erros_t>(string_vector{ error }))
+{
+}
+rx_result::rx_result(string_type&& error)
+	: result_value_(std::make_unique<result_erros_t>(string_vector{ std::move(error) }))
+{
+}
+void rx_result::register_error(string_type&& error)
+{
+	if (!result_value_)
+		result_value_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
+	else
+		result_value_->emplace_back(std::move(error));
+}
+const rx_result::result_erros_t& rx_result::errors() const
+{
+	return *result_value_;
+}
+rx_result::operator bool() const
+{
+	return !result_value_;
+}
+
 rx_uuid::rx_uuid()
 {
 	memzero(&m_uuid, sizeof(rx_uuid_t));

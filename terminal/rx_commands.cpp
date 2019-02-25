@@ -57,18 +57,6 @@ server_command::~server_command()
 
 
 
-void server_command::virtual_bind ()
-{
-  bind();
-
-}
-
-void server_command::virtual_release ()
-{
-  release();
-
-}
-
 namespace_item_attributes server_command::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
@@ -82,6 +70,12 @@ bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 bool server_command::is_browsable () const
 {
 	return false;
+}
+
+void server_command::dump_error_result (std::ostream& err, rx_result result) const
+{
+	for (const auto& one : result.errors())
+		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 }
 
 
@@ -114,6 +108,8 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::dir_command>());
 	register_command(rx_create_reference<console::console_commands::ls_command>());
 	register_command(rx_create_reference<console::console_commands::cd_command>());
+	register_command(rx_create_reference<console::console_commands::mkdir_command>());
+	register_command(rx_create_reference<console::console_commands::rmdir_command>());
 	register_command(rx_create_reference<console::console_commands::info_command>());
 	register_command(rx_create_reference<console::console_commands::code_command>());
 	register_command(rx_create_reference<console::console_commands::rx_name_command>());

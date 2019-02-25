@@ -231,6 +231,7 @@ std::ostream& console_program_context::get_stderr ()
 
 void console_program_context::send_results (bool result)
 {
+	postpone_done();
 	if (client_)
 		client_->process_event(result, get_out(), get_err(),true);
 }
@@ -292,6 +293,12 @@ bool console_program_context::is_canceled ()
 void console_program_context::postpone_done ()
 {
 	postponed_--;
+}
+
+void console_program_context::set_waiting ()
+{
+	postponed_++;
+	stop_execution();
 }
 
 

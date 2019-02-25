@@ -33,9 +33,9 @@
 // rx_test_runtime
 #include "testing/rx_test_runtime.h"
 
-#include "model/rx_meta.h"
+#include "model/rx_meta_api.h"
 #include "sys_internal/rx_internal_ns.h"
-#include "system/runtime/rx_rt_data.h"
+#include "lib/rx_rt_data.h"
 #include <valarray>
 #include "lib/rx_const_size_vector.h"
 #include "system/server/rx_server.h"

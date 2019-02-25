@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_rt_data.cpp
+*  lib\rx_rt_data.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,59 +30,20 @@
 
 
 // rx_rt_data
-#include "system/runtime/rx_rt_data.h"
+#include "lib/rx_rt_data.h"
 
 #include "rx_configuration.h"
 
 
-namespace rx_platform {
-
-namespace runtime {
+namespace rx {
 
 namespace data {
 
-// Class rx_platform::runtime::data::runtime_value 
+// Class rx::data::runtime_value 
 
 
-bool runtime_value::serialize (base_meta_writer& stream, const string_type& name) const
-{
-	if (!value.serialize_value(stream, name))
-		return false;
-	return true;
-}
+// Class rx::data::runtime_values_data 
 
-bool runtime_value::deserialize (base_meta_reader& stream)
-{
-	return false;
-}
-
-
-// Class rx_platform::runtime::data::runtime_values_data 
-
-
-bool runtime_values_data::serialize (base_meta_writer& stream, const string_type& name) const
-{
-	if (!stream.start_object(name.c_str()))
-		return false;
-	for (const auto& one : children)
-	{
-		if (!one.second.serialize(stream, one.first))
-			return false;
-	}
-	for (const auto& one : values)
-	{
-		if (!one.second.serialize(stream, one.first))
-			return false;
-	}
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool runtime_values_data::deserialize (base_meta_reader& stream)
-{
-	return false;
-}
 
 void runtime_values_data::add_value (const string_type& name, const rx_simple_value& value)
 {
@@ -121,6 +82,35 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 
 
 } // namespace data
-} // namespace runtime
-} // namespace rx_platform
+} // namespace rx
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	if (!value.serialize_value(stream, name))
+		return false;
+	return true;
+
+	return false;
+
+	if (!stream.start_object(name.c_str()))
+		return false;
+	for (const auto& one : children)
+	{
+		if (!one.second.serialize(stream, one.first))
+			return false;
+	}
+	for (const auto& one : values)
+	{
+		if (!one.second.serialize(stream, one.first))
+			return false;
+	}
+	if (!stream.end_object())
+		return false;
+	return true;
+
+	return false;
+
+#endif

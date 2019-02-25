@@ -268,7 +268,7 @@ public:
 	template<typename... Args>
 	explicit reference(Args... args)
 	{
-		this->ptr_ = new ptrT(args...);
+		this->ptr_ = new ptrT(std::forward<Args>(args)...);
 	}
 	explicit reference()
 	{

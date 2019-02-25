@@ -34,6 +34,7 @@
 
 #include "rx_server.h"
 #include "lib/rx_io.h"
+#include "model/rx_meta_api.h"
 
 
 namespace rx_platform {
@@ -199,6 +200,8 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 			return io_pool_->get_pool().unsafe_ptr();
 	case RX_DOMAIN_IO:
 		return io_pool_->get_pool().unsafe_ptr();
+	case RX_DOMAIN_META:
+		return &model::platform_types_manager::instance().get_worker();
 	default:
 		if(workers_)
 			return workers_->get_executer(domain);

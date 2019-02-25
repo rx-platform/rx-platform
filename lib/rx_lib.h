@@ -72,17 +72,27 @@ bool file_exist(const std::string& path, const std::string& file);
 bool file_exist(const std::string& file);
 void rx_get_full_path(const std::string& base, std::string& path);
 
-class rx_except : public std::exception
+class rx_result
 {
+	typedef std::vector<string_type> result_erros_t;
+	std::unique_ptr<result_erros_t> result_value_;
 public:
-	rx_except(const char* what, uint32_t code) throw() : m_what(what), m_code(code) { }
-	const char *what() const throw() { return m_what.c_str(); }
-	uint32_t code() throw() { return m_code; }
+	rx_result(bool value);
+	rx_result(const string_vector& errors);
+	rx_result(string_vector&& errors);
+	rx_result(const char* error);
+	rx_result(const string_type& error);
+	rx_result(string_type&& error);
+	void register_error(string_type&& error);
+	operator bool() const;
+	const result_erros_t& errors()const;
+	rx_result(const rx_result& right) = delete;// because of the unique_ptr!
 
-private:
-	std::string m_what;
-	uint32_t m_code;
-
+	rx_result() = default;
+	~rx_result() = default;
+	rx_result(rx_result&&) noexcept = default;
+	rx_result& operator=(const rx_result&) = delete;
+	rx_result& operator=(rx_result&&) noexcept = default;
 };
 
 extern const char* g_complie_time;

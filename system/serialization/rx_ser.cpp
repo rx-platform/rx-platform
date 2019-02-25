@@ -683,6 +683,66 @@ bool json_reader::parse_version_string (uint32_t& result, const string_type& ver
 	return false;
 }
 
+bool json_reader::read_init_values (const char* name, data::runtime_values_data& values)
+{
+	if (!start_object(name))
+		return false;
+	// now enumerate objects
+	int index = 0;
+	Json::Value& val = get_current_value(index);
+
+	if (!val.isObject())
+		return false;
+
+	if (!internal_read_init_values(values, val))
+		return false;
+
+
+	if (!end_object())
+		return false;
+	return true;
+}
+
+bool json_reader::internal_read_init_values (data::runtime_values_data& values, Json::Value& val)
+{
+	auto names = val.getMemberNames();
+	for (auto& one : names)
+	{
+		Json::Value& temp = val[one];
+		if (temp.isBool())
+		{
+			values.add_value_static(one, temp.asBool());
+		}
+		else if (temp.isInt())
+		{
+			values.add_value_static(one, temp.asInt());
+		}
+		/*else if (temp.isInt64())
+		{
+			values.add_value_static(one, temp.asInt64());
+		}*/
+		else if (temp.isDouble())
+		{
+			values.add_value_static(one, temp.asDouble());
+		}
+		else if (temp.isString())
+		{
+			values.add_value_static(one, temp.asString());
+		}
+		else if (temp.isObject())
+		{
+			auto& child = values.add_child(one);
+			if (!internal_read_init_values(child, temp))
+				return false;
+		}
+		else
+		{// unknown format
+			return false;
+		}
+	}
+	return true;
+}
+
 
 // Class rx_platform::serialization::json_writer 
 
@@ -1044,6 +1104,25 @@ bool json_writer::get_version_string (string_type& result, uint32_t version)
 	char buff[0x20];
 	sprintf(buff, "%d.%d", major, minor);
 	result = buff;
+	return true;
+}
+
+bool json_writer::write_init_values (const char* name, const data::runtime_values_data& values)
+{
+	if (!start_object(name))
+		return false;
+	for (const auto& one : values.children)
+	{
+		if (!write_init_values(one.first.c_str(), one.second))
+			return false;
+	}
+	for (const auto& one : values.values)
+	{
+		if (!one.second.value.serialize_value(*this, one.first))
+			return false;
+	}
+	if (!end_object())
+		return false;
 	return true;
 }
 

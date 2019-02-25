@@ -34,10 +34,9 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "sys_internal/rx_internal_ns.h"
-#include "model/rx_meta.h"
 #include "system/constructors/rx_construct.h"
 #include "system/runtime/rx_objbase.h"
-#include "system/runtime/rx_rt_data.h"
+#include "lib/rx_rt_data.h"
 using namespace rx_platform::meta::meta_algorithm;
 
 
@@ -78,7 +77,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 
 			if (!stream.start_object("Item"))
 				return false;
-			if (!stream.write_string("Type",struct_type::type_name.c_str()))
+			if (!stream.write_string("Type",basic_types::struct_type::type_name.c_str()))
 				return false;
 			if (!structs_[one.second&index_mask].serialize_definition(stream,type))
 				return false;
@@ -91,7 +90,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 
 			if (!stream.start_object("Item"))
 				return false;
-			if (!stream.write_string("Type", variable_type::type_name.c_str()))
+			if (!stream.write_string("Type", basic_types::variable_type::type_name.c_str()))
 				return false;
 			if (!variables_[one.second&index_mask].serialize_definition(stream, type))
 				return false;

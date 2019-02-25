@@ -32,7 +32,7 @@
 // rx_meta_commands
 #include "model/rx_meta_commands.h"
 
-#include "model/rx_meta.h"
+#include "model/rx_meta_internals.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/meta/rx_obj_types.h"
 
@@ -136,8 +136,8 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		{
 			serialization::json_reader reader;
 			reader.parse_data(definition);
-			runtime::data::runtime_values_data init_data;
-			if (init_data.deserialize(reader))
+			data::runtime_values_data init_data;
+			if (reader.read_init_values("Values", init_data))
 			{
 				object_ptr = platform_types_manager::instance().create_runtime<T>(name, class_name, &init_data, ctx->get_current_directory());
 			}
@@ -158,7 +158,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			return false;
 		}
 	}
-	if (as_command.empty())
+	else if (as_command.empty())
 	{
 		object_ptr = platform_types_manager::instance().create_runtime<T>(name, class_name, nullptr, ctx->get_current_directory());
 	}
@@ -212,20 +212,18 @@ bool dump_types_command::do_console_command (std::istream& in, std::ostream& out
 	in >> item_type;
 	if (item_type == "objects")
 	{
-		return dump_types_to_console(platform_types_manager::instance().get_type_cache<meta::object_types::object_type>(),
-			in, out, err, ctx);
+		return dump_types_to_console(tl::type2type<meta::object_types::object_type>(), in, out, err, ctx);
 	}
 	if (item_type == "ports")
 	{
-		return dump_types_to_console(platform_types_manager::instance().get_type_cache<meta::object_types::port_type>(),
-			in, out, err, ctx);
+		return dump_types_to_console(tl::type2type<meta::object_types::port_type>(), in, out, err, ctx);
 	}
 	return true;
 }
 
 
 template<typename T>
-bool dump_types_command::dump_types_to_console(model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type where_from;
 	in >> where_from;
@@ -238,21 +236,174 @@ bool dump_types_command::dump_types_to_console(model::type_hash<T>& hash, std::i
 	out << RX_CONSOLE_HEADER_LINE << "\r\n";
 	out << "Starting from id " << start.to_string() << "\r\n";
 
-	dump_types_recursive(start, 0, hash, in, out, err, ctx);
+	dump_types_recursive(tl::type2type<T>(), start, 0, in, out, err, ctx);
 
 	return true;
 }
 
 template<typename T>
-bool dump_types_command::dump_types_recursive(rx_node_id start, int indent, model::type_hash<T>& hash, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type indent_str(indent * 4, ' ');
-	auto result = hash.get_derived_types(start);
+	const auto& result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
 	for (auto one : result.details)
 	{
 		out << indent_str << one.name << " [" << one.id.to_string() << "]\r\n";
-		dump_types_recursive(one.id, indent + 1, hash, in, out, err, ctx);
+		dump_types_recursive(tl::type2type<T>(), one.id, indent + 1, in, out, err, ctx);
 	}
+	return true;
+}
+struct delete_data_t : public pointers::struct_reference
+{
+	uint64_t started;
+};
+// Class model::meta_commands::delete_command 
+
+delete_command::delete_command (const string_type& console_name)
+	: server_command(console_name)
+{
+}
+
+
+
+bool delete_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	rx_reference<delete_data_t> data = ctx->get_instruction_data<delete_data_t>();
+	if (!data)
+	{// we just entered to command
+		bool ret = false;
+		if (!in.eof())
+		{
+			string_type what;
+			in >> what;
+			if (!what.empty())
+			{
+				if (what == "object")
+				{
+					ret = delete_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "object_type")
+				{
+					ret = delete_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else
+				{
+					err << "Unknown type:" << what << "\r\n";
+				}
+			}
+			else
+				err << "Delete type is unknown!\r\n";
+		}
+		else
+			err << "Delete type is unknown!\r\n";
+
+		if (ret)
+		{			
+			data = rx_create_reference<delete_data_t>();
+			data->started = rx_get_us_ticks();
+			ctx->set_instruction_data(data);
+			ctx->set_waiting();
+		}
+		return ret;
+	}
+	else
+	{// we are returned here
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		if (ctx->is_canceled())
+		{
+			out << "Delete was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Delete lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		return true;
+	}
+}
+
+template<class T>
+bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	in >> name;
+
+	if (name.empty())
+	{
+		err << "Error deleting "
+			<< T::type_name << ", name of object is empty";
+		return false;
+	}
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::RTypePtr object_ptr;
+	
+	platform_types_manager::instance().delete_runtime<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+		[ctx, name, this](rx_result&& result)
+		{
+			if (!result)
+			{
+				auto& err = ctx->get_stderr();
+				err << "Error deleting "
+					<< T::type_name << ":\r\n";
+				this->dump_error_result(err, std::move(result));
+			}
+			else
+			{
+				ctx->get_stdout() << "Deleted object "
+					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+					<< ".\r\n";
+			}
+			ctx->send_results(result);
+		}
+		, ctx->get_client()
+	);
+	ctx->set_waiting();
+	return true;
+}
+
+template<class T>
+bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	in >> name;
+
+	if (name.empty())
+	{
+		err << "Error deleting "
+			<< T::type_name << " type, name of type is empty";
+		return false;
+	}
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::RTypePtr object_ptr;
+
+	platform_types_manager::instance().delete_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+		[ctx, name, this](rx_result result)
+		{
+			if (!result)
+			{
+				auto& err = ctx->get_stderr();
+				err << "Error deleting "
+					<< T::type_name << " type:\r\n";
+				this->dump_error_result(err, std::move(result));
+			}
+			else
+			{
+				ctx->get_stdout() << "Deleted type "
+					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+					<< ".\r\n";
+			}
+			ctx->send_results(result);
+		}
+		, ctx->get_client()
+	);
+	ctx->set_waiting();
 	return true;
 }
 // Class model::meta_commands::rm_command 
@@ -272,79 +423,6 @@ del_command::del_command()
 }
 
 
-
-// Class model::meta_commands::delete_command 
-
-delete_command::delete_command (const string_type& console_name)
-	: server_command(console_name)
-{
-}
-
-
-
-bool delete_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
-{
-	if (!in.eof())
-	{
-		string_type what;
-		in >> what;
-		if (!what.empty())
-		{
-			if (what == "object")
-			{
-				return delete_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
-			}
-			if (what == "type")
-			{
-				return delete_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
-			}
-			else
-			{
-				err << "Unknown type:" << what << "\r\n";
-			}
-		}
-		else
-			err << "Delete type is unknown!\r\n";
-	}
-	else
-		err << "Delete type is unknown!\r\n";
-	return false;
-}
-
-template<class T>
-bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
-{
-	string_type name;
-	in >> name;
-
-	if (name.empty())
-	{
-		err << "Error deleting "
-			<< T::type_name << ", name of object is empty";
-		return false;
-	}
-
-	// these are type definition and stream for creation
-	typename T::smart_ptr type_definition;
-	typename T::RTypePtr object_ptr;
-
-	if (!platform_types_manager::instance().delete_runtime<T>(name, ctx->get_current_directory()))
-	{
-		err << "Error deleting "
-			<< T::type_name	<< "!";
-		return false;
-	}
-	return true;
-}
-
-template<class T>
-bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
-{
-	string_type def;
-	std::getline(in, def, '\0');
-	out << "Hello from delete type!!!\r\n";
-	return true;
-}
 
 } // namespace meta_commands
 } // namespace model

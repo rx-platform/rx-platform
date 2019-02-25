@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  model\rx_meta.cpp
+*  model\rx_meta_internals.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -29,8 +29,8 @@
 #include "pch.h"
 
 
-// rx_meta
-#include "model/rx_meta.h"
+// rx_meta_internals
+#include "model/rx_meta_internals.h"
 
 using namespace rx;
 
@@ -392,6 +392,4 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 
 
 } // namespace model
-
-
 

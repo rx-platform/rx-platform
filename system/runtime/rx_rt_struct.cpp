@@ -129,18 +129,31 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		{
 		case rt_const_index_type:
 		{// const value
-			auto val = data.get_value(one.name);
-			const_values[one.index >> rt_type_shift].set_value(std::move(val), ctx);
+			auto it = data.values.find(one.name);
+			if (it != data.values.end())
+			{
+				const_values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx);
+			}
 		}
 		break;
 		case rt_value_index_type:
 		{// value
-			auto val = data.get_value(one.name);
-			values[one.index >> rt_type_shift].set_value(std::move(val), ctx);
+			auto it = data.values.find(one.name);
+			if (it != data.values.end())
+			{
+				values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx);
+			}
 		}
 		break;
 		case rt_variable_index_type:
 		{// variable
+			// check for simple value first
+			auto it_vals = data.values.find(one.name);
+			if (it_vals != data.values.end())
+			{
+				variables.collection[one.index >> rt_type_shift].set_value(rx_simple_value(it_vals->second.value), ctx);
+			}
+			// now check for complex values
 			auto it = data.children.find(one.name);
 			if (it != data.children.end())
 			{
@@ -194,7 +207,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		}
 		break;
 		default:
-			RX_ASSERT(false);// shouldn't happend
+			RX_ASSERT(false);// shouldn't happened
 		}
 	}
 }
@@ -449,7 +462,11 @@ void variable_data::collect_data (data::runtime_values_data& data) const
 
 void variable_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
 {
-	value = rx_value::from_simple(data.get_value(RX_DEFAULT_VARIABLE_NAME), ctx.now);
+	auto it = data.values.find(RX_DEFAULT_VARIABLE_NAME);
+	if (it != data.values.end())
+	{
+		value = rx_value::from_simple(it->second.value, ctx.now);
+	}
 	item->fill_data(data, ctx);
 }
 

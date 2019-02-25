@@ -182,7 +182,7 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 
 	item_->collect_data(temp_data);
 
-	if (!temp_data.serialize(stream, "Values"))
+	if (!stream.write_init_values("Values", temp_data))
 		return false;
 
 	auto test_val = temp_data.get_value("variableName.variableVal");

@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,6 +40,22 @@
 
 namespace rx_platform {
 
+bool rx_is_valid_namespace_name(const string_type& name)
+{
+	if (name.empty())
+		return false;
+	for (const auto& one : name)
+	{
+		if (!((one >= 'a' && one <= 'z')
+			|| (one >= 'A' && one <= 'Z')
+			|| (one >= '0' && one <= '9')
+			|| one == '_'))
+			return false;
+	}
+	return true;
+}
+
+
 namespace ns {
 /*
 namespace_item_read_access = 1,
@@ -48,9 +64,10 @@ namespace_item_delete_access = 4,
 namespace_item_execute = 8,
 namespace_item_system = 0x10
 */
+
 void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 {
-	str.assign(6, '-');
+	str.assign(7, '-');
 	str[4] = ' ';
 	if (attr&namespace_item_read_access)
 		str[0] = 'r';
@@ -58,13 +75,15 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 		str[1] = 'w';
 	if (attr&namespace_item_delete_access)
 		str[2] = 'd';
+	if (attr&namespace_item_pull_access)
+		str[3] = 'p';
 	if (attr&namespace_item_execute_access)
-		str[3] = 'x';
+		str[4] = 'x';
 	//////////////////////////
 	if (attr&namespace_item_system)
-		str[5] = 's';
+		str[6] = 's';
 	if (attr&namespace_item_internal)
-		str[5] = 'i';
+		str[6] = 'i';
 }
 
 void fill_quality_string(values::rx_value val, string_type& str)
@@ -87,7 +106,7 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class rx_platform::ns::rx_platform_item 
+// Class rx_platform::ns::rx_platform_item
 
 rx_platform_item::rx_platform_item()
 {
@@ -146,7 +165,7 @@ string_type rx_platform_item::get_path () const
 	return ret + get_name();
 }
 
-bool rx_platform_item::serialize (base_meta_writer& stream) const
+rx_result rx_platform_item::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("Name", get_name().c_str()))
 		return false;
@@ -154,7 +173,7 @@ bool rx_platform_item::serialize (base_meta_writer& stream) const
 	return true;
 }
 
-bool rx_platform_item::deserialize (base_meta_reader& stream)
+rx_result rx_platform_item::deserialize (base_meta_reader& stream)
 {
 	string_type temp;
 
@@ -165,7 +184,7 @@ bool rx_platform_item::deserialize (base_meta_reader& stream)
 }
 
 
-// Class rx_platform::ns::rx_server_directory 
+// Class rx_platform::ns::rx_server_directory
 
 rx_server_directory::rx_server_directory()
       : created_(rx_time::now())
@@ -296,11 +315,11 @@ void rx_server_directory::fill_path (string_type& path) const
 		parent_->fill_path(path);
 	}
 	if (name_.empty())
-		path = '/';
+		path = RX_DIR_DELIMETER;
 	else
 	{
 		if (path != "/")
-			path += '/';
+			path += RX_DIR_DELIMETER;
 		path += name_;
 	}
 	structure_unlock();
@@ -387,43 +406,64 @@ void rx_server_directory::get_value (const string_type& name, rx_value& value)
 {
 }
 
-bool rx_server_directory::add_sub_directory (server_directory_ptr who)
+rx_result rx_server_directory::add_sub_directory (server_directory_ptr who)
 {
+	rx_result ret;
 	structure_lock();
-	sub_directories_.emplace(who->name_, who);
-	who->structure_lock();
-	who->parent_ = smart_this();
-	who->structure_unlock();
-	structure_unlock();
-	return false;
-}
-
-bool rx_server_directory::add_item (platform_item_ptr who)
-{
-	structure_lock();
-	auto ret = sub_items_.emplace(who->get_name(), who);
-	who->set_parent(smart_this());
-	structure_unlock();
-	return ret.second;
-}
-
-bool rx_server_directory::delete_item (platform_item_ptr who)
-{
-	bool ret = false;
-	structure_lock();
-	auto it = sub_items_.find(who->get_name());
-	if (it != sub_items_.end())
+	auto it = sub_directories_.find(who->name_);
+	if (it == sub_directories_.end())
 	{
-		sub_items_.erase(it);
-		ret = true;
+		sub_directories_.emplace(who->name_, who);
+		who->structure_lock();
+		who->parent_ = smart_this();
+		who->structure_unlock();
+	}
+	else
+	{
+		ret.register_error("Directory " + who->name_ + " already exists");
 	}
 	structure_unlock();
 	return ret;
 }
 
-bool rx_server_directory::delete_item (const string_type& path)
+rx_result rx_server_directory::add_item (platform_item_ptr who)
 {
-	bool ret = false;
+	auto name = who->get_name();
+	rx_result ret;
+	structure_lock();
+	auto it = sub_items_.find(name);
+	if (it == sub_items_.end())
+	{
+		sub_items_.emplace(name, who);
+		who->set_parent(smart_this());
+	}
+	else
+	{
+		ret.register_error("Item " + name + " already exists");
+	}
+	structure_unlock();
+	return ret;
+}
+
+rx_result rx_server_directory::delete_item (platform_item_ptr who)
+{
+	rx_result ret;
+	structure_lock();
+	auto it = sub_items_.find(who->get_name());
+	if (it != sub_items_.end())
+	{
+		sub_items_.erase(it);
+	}
+	else
+	{
+		ret.register_error("Item does not exists!");
+	}
+	structure_unlock();
+	return ret;
+}
+
+rx_result rx_server_directory::delete_item (const string_type& path)
+{
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
 	{// plain item
@@ -448,12 +488,81 @@ bool rx_server_directory::delete_item (const string_type& path)
 	return false;
 }
 
-template<class TImpl>
-void rx_server_directory::add_item(TImpl who)
+rx_result rx_server_directory::add_sub_directory (const string_type& path)
 {
-	add_item(sys_internal::internal_ns::rx_item_implementation<TImpl>());
+	if (path.empty())
+		return "Invalid directory name!";
+	auto idx = path.rfind(RX_DIR_DELIMETER);
+	if (idx != string_type::npos)
+	{// plain name just
+		string_type name(path.substr(idx + 1));
+		auto where = get_sub_directory(path.substr(0, idx));
+		if (!where)
+			return "Directory not found!";
+		else
+			return where->add_sub_directory(name);
+	}
+	if (path.empty() || !rx_is_valid_namespace_name(path))
+	{
+		return "Invalid directory name!";
+	}
+	auto new_dir = rx_create_reference<sys_internal::internal_ns::user_directory>(path);
+	return add_sub_directory(new_dir);
 }
-// Class rx_platform::ns::rx_names_cache 
+
+rx_result rx_server_directory::delete_sub_directory (const string_type& path)
+{
+	if (path.empty())
+		return "Invalid directory name!";
+	auto idx = path.rfind(RX_DIR_DELIMETER);
+	if (idx != string_type::npos)
+	{// plain name just
+		string_type name(path.substr(idx + 1));
+		auto where = get_sub_directory(path.substr(0, idx));
+		if (!where)
+			return "Directory not found!";
+		else
+			return where->delete_sub_directory(name);
+	}
+	rx_result ret;
+	structure_lock();
+	auto it = sub_directories_.find(path);
+	if (it != sub_directories_.end())
+	{
+
+		if ((it->second->get_attributes()&namespace_item_delete_access) == namespace_item_delete_access)
+		{
+			if (!it->second->empty())
+				ret.register_error("Directory not empty!");
+			else
+				sub_directories_.erase(it);
+		}
+		else
+			ret.register_error(RX_ACCESS_DENIED);
+	}
+	else
+	{
+		ret.register_error("Directory does not exists!");
+	}
+	structure_unlock();
+	return ret;
+}
+
+bool rx_server_directory::empty () const
+{
+	bool ret;
+	structure_lock();
+	ret = sub_directories_.empty() && sub_items_.empty();
+	structure_unlock();
+	return ret;
+}
+
+template<class TImpl>
+rx_result rx_server_directory::add_item(TImpl who)
+{
+	return add_item(sys_internal::internal_ns::rx_item_implementation<TImpl>());
+}
+// Class rx_platform::ns::rx_names_cache
 
 rx_names_cache::rx_names_cache()
 {

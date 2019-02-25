@@ -85,6 +85,8 @@ public:
 
       std::ostream& get_stderr ();
 
+      void send_results (bool result);
+
       bool is_postponed () const;
 
       bool postpone (uint32_t interval);
@@ -94,6 +96,8 @@ public:
       bool is_canceled ();
 
       void postpone_done ();
+
+      void set_waiting ();
 
 
       rx_reference<console_client> get_client ()
@@ -168,8 +172,6 @@ public:
 		  }
 	  }
   protected:
-
-      void send_results (bool result);
 
       size_t get_possition () const;
 

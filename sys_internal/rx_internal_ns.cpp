@@ -56,27 +56,27 @@ platform_root::~platform_root()
 
 namespace_item_attributes platform_root::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+	return namespace_item_internal_access;
 }
 
 
-// Class sys_internal::internal_ns::namespace_directory 
+// Class sys_internal::internal_ns::user_directory 
 
-namespace_directory::namespace_directory (const string_type& name)
+user_directory::user_directory (const string_type& name)
 	: rx_server_directory(name)
 {
 }
 
 
-namespace_directory::~namespace_directory()
+user_directory::~user_directory()
 {
 }
 
 
 
-namespace_item_attributes namespace_directory::get_attributes () const
+namespace_item_attributes user_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system | namespace_item_delete_access);
 }
 
 
@@ -96,7 +96,7 @@ unassigned_directory::~unassigned_directory()
 
 namespace_item_attributes unassigned_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+	return namespace_item_internal_access;
 }
 
 
@@ -116,75 +116,7 @@ world_directory::~world_directory()
 
 namespace_item_attributes world_directory::get_attributes () const
 {
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
-}
-
-
-// Parameterized Class sys_internal::internal_ns::runtime_simple_platform_item 
-
-template <class T, int class_name_idx>
-runtime_simple_platform_item<T,class_name_idx>::runtime_simple_platform_item()
-{
-}
-
-template <class T, int class_name_idx>
-runtime_simple_platform_item<T,class_name_idx>::runtime_simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name)
-{
-}
-
-
-template <class T, int class_name_idx>
-runtime_simple_platform_item<T,class_name_idx>::~runtime_simple_platform_item()
-{
-}
-
-
-
-template <class T, int class_name_idx>
-void runtime_simple_platform_item<T,class_name_idx>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-template <class T, int class_name_idx>
-string_type runtime_simple_platform_item<T,class_name_idx>::get_type_name ()
-{
-  return "simple";
-}
-
-template <class T, int class_name_idx>
-values::rx_value runtime_simple_platform_item<T,class_name_idx>::get_value ()
-{
-  return values::rx_value {};
-}
-
-template <class T, int class_name_idx>
-namespace_item_attributes runtime_simple_platform_item<T,class_name_idx>::get_attributes ()
-{
-  return 0;
-}
-
-template <class T, int class_name_idx>
-bool runtime_simple_platform_item<T,class_name_idx>::generate_json (std::ostream& def, std::ostream& err)
-{
-  return false;
-}
-
-template <class T, int class_name_idx>
-bool runtime_simple_platform_item<T,class_name_idx>::is_browsable ()
-{
-  return false;
-}
-
-template <class T, int class_name_idx>
-size_t runtime_simple_platform_item<T,class_name_idx>::get_size () const
-{
-  return 0;
-}
-
-template <class T, int class_name_idx>
-rx_node_id runtime_simple_platform_item<T,class_name_idx>::get_node_id () const
-{
-	return rx_node_id::null_id;
+	return namespace_item_internal_access;
 }
 
 
@@ -214,6 +146,26 @@ void storage_directory::get_content (server_directories_type& sub_directories, s
 }
 
 
+// Class sys_internal::internal_ns::internal_directory 
+
+internal_directory::internal_directory (const string_type& name)
+	: rx_server_directory(name)
+{
+}
+
+
+internal_directory::~internal_directory()
+{
+}
+
+
+
+namespace_item_attributes internal_directory::get_attributes () const
+{
+	return namespace_item_internal_access;
+}
+
+
 } // namespace internal_ns
 } // namespace sys_internal
 
@@ -236,4 +188,3 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::vari
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_type_ptr>;
-

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  terminal\rx_terminal_style.h
+*  model\rx_meta_api.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,35 +26,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_terminal_style_h
-#define rx_terminal_style_h 1
+#ifndef rx_meta_api_h
+#define rx_meta_api_h 1
 
 
 
 
-
-
-#define ANSI_COLOR_BOLD	   "\x1b[1m"
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
-
-#define ANSI_CLS "\x1b[2J"
-#define ANSI_CUR_HOME "\033[0;0H"
-
-
-#define ANSI_RX_PULL_COLOR ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
-#define ANSI_RX_EXECUTE_COLOR ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-
-#define ANSI_RX_OBJECT_COLOR ANSI_RX_PULL_COLOR
-
-
-#define ANSI_RX_ERROR_LIST ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
-
+#include "rx_meta_internals.h"
 
 
 

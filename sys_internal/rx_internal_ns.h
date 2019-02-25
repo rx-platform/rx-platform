@@ -31,12 +31,12 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -66,7 +66,7 @@ contains root server folders\
   public:
       platform_root();
 
-      virtual ~platform_root();
+      ~platform_root();
 
 
       namespace_item_attributes get_attributes () const;
@@ -84,20 +84,18 @@ contains root server folders\
 
 
 
-class namespace_directory : public rx_platform::ns::rx_server_directory  
+class user_directory : public rx_platform::ns::rx_server_directory  
 {
-	DECLARE_REFERENCE_PTR(namespace_directory);
-
-
+	DECLARE_REFERENCE_PTR(user_directory);
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 server directory:\r\n\
-used to create system defined folders...\
+used to create user defined folders...\
 ");
 
   public:
-      namespace_directory (const string_type& name);
+      user_directory (const string_type& name);
 
-      virtual ~namespace_directory();
+      ~user_directory();
 
 
       namespace_item_attributes get_attributes () const;
@@ -118,8 +116,6 @@ used to create system defined folders...\
 class unassigned_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(unassigned_directory);
-
-
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 storing unassigned domains and applications\r\n\
 All objects here are with unassigned state and hawing a bad quality\
@@ -128,7 +124,7 @@ All objects here are with unassigned state and hawing a bad quality\
   public:
       unassigned_directory();
 
-      virtual ~unassigned_directory();
+      ~unassigned_directory();
 
 
       namespace_item_attributes get_attributes () const;
@@ -149,8 +145,6 @@ All objects here are with unassigned state and hawing a bad quality\
 class world_directory : public rx_platform::ns::rx_server_directory  
 {
 	DECLARE_REFERENCE_PTR(world_directory);
-
-
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 user directory:\r\n\
 used to create user defined folders...\
@@ -159,52 +153,10 @@ used to create user defined folders...\
   public:
       world_directory();
 
-      virtual ~world_directory();
+      ~world_directory();
 
 
       namespace_item_attributes get_attributes () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-template <class T, int class_name_idx>
-class runtime_simple_platform_item : public rx_platform::ns::rx_platform_item  
-{
-	DECLARE_REFERENCE_PTR(runtime_simple_platform_item);
-
-  public:
-      runtime_simple_platform_item();
-
-      runtime_simple_platform_item (const string_type& name, const rx_value& value, namespace_item_attributes attributes, const string_type& type_name);
-
-      virtual ~runtime_simple_platform_item();
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      string_type get_type_name ();
-
-      values::rx_value get_value ();
-
-      namespace_item_attributes get_attributes ();
-
-      bool generate_json (std::ostream& def, std::ostream& err);
-
-      bool is_browsable ();
-
-      size_t get_size () const;
-
-      rx_node_id get_node_id () const;
 
 
   protected:
@@ -236,7 +188,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       namespace_item_attributes get_attributes () const;
 
-      bool generate_json (std::ostream& def, std::ostream& err) const;
+      rx_result generate_json (std::ostream& def, std::ostream& err) const;
 
       bool is_browsable () const;
 
@@ -276,7 +228,7 @@ used to interface storage objects...\
   public:
       storage_directory();
 
-      virtual ~storage_directory();
+      ~storage_directory();
 
 
       namespace_item_attributes get_attributes () const;
@@ -312,7 +264,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       namespace_item_attributes get_attributes () const;
 
-      bool generate_json (std::ostream& def, std::ostream& err) const;
+      rx_result generate_json (std::ostream& def, std::ostream& err) const;
 
       bool is_browsable () const;
 
@@ -333,6 +285,35 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
 
       TImpl impl_;
+
+
+};
+
+
+
+
+
+
+class internal_directory : public rx_platform::ns::rx_server_directory  
+{
+	DECLARE_REFERENCE_PTR(internal_directory);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+server directory:\r\n\
+used to create system defined folders...\
+");
+
+  public:
+      internal_directory (const string_type& name);
+
+      ~internal_directory();
+
+
+      namespace_item_attributes get_attributes () const;
+
+
+  protected:
+
+  private:
 
 
 };
@@ -372,7 +353,7 @@ namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
 }
 
 template <class TImpl>
-bool rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writer writer;
 
@@ -458,7 +439,7 @@ namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () 
 }
 
 template <class TImpl>
-bool rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
+rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writer writer;
 
