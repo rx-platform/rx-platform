@@ -34,7 +34,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 
 
 namespace model {
@@ -50,14 +50,14 @@ class create_command : public terminal::commands::server_command
 {
 	DECLARE_REFERENCE_PTR(create_command);
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-command for creating various objects in platform\r\n\
+command for creating various objects and types in platform\r\n\
 \
 ");
 
   public:
       create_command();
 
-      virtual ~create_command();
+      ~create_command();
 
 
   protected:
@@ -89,7 +89,7 @@ command for dumping types data\r\n\
   public:
       dump_types_command();
 
-      virtual ~dump_types_command();
+      ~dump_types_command();
 
 
   protected:
@@ -114,6 +114,10 @@ command for dumping types data\r\n\
 class delete_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(delete_command);
+	struct delete_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
 
   public:
       delete_command (const string_type& console_name);
@@ -176,6 +180,43 @@ command for deleting objects and types\r\n\
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class check_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(check_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for checking various types in platform\r\n\
+\
+");
+	struct check_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
+
+  public:
+      check_command();
+
+      ~check_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+	  template<class T>
+	  bool check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
+	  bool check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 
 };

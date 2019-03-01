@@ -39,7 +39,7 @@
 #include "terminal/rx_telnet.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -111,7 +111,7 @@ uint32_t server_manager::stop ()
 	{
 		//TODOIO
 		//telnet_listener_->stop();
-		telnet_listener_ = runtime::rx_port_ptr::null_ptr;
+		telnet_listener_ = rx_port_ptr::null_ptr;
 	}
 	return RX_OK;
 }

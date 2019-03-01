@@ -95,11 +95,11 @@ class object_data_type
       object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
 
-      bool serialize_object_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_object_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_object_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
-      void construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
+      rx_result construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -137,23 +137,23 @@ class application_type : public rx::pointers::reference_object
 implementation of application type");
 public:
 	typedef runtime::objects::application_runtime RType;
-	typedef runtime::rx_application_ptr RTypePtr;
+	typedef runtime::objects::application_runtime::smart_ptr RTypePtr;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
   public:
       application_type (const object_type_creation_data& data);
 
-      virtual ~application_type();
+      ~application_type();
 
 
-      void construct (runtime::rx_application_ptr& what, construct_context& ctx) const;
+      rx_result construct (rx_application_ptr& what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
@@ -161,7 +161,7 @@ public:
 
       def_blocks::mapped_data_type& mapping_data ();
 
-      bool check_type (type_check_context& ctx);
+      rx_result check_type (type_check_context& ctx);
 
 
       const object_data_type& object_data () const;
@@ -221,16 +221,16 @@ public:
   public:
       domain_type (const object_type_creation_data& data);
 
-      virtual ~domain_type();
+      ~domain_type();
 
 
-      void construct (runtime::rx_domain_ptr what, construct_context& ctx) const;
+      rx_result construct (rx_domain_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
@@ -298,18 +298,18 @@ public:
   public:
       object_type (const object_type_creation_data& data);
 
-      virtual ~object_type();
+      ~object_type();
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      void construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
+      rx_result construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
@@ -379,16 +379,16 @@ public:
   public:
       port_type (const object_type_creation_data& data);
 
-      virtual ~port_type();
+      ~port_type();
 
 
-      void construct (runtime::rx_port_ptr what, construct_context& ctx) const;
+      rx_result construct (rx_port_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 

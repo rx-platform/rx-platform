@@ -37,9 +37,8 @@
 #include "system/server/rx_inf.h"
 #include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 #include "rx_configuration.h"
-#include "model/rx_meta_api.h"
 using namespace rx_platform::meta::object_types;
 
 

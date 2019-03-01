@@ -75,9 +75,9 @@ application_type::~application_type()
 
 
 
-void application_type::construct (runtime::rx_application_ptr& what, construct_context& ctx) const
+rx_result application_type::construct (rx_application_ptr& what, construct_context& ctx) const
 {
-	object_types_algorithm<application_type>::construct_object(*this, what, ctx);
+	return object_types_algorithm<application_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr application_type::get_item_ptr ()
@@ -86,12 +86,12 @@ platform_item_ptr application_type::get_item_ptr ()
 
 }
 
-bool application_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result application_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return object_types_algorithm<application_type>::serialize_object_type(*this, stream, type);
 }
 
-bool application_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result application_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return object_types_algorithm<application_type>::deserialize_object_type(*this, stream, type);
 }
@@ -114,7 +114,7 @@ def_blocks::mapped_data_type& application_type::mapping_data ()
 
 }
 
-bool application_type::check_type (type_check_context& ctx)
+rx_result application_type::check_type (type_check_context& ctx)
 {
 	return object_types_algorithm<application_type>::check_object_type(*this, ctx);
 }
@@ -161,9 +161,9 @@ domain_type::~domain_type()
 
 
 
-void domain_type::construct (runtime::rx_domain_ptr what, construct_context& ctx) const
+rx_result domain_type::construct (rx_domain_ptr what, construct_context& ctx) const
 {
-	object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
+	return object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr domain_type::get_item_ptr ()
@@ -172,12 +172,12 @@ platform_item_ptr domain_type::get_item_ptr ()
 
 }
 
-bool domain_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result domain_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return object_types_algorithm<domain_type>::serialize_object_type(*this, stream, type);
 }
 
-bool domain_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result domain_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return object_types_algorithm<domain_type>::deserialize_object_type(*this, stream, type);
 }
@@ -251,9 +251,9 @@ void object_type::get_class_info (string_type& class_name, string_type& console,
 {
 }
 
-void object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
+rx_result object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
-	object_types_algorithm<object_type>::construct_object(*this, what, ctx);
+	return object_types_algorithm<object_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr object_type::get_item_ptr ()
@@ -262,12 +262,12 @@ platform_item_ptr object_type::get_item_ptr ()
 
 }
 
-bool object_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result object_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return object_types_algorithm<object_type>::serialize_object_type(*this, stream, type);
 }
 
-bool object_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result object_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return object_types_algorithm<object_type>::deserialize_object_type(*this, stream, type);
 }
@@ -334,22 +334,23 @@ object_data_type::object_data_type (const string_type& name, const rx_node_id& i
 
 
 
-bool object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
+rx_result object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!stream.write_bool("Constructible", constructible_))
 		return false;
 	return true;
 }
 
-bool object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
+rx_result object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.read_bool("Constructible", constructible_))
 		return false;
 	return true;
 }
 
-void object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
+rx_result object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
+	return true;
 }
 
 bool object_data_type::check_type (type_check_context& ctx)
@@ -378,9 +379,9 @@ port_type::~port_type()
 
 
 
-void port_type::construct (runtime::rx_port_ptr what, construct_context& ctx) const
+rx_result port_type::construct (rx_port_ptr what, construct_context& ctx) const
 {
-	object_types_algorithm<port_type>::construct_object(*this, what, ctx);
+	return object_types_algorithm<port_type>::construct_object(*this, what, ctx);
 }
 
 platform_item_ptr port_type::get_item_ptr ()
@@ -389,12 +390,12 @@ platform_item_ptr port_type::get_item_ptr ()
 
 }
 
-bool port_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result port_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return object_types_algorithm<port_type>::serialize_object_type(*this, stream, type);
 }
 
-bool port_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result port_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return object_types_algorithm<port_type>::deserialize_object_type(*this, stream, type);
 }

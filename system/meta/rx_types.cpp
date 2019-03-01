@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace_item_attributes create_attributes_for_basic_types_from_flags(bool syst
 	}
 }
 
-// Class rx_platform::meta::basic_types::event_type
+// Class rx_platform::meta::basic_types::event_type 
 
 string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
 
@@ -76,12 +76,12 @@ platform_item_ptr event_type::get_item_ptr ()
 
 }
 
-bool event_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result event_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<event_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool event_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result event_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<event_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -98,7 +98,7 @@ def_blocks::complex_data_type& event_type::complex_data ()
 
 }
 
-void event_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result event_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<event_type>::construct_basic_type(*this, ctx);
 }
@@ -120,7 +120,7 @@ const checkable_data& event_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::filter_type
+// Class rx_platform::meta::basic_types::filter_type 
 
 string_type filter_type::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
 
@@ -141,12 +141,12 @@ platform_item_ptr filter_type::get_item_ptr ()
 
 }
 
-bool filter_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result filter_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<filter_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool filter_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result filter_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<filter_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -163,7 +163,7 @@ def_blocks::complex_data_type& filter_type::complex_data ()
 
 }
 
-void filter_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result filter_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<filter_type>::construct_basic_type(*this, ctx);
 }
@@ -185,7 +185,7 @@ const checkable_data& filter_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::mapper_type
+// Class rx_platform::meta::basic_types::mapper_type 
 
 string_type mapper_type::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
 
@@ -206,12 +206,12 @@ platform_item_ptr mapper_type::get_item_ptr ()
 
 }
 
-bool mapper_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result mapper_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<mapper_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<mapper_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -228,7 +228,7 @@ def_blocks::complex_data_type& mapper_type::complex_data ()
 
 }
 
-void mapper_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result mapper_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<mapper_type>::construct_basic_type(*this, ctx);
 }
@@ -250,7 +250,7 @@ const def_blocks::complex_data_type& mapper_type::complex_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::source_type
+// Class rx_platform::meta::basic_types::source_type 
 
 string_type source_type::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
 
@@ -271,12 +271,12 @@ platform_item_ptr source_type::get_item_ptr ()
 
 }
 
-bool source_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result source_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<source_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool source_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result source_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<source_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -293,7 +293,7 @@ def_blocks::complex_data_type& source_type::complex_data ()
 
 }
 
-void source_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result source_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<source_type>::construct_basic_type(*this, ctx);
 }
@@ -315,7 +315,7 @@ const checkable_data& source_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::struct_type
+// Class rx_platform::meta::basic_types::struct_type 
 
 string_type struct_type::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
 
@@ -330,7 +330,7 @@ struct_type::struct_type (const type_creation_data& data)
 
 
 
-void struct_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result struct_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<struct_type>::construct_basic_type(*this, ctx);
 }
@@ -341,12 +341,12 @@ platform_item_ptr struct_type::get_item_ptr ()
 
 }
 
-bool struct_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result struct_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<struct_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool struct_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result struct_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<struct_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -391,7 +391,7 @@ const checkable_data& struct_type::meta_data () const
 }
 
 
-// Class rx_platform::meta::basic_types::variable_type
+// Class rx_platform::meta::basic_types::variable_type 
 
 string_type variable_type::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
 
@@ -406,17 +406,17 @@ variable_type::variable_type (const type_creation_data& data)
 
 
 
-void variable_type::construct (RTypePtr& what, construct_context& ctx) const
+rx_result variable_type::construct (RTypePtr& what, construct_context& ctx) const
 {
 	return basic_types_algorithm<variable_type>::construct_basic_type(*this, ctx);
 }
 
-bool variable_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result variable_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return basic_types_algorithm<variable_type>::serialize_basic_type(*this, stream, type);
 }
 
-bool variable_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result variable_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return basic_types_algorithm<variable_type>::deserialize_basic_type(*this, stream, type);
 }
@@ -488,5 +488,4 @@ const def_blocks::complex_data_type& variable_type::complex_data () const
 } // namespace basic_types
 } // namespace meta
 } // namespace rx_platform
-
 

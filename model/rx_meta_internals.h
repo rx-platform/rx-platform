@@ -286,9 +286,9 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const data::runtime_values_data* init_data = nullptr);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const data::runtime_values_data* init_data = nullptr);
 
-      typename type_hash<typeT>::RTypePtr create_runtime (const string_type& name, const rx_node_id& type_id, const data::runtime_values_data* init_data = nullptr);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& type_id, const data::runtime_values_data* init_data = nullptr);
 
       query_result get_derived_types (const rx_node_id& id) const;
 
@@ -352,7 +352,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      typename simple_type_hash<typeT>::RDataType create_simple_runtime (const rx_node_id& type_id) const;
+      rx_result_with<typename simple_type_hash<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id) const;
 
       query_result get_derived_types (const rx_node_id& id) const;
 
@@ -569,28 +569,27 @@ class platform_types_manager
 		  return ret;
 	  }
 	  template<class T>
-	  typename T::RTypePtr create_runtime(const string_type& name, const string_type& path, const data::runtime_values_data* init_data, ns::rx_server_directory::smart_ptr dir)
+	  rx_result_with<typename T::RTypePtr> create_runtime(const string_type& name, const string_type& path, const data::runtime_values_data* init_data, ns::rx_server_directory::smart_ptr dir)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
 		  if (!item)
 		  {// TODO error, type does not exists
-			  return T::RTypePtr::null_ptr;
+			  return "Type "s + path + " does not exists!";
 		  }
 		  auto id = item->get_node_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
-			  return T::RTypePtr::null_ptr;
+			  return path + " does not have valid Id!";
 		  }
 		  auto ret = internal_get_type_cache<T>().create_runtime(name, id, init_data);
-		  if (!ret)
-		  {// TODO error, didn't created runtime
-			  return T::RTypePtr::null_ptr;
-		  }
-		  if (!dir->add_item(ret->get_item_ptr()))
+		  if (ret)
 		  {
-			  internal_get_type_cache<T>().delete_runtime(id);
-			  // TODO error, can't add this name
-			  return T::RTypePtr::null_ptr;
+			  if (!dir->add_item(ret.value()->get_item_ptr()))
+			  {
+				  internal_get_type_cache<T>().delete_runtime(id);
+				  return "Unable to add "s + name + " to directory!";
+				  // TODO error, can't add this name
+			  }
 		  }
 		  return ret;
 	  }
@@ -626,6 +625,24 @@ class platform_types_manager
 		  }
 		  return what;
 	  }
+
+	  template<class T, class refT>
+	  void check_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(type_check_context)> callback, refT ref)
+	  {
+		  std::function<type_check_context(const string_type, ns::rx_server_directory::smart_ptr)> func = [=](const string_type loc_name, ns::rx_server_directory::smart_ptr loc_dir) mutable {
+			  return check_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
+		  };
+		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
+	  }
+	  template<class T, class refT>
+	  void check_simple_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(type_check_context)> callback, refT ref)
+	  {
+		  std::function<type_check_context(const string_type, ns::rx_server_directory::smart_ptr)> func = [=](const string_type loc_name, ns::rx_server_directory::smart_ptr loc_dir) mutable {
+			  return check_simple_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
+		  };
+		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
+	  }
+
 	  template<class T, class refT>
 	  void delete_runtime(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(rx_result&&)> callback, refT ref)
 	  {
@@ -660,7 +677,7 @@ class platform_types_manager
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 		  if (!item)
-		  { 
+		  {
 			  return name + " does not exists!";
 		  }
 		  auto id = item->get_node_id();
@@ -671,7 +688,7 @@ class platform_types_manager
 		  auto ret = internal_get_type_cache<T>().delete_runtime(id);
 		  if (!ret)
 		  {// TODO error, didn't deleted runtime
-			  return false;
+			  return ret;
 		  }
 		  dir->delete_item(name);
 		  return true;
@@ -717,6 +734,44 @@ class platform_types_manager
 		  }
 		  dir->delete_item(name);
 		  return true;
+	  }
+	  template<class T>
+	  type_check_context check_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  {
+		  type_check_context ret;
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+		  if (!item)
+		  {
+			  ret.add_error(name + " does not exists!");
+			  return ret;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
+			  return ret;
+		  }
+		  internal_get_type_cache<T>().check_type(id, ret);
+		  return ret;
+	  }
+	  template<class T>
+	  type_check_context check_simple_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  {
+		  type_check_context ret;
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+		  if (!item)
+		  {
+			  ret.add_error(name + " does not exists!");
+			  return ret;
+		  }
+		  auto id = item->get_node_id();
+		  if (id.is_null())
+		  {// TODO error, item does not have id
+			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
+			  return ret;
+		  }
+		  internal_get_simple_type_cache<T>().check_type(id, ret);
+		  return ret;
 	  }
 
       rx::threads::physical_job_thread worker_;
@@ -777,13 +832,19 @@ rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::fun
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const data::runtime_values_data* init_data)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, const data::runtime_values_data* init_data)
 {
 	rx_node_id to_create;
 	if (id.is_null())
 		to_create = rx_node_id::generate_new(RX_USER_NAMESPACE);
 	else
+	{
+		if (registered_objects_.find(id) != registered_objects_.end())
+		{
+			return "Duplicate Id!";
+		}
 		to_create = id;
+	}
 
 	RTypePtr ret;
 
@@ -809,8 +870,11 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
-			my_class->construct(ret, ctx);
-
+			auto result = my_class->construct(ret, ctx);
+			if (!result)
+			{// error constructing object
+				return result.errors();
+			}
 		}
 	}
 	object_type::set_object_runtime_data(ctx.runtime_data, ret);
@@ -824,7 +888,7 @@ typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const stri
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, const data::runtime_values_data* init_data)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, const data::runtime_values_data* init_data)
 {
 	return create_runtime(name, rx_node_id::null_id, type_id, false, init_data);
 }
@@ -1038,7 +1102,7 @@ rx_result simple_type_hash<typeT>::register_constructor (const rx_node_id& id, s
 }
 
 template <class typeT>
-typename simple_type_hash<typeT>::RDataType simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id) const
+rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id) const
 {
 	RTypePtr ret;
 
@@ -1063,8 +1127,11 @@ typename simple_type_hash<typeT>::RDataType simple_type_hash<typeT>::create_simp
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
-			my_class->construct(ret, ctx);
-
+			auto result = my_class->construct(ret, ctx);
+			if (!result)
+			{// error constructing object
+				return result.errors();
+			}
 		}
 	}
 

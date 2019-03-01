@@ -264,11 +264,11 @@ void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_
 			ret_thread, ref)
 	);
 }
-runtime::rx_domain_ptr rx_system_domain();
-runtime::rx_application_ptr rx_system_application();
+rx_domain_ptr rx_system_domain();
+rx_application_ptr rx_system_application();
 
-runtime::rx_domain_ptr rx_unassigned_domain();
-runtime::rx_application_ptr rx_unassigned_application();
+rx_domain_ptr rx_unassigned_domain();
+rx_application_ptr rx_unassigned_application();
 
 } // namespace rx_platform
 

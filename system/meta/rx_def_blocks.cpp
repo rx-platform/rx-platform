@@ -42,6 +42,22 @@ using namespace rx_platform::meta::meta_algorithm;
 
 namespace rx_platform {
 
+
+bool rx_is_valid_item_name(const string_type& name)
+{
+	if (name.empty() || name== RX_DEFAULT_VARIABLE_NAME)
+		return false;
+	for (const auto& one : name)
+	{
+		if (!((one >= 'a' && one <= 'z')
+			|| (one >= 'A' && one <= 'Z')
+			|| (one >= '0' && one <= '9')
+			|| one == '_'))
+			return false;
+	}
+	return true;
+}
+
 namespace meta {
 
 namespace def_blocks {
@@ -58,7 +74,7 @@ complex_data_type::complex_data_type (const string_type& name, const rx_node_id&
 
 
 
-bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, uint8_t type) const
+rx_result complex_data_type::serialize_complex_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!stream.write_bool("Sealed", sealed_))
 		return false;
@@ -131,7 +147,7 @@ bool complex_data_type::serialize_complex_definition (base_meta_writer& stream, 
 	return true;
 }
 
-bool complex_data_type::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
+rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.read_bool("Sealed", sealed_))
 		return false;
@@ -151,36 +167,30 @@ bool complex_data_type::deserialize_complex_definition (base_meta_reader& stream
 	return false;//!!!! NOT DONE
 }
 
-bool complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
+rx_result complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
 {
-	if (check_name(name, (static_cast<int>(structs_.size()|structs_mask))))
+	auto ret = check_name(name, (static_cast<int>(variables_.size() | structs_mask)));
+	if (ret)
 	{
 		structs_.emplace_back(struct_attribute(name, id));
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
+rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
 {
-	if (check_name(name, (static_cast<int>(variables_.size()|variables_mask))))
+	auto ret = check_name(name, (static_cast<int>(variables_.size() | variables_mask)));
+	if(ret)
 	{
 		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only));
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool complex_data_type::check_name (const string_type& name, int rt_index)
+rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 {
-	if (name == RX_DEFAULT_VARIABLE_NAME)
-		return false;
+	if (!rx_is_valid_item_name(name))
+		return name + "is invalid item name!";
 
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
@@ -190,11 +200,11 @@ bool complex_data_type::check_name (const string_type& name, int rt_index)
 	}
 	else
 	{
-		return false;
+		return name + " already exists!";
 	}
 }
 
-void complex_data_type::construct (construct_context& ctx) const
+rx_result complex_data_type::construct (construct_context& ctx) const
 {
 	for (const auto& one : names_cache_)
 	{
@@ -204,7 +214,7 @@ void complex_data_type::construct (construct_context& ctx) const
 		case const_values_mask:
 		{
 			ctx.runtime_data.add_const_value(
-				const_values_[one.second&index_mask].get_name(),
+				one.first,
 				const_values_[one.second&index_mask].get_value());
 		}
 		break;
@@ -212,72 +222,73 @@ void complex_data_type::construct (construct_context& ctx) const
 		case simple_values_mask:
 		{
 			ctx.runtime_data.add_value(
-				simple_values_[one.second&index_mask].get_name(),
+				one.first,
 				simple_values_[one.second&index_mask].get_value(ctx.now));
 		}
 		break;
 		// structures
 		case structs_mask:
-			structs_[one.second&index_mask].construct(ctx);
+		{
+			rx_result ret = structs_[one.second&index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create struct "s +one.first + "!");
+				return ret;
+			}
 			break;
+		}
 		// variables
 		case variables_mask:
-			variables_[one.second&index_mask].construct(ctx);
+			rx_result ret = variables_[one.second&index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create variable "s + one.first + "!");
+				return ret;
+			}
 			break;
 		}
 	}
+	return true;
 }
 
-bool complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
+rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
 {
-	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
+	auto ret = check_name(name, (static_cast<int>(variables_.size() | simple_values_mask)));
+	if (ret)
 	{
 		simple_values_.emplace_back(name, read_only, std::move(val));
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
+rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
 {
-	if (check_name(name, (static_cast<int>(const_values_.size()|const_values_mask))))
+	auto ret = check_name(name, (static_cast<int>(variables_.size() | const_values_mask)));
+	if (ret)
 	{
 		const_values_.emplace_back(name, std::move(val));
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
+rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
 {
-	if (check_name(name, (static_cast<int>(simple_values_.size()|simple_values_mask))))
+	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
+	if(ret)
 	{
 		simple_values_.emplace_back(name, read_only, val);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
 {
-	if (check_name(name, (static_cast<int>(const_values_.size()|const_values_mask))))
+	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
+	if(ret)
 	{
 		const_values_.emplace_back(name, val);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
 bool complex_data_type::check_type (type_check_context& ctx)
@@ -309,7 +320,7 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 
 
 
-bool const_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result const_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	stream.write_string("Name", name_.c_str());
 	if (!get_value().serialize(stream))
@@ -317,7 +328,7 @@ bool const_value_def::serialize_definition (base_meta_writer& stream, uint8_t ty
 	return true;
 }
 
-bool const_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result const_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
 }
@@ -338,27 +349,27 @@ event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
 
 
 
-bool event_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result event_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	auto temp = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(*this, stream);
 	return temp;
 }
 
-bool event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result event_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	auto temp = meta_blocks_algorithm<event_attribute>::deserialize_complex_attribute(*this, stream);
 	return temp;
 }
 
-bool event_attribute::check (type_check_context& ctx)
+rx_result event_attribute::check (type_check_context& ctx)
 {
 	auto temp = meta_blocks_algorithm<event_attribute>::check_complex_attribute(*this, ctx);
 	return temp;
 }
 
-void event_attribute::construct (construct_context& ctx) const
+rx_result event_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -372,24 +383,24 @@ filter_attribute::filter_attribute (const string_type& name, const rx_node_id& i
 
 
 
-bool filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result filter_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
 }
 
-bool filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result filter_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
-bool filter_attribute::check (type_check_context& ctx)
+rx_result filter_attribute::check (type_check_context& ctx)
 {
 	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
 }
 
-void filter_attribute::construct (construct_context& ctx) const
+rx_result filter_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -405,7 +416,7 @@ mapped_data_type::mapped_data_type (const string_type& name, const rx_node_id& i
 
 
 
-bool mapped_data_type::serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const
+rx_result mapped_data_type::serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!stream.start_array("Mappers", mappers_.size()))
 		return false;
@@ -423,12 +434,12 @@ bool mapped_data_type::serialize_mapped_definition (base_meta_writer& stream, ui
 	return true;
 }
 
-bool mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
+rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
 }
 
-void mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
+rx_result mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
 {
 	for (const auto& one : names)
 	{
@@ -436,30 +447,37 @@ void mapped_data_type::construct (const names_cahce_type& names, construct_conte
 		{
 		// mappers
 		case complex_data_type::mappings_mask:
-			mappers_[one.second&complex_data_type::index_mask].construct(ctx);
+		{
+			rx_result ret = mappers_[one.second&complex_data_type::index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create mapper "s + one.first + "!");
+				return ret;
+			}
 			break;
 		}
+		}
 	}
+	return true;
 }
 
-bool mapped_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result mapped_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(name, (static_cast<int>(mappers_.size()|complex_data_type::mappings_mask))))
+	auto ret = complex_data.check_name(name, (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
+	if(ret)
 	{
 		mappers_.emplace_back(name, id);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
 bool mapped_data_type::check_type (type_check_context& ctx)
 {
 	bool ret = true;
 	for (auto& one : mappers_)
+	{
 		ret &= one.check(ctx);
+	}
 	return ret;
 }
 
@@ -474,24 +492,24 @@ mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& i
 
 
 
-bool mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result mapper_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return meta_blocks_algorithm<mapper_attribute>::serialize_complex_attribute(*this, stream);
 }
 
-bool mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result mapper_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return meta_blocks_algorithm<mapper_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
-bool mapper_attribute::check (type_check_context& ctx)
+rx_result mapper_attribute::check (type_check_context& ctx)
 {
 	return meta_blocks_algorithm<mapper_attribute>::check_complex_attribute(*this, ctx);
 }
 
-void mapper_attribute::construct (construct_context& ctx) const
+rx_result mapper_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -515,7 +533,7 @@ simple_value_def::simple_value_def (const string_type& name, bool read_only, con
 
 
 
-bool simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	stream.write_string("Name", name_.c_str());
 	stream.write_bool("RO", read_only_);
@@ -524,7 +542,7 @@ bool simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t t
 	return true;
 }
 
-bool simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
 }
@@ -545,24 +563,24 @@ source_attribute::source_attribute (const string_type& name, const rx_node_id& i
 
 
 
-bool source_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result source_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return meta_blocks_algorithm<source_attribute>::serialize_complex_attribute(*this, stream);
 }
 
-bool source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result source_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return meta_blocks_algorithm<source_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
-bool source_attribute::check (type_check_context& ctx)
+rx_result source_attribute::check (type_check_context& ctx)
 {
 	return meta_blocks_algorithm<source_attribute>::check_complex_attribute(*this, ctx);
 }
 
-void source_attribute::construct (construct_context& ctx) const
+rx_result source_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<source_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<source_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -576,24 +594,24 @@ struct_attribute::struct_attribute (const string_type& name, const rx_node_id& i
 
 
 
-bool struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result struct_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return meta_blocks_algorithm<struct_attribute>::serialize_complex_attribute(*this, stream);
 }
 
-bool struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result struct_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return meta_blocks_algorithm<struct_attribute>::deserialize_complex_attribute(*this, stream);
 }
 
-bool struct_attribute::check (type_check_context& ctx)
+rx_result struct_attribute::check (type_check_context& ctx)
 {
 	return meta_blocks_algorithm<struct_attribute>::check_complex_attribute(*this, ctx);
 }
 
-void struct_attribute::construct (construct_context& ctx) const
+rx_result struct_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<struct_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<struct_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -608,13 +626,13 @@ variable_attribute::variable_attribute (const string_type& name, const rx_node_i
 
 
 
-bool variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result variable_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	auto temp = meta_blocks_algorithm<variable_attribute>::serialize_complex_attribute(*this, stream);
 	return temp;
 }
 
-bool variable_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result variable_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	auto temp = meta_blocks_algorithm<variable_attribute>::deserialize_complex_attribute(*this, stream);
 	return temp;
@@ -625,14 +643,14 @@ rx_value variable_attribute::get_value (rx_time now) const
 	return rx_value::from_simple(storage_, now);
 }
 
-bool variable_attribute::check (type_check_context& ctx)
+rx_result variable_attribute::check (type_check_context& ctx)
 {
 	return meta_blocks_algorithm<variable_attribute>::check_complex_attribute(*this, ctx);
 }
 
-void variable_attribute::construct (construct_context& ctx) const
+rx_result variable_attribute::construct (construct_context& ctx) const
 {
-	meta_blocks_algorithm<variable_attribute>::construct_complex_attribute(*this, ctx);
+	return meta_blocks_algorithm<variable_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -653,7 +671,7 @@ variable_data_type::~variable_data_type()
 
 
 
-void variable_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
+rx_result variable_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
 {
 	for (const auto& one : names)
 	{
@@ -661,21 +679,43 @@ void variable_data_type::construct (const names_cahce_type& names, construct_con
 		{
 		// sources
 		case complex_data_type::sources_mask:
-			sources_[one.second&complex_data_type::index_mask].construct(ctx);
-			break;
-		// filters
-		case complex_data_type::filters_mask:
-			filters_[one.second&complex_data_type::index_mask].construct(ctx);
-			break;
-		// events
-		case complex_data_type::events_mask:
-			events_[one.second&complex_data_type::index_mask].construct(ctx);
+		{
+			rx_result ret = sources_[one.second&complex_data_type::index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create source "s + one.first + "!");
+				return ret;
+			}
 			break;
 		}
+		// filters
+		case complex_data_type::filters_mask:
+		{
+			rx_result ret = filters_[one.second&complex_data_type::index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create filter "s + one.first + "!");
+				return ret;
+			}
+			break;
+		}
+		// events
+		case complex_data_type::events_mask:
+		{
+			rx_result ret = events_[one.second&complex_data_type::index_mask].construct(ctx);
+			if (!ret)
+			{
+				ret.register_error("Unable to create event "s + one.first + "!");
+				return ret;
+			}
+			break;
+		}
+		}
 	}
+	return true;
 }
 
-bool variable_data_type::serialize_variable_definition (base_meta_writer& stream, uint8_t type) const
+rx_result variable_data_type::serialize_variable_definition (base_meta_writer& stream, uint8_t type) const
 {
 	if (!stream.start_array("Sources", sources_.size()))
 		return false;
@@ -719,48 +759,39 @@ bool variable_data_type::serialize_variable_definition (base_meta_writer& stream
 	return true;
 }
 
-bool variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
+rx_result variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
 }
 
-bool variable_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result variable_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(name, (static_cast<int>(sources_.size()|complex_data_type::sources_mask))))
+	auto ret = complex_data.check_name(name, (static_cast<int>(sources_.size() | complex_data_type::sources_mask)));
+	if (ret)
 	{
 		sources_.emplace_back(name, id);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool variable_data_type::register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result variable_data_type::register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(name, (static_cast<int>(filters_.size()|complex_data_type::filters_mask))))
+	auto ret = complex_data.check_name(name, (static_cast<int>(filters_.size() | complex_data_type::filters_mask)));
+	if (ret)
 	{
 		filters_.emplace_back(name, id);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
-bool variable_data_type::register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result variable_data_type::register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
-	if (complex_data.check_name(name, (static_cast<int>(events_.size()|complex_data_type::events_mask))))
+	auto ret = complex_data.check_name(name, (static_cast<int>(events_.size() | complex_data_type::events_mask)));
+	if (ret)
 	{
 		events_.emplace_back(name, id);
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
 bool variable_data_type::check_type (type_check_context& ctx)

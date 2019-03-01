@@ -36,6 +36,7 @@
 // rx_cmds
 #include "system/server/rx_cmds.h"
 
+#include "terminal/rx_terminal_style.h"
 using namespace rx_platform::prog;
 using namespace rx_platform; 
 using namespace rx_platform::ns;
@@ -74,9 +75,14 @@ class server_command : public rx_platform::prog::server_command_base
 
   protected:
 
-      void dump_error_result (std::ostream& err, rx_result result) const;
+      void dump_error_result (std::ostream& err, const rx_result& result) const;
 
-
+	  template<typename T>
+	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
+	  {
+		  for (const auto& one : result.errors())
+			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+	  }
   private:
 
 

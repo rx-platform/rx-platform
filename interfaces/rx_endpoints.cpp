@@ -45,7 +45,7 @@ namespace io_endpoints {
 // Class interfaces::io_endpoints::rx_io_manager 
 
 rx_io_manager::rx_io_manager()
-	: server_object(runtime::objects::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_domain_ptr::null_ptr })
+	: server_object(runtime::objects::object_creation_data{ RX_IO_MANAGER_NAME, RX_IO_MANAGER_ID, RX_IO_MANAGER_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_domain_ptr::null_ptr })
 {
 }
 

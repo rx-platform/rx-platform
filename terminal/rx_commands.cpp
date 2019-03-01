@@ -32,7 +32,6 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-#include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 #include "terminal/rx_con_commands.h"
 #include "testing/rx_test.h"
@@ -72,7 +71,7 @@ bool server_command::is_browsable () const
 	return false;
 }
 
-void server_command::dump_error_result (std::ostream& err, rx_result result) const
+void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
 {
 	for (const auto& one : result.errors())
 		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
@@ -82,7 +81,7 @@ void server_command::dump_error_result (std::ostream& err, rx_result result) con
 // Class terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
-	: runtime::objects::server_object(runtime::objects::object_creation_data{ NS_RX_COMMANDS_MANAGER_NAME, RX_COMMANDS_MANAGER_ID, RX_COMMANDS_MANAGER_TYPE_ID, true,  runtime::rx_application_ptr::null_ptr, runtime::rx_application_ptr::null_ptr })
+	: runtime::objects::server_object(runtime::objects::object_creation_data{ NS_RX_COMMANDS_MANAGER_NAME, RX_COMMANDS_MANAGER_ID, RX_COMMANDS_MANAGER_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_application_ptr::null_ptr })
 {
 }
 
@@ -122,12 +121,14 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::def_command>());
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
+	// test command
 	register_command(rx_create_reference<testing::test_command>());
 	// meta commands
 	register_command(rx_create_reference<model::meta_commands::del_command>());
 	register_command(rx_create_reference<model::meta_commands::rm_command>());
 	register_command(rx_create_reference<model::meta_commands::create_command>());
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
+	register_command(rx_create_reference<model::meta_commands::check_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)

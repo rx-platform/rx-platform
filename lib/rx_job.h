@@ -81,12 +81,6 @@ class job : private pointers::reference_object
       }
 
 
-      const rx_thread_handle_t get_destination () const
-      {
-        return destination_;
-      }
-
-
       const rx_criticalness get_criticalness () const
       {
         return criticalness_;
@@ -128,8 +122,6 @@ class job : private pointers::reference_object
       bool canceled_;
 
       rx_security_handle_t security_context_;
-
-      rx_thread_handle_t destination_;
 
       rx_criticalness criticalness_;
 

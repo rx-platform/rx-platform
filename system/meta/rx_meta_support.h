@@ -41,16 +41,16 @@ namespace rx_platform {
 namespace meta {
 
 
-	
+
 
 
 class type_check_context 
 {
   public:
-  	  type_check_context(const type_check_context&) = delete;
-	  type_check_context(type_check_context&&) = delete;
-	  type_check_context& operator=(const type_check_context&) = delete;
-   	  type_check_context& operator=(type_check_context&&) = delete;
+  	  type_check_context(const type_check_context&) = default;
+	  type_check_context(type_check_context&&) = default;
+	  type_check_context& operator=(const type_check_context&) = default;
+   	  type_check_context& operator=(type_check_context&&) = default;
 
   public:
       type_check_context();

@@ -95,6 +95,82 @@ public:
 	rx_result& operator=(rx_result&&) noexcept = default;
 };
 
+
+template<class T>
+class rx_result_with
+{
+	T value_;
+	typedef std::vector<string_type> result_erros_t;
+	std::unique_ptr<result_erros_t> errors_;
+public:
+	rx_result_with(const T& value)
+		: value_(value)
+	{
+		if (!value_)
+			errors_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+	}
+	rx_result_with(T&& value)
+		: value_(std::move(value))
+	{
+		if (!value)
+			errors_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+	}
+	rx_result_with(const string_vector& errors)
+		: errors_(std::make_unique<result_erros_t>(errors))
+	{
+	}
+	rx_result_with(string_vector&& errors)
+		: errors_(std::make_unique<result_erros_t>(std::move(errors)))
+	{
+	}
+	rx_result_with(const char* error)
+		: errors_(std::make_unique<result_erros_t>(string_vector{ error }))
+	{
+	}
+	rx_result_with(const string_type& error)
+		: errors_(std::make_unique<result_erros_t>(string_vector{ error }))
+	{
+	}
+	rx_result_with(string_type&& error)
+		: errors_(std::make_unique<result_erros_t>(string_vector{ std::move(error) }))
+	{
+	}
+	void register_error(string_type&& error)
+	{
+		if (!errors_)
+			errors_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
+		else
+			errors_->emplace_back(std::move(error));
+	}
+	operator T() const
+	{
+		return value_;
+	}
+	const T& value() const
+	{
+		return value_;
+	}
+	T& value()
+	{
+		return value_;
+	}
+	operator bool() const
+	{
+		return value_;
+	}
+	const result_erros_t& errors()const
+	{
+		return *errors_;
+	}
+	rx_result_with(const rx_result_with& right) = delete;// because of the unique_ptr!
+
+	rx_result_with() = default;
+	~rx_result_with() = default;
+	rx_result_with(rx_result_with&&) noexcept = default;
+	rx_result_with& operator=(const rx_result_with&) = delete;
+	rx_result_with& operator=(rx_result_with&&) noexcept = default;
+};
+
 extern const char* g_complie_time;
 extern const char* g_lib_version;
 

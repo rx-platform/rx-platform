@@ -311,10 +311,14 @@ class variable_data
   public:
 	  variable_data() = default;
 	  ~variable_data() = default;
-	  variable_data(const variable_data&) = default;
+	  variable_data(const variable_data&) = delete;
 	  variable_data(variable_data&&) noexcept = default;
-	  variable_data& operator=(const variable_data&) = default;
+	  variable_data& operator=(const variable_data&) = delete;
 	  variable_data& operator=(variable_data&&) noexcept = default;
+	  operator bool() const
+	  {
+		  return variable_ptr;
+	  }
 
   public:
       variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
@@ -363,6 +367,10 @@ class struct_data
 	  struct_data(struct_data&&) noexcept = default;
 	  struct_data& operator=(const struct_data&) = default;
 	  struct_data& operator=(struct_data&&) noexcept = default;
+	  operator bool() const
+	  {
+		  return struct_ptr;
+	  }
 
   public:
       struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var);
@@ -402,6 +410,10 @@ public:
 	mapper_data(mapper_data&&) noexcept = default;
 	mapper_data& operator=(const mapper_data&) = default;
 	mapper_data& operator=(mapper_data&&) noexcept = default;
+	operator bool() const
+	{
+		return mapper_ptr;
+	}
 
   public:
 
@@ -439,6 +451,10 @@ class source_data
 	source_data(source_data&&) noexcept = default;
 	source_data& operator=(const source_data&) = default;
 	source_data& operator=(source_data&&) noexcept = default;
+	operator bool() const
+	{
+		return source_ptr;
+	}
 
   public:
 
@@ -476,6 +492,10 @@ public:
 	event_data(event_data&&) noexcept = default;
 	event_data& operator=(const event_data&) = default;
 	event_data& operator=(event_data&&) noexcept = default;
+	operator bool() const
+	{
+		return event_ptr;
+	}
 
   public:
 
@@ -513,6 +533,10 @@ public:
 	filter_data(filter_data&&) noexcept = default;
 	filter_data& operator=(const filter_data&) = default;
 	filter_data& operator=(filter_data&&) noexcept = default;
+	operator bool() const
+	{
+		return filter_ptr;
+	}
 
   public:
 

@@ -112,9 +112,10 @@ namespace meta_test {
 	 if (object_type_id)
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_object = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::object_type>("test_object", "test_object_type", nullptr, ctx->get_current_directory());
-		 if (test_object)
+		 auto test_result = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::object_type>("test_object", "test_object_type", nullptr, ctx->get_current_directory());
+		 if (test_result)
 		 {
+			 rx_object_ptr test_object=test_result;
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 if (test_object->get_item_ptr()->generate_json(out, err))
@@ -322,9 +323,10 @@ namespace meta_test {
 	 if (object_type_id)
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_object = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::object_type>("inh_test_object", "derived_test_object_type", nullptr, ctx->get_current_directory());
-		 if (test_object)
+		 auto test_result = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::object_type>("inh_test_object", "derived_test_object_type", nullptr, ctx->get_current_directory());
+		 if (test_result)
 		 {
+			 rx_object_ptr test_object = test_result;
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 if (test_object->get_item_ptr()->generate_json(out, err))

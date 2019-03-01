@@ -169,9 +169,9 @@ namespace_item_attributes internal_directory::get_attributes () const
 } // namespace internal_ns
 } // namespace sys_internal
 
-template class sys_internal::internal_ns::rx_item_implementation<runtime::rx_domain_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<runtime::rx_application_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<runtime::object_runtime_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<rx_domain_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<rx_application_ptr>;
+template class sys_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<testing::test_case::smart_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;

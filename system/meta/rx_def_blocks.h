@@ -129,6 +129,7 @@ using namespace rx::pointers;
 
 
 namespace rx_platform {
+bool rx_is_valid_item_name(const string_type& name);
 
 namespace meta {
 
@@ -152,9 +153,9 @@ public:
       const_value_def (const string_type& name, const rx_simple_value& value);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       rx_simple_value get_value () const;
 
@@ -204,13 +205,13 @@ class event_attribute
       event_attribute (const string_type& name, const rx_node_id& id);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -254,13 +255,13 @@ class filter_attribute
       filter_attribute (const string_type& name, const rx_node_id& id);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -304,13 +305,13 @@ class mapper_attribute
       mapper_attribute (const string_type& name, const rx_node_id& id);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -357,9 +358,9 @@ public:
       simple_value_def (const string_type& name, bool read_only, const rx_simple_value& value);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       rx_timed_value get_value (rx_time now) const;
 
@@ -424,25 +425,25 @@ class complex_data_type
       complex_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
 
-      bool serialize_complex_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_complex_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_complex_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_complex_definition (base_meta_reader& stream, uint8_t type);
 
-      bool register_struct (const string_type& name, const rx_node_id& id);
+      rx_result register_struct (const string_type& name, const rx_node_id& id);
 
-      bool register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
+      rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
 
-      bool check_name (const string_type& name, int rt_index);
+      rx_result check_name (const string_type& name, int rt_index);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
-      bool register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
+      rx_result register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
 
-      bool register_const_value (const string_type& name, rx_simple_value&& val);
+      rx_result register_const_value (const string_type& name, rx_simple_value&& val);
 
-      bool register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val);
+      rx_result register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val);
 
-      bool register_const_value (const string_type& name, const rx_simple_value& val);
+      rx_result register_const_value (const string_type& name, const rx_simple_value& val);
 
       bool check_type (type_check_context& ctx);
 
@@ -531,13 +532,13 @@ class mapped_data_type
       mapped_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
 
-      bool serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
 
-      void construct (const names_cahce_type& names, construct_context& ctx) const;
+      rx_result construct (const names_cahce_type& names, construct_context& ctx) const;
 
-      bool register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+      rx_result register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
       bool check_type (type_check_context& ctx);
 
@@ -568,13 +569,13 @@ class source_attribute
       source_attribute (const string_type& name, const rx_node_id& id);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -618,13 +619,13 @@ class struct_attribute
       struct_attribute (const string_type& name, const rx_node_id& id);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -668,15 +669,15 @@ class variable_attribute
       variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       rx_value get_value (rx_time now) const;
 
-      bool check (type_check_context& ctx);
+      rx_result check (type_check_context& ctx);
 
-      void construct (construct_context& ctx) const;
+      rx_result construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -731,20 +732,20 @@ class variable_data_type
 
       variable_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
-      virtual ~variable_data_type();
+      ~variable_data_type();
 
 
-      void construct (const names_cahce_type& names, construct_context& ctx) const;
+      rx_result construct (const names_cahce_type& names, construct_context& ctx) const;
 
-      bool serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
 
-      bool register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+      rx_result register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
-      bool register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+      rx_result register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
-      bool register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+      rx_result register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
       bool check_type (type_check_context& ctx);
 

@@ -72,13 +72,13 @@ class meta_blocks_algorithm
 
   public:
 
-      static bool serialize_complex_attribute (const typeT& whose, base_meta_writer& stream);
+      static rx_result serialize_complex_attribute (const typeT& whose, base_meta_writer& stream);
 
-      static bool deserialize_complex_attribute (typeT& whose, base_meta_reader& stream);
+      static rx_result deserialize_complex_attribute (typeT& whose, base_meta_reader& stream);
 
       static bool check_complex_attribute (typeT& whose, type_check_context& ctx);
 
-      static void construct_complex_attribute (const typeT& whose, construct_context& ctx);
+      static rx_result construct_complex_attribute (const typeT& whose, construct_context& ctx);
 
 
   protected:
@@ -99,13 +99,13 @@ class basic_types_algorithm
 
   public:
 
-      static bool serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type);
+      static rx_result serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type);
 
-      static bool deserialize_basic_type (typeT& whose, base_meta_reader& stream, uint8_t type);
+      static rx_result deserialize_basic_type (typeT& whose, base_meta_reader& stream, uint8_t type);
 
       static bool check_basic_type (typeT& whose, type_check_context& ctx);
 
-      static void construct_basic_type (const typeT& whose, construct_context& ctx);
+      static rx_result construct_basic_type (const typeT& whose, construct_context& ctx);
 
 
   protected:
@@ -126,13 +126,13 @@ class object_types_algorithm
 
   public:
 
-      static bool serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type);
+      static rx_result serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type);
 
-      static bool deserialize_object_type (typeT& whose, base_meta_reader& stream, uint8_t type);
+      static rx_result deserialize_object_type (typeT& whose, base_meta_reader& stream, uint8_t type);
 
       static bool check_object_type (typeT& whose, type_check_context& ctx);
 
-      static void construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx);
+      static rx_result construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx);
 
 
   protected:

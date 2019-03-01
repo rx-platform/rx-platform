@@ -32,7 +32,7 @@
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 #include "rx_def_blocks.h"
 
 
@@ -46,7 +46,7 @@ namespace meta_algorithm {
 
 
 template <class typeT>
-bool meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
+rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
 	if (!stream.start_object(typeT::TargetType::type_name.c_str()))
 		return false;
@@ -60,7 +60,7 @@ bool meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& who
 }
 
 template <class typeT>
-bool meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
+rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
 {
 	if (!stream.start_object(typeT::TargetType::type_name.c_str()))
 		return false;
@@ -91,15 +91,23 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 }
 
 template <class typeT>
-void meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
+rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
 {
 	auto temp = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().create_simple_runtime(whose.target_id_);
-	ctx.runtime_data.add(whose.name_, std::move(temp));
+	if (temp)
+	{
+		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
 }
 
 // Variable Attribute is a special case!!!
 template<>
-bool meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
+rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.start_object(variable_attribute::TargetType::type_name.c_str()))
 		return false;
@@ -116,7 +124,7 @@ bool meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_at
 	return true;
 }
 template<>
-bool meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_attribute(def_blocks::variable_attribute& whose, base_meta_reader& stream)
+rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_attribute(def_blocks::variable_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.start_object(variable_attribute::TargetType::type_name.c_str()))
 		return false;
@@ -133,11 +141,19 @@ bool meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_
 	return true;
 }
 template<>
-void meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_attribute(const def_blocks::variable_attribute& whose, construct_context& ctx)
+rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_attribute(const def_blocks::variable_attribute& whose, construct_context& ctx)
 {
 	auto temp = model::platform_types_manager::instance().get_simple_type_cache<def_blocks::variable_attribute::TargetType>().create_simple_runtime(whose.target_id_);
-	temp.set_value(whose.get_value(ctx.now));
-	ctx.runtime_data.add_variable(whose.name_, std::move(temp), whose.get_value(ctx.now));
+	if (temp)
+	{
+		temp.value().set_value(whose.get_value(ctx.now));
+		ctx.runtime_data.add_variable(whose.name_, std::move(temp.value()), whose.get_value(ctx.now));
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
 }
 // explicit templates initialization
 template class meta_blocks_algorithm<variable_attribute>;
@@ -150,7 +166,7 @@ template class meta_blocks_algorithm<mapper_attribute>;
 
 
 template <class typeT>
-bool basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
+rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_data_.serialize_checkable_definition(stream, type, typeT::type_name))
 		return false;
@@ -164,7 +180,7 @@ bool basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose, bas
 }
 
 template <class typeT>
-bool basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, base_meta_reader& stream, uint8_t type)
+rx_result basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("Def"))
 		return false;
@@ -183,14 +199,14 @@ bool basic_types_algorithm<typeT>::check_basic_type (typeT& whose, type_check_co
 }
 
 template <class typeT>
-void basic_types_algorithm<typeT>::construct_basic_type (const typeT& whose, construct_context& ctx)
+rx_result basic_types_algorithm<typeT>::construct_basic_type (const typeT& whose, construct_context& ctx)
 {
-	whose.complex_data_.construct(ctx);
+	return whose.complex_data_.construct(ctx);
 }
 
 // Struct Type is a special case!!!
 template <>
-bool basic_types_algorithm<basic_types::struct_type>::serialize_basic_type(const basic_types::struct_type& whose, base_meta_writer& stream, uint8_t type)
+rx_result basic_types_algorithm<basic_types::struct_type>::serialize_basic_type(const basic_types::struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_data_.serialize_checkable_definition(stream, type, basic_types::struct_type::type_name))
 		return false;
@@ -206,7 +222,7 @@ bool basic_types_algorithm<basic_types::struct_type>::serialize_basic_type(const
 }
 
 template <>
-bool basic_types_algorithm<basic_types::struct_type>::deserialize_basic_type(basic_types::struct_type& whose, base_meta_reader& stream, uint8_t type)
+rx_result basic_types_algorithm<basic_types::struct_type>::deserialize_basic_type(basic_types::struct_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("Def"))
 		return false;
@@ -228,14 +244,16 @@ bool basic_types_algorithm<basic_types::struct_type>::check_basic_type(basic_typ
 }
 
 template <>
-void basic_types_algorithm<basic_types::struct_type>::construct_basic_type(const basic_types::struct_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<basic_types::struct_type>::construct_basic_type(const basic_types::struct_type& whose, construct_context& ctx)
 {
-	whose.complex_data_.construct(ctx);
-	whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+	auto ret = whose.complex_data_.construct(ctx);
+	if(ret)
+		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+	return ret;
 }
 // Variable Type is a special case!!!
 template <>
-bool basic_types_algorithm<basic_types::variable_type>::serialize_basic_type(const basic_types::variable_type& whose, base_meta_writer& stream, uint8_t type)
+rx_result basic_types_algorithm<basic_types::variable_type>::serialize_basic_type(const basic_types::variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_data_.serialize_checkable_definition(stream, type, basic_types::variable_type::type_name))
 		return false;
@@ -253,7 +271,7 @@ bool basic_types_algorithm<basic_types::variable_type>::serialize_basic_type(con
 }
 
 template <>
-bool basic_types_algorithm<basic_types::variable_type>::deserialize_basic_type(basic_types::variable_type& whose, base_meta_reader& stream, uint8_t type)
+rx_result basic_types_algorithm<basic_types::variable_type>::deserialize_basic_type(basic_types::variable_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("Def"))
 		return false;
@@ -271,18 +289,29 @@ bool basic_types_algorithm<basic_types::variable_type>::deserialize_basic_type(b
 template <>
 bool basic_types_algorithm<basic_types::variable_type>::check_basic_type(basic_types::variable_type& whose, type_check_context& ctx)
 {
-	bool ret = whose.complex_data_.check_type(ctx);
-	ret &= whose.mapping_data_.check_type(ctx);
-	ret &= whose.variable_data_.check_type(ctx);
+	auto ret = whose.complex_data_.check_type(ctx);
+	if (ret)
+	{
+		ret = whose.mapping_data_.check_type(ctx);
+		if (ret)
+		{
+			ret = whose.variable_data_.check_type(ctx);
+		}
+	}
 	return ret;
 }
 
 template <>
-void basic_types_algorithm<basic_types::variable_type>::construct_basic_type(const basic_types::variable_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<basic_types::variable_type>::construct_basic_type(const basic_types::variable_type& whose, construct_context& ctx)
 {
-	whose.complex_data_.construct(ctx);
-	whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-	whose.variable_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+	auto ret = whose.complex_data_.construct(ctx);
+	if (ret)
+	{
+		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+		if (ret)
+			ret = whose.variable_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+	}
+	return ret;
 }
 template class basic_types_algorithm<basic_types::struct_type>;
 template class basic_types_algorithm<basic_types::variable_type>;
@@ -294,7 +323,7 @@ template class basic_types_algorithm<basic_types::event_type>;
 
 
 template <class typeT>
-bool object_types_algorithm<typeT>::serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
+rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_data_.serialize_checkable_definition(stream, type, typeT::type_name))
 		return false;
@@ -312,7 +341,7 @@ bool object_types_algorithm<typeT>::serialize_object_type (const typeT& whose, b
 }
 
 template <class typeT>
-bool object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, base_meta_reader& stream, uint8_t type)
+rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("Def"))
 		return false;
@@ -337,11 +366,16 @@ bool object_types_algorithm<typeT>::check_object_type (typeT& whose, type_check_
 }
 
 template <class typeT>
-void object_types_algorithm<typeT>::construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx)
+rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx)
 {
-	whose.complex_data_.construct(ctx);
-	whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-	whose.object_data_.construct(what, ctx);
+	auto ret = whose.complex_data_.construct(ctx);
+	if (ret)
+	{
+		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+		if (ret)
+			ret = whose.object_data_.construct(what, ctx);
+	}
+	return ret;
 }
 
 template class object_types_algorithm<object_types::object_type>;

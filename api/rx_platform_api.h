@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  model\rx_meta_api.cpp
+*  api\rx_platform_api.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,11 +26,14 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_meta_api
-#include "model/rx_meta_api.h"
+#ifndef rx_platform_api_h
+#define rx_platform_api_h 1
 
 
 
+
+
+
+
+
+#endif

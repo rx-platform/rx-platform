@@ -36,25 +36,25 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_builders.h"
 #include "system/python/py_support.h"
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 
 
 namespace rx_platform {
 
-runtime::rx_domain_ptr rx_system_domain()
+rx_domain_ptr rx_system_domain()
 {
 	return rx_gate::instance().get_manager().get_system_domain();
 }
-runtime::rx_application_ptr rx_system_application()
+rx_application_ptr rx_system_application()
 {
 	return rx_gate::instance().get_manager().get_system_app();
 }
 
-runtime::rx_domain_ptr rx_unassigned_domain()
+rx_domain_ptr rx_unassigned_domain()
 {
 	return rx_gate::instance().get_manager().get_unassigned_domain();
 }
-runtime::rx_application_ptr rx_unassigned_application()
+rx_application_ptr rx_unassigned_application()
 {
 	return rx_gate::instance().get_manager().get_unassigned_app();
 }

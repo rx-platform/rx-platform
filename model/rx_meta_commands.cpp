@@ -67,7 +67,15 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 			{
 				return create_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
 			}
-			if (what == "type")
+			else if (what == "domain")
+			{
+				return create_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+			}
+			else if (what == "app" || what == "application")
+			{
+				return create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+			}
+			else if (what == "type")
 			{
 				return create_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
 			}
@@ -115,7 +123,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	else
 	{
 		err << "Unknown base "
-			<< T::type_name
+			<< T::RType::type_name
 			<< " specifier:"
 			<< from_command << "!";
 		return false;
@@ -139,12 +147,21 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("Values", init_data))
 			{
-				object_ptr = platform_types_manager::instance().create_runtime<T>(name, class_name, &init_data, ctx->get_current_directory());
+				auto ret = platform_types_manager::instance().create_runtime<T>(name, class_name, &init_data, ctx->get_current_directory());
+				if (!ret)
+				{
+					err << "Error creating "
+						<< T::RType::type_name << ":\r\n";
+					dump_error_result(err, ret);
+					return false;
+				}
+				else
+					object_ptr = ret;
 			}
 			else
 			{
 				err << "Error deserialization of initialization data for "
-					<< T::type_name
+					<< T::RType::type_name
 					<< " as " << def_command << "!";
 				return false;
 			}
@@ -152,7 +169,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		else
 		{
 			err << "Unknown "
-				<< T::type_name
+				<< T::RType::type_name
 				<< " definition specifier:"
 				<< def_command << "!";
 			return false;
@@ -160,19 +177,28 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	}
 	else if (as_command.empty())
 	{
-		object_ptr = platform_types_manager::instance().create_runtime<T>(name, class_name, nullptr, ctx->get_current_directory());
+		auto ret = platform_types_manager::instance().create_runtime<T>(name, class_name, nullptr, ctx->get_current_directory());
+		if (!ret)
+		{
+			err << "Error creating "
+				<< T::RType::type_name << ":\r\n";
+			dump_error_result(err, ret);
+			return false;
+		}
+		else
+			object_ptr = ret;
 	}
 	else
 	{
 		err << "Unknown "
-			<< T::type_name
+			<< T::RType::type_name
 			<< " creation type:"
 			<< as_command << "!";
 		return false;
 	}
 	if (object_ptr)
 	{
-		out << "Created object "
+		out << "Created " << T::RType::type_name << " "
 			<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 			<< ".\r\n";
 	}
@@ -253,10 +279,6 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	}
 	return true;
 }
-struct delete_data_t : public pointers::struct_reference
-{
-	uint64_t started;
-};
 // Class model::meta_commands::delete_command 
 
 delete_command::delete_command (const string_type& console_name)
@@ -281,6 +303,18 @@ bool delete_command::do_console_command (std::istream& in, std::ostream& out, st
 				if (what == "object")
 				{
 					ret = delete_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "port")
+				{
+					ret = delete_object<port_type>(in, out, err, ctx, tl::type2type<port_type>());
+				}
+				else if (what == "domain")
+				{
+					ret = delete_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "app" || what == "application")
+				{
+					ret = delete_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
 				}
 				else if (what == "object_type")
 				{
@@ -349,7 +383,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 			{
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
-					<< T::type_name << ":\r\n";
+					<< T::RType::type_name << ":\r\n";
 				this->dump_error_result(err, std::move(result));
 			}
 			else
@@ -362,7 +396,6 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 		}
 		, ctx->get_client()
 	);
-	ctx->set_waiting();
 	return true;
 }
 
@@ -423,6 +456,159 @@ del_command::del_command()
 }
 
 
+
+// Class model::meta_commands::check_command 
+
+check_command::check_command()
+	: server_command("check")
+{
+}
+
+
+check_command::~check_command()
+{
+}
+
+
+
+bool check_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	rx_reference<check_data_t> data = ctx->get_instruction_data<check_data_t>();
+	if (!data)
+	{// we just entered to command
+		bool ret = false;
+		if (!in.eof())
+		{
+			string_type what;
+			in >> what;
+			if (!what.empty())
+			{
+				if (what == "object")
+				{
+					ret = check_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "struct")
+				{
+					ret = check_simple_type<struct_type>(in, out, err, ctx, tl::type2type<struct_type>());
+				}
+				else if (what == "port")
+				{
+					ret = check_type<port_type>(in, out, err, ctx, tl::type2type<port_type>());
+				}
+				else if (what == "domain")
+				{
+					ret = check_type<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "app" || what == "application")
+				{
+					ret = check_type<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+				}
+				else
+				{
+					err << "Unknown type:" << what << "\r\n";
+				}
+			}
+			else
+				err << "Check type is unknown!\r\n";
+		}
+		else
+			err << "Check type is unknown!\r\n";
+		
+		if (ret)
+		{
+			data = rx_create_reference<check_data_t>();
+			data->started = rx_get_us_ticks();
+			ctx->set_instruction_data(data);
+			ctx->set_waiting();
+		}
+		return ret;
+	}
+	else
+	{// we are returned here
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		if (ctx->is_canceled())
+		{
+			out << "Check was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Check lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		return true;
+	}
+}
+
+
+template<class T>
+bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	in >> name;
+	if (!name.empty())
+	{
+		platform_types_manager::instance().check_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+			[ctx, name, this](type_check_context result)
+			{
+				if (!result.is_check_ok())
+				{
+					auto& out = ctx->get_stdout();
+					out << T::type_name << " has errors:\r\n";
+					for(auto& one : result.get_errors())
+						out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+				}
+				else
+				{
+					ctx->get_stdout() << T::type_name << " "
+						<< name << "O.K.\r\n";
+				}
+				ctx->send_results(true);
+			}
+			, ctx->get_client());
+		return true;
+	}
+	else
+	{
+		err << "Undefined name!";
+		return false;
+	}
+}
+template<class T>
+bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	in >> name;
+	if (!name.empty())
+	{
+		platform_types_manager::instance().check_simple_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+			[ctx, name, this](type_check_context result)
+		{
+			if (!result.is_check_ok())
+			{
+				auto& out = ctx->get_stdout();
+				out << T::type_name << " has errors:\r\n";
+				for (auto& one : result.get_errors())
+					out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+			}
+			else
+			{
+				ctx->get_stdout() << T::type_name << " "
+					<< name << " O.K.\r\n";
+			}
+			ctx->send_results(true);
+		}
+		, ctx->get_client());
+		return true;
+	}
+	else
+	{
+		err << "Undefined name!";
+		return false;
+	}
+}
 
 } // namespace meta_commands
 } // namespace model

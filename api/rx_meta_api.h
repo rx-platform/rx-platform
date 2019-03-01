@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  model\rx_meta_api.h
+*  api\rx_meta_api.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -32,7 +32,25 @@
 
 
 
-#include "rx_meta_internals.h"
+#include "rx_library.h"
+#include "model/rx_meta_internals.h"
+namespace rx_platform
+{
+namespace api
+{
+namespace meta
+{
+
+
+void rx_delete_object(
+	const string_type& name
+	, ns::rx_server_directory::smart_ptr dir
+	, std::function<void(rx_result&&)> callback
+	, pointers::reference_object::smart_ptr ref);
+
+}
+}
+}
 
 
 

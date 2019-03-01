@@ -87,15 +87,15 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -153,15 +153,15 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -221,15 +221,15 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -285,15 +285,15 @@ public:
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
       def_blocks::complex_data_type& complex_data ();
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -349,13 +349,13 @@ public:
       struct_type (const type_creation_data& data);
 
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr ();
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       checkable_data& meta_data ();
 
@@ -421,11 +421,11 @@ public:
       variable_type (const type_creation_data& data);
 
 
-      void construct (RTypePtr& what, construct_context& ctx) const;
+      rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       platform_item_ptr get_item_ptr ();
 

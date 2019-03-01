@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -33,7 +33,7 @@
 // rx_test_runtime
 #include "testing/rx_test_runtime.h"
 
-#include "model/rx_meta_api.h"
+#include "api/rx_meta_api.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "lib/rx_rt_data.h"
 #include <valarray>
@@ -49,7 +49,7 @@ namespace basic_tests {
 
 namespace meta_test {
 
- // Class testing::basic_tests::meta_test::runtime_structure_test 
+ // Class testing::basic_tests::meta_test::runtime_structure_test
 
  runtime_structure_test::runtime_structure_test()
 	 : test_case("runtime")
@@ -69,7 +69,7 @@ namespace meta_test {
 
 	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::objects::object_runtime) << ANSI_COLOR_RESET "\r\n";
 	 out << "variable_runtime:" ANSI_RX_OBJECT_SIZE  << sizeof(runtime::blocks::variable_runtime) << ANSI_COLOR_RESET << "\r\n";
-	
+
 	 out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 	 out << "empty_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::empty_item_data) << ANSI_COLOR_RESET "\r\n";
 	 out << "basic_item_data:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::structure::basic_item_data) << ANSI_COLOR_RESET "\r\n";

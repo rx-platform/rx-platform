@@ -49,7 +49,8 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
-	startup_script_ = "test run meta/construct-inheritance\n";
+	//startup_script_ = "test run meta/construct-wide\n";
+	startup_script_ = "test run meta/type-check\ncreate object perica from check_test_object_type\r\n";
 }
 
 
@@ -320,20 +321,27 @@ under certain conditions; type `license' for details.\r\n\
 			continue;
 
 		temp.clear();
+		string_array lines;
 		for (size_t i = 0; i < count; i++)
 		{
 
-			vt100_transport_.char_received(buffer[i], false, temp, [this](const string_type& line)
+			vt100_transport_.char_received(buffer[i], false, temp, [&lines, this](const string_type& line)
 			{
-				memory::buffer_ptr out_buffer(pointers::_create_new);
-				memory::buffer_ptr err_buffer(pointers::_create_new);
-
-				do_command(string_type(line), out_buffer, err_buffer, security_context_);
+				lines.push_back(line);
 			});
 		}
 		if (!temp.empty() && 
 			!rx_platform::rx_gate::instance().is_shutting_down())
 			host_->write_stdout(temp);
+
+		if (!lines.empty())
+		{
+
+			memory::buffer_ptr out_buffer(pointers::_create_new);
+			memory::buffer_ptr err_buffer(pointers::_create_new);
+
+			do_commands(std::move(lines), out_buffer, err_buffer, security_context_);
+		}
 
 	}
 	security_context_->logout();

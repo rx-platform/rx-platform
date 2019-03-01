@@ -72,17 +72,21 @@ namespace object_types
 	class object_type;
 }
 }
-
 namespace runtime {
 namespace objects {
 	class port_runtime;
 	class object_runtime;
 
 } // namespace object_types
-typedef rx_reference<objects::domain_runtime> rx_domain_ptr;
-typedef rx_reference<objects::port_runtime> rx_port_ptr;
-typedef rx_reference<objects::object_runtime> rx_object_ptr;
-typedef rx_reference<objects::application_runtime> rx_application_ptr;
+}
+typedef rx_reference<runtime::objects::domain_runtime> rx_domain_ptr;
+typedef rx_reference<runtime::objects::port_runtime> rx_port_ptr;
+typedef rx_reference<runtime::objects::object_runtime> rx_object_ptr;
+typedef rx_reference<runtime::objects::application_runtime> rx_application_ptr;
+
+
+
+namespace runtime {
 
 namespace objects {
 
