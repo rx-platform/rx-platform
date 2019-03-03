@@ -433,11 +433,6 @@ bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostre
 	}
 }
 
-bool test_case::is_browsable () const
-{
-	return false;
-}
-
 rx_time test_case::get_created_time () const
 {
 	return rx_gate::instance().get_started();
@@ -563,7 +558,7 @@ test_program_context* testing_enviroment::create_test_context (rx_platform::prog
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : status_(RX_TEST_STATUS_UNKNOWN)
 	, console_program_context(parent, holder,  current_directory, out, err, client)
 {

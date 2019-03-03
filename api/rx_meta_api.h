@@ -32,8 +32,7 @@
 
 
 
-#include "rx_library.h"
-#include "model/rx_meta_internals.h"
+#include "rx_platform_api.h"
 namespace rx_platform
 {
 namespace api
@@ -42,11 +41,26 @@ namespace meta
 {
 
 
-void rx_delete_object(
+
+rx_result rx_delete_object(
 	const string_type& name
-	, ns::rx_server_directory::smart_ptr dir
 	, std::function<void(rx_result&&)> callback
-	, pointers::reference_object::smart_ptr ref);
+	, rx_context ctx);
+
+
+rx_result rx_create_object(
+	const string_type& name
+	, const string_type& type_name
+	, const data::runtime_values_data* init_data
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_create_object_type(
+	const string_type& name
+	, const string_type& base_name
+	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
+	, rx_context ctx);
+
 
 }
 }

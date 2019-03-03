@@ -452,6 +452,11 @@ typedef pointers::reference<object_types::application_type> application_type_ptr
 typedef pointers::reference<object_types::port_type> port_type_ptr;
 
 }
+
+typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
+typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;
+typedef pointers::reference<meta::object_types::application_type> rx_application_type_ptr;
+typedef pointers::reference<meta::object_types::port_type> rx_port_type_ptr;
 }
 
 

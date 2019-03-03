@@ -58,7 +58,7 @@ class rx_platform_builder
 
       virtual void build (platform_root::smart_ptr root) = 0;
 
-      static server_directory_ptr buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data);
+      static rx_directory_ptr buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data);
 
 
   protected:
@@ -109,16 +109,16 @@ class basic_types_builder : public rx_platform_builder
 
   private:
 	    template<class T>
-		void build_basic_object_type(server_directory_ptr dir, rx_reference<T> what);
+		void build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what);
 		template<class T>
-		void build_basic_domain_type(server_directory_ptr dir, rx_reference<T> what);
+		void build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what);
 		template<class T>
-		void build_basic_application_type(server_directory_ptr dir, rx_reference<T> what);
+		void build_basic_application_type(rx_directory_ptr dir, rx_reference<T> what);
 		template<class T>
-		void build_basic_port_type(server_directory_ptr dir, rx_reference<T> what);
+		void build_basic_port_type(rx_directory_ptr dir, rx_reference<T> what);
 
 		template<class T>
-		void build_basic_type(server_directory_ptr dir, rx_reference<T> what);
+		void build_basic_type(rx_directory_ptr dir, rx_reference<T> what);
 
 };
 

@@ -37,6 +37,7 @@
 #include "sys_internal/rx_internal_builders.h"
 #include "system/python/py_support.h"
 #include "api/rx_meta_api.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_platform {
@@ -191,7 +192,7 @@ uint32_t rx_gate::stop ()
 	return RX_OK;
 }
 
-server_directory_ptr rx_gate::get_root_directory ()
+rx_directory_ptr rx_gate::get_root_directory ()
 {
 	return root_;
 }

@@ -71,7 +71,7 @@ class host_security_context : public rx::security::built_in_security_context
   public:
       host_security_context();
 
-      virtual ~host_security_context();
+      ~host_security_context();
 
 
       bool is_system () const;
@@ -99,7 +99,7 @@ file class. basic implementation of a file");
   public:
       rx_platform_file();
 
-      virtual ~rx_platform_file();
+      ~rx_platform_file();
 
 
       string_type get_type_name () const;
@@ -107,8 +107,6 @@ file class. basic implementation of a file");
       namespace_item_attributes get_attributes () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      bool is_browsable () const;
 
       virtual values::rx_value get_value () const = 0;
 
@@ -151,7 +149,7 @@ class rx_platform_storage : public rx::pointers::reference_object
   public:
       rx_platform_storage();
 
-      virtual ~rx_platform_storage();
+      ~rx_platform_storage();
 
 
       virtual void get_storage_info (string_type& info) = 0;
@@ -166,7 +164,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual void deinit_storage ();
 
-      virtual void list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) = 0;
+      virtual void list_storage (const string_type& path, platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) = 0;
 
 
   protected:

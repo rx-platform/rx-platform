@@ -43,28 +43,19 @@ namespace meta {
 
 // Class rx_platform::meta::type_check_context 
 
-type_check_context::type_check_context()
-      : type_ok_(true)
-{
-}
-
-
 
 bool type_check_context::is_check_ok () const
 {
-	return type_ok_;
+	return errors_.empty();
 }
 
 void type_check_context::add_error (const string_type& error)
 {
-	if (type_ok_)// avoid unnecessary write
-		type_ok_ = false;
 	errors_.emplace_back(error);
 }
 
 void type_check_context::reinit ()
 {
-	type_ok_ = true;
 	errors_.clear();
 }
 
@@ -351,6 +342,25 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 
 
 // Class rx_platform::meta::type_creation_data 
+
+
+// Class rx_platform::meta::type_create_context 
+
+
+bool type_create_context::created () const
+{
+	return errors_.empty();
+}
+
+void type_create_context::add_error (const string_type& error)
+{
+	errors_.push_back(error);
+}
+
+void type_create_context::reinit ()
+{
+	errors_.clear();
+}
 
 
 } // namespace meta

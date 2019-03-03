@@ -36,6 +36,7 @@
 #include "terminal/rx_con_commands.h"
 #include "testing/rx_test.h"
 #include "model/rx_meta_commands.h"
+#include "sys_internal/rx_ns_commands.h"
 
 
 namespace terminal {
@@ -64,11 +65,6 @@ namespace_item_attributes server_command::get_attributes () const
 bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 {
 	return true;
-}
-
-bool server_command::is_browsable () const
-{
-	return false;
 }
 
 void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
@@ -104,11 +100,6 @@ void server_command_manager::register_internal_commands ()
 
 	// console commands
 	register_command(rx_create_reference<echo_server_command>());
-	register_command(rx_create_reference<console::console_commands::dir_command>());
-	register_command(rx_create_reference<console::console_commands::ls_command>());
-	register_command(rx_create_reference<console::console_commands::cd_command>());
-	register_command(rx_create_reference<console::console_commands::mkdir_command>());
-	register_command(rx_create_reference<console::console_commands::rmdir_command>());
 	register_command(rx_create_reference<console::console_commands::info_command>());
 	register_command(rx_create_reference<console::console_commands::code_command>());
 	register_command(rx_create_reference<console::console_commands::rx_name_command>());
@@ -121,6 +112,12 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::def_command>());
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
+	// namespace commands
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::dir_command>());
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::ls_command>());
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::cd_command>());
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::mkdir_command>());
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::rmdir_command>());
 	// test command
 	register_command(rx_create_reference<testing::test_command>());
 	// meta commands

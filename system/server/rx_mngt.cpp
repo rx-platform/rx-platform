@@ -40,6 +40,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
 #include "api/rx_meta_api.h"
+#include "model/rx_meta_internals.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -64,14 +65,6 @@ server_manager::~server_manager()
 }
 
 
-
-void server_manager::virtual_bind ()
-{
-}
-
-void server_manager::virtual_release ()
-{
-}
 
 uint32_t server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
 {
@@ -116,7 +109,7 @@ uint32_t server_manager::stop ()
 	return RX_OK;
 }
 
-void server_manager::get_directories (server_directories_type& dirs)
+void server_manager::get_directories (platform_directories_type& dirs)
 {
 }
 

@@ -224,17 +224,6 @@ bool object_runtime::init_object ()
 	return true;
 }
 
-bool object_runtime::is_browsable () const
-{
-	return true;
-}
-
-void object_runtime::get_content (server_items_type& sub_items, const string_type& pattern) const
-{
-	// TODO!!!!
-  //runtime_item_.get_sub_items(sub_items,pattern);
-}
-
 platform_item_ptr object_runtime::get_item_ptr ()
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());

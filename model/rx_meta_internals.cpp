@@ -257,20 +257,17 @@ inheritance_hash::inheritance_hash()
 
 
 
-bool inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
+rx_result inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
 {
 	if (hash_data_.find(new_id) != hash_data_.end())
-	{// this node id already exist
-		return false;
-	}
+		return "Node already exists!";
+
 	relation_map_type::iterator base_data_it = hash_data_.end();
 	if (!base_id.is_null())
 	{
 		base_data_it = hash_data_.find(base_id);
 		if (base_data_it == hash_data_.end())
-		{// base node id does not exists
-			return false;
-		}
+			return "Base node does not exists!";
 	}
 	auto new_data_it = hash_data_.emplace(new_id, std::make_unique<relation_elements_data>()).first;
 	if (!base_id.is_null())
@@ -306,34 +303,49 @@ bool inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node
 	return true;
 }
 
-void inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& result) const
+rx_result inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& result) const
 {
 	auto it = hash_data_.find(id);
 	if (it != hash_data_.end())
 	{
 		std::copy(it->second->ordered.begin(), it->second->ordered.end(), std::back_inserter(result));
+		return true;
+	}
+	else
+	{
+		return "Node does not exists!";
 	}
 }
 
-void inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids& result) const
+rx_result inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids& result) const
 {
 	auto it = derived_first_hash_.find(id);
 	if (it != derived_first_hash_.end())
 	{
 		std::copy(it->second->begin(), it->second->end(), std::back_inserter(result));
+		return true;
+	}
+	else
+	{
+		return "Node does not exists!";
 	}
 }
 
-void inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const
+rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const
 {
 	auto it = derived_hash_.find(id);
 	if (it != derived_hash_.end())
 	{
 		std::copy(it->second->begin(), it->second->end(), std::back_inserter(result));
+		return true;
+	}
+	else
+	{
+		return "Node does not exists!";
 	}
 }
 
-bool inheritance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
+rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
 {
 	RX_ASSERT(false);
 	return false;

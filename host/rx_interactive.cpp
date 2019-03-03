@@ -50,7 +50,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
 	, hosting::rx_platform_host(storage)
 {
 	//startup_script_ = "test run meta/construct-wide\n";
-	startup_script_ = "test run meta/type-check\ncreate object perica from check_test_object_type\r\n";
+	startup_script_ = "test run meta/type-check\n";
 }
 
 

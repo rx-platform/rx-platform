@@ -50,7 +50,7 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
   public:
       file_system_storage();
 
-      virtual ~file_system_storage();
+      ~file_system_storage();
 
 
       void get_storage_info (string_type& info);
@@ -65,7 +65,7 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
 
       void deinit_storage ();
 
-      void list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern);
+      void list_storage (const string_type& path, platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern);
 
 
   protected:

@@ -70,8 +70,6 @@ class server_command : public rx_platform::prog::server_command_base
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
-      bool is_browsable () const;
-
 
   protected:
 

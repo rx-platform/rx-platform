@@ -32,6 +32,29 @@
 
 
 
+#include "rx_library.h"
+#include "system/server/rx_ns.h"
+#include "system/runtime/rx_objbase.h"
+#include "system/meta/rx_obj_types.h"
+namespace rx_platform
+{
+namespace api
+{
+namespace meta
+{
+
+struct rx_context
+{
+	rx_directory_ptr directory;
+	rx_application_ptr application;
+	rx_domain_ptr domain;
+	rx_object_ptr object;
+	pointers::reference_object::smart_ptr reference;
+};
+
+}
+}
+}
 
 
 

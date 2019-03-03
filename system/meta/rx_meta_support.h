@@ -47,14 +47,14 @@ namespace meta {
 class type_check_context 
 {
   public:
+	  type_check_context() = default;
+	  ~type_check_context() = default;
   	  type_check_context(const type_check_context&) = default;
 	  type_check_context(type_check_context&&) = default;
 	  type_check_context& operator=(const type_check_context&) = default;
    	  type_check_context& operator=(type_check_context&&) = default;
 
   public:
-      type_check_context();
-
 
       bool is_check_ok () const;
 
@@ -76,8 +76,6 @@ class type_check_context
 
 
       string_array errors_;
-
-      bool type_ok_;
 
 
 };
@@ -226,6 +224,47 @@ struct type_creation_data
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class type_create_context 
+{
+public:
+	type_create_context() = default;
+	~type_create_context() = default;
+	type_create_context(const type_create_context&) = default;
+	type_create_context(type_create_context&&) = default;
+	type_create_context& operator=(const type_create_context&) = default;
+	type_create_context& operator=(type_create_context&&) = default;
+
+  public:
+
+      bool created () const;
+
+      void add_error (const string_type& error);
+
+      void reinit ();
+
+
+      const string_array& get_errors () const
+      {
+        return errors_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_array errors_;
 
 
 };

@@ -68,7 +68,7 @@ and general usage thread pool resources\r\n\
   public:
       server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id);
 
-      virtual ~server_dispatcher_object();
+      ~server_dispatcher_object();
 
 
       rx_reference<rx::threads::dispatcher_pool> get_pool ()
@@ -79,9 +79,6 @@ and general usage thread pool resources\r\n\
 
 
   protected:
-
-      void get_items (server_items_type& sub_items, const string_type& pattern) const;
-
 
   private:
 
@@ -106,7 +103,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
   public:
       dispatcher_subscribers_job();
 
-      virtual ~dispatcher_subscribers_job();
+      ~dispatcher_subscribers_job();
 
 
       void process ();
@@ -141,7 +138,7 @@ thread pool resources\r\n\
   public:
       domains_pool (uint32_t pool_size);
 
-      virtual ~domains_pool();
+      ~domains_pool();
 
 
       void run (int priority = RX_PRIORITY_NORMAL);
@@ -214,7 +211,7 @@ callculation ( normal priority)");
   public:
       server_rt();
 
-      virtual ~server_rt();
+      ~server_rt();
 
 
       uint32_t initialize (hosting::rx_platform_host* host, runtime_data_t& data);
@@ -270,13 +267,6 @@ callculation ( normal priority)");
 
 
   protected:
-
-      void get_items (server_items_type& sub_items, const string_type& pattern) const;
-
-      void virtual_bind ();
-
-      void virtual_release ();
-
 
   private:
 

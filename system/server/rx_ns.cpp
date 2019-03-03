@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
+*  
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -106,7 +106,7 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class rx_platform::ns::rx_platform_item
+// Class rx_platform::ns::rx_platform_item 
 
 rx_platform_item::rx_platform_item()
 {
@@ -142,13 +142,13 @@ void rx_platform_item::unlock ()
 	item_lock_.unlock();
 }
 
-server_directory_ptr rx_platform_item::get_parent () const
+rx_directory_ptr rx_platform_item::get_parent () const
 {
 	locks::auto_lock_t<rx_platform_item> dummy (const_cast<rx_platform_item*>(this));
-	return server_directory_ptr::null_ptr;
+	return parent_;
 }
 
-void rx_platform_item::set_parent (server_directory_ptr parent)
+void rx_platform_item::set_parent (rx_directory_ptr parent)
 {
 	locks::auto_lock_t<rx_platform_item> dummy(this);
 	parent_ = parent;
@@ -184,28 +184,28 @@ rx_result rx_platform_item::deserialize (base_meta_reader& stream)
 }
 
 
-// Class rx_platform::ns::rx_server_directory
+// Class rx_platform::ns::rx_platform_directory 
 
-rx_server_directory::rx_server_directory()
+rx_platform_directory::rx_platform_directory()
       : created_(rx_time::now())
 , name_("<unnamed>")
 {
 }
 
-rx_server_directory::rx_server_directory (const string_type& name)
+rx_platform_directory::rx_platform_directory (const string_type& name)
       : created_(rx_time::now())
 	, name_(name)
 {
 }
 
 
-rx_server_directory::~rx_server_directory()
+rx_platform_directory::~rx_platform_directory()
 {
 }
 
 
 
-void rx_server_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
+void rx_platform_directory::get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const
 {
 	locks::const_auto_slim_lock dummy(&structure_lock_);
 	for (const auto& one : sub_directories_)
@@ -218,19 +218,19 @@ void rx_server_directory::get_content (server_directories_type& sub_directories,
 	}
 }
 
-void rx_server_directory::structure_lock ()
+void rx_platform_directory::structure_lock ()
 {
 	structure_lock_.lock();
 }
 
-void rx_server_directory::structure_unlock ()
+void rx_platform_directory::structure_unlock ()
 {
 	structure_lock_.unlock();
 }
 
-server_directory_ptr rx_server_directory::get_parent () const
+rx_directory_ptr rx_platform_directory::get_parent () const
 {
-	server_directory_ptr ret;
+	rx_directory_ptr ret;
 	structure_lock();
 	if (parent_)
 	{
@@ -242,20 +242,20 @@ server_directory_ptr rx_server_directory::get_parent () const
 	return ret;
 }
 
-server_directory_ptr rx_server_directory::get_sub_directory (const string_type& path) const
+rx_directory_ptr rx_platform_directory::get_sub_directory (const string_type& path) const
 {
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
 	{// plain item
 		if (path.empty() || path == ".")
 		{
-			return smart_ptr::create_from_pointer(const_cast<rx_server_directory*>(this));
+			return smart_ptr::create_from_pointer(const_cast<rx_platform_directory*>(this));
 		}
 		else if (path == "..")
 		{// go one up
-			server_directory_ptr ret = get_parent();
+			rx_directory_ptr ret = get_parent();
 			if (!ret)
-				return smart_ptr::create_from_pointer(const_cast<rx_server_directory*>(this));
+				return smart_ptr::create_from_pointer(const_cast<rx_platform_directory*>(this));
 			else
 				return ret;
 		}
@@ -266,7 +266,7 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 			if (it != sub_directories_.end())
 				return it->second;
 			else
-				return server_directory_ptr::null_ptr;
+				return rx_directory_ptr::null_ptr;
 		}
 	}
 	else
@@ -281,23 +281,23 @@ server_directory_ptr rx_server_directory::get_sub_directory (const string_type& 
 			string_type rest;
 			extract_next(path, mine, rest, '/');
 
-			server_directory_ptr temp = get_sub_directory(mine);
+			rx_directory_ptr temp = get_sub_directory(mine);
 			if (temp)
 				return temp->get_sub_directory(rest);
 			else
-				return server_directory_ptr::null_ptr;
+				return rx_directory_ptr::null_ptr;
 		}
 	}
 }
 
-string_type rx_server_directory::get_path () const
+string_type rx_platform_directory::get_path () const
 {
 	string_type path;
 	fill_path(path);
 	return path;
 }
 
-string_type rx_server_directory::get_name () const
+string_type rx_platform_directory::get_name () const
 {
 	locks::const_auto_slim_lock dummy(&structure_lock_);
 	if (name_.empty())
@@ -306,7 +306,7 @@ string_type rx_server_directory::get_name () const
 		return name_;
 }
 
-void rx_server_directory::fill_path (string_type& path) const
+void rx_platform_directory::fill_path (string_type& path) const
 {
 
 	structure_lock();
@@ -325,7 +325,7 @@ void rx_server_directory::fill_path (string_type& path) const
 	structure_unlock();
 }
 
-void rx_server_directory::set_parent (server_directory_ptr parent)
+void rx_platform_directory::set_parent (rx_directory_ptr parent)
 {
 	/*if (library::cpp_classes_manager::instance().check_class(parent.get_code_behind()))
 	{
@@ -338,13 +338,13 @@ void rx_server_directory::set_parent (server_directory_ptr parent)
 	parent_ = parent;
 }
 
-void rx_server_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+void rx_platform_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 	class_name = get_class_name();
 	has_own_code_info = true;
 }
 
-const string_type& rx_server_directory::get_type_name () const
+const string_type& rx_platform_directory::get_type_name () const
 {
   // generated from ROSE!!!
   static string_type type_name = "DIR";
@@ -353,7 +353,7 @@ const string_type& rx_server_directory::get_type_name () const
 
 }
 
-platform_item_ptr rx_server_directory::get_sub_item (const string_type& path) const
+platform_item_ptr rx_platform_directory::get_sub_item (const string_type& path) const
 {
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
@@ -369,7 +369,7 @@ platform_item_ptr rx_server_directory::get_sub_item (const string_type& path) co
 	{// dir + item
 		string_type dir_path = path.substr(0, idx);
 		string_type item_name = path.substr(idx + 1);
-		server_directory_ptr dir = get_sub_directory(dir_path);
+		rx_directory_ptr dir = get_sub_directory(dir_path);
 		if (dir)
 		{
 			return dir->get_sub_item(item_name);
@@ -381,32 +381,32 @@ platform_item_ptr rx_server_directory::get_sub_item (const string_type& path) co
 	}
 }
 
-void rx_server_directory::structure_lock () const
+void rx_platform_directory::structure_lock () const
 {
-	const_cast<rx_server_directory*>(this)->structure_lock_.lock();
+	const_cast<rx_platform_directory*>(this)->structure_lock_.lock();
 }
 
-void rx_server_directory::structure_unlock () const
+void rx_platform_directory::structure_unlock () const
 {
-	const_cast<rx_server_directory*>(this)->structure_lock_.unlock();
+	const_cast<rx_platform_directory*>(this)->structure_lock_.unlock();
 }
 
-void rx_server_directory::get_value (rx_value& value)
+void rx_platform_directory::get_value (rx_value& value)
 {
 	value.assign_static(get_name(), get_created());
 }
 
-void rx_server_directory::fill_code_info (std::ostream& info)
+void rx_platform_directory::fill_code_info (std::ostream& info)
 {
 	string_type name = get_path();
 	fill_code_info(info, name);
 }
 
-void rx_server_directory::get_value (const string_type& name, rx_value& value)
+void rx_platform_directory::get_value (const string_type& name, rx_value& value)
 {
 }
 
-rx_result rx_server_directory::add_sub_directory (server_directory_ptr who)
+rx_result rx_platform_directory::add_sub_directory (rx_directory_ptr who)
 {
 	rx_result ret;
 	structure_lock();
@@ -426,7 +426,7 @@ rx_result rx_server_directory::add_sub_directory (server_directory_ptr who)
 	return ret;
 }
 
-rx_result rx_server_directory::add_item (platform_item_ptr who)
+rx_result rx_platform_directory::add_item (platform_item_ptr who)
 {
 	auto name = who->get_name();
 	rx_result ret;
@@ -445,7 +445,7 @@ rx_result rx_server_directory::add_item (platform_item_ptr who)
 	return ret;
 }
 
-rx_result rx_server_directory::delete_item (platform_item_ptr who)
+rx_result rx_platform_directory::delete_item (platform_item_ptr who)
 {
 	rx_result ret;
 	structure_lock();
@@ -462,7 +462,7 @@ rx_result rx_server_directory::delete_item (platform_item_ptr who)
 	return ret;
 }
 
-rx_result rx_server_directory::delete_item (const string_type& path)
+rx_result rx_platform_directory::delete_item (const string_type& path)
 {
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
@@ -479,7 +479,7 @@ rx_result rx_server_directory::delete_item (const string_type& path)
 	{// dir + item
 		string_type dir_path = path.substr(0, idx);
 		string_type item_name = path.substr(idx + 1);
-		server_directory_ptr dir = get_sub_directory(dir_path);
+		rx_directory_ptr dir = get_sub_directory(dir_path);
 		if (dir)
 		{
 			return dir->delete_item(item_name);
@@ -488,7 +488,7 @@ rx_result rx_server_directory::delete_item (const string_type& path)
 	return false;
 }
 
-rx_result rx_server_directory::add_sub_directory (const string_type& path)
+rx_result rx_platform_directory::add_sub_directory (const string_type& path)
 {
 	if (path.empty())
 		return "Invalid directory name!";
@@ -510,7 +510,7 @@ rx_result rx_server_directory::add_sub_directory (const string_type& path)
 	return add_sub_directory(new_dir);
 }
 
-rx_result rx_server_directory::delete_sub_directory (const string_type& path)
+rx_result rx_platform_directory::delete_sub_directory (const string_type& path)
 {
 	if (path.empty())
 		return "Invalid directory name!";
@@ -548,7 +548,7 @@ rx_result rx_server_directory::delete_sub_directory (const string_type& path)
 	return ret;
 }
 
-bool rx_server_directory::empty () const
+bool rx_platform_directory::empty () const
 {
 	bool ret;
 	structure_lock();
@@ -558,11 +558,11 @@ bool rx_server_directory::empty () const
 }
 
 template<class TImpl>
-rx_result rx_server_directory::add_item(TImpl who)
+rx_result rx_platform_directory::add_item(TImpl who)
 {
 	return add_item(sys_internal::internal_ns::rx_item_implementation<TImpl>());
 }
-// Class rx_platform::ns::rx_names_cache
+// Class rx_platform::ns::rx_names_cache 
 
 rx_names_cache::rx_names_cache()
 {

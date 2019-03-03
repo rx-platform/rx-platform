@@ -112,11 +112,6 @@ values::rx_value program_runtime::get_value () const
 	return temp;
 }
 
-bool program_runtime::is_browsable () const
-{
-	return false;
-}
-
 rx_time program_runtime::get_created_time () const
 {
 	return meta_data_.get_created_time();

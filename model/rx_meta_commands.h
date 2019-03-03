@@ -49,6 +49,10 @@ typedef rx_platform::prog::console_program_context::smart_ptr console_program_co
 class create_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(create_command);
+	struct create_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for creating various objects and types in platform\r\n\
 \

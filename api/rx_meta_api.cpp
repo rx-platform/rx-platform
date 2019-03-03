@@ -42,10 +42,33 @@ namespace api
 namespace meta
 {
 
-void rx_delete_object(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(rx_result&&)> callback, pointers::reference_object::smart_ptr ref)
+rx_result rx_delete_object(const string_type& name
+	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::platform_types_manager::instance().delete_runtime<object_type, pointers::reference_object::smart_ptr>(name, dir, callback, ref);
+	model::platform_types_manager::instance().delete_runtime<object_type, pointers::reference_object::smart_ptr>(
+		name, ctx.directory, callback, ctx.reference);
+	return true;
 }
+
+
+
+rx_result rx_create_object(const string_type& name, const string_type& type_name, const data::runtime_values_data* init_data
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
+{
+	model::platform_types_manager::instance().create_runtime<object_type, pointers::reference_object::smart_ptr>(
+		name, type_name, init_data, ctx.directory, callback, ctx.reference);
+	return true;
+}
+
+
+rx_result rx_create_object_type(rx_object_type_ptr what
+	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
+{
+	model::platform_types_manager::instance().create_type<object_type, pointers::reference_object::smart_ptr>(
+		what, ctx.directory, callback, ctx.reference);
+	return true;
+}
+
 
 }
 }

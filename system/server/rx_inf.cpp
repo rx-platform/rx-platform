@@ -35,6 +35,7 @@
 #include "rx_server.h"
 #include "lib/rx_io.h"
 #include "api/rx_meta_api.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_platform {
@@ -160,18 +161,6 @@ void server_rt::get_class_info (string_type& class_name, string_type& console, b
 	has_own_code_info = true;
 }
 
-void server_rt::get_items (server_items_type& sub_items, const string_type& pattern) const
-{
-}
-
-void server_rt::virtual_bind ()
-{
-}
-
-void server_rt::virtual_release ()
-{
-}
-
 void server_rt::get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const
 {
 }
@@ -268,12 +257,6 @@ server_dispatcher_object::~server_dispatcher_object()
 {
 }
 
-
-
-void server_dispatcher_object::get_items (server_items_type& sub_items, const string_type& pattern) const
-{
-	//sub_items.emplace_back(values::simple_const_value_ns_item<uint32_t>::smart_ptr(IO_POOL_NAME, ns::namespace_item_system_const_value, "-", get_created(), m_threads_count.get_value()));
-}
 
 
 // Class rx_platform::infrastructure::dispatcher_subscribers_job 

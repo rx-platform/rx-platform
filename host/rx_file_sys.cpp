@@ -109,7 +109,7 @@ void file_system_storage::deinit_storage ()
 {
 }
 
-void file_system_storage::list_storage (const string_type& path, server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern)
+void file_system_storage::list_storage (const string_type& path, platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern)
 {
 	string_type result_path;
 	rx_combine_paths(root_, path, result_path);

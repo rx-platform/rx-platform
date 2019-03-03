@@ -54,7 +54,7 @@ namespace internal_ns {
 
 
 
-class platform_root : public rx_platform::ns::rx_server_directory  
+class platform_root : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(platform_root);
 
@@ -84,7 +84,7 @@ contains root server folders\
 
 
 
-class user_directory : public rx_platform::ns::rx_server_directory  
+class user_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(user_directory);
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
@@ -113,7 +113,7 @@ used to create user defined folders...\
 
 
 
-class unassigned_directory : public rx_platform::ns::rx_server_directory  
+class unassigned_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(unassigned_directory);
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
@@ -142,7 +142,7 @@ All objects here are with unassigned state and hawing a bad quality\
 
 
 
-class world_directory : public rx_platform::ns::rx_server_directory  
+class world_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(world_directory);
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
@@ -190,8 +190,6 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result generate_json (std::ostream& def, std::ostream& err) const;
 
-      bool is_browsable () const;
-
       rx_time get_created_time () const;
 
       string_type get_name () const;
@@ -216,7 +214,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
 
 
-class storage_directory : public rx_platform::ns::rx_server_directory  
+class storage_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(storage_directory);
 
@@ -233,7 +231,7 @@ used to interface storage objects...\
 
       namespace_item_attributes get_attributes () const;
 
-      void get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const;
+      void get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
 
 
   protected:
@@ -266,8 +264,6 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result generate_json (std::ostream& def, std::ostream& err) const;
 
-      bool is_browsable () const;
-
       rx_time get_created_time () const;
 
       string_type get_name () const;
@@ -294,7 +290,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
 
 
-class internal_directory : public rx_platform::ns::rx_server_directory  
+class internal_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(internal_directory);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
@@ -372,12 +368,6 @@ rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
 
 	return true;
-}
-
-template <class TImpl>
-bool rx_item_implementation<TImpl>::is_browsable () const
-{
-	return impl_->is_browsable();
 }
 
 template <class TImpl>
@@ -463,12 +453,6 @@ rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, 
 		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
 
 	return out;
-}
-
-template <class TImpl>
-bool rx_meta_item_implementation<TImpl>::is_browsable () const
-{
-	return false;
 }
 
 template <class TImpl>

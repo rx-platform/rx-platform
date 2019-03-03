@@ -108,9 +108,6 @@ struct managment_data_t
 
 class server_manager 
 {
-	DECLARE_VIRTUAL_REFERENCE_PTR(server_manager);
-
-
 public:
 	template<class clsT>
 	typename clsT::smart_ptr get_type(const rx_node_id& id);
@@ -120,7 +117,7 @@ public:
   public:
       server_manager();
 
-      virtual ~server_manager();
+      ~server_manager();
 
 
       uint32_t initialize (hosting::rx_platform_host* host, managment_data_t& data);
@@ -131,7 +128,7 @@ public:
 
       uint32_t stop ();
 
-      void get_directories (server_directories_type& dirs);
+      void get_directories (platform_directories_type& dirs);
 
 
       rx_reference<runtime::objects::server_object> get_commands_manager ()
@@ -166,11 +163,6 @@ public:
 
 
   protected:
-
-      void virtual_bind ();
-
-      void virtual_release ();
-
 
   private:
 

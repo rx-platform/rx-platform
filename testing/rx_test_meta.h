@@ -58,7 +58,7 @@ basic testing object creation (all sub-types are created).");
    public:
        object_creation_test();
 
-       virtual ~object_creation_test();
+       ~object_creation_test();
 
 
        bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -98,7 +98,7 @@ basic testing object creation (all sub-types are created).");
    public:
        meta_model_test_category();
 
-       virtual ~meta_model_test_category();
+       ~meta_model_test_category();
 
 
    protected:
@@ -122,7 +122,7 @@ basic testing object creation (inheritance test).");
    public:
        inheritance_creation_test();
 
-       virtual ~inheritance_creation_test();
+       ~inheritance_creation_test();
 
 
        bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -155,7 +155,7 @@ basic testing object creation (inheritance test).");
    public:
        type_check_test();
 
-       virtual ~type_check_test();
+       ~type_check_test();
 
 
        bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -167,7 +167,7 @@ basic testing object creation (inheritance test).");
 
        rx_node_id create_object_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id struct_id, rx_node_id mapper_id);
 
-       rx_node_id create_struct_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id variable_id);
+       rx_result create_struct_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx, rx_node_id variable_id, rx_node_id& struct_id);
 
 
 

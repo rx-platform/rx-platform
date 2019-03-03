@@ -55,118 +55,6 @@ namespace console {
 namespace console_commands {
 typedef rx_platform::prog::console_program_context::smart_ptr console_program_contex_ptr;
 
-struct term_list_item_options
-{
-	bool list_attributes;
-	bool list_qualities;
-	bool list_timestamps;
-	bool list_created;
-	bool list_type;
-	bool list_size;
-};
-
-
-
-
-class namespace_command : public commands::server_command  
-{
-	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
-list current directory on console ( dir, ls ");
-
-  public:
-      namespace_command (const string_type& console_name);
-
-      ~namespace_command();
-
-
-      bool list_directory (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, server_directory_ptr& directory);
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
-class dir_command : public namespace_command  
-{
-	DECLARE_REFERENCE_PTR(dir_command);
-
-  public:
-      dir_command();
-
-      ~dir_command();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class ls_command : public namespace_command  
-{
-	DECLARE_REFERENCE_PTR(ls_command);
-
-  public:
-      ls_command();
-
-      ~ls_command();
-
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class cd_command : public commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(cd_command);
-	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
-changes current active directory");
-
-  public:
-      cd_command();
-
-      ~cd_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
-
 
 
 
@@ -417,7 +305,7 @@ displays details of selected item");
       ~info_command();
 
 
-      bool dump_dir_info (std::ostream& out, server_directory_ptr directory);
+      bool dump_dir_info (std::ostream& out, rx_directory_ptr directory);
 
 
   protected:
@@ -546,60 +434,6 @@ displays license info");
 };
 
 
-
-
-
-
-class mkdir_command : public commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(mkdir_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-creates new directory in namespace");
-
-  public:
-      mkdir_command();
-
-      ~mkdir_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rmdir_command : public commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(rmdir_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-removes directory from namespace");
-
-  public:
-      rmdir_command();
-
-      ~rmdir_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
-
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
@@ -607,3 +441,5 @@ removes directory from namespace");
 
 
 #endif
+
+

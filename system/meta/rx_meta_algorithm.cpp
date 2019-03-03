@@ -34,6 +34,8 @@
 
 #include "api/rx_meta_api.h"
 #include "rx_def_blocks.h"
+#include "rx_types.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_platform {

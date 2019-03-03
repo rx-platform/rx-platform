@@ -160,11 +160,6 @@ rx_time server_command_base::get_created_time () const
 	return rx_gate::instance().get_started();
 }
 
-bool server_command_base::is_browsable () const
-{
-	return false;
-}
-
 bool server_command_base::generate_json (std::ostream& def, std::ostream& err) const
 {
 	return false;
@@ -198,7 +193,7 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 
 // Class rx_platform::prog::console_program_context 
 
-console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
+console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : client_(client),
         out_std_(out.unsafe_ptr()),
         err_std_(err.unsafe_ptr()),
@@ -360,13 +355,6 @@ void console_client::get_prompt (string_type& prompt)
 {
 	prompt = "\r\n";
 	prompt += current_directory_->get_path();
-	if (current_object_)
-	{
-		prompt += RX_DIR_DELIMETER;
-		prompt += ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
-		prompt += current_object_->get_name();
-		prompt += ANSI_COLOR_RESET;
-	}
 	prompt += "\r\n" ANSI_RX_USER;
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;
@@ -470,10 +458,6 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		// set security context
 		security::security_auto_context dummy(ctx);
 
-
-		context->set_current_object(current_object_);
-		context->set_current_item(current_item_);
-
 		prog->my_program().process_program(context, rx_time::now(), false);
 		ret = !context->has_error();
 		if (ret)
@@ -486,8 +470,6 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 			else
 			{
 				current_directory_ = context->get_current_directory();
-				current_item_ = context->get_current_item();
-				current_object_ = context->get_current_object();
 			}
 		}
 	}
@@ -627,7 +609,7 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 
 sl_runtime::program_context* console_program::create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder)
 {
-	return new console_program_context(parent_context, holder, server_directory_ptr::null_ptr, buffer_ptr::null_ptr, buffer_ptr::null_ptr, console_client::smart_ptr::null_ptr);
+	return new console_program_context(parent_context, holder, rx_directory_ptr::null_ptr, buffer_ptr::null_ptr, buffer_ptr::null_ptr, console_client::smart_ptr::null_ptr);
 }
 
 

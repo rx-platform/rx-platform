@@ -192,15 +192,15 @@ class inheritance_hash
       inheritance_hash();
 
 
-      bool add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
+      rx_result add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
 
-      void get_base_types (const rx_node_id& id, rx_node_ids& result) const;
+      rx_result get_base_types (const rx_node_id& id, rx_node_ids& result) const;
 
-      void get_derived_from (const rx_node_id& id, rx_node_ids& result) const;
+      rx_result get_derived_from (const rx_node_id& id, rx_node_ids& result) const;
 
-      void get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const;
+      rx_result get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const;
 
-      bool remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
+      rx_result remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
 
 
   protected:
@@ -529,7 +529,7 @@ class platform_types_manager
 		  return _simple_types_container.get_internal_const<T>(tl::type2type<T>());
 	  }
 	  template<class T>
-	  typename T::smart_ptr get_type(const string_type& path, ns::rx_server_directory::smart_ptr dir)
+	  typename T::smart_ptr get_type(const string_type& path, rx_directory_ptr dir)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
 		  if (!item)
@@ -549,7 +549,7 @@ class platform_types_manager
 		  return ret;
 	  }
 	  template<class T>
-	  typename T::RTypePtr get_runtime(const string_type& path, ns::rx_server_directory::smart_ptr dir)
+	  typename T::RTypePtr get_runtime(const string_type& path, rx_directory_ptr dir)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
 		  if (!item)
@@ -568,18 +568,26 @@ class platform_types_manager
 		  }
 		  return ret;
 	  }
-	  template<class T>
-	  rx_result_with<typename T::RTypePtr> create_runtime(const string_type& name, const string_type& path, const data::runtime_values_data* init_data, ns::rx_server_directory::smart_ptr dir)
+	  template<class T, class refT>
+	  void create_runtime(const string_type& name, const string_type& type_name, const data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
 	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
+		  std::function<rx_result_with<typename T::RTypePtr>()> func = [=]() mutable {
+			  return create_runtime_helper<T>(name, type_name, init_data, dir, tl::type2type<T>());
+		  };
+		  rx_do_with_callback<rx_result_with<typename T::RTypePtr>, refT>(func, RX_DOMAIN_META, callback, ref);
+	  }
+	  template<class T>
+	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name, const data::runtime_values_data* init_data, rx_directory_ptr dir, tl::type2type<T>)
+	  {
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
 		  if (!item)
 		  {// TODO error, type does not exists
-			  return "Type "s + path + " does not exists!";
+			  return "Type "s + type_name + " does not exists!";
 		  }
 		  auto id = item->get_node_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
-			  return path + " does not have valid Id!";
+			  return type_name + " does not have valid Id!";
 		  }
 		  auto ret = internal_get_type_cache<T>().create_runtime(name, id, init_data);
 		  if (ret)
@@ -593,8 +601,18 @@ class platform_types_manager
 		  }
 		  return ret;
 	  }
+
+	  template<class T, class refT>
+	  void create_type(typename T::smart_ptr what, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
+	  {
+		  using result_t = rx_result_with<typename T::smart_ptr>;
+		  std::function<result_t(void)> func = [=]() {
+			  return create_type_helper<T>(what, dir, tl::type2type<T>());
+		  };
+		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
+	  }
 	  template<class T>
-	  typename T::smart_ptr create_type(typename T::smart_ptr what, ns::rx_server_directory::smart_ptr dir)
+	  rx_result_with<typename T::smart_ptr> create_type_helper(typename T::smart_ptr what, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  auto ret = internal_get_type_cache<T>().register_type(what);
 		  if (!ret)
@@ -610,7 +628,7 @@ class platform_types_manager
 		  return what;
 	  }
 	  template<class T>
-	  typename T::smart_ptr create_simple_type(typename T::smart_ptr what, ns::rx_server_directory::smart_ptr dir)
+	  rx_result_with<typename T::smart_ptr> create_simple_type(typename T::smart_ptr what, rx_directory_ptr dir)
 	  {
 		  auto ret = internal_get_simple_type_cache<T>().register_type(what);
 		  if (!ret)
@@ -619,7 +637,10 @@ class platform_types_manager
 		  }
 		  if (!dir->add_item(what->get_item_ptr()))
 		  {
-			  internal_get_simple_type_cache<T>().delete_type(what->meta_data().get_id());
+			  if (internal_get_simple_type_cache<T>().delete_type(what->meta_data().get_id()))
+			  {
+
+			  }
 			  // TODO error, can't add this name
 			  return T::smart_ptr::null_ptr;
 		  }
@@ -627,42 +648,42 @@ class platform_types_manager
 	  }
 
 	  template<class T, class refT>
-	  void check_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(type_check_context)> callback, refT ref)
+	  void check_type(const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, refT ref)
 	  {
-		  std::function<type_check_context(const string_type, ns::rx_server_directory::smart_ptr)> func = [=](const string_type loc_name, ns::rx_server_directory::smart_ptr loc_dir) mutable {
+		  std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
 			  return check_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
 		  };
 		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
 	  }
 	  template<class T, class refT>
-	  void check_simple_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(type_check_context)> callback, refT ref)
+	  void check_simple_type(const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, refT ref)
 	  {
-		  std::function<type_check_context(const string_type, ns::rx_server_directory::smart_ptr)> func = [=](const string_type loc_name, ns::rx_server_directory::smart_ptr loc_dir) mutable {
+		  std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
 			  return check_simple_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
 		  };
 		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
 	  }
 
 	  template<class T, class refT>
-	  void delete_runtime(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(rx_result&&)> callback, refT ref)
+	  void delete_runtime(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result&&)> callback, refT ref)
 	  {
-		  std::function<rx_result(const string_type, ns::rx_server_directory::smart_ptr)> func = [=](const string_type loc_name, ns::rx_server_directory::smart_ptr loc_dir) mutable {
-			  return delete_runtime_helper<T>(loc_name, loc_dir, tl::type2type<T>());
+		  std::function<rx_result()> func = [=]() {
+			  return delete_runtime_helper<T>(name, dir, tl::type2type<T>());
 		  };
-		  rx_do_with_callback<rx_result, refT, string_type, ns::rx_server_directory::smart_ptr>(func, RX_DOMAIN_META, callback, ref, name, dir);
+		  rx_do_with_callback<rx_result, refT>(func, RX_DOMAIN_META, callback, ref);
 	  }
 	  template<class T, class refT>
-	  void delete_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(rx_result)> callback, refT ref)
+	  void delete_type(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, refT ref)
 	  {
-		  std::function<rx_result(string_type, ns::rx_server_directory::smart_ptr)> func = [=](string_type name, ns::rx_server_directory::smart_ptr dir) {
+		  std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
 			  return delete_type_helper<T>(name, dir, tl::type2type<T>());
 		  };
 		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
 	  }
 	  template<class T, class refT>
-	  void delete_simple_type(const string_type& name, ns::rx_server_directory::smart_ptr dir, std::function<void(rx_result)> callback, refT ref)
+	  void delete_simple_type(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, refT ref)
 	  {
-		  std::function<rx_result(string_type, ns::rx_server_directory::smart_ptr)> func = [=](string_type name, ns::rx_server_directory::smart_ptr dir) {
+		  std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
 			  return delete_simple_type_helper<T>(name, dir, tl::type2type<T>());
 		  };
 		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
@@ -673,7 +694,7 @@ class platform_types_manager
       platform_types_manager();
 
 	  template<class T>
-	  rx_result delete_runtime_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  rx_result delete_runtime_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 		  if (!item)
@@ -694,7 +715,7 @@ class platform_types_manager
 		  return true;
 	  }
 	  template<class T>
-	  rx_result delete_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  rx_result delete_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 		  if (!item)
@@ -715,7 +736,7 @@ class platform_types_manager
 		  return true;
 	  }
 	  template<class T>
-	  rx_result delete_simple_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  rx_result delete_simple_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 		  if (!item)
@@ -736,7 +757,7 @@ class platform_types_manager
 		  return true;
 	  }
 	  template<class T>
-	  type_check_context check_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  type_check_context check_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  type_check_context ret;
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
@@ -755,7 +776,7 @@ class platform_types_manager
 		  return ret;
 	  }
 	  template<class T>
-	  type_check_context check_simple_type_helper(const string_type& name, ns::rx_server_directory::smart_ptr dir, tl::type2type<T>)
+	  type_check_context check_simple_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
 	  {
 		  type_check_context ret;
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
@@ -850,7 +871,9 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 
 	rx_node_ids base;
 	base.emplace_back(type_id);
-	inheritance_hash_.get_base_types(type_id,base);
+	auto base_result = inheritance_hash_.get_base_types(type_id,base);
+	if (!base_result)
+		return base_result.errors();
 	for(const auto& one : base)
 	{
 		auto it = constructors_.find(one);
@@ -1108,7 +1131,10 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 
 	rx_node_ids base;
 	base.emplace_back(type_id);
-	inheritance_hash_.get_base_types(type_id, base);
+	auto base_result = inheritance_hash_.get_base_types(type_id, base);
+	if (!base_result)
+		return base_result.errors();
+
 	for (const auto& one : base)
 	{
 		auto it = constructors_.find(one);

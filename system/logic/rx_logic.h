@@ -33,10 +33,10 @@
 
 // rx_checkable
 #include "system/meta/rx_checkable.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// soft_plc
+#include "soft_logic/soft_plc.h"
 
 
 
@@ -57,7 +57,7 @@ public:
   public:
       program_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~program_runtime();
+      ~program_runtime();
 
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
@@ -77,8 +77,6 @@ public:
       platform_item_ptr get_item_ptr ();
 
       values::rx_value get_value () const;
-
-      bool is_browsable () const;
 
       rx_time get_created_time () const;
 
@@ -129,7 +127,7 @@ ladder program class.");
   public:
       ladder_program (const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~ladder_program();
+      ~ladder_program();
 
 
       string_type get_type_name () const;

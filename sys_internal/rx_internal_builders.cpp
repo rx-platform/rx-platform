@@ -35,10 +35,10 @@
 #include "system/server/rx_server.h"
 #include "terminal/rx_commands.h"
 #include "system/server/rx_inf.h"
-#include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
 #include "api/rx_meta_api.h"
 #include "rx_configuration.h"
+#include "model/rx_meta_internals.h"
 using namespace rx_platform::meta::object_types;
 
 
@@ -47,9 +47,9 @@ namespace sys_internal {
 namespace builders {
 
 template<class T>
-void add_type_to_configuration(server_directory_ptr dir, rx_reference<T> what)
+void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what)
 {
-	model::platform_types_manager::instance().create_type<T>(what, dir);
+	model::platform_types_manager::instance().create_type_helper<T>(what, dir, tl::type2type<T>());
 }
 
 
@@ -77,7 +77,7 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-server_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data)
+rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data)
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// types builders
@@ -300,31 +300,31 @@ void basic_types_builder::build (platform_root::smart_ptr root)
 }
 
 template<class T>
-void basic_types_builder::build_basic_object_type(server_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
-	model::platform_types_manager::instance().create_type<T>(what, dir);
+	model::platform_types_manager::instance().create_type_helper(what, dir, tl::type2type<T>());
 }
 template<class T>
-void basic_types_builder::build_basic_domain_type(server_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	
 	what->complex_data().register_simple_value_static("Processor", true, -1); 
 	build_basic_object_type(dir, what);
 }
 template<class T>
-void basic_types_builder::build_basic_application_type(server_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_basic_application_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	build_basic_domain_type(dir, what);
 }
 template<class T>
-void basic_types_builder::build_basic_port_type(server_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_basic_port_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	build_basic_object_type(dir, what);
 }
 template<class T>
-void basic_types_builder::build_basic_type(server_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	model::platform_types_manager::instance().create_simple_type<T>(what, dir);

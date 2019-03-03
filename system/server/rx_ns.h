@@ -59,7 +59,7 @@ bool rx_is_valid_namespace_name(const string_type& name);
 
 namespace ns
 {
-class rx_server_directory;
+class rx_platform_directory;
 class rx_platform_item;
 }
 namespace prog
@@ -68,9 +68,9 @@ class server_command_base;
 }
 typedef rx::pointers::reference<prog::server_command_base> server_command_base_ptr;
 typedef rx::pointers::reference<ns::rx_platform_item> platform_item_ptr;
-typedef rx::pointers::reference<ns::rx_server_directory> server_directory_ptr;
-typedef std::vector<platform_item_ptr> server_items_type;
-typedef std::vector<server_directory_ptr> server_directories_type;
+typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
+typedef std::vector<platform_item_ptr> platform_items_type;
+typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 
 namespace ns {
@@ -109,30 +109,30 @@ void fill_quality_string(values::rx_value val, string_type& q);
 
 
 
-class rx_server_directory : public rx::pointers::reference_object  
+class rx_platform_directory : public rx::pointers::reference_object  
 {
-	DECLARE_REFERENCE_PTR(rx_server_directory);
-	typedef std::map<string_type, rx_server_directory::smart_ptr>  sub_directories_type;
+	DECLARE_REFERENCE_PTR(rx_platform_directory);
+	typedef std::map<string_type, rx_platform_directory::smart_ptr>  sub_directories_type;
 	typedef std::map<string_type, platform_item_ptr> sub_items_type;
 
 
   public:
-      rx_server_directory();
+      rx_platform_directory();
 
-      rx_server_directory (const string_type& name);
+      rx_platform_directory (const string_type& name);
 
-      ~rx_server_directory();
+      ~rx_platform_directory();
 
 
-      virtual void get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const;
+      virtual void get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
 
       void structure_lock ();
 
       void structure_unlock ();
 
-      server_directory_ptr get_parent () const;
+      rx_directory_ptr get_parent () const;
 
-      virtual server_directory_ptr get_sub_directory (const string_type& path) const;
+      virtual rx_directory_ptr get_sub_directory (const string_type& path) const;
 
       string_type get_path () const;
 
@@ -140,7 +140,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       void fill_path (string_type& path) const;
 
-      void set_parent (server_directory_ptr parent);
+      void set_parent (rx_directory_ptr parent);
 
       virtual namespace_item_attributes get_attributes () const = 0;
 
@@ -160,7 +160,7 @@ class rx_server_directory : public rx::pointers::reference_object
 
       virtual void get_value (const string_type& name, rx_value& value);
 
-      rx_result add_sub_directory (server_directory_ptr who);
+      rx_result add_sub_directory (rx_directory_ptr who);
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
@@ -190,7 +190,7 @@ class rx_server_directory : public rx::pointers::reference_object
   private:
 
 
-      rx_reference<rx_server_directory> parent_;
+      rx_reference<rx_platform_directory> parent_;
 
       sub_directories_type sub_directories_;
 
@@ -238,9 +238,9 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual namespace_item_attributes get_attributes () const = 0;
 
-      server_directory_ptr get_parent () const;
+      rx_directory_ptr get_parent () const;
 
-      void set_parent (server_directory_ptr parent);
+      void set_parent (rx_directory_ptr parent);
 
       string_type get_path () const;
 
@@ -249,8 +249,6 @@ class rx_platform_item : public rx::pointers::reference_object
       virtual rx_result serialize (base_meta_writer& stream) const;
 
       virtual rx_result deserialize (base_meta_reader& stream);
-
-      virtual bool is_browsable () const = 0;
 
       virtual rx_time get_created_time () const = 0;
 
@@ -266,7 +264,7 @@ class rx_platform_item : public rx::pointers::reference_object
   private:
 
 
-      rx_reference<rx_server_directory> parent_;
+      rx_reference<rx_platform_directory> parent_;
 
 
       locks::lockable item_lock_;

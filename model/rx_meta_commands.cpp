@@ -36,6 +36,9 @@
 #include "terminal/rx_terminal_style.h"
 #include "system/meta/rx_obj_types.h"
 
+using namespace rx_platform::api;
+using namespace rx_platform::api::meta;
+
 
 namespace model {
 
@@ -57,39 +60,70 @@ create_command::~create_command()
 
 bool create_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	if (!in.eof())
+	rx_reference<create_data_t> data = ctx->get_instruction_data<create_data_t>();
+	if (!data)
 	{
-		string_type what;
-		in >> what;
-		if (!what.empty())
+		if (!in.eof())
 		{
-			if (what == "object")
+			string_type what;
+			in >> what;
+			if (!what.empty())
 			{
-				return create_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
-			}
-			else if (what == "domain")
-			{
-				return create_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
-			}
-			else if (what == "app" || what == "application")
-			{
-				return create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
-			}
-			else if (what == "type")
-			{
-				return create_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				bool ret = false;
+				if (what == "object")
+				{
+					ret = create_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "domain")
+				{
+					ret = create_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "app" || what == "application")
+				{
+					ret = create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+				}
+				else if (what == "type")
+				{
+					ret = create_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else
+				{
+					err << "Unknown type:" << what << "\r\n";
+					return false;
+				}
+				if (ret)
+				{
+					data = rx_create_reference<create_data_t>();
+					data->started = rx_get_us_ticks();
+					ctx->set_instruction_data(data);
+					ctx->set_waiting();
+				}
+				return ret;
 			}
 			else
-			{
-				err << "Unknown type:" << what << "\r\n";
-			}
+				err << "Create type is unknown!\r\n";
 		}
 		else
 			err << "Create type is unknown!\r\n";
+		return false;
 	}
 	else
-		err << "Create type is unknown!\r\n";
-	return false;
+	{// we are returned here
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		if (ctx->is_canceled())
+		{
+			out << "Create was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Create lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		return true;
+	}
 }
 
 
@@ -147,16 +181,28 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("Values", init_data))
 			{
-				auto ret = platform_types_manager::instance().create_runtime<T>(name, class_name, &init_data, ctx->get_current_directory());
-				if (!ret)
-				{
-					err << "Error creating "
-						<< T::RType::type_name << ":\r\n";
-					dump_error_result(err, ret);
-					return false;
-				}
-				else
-					object_ptr = ret;
+				rx_context rxc;
+				rxc.reference = ctx->get_client();
+				rxc.directory = ctx->get_current_directory();
+				rx_platform::api::meta::rx_create_object(name, class_name, &init_data,
+					[=](rx_result_with<rx_object_ptr>&& result)
+					{
+						if (!result)
+						{
+							ctx->get_stderr() << "Error creating "
+								<< T::RType::type_name << ":\r\n";
+							dump_error_result(ctx->get_stderr(), result);
+						}
+						else
+						{
+							ctx->get_stdout() << "Created " << T::RType::type_name << " "
+								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+								<< ".\r\n";
+						}
+						ctx->send_results(result);
+					}
+					, rxc);
+				return true;
 			}
 			else
 			{
@@ -177,16 +223,30 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	}
 	else if (as_command.empty())
 	{
-		auto ret = platform_types_manager::instance().create_runtime<T>(name, class_name, nullptr, ctx->get_current_directory());
-		if (!ret)
-		{
-			err << "Error creating "
-				<< T::RType::type_name << ":\r\n";
-			dump_error_result(err, ret);
-			return false;
-		}
-		else
-			object_ptr = ret;
+		rx_context rxc;
+		rxc.reference = ctx->get_client();
+		rxc.directory = ctx->get_current_directory();
+		rx_platform::api::meta::rx_create_object(name, class_name, nullptr,
+			[=](rx_result_with<rx_result_with<rx_object_ptr> >&& result)
+			{
+				if (!result)
+				{
+					auto& err = ctx->get_stderr();
+					err << "Error creating "
+						<< T::RType::type_name << ":\r\n";
+					dump_error_result(err, result);
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					out << "Created " << T::RType::type_name << " "
+						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+						<< ".\r\n";
+				}
+				ctx->send_results(result);
+			}
+			, rxc);
+			return true;
 	}
 	else
 	{
@@ -196,18 +256,6 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			<< as_command << "!";
 		return false;
 	}
-	if (object_ptr)
-	{
-		out << "Created " << T::RType::type_name << " "
-			<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
-			<< ".\r\n";
-	}
-	else
-	{
-		err << "something went wrong!!!";
-		return false;
-	}
-	return true;
 }
 
 template<class T>
@@ -238,11 +286,11 @@ bool dump_types_command::do_console_command (std::istream& in, std::ostream& out
 	in >> item_type;
 	if (item_type == "objects")
 	{
-		return dump_types_to_console(tl::type2type<meta::object_types::object_type>(), in, out, err, ctx);
+		return dump_types_to_console(tl::type2type<object_types::object_type>(), in, out, err, ctx);
 	}
 	if (item_type == "ports")
 	{
-		return dump_types_to_console(tl::type2type<meta::object_types::port_type>(), in, out, err, ctx);
+		return dump_types_to_console(tl::type2type<object_types::port_type>(), in, out, err, ctx);
 	}
 	return true;
 }
@@ -375,8 +423,10 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	// these are type definition and stream for creation
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
-	
-	platform_types_manager::instance().delete_runtime<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+
+	rx_context rxc;
+	rxc.reference = ctx->get_client();
+	rx_platform::api::meta::rx_delete_object(name,
 		[ctx, name, this](rx_result&& result)
 		{
 			if (!result)
@@ -394,8 +444,8 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 			}
 			ctx->send_results(result);
 		}
-		, ctx->get_client()
-	);
+		, rxc);
+	
 	return true;
 }
 

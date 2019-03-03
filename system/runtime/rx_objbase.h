@@ -45,8 +45,8 @@
 namespace rx_platform {
 namespace runtime {
 namespace objects {
-class domain_runtime;
 class application_runtime;
+class domain_runtime;
 
 } // namespace objects
 } // namespace runtime
@@ -196,7 +196,7 @@ object class. basic implementation of an object");
   public:
       object_runtime (object_creation_data&& data);
 
-      virtual ~object_runtime();
+      ~object_runtime();
 
 
       rx_value get_value (const string_type path) const;
@@ -218,10 +218,6 @@ object class. basic implementation of an object");
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      bool is_browsable () const;
-
-      virtual void get_content (server_items_type& sub_items, const string_type& pattern) const;
 
       platform_item_ptr get_item_ptr ();
 
@@ -315,7 +311,7 @@ user object class. basic implementation of a user object");
 
       user_object (object_creation_data&& data);
 
-      virtual ~user_object();
+      ~user_object();
 
 
   protected:
@@ -340,7 +336,7 @@ system object class. basic implementation of a system object");
   public:
       server_object (object_creation_data&& data);
 
-      virtual ~server_object();
+      ~server_object();
 
 
   protected:
@@ -369,7 +365,7 @@ public:
   public:
       domain_runtime (domain_creation_data&& data);
 
-      virtual ~domain_runtime();
+      ~domain_runtime();
 
 
       string_type get_type_name () const;
@@ -443,7 +439,7 @@ system port class. basic implementation of a port");
   public:
       port_runtime (port_creation_data&& data);
 
-      virtual ~port_runtime();
+      ~port_runtime();
 
 
       string_type get_type_name () const;
@@ -488,7 +484,7 @@ system application class. contains system default application");
   public:
       application_runtime (application_creation_data&& data);
 
-      virtual ~application_runtime();
+      ~application_runtime();
 
 
       string_type get_type_name () const;

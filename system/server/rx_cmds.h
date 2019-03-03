@@ -76,9 +76,9 @@ public:
 	typedef int pending_jobs_type;
 
   public:
-      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
+      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
 
-      virtual ~console_program_context();
+      ~console_program_context();
 
 
       std::ostream& get_stdout ();
@@ -107,12 +107,12 @@ public:
 
 
 
-      server_directory_ptr get_current_directory ()
+      rx_directory_ptr get_current_directory ()
       {
         return current_directory_;
       }
 
-      void set_current_directory (server_directory_ptr value)
+      void set_current_directory (rx_directory_ptr value)
       {
         current_directory_ = value;
       }
@@ -127,28 +127,6 @@ public:
       const buffer_ptr get_err () const
       {
         return err_;
-      }
-
-
-      platform_item_ptr get_current_object ()
-      {
-        return current_object_;
-      }
-
-      void set_current_object (platform_item_ptr value)
-      {
-        current_object_ = value;
-      }
-
-
-      platform_item_ptr get_current_item ()
-      {
-        return current_item_;
-      }
-
-      void set_current_item (platform_item_ptr value)
-      {
-        current_item_ = value;
       }
 
 
@@ -186,7 +164,7 @@ public:
 
       std::ostream err_std_;
 
-      server_directory_ptr current_directory_;
+      rx_directory_ptr current_directory_;
 
       buffer_ptr out_;
 
@@ -197,10 +175,6 @@ public:
       instructions_data_type instructions_data_;
 
       std::atomic_bool canceled_;
-
-      platform_item_ptr current_object_;
-
-      platform_item_ptr current_item_;
 
       bool result_;
 
@@ -219,7 +193,7 @@ class server_command_base : public logic::program_runtime
   public:
       server_command_base (const string_type& name, const rx_node_id& id);
 
-      virtual ~server_command_base();
+      ~server_command_base();
 
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
@@ -241,8 +215,6 @@ class server_command_base : public logic::program_runtime
       bool console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx);
 
       rx_time get_created_time () const;
-
-      bool is_browsable () const;
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
@@ -304,7 +276,7 @@ class console_client : public runtime::objects::port_runtime
   public:
       console_client (runtime::objects::port_creation_data&& data);
 
-      virtual ~console_client();
+      ~console_client();
 
 
       virtual const string_type& get_console_name () = 0;
@@ -342,7 +314,7 @@ class console_client : public runtime::objects::port_runtime
       void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
-      server_directory_ptr current_directory_;
+      rx_directory_ptr current_directory_;
 
 
 
@@ -354,10 +326,6 @@ class console_client : public runtime::objects::port_runtime
       string_type line_;
 
       string_type name_;
-
-      platform_item_ptr current_object_;
-
-      platform_item_ptr current_item_;
 
 
 };
@@ -379,7 +347,7 @@ class server_script_host
   public:
       server_script_host (const script_def_t& definition);
 
-      virtual ~server_script_host();
+      ~server_script_host();
 
 
       virtual void deinitialize () = 0;
@@ -425,7 +393,7 @@ class console_program : public sl_runtime::sl_script::sl_script_program
   public:
       console_program();
 
-      virtual ~console_program();
+      ~console_program();
 
 
       sl_runtime::program_context* create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder);
@@ -455,7 +423,7 @@ class server_console_program : public logic::program_runtime
   public:
       server_console_program (console_client::smart_ptr client, const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~server_console_program();
+      ~server_console_program();
 
 
       void cancel_execution ();

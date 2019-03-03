@@ -43,7 +43,7 @@ namespace internal_ns {
 // Class sys_internal::internal_ns::platform_root 
 
 platform_root::platform_root()
-	: rx_server_directory("")
+	: rx_platform_directory("")
 {
 }
 
@@ -63,7 +63,7 @@ namespace_item_attributes platform_root::get_attributes () const
 // Class sys_internal::internal_ns::user_directory 
 
 user_directory::user_directory (const string_type& name)
-	: rx_server_directory(name)
+	: rx_platform_directory(name)
 {
 }
 
@@ -83,7 +83,7 @@ namespace_item_attributes user_directory::get_attributes () const
 // Class sys_internal::internal_ns::unassigned_directory 
 
 unassigned_directory::unassigned_directory()
-	: rx_server_directory(RX_NS_UNASSIGNED_NAME)
+	: rx_platform_directory(RX_NS_UNASSIGNED_NAME)
 {
 }
 
@@ -103,7 +103,7 @@ namespace_item_attributes unassigned_directory::get_attributes () const
 // Class sys_internal::internal_ns::world_directory 
 
 world_directory::world_directory()
-	: rx_server_directory(RX_NS_WORLD_NAME)
+	: rx_platform_directory(RX_NS_WORLD_NAME)
 {
 }
 
@@ -123,7 +123,7 @@ namespace_item_attributes world_directory::get_attributes () const
 // Class sys_internal::internal_ns::storage_directory 
 
 storage_directory::storage_directory()
-	: rx_server_directory(RX_NS_STORAGE_NAME)
+	: rx_platform_directory(RX_NS_STORAGE_NAME)
 {
 }
 
@@ -139,17 +139,17 @@ namespace_item_attributes storage_directory::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
 }
 
-void storage_directory::get_content (server_directories_type& sub_directories, server_items_type& sub_items, const string_type& pattern) const
+void storage_directory::get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const
 {
 	rx_gate::instance().get_host()->get_storage()->list_storage("", sub_directories, sub_items, pattern);
-	rx_server_directory::get_content(sub_directories, sub_items, pattern);
+	rx_platform_directory::get_content(sub_directories, sub_items, pattern);
 }
 
 
 // Class sys_internal::internal_ns::internal_directory 
 
 internal_directory::internal_directory (const string_type& name)
-	: rx_server_directory(name)
+	: rx_platform_directory(name)
 {
 }
 

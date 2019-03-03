@@ -206,11 +206,6 @@ bool rx_platform_file::generate_json (std::ostream& def, std::ostream& err) cons
 	return false;
 }
 
-bool rx_platform_file::is_browsable () const
-{
-	return false;
-}
-
 size_t rx_platform_file::get_size () const
 {
 	return 0;

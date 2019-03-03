@@ -31,14 +31,14 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using namespace rx;
 
@@ -70,7 +70,7 @@ test cases are divided into several categories. you can use test command to expl
   public:
       test_command();
 
-      virtual ~test_command();
+      ~test_command();
 
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
@@ -107,9 +107,9 @@ class test_program_context : public rx_platform::prog::console_program_context
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, server_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
 
-      virtual ~test_program_context();
+      ~test_program_context();
 
 
       void set_failed ();
@@ -189,8 +189,6 @@ public:
       test_context_data get_data (test_context_data* data = nullptr) const;
 
       bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
-
-      bool is_browsable () const;
 
       rx_time get_created_time () const;
 
@@ -309,7 +307,7 @@ public:
 	typedef std::map<string_type, test_category::smart_ptr> categories_type;
 
   public:
-      virtual ~testing_enviroment();
+      ~testing_enviroment();
 
 
       static testing_enviroment& instance ();
@@ -355,7 +353,7 @@ This test creates dummy test case and is used for testing this mechanism\
   public:
       basic_test_case_test();
 
-      virtual ~basic_test_case_test();
+      ~basic_test_case_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -380,7 +378,7 @@ class test_test : public test_category
   public:
       test_test();
 
-      virtual ~test_test();
+      ~test_test();
 
 
   protected:
