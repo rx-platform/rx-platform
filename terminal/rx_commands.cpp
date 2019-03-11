@@ -47,6 +47,7 @@ namespace commands {
 
 server_command::server_command (const string_type& console_name)
 	: rx_platform::prog::server_command_base(console_name,45)
+	, options_(console_name, "jbg help stuff")
 {
 }
 

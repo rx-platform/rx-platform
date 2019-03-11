@@ -81,7 +81,7 @@ const string_type& file_system_storage::get_license ()
 	{
 		tried_get = true;
 		string_type lic_path;
-		rx_combine_paths(root_, "LICENSE", lic_path);
+		rx_combine_paths(root_, "rx-system-storage/LICENSE", lic_path);
 		sys_handle_t file = rx_file(lic_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 		if (file)
 		{
@@ -102,7 +102,7 @@ const string_type& file_system_storage::get_license ()
 
 void file_system_storage::init_storage ()
 {
-	rx_combine_paths(get_root_folder(), RX_FILE_STORAGE_FOLDER, root_);
+	root_ = get_root_folder();
 }
 
 void file_system_storage::deinit_storage ()

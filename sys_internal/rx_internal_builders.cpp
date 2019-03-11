@@ -49,7 +49,8 @@ namespace builders {
 template<class T>
 void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what)
 {
-	model::platform_types_manager::instance().create_type_helper<T>(what, dir, tl::type2type<T>());
+	model::platform_types_manager::instance().internal_get_type_cache<T>().register_type(what);
+	dir->add_item(what->get_item_ptr());
 }
 
 
@@ -304,12 +305,12 @@ void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_refer
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
-	model::platform_types_manager::instance().create_type_helper(what, dir, tl::type2type<T>());
+	model::platform_types_manager::instance().internal_get_type_cache<T>().register_type(what);
+	dir->add_item(what->get_item_ptr());
 }
 template<class T>
 void basic_types_builder::build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what)
-{
-	
+{	
 	what->complex_data().register_simple_value_static("Processor", true, -1); 
 	build_basic_object_type(dir, what);
 }

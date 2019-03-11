@@ -33,7 +33,6 @@
 
 #include "targetver.h"
 
-#define SOURCE_CODE_PATH "d:\\rx\\native\\source\\"
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS

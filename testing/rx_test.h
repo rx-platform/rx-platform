@@ -218,6 +218,17 @@ public:
 
 
   protected:
+	  template<typename T>
+	  void dump_error_result(std::ostream& out, const rx_result_with<T>& result) const
+	  {
+		  for (const auto& one : result.errors())
+			  out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+	  }
+	  void dump_error_result(std::ostream& out, const rx_result& result) const
+	  {
+		  for (const auto& one : result.errors())
+			  out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+	  }
 
   private:
       test_case(const test_case &right);

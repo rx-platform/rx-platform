@@ -78,7 +78,9 @@ rx_gate::rx_gate()
 	{
 		ASSIGN_MODULE_VERSION(rx_version_, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 	}
-	rx_name_ = rx_get_server_name();
+	auto sname = rx_get_server_name();
+	if(sname)
+		rx_name_ = rx_get_server_name();
 	lib_version_ = g_lib_version;
 	hal_version_ = g_ositf_version;
 	

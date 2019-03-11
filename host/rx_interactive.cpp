@@ -28,6 +28,9 @@
 
 #include "pch.h"
 
+// adding command line parsing library
+// see <https://github.com/jarro2783/cxxopts>
+#include "third-party/cxxopts/include/cxxopts.hpp"
 #include "rx_interactive_version.h"
 #include "terminal/rx_terminal_style.h"
 
@@ -50,7 +53,7 @@ interactive_console_host::interactive_console_host (rx_platform::hosting::rx_pla
 	, hosting::rx_platform_host(storage)
 {
 	//startup_script_ = "test run meta/construct-wide\n";
-	startup_script_ = "test run meta/type-check\n";
+	//startup_script_ = "test run -a\n";
 }
 
 
@@ -89,7 +92,7 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 		{
 			interactive_console_client interactive(this);
 
-			interactive.run_interactive();
+			interactive.run_interactive(config);
 
 			rx_platform::rx_gate::instance().stop();
 		}
@@ -124,7 +127,8 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	std::cout.flush();
 	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
-return true;
+	restore_console();
+	return true;
 }
 
 bool interactive_console_host::exit () const
@@ -204,11 +208,6 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 	return write_stdout(lines.c_str(), lines.size());
 }
 
-string_type interactive_console_host::get_startup_script ()
-{
-	return startup_script_;
-}
-
 std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	std::vector<ETH_interface> ret;
@@ -221,8 +220,91 @@ std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const str
 			return ret;
 }
 
+bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
+{
+	
+	cxxopts::Options options("rx-interactive", interactive_console_client::license_message);
+
+	options.add_options()
+		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
+		("s,startup", "Startup script", cxxopts::value<string_type>(config.startup_script))
+		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_data.platform_name))
+		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.storage_reference))
+		("y,system", "File storage system folder", cxxopts::value<string_type>(config.namespace_data.storage_reference))
+		("v,version", "Displays platform version")
+		("h,help", "Print help")
+		;
+
+	try
+	{
+		auto result = options.parse(argc, argv);
+		if (result.count("help"))
+		{
+			std::ostringstream str;
+			std::cout << "\r\n******************************************\r\n"
+				<< "* " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client *"
+				<< "\r\n******************************************\r\n";
+
+			restore_console();
+
+			std::cout << options.help({ "" });
+			std::cout << "\r\n";
+
+			// don't execute
+			return false;
+		}
+		else if (result.count("version"))
+		{
+			std::ostringstream str;
+			std::cout << "\r\n******************************************\r\n"
+				<< "* " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client *"
+				<< "\r\n******************************************\r\n" << interactive_console_client::license_message;
+
+			string_type version = rx_gate::instance().get_rx_version();
+
+			std::cout << "Platform Version:\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< version << ANSI_COLOR_RESET "\r\n";
+			
+			restore_console();
+			
+			// don't execute
+			return false;
+		}
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		std::cout << ANSI_COLOR_RED "Error parsing command line:\r\n" ANSI_COLOR_RESET
+			<< ex.what() << "\r\n";
+		return false;
+	}
+}
+
+int interactive_console_host::console_main (int argc, char* argv[])
+{
+	bool ret = setup_console(argc, argv);
+	rx_platform::configuration_data_t config;
+	ret = parse_command_line(argc, argv, config);
+	if(ret)
+		ret = start(config);
+
+	return ret ? 0 : -1;
+}
+
+rx_result interactive_console_host::setup_console (int argc, char* argv[])
+{
+	return true;
+}
+
+rx_result interactive_console_host::restore_console ()
+{
+	return true;
+}
+
 
 // Class host::interactive::interactive_console_client 
+
+string_type interactive_console_client::license_message = RX_LICENSE_MESSAGE;
 
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : host_(host),
@@ -249,19 +331,17 @@ const string_type& interactive_console_client::get_console_name ()
 	return temp;
 }
 
-void interactive_console_client::run_interactive ()
+void interactive_console_client::run_interactive (configuration_data_t& config)
 {
 
 	security::security_auto_context dummy(security_context_);
 
-	host_->write_stdout("\
-\r\n\
-Copyright(C) 2018-2019  Dusan Ciric\r\n\r\n\
-This program comes with ABSOLUTELY NO WARRANTY.\r\n\
-This is free software, and you are welcome to redistribute it\r\n\
-under certain conditions; type `license' for details.\r\n\
-\r\n" 
-	);
+
+	string_type temp_script(config.startup_script);
+	if(!temp_script.empty())
+		temp_script += "\r\n";
+
+	host_->write_stdout(license_message);
 
 	string_type temp;
 	get_wellcome(temp);
@@ -271,19 +351,27 @@ under certain conditions; type `license' for details.\r\n\
 	temp.clear();
 	get_prompt(temp);
 	host_->write_stdout(temp);
-
-	string_type startup_script(host_->get_startup_script());
-
+	
 	std::array<char, 0x100> buffer;
 
 	size_t count;
 	
 	while (!exit_ && !host_->exit())
 	{
-		if (startup_script.empty())
+		if (temp_script.empty())
 		{
 			count = 0;
 			host_->read_stdin(buffer, count);
+
+			if (count == 1 && buffer[0] == 3)
+			{
+				memory::buffer_ptr out_buffer(pointers::_create_new);
+				memory::buffer_ptr err_buffer(pointers::_create_new);
+
+				cancel_command(out_buffer, err_buffer, security_context_);
+
+				continue;
+			}
 
 			if (std::cin.fail())
 			{
@@ -303,17 +391,17 @@ under certain conditions; type `license' for details.\r\n\
 		}
 		else
 		{
-			count = startup_script.size();
+			count = temp_script.size();
 			if (count > buffer.size())
 			{
-				memcpy(&buffer[0], startup_script.c_str(), buffer.size());
+				memcpy(&buffer[0], temp_script.c_str(), buffer.size());
 				count = buffer.size();
-				startup_script = startup_script.substr(count);
+				temp_script = temp_script.substr(count);
 			}
 			else
 			{
-				memcpy(&buffer[0], startup_script.c_str(), count);
-				startup_script.clear();
+				memcpy(&buffer[0], temp_script.c_str(), count);
+				temp_script.clear();
 			}
 		}
 

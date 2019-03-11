@@ -32,12 +32,12 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -98,6 +98,8 @@ public:
       void postpone_done ();
 
       void set_waiting ();
+
+      void cancel_execution ();
 
 
       rx_reference<console_client> get_client ()
@@ -424,9 +426,6 @@ class server_console_program : public logic::program_runtime
       server_console_program (console_client::smart_ptr client, const string_type& name, const rx_node_id& id, bool system = false);
 
       ~server_console_program();
-
-
-      void cancel_execution ();
 
 
   protected:

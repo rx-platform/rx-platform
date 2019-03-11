@@ -117,6 +117,9 @@ test_client_basics::~test_client_basics()
 
 bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
+	out << "Waiting for ports implementation\r\n";
+	ctx->set_failed();
+	return true;
 	string_type addr="127.0.0.1";
 	uint16_t port=12345;
 	if (!in.eof())

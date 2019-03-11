@@ -32,6 +32,10 @@
 
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
+namespace rx_platform
+{
+struct configuration_data_t;
+}
 /////////////////////////////////////////////////////////////
 // logging macros for host library
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)
@@ -208,13 +212,9 @@ class rx_platform_host
 
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      virtual bool start (const string_array& args) = 0;
+      virtual bool start (rx_platform::configuration_data_t& config) = 0;
 
       virtual bool break_host (const string_type& msg) = 0;
-
-      int console_main (int argc, char* argv[]);
-
-      virtual string_type get_startup_script ();
 
       virtual std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 

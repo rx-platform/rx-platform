@@ -58,6 +58,7 @@ rx_result rx_create_object(
 rx_result rx_create_object_type(
 	const string_type& name
 	, const string_type& base_name
+	, rx_object_type_ptr prototype
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
 	, rx_context ctx);
 

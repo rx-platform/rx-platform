@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -59,7 +59,7 @@ void sig_handler(int s)
 
 namespace gnu {
 
-// Class gnu::gnu_console_host 
+// Class gnu::gnu_console_host
 
 gnu_console_host::gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
 	: host::interactive::interactive_console_host(storage)
@@ -77,15 +77,12 @@ bool gnu_console_host::shutdown (const string_type& msg)
 {
     if(host::interactive::interactive_console_host::shutdown(msg))
     {
-        //set old terminal attributes
-		if (tcsetattr(STDIN_FILENO, TCSANOW, &ttyold_) != 0)
-			fprintf(stderr, "Failed setting terminal attributes\n");
         return true;
     }
     return false;
 }
 
-bool gnu_console_host::start (const string_array& args)
+bool gnu_console_host::start (rx_platform::configuration_data_t& config)
 {
     main_pid=pthread_self();
 
@@ -96,35 +93,6 @@ bool gnu_console_host::start (const string_array& args)
     rx_initialize_os(getpid(),true,tls,buff);
 
     rx::log::log_object::instance().start(std::cout,true);
-
-	termios ttynew;
-
-	if (tcgetattr(STDIN_FILENO, &ttyold_) != 0)
-	{
-		fprintf(stderr, "Failed getting terminal attributes\n");
-    }
-    else
-    {
-		ttynew = ttyold_;
-
-		ttynew.c_iflag = 0;
-		ttynew.c_oflag = 0;
-
-		// disable canonical mode (don't buffer by line)
-		ttynew.c_lflag &= ~ICANON;
-
-		// disable local echo
-		ttynew.c_lflag &= ~ECHO;
-
-		ttynew.c_cc[VMIN] = 1;
-		ttynew.c_cc[VTIME] = 1;
-
-		// set new terminal attributes
-		if (tcsetattr(STDIN_FILENO, TCSANOW, &ttynew) != 0)
-			fprintf(stderr, "Failed setting terminal attributes\n");
-	}
-
-
 
 	struct sigaction act;
 	struct sigaction old;
@@ -141,9 +109,6 @@ bool gnu_console_host::start (const string_array& args)
         perror("sigaction2");
 
 	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-
-
-	rx_platform::configuration_data_t config;
 
 	// execute main loop of the console host
 	console_loop(config);
@@ -208,6 +173,50 @@ std::vector<IP_interface> gnu_console_host::get_IP_interfaces (const string_type
 {
   std::vector<IP_interface> ret;
   return ret;
+}
+
+rx_result gnu_console_host::setup_console (int argc, char* argv[])
+{
+
+	termios ttynew;
+
+	if (tcgetattr(STDIN_FILENO, &ttyold_) != 0)
+	{
+		fprintf(stderr, "Failed getting terminal attributes\n");
+	}
+	else
+	{
+		ttynew = ttyold_;
+
+		ttynew.c_iflag = 0;
+		ttynew.c_oflag = 0;
+
+		// disable canonical mode (don't buffer by line)
+		ttynew.c_lflag &= ~ICANON;
+
+		// disable local echo
+		ttynew.c_lflag &= ~ECHO;
+
+		// do not process ETX (Ctrl-C)
+		ttynew.c_lflag &= ~VINTR;
+
+		ttynew.c_cc[VMIN] = 1;
+		ttynew.c_cc[VTIME] = 1;
+
+		// set new terminal attributes
+		if (tcsetattr(STDIN_FILENO, TCSANOW, &ttynew) != 0)
+			fprintf(stderr, "Failed setting terminal attributes\n");
+	}
+	return true;
+}
+
+rx_result gnu_console_host::restore_console ()
+{
+	//set old terminal attributes
+	if (tcsetattr(STDIN_FILENO, TCSANOW, &ttyold_) != 0)
+		return "Failed setting terminal attributes\n";
+	else
+		return true;
 }
 
 

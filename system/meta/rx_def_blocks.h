@@ -204,6 +204,8 @@ class event_attribute
   public:
       event_attribute (const string_type& name, const rx_node_id& id);
 
+      event_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -212,6 +214,8 @@ class event_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -226,6 +230,12 @@ class event_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -235,6 +245,8 @@ class event_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      string_type target_name_;
 
 
 };
@@ -254,6 +266,8 @@ class filter_attribute
   public:
       filter_attribute (const string_type& name, const rx_node_id& id);
 
+      filter_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -262,6 +276,8 @@ class filter_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -276,6 +292,12 @@ class filter_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -285,6 +307,8 @@ class filter_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      string_type target_name_;
 
 
 };
@@ -304,6 +328,8 @@ class mapper_attribute
   public:
       mapper_attribute (const string_type& name, const rx_node_id& id);
 
+      mapper_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -312,6 +338,8 @@ class mapper_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -326,6 +354,12 @@ class mapper_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -335,6 +369,8 @@ class mapper_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      string_type target_name_;
 
 
 };
@@ -447,6 +483,8 @@ class complex_data_type
 
       bool check_type (type_check_context& ctx);
 
+      rx_result resolve (rx_directory_ptr dir);
+
 
       const const_values_type& get_const_values () const
       {
@@ -542,6 +580,8 @@ class mapped_data_type
 
       bool check_type (type_check_context& ctx);
 
+      rx_result resolve (rx_directory_ptr dir);
+
 
   protected:
 
@@ -568,6 +608,8 @@ class source_attribute
   public:
       source_attribute (const string_type& name, const rx_node_id& id);
 
+      source_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -576,6 +618,8 @@ class source_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -590,6 +634,12 @@ class source_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -599,6 +649,8 @@ class source_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      string_type target_name_;
 
 
 };
@@ -618,6 +670,8 @@ class struct_attribute
   public:
       struct_attribute (const string_type& name, const rx_node_id& id);
 
+      struct_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -626,6 +680,8 @@ class struct_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -640,6 +696,12 @@ class struct_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -649,6 +711,8 @@ class struct_attribute
       string_type name_;
 
       rx_node_id target_id_;
+
+      string_type target_name_;
 
 
 };
@@ -668,6 +732,8 @@ class variable_attribute
   public:
       variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
 
+      variable_attribute (const string_type& name, const string_type& target_name);
+
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -678,6 +744,8 @@ class variable_attribute
       rx_result check (type_check_context& ctx);
 
       rx_result construct (construct_context& ctx) const;
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const string_type& get_name () const
@@ -698,6 +766,12 @@ class variable_attribute
       }
 
 
+      const string_type& get_target_name () const
+      {
+        return target_name_;
+      }
+
+
 
   protected:
 
@@ -711,6 +785,8 @@ class variable_attribute
       bool read_only_;
 
       values::rx_simple_value storage_;
+
+      string_type target_name_;
 
 
 };
@@ -748,6 +824,8 @@ class variable_data_type
       rx_result register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
   protected:

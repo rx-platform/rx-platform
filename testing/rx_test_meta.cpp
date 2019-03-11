@@ -188,12 +188,12 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating object type\r\n";
-	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
+	 auto test_type = rx_create_reference< rx_platform::meta::object_types::object_type>();
 	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
 	 test_type->complex_data().register_const_value_static("constVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
 	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
-	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(test_type, ctx->get_current_directory(), tl::type2type< rx_platform::meta::object_types::object_type>());
+	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>("test_object_type", "ObjectBase", test_type, ctx->get_current_directory(), tl::type2type< rx_platform::meta::object_types::object_type>());
 	 if (result)
 	 {
 		 auto rx_type_item = result.value()->get_item_ptr();
@@ -202,6 +202,11 @@ namespace meta_test {
 			 id = test_type->meta_data().get_id();
 			 out << "Object type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -341,11 +346,12 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating object type\r\n";
-	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "base_test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
+	 auto test_type = rx_create_reference<meta::object_types::object_type>();
 	 test_type->complex_data().register_simple_value_static("constVal", false, true);
 	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
-	 if (model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(test_type, ctx->get_current_directory(), tl::type2type<rx_platform::meta::object_types::object_type>()))
+	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>("base_test_object_type", "ObjectBase", test_type, ctx->get_current_directory(), tl::type2type<rx_platform::meta::object_types::object_type>());
+	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
@@ -353,6 +359,11 @@ namespace meta_test {
 			 id = test_type->meta_data().get_id();
 			 out << "Object type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -400,9 +411,10 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating object type\r\n";
-	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "derived_test_object_type", rx_node_id::null_id, base_id,  false }));
+	 auto test_type = rx_create_reference<meta::object_types::object_type>();
 	 test_type->complex_data().register_variable_static("simpleVal", variable_id, 114.8, false);
-	 if (model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(test_type, ctx->get_current_directory(), tl::type2type<rx_platform::meta::object_types::object_type>()))
+	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>("derived_test_object_type", "base_test_object_type", test_type, ctx->get_current_directory(), tl::type2type<rx_platform::meta::object_types::object_type>());
+	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
@@ -410,6 +422,11 @@ namespace meta_test {
 			 id = test_type->meta_data().get_id();
 			 out << "Object type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -509,12 +526,13 @@ namespace meta_test {
  {
 	 rx_node_id id;
 	 out << "Creating object type\r\n";
-	 rx_platform::meta::object_type_ptr test_type(std::move(rx_platform::meta::object_type_creation_data{ "check_test_object_type", rx_node_id::null_id, RX_CLASS_OBJECT_BASE_ID,  false }));
+	 auto test_type = rx_create_reference<meta::object_types::object_type>();
 	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
 	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
 	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
-	 if (model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(test_type, ctx->get_current_directory(), tl::type2type< object_type>()))
+	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>("check_test_object_type", "/_sys/types/base/ObjectBase", test_type, ctx->get_current_directory(), tl::type2type< object_type>());
+	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
@@ -522,6 +540,11 @@ namespace meta_test {
 			 id = test_type->meta_data().get_id();
 			 out << "Object type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }

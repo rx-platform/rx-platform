@@ -107,6 +107,33 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 	}
 }
 
+template <class typeT>
+rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose, rx_directory_ptr dir)
+{
+	if (!whose.target_id_.is_null())
+		return true;// already resolved
+	if (whose.target_name_.empty())
+		return "Unable to resolve empty target name";
+	auto item = dir->get_sub_item(whose.target_name_);
+	if (!item)
+	{
+		return whose.target_name_ + " does not exists!";
+	}
+	auto id = item->get_node_id();
+	if (id.is_null())
+	{// TODO error, item does not have id
+		return whose.target_name_ + " does not have valid id!";
+	}
+	auto ret = model::platform_types_manager::instance().internal_get_simple_type_cache<typename typeT::TargetType>().type_exists(id);
+	if (!ret)
+	{// type does not exist
+		return ret;
+	}
+	// everything is good we resolved it
+	whose.target_id_ = std::move(id);
+	return true;
+}
+
 // Variable Attribute is a special case!!!
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
@@ -206,6 +233,13 @@ rx_result basic_types_algorithm<typeT>::construct_basic_type (const typeT& whose
 	return whose.complex_data_.construct(ctx);
 }
 
+template <class typeT>
+rx_result basic_types_algorithm<typeT>::resolve_basic_type (typeT& whose, rx_directory_ptr dir)
+{
+	bool ret = whose.complex_data_.resolve(dir);
+	return ret;
+}
+
 // Struct Type is a special case!!!
 template <>
 rx_result basic_types_algorithm<basic_types::struct_type>::serialize_basic_type(const basic_types::struct_type& whose, base_meta_writer& stream, uint8_t type)
@@ -251,6 +285,14 @@ rx_result basic_types_algorithm<basic_types::struct_type>::construct_basic_type(
 	auto ret = whose.complex_data_.construct(ctx);
 	if(ret)
 		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
+	return ret;
+}
+template <>
+rx_result basic_types_algorithm<basic_types::struct_type>::resolve_basic_type(basic_types::struct_type& whose, rx_directory_ptr dir)
+{
+	bool ret = whose.complex_data_.resolve(dir);
+	if(ret)
+		ret= whose.mapping_data_.resolve(dir);
 	return ret;
 }
 // Variable Type is a special case!!!
@@ -315,6 +357,18 @@ rx_result basic_types_algorithm<basic_types::variable_type>::construct_basic_typ
 	}
 	return ret;
 }
+template <>
+rx_result basic_types_algorithm<basic_types::variable_type>::resolve_basic_type(basic_types::variable_type& whose, rx_directory_ptr dir)
+{
+	bool ret = whose.complex_data_.resolve(dir);
+	if (ret)
+	{
+		ret = whose.mapping_data_.resolve(dir);
+		if(ret)
+			ret = whose.variable_data_.resolve(dir);
+	}
+	return ret;
+}
 template class basic_types_algorithm<basic_types::struct_type>;
 template class basic_types_algorithm<basic_types::variable_type>;
 template class basic_types_algorithm<basic_types::source_type>;
@@ -376,6 +430,19 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
 		if (ret)
 			ret = whose.object_data_.construct(what, ctx);
+	}
+	return ret;
+}
+
+template <class typeT>
+rx_result object_types_algorithm<typeT>::resolve_object_type (typeT& whose, rx_directory_ptr dir)
+{
+	auto ret = whose.complex_data_.resolve(dir);
+	if (ret)
+	{
+		ret = whose.mapping_data_.resolve(dir);
+		if (ret)
+			ret = whose.object_data_.resolve(dir);
 	}
 	return ret;
 }

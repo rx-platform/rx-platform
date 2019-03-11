@@ -51,23 +51,7 @@ win32_file_system_storage::~win32_file_system_storage()
 
 string_type win32_file_system_storage::get_root_folder ()
 {
-	char buff[1024];
-
-	if (GetModuleFileNameA(NULL, buff, 1024))
-	{
-		size_t j = strlen(buff);
-		for (size_t i = j - 1; i > 0; i--)
-		{
-			if (buff[i] == L'\\')
-			{
-				buff[i + 1] = L'\0';
-				break;
-			}
-		}
-		return buff;
-	}
-	else
-		return "";
+	return string_type(RX_STORAGE_PATH);
 }
 
 

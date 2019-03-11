@@ -73,6 +73,7 @@ struct configuration_data_t
 	ns::namespace_data_t namespace_data;
 	meta::meta_data_t meta_data;
 	io_manager_data_t io_manager_data;
+	string_type startup_script;
 };
 
 

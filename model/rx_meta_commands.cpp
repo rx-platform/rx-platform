@@ -182,7 +182,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			if (reader.read_init_values("Values", init_data))
 			{
 				rx_context rxc;
-				rxc.reference = ctx->get_client();
+				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
 				rx_platform::api::meta::rx_create_object(name, class_name, &init_data,
 					[=](rx_result_with<rx_object_ptr>&& result)
@@ -224,7 +224,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	else if (as_command.empty())
 	{
 		rx_context rxc;
-		rxc.reference = ctx->get_client();
+		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
 		rx_platform::api::meta::rx_create_object(name, class_name, nullptr,
 			[=](rx_result_with<rx_result_with<rx_object_ptr> >&& result)
@@ -425,7 +425,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	typename T::RTypePtr object_ptr;
 
 	rx_context rxc;
-	rxc.reference = ctx->get_client();
+	rxc.object = ctx->get_client();
 	rx_platform::api::meta::rx_delete_object(name,
 		[ctx, name, this](rx_result&& result)
 		{

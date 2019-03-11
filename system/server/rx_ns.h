@@ -81,6 +81,7 @@ struct namespace_data_t
 	namespace_data_t()
 	{
 	}
+	string_type storage_reference;
 };
 
 enum namespace_item_attributes

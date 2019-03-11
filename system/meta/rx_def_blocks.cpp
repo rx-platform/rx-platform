@@ -301,6 +301,23 @@ bool complex_data_type::check_type (type_check_context& ctx)
 	return ret;
 }
 
+rx_result complex_data_type::resolve (rx_directory_ptr dir)
+{
+	for (auto& one : structs_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	for (auto& one : variables_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	return true;
+}
+
 
 // Class rx_platform::meta::def_blocks::const_value_def 
 
@@ -342,8 +359,14 @@ rx_simple_value const_value_def::get_value () const
 // Class rx_platform::meta::def_blocks::event_attribute 
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
+{
+}
+
+event_attribute::event_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -372,12 +395,23 @@ rx_result event_attribute::construct (construct_context& ctx) const
 	return meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
 }
 
+rx_result event_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<event_attribute>::resolve_complex_attribute(*this, dir);
+}
+
 
 // Class rx_platform::meta::def_blocks::filter_attribute 
 
 filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
+{
+}
+
+filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -401,6 +435,11 @@ rx_result filter_attribute::check (type_check_context& ctx)
 rx_result filter_attribute::construct (construct_context& ctx) const
 {
 	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
+}
+
+rx_result filter_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<filter_attribute>::resolve_complex_attribute(*this, dir);
 }
 
 
@@ -481,12 +520,29 @@ bool mapped_data_type::check_type (type_check_context& ctx)
 	return ret;
 }
 
+rx_result mapped_data_type::resolve (rx_directory_ptr dir)
+{
+	for (auto& one : mappers_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	return true;
+}
+
 
 // Class rx_platform::meta::def_blocks::mapper_attribute 
 
 mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
+{
+}
+
+mapper_attribute::mapper_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -510,6 +566,11 @@ rx_result mapper_attribute::check (type_check_context& ctx)
 rx_result mapper_attribute::construct (construct_context& ctx) const
 {
 	return meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(*this, ctx);
+}
+
+rx_result mapper_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<mapper_attribute>::resolve_complex_attribute(*this, dir);
 }
 
 
@@ -556,8 +617,14 @@ rx_timed_value simple_value_def::get_value (rx_time now) const
 // Class rx_platform::meta::def_blocks::source_attribute 
 
 source_attribute::source_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
+{
+}
+
+source_attribute::source_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -583,12 +650,23 @@ rx_result source_attribute::construct (construct_context& ctx) const
 	return meta_blocks_algorithm<source_attribute>::construct_complex_attribute(*this, ctx);
 }
 
+rx_result source_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<source_attribute>::resolve_complex_attribute(*this, dir);
+}
+
 
 // Class rx_platform::meta::def_blocks::struct_attribute 
 
 struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
+{
+}
+
+struct_attribute::struct_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -614,13 +692,24 @@ rx_result struct_attribute::construct (construct_context& ctx) const
 	return meta_blocks_algorithm<struct_attribute>::construct_complex_attribute(*this, ctx);
 }
 
+rx_result struct_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<struct_attribute>::resolve_complex_attribute(*this, dir);
+}
+
 
 // Class rx_platform::meta::def_blocks::variable_attribute 
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
-      : name_(name),
-        target_id_(id)
+      : name_(name)
+	, target_id_(id)
 	, storage_(std::move(value))
+{
+}
+
+variable_attribute::variable_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_name_(target_name)
 {
 }
 
@@ -651,6 +740,11 @@ rx_result variable_attribute::check (type_check_context& ctx)
 rx_result variable_attribute::construct (construct_context& ctx) const
 {
 	return meta_blocks_algorithm<variable_attribute>::construct_complex_attribute(*this, ctx);
+}
+
+rx_result variable_attribute::resolve (rx_directory_ptr dir)
+{
+	return meta_blocks_algorithm<variable_attribute>::resolve_complex_attribute(*this, dir);
 }
 
 
@@ -804,6 +898,29 @@ bool variable_data_type::check_type (type_check_context& ctx)
 	for (auto& one : events_)
 		ret &= one.check(ctx);
 	return ret;
+}
+
+rx_result variable_data_type::resolve (rx_directory_ptr dir)
+{
+	for (auto& one : sources_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	for (auto& one : filters_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	for (auto& one : events_)
+	{
+		auto result = one.resolve(dir);
+		if (!result)
+			return result;
+	}
+	return true;
 }
 
 

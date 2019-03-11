@@ -33,6 +33,7 @@
 // rx_pipe
 #include "host/rx_pipe.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace host {
@@ -97,7 +98,7 @@ bool rx_pipe_host::write_stdout (const string_type& lines)
 	return true;
 }
 
-bool rx_pipe_host::start (const string_array& args)
+bool rx_pipe_host::start (rx_platform::configuration_data_t& config)
 {
 	return true;
 }
@@ -115,6 +116,13 @@ bool rx_pipe_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 bool rx_pipe_host::write_stdout (const void* data, size_t size)
 {
 	return true;
+}
+
+int rx_pipe_host::pipe_main (int argc, char* argv[])
+{
+	rx_platform::configuration_data_t config;
+	bool ret = start(config);
+	return ret ? 0 : -1;
 }
 
 

@@ -87,25 +87,9 @@ bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_
 {
 
 	std::ostream out(out_buffer.unsafe_ptr());
-	out << "dummy inmplmentation by base interface class\r\n";
+	out << "dummy implementation by base interface class\r\n";
 
 	return true;
-}
-
-int rx_platform_host::console_main (int argc, char* argv[])
-{
-	string_vector arguments(argc);
-	for (int i = 0; i < argc; i++)
-		arguments[i] = argv[i];
-
-	bool ret = start(arguments);
-
-	return ret ? 0 : -1;
-}
-
-string_type rx_platform_host::get_startup_script ()
-{
-	return "nop/r/n";
 }
 
 std::vector<ETH_interface> rx_platform_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)

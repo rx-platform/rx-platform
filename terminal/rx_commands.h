@@ -31,11 +31,14 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
+// adding command line parsing library
+// see <https://github.com/jarro2783/cxxopts>
+#include "third-party/cxxopts/include/cxxopts.hpp"
 #include "terminal/rx_terminal_style.h"
 using namespace rx_platform::prog;
 using namespace rx_platform; 
@@ -82,6 +85,9 @@ class server_command : public rx_platform::prog::server_command_base
 			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 	  }
   private:
+
+
+      cxxopts::Options options_;
 
 
 };

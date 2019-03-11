@@ -50,7 +50,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
   public:
       rx_pipe_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
 
-      virtual ~rx_pipe_host();
+      ~rx_pipe_host();
 
 
       void get_host_info (string_array& hosts);
@@ -69,13 +69,15 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool write_stdout (const string_type& lines);
 
-      bool start (const string_array& args);
+      bool start (rx_platform::configuration_data_t& config);
 
       bool break_host (const string_type& msg);
 
       bool read_stdin (std::array<char,0x100>& chars, size_t& count);
 
       bool write_stdout (const void* data, size_t size);
+
+      int pipe_main (int argc, char* argv[]);
 
 
   protected:

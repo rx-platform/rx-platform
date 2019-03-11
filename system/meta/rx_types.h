@@ -58,6 +58,7 @@ struct meta_data_t
 		wd_timer_period = 1000;
 	}
 	uint32_t wd_timer_period;
+	string_type platform_name;
 };
 
 
@@ -82,6 +83,8 @@ public:
 	friend class meta_algorithm::basic_types_algorithm;
 
   public:
+      event_type();
+
       event_type (const type_creation_data& data);
 
 
@@ -98,6 +101,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -118,8 +123,6 @@ public:
   protected:
 
   private:
-      event_type();
-
 
 
       def_blocks::complex_data_type complex_data_;
@@ -148,6 +151,8 @@ public:
 	friend class meta_algorithm::basic_types_algorithm;
 
   public:
+      filter_type();
+
       filter_type (const type_creation_data& data);
 
 
@@ -164,6 +169,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -184,8 +191,6 @@ public:
   protected:
 
   private:
-      filter_type();
-
 
 
       def_blocks::complex_data_type complex_data_;
@@ -232,6 +237,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const checkable_data& meta_data () const;
@@ -280,6 +287,8 @@ public:
 	friend class meta_algorithm::basic_types_algorithm;
 
   public:
+      source_type();
+
       source_type (const type_creation_data& data);
 
 
@@ -296,6 +305,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -316,8 +327,6 @@ public:
   protected:
 
   private:
-      source_type();
-
 
 
       def_blocks::complex_data_type complex_data_;
@@ -346,6 +355,8 @@ public:
 	friend class meta_algorithm::basic_types_algorithm;
 
   public:
+      struct_type();
+
       struct_type (const type_creation_data& data);
 
 
@@ -364,6 +375,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -386,8 +399,6 @@ public:
   protected:
 
   private:
-      struct_type();
-
 
 
       def_blocks::complex_data_type complex_data_;
@@ -418,6 +429,8 @@ public:
 	friend class meta_algorithm::basic_types_algorithm;
 
   public:
+      variable_type();
+
       variable_type (const type_creation_data& data);
 
 
@@ -440,6 +453,8 @@ public:
       def_blocks::variable_data_type& variable_data ();
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const checkable_data& meta_data () const;
@@ -464,8 +479,6 @@ public:
   protected:
 
   private:
-      variable_type();
-
 
 
       checkable_data meta_data_;

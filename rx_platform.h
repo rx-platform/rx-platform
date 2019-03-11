@@ -45,6 +45,13 @@
 #include "system/meta/rx_obj_types.h"
 
 
+#define RX_LICENSE_MESSAGE "\
+\r\n\
+Copyright(C) 2018 - 2019  Dusan Ciric\r\n\r\n\
+This program comes with ABSOLUTELY NO WARRANTY.\r\n\
+This is free software, and you are welcome to redistribute it\r\n\
+under certain conditions; type `license' for details.\r\n\
+\r\n"
 
 
 

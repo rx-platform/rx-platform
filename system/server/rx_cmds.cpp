@@ -296,6 +296,11 @@ void console_program_context::set_waiting ()
 	stop_execution();
 }
 
+void console_program_context::cancel_execution ()
+{
+	canceled_ = true;
+}
+
 
 // Class rx_platform::prog::server_console_program 
 
@@ -310,11 +315,6 @@ server_console_program::~server_console_program()
 {
 }
 
-
-
-void server_console_program::cancel_execution ()
-{
-}
 
 
 // Class rx_platform::prog::console_client 
@@ -446,6 +446,18 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		}
 		ret = true;
 	}
+	else if (line == "welcome")
+	{
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(out_buffer.unsafe_ptr());
+
+		string_type msg;
+		get_wellcome(msg);
+
+		out << msg;
+
+		ret = true;
+	}
 	else
 	{
 		rx_uuid id = rx_uuid::create_new();
@@ -511,9 +523,8 @@ void console_client::synchronized_cancel_command (memory::buffer_ptr out_buffer,
 {
 	if (current_program_)
 	{// we are in a command
-		current_program_->cancel_execution();
-		current_program_ = server_console_program::smart_ptr::null_ptr;
-		current_context_ = nullptr;
+		current_context_->cancel_execution();
+		process_event(true, out_buffer, err_buffer, true);
 	}
 	else
 	{// nothing to cancel!!!

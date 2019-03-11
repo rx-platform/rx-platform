@@ -33,14 +33,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_vt100
-#include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_vt100
+#include "host/rx_vt100.h"
 
 namespace host {
 namespace interactive {
@@ -71,7 +71,7 @@ class interactive_security_context : public rx::security::built_in_security_cont
   public:
       interactive_security_context();
 
-      virtual ~interactive_security_context();
+      ~interactive_security_context();
 
 
       bool has_console () const;
@@ -101,14 +101,17 @@ class interactive_console_client : public rx_platform::prog::console_client
   public:
       interactive_console_client (interactive_console_host* host);
 
-      virtual ~interactive_console_client();
+      ~interactive_console_client();
 
 
       const string_type& get_console_name ();
 
-      void run_interactive ();
+      void run_interactive (configuration_data_t& config);
 
       security::security_context::smart_ptr get_current_security_context ();
+
+
+      static string_type license_message;
 
 
   protected:
@@ -147,7 +150,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
   public:
       interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
 
-      virtual ~interactive_console_host();
+      ~interactive_console_host();
 
 
       void get_host_info (string_array& hosts);
@@ -172,24 +175,28 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       bool write_stdout (const string_type& lines);
 
-      string_type get_startup_script ();
-
       std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      int console_main (int argc, char* argv[]);
+
+      virtual rx_result setup_console (int argc, char* argv[]);
+
+      virtual rx_result restore_console ();
 
 
   protected:
 
       void console_loop (configuration_data_t& config);
 
+      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
+
 
   private:
 
 
       bool exit_;
-
-      string_type startup_script_;
 
 
 };

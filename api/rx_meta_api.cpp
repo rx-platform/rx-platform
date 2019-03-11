@@ -46,26 +46,25 @@ rx_result rx_delete_object(const string_type& name
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().delete_runtime<object_type, pointers::reference_object::smart_ptr>(
-		name, ctx.directory, callback, ctx.reference);
+		name, ctx.directory, callback, ctx.object);
 	return true;
 }
-
-
 
 rx_result rx_create_object(const string_type& name, const string_type& type_name, const data::runtime_values_data* init_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().create_runtime<object_type, pointers::reference_object::smart_ptr>(
-		name, type_name, init_data, ctx.directory, callback, ctx.reference);
+		name, type_name, init_data, ctx.directory, callback, ctx.object);
 	return true;
 }
 
 
-rx_result rx_create_object_type(rx_object_type_ptr what
+rx_result rx_create_object_type(const string_type& name
+	, const string_type& base_name, rx_object_type_ptr prototype
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().create_type<object_type, pointers::reference_object::smart_ptr>(
-		what, ctx.directory, callback, ctx.reference);
+		name, base_name, prototype, ctx.directory, callback, ctx.object);
 	return true;
 }
 

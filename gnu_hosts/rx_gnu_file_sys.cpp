@@ -51,37 +51,7 @@ gnu_file_system_storage::~gnu_file_system_storage()
 
 string_type gnu_file_system_storage::get_root_folder ()
 {
-	char lpath[PATH_MAX + 1];
-	char buff[PATH_MAX + 1];
-	//memset(buff,0,sizeof(buff)); // readlink does not null terminate!
-	// does not need this, we'll read the place where to put zero
-	int ret;
-	pid_t pid = getpid();
-	sprintf(lpath, "/proc/%d/exe", pid);
-	ret = readlink(lpath, buff, PATH_MAX);
-	if (ret == -1)
-		perror("readlink");
-	else
-	{
-		// now plase zero at the end!
-		buff[ret] = '\0';
-		printf("%s\n", buff);
-	}
-	if (ret != -1)
-	{
-		size_t j = strlen(buff);
-		for (size_t i = j - 1; i>0; i--)
-		{
-			if (buff[i] == L'/')
-			{
-				buff[i + 1] = L'\0';
-				break;
-			}
-		}
-
-		return buff;
-	}
-	return "";
+	return RX_STORAGE_PATH;
 }
 
 

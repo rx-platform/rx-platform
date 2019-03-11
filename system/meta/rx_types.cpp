@@ -108,6 +108,11 @@ bool event_type::check_type (type_check_context& ctx)
 	return basic_types_algorithm<event_type>::check_basic_type(*this, ctx);
 }
 
+rx_result event_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<event_type>::resolve_basic_type(*this, dir);
+}
+
 
 const def_blocks::complex_data_type& event_type::complex_data () const
 {
@@ -171,6 +176,11 @@ rx_result filter_type::construct (RTypePtr& what, construct_context& ctx) const
 bool filter_type::check_type (type_check_context& ctx)
 {
 	return basic_types_algorithm<filter_type>::check_basic_type(*this, ctx);
+}
+
+rx_result filter_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<filter_type>::resolve_basic_type(*this, dir);
 }
 
 
@@ -238,6 +248,11 @@ bool mapper_type::check_type (type_check_context& ctx)
 	return basic_types_algorithm<mapper_type>::check_basic_type(*this, ctx);
 }
 
+rx_result mapper_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<mapper_type>::resolve_basic_type(*this, dir);
+}
+
 
 const checkable_data& mapper_type::meta_data () const
 {
@@ -301,6 +316,11 @@ rx_result source_type::construct (RTypePtr& what, construct_context& ctx) const
 bool source_type::check_type (type_check_context& ctx)
 {
 	return basic_types_algorithm<source_type>::check_basic_type(*this, ctx);
+}
+
+rx_result source_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<source_type>::resolve_basic_type(*this, dir);
 }
 
 
@@ -372,6 +392,11 @@ def_blocks::mapped_data_type& struct_type::mapping_data ()
 bool struct_type::check_type (type_check_context& ctx)
 {
 	return basic_types_algorithm<struct_type>::check_basic_type(*this, ctx);
+}
+
+rx_result struct_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<struct_type>::resolve_basic_type(*this, dir);
 }
 
 
@@ -461,6 +486,11 @@ def_blocks::variable_data_type& variable_type::variable_data ()
 bool variable_type::check_type (type_check_context& ctx)
 {
 	return basic_types_algorithm<variable_type>::check_basic_type(*this, ctx);
+}
+
+rx_result variable_type::resolve (rx_directory_ptr dir)
+{
+	return basic_types_algorithm<variable_type>::resolve_basic_type(*this, dir);
 }
 
 

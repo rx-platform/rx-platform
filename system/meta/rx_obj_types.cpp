@@ -119,6 +119,11 @@ rx_result application_type::check_type (type_check_context& ctx)
 	return object_types_algorithm<application_type>::check_object_type(*this, ctx);
 }
 
+rx_result application_type::resolve (rx_directory_ptr dir)
+{
+	return object_types_algorithm<application_type>::resolve_object_type(*this, dir);
+}
+
 
 const object_data_type& application_type::object_data () const
 {
@@ -203,6 +208,11 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 bool domain_type::check_type (type_check_context& ctx)
 {
 	return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
+}
+
+rx_result domain_type::resolve (rx_directory_ptr dir)
+{
+	return object_types_algorithm<domain_type>::resolve_object_type(*this, dir);
 }
 
 
@@ -300,6 +310,11 @@ bool object_type::check_type (type_check_context& ctx)
 	return object_types_algorithm<object_type>::check_object_type(*this, ctx);
 }
 
+rx_result object_type::resolve (rx_directory_ptr dir)
+{
+	return object_types_algorithm<object_type>::resolve_object_type(*this, dir);
+}
+
 
 const object_data_type& object_type::object_data () const
 {
@@ -355,6 +370,12 @@ rx_result object_data_type::construct (runtime::object_runtime_ptr what, constru
 
 bool object_data_type::check_type (type_check_context& ctx)
 {
+	return true;
+}
+
+rx_result object_data_type::resolve (rx_directory_ptr dir)
+{
+	// nothing yet to resolve here
 	return true;
 }
 
@@ -421,6 +442,11 @@ def_blocks::mapped_data_type& port_type::mapping_data ()
 bool port_type::check_type (type_check_context& ctx)
 {
 	return object_types_algorithm<port_type>::check_object_type(*this, ctx);
+}
+
+rx_result port_type::resolve (rx_directory_ptr dir)
+{
+	return object_types_algorithm<port_type>::resolve_object_type(*this, dir);
 }
 
 

@@ -181,6 +181,7 @@ struct runtime_data_t
 		slow_pool_size = -1;
 		io_timer_period = 200;
 	}
+	bool real_time;
 	int io_pool_size;
 	int genereal_pool_size;
 	int workers_pool_size;

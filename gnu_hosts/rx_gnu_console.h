@@ -31,10 +31,10 @@
 
 
 
-// rx_interactive
-#include "host/rx_interactive.h"
 // rx_gnu_file_sys
 #include "gnu_hosts/rx_gnu_file_sys.h"
+// rx_interactive
+#include "host/rx_interactive.h"
 
 
 
@@ -51,12 +51,12 @@ class gnu_console_host : public host::interactive::interactive_console_host
   public:
       gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
 
-      virtual ~gnu_console_host();
+      ~gnu_console_host();
 
 
       bool shutdown (const string_type& msg);
 
-      bool start (const string_array& args);
+      bool start (rx_platform::configuration_data_t& config);
 
       void get_host_info (string_array& hosts);
 
@@ -71,6 +71,10 @@ class gnu_console_host : public host::interactive::interactive_console_host
       std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      rx_result setup_console (int argc, char* argv[]);
+
+      rx_result restore_console ();
 
 
   protected:

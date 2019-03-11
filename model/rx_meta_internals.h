@@ -360,6 +360,8 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
+      rx_result type_exists (rx_node_id id) const;
+
 
   protected:
 
@@ -487,17 +489,7 @@ class platform_types_manager
 			return *ret;
 		}
 	};
-	simple_type_cache_list_container _simple_types_container;
-	template<class T>
-	type_hash<T>& internal_get_type_cache()
-	{
-		return _types_container.get_internal<T>(tl::type2type<T>());
-	}
-	template<class T>
-	simple_type_hash<T>& internal_get_simple_type_cache()
-	{
-		return _simple_types_container.get_internal<T>(tl::type2type<T>());
-	}
+	simple_type_cache_list_container _simple_types_container;	
 
   public:
 
@@ -518,6 +510,16 @@ class platform_types_manager
       }
 
 
+	  template<class T>
+	  type_hash<T>& internal_get_type_cache()
+	  {
+		  return _types_container.get_internal<T>(tl::type2type<T>());
+	  }
+	  template<class T>
+	  simple_type_hash<T>& internal_get_simple_type_cache()
+	  {
+		  return _simple_types_container.get_internal<T>(tl::type2type<T>());
+	  }
 	  template<class T>
 	  const type_hash<T>& get_type_cache() const
 	  {
@@ -603,29 +605,47 @@ class platform_types_manager
 	  }
 
 	  template<class T, class refT>
-	  void create_type(typename T::smart_ptr what, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
+	  void create_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
 	  {
 		  using result_t = rx_result_with<typename T::smart_ptr>;
 		  std::function<result_t(void)> func = [=]() {
-			  return create_type_helper<T>(what, dir, tl::type2type<T>());
+			  return create_type_helper<T>(name, base_name, prototype, dir, tl::type2type<T>());
 		  };
 		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
 	  }
 	  template<class T>
-	  rx_result_with<typename T::smart_ptr> create_type_helper(typename T::smart_ptr what, rx_directory_ptr dir, tl::type2type<T>)
+	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype, rx_directory_ptr dir, tl::type2type<T>)
 	  {
-		  auto ret = internal_get_type_cache<T>().register_type(what);
+		  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
+		  if (!item)
+		  {// TODO error, type does not exists
+			  return "Type "s + base_name + " does not exists!";
+		  }
+		  auto base_id = item->get_node_id();
+		  if (base_id.is_null())
+		  {// TODO error, item does not have id
+			  return base_name + " does not have valid Id!";
+		  }
+		  rx_node_id item_id = rx_node_id::generate_new();
+
+		  auto result = prototype->resolve(dir);
+		  if (!result)
+			  return result.errors();
+
+		  prototype->meta_data().construct(name, item_id, base_id, false);
+
+		  auto ret = internal_get_type_cache<T>().register_type(prototype);
 		  if (!ret)
 		  {// TODO error, didn't created runtime
-			  return T::smart_ptr::null_ptr;
+			  return ret.errors();
 		  }
-		  if (!dir->add_item(what->get_item_ptr()))
+		  if (!dir->add_item(prototype->get_item_ptr()))
 		  {
-			  internal_get_type_cache<T>().delete_type(what->meta_data().get_id());
+			  internal_get_type_cache<T>().delete_type(prototype->meta_data().get_id());
 			  // TODO error, can't add this name
-			  return T::smart_ptr::null_ptr;
+			  return "Unable to add "s + name + " to directory!";
 		  }
-		  return what;
+		  return prototype;
 	  }
 	  template<class T>
 	  rx_result_with<typename T::smart_ptr> create_simple_type(typename T::smart_ptr what, rx_directory_ptr dir)
@@ -1208,6 +1228,25 @@ rx_result simple_type_hash<typeT>::delete_type (rx_node_id id)
 	else
 	{
 		return false;
+	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::type_exists (rx_node_id id) const
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return true;
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		return ss.str();
 	}
 }
 

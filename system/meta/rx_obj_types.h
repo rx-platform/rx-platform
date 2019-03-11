@@ -103,6 +103,8 @@ class object_data_type
 
       bool check_type (type_check_context& ctx);
 
+      rx_result resolve (rx_directory_ptr dir);
+
 
       const bool is_constructible () const
       {
@@ -142,6 +144,8 @@ public:
 	friend class meta_algorithm::object_types_algorithm;
 
   public:
+      application_type();
+
       application_type (const object_type_creation_data& data);
 
       ~application_type();
@@ -162,6 +166,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       rx_result check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const object_data_type& object_data () const;
@@ -186,8 +192,6 @@ public:
   protected:
 
   private:
-      application_type();
-
 
 
       object_data_type object_data_;
@@ -219,6 +223,8 @@ public:
 	friend class meta_algorithm::object_types_algorithm;
 
   public:
+      domain_type();
+
       domain_type (const object_type_creation_data& data);
 
       ~domain_type();
@@ -239,6 +245,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const object_data_type& object_data () const;
@@ -263,8 +271,6 @@ public:
   protected:
 
   private:
-      domain_type();
-
 
 
       object_data_type object_data_;
@@ -296,6 +302,8 @@ public:
 	friend class meta_algorithm::object_types_algorithm;
 
   public:
+      object_type();
+
       object_type (const object_type_creation_data& data);
 
       ~object_type();
@@ -321,6 +329,8 @@ public:
 
       bool check_type (type_check_context& ctx);
 
+      rx_result resolve (rx_directory_ptr dir);
+
 
       const object_data_type& object_data () const;
 
@@ -344,8 +354,6 @@ public:
   protected:
 
   private:
-      object_type();
-
 
 
       object_data_type object_data_;
@@ -377,6 +385,8 @@ public:
 	friend class meta_algorithm::object_types_algorithm;
 
   public:
+      port_type();
+
       port_type (const object_type_creation_data& data);
 
       ~port_type();
@@ -397,6 +407,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      rx_result resolve (rx_directory_ptr dir);
 
 
       const object_data_type& object_data () const;
@@ -421,8 +433,6 @@ public:
   protected:
 
   private:
-      port_type();
-
 
 
       object_data_type object_data_;

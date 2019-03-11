@@ -248,7 +248,7 @@ bool win32_console_host::shutdown (const string_type& msg)
 	return false;
 }
 
-bool win32_console_host::start (const string_array& args)
+bool win32_console_host::start (rx_platform::configuration_data_t& config)
 {
 	BOOL ret = SetConsoleCtrlHandler(NULL,FALSE);
 	ret = SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrl_handler, TRUE);
@@ -259,44 +259,14 @@ bool win32_console_host::start (const string_array& args)
 	DWORD szname = sizeof(name);
 	GetComputerNameA(name, &szname);
 
-	rx_initialize_os(GetCurrentProcessId(), true, tls, name);
+	rx_initialize_os(GetCurrentProcessId(), config.runtime_data.real_time, tls, name);
 
 	rx::log::log_object::instance().start(std::cout, true);
 	//////////////////////////////////////////////
-
-	
+		
 	
 	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-
-
-	/////////////////////////////////////////////
-	out_handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
-	in_handle_ = GetStdHandle(STD_INPUT_HANDLE);
-
-	DWORD in_mode = 0;
-	DWORD out_mode = 0;
-	GetConsoleMode(in_handle_, &in_mode);
-	GetConsoleMode(out_handle_, &out_mode);
-
-	std::bitset<32> in_bits(in_mode);
-	std::bitset<32> out_bits(out_mode);
-
-	//in_bits.reset(0);
-	in_bits.reset(1);
-	in_bits.reset(2);
-	in_bits.set(3);
-	in_bits.set(9);
-
-	out_bits.set(2);
-	out_bits.set(0);
-	//out_bits.reset(3);
-
-	SetConsoleMode(in_handle_, in_bits.to_ulong());
-	SetConsoleMode(out_handle_, out_bits.to_ulong());
-
-
-	rx_platform::configuration_data_t config;
-
+	
 	// execute main loop of the console host
 	console_loop(config);
 
@@ -335,7 +305,25 @@ bool win32_console_host::break_host (const string_type& msg)
 bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
 	DWORD read = 0;
-	bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
+	CONSOLE_READCONSOLE_CONTROL ctrl;
+	ZeroMemory(&ctrl, sizeof(ctrl));
+	ctrl.nLength = sizeof(ctrl);
+	ctrl.dwCtrlWakeupMask = (1 << 4) | (1 << 26) | (1 << 3);
+	bool has = false;
+	while (!has)
+	{
+		read = 0;
+		INPUT_RECORD input;
+		BOOL peek = PeekConsoleInput(in_handle_, &input, 1, &read);
+		if (read)
+			has = true;
+		else
+			Sleep(20);
+	}
+	if (is_canceling())
+		return false;
+	//bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
+	bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, &ctrl));
 	count = read;
 	return ret;
 }
@@ -364,6 +352,35 @@ std::vector<IP_interface> win32_console_host::get_IP_interfaces (const string_ty
 	}
 
 	return ret;
+}
+
+rx_result win32_console_host::setup_console (int argc, char* argv[])
+{
+	out_handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
+	in_handle_ = GetStdHandle(STD_INPUT_HANDLE);
+
+	DWORD in_mode = 0;
+	DWORD out_mode = 0;
+	GetConsoleMode(in_handle_, &in_mode);
+	GetConsoleMode(out_handle_, &out_mode);
+
+	std::bitset<32> in_bits(in_mode);
+	std::bitset<32> out_bits(out_mode);
+
+	in_bits.reset(0);
+	in_bits.reset(1);
+	in_bits.reset(2);
+	in_bits.set(3);
+	in_bits.set(9);
+
+	out_bits.set(2);
+	out_bits.set(0);
+	//out_bits.reset(3);
+
+	SetConsoleMode(in_handle_, in_bits.to_ulong());
+	SetConsoleMode(out_handle_, out_bits.to_ulong());
+
+	return true;
 }
 
 
