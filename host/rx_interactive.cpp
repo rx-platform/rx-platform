@@ -48,7 +48,7 @@ namespace interactive {
 
 // Class host::interactive::interactive_console_host 
 
-interactive_console_host::interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
+interactive_console_host::interactive_console_host (hosting::rx_host_storages& storage)
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
@@ -160,10 +160,10 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 		string_type file_name;
 		in >> file_name;
 		file_name = "platform script one.rxs";
-		auto storage = get_storage();
+		auto storage = get_user_storage();
 		if (storage)
 		{
-			sys_handle_t file = storage->get_host_console_script_file(file_name);
+			sys_handle_t file = 0;// storage->get_host_console_script_file(file_name);
 			if (file)
 			{
 				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
@@ -229,8 +229,9 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
 		("s,startup", "Startup script", cxxopts::value<string_type>(config.startup_script))
 		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_data.platform_name))
-		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.storage_reference))
-		("y,system", "File storage system folder", cxxopts::value<string_type>(config.namespace_data.storage_reference))
+		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
+		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
+		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
 		("v,version", "Displays platform version")
 		("h,help", "Print help")
 		;
@@ -285,8 +286,25 @@ int interactive_console_host::console_main (int argc, char* argv[])
 	bool ret = setup_console(argc, argv);
 	rx_platform::configuration_data_t config;
 	ret = parse_command_line(argc, argv, config);
-	if(ret)
-		ret = start(config);
+	if (ret)
+	{
+		ret = get_system_storage()->init_storage(config.namespace_data.system_storage_reference);
+		if (ret)
+		{
+			ret = get_user_storage()->init_storage(config.namespace_data.user_storage_reference);
+			if (ret)
+			{
+				ret = get_test_storage()->init_storage(config.namespace_data.test_storage_reference);
+				if (ret)
+				{
+					ret = start(config);
+					get_test_storage()->deinit_storage();
+				}
+				get_user_storage()->deinit_storage();
+			}
+			get_system_storage()->deinit_storage();
+		}
+	}
 
 	return ret ? 0 : -1;
 }

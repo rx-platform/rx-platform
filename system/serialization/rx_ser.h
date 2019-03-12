@@ -589,10 +589,10 @@ bool binary_reader<allocT,swap_bytes>::read_header (int& type)
 		buffer_.read_data(type_);
 		switch (type_)
 		{
-		case STREAMING_TYPE_CLASS:
+		case STREAMING_TYPE_TYPE:
             ret=true;
             break;
-		case STREAMING_TYPE_CLASSES:
+		case STREAMING_TYPE_TYPES:
             ret=true;
             break;
 		case STREAMING_TYPE_OBJECT:

@@ -49,11 +49,6 @@ gnu_file_system_storage::~gnu_file_system_storage()
 
 
 
-string_type gnu_file_system_storage::get_root_folder ()
-{
-	return RX_STORAGE_PATH;
-}
-
-
 } // namespace gnu
+
 

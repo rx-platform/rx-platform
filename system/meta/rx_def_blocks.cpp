@@ -152,19 +152,70 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 	if (!stream.read_bool("Sealed", sealed_))
 		return false;
 
+	if (!stream.read_bool("Abstract", abstract_))
+		return false;
+
 	if (!stream.start_array("Items"))
 		return false;
 
-	//for (const auto& one : sub_items_)
-	//{
-	//	if (!one->deserialize_definition(stream, type))
-	//		return false;
-	//}
+	while(!stream.array_end())	
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		string_type item_type;
+		if (!stream.read_string("Type", item_type))
+			return false;
+		if (item_type == RX_CONST_VALUE_TYPE_NAME)
+		{
+			const_value_def temp;
+			if (!temp.deserialize_definition(stream, type))
+				return false;
+			auto ret = check_name(temp.get_name(), (static_cast<int>(const_values_.size() | const_values_mask)));
+			if (ret)
+			{
+				const_values_.emplace_back(std::move(temp));
+			}
+		}
+		else if (item_type == RX_VALUE_TYPE_NAME)
+		{
+			simple_value_def temp;
+			if (!temp.deserialize_definition(stream, type))
+				return false;
+			auto ret = check_name(temp.get_name(), (static_cast<int>(simple_values_.size() | simple_values_mask)));
+			if (ret)
+			{
+				simple_values_.emplace_back(std::move(temp));
+			}
+		}
+		else if (item_type == RX_CPP_STRUCT_CLASS_TYPE_NAME)
+		{
+			meta::def_blocks::struct_attribute temp;
+			if (!temp.deserialize_definition(stream, type))
+				return false;
+			auto ret = check_name(temp.get_name(), (static_cast<int>(structs_.size() | structs_mask)));
+			if (ret)
+			{
+				structs_.emplace_back(std::move(temp));
+			}
+		}
+		else if (item_type == RX_CPP_VARIABLE_CLASS_TYPE_NAME)
+		{
+			meta::def_blocks::variable_attribute temp;
+			if (!temp.deserialize_definition(stream, type))
+				return false;
+			auto ret = check_name(temp.get_name(), (static_cast<int>(variables_.size() | variables_mask)));
+			if (ret)
+			{
+				variables_.emplace_back(std::move(temp));
+			}
+		}
+		else
+			return item_type + "is unknown type!";
 
-	if (!stream.array_end())
-		return false;
-
-	return false;//!!!! NOT DONE
+		if (!stream.end_object())
+			return false;
+	}
+	return true;//!!!! NOT DONE
 }
 
 rx_result complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
@@ -253,7 +304,7 @@ rx_result complex_data_type::construct (construct_context& ctx) const
 
 rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
 {
-	auto ret = check_name(name, (static_cast<int>(variables_.size() | simple_values_mask)));
+	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
 	if (ret)
 	{
 		simple_values_.emplace_back(name, read_only, std::move(val));
@@ -263,7 +314,7 @@ rx_result complex_data_type::register_simple_value (const string_type& name, boo
 
 rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
 {
-	auto ret = check_name(name, (static_cast<int>(variables_.size() | const_values_mask)));
+	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if (ret)
 	{
 		const_values_.emplace_back(name, std::move(val));
@@ -339,15 +390,20 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 
 rx_result const_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	stream.write_string("Name", name_.c_str());
-	if (!get_value().serialize(stream))
+	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+	if (!storage_.serialize(stream))
 		return false;
 	return true;
 }
 
 rx_result const_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.read_string("Name", name_))
+		return false;
+	if (!storage_.deserialize(stream))
+		return false;
+	return true;
 }
 
 rx_simple_value const_value_def::get_value () const
@@ -473,9 +529,35 @@ rx_result mapped_data_type::serialize_mapped_definition (base_meta_writer& strea
 	return true;
 }
 
-rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type)
+rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data)
 {
-	return false;
+	if (!stream.start_array("Mappers"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		string_type item_type;
+		if (!stream.read_string("Type", item_type))
+			return false;
+		if (item_type == RX_CPP_MAPPER_CLASS_TYPE_NAME)
+		{
+			mapper_attribute temp;
+			if (!temp.deserialize_definition(stream, type))
+				return false;
+			auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
+			if (ret)
+			{
+				mappers_.emplace_back(std::move(temp));
+			}
+		}
+		else
+			return item_type + "is unknown type!";
+
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
 }
 
 rx_result mapped_data_type::construct (const names_cahce_type& names, construct_context& ctx) const
@@ -596,8 +678,10 @@ simple_value_def::simple_value_def (const string_type& name, bool read_only, con
 
 rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	stream.write_string("Name", name_.c_str());
-	stream.write_bool("RO", read_only_);
+	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+	if (!stream.write_bool("RO", read_only_))
+		return false;
 	if (!storage_.serialize(stream))
 		return false;
 	return true;
@@ -605,7 +689,13 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint
 
 rx_result simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	return false;
+	if (!stream.read_string("Name", name_))
+		return false;
+	if (!stream.read_bool("RO", read_only_))
+		return false;
+	if (!storage_.deserialize(stream))
+		return false;
+	return true;
 }
 
 rx_timed_value simple_value_def::get_value (rx_time now) const
@@ -853,7 +943,7 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 	return true;
 }
 
-rx_result variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type)
+rx_result variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data)
 {
 	return false;
 }

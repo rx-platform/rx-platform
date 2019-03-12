@@ -47,8 +47,8 @@ using namespace rx;
 
 //////////////////////////////////////////////////
 // streaming constants from header
-#define STREAMING_TYPE_CLASS		0x01
-#define STREAMING_TYPE_CLASSES		0x02
+#define STREAMING_TYPE_TYPE			0x01
+#define STREAMING_TYPE_TYPES		0x02
 #define STREAMING_TYPE_OBJECT		0x03
 #define STREAMING_TYPE_OBJECTS		0x04
 #define STREAMING_TYPE_CHECKOUT		0x05

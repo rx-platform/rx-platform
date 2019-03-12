@@ -225,7 +225,7 @@ namespace win32 {
 
 // Class win32::win32_console_host 
 
-win32_console_host::win32_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
+win32_console_host::win32_console_host (hosting::rx_host_storages& storage)
       : out_handle_(NULL),
         in_handle_(NULL)
 	, host::interactive::interactive_console_host(storage)

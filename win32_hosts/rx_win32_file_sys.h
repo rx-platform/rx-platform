@@ -31,8 +31,8 @@
 
 
 
-// rx_file_sys
-#include "host/rx_file_sys.h"
+// rx_file_storage
+#include "host/rx_file_storage.h"
 
 
 
@@ -49,13 +49,10 @@ class win32_file_system_storage : public host::files::file_system_storage
   public:
       win32_file_system_storage();
 
-      virtual ~win32_file_system_storage();
+      ~win32_file_system_storage();
 
 
   protected:
-
-      string_type get_root_folder ();
-
 
   private:
 

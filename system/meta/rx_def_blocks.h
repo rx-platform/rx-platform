@@ -201,6 +201,11 @@ class event_attribute
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
 
+	  event_attribute(const event_attribute& right) = default;
+	  event_attribute(event_attribute&& right) = default;
+	  event_attribute() = default;
+	  ~event_attribute() = default;
+
   public:
       event_attribute (const string_type& name, const rx_node_id& id);
 
@@ -263,6 +268,11 @@ class filter_attribute
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
 
+	  filter_attribute(const filter_attribute& right) = default;
+	  filter_attribute(filter_attribute&& right) = default;
+	  filter_attribute() = default;
+	  ~filter_attribute() = default;
+
   public:
       filter_attribute (const string_type& name, const rx_node_id& id);
 
@@ -324,6 +334,11 @@ class mapper_attribute
 	  typedef rx_platform::meta::basic_types::mapper_type TargetType;
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
+
+	  mapper_attribute(const mapper_attribute& right) = default;
+	  mapper_attribute(mapper_attribute&& right) = default;
+	  mapper_attribute() = default;
+	  ~mapper_attribute() = default;
 
   public:
       mapper_attribute (const string_type& name, const rx_node_id& id);
@@ -572,7 +587,7 @@ class mapped_data_type
 
       rx_result serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_mapped_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_mapped_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data);
 
       rx_result construct (const names_cahce_type& names, construct_context& ctx) const;
 
@@ -604,6 +619,11 @@ class source_attribute
 	  typedef rx_platform::meta::basic_types::source_type TargetType;
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
+
+	  source_attribute(const source_attribute& right) = default;
+	  source_attribute(source_attribute&& right) = default;
+	  source_attribute() = default;
+	  ~source_attribute() = default;
 
   public:
       source_attribute (const string_type& name, const rx_node_id& id);
@@ -667,6 +687,11 @@ class struct_attribute
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
 
+	  struct_attribute(const struct_attribute& right) = default;
+	  struct_attribute(struct_attribute&& right) = default;
+	  struct_attribute() = default;
+	  ~struct_attribute() = default;
+
   public:
       struct_attribute (const string_type& name, const rx_node_id& id);
 
@@ -728,6 +753,11 @@ class variable_attribute
 	  typedef rx_platform::meta::basic_types::variable_type TargetType;
 	  template<class typeT>
 	  friend class meta_algorithm::meta_blocks_algorithm;
+
+	  variable_attribute(const variable_attribute& right) = default;
+	  variable_attribute(variable_attribute&& right) = default;
+	  variable_attribute() = default;
+	  ~variable_attribute() = default;
 
   public:
       variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
@@ -815,7 +845,7 @@ class variable_data_type
 
       rx_result serialize_variable_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_variable_definition (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize_variable_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data);
 
       rx_result register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 

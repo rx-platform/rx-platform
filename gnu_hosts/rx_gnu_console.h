@@ -49,7 +49,7 @@ class gnu_console_host : public host::interactive::interactive_console_host
 {
 
   public:
-      gnu_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      gnu_console_host (hosting::rx_host_storages& storage);
 
       ~gnu_console_host();
 

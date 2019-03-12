@@ -142,10 +142,10 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 	else
 	{
 		file_name = "rx-script-1.rxs";
-		auto storage = rx_gate::instance().get_host()->get_storage();
+		auto storage = rx_gate::instance().get_host()->get_test_storage();
 		if (storage)
 		{
-			sys_handle_t file = storage->get_host_test_file(file_name);
+			sys_handle_t file = 0;// storage->get_host_test_file(file_name);
 			if (file)
 			{
 				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);

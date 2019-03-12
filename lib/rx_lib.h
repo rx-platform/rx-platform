@@ -62,15 +62,6 @@ typedef std::vector<rx_row_type> rx_table_type;
 void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width);
 void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names,bool dot_lines);
 
-void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
-void rx_combine_paths(const std::string& path1, const std::string& path2, std::string& path);
-
-bool create_directory(const std::string& dir, bool fail_on_exsists);
-bool rx_delete_all_files(const std::string& dir, const std::string& pattern);
-
-bool file_exist(const std::string& path, const std::string& file);
-bool file_exist(const std::string& file);
-void rx_get_full_path(const std::string& base, std::string& path);
 
 class rx_result
 {
@@ -170,6 +161,18 @@ public:
 	rx_result_with& operator=(const rx_result_with&) = delete;
 	rx_result_with& operator=(rx_result_with&&) noexcept = default;
 };
+
+rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
+std::string rx_combine_paths(const std::string& path1, const std::string& path2);
+std::string rx_get_extension(const std::string& path);
+
+rx_result create_directory(const std::string& dir, bool fail_on_exsists);
+rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);
+
+rx_result file_exist(const std::string& path, const std::string& file);
+rx_result file_exist(const std::string& file);
+rx_result rx_get_full_path(const std::string& base, std::string& path);
+
 
 extern const char* g_complie_time;
 extern const char* g_lib_version;

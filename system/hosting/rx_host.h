@@ -44,8 +44,6 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
@@ -89,56 +87,55 @@ class host_security_context : public rx::security::built_in_security_context
 };
 
 
+class rx_storage_item;
+typedef std::unique_ptr<rx_storage_item> rx_storage_item_ptr;
 
 
 
 
-class rx_platform_file : public rx::pointers::reference_object  
+class rx_storage_item 
 {
-	DECLARE_REFERENCE_PTR(rx_platform_file);
-
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-file class. basic implementation of a file");
 
   public:
-      rx_platform_file();
+      rx_storage_item (const string_type& path);
 
-      ~rx_platform_file();
-
-
-      string_type get_type_name () const;
-
-      namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      virtual values::rx_value get_value () const = 0;
-
-      virtual rx_time get_created_time () const = 0;
-
-      virtual string_type get_name () const = 0;
-
-      virtual size_t get_size () const;
-
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      platform_item_ptr get_item_ptr ();
+      virtual ~rx_storage_item();
 
 
-      const meta::checkable_data& meta_data () const;
+      virtual rx_result open_for_read () = 0;
+
+      virtual rx_result open_for_write () = 0;
+
+      virtual rx_result close () = 0;
+
+      virtual base_meta_reader& read_stream () = 0;
+
+      virtual base_meta_writer& write_stream () = 0;
+
+      virtual rx_result delete_item () = 0;
 
 
+      const string_type& get_path () const
+      {
+        return path_;
+      }
+
+
+	  rx_storage_item() = delete;
+	  rx_storage_item(const rx_storage_item&) = delete;
+	  rx_storage_item(rx_storage_item&&) = delete;
+	  rx_storage_item& operator=(const rx_storage_item&) = delete;
+	  rx_storage_item& operator=(rx_storage_item&&) = delete;
   protected:
 
   private:
 
 
-      meta::checkable_data meta_data_;
+      string_type path_;
 
 
 };
+
 
 
 
@@ -148,7 +145,6 @@ file class. basic implementation of a file");
 class rx_platform_storage : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(rx_platform_storage);
-	typedef std::map<string_type, rx_platform_file::smart_ptr> files_type;
 
   public:
       rx_platform_storage();
@@ -158,17 +154,13 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual void get_storage_info (string_type& info) = 0;
 
-      virtual sys_handle_t get_host_test_file (const string_type& path);
+      virtual rx_result init_storage (const string_type& storage_reference);
 
-      virtual sys_handle_t get_host_console_script_file (const string_type& path);
+      virtual rx_result deinit_storage ();
 
-      virtual const string_type& get_license () = 0;
+      virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
 
-      virtual void init_storage ();
-
-      virtual void deinit_storage ();
-
-      virtual void list_storage (const string_type& path, platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) = 0;
+      virtual void get_storage_reference (string_type& ref) = 0;
 
 
   protected:
@@ -176,12 +168,15 @@ class rx_platform_storage : public rx::pointers::reference_object
   private:
 
 
-      files_type files_;
-
-
 };
 
 
+struct rx_host_storages
+{
+	rx_platform_storage::smart_ptr system_storage;
+	rx_platform_storage::smart_ptr user_storage;
+	rx_platform_storage::smart_ptr test_storage;
+};
 
 
 
@@ -193,7 +188,7 @@ class rx_platform_host
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
-      rx_platform_host (rx_platform_storage::smart_ptr storage);
+      rx_platform_host (rx_host_storages& storage);
 
       virtual ~rx_platform_host();
 
@@ -227,9 +222,21 @@ class rx_platform_host
       }
 
 
-      rx_reference<rx_platform_storage> get_storage () const
+      rx_reference<rx_platform_storage> get_system_storage () const
       {
-        return storage_;
+        return system_storage_;
+      }
+
+
+      rx_reference<rx_platform_storage> get_user_storage () const
+      {
+        return user_storage_;
+      }
+
+
+      rx_reference<rx_platform_storage> get_test_storage () const
+      {
+        return test_storage_;
       }
 
 
@@ -245,7 +252,11 @@ class rx_platform_host
 
       rx_platform_host *parent_;
 
-      rx_reference<rx_platform_storage> storage_;
+      rx_reference<rx_platform_storage> system_storage_;
+
+      rx_reference<rx_platform_storage> user_storage_;
+
+      rx_reference<rx_platform_storage> test_storage_;
 
 
 };

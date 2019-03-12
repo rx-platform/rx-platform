@@ -120,32 +120,6 @@ namespace_item_attributes world_directory::get_attributes () const
 }
 
 
-// Class sys_internal::internal_ns::storage_directory 
-
-storage_directory::storage_directory()
-	: rx_platform_directory(RX_NS_STORAGE_NAME)
-{
-}
-
-
-storage_directory::~storage_directory()
-{
-}
-
-
-
-namespace_item_attributes storage_directory::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system);
-}
-
-void storage_directory::get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const
-{
-	rx_gate::instance().get_host()->get_storage()->list_storage("", sub_directories, sub_items, pattern);
-	rx_platform_directory::get_content(sub_directories, sub_items, pattern);
-}
-
-
 // Class sys_internal::internal_ns::internal_directory 
 
 internal_directory::internal_directory (const string_type& name)
@@ -175,7 +149,6 @@ template class sys_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<testing::test_case::smart_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<prog::command_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<logic::program_runtime_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<hosting::rx_platform_file::smart_ptr>;
 
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_type_ptr>;

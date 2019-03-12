@@ -48,7 +48,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      rx_pipe_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      rx_pipe_host (hosting::rx_host_storages& storage);
 
       ~rx_pipe_host();
 

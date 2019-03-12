@@ -49,7 +49,7 @@ class win32_console_host : public host::interactive::interactive_console_host
 {
 
   public:
-      win32_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      win32_console_host (hosting::rx_host_storages& storage);
 
       ~win32_console_host();
 

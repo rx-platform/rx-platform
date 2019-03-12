@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -106,7 +106,7 @@ void fill_quality_string(values::rx_value val, string_type& str)
 		str[4] = 's';
 }
 
-// Class rx_platform::ns::rx_platform_item 
+// Class rx_platform::ns::rx_platform_item
 
 rx_platform_item::rx_platform_item()
 {
@@ -184,11 +184,11 @@ rx_result rx_platform_item::deserialize (base_meta_reader& stream)
 }
 
 
-// Class rx_platform::ns::rx_platform_directory 
+// Class rx_platform::ns::rx_platform_directory
 
 rx_platform_directory::rx_platform_directory()
       : created_(rx_time::now())
-, name_("<unnamed>")
+	, name_("<unnamed>")
 {
 }
 
@@ -488,7 +488,7 @@ rx_result rx_platform_directory::delete_item (const string_type& path)
 	return false;
 }
 
-rx_result rx_platform_directory::add_sub_directory (const string_type& path)
+rx_result_with<rx_directory_ptr> rx_platform_directory::add_sub_directory (const string_type& path)
 {
 	if (path.empty())
 		return "Invalid directory name!";
@@ -506,8 +506,12 @@ rx_result rx_platform_directory::add_sub_directory (const string_type& path)
 	{
 		return "Invalid directory name!";
 	}
-	auto new_dir = rx_create_reference<sys_internal::internal_ns::user_directory>(path);
-	return add_sub_directory(new_dir);
+	rx_directory_ptr new_dir = rx_create_reference<sys_internal::internal_ns::user_directory>(path);
+	auto result = add_sub_directory(new_dir);
+	if (result)
+		return new_dir;
+	else
+		return result.errors();
 }
 
 rx_result rx_platform_directory::delete_sub_directory (const string_type& path)
@@ -562,7 +566,7 @@ rx_result rx_platform_directory::add_item(TImpl who)
 {
 	return add_item(sys_internal::internal_ns::rx_item_implementation<TImpl>());
 }
-// Class rx_platform::ns::rx_names_cache 
+// Class rx_platform::ns::rx_names_cache
 
 rx_names_cache::rx_names_cache()
 {

@@ -148,7 +148,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      interactive_console_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage);
+      interactive_console_host (hosting::rx_host_storages& storage);
 
       ~interactive_console_host();
 

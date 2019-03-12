@@ -93,8 +93,6 @@ bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, u
 		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
-	if (!stream.write_id("NodeId", id_))
-		return false;
 	if (!stream.write_byte("Attrs", (uint8_t)attributes_))
 		return false;
 	if (!stream.write_string("Name", name_.c_str()))
@@ -110,6 +108,10 @@ bool checkable_data::serialize_checkable_definition (base_meta_writer& stream, u
 
 bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream, uint8_t type, string_type& object_type)
 {
+	if (!stream.start_object("Meta"))
+		return false;
+	if (!stream.read_string("Type", object_type))
+		return false;
 	if (!stream.read_id("NodeId", id_))
 		return false;
 	uint8_t temp_byte;
@@ -121,6 +123,8 @@ bool checkable_data::deserialize_checkable_definition (base_meta_reader& stream,
 	if (!stream.read_id("SuperId", parent_))
 		return false;
 	if (!stream.read_version("Ver", version_))
+		return false;
+	if (!stream.end_object())
 		return false;
 	return true;
 }

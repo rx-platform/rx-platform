@@ -316,6 +316,18 @@ bool json_reader::read_header (int& type)
 				return true;
 			}
 		}
+		else if (envelope_.isMember("type"))
+		{
+			Json::Value& temp = envelope_["type"];
+			if (temp.isObject())
+			{
+				json_read_stack_data temps(temp);
+				temps.index = -1;
+				stack_.push(temps);
+				type = STREAMING_TYPE_TYPE;
+				return true;
+			}
+		}
 		if (envelope_.isMember("body"))
 		{
 			Json::Value& temp = envelope_["body"];
@@ -349,6 +361,19 @@ bool json_reader::read_header (int& type)
 				temps.index = 0;
 				stack_.push(temps);
 				type = STREAMING_TYPE_OBJECTS;
+				return true;
+			}
+		}
+
+		else if (envelope_.isMember("types"))
+		{
+			Json::Value& temp = envelope_["types"];
+			if (temp.isArray())
+			{
+				json_read_stack_data temps(temp);
+				temps.index = 0;
+				stack_.push(temps);
+				type = STREAMING_TYPE_TYPES;
 				return true;
 			}
 		}
@@ -674,7 +699,7 @@ bool json_reader::parse_version_string (uint32_t& result, const string_type& ver
 	{
 		int major = atoi(version.substr(0, idx).c_str());
 		int minor = atoi(version.substr(idx + 1).c_str());
-		if (major >= 0 && minor > 0 && major < 0xffff && minor < 0xffff)
+		if (major >= 0 && minor >= 0 && major < 0xffff && minor < 0xffff)
 		{
 			result = (((uint32_t)major) << 16) | (((uint32_t)minor)&0xffff);
 			return true;
@@ -911,13 +936,13 @@ bool json_writer::write_header (int type, size_t size)
 
 	switch (type_)
 	{
-	case STREAMING_TYPE_CLASS:
+	case STREAMING_TYPE_TYPE:
 		data.is_array = false;
-		data.name = "class";
+		data.name = "type";
 		break;
-	case STREAMING_TYPE_CLASSES:
+	case STREAMING_TYPE_TYPES:
 		data.is_array = false;
-		data.name = "classes";
+		data.name = "types";
 		break;
 	case STREAMING_TYPE_OBJECT:
 		data.is_array = false;

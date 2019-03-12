@@ -49,17 +49,17 @@ rx_platform_host::rx_platform_host(const rx_platform_host &right)
 	RX_ASSERT(false);
 }
 
-rx_platform_host::rx_platform_host (rx_platform_storage::smart_ptr storage)
+rx_platform_host::rx_platform_host (rx_host_storages& storage)
       : parent_(nullptr)
-	, storage_(storage)
+	, system_storage_(storage.system_storage)
+	, user_storage_(storage.user_storage)
+	, test_storage_(storage.test_storage)
 {
-	storage_->init_storage();
 }
 
 
 rx_platform_host::~rx_platform_host()
 {
-	storage_->deinit_storage();
 }
 
 
@@ -142,80 +142,29 @@ rx_platform_storage::~rx_platform_storage()
 
 
 
-sys_handle_t rx_platform_storage::get_host_test_file (const string_type& path)
-{
-	return 0;
-}
-
-sys_handle_t rx_platform_storage::get_host_console_script_file (const string_type& path)
-{
-	return 0;
-}
-
-void rx_platform_storage::init_storage ()
-{
-}
-
-void rx_platform_storage::deinit_storage ()
-{
-}
-
-
-// Class rx_platform::hosting::rx_platform_file 
-
-rx_platform_file::rx_platform_file()
-{
-}
-
-
-rx_platform_file::~rx_platform_file()
-{
-}
-
-
-
-string_type rx_platform_file::get_type_name () const
-{
-	return "file";
-}
-
-namespace_item_attributes rx_platform_file::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
-}
-
-bool rx_platform_file::generate_json (std::ostream& def, std::ostream& err) const
-{
-	err << "Can't serialize file object!";
-	return false;
-}
-
-size_t rx_platform_file::get_size () const
-{
-	return 0;
-}
-
-bool rx_platform_file::serialize_definition (base_meta_writer& stream, uint8_t type) const
+rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
 {
 	return false;
 }
 
-bool rx_platform_file::deserialize_definition (base_meta_reader& stream, uint8_t type)
+rx_result rx_platform_storage::deinit_storage ()
 {
-	return false;
-}
-
-platform_item_ptr rx_platform_file::get_item_ptr ()
-{
-  return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
-
+	return true;
 }
 
 
-const meta::checkable_data& rx_platform_file::meta_data () const
+// Class rx_platform::hosting::rx_storage_item 
+
+rx_storage_item::rx_storage_item (const string_type& path)
+      : path_(path)
 {
-  return meta_data_;
 }
+
+
+rx_storage_item::~rx_storage_item()
+{
+}
+
 
 
 } // namespace hosting

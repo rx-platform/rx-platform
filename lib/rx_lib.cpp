@@ -201,11 +201,11 @@ void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_na
 	out << "\r\n";
 }
 
-bool create_directory(const std::string& dir, bool fail_on_exsists)
+rx_result create_directory(const std::string& dir, bool fail_on_exsists)
 {
 	return rx_create_directory(dir.c_str(), fail_on_exsists ? 1 : 0) != 0;
 }
-bool rx_delete_all_files(const std::string& dir, const std::string& pattern)
+rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern)
 {
 	bool succeeded = true;
 	std::vector<std::string> files;
@@ -213,18 +213,16 @@ bool rx_delete_all_files(const std::string& dir, const std::string& pattern)
 	rx_list_files(dir, pattern, files,dirs);
 	for (auto& one : files)
 	{
-		string_type temp_path;
-		rx_combine_paths(dir, one, temp_path);
+		string_type temp_path = rx_combine_paths(dir, one);
 		if (!rx_file_delete(temp_path.c_str()))
 			succeeded = false;
 	}
 	return succeeded;
 }
 
-void rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories)
+rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories)
 {
-	std::string search;
-	rx_combine_paths(dir, pattern, search);
+	std::string search = rx_combine_paths(dir, pattern);
 	rx_file_directory_entry_t one;
 
 	find_file_handle_t hndl = rx_open_find_file_list(search.c_str(), &one);
@@ -232,18 +230,30 @@ void rx_list_files(const std::string& dir, const std::string& pattern, std::vect
 	{
 		do
 		{
-			if (one.is_directory)
-				directories.emplace_back(one.file_name);
-			else
-				files.emplace_back(one.file_name);
+			if (strcmp(one.file_name, ".") != 0 && strcmp(one.file_name, "..") != 0)
+			{
+				if (one.is_directory)
+					directories.emplace_back(one.file_name);
+				else
+					files.emplace_back(one.file_name);
+			}
 
 		} while (rx_get_next_file(hndl, &one));
 		rx_find_file_close(hndl);
 	}
+	return true;
 }
-
-void rx_combine_paths(const std::string& path1, const std::string& path2, std::string& path)
+std::string rx_get_extension(const std::string& path)
 {
+	auto idx = path.find_last_of(".\\/");
+	if (idx == string_type::npos || path[idx] != '.')
+		return string_type();
+	else
+		return path.substr(idx + 1);
+}
+std::string rx_combine_paths(const std::string& path1, const std::string& path2)
+{
+	std::string path;
 	path = path1;
 	if (!path1.empty())
 	{
@@ -259,8 +269,9 @@ void rx_combine_paths(const std::string& path1, const std::string& path2, std::s
 		else
 			path += path2;
 	}
+	return path;
 }
-bool file_exist(const std::string& file)
+rx_result file_exist(const std::string& file)
 {
 	return rx_file_exsist(file.c_str())!=0;
 }

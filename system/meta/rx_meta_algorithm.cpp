@@ -264,7 +264,7 @@ rx_result basic_types_algorithm<basic_types::struct_type>::deserialize_basic_typ
 		return false;
 	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
+	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -321,9 +321,9 @@ rx_result basic_types_algorithm<basic_types::variable_type>::deserialize_basic_t
 		return false;
 	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
+	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
 		return false;
-	if (!whose.variable_data_.deserialize_variable_definition(stream, type))
+	if (!whose.variable_data_.deserialize_variable_definition(stream, type, whose.complex_data_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -403,7 +403,7 @@ rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, 
 		return false;
 	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type))
+	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
 		return false;
 	if (!whose.object_data_.deserialize_object_definition(stream, type))
 		return false;

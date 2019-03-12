@@ -38,7 +38,7 @@ namespace rx {
 
 bool is_serialization_type_array(int type)
 {
-	return (type == STREAMING_TYPE_CLASSES
+	return (type == STREAMING_TYPE_TYPES
 		|| type == STREAMING_TYPE_OBJECTS
 		|| type == STREAMING_TYPE_DETAILS
 		|| type == STREAMING_TYPE_DIRECTORY

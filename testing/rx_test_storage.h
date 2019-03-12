@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_file_sys.h
+*  testing\rx_test_storage.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,29 +26,34 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_file_sys_h
-#define rx_gnu_file_sys_h 1
+#ifndef rx_test_storage_h
+#define rx_test_storage_h 1
+
+
+#ifndef EXCLUDE_TEST_CODE
+
+// rx_test
+#include "testing/rx_test.h"
 
 
 
-// rx_file_storage
-#include "host/rx_file_storage.h"
+namespace testing {
+
+namespace basic_tests {
+
+namespace storage_test {
 
 
 
-namespace gnu {
 
 
-
-
-
-class gnu_file_system_storage : public host::files::file_system_storage  
+class storage_test_category : public test_category  
 {
 
   public:
-      gnu_file_system_storage();
+      storage_test_category();
 
-      ~gnu_file_system_storage();
+      ~storage_test_category();
 
 
   protected:
@@ -59,8 +64,40 @@ class gnu_file_system_storage : public host::files::file_system_storage
 };
 
 
-} // namespace gnu
 
+
+
+
+class file_storage_list_test : public test_case  
+{
+
+  public:
+      file_storage_list_test();
+
+      ~file_storage_list_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result read_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir);
+
+      rx_result read_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir);
+
+
+
+};
+
+
+} // namespace storage_test
+} // namespace basic_tests
+} // namespace testing
+
+#endif //EXCLUDE_TEST_CODE
 
 
 #endif

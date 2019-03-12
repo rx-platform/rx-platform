@@ -49,11 +49,7 @@ win32_file_system_storage::~win32_file_system_storage()
 
 
 
-string_type win32_file_system_storage::get_root_folder ()
-{
-	return string_type(RX_STORAGE_PATH);
-}
-
-
 } // namespace win32
+
+
 

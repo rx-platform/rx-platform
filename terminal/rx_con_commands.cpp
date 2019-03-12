@@ -720,10 +720,10 @@ license_command::~license_command()
 
 bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	auto storage = rx_gate::instance().get_host()->get_storage();
+	auto storage = rx_gate::instance().get_host()->get_system_storage();
 	if (storage)
 	{
-		const string_type& lic_info = storage->get_license();
+		const string_type& lic_info = "aaaa";//storage->get_license();
 		if (lic_info.empty())
 		{
 			err << "No valid LICENSE file in directory!!!";

@@ -229,7 +229,6 @@ public:
 		  for (const auto& one : result.errors())
 			  out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 	  }
-
   private:
       test_case(const test_case &right);
 
@@ -260,6 +259,34 @@ public:
 
 
 
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      ~basic_test_case_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class test_category 
 {
 	typedef std::map<string_type, test_case::smart_ptr> cases_type;
@@ -272,7 +299,7 @@ public:
       virtual ~test_category();
 
 
-      void collect_test_cases (std::vector<test_case::smart_ptr>& cases);
+      void collect_test_cases (std::vector<std::pair<string_type, test_case::smart_ptr> >& cases);
 
       void get_cases (string_array& cases);
 
@@ -321,9 +348,11 @@ public:
       ~testing_enviroment();
 
 
+      void register_test_category (test_category::smart_ptr test);
+
       static testing_enviroment& instance ();
 
-      void collect_test_cases (const string_type& category, std::vector<test_case::smart_ptr>& cases);
+      void collect_test_cases (const string_type& category, std::vector<std::pair<string_type, test_case::smart_ptr> >& cases);
 
       void get_categories (string_array& categories);
 
@@ -340,39 +369,8 @@ public:
       testing_enviroment();
 
 
-      void register_code_test (test_category::smart_ptr test);
-
-
 
       categories_type categories_;
-
-
-};
-
-
-
-
-
-
-class basic_test_case_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(basic_test_case_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-This test creates dummy test case and is used for testing this mechanism\
-");
-
-  public:
-      basic_test_case_test();
-
-      ~basic_test_case_test();
-
-
-      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
 
 
 };

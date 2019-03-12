@@ -111,12 +111,12 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 	if (temp_str=="-a" || temp_str=="--all")
 	{
 		bool ret = true;
-		std::vector<test_case::smart_ptr> cases;
+		std::vector<std::pair<string_type, test_case::smart_ptr> > cases;
 		testing_enviroment::instance().collect_test_cases("", cases);
 		for (auto one : cases)
 		{
 			out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-			ret = one->do_console_test(in, out, err, ctx);
+			ret = one.second->do_console_test(in, out, err, ctx);
 			out << RX_CONSOLE_HEADER_LINE "\r\n";
 			if (!ret)
 				break;
@@ -139,12 +139,13 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 {
 	string_type filter;
 	in >> filter;
-	std::vector<test_case::smart_ptr> cases;
+	std::vector<std::pair<string_type, test_case::smart_ptr> > cases;
 	testing_enviroment::instance().collect_test_cases(filter,cases);
 
 	rx_table_type table;
 
 	rx_row_type header;
+	header.emplace_back("Category");
 	header.emplace_back("Name");
 	header.emplace_back("Status");
 	header.emplace_back("Time");
@@ -152,13 +153,24 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 
 	table.emplace_back(header);
 
+	string_type old_category;
+
 	for (auto& one : cases)
 	{
 		rx_row_type row;
-		row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
+		if (old_category == one.first)
+		{
+			row.emplace_back("");
+		}
+		else
+		{
+			row.emplace_back(one.first, ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			old_category = one.first;
+		}
+		row.emplace_back(one.second->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_YELLOW, ANSI_COLOR_RESET);
 
-		test_context_data data = one->get_data();
-		test_status_t result = one->get_status();
+		test_context_data data = one.second->get_data();
+		test_status_t result = one.second->get_status();
 		switch (result)
 		{
 		case RX_TEST_STATUS_OK:
@@ -181,7 +193,7 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 		row.emplace_back(data.user);
 		table.emplace_back(row);
 	}
-	rx_dump_table(table, out, true,false);
+	rx_dump_table(table, out, true, false);
 	return true;
 }
 
@@ -227,6 +239,185 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 }
 
 
+// Class testing::testing_enviroment 
+
+testing_enviroment::testing_enviroment()
+{
+	register_test_category(std::make_unique<test_test>());
+#ifndef EXCLUDE_TEST_CODE
+	register_test_category(std::make_unique<script_test::rxs::rx_script_category>());
+	register_test_category(std::make_unique<basic_tests::lib_test::library_test_category>());
+	register_test_category(std::make_unique<basic_tests::meta_test::meta_model_test_category>());
+	register_test_category(std::make_unique<io_test::ip_test::tcp_test>());
+	register_test_category(std::make_unique<script_test::py_test::python_test>());
+#endif // EXCLUDE_TEST_CODE
+}
+
+
+testing_enviroment::~testing_enviroment()
+{
+}
+
+
+
+void testing_enviroment::register_test_category (test_category::smart_ptr test)
+{
+	categories_.emplace(test->get_category(), std::move(test));
+}
+
+testing_enviroment& testing_enviroment::instance ()
+{
+	static testing_enviroment g_obj;
+	return g_obj;
+}
+
+void testing_enviroment::collect_test_cases (const string_type& category, std::vector<std::pair<string_type, test_case::smart_ptr> >& cases)
+{
+	if (category.empty())
+	{
+		for (auto& one : categories_)
+			one.second->collect_test_cases(cases);
+	}
+	else
+	{
+		const auto& it = categories_.find(category);
+		if (it != categories_.end())
+			it->second->collect_test_cases(cases);
+	}
+}
+
+void testing_enviroment::get_categories (string_array& categories)
+{
+	for(auto& one : categories_)
+	{
+		categories.push_back(one.first);
+	}
+}
+
+void testing_enviroment::get_cases (const string_type& category, string_array& cases)
+{
+	const auto& it = categories_.find(category);
+	if (it != categories_.end())
+		return it->second->get_cases(cases);
+}
+
+test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_name)
+{
+	size_t idx = test_name.find_first_of("./");
+	if (idx != string_type::npos)
+	{
+		string_type category(test_name.substr(0, idx));
+		string_type name = test_name.substr(idx + 1);
+		const auto& it = categories_.find(category);
+		if (it != categories_.end())
+		{
+			return it->second->get_test_case(name);
+		}
+	}
+	return test_case::smart_ptr::null_ptr;
+}
+
+test_program_context* testing_enviroment::create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx)
+{
+	return new test_program_context(
+		console_ctx,
+		console_ctx->get_program_holder(),
+		console_ctx->get_current_directory(),
+		console_ctx->get_out(),
+		console_ctx->get_err(),
+		console_ctx->get_client()
+		);
+}
+
+
+// Class testing::test_program_context 
+
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
+      : status_(RX_TEST_STATUS_UNKNOWN)
+	, console_program_context(parent, holder,  current_directory, out, err, client)
+{
+}
+
+
+test_program_context::~test_program_context()
+{
+}
+
+
+
+void test_program_context::set_failed ()
+{
+	status_ = RX_TEST_STATUS_FAILED;
+	fill_data();
+}
+
+void test_program_context::set_passed ()
+{
+	status_ = RX_TEST_STATUS_OK;
+	fill_data();
+}
+
+void test_program_context::fill_data ()
+{
+	data_.time_stamp = rx_time::now();
+	data_.user = security::active_security()->get_full_name();
+}
+
+size_t test_program_context::get_possition () const
+{
+	return 0;
+}
+
+
+// Class testing::basic_test_case_test 
+
+basic_test_case_test::basic_test_case_test()
+	: test_case("test")
+{
+}
+
+
+basic_test_case_test::~basic_test_case_test()
+{
+}
+
+
+
+bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	bool pass = true;
+	if (!in.eof())
+	{
+		in >> pass;
+	}
+
+	out << "Testing Test Category abstract....\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
+
+	if (pass)
+		ctx->set_passed();
+	else
+		ctx->set_failed();
+
+	return true;
+}
+
+
+// Class testing::test_test 
+
+test_test::test_test()
+	: test_category("test")
+{
+	register_test_case(rx_create_reference<basic_test_case_test>());
+}
+
+
+test_test::~test_test()
+{
+}
+
+
+
 // Class testing::test_category 
 
 test_category::test_category(const test_category &right)
@@ -257,10 +448,10 @@ void test_category::register_test_case (test_case::smart_ptr test)
 	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
 }
 
-void test_category::collect_test_cases (std::vector<test_case::smart_ptr>& cases)
+void test_category::collect_test_cases (std::vector<std::pair<string_type, test_case::smart_ptr> >& cases)
 {
 	for (auto& one : cases_)
-		cases.emplace_back(one.second);
+		cases.emplace_back(category_, one.second);
 }
 
 void test_category::get_cases (string_array& cases)
@@ -463,185 +654,6 @@ const rx_platform::meta::checkable_data& test_case::meta_data () const
 {
   return meta_data_;
 }
-
-
-// Class testing::testing_enviroment 
-
-testing_enviroment::testing_enviroment()
-{
-	register_code_test(std::make_unique<test_test>());
-#ifndef EXCLUDE_TEST_CODE
-	register_code_test(std::make_unique<script_test::rxs::rx_script_category>());
-	register_code_test(std::make_unique<basic_tests::lib_test::library_test_category>());
-	register_code_test(std::make_unique<basic_tests::meta_test::meta_model_test_category>());
-	register_code_test(std::make_unique<io_test::ip_test::tcp_test>());
-	register_code_test(std::make_unique<script_test::py_test::python_test>());
-#endif // EXCLUDE_TEST_CODE
-}
-
-
-testing_enviroment::~testing_enviroment()
-{
-}
-
-
-
-void testing_enviroment::register_code_test (test_category::smart_ptr test)
-{
-	categories_.emplace(test->get_category(), std::forward<test_category::smart_ptr>(test));
-}
-
-testing_enviroment& testing_enviroment::instance ()
-{
-	static testing_enviroment g_obj;
-	return g_obj;
-}
-
-void testing_enviroment::collect_test_cases (const string_type& category, std::vector<test_case::smart_ptr>& cases)
-{
-	if (category.empty())
-	{
-		for (auto& one : categories_)
-			one.second->collect_test_cases(cases);
-	}
-	else
-	{
-		const auto& it = categories_.find(category);
-		if (it != categories_.end())
-			it->second->collect_test_cases(cases);
-	}
-}
-
-void testing_enviroment::get_categories (string_array& categories)
-{
-	for(auto& one : categories_)
-	{
-		categories.push_back(one.first);
-	}
-}
-
-void testing_enviroment::get_cases (const string_type& category, string_array& cases)
-{
-	const auto& it = categories_.find(category);
-	if (it != categories_.end())
-		return it->second->get_cases(cases);
-}
-
-test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_name)
-{
-	size_t idx = test_name.find_first_of("./");
-	if (idx != string_type::npos)
-	{
-		string_type category(test_name.substr(0, idx));
-		string_type name = test_name.substr(idx + 1);
-		const auto& it = categories_.find(category);
-		if (it != categories_.end())
-		{
-			return it->second->get_test_case(name);
-		}
-	}
-	return test_case::smart_ptr::null_ptr;
-}
-
-test_program_context* testing_enviroment::create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx)
-{
-	return new test_program_context(
-		console_ctx,
-		console_ctx->get_program_holder(),
-		console_ctx->get_current_directory(),
-		console_ctx->get_out(),
-		console_ctx->get_err(),
-		console_ctx->get_client()
-		);
-}
-
-
-// Class testing::test_program_context 
-
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
-      : status_(RX_TEST_STATUS_UNKNOWN)
-	, console_program_context(parent, holder,  current_directory, out, err, client)
-{
-}
-
-
-test_program_context::~test_program_context()
-{
-}
-
-
-
-void test_program_context::set_failed ()
-{
-	status_ = RX_TEST_STATUS_FAILED;
-	fill_data();
-}
-
-void test_program_context::set_passed ()
-{
-	status_ = RX_TEST_STATUS_OK;
-	fill_data();
-}
-
-void test_program_context::fill_data ()
-{
-	data_.time_stamp = rx_time::now();
-	data_.user = security::active_security()->get_full_name();
-}
-
-size_t test_program_context::get_possition () const
-{
-	return 0;
-}
-
-
-// Class testing::basic_test_case_test 
-
-basic_test_case_test::basic_test_case_test()
-	: test_case("test")
-{
-}
-
-
-basic_test_case_test::~basic_test_case_test()
-{
-}
-
-
-
-bool basic_test_case_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
-{
-	bool pass = true;
-	if (!in.eof())
-	{
-		in >> pass;
-	}
-
-	out << "Testing Test Category abstract....\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "This is a dummy test case that is testing the test_case mechanisms\r\n";
-
-	if (pass)
-		ctx->set_passed();
-	else
-		ctx->set_failed();
-
-	return true;
-}
-
-
-// Class testing::test_test 
-
-test_test::test_test()
-	: test_category("test")
-{
-	register_test_case(rx_create_reference<basic_test_case_test>());
-}
-
-
-test_test::~test_test()
-{
-}
-
 
 
 } // namespace testing

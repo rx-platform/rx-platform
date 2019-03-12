@@ -81,7 +81,9 @@ struct namespace_data_t
 	namespace_data_t()
 	{
 	}
-	string_type storage_reference;
+	string_type system_storage_reference;
+	string_type user_storage_reference;
+	string_type test_storage_reference;
 };
 
 enum namespace_item_attributes
@@ -171,7 +173,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       virtual rx_result delete_item (const string_type& path);
 
-      rx_result add_sub_directory (const string_type& path);
+      rx_result_with<rx_directory_ptr> add_sub_directory (const string_type& path);
 
       rx_result delete_sub_directory (const string_type& path);
 

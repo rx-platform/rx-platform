@@ -214,38 +214,6 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
 
 
-class storage_directory : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(storage_directory);
-
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-storage directory:\r\n\
-used to interface storage objects...\
-");
-
-  public:
-      storage_directory();
-
-      ~storage_directory();
-
-
-      namespace_item_attributes get_attributes () const;
-
-      void get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 template <class TImpl>
 class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item  
 {
@@ -433,11 +401,11 @@ rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, 
 {
 	rx_platform::serialization::json_writer writer;
 
-	writer.write_header(STREAMING_TYPE_CLASS, 0);
+	writer.write_header(STREAMING_TYPE_TYPE, 0);
 
 	bool out = false;
 
-	out = impl_->serialize_definition(writer, STREAMING_TYPE_CLASS);
+	out = impl_->serialize_definition(writer, STREAMING_TYPE_TYPE);
 
 	writer.write_footer();
 
@@ -492,3 +460,4 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 
 
 #endif
+

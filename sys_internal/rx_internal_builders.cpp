@@ -96,14 +96,8 @@ rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform
 		one->build(root);
 	}
 
-	// now add host classes
-	/*std::vector<object_class_ptr> host_classes;
-	auto current = host;
-	while (current)
-	{
-		current->get_host_classes()
-	}*/
-
+	
+	
 	return root;
 	/*
 	server_directories_type dirs;
@@ -236,7 +230,6 @@ rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform
 void root_folder_builder::build (platform_root::smart_ptr root)
 {
 	root->add_sub_directory(rx_create_reference<world_directory>());
-	root->add_sub_directory(rx_create_reference<storage_directory>());
 	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
 	auto sys_dir = rx_create_reference<internal_directory>(RX_NS_SYS_NAME);

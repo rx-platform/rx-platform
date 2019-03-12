@@ -42,7 +42,7 @@ namespace pipe {
 
 // Class host::pipe::rx_pipe_host 
 
-rx_pipe_host::rx_pipe_host (rx_platform::hosting::rx_platform_storage::smart_ptr storage)
+rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
       : exit_(false)
 	, hosting::rx_platform_host(storage)
 {
