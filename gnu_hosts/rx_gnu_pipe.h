@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_meta_api.h
+*  gnu_hosts\rx_gnu_pipe.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,55 +26,50 @@
 ****************************************************************************/
 
 
-#ifndef rx_meta_api_h
-#define rx_meta_api_h 1
+#ifndef rx_gnu_pipe_h
+#define rx_gnu_pipe_h 1
+
+
+
+// rx_pipe
+#include "host/rx_pipe.h"
+// rx_gnu_file_sys
+#include "gnu_hosts/rx_gnu_file_sys.h"
+
+
+
+namespace gnu {
 
 
 
 
-#include "rx_platform_api.h"
-namespace rx_platform
+
+
+class gnu_pipe_host : public host::pipe::rx_pipe_host  
 {
-namespace api
-{
-namespace meta
-{
+
+  public:
+      gnu_pipe_host (hosting::rx_host_storages& storage);
+
+      ~gnu_pipe_host();
 
 
+      string_type get_config_path () const;
 
-rx_result rx_delete_object(
-	const string_type& name
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
+      string_type get_default_name () const;
 
-
-rx_result rx_create_object(
-	const string_type& name
-	, const string_type& type_name
-	, data::runtime_values_data& init_data
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
+      void get_host_info (string_array& hosts);
 
 
-rx_result rx_create_prototype(
-	const string_type& name
-	, const string_type& type_name
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
+  protected:
+
+  private:
 
 
-rx_result rx_create_object_type(
-	const string_type& name
-	, const string_type& base_name
-	, rx_object_type_ptr prototype
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-	, rx_context ctx);
+};
 
 
-}
-}
-}
-
+} // namespace gnu
 
 
 

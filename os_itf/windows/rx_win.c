@@ -464,7 +464,7 @@ void test_client_lpc()
 	printf("Client: NtClose result 0x%08lX\n", Status);
 }
 
-void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* server_name)
+void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
 #ifndef _DEBUG
 	uint32_t tid;
@@ -478,7 +478,7 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls, const char* se
 
 	rx_server_name = server_name;
 	rx_tls = tls;
-	rx_pid = pid;
+	rx_pid = GetCurrentProcessId();
 	// determine big endian or little endian
 	union {
 		uint32_t i;

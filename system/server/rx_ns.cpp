@@ -39,17 +39,20 @@
 
 
 namespace rx_platform {
-
+bool rx_is_valid_name_character(char ch)
+{
+	return ((ch >= 'a' && ch <= 'z')
+		|| (ch >= 'A' && ch <= 'Z')
+		|| (ch >= '0' && ch <= '9')
+		|| ch == '_');
+}
 bool rx_is_valid_namespace_name(const string_type& name)
 {
 	if (name.empty())
 		return false;
 	for (const auto& one : name)
 	{
-		if (!((one >= 'a' && one <= 'z')
-			|| (one >= 'A' && one <= 'Z')
-			|| (one >= '0' && one <= '9')
-			|| one == '_'))
+		if (!rx_is_valid_name_character(one))
 			return false;
 	}
 	return true;

@@ -34,6 +34,7 @@
 // rx_host
 #include "system/hosting/rx_host.h"
 
+#include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
 
 
@@ -104,6 +105,29 @@ std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type
 	return ret;
 }
 
+bool rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
+{
+	string_type config_path = rx_combine_paths(get_config_path(), "platform.yml");
+	if (!config_path.empty())
+	{
+		string_type settings_buff;
+		bool ret = false;
+		{
+			rx_source_file file;
+			if (file.open(config_path.c_str()))
+			{
+				ret = file.read_string(settings_buff);
+			}
+		}
+		if(ret)
+		{
+			ret = reader.parse_configuration(settings_buff, config);
+		}
+		return ret;
+	}
+	return false;
+}
+
 
 // Class rx_platform::hosting::host_security_context 
 
@@ -165,6 +189,9 @@ rx_storage_item::~rx_storage_item()
 {
 }
 
+
+
+// Class rx_platform::hosting::configuration_reader 
 
 
 } // namespace hosting

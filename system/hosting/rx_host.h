@@ -171,6 +171,26 @@ class rx_platform_storage : public rx::pointers::reference_object
 };
 
 
+
+
+
+
+class configuration_reader 
+{
+
+  public:
+
+      virtual rx_result parse_configuration (const string_type& input_data, configuration_data_t& config) = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 struct rx_host_storages
 {
 	rx_platform_storage::smart_ptr system_storage;
@@ -207,13 +227,15 @@ class rx_platform_host
 
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      virtual bool start (rx_platform::configuration_data_t& config) = 0;
-
       virtual bool break_host (const string_type& msg) = 0;
 
       virtual std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       virtual std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      virtual string_type get_config_path () const = 0;
+
+      virtual string_type get_default_name () const = 0;
 
 
       rx_platform_host * get_parent ()
@@ -242,6 +264,9 @@ class rx_platform_host
 
 
   protected:
+
+      bool read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
+
 
   private:
       rx_platform_host(const rx_platform_host &right);

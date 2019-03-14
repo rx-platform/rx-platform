@@ -601,6 +601,79 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
 
+
+
+class rx_source_file
+{
+	sys_handle_t m_handle;
+public:
+	rx_source_file()
+		: m_handle(0)
+	{
+	}
+	bool open(const char* file_name)
+	{
+		m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		return m_handle != 0;
+	}
+	bool open_write(const char* file_name)
+	{
+		m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
+		return m_handle != 0;
+	}
+	bool read_string(std::string& buff)
+	{
+		if (m_handle == 0)
+		{
+			assert(false);
+			return false;
+		}
+		uint64_t size;
+		if (rx_file_get_size(m_handle, &size) != RX_OK)
+			return false;
+
+		char* temp = new char[size];
+
+		uint32_t readed = 0;
+		if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)
+		{
+			buff.assign(temp, size);
+			delete[] temp;
+			return true;
+		}
+		else
+		{
+			delete[] temp;
+			return false;
+		}
+	}
+	bool write_string(const std::string& buff)
+	{
+		if (m_handle == 0)
+		{
+			assert(false);
+			return false;
+		}
+
+		uint32_t size = (uint32_t)buff.size();
+		uint32_t written = 0;
+		if (rx_file_write(m_handle, buff.c_str(), size, &written) == RX_OK)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	~rx_source_file()
+	{
+		if (m_handle != 0)
+			rx_file_close(m_handle);
+	}
+
+};
+
 }// namespace rx
 
 

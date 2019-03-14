@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_meta_api.h
+*  system\hosting\rx_yaml.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,55 +26,47 @@
 ****************************************************************************/
 
 
-#ifndef rx_meta_api_h
-#define rx_meta_api_h 1
+#ifndef rx_yaml_h
+#define rx_yaml_h 1
+
+
+
+// rx_host
+#include "system/hosting/rx_host.h"
+
+
+
+namespace rx_platform {
+
+namespace hosting {
 
 
 
 
-#include "rx_platform_api.h"
-namespace rx_platform
+
+class simplified_yaml_reader : public configuration_reader  
 {
-namespace api
-{
-namespace meta
-{
+
+  public:
+
+      rx_result parse_configuration (const string_type& input_data, configuration_data_t& config);
+
+      rx_result parse_yaml_file (const string_type& input_data, std::map<string_type, string_type>& config_values);
+
+
+  protected:
+
+  private:
+
+      rx_result parse_yaml_line (const string_type& line, string_type& key, string_type& value, int& level);
 
 
 
-rx_result rx_delete_object(
-	const string_type& name
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
+};
 
 
-rx_result rx_create_object(
-	const string_type& name
-	, const string_type& type_name
-	, data::runtime_values_data& init_data
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_prototype(
-	const string_type& name
-	, const string_type& type_name
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_object_type(
-	const string_type& name
-	, const string_type& base_name
-	, rx_object_type_ptr prototype
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-	, rx_context ctx);
-
-
-}
-}
-}
-
+} // namespace hosting
+} // namespace rx_platform
 
 
 

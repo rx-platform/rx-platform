@@ -249,13 +249,13 @@ void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_
 	auto ret_thread = rx_thread_context();
 	et->append(
 		rx_create_reference<jobs::lambda_job<decltype(ret_thread), refT> >(
-			[=](decltype(ret_thread) dummy)
+			[=](decltype(ret_thread) dummy) mutable
 			{
 				resultT ret = what(args...);
 				auto jt = rx_gate::instance().get_runtime().get_executer(dummy);
 				jt->append(
 					rx_create_reference<jobs::lambda_job<resultT, refT> >(
-						[=](resultT&& ret_val)
+						[=](resultT&& ret_val) mutable
 						{
 							callback(std::move(ret_val));
 						},

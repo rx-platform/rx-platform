@@ -33,6 +33,7 @@
 #include "third-party/cxxopts/include/cxxopts.hpp"
 #include "rx_interactive_version.h"
 #include "terminal/rx_terminal_style.h"
+#include "system/hosting/rx_yaml.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -285,27 +286,54 @@ int interactive_console_host::console_main (int argc, char* argv[])
 {
 	bool ret = setup_console(argc, argv);
 	rx_platform::configuration_data_t config;
-	ret = parse_command_line(argc, argv, config);
+
+	ret = parse_command_line(argc, argv, config); 
 	if (ret)
 	{
-		ret = get_system_storage()->init_storage(config.namespace_data.system_storage_reference);
+		rx_platform::hosting::simplified_yaml_reader reader;
+		ret = read_config_file(reader, config);
 		if (ret)
 		{
-			ret = get_user_storage()->init_storage(config.namespace_data.user_storage_reference);
+			rx_thread_data_t tls = rx_alloc_thread_data();
+			string_type server_name = get_default_name();
+
+			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
+
+			rx::log::log_object::instance().start(std::cout, true);
+
+			ret = get_system_storage()->init_storage(config.namespace_data.system_storage_reference);
 			if (ret)
 			{
-				ret = get_test_storage()->init_storage(config.namespace_data.test_storage_reference);
+				ret = get_user_storage()->init_storage(config.namespace_data.user_storage_reference);
 				if (ret)
 				{
-					ret = start(config);
-					get_test_storage()->deinit_storage();
+					ret = get_test_storage()->init_storage(config.namespace_data.test_storage_reference);
+					if (ret)
+					{
+						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+						// execute main loop of the console host
+						console_loop(config);
+						HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+						get_test_storage()->deinit_storage();
+					}
+					get_user_storage()->deinit_storage();
 				}
-				get_user_storage()->deinit_storage();
+				get_system_storage()->deinit_storage();
 			}
-			get_system_storage()->deinit_storage();
+			rx::log::log_object::instance().deinitialize();
+
+			rx_deinitialize_os();
+		}
+		else
+		{
+			printf("Error reading configuration file!\r\n");
 		}
 	}
-
+	else
+	{
+		printf("Error parsing command line arguments:\r\n");
+	}
 	return ret ? 0 : -1;
 }
 

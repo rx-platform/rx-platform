@@ -29,6 +29,7 @@
 #include "pch.h"
 
 #include "rx_win32_console_version.h"
+#include "rx_win32_common.h"
 
 // rx_win32_interactive
 #include "win32_hosts/rx_win32_interactive.h"
@@ -248,45 +249,12 @@ bool win32_console_host::shutdown (const string_type& msg)
 	return false;
 }
 
-bool win32_console_host::start (rx_platform::configuration_data_t& config)
-{
-	BOOL ret = SetConsoleCtrlHandler(NULL,FALSE);
-	ret = SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrl_handler, TRUE);
-
-	rx_thread_data_t tls = rx_alloc_thread_data();
-
-	char name[0x100];
-	DWORD szname = sizeof(name);
-	GetComputerNameA(name, &szname);
-
-	rx_initialize_os(GetCurrentProcessId(), config.runtime_data.real_time, tls, name);
-
-	rx::log::log_object::instance().start(std::cout, true);
-	//////////////////////////////////////////////
-		
-	
-	HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-	
-	// execute main loop of the console host
-	console_loop(config);
-
-
-	HOST_LOG_INFO("Main", 999, "Console Host exited.");
-
-	rx::log::log_object::instance().deinitialize();
-
-	rx_deinitialize_os();
-
-	return true;
-
-}
-
 void win32_console_host::get_host_info (string_array& hosts)
 {
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_WIN32_HOST_NAME, RX_WIN32_HOST_MAJOR_VERSION, RX_WIN32_HOST_MINOR_VERSION, RX_WIN32_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_WIN32_CON_HOST_NAME, RX_WIN32_CON_HOST_MAJOR_VERSION, RX_WIN32_CON_HOST_MINOR_VERSION, RX_WIN32_CON_HOST_BUILD_NUMBER);
 	}
 	hosts.emplace_back(ret);
 	host::interactive::interactive_console_host::get_host_info(hosts);
@@ -322,8 +290,8 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 	}
 	if (is_canceling())
 		return false;
-	//bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
-	bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, &ctrl));
+	bool ret = (FALSE != ReadFile(in_handle_, &chars[0], 0x100, &read, NULL));
+	//bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, &ctrl));
 	count = read;
 	return ret;
 }
@@ -356,6 +324,9 @@ std::vector<IP_interface> win32_console_host::get_IP_interfaces (const string_ty
 
 rx_result win32_console_host::setup_console (int argc, char* argv[])
 {
+	BOOL ret = SetConsoleCtrlHandler(NULL, FALSE);
+	ret = SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrl_handler, TRUE);
+
 	out_handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
 	in_handle_ = GetStdHandle(STD_INPUT_HANDLE);
 
@@ -381,6 +352,20 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 	SetConsoleMode(out_handle_, out_bits.to_ulong());
 
 	return true;
+}
+
+string_type win32_console_host::get_config_path () const
+{
+	string_type ret;
+	get_full_path("config", ret);
+	return ret;	
+}
+
+string_type win32_console_host::get_default_name () const
+{
+	string_type ret;
+	get_host_name(ret);
+	return ret;
 }
 
 

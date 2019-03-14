@@ -55,6 +55,7 @@ using namespace rx_platform;
 
 namespace rx_platform {
 
+bool rx_is_valid_name_character(char ch);
 bool rx_is_valid_namespace_name(const string_type& name);
 
 namespace ns

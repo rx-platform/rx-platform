@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_interactive.h
+*  win32_hosts\rx_win32_pipe.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,13 +26,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_win32_interactive_h
-#define rx_win32_interactive_h 1
+#ifndef rx_win32_pipe_h
+#define rx_win32_pipe_h 1
 
 
 
-// rx_interactive
-#include "host/rx_interactive.h"
+// rx_pipe
+#include "host/rx_pipe.h"
 // rx_win32_file_sys
 #include "win32_hosts/rx_win32_file_sys.h"
 
@@ -45,46 +45,25 @@ namespace win32 {
 
 
 
-class win32_console_host : public host::interactive::interactive_console_host  
+class win32_pipe_host : public host::pipe::rx_pipe_host  
 {
 
   public:
-      win32_console_host (hosting::rx_host_storages& storage);
+      win32_pipe_host (hosting::rx_host_storages& storage);
 
-      ~win32_console_host();
+      ~win32_pipe_host();
 
-
-      bool shutdown (const string_type& msg);
-
-      void get_host_info (string_array& hosts);
-
-      bool is_canceling () const;
-
-      bool break_host (const string_type& msg);
-
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
-
-      std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      rx_result setup_console (int argc, char* argv[]);
 
       string_type get_config_path () const;
 
       string_type get_default_name () const;
 
+      void get_host_info (string_array& hosts);
+
 
   protected:
 
   private:
-
-
-      HANDLE out_handle_;
-
-      HANDLE in_handle_;
 
 
 };

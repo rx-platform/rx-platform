@@ -73,6 +73,8 @@ command for creating various objects and types in platform\r\n\
 	  template<class T>
 	  bool create_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
+	  bool create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
 	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 };
@@ -221,7 +223,6 @@ command for checking various types in platform\r\n\
 	  bool check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
-
 
 };
 

@@ -67,15 +67,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
-      bool write_stdout (const string_type& lines);
-
-      bool start (rx_platform::configuration_data_t& config);
-
       bool break_host (const string_type& msg);
-
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
 
       int pipe_main (int argc, char* argv[]);
 

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_meta_api.h
+*  gnu_hosts\rx_gnu_common.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,53 +26,16 @@
 ****************************************************************************/
 
 
-#ifndef rx_meta_api_h
-#define rx_meta_api_h 1
+#ifndef rx_gnu_common_h
+#define rx_gnu_common_h 1
 
 
 
 
-#include "rx_platform_api.h"
-namespace rx_platform
+namespace gnu
 {
-namespace api
-{
-namespace meta
-{
-
-
-
-rx_result rx_delete_object(
-	const string_type& name
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_object(
-	const string_type& name
-	, const string_type& type_name
-	, data::runtime_values_data& init_data
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_prototype(
-	const string_type& name
-	, const string_type& type_name
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_object_type(
-	const string_type& name
-	, const string_type& base_name
-	, rx_object_type_ptr prototype
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-	, rx_context ctx);
-
-
-}
-}
+void get_full_path(const std::string& base, std::string& path);
+void get_host_name(std::string& name);
 }
 
 

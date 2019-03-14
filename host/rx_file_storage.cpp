@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -41,7 +41,7 @@ namespace host {
 
 namespace files {
 
-// Class host::files::file_system_storage 
+// Class host::files::file_system_storage
 
 file_system_storage::file_system_storage()
 {
@@ -157,78 +157,7 @@ void file_system_storage::get_storage_reference (string_type& ref)
 	ref = root_;
 }
 
-
-class rx_source_file
-{
-	sys_handle_t m_handle;
-public:
-	rx_source_file()
-		: m_handle(0)
-	{
-	}
-	bool open(const char* file_name)
-	{
-		m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-		return m_handle != 0;
-	}
-	bool open_write(const char* file_name)
-	{
-		m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
-		return m_handle != 0;
-	}
-	bool read_string(std::string& buff)
-	{
-		if (m_handle == 0)
-		{
-			assert(false);
-			return false;
-		}
-		uint64_t size;
-		if (rx_file_get_size(m_handle, &size) != RX_OK)
-			return false;
-
-		char* temp = new char[size];
-
-		uint32_t readed = 0;
-		if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)
-		{
-			buff.assign(temp, size);
-			delete[] temp;
-			return true;
-		}
-		else
-		{
-			delete[] temp;
-			return false;
-		}
-	}
-	bool write_string(const std::string& buff)
-	{
-		if (m_handle == 0)
-		{
-			assert(false);
-			return false;
-		}
-
-		uint32_t size = (uint32_t)buff.size();
-		uint32_t written = 0;
-		if (rx_file_write(m_handle, buff.c_str(), size, &written) == RX_OK)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	~rx_source_file()
-	{
-		if (m_handle != 0)
-			rx_file_close(m_handle);
-	}
-
-};
-// Class host::files::rx_file_item 
+// Class host::files::rx_file_item
 
 rx_file_item::rx_file_item (const string_type& path, const string_type& file_path)
       : valid_(false),
@@ -269,7 +198,7 @@ rx_result rx_file_item::delete_item ()
 }
 
 
-// Class host::files::rx_json_file 
+// Class host::files::rx_json_file
 
 rx_json_file::rx_json_file (const string_type& path, const string_type& file_path)
 	: rx_file_item(path, file_path)
@@ -301,7 +230,7 @@ rx_result rx_json_file::open_for_read ()
 		return "File storage "s + file_path_ + " already opened for writing";
 
 	rx_source_file file;
-	bool ret = false;
+
 	if (file.open(file_path_.c_str()))
 	{
 		std::string data;
@@ -326,7 +255,7 @@ rx_result rx_json_file::open_for_write ()
 		return "File storage "s + file_path_ + " already opened for reading";
 	if (writer_)
 		return "File storage "s + file_path_ + " already opened for writing";
-	
+
 	writer_ = std::make_unique<rx_platform::serialization::json_writer>();
 	return true;
 }
@@ -357,7 +286,7 @@ rx_result rx_json_file::close ()
 }
 
 
-// Class host::files::rx_binary_file 
+// Class host::files::rx_binary_file
 
 rx_binary_file::rx_binary_file (const string_type& path, const string_type& file_path)
 	: rx_file_item(path, file_path)

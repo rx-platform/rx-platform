@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_meta_api.h
+*  win32_hosts\rx_win32_common.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -26,56 +26,42 @@
 ****************************************************************************/
 
 
-#ifndef rx_meta_api_h
-#define rx_meta_api_h 1
+#include "pch.h"
 
 
+// rx_win32_common
+#include "win32_hosts/rx_win32_common.h"
 
-
-#include "rx_platform_api.h"
-namespace rx_platform
+namespace win32
 {
-namespace api
+void get_full_path(const std::string& base, std::string& path)
 {
-namespace meta
-{
+	char buff[1024];
 
+	if (GetModuleFileNameA(NULL, buff, 1024))
+	{
+		size_t j = strlen(buff);
+		for (size_t i = j - 1; i > 0; i--)
+		{
+			if (buff[i] == L'\\')
+			{
+				buff[i + 1] = L'\0';
+				break;
+			}
+		}
 
+		strcat_s(buff, 1024, base.c_str());
 
-rx_result rx_delete_object(
-	const string_type& name
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_object(
-	const string_type& name
-	, const string_type& type_name
-	, data::runtime_values_data& init_data
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_prototype(
-	const string_type& name
-	, const string_type& type_name
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
-	, rx_context ctx);
-
-
-rx_result rx_create_object_type(
-	const string_type& name
-	, const string_type& base_name
-	, rx_object_type_ptr prototype
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-	, rx_context ctx);
-
-
+		path = buff;
+	}
 }
+void get_host_name(std::string& name)
+{
+	char buff[0x100];
+	DWORD szname = sizeof(buff);
+	GetComputerNameA(buff, &szname);
+	name = buff;
 }
 }
 
 
-
-
-#endif

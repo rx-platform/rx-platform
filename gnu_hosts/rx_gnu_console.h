@@ -31,10 +31,10 @@
 
 
 
-// rx_gnu_file_sys
-#include "gnu_hosts/rx_gnu_file_sys.h"
 // rx_interactive
 #include "host/rx_interactive.h"
+// rx_gnu_file_sys
+#include "gnu_hosts/rx_gnu_file_sys.h"
 
 
 
@@ -56,8 +56,6 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       bool shutdown (const string_type& msg);
 
-      bool start (rx_platform::configuration_data_t& config);
-
       void get_host_info (string_array& hosts);
 
       bool is_canceling () const;
@@ -75,6 +73,10 @@ class gnu_console_host : public host::interactive::interactive_console_host
       rx_result setup_console (int argc, char* argv[]);
 
       rx_result restore_console ();
+
+      string_type get_config_path () const;
+
+      string_type get_default_name () const;
 
 
   protected:

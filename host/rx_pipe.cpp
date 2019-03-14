@@ -93,27 +93,7 @@ bool rx_pipe_host::do_host_command (const string_type& line, memory::buffer_ptr 
 	return true;
 }
 
-bool rx_pipe_host::write_stdout (const string_type& lines)
-{
-	return true;
-}
-
-bool rx_pipe_host::start (rx_platform::configuration_data_t& config)
-{
-	return true;
-}
-
 bool rx_pipe_host::break_host (const string_type& msg)
-{
-	return true;
-}
-
-bool rx_pipe_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
-{
-	return true;
-}
-
-bool rx_pipe_host::write_stdout (const void* data, size_t size)
 {
 	return true;
 }
@@ -121,11 +101,20 @@ bool rx_pipe_host::write_stdout (const void* data, size_t size)
 int rx_pipe_host::pipe_main (int argc, char* argv[])
 {
 	rx_platform::configuration_data_t config;
-	bool ret = start(config);
-	return ret ? 0 : -1;
+	return true;
 }
 
 
 } // namespace pipe
 } // namespace host
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return "";
+
+	return "";
+
+#endif

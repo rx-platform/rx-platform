@@ -464,9 +464,9 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		string_type test_ref;
 		rx_gate::instance().get_host()->get_test_storage()->get_storage_info(test_info);
 		rx_gate::instance().get_host()->get_test_storage()->get_storage_reference(test_ref);
-		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "System Storage\r\n==================\r\nReference: " << sys_ref << "\r\nVersion: "<< sys_info << "\r\n";
-		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "User Storage\r\n==================\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n";
-		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Test Storage\r\n==================\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
+		out << ANSI_COLOR_GREEN "System Storage" ANSI_COLOR_RESET "\r\nReference: " << sys_ref << "\r\nVersion: "<< sys_info << "\r\n\r\n";
+		out << ANSI_COLOR_GREEN "User Storage" ANSI_COLOR_RESET "\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n\r\n";
+		out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
 		
 		ret = true;
 	}

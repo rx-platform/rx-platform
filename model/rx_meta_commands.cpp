@@ -82,7 +82,19 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 				{
 					ret = create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
 				}
-				else if (what == "type")
+				else if (what == "object-prototype")
+				{
+					ret = create_prototype<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "domain-prototype")
+				{
+					ret = create_prototype<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "app-prototype" || what == "application-prototype")
+				{
+					ret = create_prototype<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+				}
+				else if (what == "object-type")
 				{
 					ret = create_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
 				}
@@ -184,7 +196,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_object(name, class_name, &init_data,
+				rx_platform::api::meta::rx_create_object(name, class_name, init_data,
 					[=](rx_result_with<rx_object_ptr>&& result)
 					{
 						if (!result)
@@ -226,8 +238,9 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_object(name, class_name, nullptr,
-			[=](rx_result_with<rx_result_with<rx_object_ptr> >&& result)
+		data::runtime_values_data init_data;
+		rx_platform::api::meta::rx_create_object(name, class_name, init_data,
+			[=](rx_result_with<rx_object_ptr>&& result)
 			{
 				if (!result)
 				{
@@ -254,6 +267,98 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			<< T::RType::type_name
 			<< " creation type:"
 			<< as_command << "!";
+		return false;
+	}
+}
+
+template<class T>
+bool create_command::create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	string_type from_command;
+	string_type class_name;
+	string_type to_command;
+	string_type def_command;
+	in >> name
+		>> from_command
+		>> class_name
+		>> to_command
+		>> def_command;
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::RTypePtr object_ptr;
+
+	// try to acquire the type
+	if (from_command == "from")
+	{
+		type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
+	}
+	else
+	{
+		err << "Unknown base "
+			<< T::RType::type_name
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
+	// do we have type
+	if (!type_definition)
+	{
+		err << "Undefined "
+			<< T::type_name
+			<< ":"
+			<< class_name << "!";
+		return false;
+	}
+	// try to acquire definition
+	if (to_command == "to")
+	{
+		if (def_command == "json")
+		{
+
+			rx_context rxc;
+			rxc.object = ctx->get_client();
+			rxc.directory = ctx->get_current_directory();
+			rx_platform::api::meta::rx_create_prototype(name, class_name,
+				[=](rx_result_with<rx_object_ptr>&& result)
+				{
+					bool ret = result;
+					if (!result)
+					{
+						auto& err = ctx->get_stderr();
+						err << "Error prototyping "
+							<< T::RType::type_name << ":\r\n";
+						dump_error_result(err, result);
+					}
+					else
+					{
+						auto& out = ctx->get_stdout();
+						auto& err = ctx->get_stderr();
+
+						out << "Prototyped " << T::RType::type_name << " "
+							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+							<< ".\r\n";
+						ret = result.value()->get_item_ptr()->generate_json(out, err);
+					}
+					ctx->send_results(ret);
+				}
+				, rxc);
+			return true;
+		}
+		else
+		{
+			err << "Unknown "
+				<< T::RType::type_name
+				<< " target type!";
+			return false;
+		}
+	}
+	else
+	{
+		err << "Unknown "
+			<< T::RType::type_name
+			<< " target!";
 		return false;
 	}
 }
@@ -380,7 +485,7 @@ bool delete_command::do_console_command (std::istream& in, std::ostream& out, st
 			err << "Delete type is unknown!\r\n";
 
 		if (ret)
-		{			
+		{
 			data = rx_create_reference<delete_data_t>();
 			data->started = rx_get_us_ticks();
 			ctx->set_instruction_data(data);
@@ -445,7 +550,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 			ctx->send_results(result);
 		}
 		, rxc);
-	
+
 	return true;
 }
 
@@ -563,7 +668,7 @@ bool check_command::do_console_command (std::istream& in, std::ostream& out, std
 		}
 		else
 			err << "Check type is unknown!\r\n";
-		
+
 		if (ret)
 		{
 			data = rx_create_reference<check_data_t>();
@@ -659,7 +764,8 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-
 } // namespace meta_commands
 } // namespace model
+
+
 

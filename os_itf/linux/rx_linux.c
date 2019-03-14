@@ -6,23 +6,23 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
 *  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -93,7 +93,7 @@ const char* rx_get_server_name()
 const char* g_ositf_version = "ERROR!!!";
 char ver_buffer[0x100];
 rx_pid_t rx_pid;
-void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls,const char* server_name)
+void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
@@ -101,7 +101,7 @@ void rx_initialize_os(rx_pid_t pid, int rt, rx_thread_data_t tls,const char* ser
 
     rx_server_name=server_name;
 	rx_tls = tls;
-	rx_pid=pid;
+	rx_pid= getpid();
 	// determine big endian or little endian
 	union {
 		uint32_t i;
@@ -518,11 +518,13 @@ void read_off_memory_status(size_t* process)
 	if (!f) {
 		perror(statm_path);
 	}
-	if (1 != fscanf(f, "%ulld" ,
-		process))
+	uint32_t temp;
+	if (1 != fscanf(f, "%u" ,
+		&temp))
 	{
 		perror(statm_path);
 	}
+	*process = temp;
 	fclose(f);
 }
 void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)

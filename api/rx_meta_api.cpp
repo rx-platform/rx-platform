@@ -50,14 +50,22 @@ rx_result rx_delete_object(const string_type& name
 	return true;
 }
 
-rx_result rx_create_object(const string_type& name, const string_type& type_name, const data::runtime_values_data* init_data
+rx_result rx_create_object(const string_type& name, const string_type& type_name, data::runtime_values_data& init_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
 {
+	auto ptr_copy = new data::runtime_values_data(std::move(init_data));
 	model::platform_types_manager::instance().create_runtime<object_type, pointers::reference_object::smart_ptr>(
-		name, type_name, init_data, ctx.directory, callback, ctx.object);
+		name, type_name, ptr_copy, ctx.directory, callback, ctx.object);
 	return true;
 }
 
+rx_result rx_create_prototype(const string_type& name, const string_type& type_name
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
+{
+	model::platform_types_manager::instance().create_prototype<object_type, pointers::reference_object::smart_ptr>(
+		name, type_name, ctx.directory, callback, ctx.object);
+	return true;
+}
 
 rx_result rx_create_object_type(const string_type& name
 	, const string_type& base_name, rx_object_type_ptr prototype
