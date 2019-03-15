@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -53,7 +54,7 @@ class library_test_category : public test_category
   public:
       library_test_category();
 
-      virtual ~library_test_category();
+      ~library_test_category();
 
 
   protected:
@@ -77,7 +78,7 @@ basic testing of callback capabilities.");
   public:
       platform_callback_test();
 
-      virtual ~platform_callback_test();
+      ~platform_callback_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -104,7 +105,7 @@ basic testing for platform values.");
   public:
       values_test();
 
-      virtual ~values_test();
+      ~values_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -136,7 +137,7 @@ basic testing for Ethernet and RS232/485 port resources on this staffroom.");
   public:
       external_interfaces_test();
 
-      virtual ~external_interfaces_test();
+      ~external_interfaces_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -158,4 +159,3 @@ basic testing for Ethernet and RS232/485 port resources on this staffroom.");
 
 
 #endif
-

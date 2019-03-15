@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -124,7 +125,7 @@ log_object& log_object::instance ()
 void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message)
 {
 	// just fire the job and let worker take care of it!
-	rx_reference<log_event_job> my_job(event_type, library, source, level, code, message,sync_event);
+	auto my_job = rx_create_reference<log_event_job>(event_type, library, source, level, code, message,sync_event);
 	worker_.append(my_job);
 }
 
@@ -150,7 +151,7 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 	temp_array.reserve(0x10);
 	lock();
 	for (auto one : subscribers_)
-		temp_array.emplace_back(one);
+		temp_array.push_back(one);
 	unlock();
 	for (auto one : temp_array)
 		one->log_event(event_type, library, source, level, code, message,when);
@@ -186,7 +187,7 @@ void log_object::deinitialize ()
 	g_object = nullptr;
 }
 
-bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int priority)
+rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 {
 	if (log_cache_size)
 	{
@@ -197,7 +198,6 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 	LOG_CODE_PREFIX
 	sync_log_event(rx::log::info_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
-	out << line << "\r\n";
 
 	worker_.start(priority);
 
@@ -207,7 +207,6 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 
 		line = "Performing initial log test...";
 		LOG_SELF_INFO(line);
-		out << line << "\r\n";
 
 		double spans[4];
 
@@ -222,7 +221,6 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 			double ms = (double)(second_tick - first_tick) / 1000.0;
 			snprintf(buffer, sizeof(buffer), "Initial log test %d passed. Delay time: %g ms...", (int)i, ms);
 			LOG_SELF_INFO(buffer);
-			out << buffer <<"\r\n";
 			spans[i] = ms;
 			rx_msleep(10);
 		}
@@ -242,12 +240,11 @@ bool log_object::start (std::ostream& out, bool test, size_t log_cache_size, int
 		snprintf(buffer, sizeof(buffer), "Average response time: %g ms...", val);
 		line = buffer;
 		LOG_SELF_INFO(line);
-		out << line << "\r\n";
 
 		line = "Initial log test completed.";
 		LOG_SELF_INFO(line);
-		out << line << "\r\n";
 	}
+	
 	return true;
 }
 

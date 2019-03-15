@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -80,7 +81,7 @@ rx_gate::rx_gate()
 	}
 	auto sname = rx_get_server_name();
 	if(sname)
-		rx_name_ = rx_get_server_name();
+		rx_name_ = sname;
 	lib_version_ = g_lib_version;
 	hal_version_ = g_ositf_version;
 	
@@ -116,7 +117,7 @@ void rx_gate::cleanup ()
 	g_instance = nullptr;
 }
 
-uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
+rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
@@ -124,10 +125,13 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 #endif
 	
 	host_ = host;
+	rx_name_ = data.meta_data.instance_name;
 
-	if (runtime_.initialize(host, data.runtime_data))
+	auto result = runtime_.initialize(host, data.runtime_data);
+	if (result)
 	{
-		if (manager_.initialize(host, data.managment_data))
+		result = manager_.initialize(host, data.managment_data);
+		if (result)
 		{
 			if (true)//io_manager_.initialize(host, data.io_manager_data))
 			{
@@ -138,7 +142,7 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 
 				model::platform_types_manager::instance().initialize(host, data.meta_data);
 
-				return RX_OK;
+				return true;
 			}
 			else
 			{
@@ -150,10 +154,10 @@ uint32_t rx_gate::initialize (hosting::rx_platform_host* host, configuration_dat
 			runtime_.deinitialize();
 		}
 	}
-	return RX_ERROR;
+	return result;
 }
 
-uint32_t rx_gate::deinitialize ()
+rx_result rx_gate::deinitialize ()
 {
 	
 	for (auto one : scripts_)
@@ -166,32 +170,34 @@ uint32_t rx_gate::deinitialize ()
 	return RX_OK;
 }
 
-uint32_t rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	if (runtime_.start(host, data.runtime_data))
+	auto result = runtime_.start(host, data.runtime_data);
+	if (result)
 	{
-		if (manager_.start(host, data.managment_data))
+		result = manager_.start(host, data.managment_data);
+		if (result)
 		{
 			model::platform_types_manager::instance().start(host, data.meta_data);
 
 			host->server_started_event();
 
-			return RX_OK;
+			return true;
 		}
 		else
 		{
 			runtime_.stop();
 		}
 	}
-	return RX_ERROR;
+	return result;
 }
 
-uint32_t rx_gate::stop ()
+rx_result rx_gate::stop ()
 {
 	model::platform_types_manager::instance().stop();
 	manager_.stop();
 	runtime_.stop();
-	return RX_OK;
+	return true;
 }
 
 rx_directory_ptr rx_gate::get_root_directory ()

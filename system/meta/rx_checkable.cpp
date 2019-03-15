@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -34,11 +35,25 @@
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 
+#include "system/meta/rx_obj_types.h"
 
 
 namespace rx_platform {
 
 namespace meta {
+template<typename T>
+rx_result_with<typename T::RTypePtr> deserialize_runtime(const checkable_data& meta_data, base_meta_reader& stream, uint8_t type)
+{
+	using runtime_ptr = typename T::RTypePtr;
+
+	runtime_ptr ret;
+	auto result = ret->deserialize_definition(stream, type);
+	if (result)
+	{
+		ret->meta_data() = meta_data;
+	}
+	return ret;
+}
 
 // Class rx_platform::meta::checkable_data 
 
@@ -136,7 +151,7 @@ values::rx_value checkable_data::get_value () const
 	return temp;
 }
 
-void checkable_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, bool system)
+void checkable_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, ns::namespace_item_attributes& attributes)
 {
 	name_ = name;
 	id_ = id;
@@ -146,6 +161,49 @@ void checkable_data::construct (const string_type& name, const rx_node_id& id, r
 bool checkable_data::get_system () const
 {
 	return (attributes_&namespace_item_system) != namespace_item_null;
+}
+
+rx_result_with<platform_item_ptr> checkable_data::deserialize_runtime_item (base_meta_reader& stream, uint8_t type)
+{
+	meta::checkable_data meta_data;
+	string_type type_name;
+	if (!meta_data.deserialize_checkable_definition(stream, type, type_name))
+		return "Error deserialize meta data!";
+
+	if (type_name == RX_CPP_OBJECT_TYPE_NAME)
+	{
+		auto result = deserialize_runtime<object_types::object_type>(meta_data, stream, type);
+		if (result)
+			return result.value()->get_item_ptr();
+		else
+			return result.errors();
+	}
+	else if (type_name == RX_CPP_PORT_TYPE_NAME)
+	{
+		auto result = deserialize_runtime<object_types::port_type>(meta_data, stream, type);
+		if (result)
+			return result.value()->get_item_ptr();
+		else
+			return result.errors();
+	}
+	else if (type_name == RX_CPP_DOMAIN_TYPE_NAME)
+	{
+		auto result = deserialize_runtime<object_types::domain_type>(meta_data, stream, type);
+		if (result)
+			return result.value()->get_item_ptr();
+		else
+			return result.errors();
+	}
+	else if (type_name == RX_CPP_APPLICATION_TYPE_NAME)
+	{
+		auto result = deserialize_runtime<object_types::application_type>(meta_data, stream, type);
+		if (result)
+			return result.value()->get_item_ptr();
+		else
+			return result.errors();
+	}
+	else
+		return type_name + " is unknown type name";
 }
 
 

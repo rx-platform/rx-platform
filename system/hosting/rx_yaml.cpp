@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -50,11 +51,24 @@ enum yaml_parsing_state
 // Class rx_platform::hosting::simplified_yaml_reader 
 
 
-rx_result simplified_yaml_reader::parse_configuration (const string_type& input_data, configuration_data_t& config)
+rx_result simplified_yaml_reader::parse_configuration (const string_type& input_data, std::map<string_type, string_type>& config_values)
 {
-	std::map<string_type, string_type> config_values;
-	auto result = parse_yaml_file(input_data, config_values);
-	return result;
+	std::istringstream stream(input_data);
+	string_type line;
+	string_type key;
+	string_type value;
+	int level;
+	while (std::getline(stream, line))
+	{
+		if (line.empty() || line[0] == '#')
+			continue;
+		auto result = parse_yaml_line(line, key, value, level);
+		if (!result)
+			return result;
+		if (!key.empty())
+			config_values.emplace(key, value);
+	}
+	return true;
 }
 
 rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, string_type& key, string_type& value, int& level)
@@ -161,29 +175,11 @@ rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, stri
 			value = line.substr(idx_value_start, idx_value_stop - idx_value_start + 1);
 		else
 			return "Something really went wrong with value! :(";
+		if (value.size() >= 2 && *value.begin() == '"' && *value.rbegin() == '"')
+			value = value.substr(1, value.size() - 2);
 	}
 	else
 		value.clear();
-	return true;
-}
-
-rx_result simplified_yaml_reader::parse_yaml_file (const string_type& input_data, std::map<string_type, string_type>& config_values)
-{
-	std::istringstream stream(input_data);
-	string_type line;
-	string_type key;
-	string_type value;
-	int level;
-	while (std::getline(stream, line))
-	{
-		if (line.empty() || line[0] == '#')
-			continue;
-		auto result = parse_yaml_line(line, key, value, level);
-		if (!result)
-			return result;
-		if (!key.empty())
-			config_values.emplace(key, value);
-	}
 	return true;
 }
 

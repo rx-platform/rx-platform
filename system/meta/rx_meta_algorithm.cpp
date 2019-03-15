@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -223,7 +224,7 @@ rx_result basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, ba
 template <class typeT>
 bool basic_types_algorithm<typeT>::check_basic_type (typeT& whose, type_check_context& ctx)
 {
-	bool ret = whose.complex_data_.check_type(ctx);
+	auto ret = whose.complex_data_.check_type(ctx);
 	return ret;
 }
 
@@ -236,86 +237,64 @@ rx_result basic_types_algorithm<typeT>::construct_basic_type (const typeT& whose
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::resolve_basic_type (typeT& whose, rx_directory_ptr dir)
 {
-	bool ret = whose.complex_data_.resolve(dir);
+	auto ret = whose.complex_data_.resolve(dir);
 	return ret;
+	
+	
 }
 
-// Struct Type is a special case!!!
+// Template specialization for variable_type and struct_type
 template <>
-rx_result basic_types_algorithm<basic_types::struct_type>::serialize_basic_type(const basic_types::struct_type& whose, base_meta_writer& stream, uint8_t type)
+rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, basic_types::struct_type::type_name))
+	if (!whose.meta_data_.serialize_checkable_definition(stream, type, variable_type::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
 	if (!whose.complex_data_.serialize_complex_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-template <>
-rx_result basic_types_algorithm<basic_types::struct_type>::deserialize_basic_type(basic_types::struct_type& whose, base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("Def"))
-		return false;
-	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-template <>
-bool basic_types_algorithm<basic_types::struct_type>::check_basic_type(basic_types::struct_type& whose, type_check_context& ctx)
-{
-	bool ret = whose.complex_data_.check_type(ctx);
-	ret &= whose.mapping_data_.check_type(ctx);
-	return ret;
-}
-
-template <>
-rx_result basic_types_algorithm<basic_types::struct_type>::construct_basic_type(const basic_types::struct_type& whose, construct_context& ctx)
-{
-	auto ret = whose.complex_data_.construct(ctx);
-	if(ret)
-		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-	return ret;
-}
-template <>
-rx_result basic_types_algorithm<basic_types::struct_type>::resolve_basic_type(basic_types::struct_type& whose, rx_directory_ptr dir)
-{
-	bool ret = whose.complex_data_.resolve(dir);
-	if(ret)
-		ret= whose.mapping_data_.resolve(dir);
-	return ret;
-}
-// Variable Type is a special case!!!
-template <>
-rx_result basic_types_algorithm<basic_types::variable_type>::serialize_basic_type(const basic_types::variable_type& whose, base_meta_writer& stream, uint8_t type)
-{
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, basic_types::variable_type::type_name))
-		return false;
-	if (!stream.start_object("Def"))
-		return false;
-	if (!whose.complex_data_.serialize_complex_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
 		return false;
 	if (!whose.variable_data_.serialize_variable_definition(stream, type))
 		return false;
+	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+template <>
+rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
+{
+	if (!whose.meta_data_.serialize_checkable_definition(stream, type, variable_type::type_name))
+		return false;
+	if (!stream.start_object("Def"))
+		return false;
+	if (!whose.complex_data_.serialize_complex_definition(stream, type))
+		return false;
+	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
+		return false;
 	if (!stream.end_object())
 		return false;
 	return true;
 }
 
 template <>
-rx_result basic_types_algorithm<basic_types::variable_type>::deserialize_basic_type(basic_types::variable_type& whose, base_meta_reader& stream, uint8_t type)
+rx_result basic_types_algorithm<variable_type>::deserialize_basic_type(variable_type& whose, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("Def"))
+		return false;
+	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
+		return false;
+	if (!whose.variable_data_.deserialize_variable_definition(stream, type, whose.complex_data_))
+		return false;
+	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+template <>
+rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("Def"))
 		return false;
@@ -323,58 +302,83 @@ rx_result basic_types_algorithm<basic_types::variable_type>::deserialize_basic_t
 		return false;
 	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
 		return false;
-	if (!whose.variable_data_.deserialize_variable_definition(stream, type, whose.complex_data_))
-		return false;
 	if (!stream.end_object())
 		return false;
 	return true;
 }
 
+
 template <>
-bool basic_types_algorithm<basic_types::variable_type>::check_basic_type(basic_types::variable_type& whose, type_check_context& ctx)
+bool basic_types_algorithm<variable_type>::check_basic_type(variable_type& whose, type_check_context& ctx)
 {
 	auto ret = whose.complex_data_.check_type(ctx);
+	ret = ret && whose.variable_data_.check_type(ctx);
+	ret = ret && whose.mapping_data_.check_type(ctx);
+	return ret;
+}
+template <>
+bool basic_types_algorithm<struct_type>::check_basic_type(struct_type& whose, type_check_context& ctx)
+{
+	auto ret = whose.complex_data_.check_type(ctx);
+	ret = ret && whose.mapping_data_.check_type(ctx);
+	return ret;
+}
+
+
+template <>
+rx_result basic_types_algorithm<variable_type>::construct_basic_type(const variable_type& whose, construct_context& ctx)
+{
+	auto ret = whose.complex_data_.construct(ctx);
 	if (ret)
 	{
-		ret = whose.mapping_data_.check_type(ctx);
+		ret = whose.variable_data_.construct(whose.complex_data_.get_names_cache() , ctx);
 		if (ret)
-		{
-			ret = whose.variable_data_.check_type(ctx);
-		}
+			ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
 	}
 	return ret;
 }
 
 template <>
-rx_result basic_types_algorithm<basic_types::variable_type>::construct_basic_type(const basic_types::variable_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<struct_type>::construct_basic_type(const struct_type& whose, construct_context& ctx)
 {
-	auto ret = whose.complex_data_.construct(ctx);
+	auto ret = whose.complex_data_.construct(ctx);	
 	if (ret)
-	{
 		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-		if (ret)
-			ret = whose.variable_data_.construct(whose.complex_data_.get_names_cache(), ctx);
-	}
+
 	return ret;
 }
+
+
 template <>
-rx_result basic_types_algorithm<basic_types::variable_type>::resolve_basic_type(basic_types::variable_type& whose, rx_directory_ptr dir)
+rx_result basic_types_algorithm<variable_type>::resolve_basic_type(variable_type& whose, rx_directory_ptr dir)
 {
-	bool ret = whose.complex_data_.resolve(dir);
+	auto ret = whose.complex_data_.resolve(dir);
 	if (ret)
 	{
-		ret = whose.mapping_data_.resolve(dir);
-		if(ret)
-			ret = whose.variable_data_.resolve(dir);
+		ret = whose.variable_data_.resolve(dir);
+		if (ret)
+			ret = whose.mapping_data_.resolve(dir);
 	}
 	return ret;
 }
+
+
+template <>
+rx_result basic_types_algorithm<struct_type>::resolve_basic_type(struct_type& whose, rx_directory_ptr dir)
+{
+	auto ret = whose.complex_data_.resolve(dir);
+	if (ret)
+		ret = whose.mapping_data_.resolve(dir);
+	return ret;
+}
+
 template class basic_types_algorithm<basic_types::struct_type>;
 template class basic_types_algorithm<basic_types::variable_type>;
 template class basic_types_algorithm<basic_types::source_type>;
 template class basic_types_algorithm<basic_types::mapper_type>;
 template class basic_types_algorithm<basic_types::filter_type>;
 template class basic_types_algorithm<basic_types::event_type>;
+
 // Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm 
 
 

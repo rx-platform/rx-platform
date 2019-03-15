@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -77,14 +78,14 @@
  LOG_CODE_POSTFIX
 //////////////////////////////////////////////////////////////////////////////
 
-// rx_lock
-#include "lib/rx_lock.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_lock
+#include "lib/rx_lock.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -128,14 +129,14 @@ struct log_query_type
 
 
 
-class log_subscriber : public pointers::interface_object  
+class log_subscriber : public pointers::reference_object  
 {
-	DECLARE_INTERFACE_PTR(log_subscriber);
+	DECLARE_REFERENCE_PTR(log_subscriber);
 
   public:
       log_subscriber();
 
-      virtual ~log_subscriber();
+      ~log_subscriber();
 
 
       virtual void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when) = 0;
@@ -153,16 +154,14 @@ class log_subscriber : public pointers::interface_object
 
 
 
-class stream_log_subscriber : public log_subscriber, 
-                              	public pointers::reference_object  
+class stream_log_subscriber : public log_subscriber  
 {
 	DECLARE_REFERENCE_PTR(stream_log_subscriber);
-	DECLARE_DERIVED_FROM_INTERFACE;
 
   public:
       stream_log_subscriber (std::ostream* stream);
 
-      virtual ~stream_log_subscriber();
+      ~stream_log_subscriber();
 
 
       void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
@@ -183,17 +182,15 @@ class stream_log_subscriber : public log_subscriber,
 
 
 
-class cache_log_subscriber : public log_subscriber, 
-                             	public pointers::reference_object  
+class cache_log_subscriber : public log_subscriber  
 {
 	DECLARE_REFERENCE_PTR(cache_log_subscriber);
-	DECLARE_DERIVED_FROM_INTERFACE;
 	typedef std::multimap<rx_time,log_event_data> events_cache_type;
 
   public:
       cache_log_subscriber (size_t max_size);
 
-      virtual ~cache_log_subscriber();
+      ~cache_log_subscriber();
 
 
       void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
@@ -240,7 +237,7 @@ class log_object : public locks::lockable
 
       void deinitialize ();
 
-      bool start (std::ostream& out, bool test, size_t log_cache_size = 0x100, int priority = RX_PRIORITY_IDLE);
+      rx_result start (bool test, size_t log_cache_size = 0x100, int priority = RX_PRIORITY_IDLE);
 
       bool read_cache (const log_query_type& query, log_events_type& result);
 
@@ -286,7 +283,7 @@ class log_event_job : public jobs::job
   public:
       log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when = rx_time::now());
 
-      virtual ~log_event_job();
+      ~log_event_job();
 
 
       void process ();

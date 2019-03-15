@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -52,12 +53,14 @@ rx_result rx_create_object(
 	const string_type& name
 	, const string_type& type_name
 	, data::runtime_values_data& init_data
+	, ns::namespace_item_attributes attributes
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
 	, rx_context ctx);
 
 
 rx_result rx_create_prototype(
 	const string_type& name
+	, const rx_node_id& instance_id
 	, const string_type& type_name
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
 	, rx_context ctx);
@@ -67,6 +70,7 @@ rx_result rx_create_object_type(
 	const string_type& name
 	, const string_type& base_name
 	, rx_object_type_ptr prototype
+	, ns::namespace_item_attributes attributes
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
 	, rx_context ctx);
 

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -130,66 +131,6 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 }
 
 }
-
-// Class sys_internal::internal_ns::namespace_commands::mkdir_command 
-
-mkdir_command::mkdir_command()
-	: server_command("mkdir")
-{
-}
-
-
-mkdir_command::~mkdir_command()
-{
-}
-
-
-
-bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
-{
-	string_type path;
-	in >> path;
-
-	auto ret = ctx->get_current_directory()->add_sub_directory(path);
-	if (!ret)
-	{
-		err << "Error adding directory!\r\n";
-		dump_error_result(err, std::move(ret));
-		return false;
-	}
-	return true;
-}
-
-
-// Class sys_internal::internal_ns::namespace_commands::rmdir_command 
-
-rmdir_command::rmdir_command()
-	: server_command("rmdir")
-{
-}
-
-
-rmdir_command::~rmdir_command()
-{
-}
-
-
-
-bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
-{
-	string_type path;
-	in >> path;
-
-	auto ret = ctx->get_current_directory()->delete_sub_directory(path);
-	if (!ret)
-	{
-		err << "Error deleting directory!\r\n";
-		dump_error_result(err, std::move(ret));
-		return false;
-	}
-	return true;
-}
-
 
 // Class sys_internal::internal_ns::namespace_commands::cd_command 
 
@@ -387,6 +328,66 @@ bool list_command::do_console_command (std::istream& in, std::ostream& out, std:
 
 	rx_directory_ptr dir = ctx->get_current_directory();
 	return list_directory(out, err, filter, options, dir);
+}
+
+
+// Class sys_internal::internal_ns::namespace_commands::mkdir_command 
+
+mkdir_command::mkdir_command()
+	: server_command("mkdir")
+{
+}
+
+
+mkdir_command::~mkdir_command()
+{
+}
+
+
+
+bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type path;
+	in >> path;
+
+	auto ret = ctx->get_current_directory()->add_sub_directory(path);
+	if (!ret)
+	{
+		err << "Error adding directory!\r\n";
+		dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
+}
+
+
+// Class sys_internal::internal_ns::namespace_commands::rmdir_command 
+
+rmdir_command::rmdir_command()
+	: server_command("rmdir")
+{
+}
+
+
+rmdir_command::~rmdir_command()
+{
+}
+
+
+
+bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type path;
+	in >> path;
+
+	auto ret = ctx->get_current_directory()->delete_sub_directory(path);
+	if (!ret)
+	{
+		err << "Error deleting directory!\r\n";
+		rx_dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
 }
 
 

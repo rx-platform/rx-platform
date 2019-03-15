@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -45,6 +46,14 @@
 
 #define ANSI_CLS "\x1b[2J"
 #define ANSI_CUR_HOME "\033[0;0H"
+
+#define ANSI_CLEAR_LINE "\x1b[2K"
+#define ANSI_CUR_BEGIN "\033[100D"
+
+#define ANSI_REDRAW_LINE ANSI_CLEAR_LINE ANSI_CUR_BEGIN
+
+#define ANSI_STATUS_OK ANSI_COLOR_GREEN ANSI_COLOR_BOLD "OK" ANSI_COLOR_RESET
+#define ANSI_STATUS_ERROR ANSI_COLOR_RED ANSI_COLOR_BOLD "ERROR" ANSI_COLOR_RESET
 
 #define RX_CONSOLE_CHECKED "[X]"
 #define RX_CONSOLE_UNCHECKED "[ ]"

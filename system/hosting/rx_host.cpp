@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -105,7 +106,7 @@ std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type
 	return ret;
 }
 
-bool rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
+rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
 {
 	string_type config_path = rx_combine_paths(get_config_path(), "platform.yml");
 	if (!config_path.empty())
@@ -121,11 +122,68 @@ bool rx_platform_host::read_config_file (configuration_reader& reader, rx_platfo
 		}
 		if(ret)
 		{
-			ret = reader.parse_configuration(settings_buff, config);
+			std::map<string_type, string_type> config_values;
+			ret = reader.parse_configuration(settings_buff, config_values);
+			if (ret)
+			{
+				for (auto& row : config_values)
+				{
+					if (config.namespace_data.system_storage_reference.empty() && row.first == "storage.system")
+						config.namespace_data.system_storage_reference = row.second;
+					else if (config.namespace_data.user_storage_reference.empty() && row.first == "storage.user")
+						config.namespace_data.user_storage_reference = row.second;
+					else if (config.namespace_data.test_storage_reference.empty() && row.first == "storage.test")
+						config.namespace_data.test_storage_reference = row.second;
+				}
+			}
 		}
 		return ret;
 	}
 	return false;
+}
+
+rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config)
+{
+	rx_result ret;
+	if (config.namespace_data.system_storage_reference.empty())
+		ret = "No valid system storage reference!";
+	else
+		ret = system_storage_->init_storage(config.namespace_data.system_storage_reference);
+	if (ret)
+	{
+		if (config.namespace_data.user_storage_reference.empty())
+			ret = "No valid user storage reference!";
+		else
+			ret = user_storage_->init_storage(config.namespace_data.user_storage_reference);
+		if (ret)
+		{
+			if (!config.namespace_data.test_storage_reference.empty())
+			{
+				ret = test_storage_->init_storage(config.namespace_data.test_storage_reference);
+				if (!ret)
+				{
+					ret.register_error("Error initializing test storage!");
+				}
+			}
+		}
+		else
+		{
+			ret.register_error("Error initializing user storage!");
+		}
+	}
+	else
+	{
+		ret.register_error("Error initializing system storage!");
+	}
+	return ret;
+}
+
+rx_result rx_platform_host::deinitialize_storages ()
+{
+	test_storage_->deinit_storage();
+	user_storage_->deinit_storage();
+	system_storage_->deinit_storage();
+	return true;
 }
 
 

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,12 +32,12 @@
 
 
 
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -460,4 +461,3 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 
 
 #endif
-

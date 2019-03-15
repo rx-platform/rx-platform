@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -82,7 +83,7 @@ class lockable
   public:
       lockable();
 
-      virtual ~lockable();
+      ~lockable();
 
 
       void lock ();
@@ -185,7 +186,7 @@ class event : public waitable
   public:
       event (bool initial);
 
-      virtual ~event();
+      ~event();
 
 
       void set ();
@@ -210,7 +211,7 @@ class empty_slim_lock
   public:
       empty_slim_lock();
 
-      virtual ~empty_slim_lock();
+      ~empty_slim_lock();
 
 
       void lock ();
@@ -245,7 +246,7 @@ class const_auto_lock_t
   public:
       const_auto_lock_t (const T* who);
 
-      virtual ~const_auto_lock_t();
+      ~const_auto_lock_t();
 
 
   protected:

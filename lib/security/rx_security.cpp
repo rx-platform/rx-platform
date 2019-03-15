@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -172,7 +173,7 @@ void security_manager::get_active_contexts (std::vector<security_context_ptr >& 
 	ctxs.reserve(active_contexts_.size());
 	for (auto one : active_contexts_)
 	{
-		ctxs.emplace_back(one.second);
+		ctxs.push_back(one.second);
 	}
 }
 

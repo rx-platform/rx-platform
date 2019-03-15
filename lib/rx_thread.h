@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,9 +32,8 @@
 
 
 #include "lib/rx_lock.h"
-
-// rx_ptr
 #include "lib/rx_ptr.h"
+
 
 namespace rx {
 namespace jobs {
@@ -66,7 +66,7 @@ class thread : public locks::waitable
   public:
       thread (const string_type& name, rx_thread_handle_t rx_thread_id);
 
-      virtual ~thread();
+      ~thread();
 
 
       void start (int priority = RX_PRIORITY_NORMAL);
@@ -109,7 +109,7 @@ class job_thread
   public:
       job_thread();
 
-      virtual ~job_thread();
+      ~job_thread();
 
 
       virtual void append (job_ptr pjob) = 0;
@@ -132,16 +132,14 @@ class job_thread
 
 
 class physical_job_thread : public thread, 
-                            	public job_thread, 
-                            	public pointers::reference_object  
+                            	public job_thread  
 {
-	DECLARE_REFERENCE_PTR(physical_job_thread);
 	typedef std::queue<job_ptr> queue_type;
 
   public:
       physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id);
 
-      virtual ~physical_job_thread();
+      ~physical_job_thread();
 
 
       void run (int priority = RX_PRIORITY_NORMAL);
@@ -186,7 +184,7 @@ class dispatcher_thread : public thread
   public:
       dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher);
 
-      virtual ~dispatcher_thread();
+      ~dispatcher_thread();
 
 
   protected:
@@ -208,16 +206,14 @@ class dispatcher_thread : public thread
 
 
 
-class dispatcher_pool : public job_thread, 
-                        	public pointers::reference_object  
+class dispatcher_pool : public job_thread  
 {
-	DECLARE_REFERENCE_PTR(dispatcher_pool);
-	typedef std::vector<dispatcher_thread*> threads_type;
+	typedef std::vector<std::unique_ptr<dispatcher_thread> > threads_type;
 
   public:
       dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id);
 
-      virtual ~dispatcher_pool();
+      ~dispatcher_pool();
 
 
       void run (int priority = RX_PRIORITY_NORMAL);
@@ -249,16 +245,14 @@ class dispatcher_pool : public job_thread,
 
 
 
-class timer : public thread, 
-              	public pointers::reference_object  
+class timer : public thread  
 {
-	DECLARE_REFERENCE_PTR(timer);
 	typedef std::set<jobs::timer_job_ptr> jobs_type;
 
   public:
       timer (const string_type& name, rx_thread_handle_t rx_thread_id);
 
-      virtual ~timer();
+      ~timer();
 
 
       void stop ();

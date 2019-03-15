@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -29,6 +30,8 @@
 #include "pch.h"
 
 
+// rx_thread
+#include "lib/rx_thread.h"
 // rx_inf
 #include "system/server/rx_inf.h"
 
@@ -56,7 +59,7 @@ server_rt::~server_rt()
 
 
 
-uint32_t server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data)
+rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data)
 {
 	if (data.io_pool_size > 0)
 	{
@@ -71,15 +74,15 @@ uint32_t server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t&
 		workers_ = domains_pool::smart_ptr(data.workers_pool_size);
 		workers_->reserve();
 	}
-	general_timer_ = rx_create_reference<rx::threads::timer>("Timer", 0);
+	general_timer_ = std::make_unique<rx::threads::timer>("Timer", 0);
 	if (data.has_callculation_timer)
-		callculation_timer_ = rx_create_reference<rx::threads::timer>("Calc",0);
+		callculation_timer_ = std::make_unique<rx::threads::timer>("Calc",0);
 
 
-	return RX_OK;
+	return true;
 }
 
-uint32_t server_rt::deinitialize ()
+rx_result server_rt::deinitialize ()
 {
 	if (io_pool_)
 		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
@@ -90,11 +93,11 @@ uint32_t server_rt::deinitialize ()
 		workers_->clear();
 
 	if (general_timer_)
-		general_timer_ = rx::threads::timer::smart_ptr::null_ptr;
+		general_timer_.release();
 	if (callculation_timer_)
-		callculation_timer_ = rx::threads::timer::smart_ptr::null_ptr;
+		callculation_timer_.release();
 
-	return RX_OK;
+	return true;
 }
 
 void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
@@ -104,12 +107,12 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, 
 		general_timer_->append_job(job,executer,period, now);
 }
 
-uint32_t server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data)
+rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data)
 {
 	if (io_pool_)
-		io_pool_->get_pool()->run(RX_PRIORITY_ABOVE_NORMAL);
+		io_pool_->get_pool().run(RX_PRIORITY_ABOVE_NORMAL);
 	if (general_pool_)
-		general_pool_->get_pool()->run(RX_PRIORITY_NORMAL);
+		general_pool_->get_pool().run(RX_PRIORITY_NORMAL);
 	if(workers_)
 		workers_->run();
 	if (general_timer_)
@@ -119,14 +122,14 @@ uint32_t server_rt::start (hosting::rx_platform_host* host, const runtime_data_t
 
 	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
 	if (callculation_timer_)
-		callculation_timer_->append_job(dispatcher_timer_, general_pool_->get_pool().unsafe_ptr(), data.io_timer_period);
+		callculation_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), data.io_timer_period);
 	if (general_timer_)
-		general_timer_->append_job(dispatcher_timer_, general_pool_->get_pool().unsafe_ptr(), data.io_timer_period);
+		general_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), data.io_timer_period);
 
-	return RX_OK;
+	return true;
 }
 
-uint32_t server_rt::stop ()
+rx_result server_rt::stop ()
 {
 	if (dispatcher_timer_)
 	{
@@ -134,9 +137,9 @@ uint32_t server_rt::stop ()
 		dispatcher_timer_ = dispatcher_subscribers_job::smart_ptr::null_ptr;
 	}
 	if (io_pool_)
-		io_pool_->get_pool()->end();
+		io_pool_->get_pool().end();
 	if (general_pool_)
-		general_pool_->get_pool()->end();
+		general_pool_->get_pool().end();
 
 	if(workers_)
 		workers_->end();
@@ -152,7 +155,7 @@ uint32_t server_rt::stop ()
 		callculation_timer_->wait_handle();
 	}
 
-	return RX_OK;
+	return true;
 }
 
 void server_rt::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -184,20 +187,20 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 	{
 	case RX_DOMAIN_GENERAL:
 		if(general_pool_)
-			return general_pool_->get_pool().unsafe_ptr();
+			return &general_pool_->get_pool();
 		else
-			return io_pool_->get_pool().unsafe_ptr();
+			return &io_pool_->get_pool();
 	case RX_DOMAIN_IO:
-		return io_pool_->get_pool().unsafe_ptr();
+		return &io_pool_->get_pool();
 	case RX_DOMAIN_META:
 		return &model::platform_types_manager::instance().get_worker();
 	default:
 		if(workers_)
 			return workers_->get_executer(domain);
 		else if(general_pool_)
-			return general_pool_->get_pool().unsafe_ptr();
+			return &general_pool_->get_pool();
 		else
-			return io_pool_->get_pool().unsafe_ptr();
+			return &io_pool_->get_pool();
 	}
 }
 
@@ -212,29 +215,29 @@ void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t pe
 
 void server_rt::append_io_job (rx::jobs::job_ptr job)
 {
-	io_pool_->get_pool()->append(job);
+	io_pool_->get_pool().append(job);
 }
 
 void server_rt::append_general_job (rx::jobs::job_ptr job)
 {
 	if (general_pool_)
-		return general_pool_->get_pool()->append(job);
+		return general_pool_->get_pool().append(job);
 	else
-		return io_pool_->get_pool()->append(job);
+		return io_pool_->get_pool().append(job);
 }
 
 void server_rt::append_slow_job (rx::jobs::job_ptr job)
 {
 	if (general_pool_)
-		return general_pool_->get_pool()->append(job);
+		return general_pool_->get_pool().append(job);
 	else
-		return io_pool_->get_pool()->append(job);
+		return io_pool_->get_pool().append(job);
 }
 
 void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	if (general_timer_)
-		general_timer_->append_job(job, io_pool_->get_pool().unsafe_ptr(), period, now);
+		general_timer_->append_job(job, &io_pool_->get_pool(), period, now);
 }
 
 rx_time server_rt::get_created_time (values::rx_value& val) const
@@ -284,7 +287,6 @@ domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
 	, server_object(runtime::objects::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, RX_POOL_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_domain_ptr::null_ptr })
 {
-	//register_const_value("count", (uint32_t)pool_size);
 }
 
 
@@ -314,7 +316,7 @@ void domains_pool::reserve ()
 {
 	workers_.reserve(pool_size_);
 	for (uint32_t i = 0; i < pool_size_; i++)
-		workers_.emplace_back(new threads::physical_job_thread("Worker",i));
+		workers_.push_back(new threads::physical_job_thread("Worker",i));
 }
 
 void domains_pool::clear ()

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -77,17 +78,6 @@ size_t reference_object::get_objects_count ()
 }
 
 
-// Class rx::pointers::virtual_reference_object 
-
-virtual_reference_object::~virtual_reference_object()
-{
-}
-
-
-
-// Parameterized Class rx::pointers::virtual_reference 
-
-
 // Class rx::pointers::struct_reference 
 
 
@@ -103,15 +93,7 @@ void struct_reference::release ()
 }
 
 
-// Parameterized Class rx::pointers::interface_reference 
-
-
-// Class rx::pointers::interface_object 
-
-interface_object::~interface_object()
-{
-}
-
+// Parameterized Class rx::pointers::basic_smart_ptr 
 
 
 } // namespace pointers

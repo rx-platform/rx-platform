@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,17 +32,16 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
 namespace rx {
 namespace threads
 {
-class smart_thread_pool;
 
 void execute_job(void* arg);
 

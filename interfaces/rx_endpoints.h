@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -108,7 +109,7 @@ class rx_io_manager : public rx_platform::runtime::objects::server_object
   public:
       rx_io_manager();
 
-      virtual ~rx_io_manager();
+      ~rx_io_manager();
 
 
       uint32_t initialize (hosting::rx_platform_host* host, io_manager_data_t& data);

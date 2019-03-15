@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -32,10 +33,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_test
-#include "testing/rx_test.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_test
+#include "testing/rx_test.h"
 
 
 
@@ -55,7 +56,7 @@ class tcp_test_client : public rx::io::tcp_client_socket_std_buffer
   public:
       tcp_test_client();
 
-      virtual ~tcp_test_client();
+      ~tcp_test_client();
 
 
       bool connect_complete ();
@@ -88,7 +89,7 @@ loading a file->reading it line by line->executing.");
   public:
       test_client_basics();
 
-      virtual ~test_client_basics();
+      ~test_client_basics();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -113,7 +114,7 @@ class tcp_test : public test_category
   public:
       tcp_test();
 
-      virtual ~tcp_test();
+      ~tcp_test();
 
 
   protected:

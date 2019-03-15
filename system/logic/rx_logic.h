@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -33,10 +34,10 @@
 
 // rx_checkable
 #include "system/meta/rx_checkable.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

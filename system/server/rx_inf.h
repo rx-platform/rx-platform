@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,12 +32,14 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+
+
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
@@ -71,7 +74,7 @@ and general usage thread pool resources\r\n\
       ~server_dispatcher_object();
 
 
-      rx_reference<rx::threads::dispatcher_pool> get_pool ()
+      rx::threads::dispatcher_pool& get_pool ()
       {
         return pool_;
       }
@@ -83,7 +86,7 @@ and general usage thread pool resources\r\n\
   private:
 
 
-      rx_reference<rx::threads::dispatcher_pool> pool_;
+      rx::threads::dispatcher_pool pool_;
 
 
       int threads_count_;
@@ -125,8 +128,6 @@ class domains_pool : public rx::threads::job_thread,
                      	public runtime::objects::server_object  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
-	DECLARE_DERIVED_FROM_INTERFACE;
 
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 class managing execution domains \r\n\
@@ -172,22 +173,13 @@ thread pool resources\r\n\
 
 struct runtime_data_t
 {
-	runtime_data_t()
-	{
-		memzero(this, sizeof(runtime_data_t));
-		io_pool_size = -1;
-		genereal_pool_size = -1;
-		workers_pool_size = -1;
-		slow_pool_size = -1;
-		io_timer_period = 200;
-	}
-	bool real_time;
-	int io_pool_size;
-	int genereal_pool_size;
-	int workers_pool_size;
-	int slow_pool_size;
-	bool has_callculation_timer;
-	uint32_t io_timer_period;
+	bool real_time = false;
+	int io_pool_size = -1;
+	int genereal_pool_size = -1;
+	int workers_pool_size = -1;
+	int slow_pool_size = -1;
+	bool has_callculation_timer = false;
+	uint32_t io_timer_period = 200;
 };
 
 
@@ -205,7 +197,7 @@ general ( high priority )\r\n\
 callculation ( normal priority)");
 
 	DECLARE_REFERENCE_PTR(server_rt);
-	typedef std::vector<rx::threads::physical_job_thread::smart_ptr> workers_type;
+	typedef std::vector<std::unique_ptr<rx::threads::physical_job_thread> > workers_type;
 
 	friend void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
@@ -215,15 +207,15 @@ callculation ( normal priority)");
       ~server_rt();
 
 
-      uint32_t initialize (hosting::rx_platform_host* host, runtime_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data);
 
-      uint32_t deinitialize ();
+      rx_result deinitialize ();
 
       void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
-      uint32_t start (hosting::rx_platform_host* host, const runtime_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data);
 
-      uint32_t stop ();
+      rx_result stop ();
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -272,9 +264,9 @@ callculation ( normal priority)");
   private:
 
 
-      rx_reference<rx::threads::timer> general_timer_;
+      std::unique_ptr<rx::threads::timer> general_timer_;
 
-      rx_reference<rx::threads::timer> callculation_timer_;
+      std::unique_ptr<rx::threads::timer> callculation_timer_;
 
       rx_reference<server_dispatcher_object> io_pool_;
 

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -55,7 +56,7 @@ system application. contains system objects and internal system communication");
   public:
       system_application();
 
-      virtual ~system_application();
+      ~system_application();
 
 
       namespace_item_attributes get_attributes () const;
@@ -82,7 +83,7 @@ this domain is used by system objects");
   public:
       system_domain();
 
-      virtual ~system_domain();
+      ~system_domain();
 
 
       namespace_item_attributes get_attributes () const;
@@ -110,7 +111,7 @@ this application is for unassigned domains.it allways has bad quality");
   public:
       unassigned_application();
 
-      virtual ~unassigned_application();
+      ~unassigned_application();
 
 
       namespace_item_attributes get_attributes () const;
@@ -138,7 +139,7 @@ this domain is for uassigned objects.it allways has bad quality");
   public:
       unssigned_domain();
 
-      virtual ~unssigned_domain();
+      ~unssigned_domain();
 
 
       namespace_item_attributes get_attributes () const;

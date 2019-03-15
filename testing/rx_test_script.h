@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -59,7 +60,7 @@ Done and checked can, be done everywhere.\
   public:
       dump_version_test();
 
-      virtual ~dump_version_test();
+      ~dump_version_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -84,7 +85,7 @@ class python_test : public test_category
   public:
       python_test();
 
-      virtual ~python_test();
+      ~python_test();
 
 
   protected:
@@ -112,7 +113,7 @@ loading a file->reading it line by line->executing.");
   public:
       read_and_run_file();
 
-      virtual ~read_and_run_file();
+      ~read_and_run_file();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
@@ -137,7 +138,7 @@ class rx_script_category : public test_category
   public:
       rx_script_category();
 
-      virtual ~rx_script_category();
+      ~rx_script_category();
 
 
   protected:

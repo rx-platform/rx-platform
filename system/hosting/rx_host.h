@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -152,7 +153,7 @@ class rx_platform_storage : public rx::pointers::reference_object
       ~rx_platform_storage();
 
 
-      virtual void get_storage_info (string_type& info) = 0;
+      virtual string_type get_storage_info () = 0;
 
       virtual rx_result init_storage (const string_type& storage_reference);
 
@@ -160,7 +161,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
 
-      virtual void get_storage_reference (string_type& ref) = 0;
+      virtual string_type get_storage_reference () = 0;
 
 
   protected:
@@ -180,7 +181,7 @@ class configuration_reader
 
   public:
 
-      virtual rx_result parse_configuration (const string_type& input_data, configuration_data_t& config) = 0;
+      virtual rx_result parse_configuration (const string_type& input_data, std::map<string_type, string_type>& config_values) = 0;
 
 
   protected:
@@ -265,7 +266,11 @@ class rx_platform_host
 
   protected:
 
-      bool read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
+      rx_result read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
+
+      rx_result initialize_storages (rx_platform::configuration_data_t& config);
+
+      rx_result deinitialize_storages ();
 
 
   private:

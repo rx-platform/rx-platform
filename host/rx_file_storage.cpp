@@ -6,23 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
+*  
 ****************************************************************************/
 
 
@@ -41,7 +42,7 @@ namespace host {
 
 namespace files {
 
-// Class host::files::file_system_storage
+// Class host::files::file_system_storage 
 
 file_system_storage::file_system_storage()
 {
@@ -57,14 +58,14 @@ file_system_storage::~file_system_storage()
 
 
 
-void file_system_storage::get_storage_info (string_type& info)
+string_type file_system_storage::get_storage_info ()
 {
 	static string_type ret;
 	if (ret.empty())
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
 	}
-	info = ret;
+	return ret;
 }
 
 sys_handle_t file_system_storage::get_host_test_file (const string_type& path)
@@ -110,7 +111,9 @@ const string_type& file_system_storage::get_license ()
 rx_result file_system_storage::init_storage (const string_type& storage_reference)
 {
 	root_ = storage_reference;
-	return true;
+	string_array files, directories;
+	auto result = rx_list_files(root_, "*", files, directories);
+	return result;
 }
 
 rx_result file_system_storage::deinit_storage ()
@@ -152,12 +155,13 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 	return true;
 }
 
-void file_system_storage::get_storage_reference (string_type& ref)
+string_type file_system_storage::get_storage_reference ()
 {
-	ref = root_;
+    return root_;
 }
 
-// Class host::files::rx_file_item
+
+// Class host::files::rx_file_item 
 
 rx_file_item::rx_file_item (const string_type& path, const string_type& file_path)
       : valid_(false),
@@ -198,7 +202,7 @@ rx_result rx_file_item::delete_item ()
 }
 
 
-// Class host::files::rx_json_file
+// Class host::files::rx_json_file 
 
 rx_json_file::rx_json_file (const string_type& path, const string_type& file_path)
 	: rx_file_item(path, file_path)
@@ -286,7 +290,7 @@ rx_result rx_json_file::close ()
 }
 
 
-// Class host::files::rx_binary_file
+// Class host::files::rx_binary_file 
 
 rx_binary_file::rx_binary_file (const string_type& path, const string_type& file_path)
 	: rx_file_item(path, file_path)

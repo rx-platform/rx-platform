@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -66,12 +67,6 @@ namespace_item_attributes server_command::get_attributes () const
 bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 {
 	return true;
-}
-
-void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
-{
-	for (const auto& one : result.errors())
-		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 }
 
 
@@ -125,6 +120,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::del_command>());
 	register_command(rx_create_reference<model::meta_commands::rm_command>());
 	register_command(rx_create_reference<model::meta_commands::create_command>());
+	register_command(rx_create_reference<model::meta_commands::prototype_command>());
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 	register_command(rx_create_reference<model::meta_commands::check_command>());
 }

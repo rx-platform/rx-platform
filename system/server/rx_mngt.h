@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -92,14 +93,9 @@ class manager_initialization_context
 class manager_initialization_context;
 struct managment_data_t
 {
-	managment_data_t()
-	{
-		telnet_port = 0;
-		manager_internal_data = nullptr;
-	}
-	uint16_t telnet_port;
+	uint16_t telnet_port = 0;
 	// internal stuff bellow do not change!!!
-	manager_initialization_context* manager_internal_data;
+	manager_initialization_context* manager_internal_data = nullptr;
 };
 
 
@@ -120,13 +116,13 @@ public:
       ~server_manager();
 
 
-      uint32_t initialize (hosting::rx_platform_host* host, managment_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, managment_data_t& data);
 
-      uint32_t deinitialize ();
+      rx_result deinitialize ();
 
-      uint32_t start (hosting::rx_platform_host* host, const managment_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const managment_data_t& data);
 
-      uint32_t stop ();
+      rx_result stop ();
 
       void get_directories (platform_directories_type& dirs);
 

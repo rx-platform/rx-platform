@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -89,7 +90,7 @@ class memory_buffer_base : public pointers::reference_object
 
       memory_buffer_base (const void* ptr, size_t size);
 
-      virtual ~memory_buffer_base();
+      ~memory_buffer_base();
 
 
       void push_data (const void* ptr, size_t size);
@@ -303,7 +304,7 @@ class std_strbuff : public memory_buffer_base<allocT, swap_bytes>,
   public:
       std_strbuff();
 
-      virtual ~std_strbuff();
+      ~std_strbuff();
 
 
       char* pbase () const;
@@ -349,7 +350,7 @@ class backward_memory_buffer_base : public pointers::reference_object
   public:
       backward_memory_buffer_base (size_t size);
 
-      virtual ~backward_memory_buffer_base();
+      ~backward_memory_buffer_base();
 
 
       void push_data (const void* ptr, size_t size);
@@ -415,7 +416,7 @@ class backward_simple_allocator
   public:
       backward_simple_allocator (size_t initial);
 
-      virtual ~backward_simple_allocator();
+      ~backward_simple_allocator();
 
 
       void allocate (size_t size);

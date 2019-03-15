@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -32,20 +33,20 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_logic
-#include "system/logic/rx_logic.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
 namespace rx_platform {
 namespace prog {
+class console_program_context;
 class console_client;
 class server_console_program;
-class console_program_context;
 
 } // namespace prog
 } // namespace rx_platform

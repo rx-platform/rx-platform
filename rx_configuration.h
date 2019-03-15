@@ -135,7 +135,7 @@
 
 
 
-// port classes and releated structs
+// port classes and related structs
 #define RX_PHYSICAL_PORT_TYPE_NAME "PhysicalPort"
 #define RX_PHYSICAL_PORT_TYPE_ID 0xc00000c
 #define RX_TRANSPORT_PORT_TYPE_NAME "TransportPort"

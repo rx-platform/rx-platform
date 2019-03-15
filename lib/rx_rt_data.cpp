@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -84,33 +85,3 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 } // namespace data
 } // namespace rx
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	if (!value.serialize_value(stream, name))
-		return false;
-	return true;
-
-	return false;
-
-	if (!stream.start_object(name.c_str()))
-		return false;
-	for (const auto& one : children)
-	{
-		if (!one.second.serialize(stream, one.first))
-			return false;
-	}
-	for (const auto& one : values)
-	{
-		if (!one.second.serialize(stream, one.first))
-			return false;
-	}
-	if (!stream.end_object())
-		return false;
-	return true;
-
-	return false;
-
-#endif

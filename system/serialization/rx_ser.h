@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -32,10 +33,10 @@
 
 #include "third-party/jsoncpp/json/json.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 using rx::memory::byte_order_type;
 
@@ -66,7 +67,7 @@ class json_reader : public rx::base_meta_reader
   public:
       json_reader();
 
-      virtual ~json_reader();
+      ~json_reader();
 
 
       bool read_id (const char* name, rx_node_id& id);
@@ -158,7 +159,7 @@ class json_writer : public rx::base_meta_writer
   public:
       json_writer (int version = RX_CURRENT_SERIALIZE_VERSION);
 
-      virtual ~json_writer();
+      ~json_writer();
 
 
       bool write_id (const char* name, const rx_node_id& id);
@@ -248,7 +249,7 @@ class binary_reader : public rx::base_meta_reader
   public:
       binary_reader (buffer_type& buffer);
 
-      virtual ~binary_reader();
+      ~binary_reader();
 
 
       bool read_id (const char* name, rx_node_id& id);
@@ -334,7 +335,7 @@ class binary_writer : public rx::base_meta_writer
   public:
       binary_writer (buffer_type& buffer, int version = RX_CURRENT_SERIALIZE_VERSION);
 
-      virtual ~binary_writer();
+      ~binary_writer();
 
 
       bool write_id (const char* name, const rx_node_id& id);

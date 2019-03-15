@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -286,9 +287,9 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& type_id, data::runtime_values_data* init_data = nullptr);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data = nullptr);
 
       query_result get_derived_types (const rx_node_id& id) const;
 
@@ -495,13 +496,13 @@ class platform_types_manager
 
       static platform_types_manager& instance ();
 
-      uint32_t initialize (hosting::rx_platform_host* host, meta_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, meta_data_t& data);
 
-      uint32_t deinitialize ();
+      rx_result deinitialize ();
 
-      uint32_t start (hosting::rx_platform_host* host, const meta_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const meta_data_t& data);
 
-      uint32_t stop ();
+      rx_result stop ();
 
 
       rx::threads::physical_job_thread& get_worker ()
@@ -571,15 +572,17 @@ class platform_types_manager
 		  return ret;
 	  }
 	  template<class T, class refT>
-	  void create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
+	  void create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data,
+		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
 	  {
-		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, type_name, init_data, dir]() mutable {
-			  return create_runtime_helper<T>(name, type_name, init_data, dir, tl::type2type<T>());
+		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, type_name, init_data, dir, attributes]() mutable {
+			  return create_runtime_helper<T>(name, type_name, init_data, dir, attributes, tl::type2type<T>());
 		  };
 		  rx_do_with_callback<rx_result_with<typename T::RTypePtr>, refT>(std::move(func), RX_DOMAIN_META, callback, ref);
 	  }
 	  template<class T>
-	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data, rx_directory_ptr dir, tl::type2type<T>)
+	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name,
+		  data::runtime_values_data* init_data, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  std::unique_ptr<data::runtime_values_data> temp;
 		  if (init_data)
@@ -594,7 +597,7 @@ class platform_types_manager
 		  {// TODO error, item does not have id
 			  return type_name + " does not have valid Id!";
 		  }
-		  auto ret = internal_get_type_cache<T>().create_runtime(name, id, init_data);
+		  auto ret = internal_get_type_cache<T>().create_runtime(name, id, attributes, init_data);
 		  if (ret)
 		  {
 			  if (!dir->add_item(ret.value()->get_item_ptr()))
@@ -608,15 +611,17 @@ class platform_types_manager
 	  }
 
 	  template<class T, class refT>
-	  void create_prototype(const string_type& name, const string_type& type_name, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
+	  void create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name,
+		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
 	  {
-		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, type_name, dir]() mutable {
-			  return create_prototype_helper<T>(name, type_name, dir, tl::type2type<T>());
+		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, instance_id, type_name, dir, attributes]() mutable {
+			  return create_prototype_helper<T>(name, instance_id, type_name, dir, attributes, tl::type2type<T>());
 		  };
 		  rx_do_with_callback<rx_result_with<typename T::RTypePtr>, refT>(std::move(func), RX_DOMAIN_META, callback, ref);
 	  }
 	  template<class T>
-	  rx_result_with<typename T::RTypePtr> create_prototype_helper(const string_type& name, const string_type& type_name, rx_directory_ptr dir, tl::type2type<T>)
+	  rx_result_with<typename T::RTypePtr> create_prototype_helper(const string_type& name, const rx_node_id& instance_id,
+		  const string_type& type_name, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
 		  if (!item)
@@ -628,22 +633,24 @@ class platform_types_manager
 		  {// TODO error, item does not have id
 			  return type_name + " does not have valid Id!";
 		  }
-		  auto ret = internal_get_type_cache<T>().create_runtime(name, rx_node_id::null_id, id, false, nullptr, true);
+		  auto ret = internal_get_type_cache<T>().create_runtime(name, instance_id, id, attributes, nullptr, true);
 
 		  return ret;
 	  }
 
 	  template<class T, class refT>
-	  void create_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
+	  void create_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
+		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
 	  {
 		  using result_t = rx_result_with<typename T::smart_ptr>;
 		  std::function<result_t(void)> func = [=]() {
-			  return create_type_helper<T>(name, base_name, prototype, dir, tl::type2type<T>());
+			  return create_type_helper<T>(name, base_name, prototype, dir, attributes, tl::type2type<T>());
 		  };
 		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
 	  }
 	  template<class T>
-	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype, rx_directory_ptr dir, tl::type2type<T>)
+	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name
+		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
 		  if (!item)
@@ -661,7 +668,7 @@ class platform_types_manager
 		  if (!result)
 			  return result.errors();
 
-		  prototype->meta_data().construct(name, item_id, base_id, false);
+		  prototype->meta_data().construct(name, item_id, base_id, attributes);
 
 		  auto ret = internal_get_type_cache<T>().register_type(prototype);
 		  if (!ret)
@@ -902,7 +909,7 @@ rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::fun
 }
 
 template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, bool system, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data, bool prototype)
 {
 	rx_node_id to_create;
 	if (id.is_null() || prototype)
@@ -936,7 +943,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		ret = default_constructor_();
 
 	construct_context ctx;
-	ret->meta_data().construct(name, to_create, type_id, system);
+	ret->meta_data().construct(name, to_create, type_id, attributes);
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -963,9 +970,9 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 }
 
 template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, data::runtime_values_data* init_data)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data)
 {
-	return create_runtime(name, rx_node_id::null_id, type_id, false, init_data);
+	return create_runtime(name, rx_node_id::null_id, type_id, attributes, init_data);
 }
 
 template <class typeT>

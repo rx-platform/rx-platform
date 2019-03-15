@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -50,7 +51,7 @@ class cryptography_key : public pointers::reference_object
   public:
       cryptography_key();
 
-      virtual ~cryptography_key();
+      ~cryptography_key();
 
 
       bool is_valid () const;
@@ -77,7 +78,7 @@ class cryptography_hash : public pointers::reference_object
   public:
       cryptography_hash();
 
-      virtual ~cryptography_hash();
+      ~cryptography_hash();
 
 
       bool is_valid () const;
@@ -104,7 +105,7 @@ class symetric_key : public cryptography_key
   public:
       symetric_key (const void* data, size_t size, int alg, int mode);
 
-      virtual ~symetric_key();
+      ~symetric_key();
 
 
   protected:

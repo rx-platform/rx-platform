@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -45,8 +46,8 @@
 namespace rx_platform {
 namespace runtime {
 namespace objects {
-class application_runtime;
 class domain_runtime;
+class application_runtime;
 
 } // namespace objects
 } // namespace runtime
@@ -183,7 +184,7 @@ class object_runtime : public rx::pointers::reference_object
 {
 	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 object class. basic implementation of an object");
-
+	
 	DECLARE_REFERENCE_PTR(object_runtime);
 
 	//typedef std::vector<runtime_item::smart_ptr> items_order_type;

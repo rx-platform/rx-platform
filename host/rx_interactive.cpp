@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -83,21 +84,36 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-
-	if (RX_OK == rx_platform::rx_gate::instance().initialize(this, config))
+	std::cout << "Initializing rx-platform...";
+	auto result = rx_platform::rx_gate::instance().initialize(this, config);
+	if (result)	
 	{
-
+		std::cout << ANSI_STATUS_OK "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-
-		if (RX_OK == rx_platform::rx_gate::instance().start(this, config))
+		std::cout << "Starting rx-platform...";
+		result = rx_platform::rx_gate::instance().start(this, config);
+		if (result)
 		{
+			std::cout << ANSI_STATUS_OK "\r\n";
 			interactive_console_client interactive(this);
 
+			std::cout << "Starting interactive console...";
+			std::cout << ANSI_STATUS_OK "\r\n";
 			interactive.run_interactive(config);
 
 			rx_platform::rx_gate::instance().stop();
 		}
+		else
+		{
+			std::cout << ANSI_STATUS_ERROR "\r\nError starting rx-platform:\r\n";
+			rx_dump_error_result(std::cout, result);
+		}
 		rx_platform::rx_gate::instance().deinitialize();
+	}
+	else
+	{
+		std::cout << ANSI_STATUS_ERROR "\r\nError initializing rx-platform:\r\n";
+		rx_dump_error_result(std::cout, result);
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
@@ -116,7 +132,6 @@ void interactive_console_host::get_host_info (string_array& hosts)
 
 void interactive_console_host::server_started_event ()
 {
-	printf("\r\nStarting rx-platform...\r\n==========================================\r\n");
 }
 
 bool interactive_console_host::shutdown (const string_type& msg)
@@ -128,7 +143,6 @@ bool interactive_console_host::shutdown (const string_type& msg)
 	std::cout.flush();
 	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
-	restore_console();
 	return true;
 }
 
@@ -224,15 +238,16 @@ std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const str
 bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
 {
 	
-	cxxopts::Options options("rx-interactive", interactive_console_client::license_message);
+	cxxopts::Options options("rx-interactive", "");
 
 	options.add_options()
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
-		("s,startup", "Startup script", cxxopts::value<string_type>(config.startup_script))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_data.platform_name))
+		("s,startup", "Startup script", cxxopts::value<string_type>(config.general.startup_script))
 		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
 		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
 		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
+		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_data.instance_name))
+		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.general.test_log))
 		("v,version", "Displays platform version")
 		("h,help", "Print help")
 		;
@@ -242,30 +257,22 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 		auto result = options.parse(argc, argv);
 		if (result.count("help"))
 		{
-			std::ostringstream str;
-			std::cout << "\r\n******************************************\r\n"
-				<< "* " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client *"
-				<< "\r\n******************************************\r\n";
 
 			restore_console();
 
 			std::cout << options.help({ "" });
-			std::cout << "\r\n";
+			std::cout << "\r\n\r\n";
 
 			// don't execute
 			return false;
 		}
 		else if (result.count("version"))
 		{
-			std::ostringstream str;
-			std::cout << "\r\n******************************************\r\n"
-				<< "* " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client *"
-				<< "\r\n******************************************\r\n" << interactive_console_client::license_message;
 
 			string_type version = rx_gate::instance().get_rx_version();
 
-			std::cout << "Platform Version:\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-				<< version << ANSI_COLOR_RESET "\r\n";
+			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< version << ANSI_COLOR_RESET "\r\n\r\n";
 			
 			restore_console();
 			
@@ -276,64 +283,79 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 	}
 	catch (std::exception& ex)
 	{
-		std::cout << ANSI_COLOR_RED "Error parsing command line:\r\n" ANSI_COLOR_RESET
+		std::cout << ANSI_STATUS_ERROR "\r\nError parsing command line:\r\n"
 			<< ex.what() << "\r\n";
+
+		restore_console();
+
 		return false;
 	}
 }
 
 int interactive_console_host::console_main (int argc, char* argv[])
 {
-	bool ret = setup_console(argc, argv);
-	rx_platform::configuration_data_t config;
+	rx_result ret = setup_console(argc, argv);
 
+	std::cout << "\r\n"
+		<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client"
+		<< "\r\n======================================\r\n";
+
+	rx_platform::configuration_data_t config;
 	ret = parse_command_line(argc, argv, config); 
 	if (ret)
-	{
+	{		
 		rx_platform::hosting::simplified_yaml_reader reader;
+		std::cout << "Reading configuration file...";
 		ret = read_config_file(reader, config);
 		if (ret)
 		{
+			std::cout << ANSI_STATUS_OK "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
 
+			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
+			std::cout << ANSI_STATUS_OK "\r\n";
 
-			rx::log::log_object::instance().start(std::cout, true);
-
-			ret = get_system_storage()->init_storage(config.namespace_data.system_storage_reference);
+			std::cout << "Starting log...";
+			ret = rx::log::log_object::instance().start(config.general.test_log);			
 			if (ret)
 			{
-				ret = get_user_storage()->init_storage(config.namespace_data.user_storage_reference);
+				std::cout << ANSI_STATUS_OK "\r\n";
+
+				std::cout << "Initializing storages...";
+				ret = initialize_storages(config);
 				if (ret)
 				{
-					ret = get_test_storage()->init_storage(config.namespace_data.test_storage_reference);
-					if (ret)
-					{
-						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-						// execute main loop of the console host
-						console_loop(config);
-						HOST_LOG_INFO("Main", 999, "Console Host exited.");
+					std::cout << ANSI_STATUS_OK "\r\n";
 
-						get_test_storage()->deinit_storage();
-					}
-					get_user_storage()->deinit_storage();
+					HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+					// execute main loop of the console host
+					console_loop(config);
+					HOST_LOG_INFO("Main", 999, "Console Host exited.");
+					
+					std::cout << "Stopping rx-platform...";
+
+					deinitialize_storages();
 				}
-				get_system_storage()->deinit_storage();
+				else
+				{
+					std::cout << ANSI_STATUS_ERROR "\r\nError initializing storages\r\n";
+					rx_dump_error_result(std::cout, ret);
+				}
+				rx::log::log_object::instance().deinitialize();
 			}
-			rx::log::log_object::instance().deinitialize();
 
 			rx_deinitialize_os();
 		}
 		else
 		{
-			printf("Error reading configuration file!\r\n");
+			std::cout << ANSI_STATUS_ERROR "\r\nError reading configuration file\r\n";
+			rx_dump_error_result(std::cout, ret);
 		}
+		restore_console();
 	}
-	else
-	{
-		printf("Error parsing command line arguments:\r\n");
-	}
+	std::cout << "\r\n";
 	return ret ? 0 : -1;
 }
 
@@ -383,7 +405,7 @@ void interactive_console_client::run_interactive (configuration_data_t& config)
 	security::security_auto_context dummy(security_context_);
 
 
-	string_type temp_script(config.startup_script);
+	string_type temp_script(config.general.startup_script);
 	if(!temp_script.empty())
 		temp_script += "\r\n";
 

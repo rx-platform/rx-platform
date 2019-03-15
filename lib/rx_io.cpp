@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -100,13 +101,12 @@ dispatcher_subscriber::~dispatcher_subscriber()
 
 
 
-bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool::smart_ptr& dispatcher)
+bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool& dispatcher)
 {
-	uint32_t ret = rx_dispatcher_register(dispatcher->dispatcher_, &dispatcher_data_);
+	uint32_t ret = rx_dispatcher_register(dispatcher.dispatcher_, &dispatcher_data_);
 	if (ret)
 	{
-		disptacher_ = dispatcher;
-		dispatcher_handle_ = dispatcher->dispatcher_;
+		dispatcher_handle_ = dispatcher.dispatcher_;
 	}
 	return ret != 0;
 }
@@ -142,12 +142,12 @@ void dispatcher_subscriber::propagate_timer ()
 	time_aware_subscribers_lock_.lock();
 	std::vector<dispatcher_subscriber::smart_ptr> helper;
 	helper.reserve(time_aware_subscribers_.size());
-	for (auto one : time_aware_subscribers_)
+	for (auto& one : time_aware_subscribers_)
 	{
 		helper.emplace_back(one);
 	}
 	time_aware_subscribers_lock_.unlock();
-	for (auto one : helper)
+	for (auto& one : helper)
 		one->timer_tick(tick);
 }
 

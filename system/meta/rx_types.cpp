@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -43,18 +44,6 @@ namespace meta {
 
 namespace basic_types {
 
-namespace_item_attributes create_attributes_for_basic_types_from_flags(bool system)
-{
-	if (system)
-	{
-		return namespace_item_system_access;
-	}
-	else
-	{
-		return namespace_item_full_access;
-	}
-}
-
 // Class rx_platform::meta::basic_types::event_type 
 
 string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
@@ -64,7 +53,7 @@ event_type::event_type()
 }
 
 event_type::event_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -134,7 +123,7 @@ filter_type::filter_type()
 }
 
 filter_type::filter_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -204,7 +193,7 @@ mapper_type::mapper_type()
 }
 
 mapper_type::mapper_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -274,7 +263,7 @@ source_type::source_type()
 }
 
 source_type::source_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -344,7 +333,7 @@ struct_type::struct_type()
 }
 
 struct_type::struct_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -425,7 +414,7 @@ variable_type::variable_type()
 }
 
 variable_type::variable_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_basic_types_from_flags(data.system))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 

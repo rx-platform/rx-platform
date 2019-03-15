@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -56,7 +57,7 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
       ~file_system_storage();
 
 
-      void get_storage_info (string_type& info);
+      string_type get_storage_info ();
 
       sys_handle_t get_host_test_file (const string_type& path);
 
@@ -70,7 +71,7 @@ class file_system_storage : public rx_platform::hosting::rx_platform_storage
 
       rx_result list_storage (std::vector<rx_platform::hosting::rx_storage_item_ptr>& items);
 
-      void get_storage_reference (string_type& ref);
+      string_type get_storage_reference ();
 
 
   protected:

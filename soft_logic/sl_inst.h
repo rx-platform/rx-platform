@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -60,7 +61,7 @@ class sl_invertor : public sl_instruction_base
   public:
       sl_invertor();
 
-      virtual ~sl_invertor();
+      ~sl_invertor();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -85,7 +86,7 @@ class bit_instruction : public sl_instruction_base
   public:
       bit_instruction (const bit_value& bit);
 
-      virtual ~bit_instruction();
+      ~bit_instruction();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -117,7 +118,7 @@ class sl_open_contact : public bit_instruction
   public:
       sl_open_contact (const bit_value& bit);
 
-      virtual ~sl_open_contact();
+      ~sl_open_contact();
 
 
   protected:
@@ -143,7 +144,7 @@ class sl_closed_contact : public bit_instruction
   public:
       sl_closed_contact (const bit_value& bit);
 
-      virtual ~sl_closed_contact();
+      ~sl_closed_contact();
 
 
   protected:
@@ -169,7 +170,7 @@ class sl_pos_contact : public bit_instruction
   public:
       sl_pos_contact (const bit_value& bit);
 
-      virtual ~sl_pos_contact();
+      ~sl_pos_contact();
 
 
   protected:
@@ -195,7 +196,7 @@ class sl_neg_contact : public bit_instruction
   public:
       sl_neg_contact (const bit_value& bit);
 
-      virtual ~sl_neg_contact();
+      ~sl_neg_contact();
 
 
   protected:
@@ -221,7 +222,7 @@ class sl_latch : public bit_instruction
   public:
       sl_latch (const bit_value& bit);
 
-      virtual ~sl_latch();
+      ~sl_latch();
 
 
   protected:
@@ -247,7 +248,7 @@ class sl_unlatch : public bit_instruction
   public:
       sl_unlatch (const bit_value& bit);
 
-      virtual ~sl_unlatch();
+      ~sl_unlatch();
 
 
   protected:
@@ -273,7 +274,7 @@ class sl_coil : public bit_instruction
   public:
       sl_coil (const bit_value& bit);
 
-      virtual ~sl_coil();
+      ~sl_coil();
 
 
   protected:
@@ -299,7 +300,7 @@ class sl_closed_coil : public bit_instruction
   public:
       sl_closed_coil (const bit_value& bit);
 
-      virtual ~sl_closed_coil();
+      ~sl_closed_coil();
 
 
   protected:
@@ -326,7 +327,7 @@ class sl_compare : public sl_instruction_base
   public:
       sl_compare (const argument_value& arg1, const argument_value& arg2);
 
-      virtual ~sl_compare();
+      ~sl_compare();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -363,7 +364,7 @@ class sl_small_compare : public sl_instruction_base
   public:
       sl_small_compare (compare_type inst_type, const argument_value& arg1, const argument_value& arg2);
 
-      virtual ~sl_small_compare();
+      ~sl_small_compare();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -393,7 +394,7 @@ class sl_mov : public sl_instruction_base
   public:
       sl_mov (const register_value& result, const argument_value& argument);
 
-      virtual ~sl_mov();
+      ~sl_mov();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -422,7 +423,7 @@ class subprogram_instruction : public sl_instruction_base
   public:
       subprogram_instruction (const string_type& sub_name, int inputs, int outputs, const std::vector<argument_value>& arguments, const std::vector<register_value>& out_arguments, const rx_uuid& guid, int height);
 
-      virtual ~subprogram_instruction();
+      ~subprogram_instruction();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -487,7 +488,7 @@ class sl_arithmetic : public sl_instruction_base
   public:
       sl_arithmetic (arithmetic_type inst_type, const argument_value& arg1, const argument_value& arg2, const register_value& result);
 
-      virtual ~sl_arithmetic();
+      ~sl_arithmetic();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -525,7 +526,7 @@ class sl_logic : public sl_instruction_base
   public:
       sl_logic (logic_type inst_type, const argument_value& arg1, const argument_value& arg2, const register_value& result);
 
-      virtual ~sl_logic();
+      ~sl_logic();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -556,7 +557,7 @@ class sl_counter : public sl_instruction_base
   public:
       sl_counter (dword number, const argument_value& preset);
 
-      virtual ~sl_counter();
+      ~sl_counter();
 
 
   protected:
@@ -615,7 +616,7 @@ class sl_up_counter : public sl_counter
   public:
       sl_up_counter (dword number, const argument_value& preset);
 
-      virtual ~sl_up_counter();
+      ~sl_up_counter();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -640,7 +641,7 @@ class sl_down_counter : public sl_counter
   public:
       sl_down_counter (dword number, const argument_value& preset);
 
-      virtual ~sl_down_counter();
+      ~sl_down_counter();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -665,7 +666,7 @@ class sl_up_down_counter : public sl_counter
   public:
       sl_up_down_counter (dword number, const argument_value& preset);
 
-      virtual ~sl_up_down_counter();
+      ~sl_up_down_counter();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -690,7 +691,7 @@ class sl_inc_dec : public sl_instruction_base
   public:
       sl_inc_dec (bool inc, const register_value& value);
 
-      virtual ~sl_inc_dec();
+      ~sl_inc_dec();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -720,7 +721,7 @@ class sl_monostabile : public sl_instruction_base
   public:
       sl_monostabile (dword number, const argument_value& preset, dword base);
 
-      virtual ~sl_monostabile();
+      ~sl_monostabile();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);
@@ -771,7 +772,7 @@ class sl_timer_inst : public sl_instruction_base
   public:
       sl_timer_inst (dword number, const argument_value& preset, dword base);
 
-      virtual ~sl_timer_inst();
+      ~sl_timer_inst();
 
 
       void process_instruction (io_program_data& io_data, program_context* context, const rx_time& now);

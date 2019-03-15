@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -81,18 +82,6 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 				else if (what == "app" || what == "application")
 				{
 					ret = create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
-				}
-				else if (what == "object-prototype")
-				{
-					ret = create_prototype<object_type>(in, out, err, ctx, tl::type2type<object_type>());
-				}
-				else if (what == "domain-prototype")
-				{
-					ret = create_prototype<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
-				}
-				else if (what == "app-prototype" || what == "application-prototype")
-				{
-					ret = create_prototype<application_type>(in, out, err, ctx, tl::type2type<application_type>());
 				}
 				else if (what == "object-type")
 				{
@@ -196,7 +185,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_object(name, class_name, init_data,
+				rx_platform::api::meta::rx_create_object(name, class_name, init_data, namespace_item_attributes::namespace_item_full_access, 
 					[=](rx_result_with<rx_object_ptr>&& result)
 					{
 						if (!result)
@@ -239,7 +228,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
 		data::runtime_values_data init_data;
-		rx_platform::api::meta::rx_create_object(name, class_name, init_data,
+		rx_platform::api::meta::rx_create_object(name, class_name, init_data, namespace_item_attributes::namespace_item_full_access,
 			[=](rx_result_with<rx_object_ptr>&& result)
 			{
 				if (!result)
@@ -270,99 +259,6 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		return false;
 	}
 }
-
-template<class T>
-bool create_command::create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
-{
-	string_type name;
-	string_type from_command;
-	string_type class_name;
-	string_type to_command;
-	string_type def_command;
-	in >> name
-		>> from_command
-		>> class_name
-		>> to_command
-		>> def_command;
-
-	// these are type definition and stream for creation
-	typename T::smart_ptr type_definition;
-	typename T::RTypePtr object_ptr;
-
-	// try to acquire the type
-	if (from_command == "from")
-	{
-		type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
-	}
-	else
-	{
-		err << "Unknown base "
-			<< T::RType::type_name
-			<< " specifier:"
-			<< from_command << "!";
-		return false;
-	}
-	// do we have type
-	if (!type_definition)
-	{
-		err << "Undefined "
-			<< T::type_name
-			<< ":"
-			<< class_name << "!";
-		return false;
-	}
-	// try to acquire definition
-	if (to_command == "to")
-	{
-		if (def_command == "json")
-		{
-
-			rx_context rxc;
-			rxc.object = ctx->get_client();
-			rxc.directory = ctx->get_current_directory();
-			rx_platform::api::meta::rx_create_prototype(name, class_name,
-				[=](rx_result_with<rx_object_ptr>&& result)
-				{
-					bool ret = result;
-					if (!result)
-					{
-						auto& err = ctx->get_stderr();
-						err << "Error prototyping "
-							<< T::RType::type_name << ":\r\n";
-						dump_error_result(err, result);
-					}
-					else
-					{
-						auto& out = ctx->get_stdout();
-						auto& err = ctx->get_stderr();
-
-						out << "Prototyped " << T::RType::type_name << " "
-							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
-							<< ".\r\n";
-						ret = result.value()->get_item_ptr()->generate_json(out, err);
-					}
-					ctx->send_results(ret);
-				}
-				, rxc);
-			return true;
-		}
-		else
-		{
-			err << "Unknown "
-				<< T::RType::type_name
-				<< " target type!";
-			return false;
-		}
-	}
-	else
-	{
-		err << "Unknown "
-			<< T::RType::type_name
-			<< " target!";
-		return false;
-	}
-}
-
 template<class T>
 bool create_command::create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
 {
@@ -539,7 +435,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
 					<< T::RType::type_name << ":\r\n";
-				this->dump_error_result(err, std::move(result));
+				rx_dump_error_result(err, std::move(result));
 			}
 			else
 			{
@@ -579,7 +475,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
 					<< T::type_name << " type:\r\n";
-				this->dump_error_result(err, std::move(result));
+				rx_dump_error_result(err, std::move(result));
 			}
 			else
 			{
@@ -764,8 +660,175 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
+// Class model::meta_commands::prototype_command 
+
+prototype_command::prototype_command()
+	: server_command("proto")
+{
+}
+
+
+prototype_command::~prototype_command()
+{
+}
+
+
+
+bool prototype_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	rx_reference<prototype_data_t> data = ctx->get_instruction_data<prototype_data_t>();
+	if (!data)
+	{
+		if (!in.eof())
+		{
+			string_type what;
+			in >> what;
+			if (!what.empty())
+			{
+				bool ret = false;
+				if (what == "object")
+				{
+					ret = create_prototype<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+				}
+				else if (what == "domain")
+				{
+					ret = create_prototype<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "app" || what == "application")
+				{
+					ret = create_prototype<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+				}
+				else
+				{
+					err << "Unknown type:" << what << "\r\n";
+					return false;
+				}
+				if (ret)
+				{
+					data = rx_create_reference<prototype_data_t>();
+					data->started = rx_get_us_ticks();
+					ctx->set_instruction_data(data);
+					ctx->set_waiting();
+				}
+				return ret;
+			}
+			else
+				err << "Create type is unknown!\r\n";
+		}
+		else
+			err << "Create type is unknown!\r\n";
+		return false;
+	}
+	else
+	{// we are returned here
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		if (ctx->is_canceled())
+		{
+			out << "Prototype was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Prototype lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		return true;
+	}
+}
+
+template<class T>
+bool prototype_command::create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	string_type from_command;
+	string_type class_name;
+	string_type to_command;
+	string_type def_command;
+	in >> name
+		>> from_command
+		>> class_name
+		>> to_command
+		>> def_command;
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::RTypePtr object_ptr;
+
+	// try to acquire the type
+	if (from_command == "from")
+	{
+		type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
+	}
+	else
+	{
+		err << "Unknown base "
+			<< T::RType::type_name
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
+	// do we have type
+	if (!type_definition)
+	{
+		err << "Undefined "
+			<< T::type_name
+			<< ":"
+			<< class_name << "!";
+		return false;
+	}
+	// try to acquire definition
+	if (to_command == "to")
+	{
+		if (def_command == "json")
+		{
+
+			rx_context rxc;
+			rxc.object = ctx->get_client();
+			rxc.directory = ctx->get_current_directory();
+			rx_platform::api::meta::rx_create_prototype(name, rx_node_id::null_id, class_name,
+				[=](rx_result_with<rx_object_ptr>&& result)
+			{
+				bool ret = result;
+				if (!result)
+				{
+					auto& err = ctx->get_stderr();
+					err << "Error prototyping "
+						<< T::RType::type_name << ":\r\n";
+					dump_error_result(err, result);
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					auto& err = ctx->get_stderr();
+
+					out << "Prototyped " << T::RType::type_name << " "
+						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+						<< ".\r\n";
+					ret = result.value()->get_item_ptr()->generate_json(out, err);
+				}
+				ctx->send_results(ret);
+			}
+			, rxc);
+			return true;
+		}
+		else
+		{
+			err << "Unknown "
+				<< T::RType::type_name
+				<< " target type!";
+			return false;
+		}
+	}
+	else
+	{
+		err << "Unknown "
+			<< T::RType::type_name
+			<< " target!";
+		return false;
+	}
+}
 } // namespace meta_commands
 } // namespace model
-
-
 

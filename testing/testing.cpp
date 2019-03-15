@@ -61,24 +61,8 @@ namespace obsolite
 
 /////////////// callbacks
 
-
-
-class virtual_test : public pointers::virtual_reference_object
-{
-	DECLARE_VIRTUAL_REFERENCE_PTR(virtual_test);
-public:
-	virtual_test()
-	{
-		printf("UsaoV\r\n");
-	}
-	~virtual_test()
-	{
-		printf("IzasaoV\r\n");
-	}
-};
-
-
-class smart_test : public pointers::reference_object, public virtual_test
+	
+class smart_test : public pointers::reference_object
 {
 	DECLARE_REFERENCE_PTR(smart_test);
 public:
@@ -138,9 +122,6 @@ int test_smart_ptr()
 
 	rx_reference<smart_test> ref(pointers::_create_new);
 
-	virtual_test::smart_ptr vref = ref;
-
-	vref = rx_create_reference<smart_test>();
 
 	return 0;
 }
@@ -242,9 +223,9 @@ void test_thread()
 
 	//my_listener lisent;
 	my_thread thread;
-	rx::threads::dispatcher_pool::smart_ptr jthread(2,"test pool",78);
+	rx::threads::dispatcher_pool jthread(2,"test pool",78);
 	//rx::thr_fx::physical_job_thread jthread;
-	jthread->run();
+	jthread.run();
 	thread.start();
 
 	//lisent.start(jthread, 12345);
@@ -255,9 +236,9 @@ void test_thread()
 
 	rx::jobs::lambda_job<int>::smart_ptr job(testing,55);
 
-	jthread->append(job);
-	jthread->append(job);
-	jthread->append(job);
+	jthread.append(job);
+	jthread.append(job);
+	jthread.append(job);
 
 	thread.wait_handle();
 
@@ -268,13 +249,14 @@ void test_thread()
 
 	//lisent.stop();
 
-	jthread->end();
+	jthread.end();
     printf("Izasao Main\r\n");
 }
 
 void test_classes()
 {
-	rx_platform::meta::object_type_ptr obj(rx_platform::meta::object_type_creation_data{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, true });
+	rx_platform::meta::object_type_ptr obj(rx_platform::meta::object_type_creation_data
+		{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_full_access });
 }
 
 

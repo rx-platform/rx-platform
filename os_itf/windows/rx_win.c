@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -466,13 +467,6 @@ void test_client_lpc()
 
 void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
-#ifndef _DEBUG
-	uint32_t tid;
-	rx_thread_create(test_lpc, 0, RX_PRIORITY_NORMAL, &tid);
-#else
-	test_client_lpc();
-#endif
-
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
@@ -519,23 +513,13 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 			ULONG current = 0;
 
 			DWORD ret = (query)(&min, &max, &current);
+					   		}
 
-			printf("Timer data:\r\nmin resolution: %.3fms\r\nmax:%.3fms\r\ncur:%.3fms\r\n",
-			(double)min / 10000.0,
-			(double)max / 10000.0,
-			(double)current / 10000.0);
-
-		}
-
-		if (set && rt)
+		if (set)
 		{
 			ULONG act = 0;
 
 			DWORD ret = (set)(500 * 10, TRUE, &act);
-			if (ret == 0)
-			{
-				printf("Process resolution set to %0.3fms\r\n", (double)act/10000.0);
-			}
 		}
 
 		FreeLibrary(hLib);
@@ -554,7 +538,6 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 		//SE_INC_BASE_PRIORITY_NAME
 
 		BOOL pret = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-		printf("Process priority class set to RT %d!\r\n",(int)pret);
 	}
 #endif
 }

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -95,7 +96,7 @@ enum namespace_item_attributes
 	namespace_item_delete_access = 4,
 	namespace_item_pull_access = 8,
 	namespace_item_execute_access = 0x10,
-	// type of item
+	// special type of item
 	namespace_item_system = 0x20,
 	namespace_item_internal = 0x40,
 	// combinations

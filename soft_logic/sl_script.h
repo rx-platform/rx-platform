@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -50,7 +51,7 @@ class script_program_context : public program_context
   public:
       script_program_context (program_context* parent, sl_program_holder* holder, std::streambuf* out_buffer, std::streambuf* error_buffer);
 
-      virtual ~script_program_context();
+      ~script_program_context();
 
 
       void initialize (initialize_context* ctx);
@@ -112,7 +113,7 @@ class sl_script_program : public sl_program
   public:
       sl_script_program();
 
-      virtual ~sl_script_program();
+      ~sl_script_program();
 
 
       void process_program (program_context* context, const rx_time& now, bool debug);

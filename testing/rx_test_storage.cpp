@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -49,7 +50,7 @@ namespace storage_test {
 storage_test_category::storage_test_category()
 	: test_category("storage")
 {
-	register_test_case(rx_create_reference<file_storage_list_test>());
+	register_test_case(rx_create_reference<storage_list_test>());
 }
 
 
@@ -59,26 +60,30 @@ storage_test_category::~storage_test_category()
 
 
 
-// Class testing::basic_tests::storage_test::file_storage_list_test 
+// Class testing::basic_tests::storage_test::storage_list_test 
 
-file_storage_list_test::file_storage_list_test()
-	: test_case("file-list")
+storage_list_test::storage_list_test()
+	: test_case("storage-list")
 {
 }
 
 
-file_storage_list_test::~file_storage_list_test()
+storage_list_test::~storage_list_test()
 {
 }
 
 
 
-bool file_storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+bool storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	std::vector<hosting::rx_storage_item_ptr> storage_items;
-	auto storage = rx_create_reference<host::files::file_system_storage>();
-	auto init_result = storage->init_storage("D:\\RX\\Native\\Storage\\test");
-	init_result = storage->list_storage(storage_items);
+	auto storage = rx_gate::instance().get_host()->get_test_storage();
+	if (!storage || storage->get_storage_reference().empty())
+	{// no test storage
+		out << "Test storage not defined in platform\r\n";
+		return true;
+	}
+	auto result = storage->list_storage(storage_items);
 
 	for (auto& one : storage_items)
 	{
@@ -139,7 +144,7 @@ bool file_storage_list_test::run_test (std::istream& in, std::ostream& out, std:
 	return true;
 }
 
-rx_result file_storage_list_test::read_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
+rx_result storage_list_test::read_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
 {
 	meta::checkable_data meta_data;
 	string_type target_type;
@@ -153,7 +158,7 @@ rx_result file_storage_list_test::read_object_from_storage (base_meta_reader& st
 	return result;
 }
 
-rx_result file_storage_list_test::read_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
+rx_result storage_list_test::read_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
 {
 	meta::checkable_data meta_data;
 	string_type target_type;

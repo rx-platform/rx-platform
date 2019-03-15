@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,6 +32,8 @@
 
 
 
+// rx_io
+#include "lib/rx_io.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_vt100
@@ -41,8 +44,6 @@
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_io
-#include "lib/rx_io.h"
 
 
 
@@ -63,7 +64,7 @@ class telnet_security_context : public rx::security::security_context
 
       telnet_security_context (const sockaddr_in& addr, const sockaddr_in& local_addr);
 
-      virtual ~telnet_security_context();
+      ~telnet_security_context();
 
 
       bool has_console () const;
@@ -89,9 +90,9 @@ class telnet_client : public rx_platform::prog::console_client
 	typedef std::queue<buffer_ptr> running_buffers_type;
 
   public:
-      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher);
+      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr);
 
-      virtual ~telnet_client();
+      ~telnet_client();
 
 
       bool on_startup (rx_thread_handle_t destination);
@@ -172,12 +173,12 @@ class server_telnet_socket : public rx::pointers::reference_object
   public:
       server_telnet_socket();
 
-      virtual ~server_telnet_socket();
+      ~server_telnet_socket();
 
 
   protected:
 
-      io::tcp_socket_std_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher, rx_thread_handle_t destination);
+      io::tcp_socket_std_buffer::smart_ptr make_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, rx_thread_handle_t destination);
 
 
   private:

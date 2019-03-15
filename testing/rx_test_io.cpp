@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -83,7 +84,7 @@ void tcp_test_client::release_buffer (buffer_ptr what)
 bool tcp_test_client::connect_complete ()
 {
 	rx::io::tcp_client_socket_std_buffer::connect_complete();
-	printf("Stigo callback\r\n");
+	printf("Callback arrived\r\n");
 	return true;
 }
 
@@ -91,9 +92,9 @@ bool tcp_test_client::connect_complete ()
 void test_tcp_client()
 {
 	tcp_test_client::smart_ptr client_socket(pointers::_create_new);
-	if (client_socket->bind_socket_tcpip_4(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_pool()))
+	if (client_socket->bind_socket_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool()))
 	{
-		if (client_socket->connect_to_tcpip_4(rx_platform::rx_gate::instance().get_runtime().get_io_pool()->get_pool(), "192.168.56.101", 12345))
+		if (client_socket->connect_to_tcpip_4("192.168.56.101", 12345))
 		{
 			rx_msleep(200);
 			client_socket->close();
@@ -143,7 +144,7 @@ bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ost
 			if (client->bind_socket_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool()))
 			{
 				out << "Sending Connect...\r\n";
-				if (client->connect_to_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), addr, port))
+				if (client->connect_to_tcpip_4(addr, port))
 				{
 					rx_msleep(200);
 					out << "Closing Connection...\r\n";

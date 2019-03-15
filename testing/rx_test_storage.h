@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -68,13 +69,13 @@ class storage_test_category : public test_category
 
 
 
-class file_storage_list_test : public test_case  
+class storage_list_test : public test_case  
 {
 
   public:
-      file_storage_list_test();
+      storage_list_test();
 
-      ~file_storage_list_test();
+      ~storage_list_test();
 
 
       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);

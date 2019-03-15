@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -115,7 +116,7 @@ mapper runtime. basic implementation of an mapper runtime");
   public:
       mapper_runtime();
 
-      virtual ~mapper_runtime();
+      ~mapper_runtime();
 
 
       string_type get_type_name () const;
@@ -149,7 +150,7 @@ source runtime. basic implementation of an source runtime");
   public:
       source_runtime();
 
-      virtual ~source_runtime();
+      ~source_runtime();
 
 
       string_type get_type_name () const;
@@ -224,7 +225,7 @@ variable runtime. basic implementation of an variable runtime");
 
       variable_runtime (const string_type& name, const rx_node_id& id, bool system = false);
 
-      virtual ~variable_runtime();
+      ~variable_runtime();
 
 
       string_type get_type_name () const;

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -66,7 +67,7 @@ server_manager::~server_manager()
 
 
 
-uint32_t server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
+rx_result server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	telnet_port_ = data.telnet_port;
@@ -75,15 +76,15 @@ uint32_t server_manager::initialize (hosting::rx_platform_host* host, managment_
 	unassigned_app_ = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
 	system_app_ = rx_create_reference<sys_internal::sys_objects::system_application>();
 	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
-	return RX_OK;
+	return true;
 }
 
-uint32_t server_manager::deinitialize ()
+rx_result server_manager::deinitialize ()
 {
-	return RX_OK;
+	return true;
 }
 
-uint32_t server_manager::start (hosting::rx_platform_host* host, const managment_data_t& data)
+rx_result server_manager::start (hosting::rx_platform_host* host, const managment_data_t& data)
 {
 	if (telnet_port_)
 	{
@@ -95,10 +96,10 @@ uint32_t server_manager::start (hosting::rx_platform_host* host, const managment
 	{
 		commands_manager_.cast_to<server_command_manager::smart_ptr>()->register_command(one);
 	}
-	return RX_OK;
+	return true;
 }
 
-uint32_t server_manager::stop ()
+rx_result server_manager::stop ()
 {
 	if (telnet_listener_)
 	{
@@ -106,7 +107,7 @@ uint32_t server_manager::stop ()
 		//telnet_listener_->stop();
 		telnet_listener_ = rx_port_ptr::null_ptr;
 	}
-	return RX_OK;
+	return true;
 }
 
 void server_manager::get_directories (platform_directories_type& dirs)

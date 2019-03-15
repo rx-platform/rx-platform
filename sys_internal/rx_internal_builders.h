@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -56,12 +57,13 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      virtual void build (platform_root::smart_ptr root) = 0;
-
       static rx_directory_ptr buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data);
 
 
   protected:
+
+      virtual rx_result do_build (platform_root::smart_ptr root) = 0;
+
 
   private:
       rx_platform_builder(const rx_platform_builder &right);
@@ -82,7 +84,7 @@ class root_folder_builder : public rx_platform_builder
 
   public:
 
-      void build (platform_root::smart_ptr root);
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:
@@ -102,7 +104,7 @@ class basic_types_builder : public rx_platform_builder
 
   public:
 
-      void build (platform_root::smart_ptr root);
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:
@@ -132,7 +134,7 @@ class system_classes_builder : public rx_platform_builder
 
   public:
 
-      void build (platform_root::smart_ptr root);
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:
@@ -152,7 +154,7 @@ class port_classes_builder : public rx_platform_builder
 
   public:
 
-      void build (platform_root::smart_ptr root);
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:
@@ -172,7 +174,7 @@ class system_objects_builder : public rx_platform_builder
 
   public:
 
-      void build (platform_root::smart_ptr root);
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:

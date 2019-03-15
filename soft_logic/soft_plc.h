@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -226,7 +227,7 @@ class sl_di_chanel : public sl_chanel_base
   public:
       sl_di_chanel (int order);
 
-      virtual ~sl_di_chanel();
+      ~sl_di_chanel();
 
 
   protected:
@@ -253,7 +254,7 @@ class sl_di_module : public sl_module_base
   public:
       sl_di_module (int order);
 
-      virtual ~sl_di_module();
+      ~sl_di_module();
 
 
       void create_chanels (module_chanels_factory* builder);
@@ -279,7 +280,7 @@ class program_executer
   public:
       program_executer (sl_program_holder* program);
 
-      virtual ~program_executer();
+      ~program_executer();
 
 
       void program_scan ();
@@ -381,7 +382,7 @@ class sl_do_chanel : public sl_chanel_base
   public:
       sl_do_chanel (int order);
 
-      virtual ~sl_do_chanel();
+      ~sl_do_chanel();
 
 
   protected:
@@ -412,7 +413,7 @@ class sl_do_module : public sl_module_base
   public:
       sl_do_module (int order);
 
-      virtual ~sl_do_module();
+      ~sl_do_module();
 
 
       void create_chanels (module_chanels_factory* builder);
@@ -596,7 +597,7 @@ class sl_ai_chanel : public sl_chanel_base
   public:
       sl_ai_chanel (int order);
 
-      virtual ~sl_ai_chanel();
+      ~sl_ai_chanel();
 
 
   protected:
@@ -625,7 +626,7 @@ class sl_ai_module : public sl_module_base
   public:
       sl_ai_module (int order);
 
-      virtual ~sl_ai_module();
+      ~sl_ai_module();
 
 
       void create_chanels (module_chanels_factory* builder);
@@ -649,7 +650,7 @@ class sl_ao_chanel : public sl_chanel_base
   public:
       sl_ao_chanel (int order);
 
-      virtual ~sl_ao_chanel();
+      ~sl_ao_chanel();
 
 
   protected:
@@ -682,7 +683,7 @@ class sl_ao_module : public sl_module_base
   public:
       sl_ao_module (int order);
 
-      virtual ~sl_ao_module();
+      ~sl_ao_module();
 
 
       void create_chanels (module_chanels_factory* builder);
@@ -740,7 +741,7 @@ class debug_segment_base
   public:
       debug_segment_base (program_context* context);
 
-      virtual ~debug_segment_base();
+      ~debug_segment_base();
 
 
       virtual void set_debug_data (const rx_uuid& guid, const std::vector<bool>& data, const rx_time& now, int segment) = 0;
@@ -885,7 +886,7 @@ class ladder_program_context : public program_context
   public:
       ladder_program_context (program_context* parent, sl_program_holder* holder);
 
-      virtual ~ladder_program_context();
+      ~ladder_program_context();
 
 
       void initialize (initialize_context* ctx);
@@ -975,7 +976,7 @@ class deinitialize_context
   public:
       deinitialize_context();
 
-      virtual ~deinitialize_context();
+      ~deinitialize_context();
 
 
   protected:
@@ -996,7 +997,7 @@ class io_program_data
   public:
       io_program_data();
 
-      virtual ~io_program_data();
+      ~io_program_data();
 
 
       virtual bool get_input (int idx) = 0;
@@ -1155,7 +1156,7 @@ class sl_ladder_program : public sl_program
   public:
       sl_ladder_program();
 
-      virtual ~sl_ladder_program();
+      ~sl_ladder_program();
 
 
       void process_program (program_context* context, const rx_time& now, bool debug);
@@ -1345,7 +1346,7 @@ class laddder_io_program_data : public io_program_data
   public:
       laddder_io_program_data (schema_type& schema, int& row, int& col, int inputs, int outputs);
 
-      virtual ~laddder_io_program_data();
+      ~laddder_io_program_data();
 
 
       bool get_input (int idx);
@@ -1485,7 +1486,7 @@ class ladder_program_builder : public program_builder
 {
 
   public:
-      virtual ~ladder_program_builder();
+      ~ladder_program_builder();
 
 
       sl_program* build_program ();

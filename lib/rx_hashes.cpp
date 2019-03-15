@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_file_sys.h
+*  lib\rx_hashes.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,41 +27,21 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_file_sys_h
-#define rx_gnu_file_sys_h 1
+#include "pch.h"
+
+
+// rx_hashes
+#include "lib/rx_hashes.h"
 
 
 
-// rx_file_storage
-#include "host/rx_file_storage.h"
+namespace rx {
+
+namespace rx_hashes {
+
+// Class rx::rx_hashes::binary_hash_key 
 
 
+} // namespace rx_hashes
+} // namespace rx
 
-namespace gnu {
-
-
-
-
-
-class gnu_file_system_storage : public host::files::file_system_storage  
-{
-
-  public:
-      gnu_file_system_storage();
-
-      ~gnu_file_system_storage();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace gnu
-
-
-
-#endif

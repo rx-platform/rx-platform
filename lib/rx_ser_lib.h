@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -122,7 +123,7 @@ public:
 
       virtual bool write_version (const char* name, uint32_t val) = 0;
 
-      virtual bool write_init_values (const char* name, const rx::data::runtime_values_data& values) = 0;
+      virtual bool write_init_values (const char* name, const data::runtime_values_data& values) = 0;
 
 
       const size_t get_version () const

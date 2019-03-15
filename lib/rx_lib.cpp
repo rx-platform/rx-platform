@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -240,8 +241,12 @@ rx_result rx_list_files(const std::string& dir, const std::string& pattern, std:
 
 		} while (rx_get_next_file(hndl, &one));
 		rx_find_file_close(hndl);
+		return true;
 	}
-	return true;
+	else
+	{
+		return false;
+	}
 }
 std::string rx_get_extension(const std::string& path)
 {
@@ -322,6 +327,11 @@ const rx_result::result_erros_t& rx_result::errors() const
 rx_result::operator bool() const
 {
 	return !result_value_;
+}
+void rx_dump_error_result(std::ostream& err, const rx_result& result)
+{
+	for (const auto& one : result.errors())
+		err <<  one << "\r\n";
 }
 
 rx_uuid::rx_uuid()

@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -60,10 +61,12 @@ namespace rx_platform {
 
 struct io_manager_data_t
 {
-	io_manager_data_t()
-	{
-		memzero(this, sizeof(io_manager_data_t));
-	}
+};
+
+struct general_data_t
+{
+	bool test_log = false;
+	string_type startup_script;
 };
 
 struct configuration_data_t
@@ -73,7 +76,7 @@ struct configuration_data_t
 	ns::namespace_data_t namespace_data;
 	meta::meta_data_t meta_data;
 	io_manager_data_t io_manager_data;
-	string_type startup_script;
+	general_data_t general;
 };
 
 
@@ -89,13 +92,13 @@ class rx_gate
 
       void cleanup ();
 
-      uint32_t initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
-      uint32_t deinitialize ();
+      rx_result deinitialize ();
 
-      uint32_t start (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
-      uint32_t stop ();
+      rx_result stop ();
 
       rx_directory_ptr get_root_directory ();
 

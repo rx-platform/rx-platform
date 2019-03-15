@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -179,13 +180,9 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 		return false;
 	
 	data::runtime_values_data temp_data;
-
 	item_->collect_data(temp_data);
-
 	if (!stream.write_init_values("Values", temp_data))
 		return false;
-
-	auto test_val = temp_data.get_value("variableName.variableVal");
 
 	if (!stream.start_array("Programs", programs_.size()))
 		return false;
@@ -204,7 +201,13 @@ bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t typ
 
 bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-			
+	
+	data::runtime_values_data temp_data;
+	if (!stream.read_init_values("Values", temp_data))
+		return false;
+	structure::init_context ctx;
+	item_->fill_data(temp_data, ctx);
+
 	if (!stream.start_array("Programs"))
 		return false;
 

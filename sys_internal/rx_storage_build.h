@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_file_sys.h
+*  sys_internal\rx_storage_build.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,29 +27,43 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_file_sys_h
-#define rx_gnu_file_sys_h 1
+#ifndef rx_storage_build_h
+#define rx_storage_build_h 1
+
+
+/////////////////////////////////////////////////////////////
+// logging macros for building
+#define BUILD_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Build",src,lvl,msg)
+#define BUILD_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Build",src,lvl,msg)
+#define BUILD_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Build",src,lvl,msg)
+#define BUILD_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Build",src,lvl,msg)
+#define BUILD_LOG_TRACE(src,lvl,msg) RX_TRACE("Build",src,lvl,msg)
+
+// rx_internal_builders
+#include "sys_internal/rx_internal_builders.h"
 
 
 
-// rx_file_storage
-#include "host/rx_file_storage.h"
+namespace sys_internal {
+
+namespace builders {
+
+namespace storage {
 
 
 
-namespace gnu {
 
 
-
-
-
-class gnu_file_system_storage : public host::files::file_system_storage  
+class configuration_storage_builder : public rx_platform_builder  
 {
 
   public:
-      gnu_file_system_storage();
+      configuration_storage_builder();
 
-      ~gnu_file_system_storage();
+      ~configuration_storage_builder();
+
+
+      rx_result do_build (platform_root::smart_ptr root);
 
 
   protected:
@@ -60,7 +74,9 @@ class gnu_file_system_storage : public host::files::file_system_storage
 };
 
 
-} // namespace gnu
+} // namespace storage
+} // namespace builders
+} // namespace sys_internal
 
 
 

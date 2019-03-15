@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -72,8 +73,6 @@ command for creating various objects and types in platform\r\n\
   private:
 	  template<class T>
 	  bool create_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
-	  template<class T>
-	  bool create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
@@ -223,6 +222,40 @@ command for checking various types in platform\r\n\
 	  bool check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+
+};
+
+
+
+
+
+
+class prototype_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(prototype_command);
+	struct prototype_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for prototyping objects in platform\r\n\
+\
+");
+
+  public:
+      prototype_command();
+
+      ~prototype_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+	  template<class T>
+	  bool create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 };
 

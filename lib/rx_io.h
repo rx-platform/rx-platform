@@ -6,23 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
+*
 *  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
+*
 ****************************************************************************/
 
 
@@ -31,12 +32,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx {
 namespace io {
@@ -58,6 +59,7 @@ typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_sub
 
 
 
+
 class dispatcher_subscriber : public pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(dispatcher_subscriber);
@@ -65,7 +67,7 @@ class dispatcher_subscriber : public pointers::reference_object
   public:
       dispatcher_subscriber (rx_thread_handle_t destination = RX_THREAD_NULL);
 
-      virtual ~dispatcher_subscriber();
+      ~dispatcher_subscriber();
 
 
       static void propagate_timer ();
@@ -82,16 +84,13 @@ class dispatcher_subscriber : public pointers::reference_object
 
   protected:
 
-      bool connect_dispatcher (threads::dispatcher_pool::smart_ptr& dispatcher);
+      bool connect_dispatcher (threads::dispatcher_pool& dispatcher);
 
       bool disconnect_dispatcher ();
 
       void register_timed ();
 
       void unregister_timed ();
-
-
-      rx_reference<threads::dispatcher_pool> disptacher_;
 
 
       rx_io_register_data dispatcher_data_;
@@ -156,9 +155,7 @@ protected:
   public:
       full_duplex_comm();
 
-      full_duplex_comm (sys_handle_t handle, threads::dispatcher_pool::smart_ptr& dispatcher);
-
-      virtual ~full_duplex_comm();
+      ~full_duplex_comm();
 
 
       void timer_tick (uint32_t tick);
@@ -240,9 +237,9 @@ class tcp_socket : public full_duplex_comm<buffT>
 
 
   public:
-      tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher);
+      tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher);
 
-      virtual ~tcp_socket();
+      ~tcp_socket();
 
 
   protected:
@@ -272,17 +269,17 @@ class tcp_listen_socket : public dispatcher_subscriber
 protected:
 	typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
 public:
-	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, threads::dispatcher_pool::smart_ptr&, rx_thread_handle_t)> make_function_t;
+	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, rx_thread_handle_t)> make_function_t;
 
   public:
       tcp_listen_socket (make_function_t make_function);
 
-      virtual ~tcp_listen_socket();
+      ~tcp_listen_socket();
 
 
-      bool start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
+      bool start (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      bool start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port);
+      bool start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
 
       void stop ();
 
@@ -336,24 +333,26 @@ class tcp_client_socket : public tcp_socket<buffT>
   public:
       tcp_client_socket();
 
-      virtual ~tcp_client_socket();
+      ~tcp_client_socket();
 
 
-      bool bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr);
+      bool bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      bool bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port = 0);
+      bool bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
 
-      bool connect_to (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr* addr, size_t addrsize);
+      bool connect_to (sockaddr* addr, size_t addrsize);
 
-      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, uint16_t port);
+      bool connect_to_tcpip_4 (unsigned long address, uint16_t port);
 
-      bool connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, uint16_t port);
+      bool connect_to_tcpip_4 (const string_type& address, uint16_t port);
 
       void timer_tick (uint32_t tick);
 
       void close ();
 
       virtual bool connect_complete ();
+
+      bool bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher);
 
 
       void set_connect_timeout (uint32_t value)
@@ -388,22 +387,10 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm 
+// Parameterized Class rx::io::full_duplex_comm
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
-      : send_timeout_(2000),
-        receive_timeout_(10000),
-        sending_(false),
-        receiving_(false),
-        send_tick_(0),
-        receive_tick_(0),
-        shutdown_called_(false)
-{
-}
-
-template <class buffT>
-full_duplex_comm<buffT>::full_duplex_comm (sys_handle_t handle, threads::dispatcher_pool::smart_ptr& dispatcher)
       : send_timeout_(2000),
         receive_timeout_(10000),
         sending_(false),
@@ -703,7 +690,7 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket 
+// Parameterized Class rx::io::tcp_socket
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -717,7 +704,7 @@ tcp_socket<buffT>::tcp_socket()
 }
 
 template <class buffT>
-tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool::smart_ptr& dispatcher)
+tcp_socket<buffT>::tcp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher)
 {
 
   // allocate paged memory to be faster
@@ -745,7 +732,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket 
+// Parameterized Class rx::io::tcp_listen_socket
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
@@ -772,7 +759,7 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 	if (!connected_)
 		return 0;
     typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
-	target_ptr created = make_function_(handle, addr, local_addr, disptacher_,get_destination_context());
+	target_ptr created = make_function_(handle, addr, local_addr, get_destination_context());
 	if (created)
 	{
 		if (created->start_loops())
@@ -789,7 +776,7 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
+bool tcp_listen_socket<buffT>::start (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
 	this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr);
 	if (this->dispatcher_data_.handle)
@@ -809,7 +796,7 @@ bool tcp_listen_socket<buffT>::start (threads::dispatcher_pool::smart_ptr dispat
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port)
+bool tcp_listen_socket<buffT>::start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -846,7 +833,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket 
+// Parameterized Class rx::io::tcp_client_socket
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -865,7 +852,7 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr_in* addr)
+bool tcp_client_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
 	this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr);
 	if (this->dispatcher_data_.handle)
@@ -879,17 +866,17 @@ bool tcp_client_socket<buffT>::bind_socket (threads::dispatcher_pool::smart_ptr 
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, uint16_t port)
+bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = INADDR_ANY;
-	return bind_socket(dispatcher, &temp_addr);
+	return bind_socket(&temp_addr, dispatcher);
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr dispatcher, sockaddr* addr, size_t addrsize)
+bool tcp_client_socket<buffT>::connect_to (sockaddr* addr, size_t addrsize)
 {
 	{
 
@@ -912,18 +899,18 @@ bool tcp_client_socket<buffT>::connect_to (threads::dispatcher_pool::smart_ptr d
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, unsigned long address, uint16_t port)
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (unsigned long address, uint16_t port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
 	temp_addr.sin_family = AF_INET;
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = address;
-	return connect_to(dispatcher,(sockaddr*)&temp_addr,sizeof(temp_addr));
+	return connect_to((sockaddr*)&temp_addr,sizeof(temp_addr));
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::smart_ptr dispatcher, const string_type& address, uint16_t port)
+bool tcp_client_socket<buffT>::connect_to_tcpip_4 (const string_type& address, uint16_t port)
 {
     unsigned long num_addr=inet_addr(address.c_str());
     struct sockaddr_in temp_addr;
@@ -931,7 +918,7 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (threads::dispatcher_pool::sma
 	temp_addr.sin_family = AF_INET;
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = num_addr;
-	return connect_to(dispatcher, (sockaddr*)&temp_addr,sizeof(temp_addr));
+	return connect_to((sockaddr*)&temp_addr,sizeof(temp_addr));
 }
 
 template <class buffT>
@@ -987,6 +974,12 @@ bool tcp_client_socket<buffT>::connect_complete ()
 {
 	this->read_loop();
 	return true;
+}
+
+template <class buffT>
+bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher)
+{
+	return bind_socket(0, dispatcher);
 }
 
 

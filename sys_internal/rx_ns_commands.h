@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -43,60 +44,6 @@ namespace sys_internal {
 namespace internal_ns {
 
 namespace namespace_commands {
-
-
-
-
-
-class mkdir_command : public terminal::commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(mkdir_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-creates new directory in namespace");
-
-  public:
-      mkdir_command();
-
-      ~mkdir_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rmdir_command : public terminal::commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(rmdir_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-removes directory from namespace");
-
-  public:
-      rmdir_command();
-
-      ~rmdir_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
 
 
 
@@ -204,6 +151,60 @@ class ls_command : public list_command
 
 
   protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class mkdir_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(mkdir_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+creates new directory in namespace");
+
+  public:
+      mkdir_command();
+
+      ~mkdir_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rmdir_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(rmdir_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+removes directory from namespace");
+
+  public:
+      rmdir_command();
+
+      ~rmdir_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
 
   private:
 

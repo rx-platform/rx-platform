@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -69,7 +70,7 @@ class security_context : public pointers::reference_object
   public:
       security_context();
 
-      virtual ~security_context();
+      ~security_context();
 
 
       void logout ();
@@ -220,7 +221,7 @@ class security_guard
   public:
       security_guard();
 
-      virtual ~security_guard();
+      ~security_guard();
 
 
       bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask);
@@ -249,7 +250,7 @@ class security_auto_context
   public:
       security_auto_context (security_context_ptr ctx);
 
-      virtual ~security_auto_context();
+      ~security_auto_context();
 
 
   protected:
@@ -274,7 +275,7 @@ class built_in_security_context : public security_context
   public:
       built_in_security_context();
 
-      virtual ~built_in_security_context();
+      ~built_in_security_context();
 
 
   protected:
@@ -296,7 +297,7 @@ class unathorized_security_context : public security_context
   public:
       unathorized_security_context();
 
-      virtual ~unathorized_security_context();
+      ~unathorized_security_context();
 
 
       bool is_authenticated () const;
@@ -327,7 +328,7 @@ public:
   public:
       loose_security_guard();
 
-      virtual ~loose_security_guard();
+      ~loose_security_guard();
 
 
   protected:

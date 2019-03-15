@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -43,17 +44,6 @@ namespace rx_platform {
 namespace meta {
 
 namespace object_types {
-namespace_item_attributes create_attributes_for_object_types_from_flags(const object_type_creation_data& data)
-{
-	if (data.system)
-	{
-		return namespace_item_system_access;
-	}
-	else
-	{
-		return namespace_item_full_access;
-	}
-}
 
 // Class rx_platform::meta::object_types::application_type 
 
@@ -64,7 +54,7 @@ application_type::application_type()
 }
 
 application_type::application_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -155,7 +145,7 @@ domain_type::domain_type()
 }
 
 domain_type::domain_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -246,7 +236,7 @@ object_type::object_type()
 }
 
 object_type::object_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 
@@ -389,7 +379,7 @@ port_type::port_type()
 }
 
 port_type::port_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, create_attributes_for_object_types_from_flags(data))
+	: meta_data_(data.name, data.id, data.base_id, data.attributes)
 {
 }
 

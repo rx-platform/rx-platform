@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,10 +32,10 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
@@ -75,9 +76,6 @@ class server_command : public rx_platform::prog::server_command_base
 
 
   protected:
-
-      void dump_error_result (std::ostream& err, const rx_result& result) const;
-
 	  template<typename T>
 	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
 	  {

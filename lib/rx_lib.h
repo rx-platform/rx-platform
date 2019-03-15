@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -86,6 +87,7 @@ public:
 	rx_result& operator=(rx_result&&) noexcept = default;
 };
 
+void rx_dump_error_result(std::ostream& err, const rx_result& result);
 
 template<class T>
 class rx_result_with
@@ -591,7 +593,6 @@ enum rx_access
 	full	= 0xff
 };
 
-void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
 rx_thread_handle_t rx_thread_context();
 bool rx_push_thread_context(rx_thread_handle_t obj);
@@ -611,26 +612,26 @@ public:
 		: m_handle(0)
 	{
 	}
-	bool open(const char* file_name)
+	rx_result open(const char* file_name)
 	{
 		m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 		return m_handle != 0;
 	}
-	bool open_write(const char* file_name)
+	rx_result open_write(const char* file_name)
 	{
 		m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
 		return m_handle != 0;
 	}
-	bool read_string(std::string& buff)
+	rx_result read_string(std::string& buff)
 	{
 		if (m_handle == 0)
 		{
-			assert(false);
-			return false;
+			RX_ASSERT(false);
+			return "File not opened!";
 		}
 		uint64_t size;
 		if (rx_file_get_size(m_handle, &size) != RX_OK)
-			return false;
+			return "Unable to get file size!";
 
 		char* temp = new char[size];
 
@@ -644,15 +645,15 @@ public:
 		else
 		{
 			delete[] temp;
-			return false;
+			return "Error reading file!";
 		}
 	}
-	bool write_string(const std::string& buff)
+	rx_result write_string(const std::string& buff)
 	{
 		if (m_handle == 0)
 		{
-			assert(false);
-			return false;
+			RX_ASSERT(false);
+			return "File not opened!";
 		}
 
 		uint32_t size = (uint32_t)buff.size();
@@ -663,7 +664,7 @@ public:
 		}
 		else
 		{
-			return false;
+			return "Error writing to file!";
 		}
 	}
 	~rx_source_file()

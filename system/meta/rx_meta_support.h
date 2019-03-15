@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -34,6 +35,7 @@
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
+#include "system/server/rx_ns.h"
 
 
 namespace rx_platform {
@@ -191,7 +193,7 @@ struct object_type_creation_data
 
       rx_node_id base_id;
 
-      bool system;
+      ns::namespace_item_attributes attributes;
 
   public:
 
@@ -217,7 +219,7 @@ struct type_creation_data
 
       rx_node_id base_id;
 
-      bool system;
+      ns::namespace_item_attributes attributes;
 
   public:
 

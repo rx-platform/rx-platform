@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -52,26 +53,26 @@ platform_types_manager& platform_types_manager::instance ()
 	return g_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-uint32_t platform_types_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
+rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
 {
-	return RX_OK;
+	return true;
 }
 
-uint32_t platform_types_manager::deinitialize ()
+rx_result platform_types_manager::deinitialize ()
 {
-	return RX_OK;
+	return true;
 }
 
-uint32_t platform_types_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
+rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
 {
 	worker_.start(RX_PRIORITY_IDLE);
-	return RX_OK;
+	return true;
 }
 
-uint32_t platform_types_manager::stop ()
+rx_result platform_types_manager::stop ()
 {
 	worker_.end();
-	return RX_OK;
+	return true;
 }
 
 

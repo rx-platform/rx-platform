@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -31,14 +32,14 @@
 
 
 
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_checkable
 #include "system/meta/rx_checkable.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 
 using namespace rx;
 
@@ -157,7 +158,6 @@ class test_program_context : public rx_platform::prog::console_program_context
 class test_case : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(test_case);
-	DECLARE_DERIVED_FROM_VIRTUAL_REFERENCE;
 
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 class intendend for console or script usage\r\n\
@@ -224,11 +224,6 @@ public:
 		  for (const auto& one : result.errors())
 			  out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 	  }
-	  void dump_error_result(std::ostream& out, const rx_result& result) const
-	  {
-		  for (const auto& one : result.errors())
-			  out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-	  }
   private:
       test_case(const test_case &right);
 
@@ -250,34 +245,6 @@ public:
       rx_time modified_time_;
 
       string_type name_;
-
-
-};
-
-
-
-
-
-
-class basic_test_case_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(basic_test_case_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-This test creates dummy test case and is used for testing this mechanism\
-");
-
-  public:
-      basic_test_case_test();
-
-      ~basic_test_case_test();
-
-
-      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
 
 
 };
@@ -371,6 +338,34 @@ public:
 
 
       categories_type categories_;
+
+
+};
+
+
+
+
+
+
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      ~basic_test_case_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
 
 
 };

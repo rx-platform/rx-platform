@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -513,6 +514,11 @@ class complex_data_type
         return sealed_;
       }
 
+      void set_sealed (bool value)
+      {
+        sealed_ = value;
+      }
+
 
       const names_cahce_type& get_names_cache () const
       {
@@ -523,6 +529,11 @@ class complex_data_type
       const bool is_abstract () const
       {
         return abstract_;
+      }
+
+      void set_abstract (bool value)
+      {
+        abstract_ = value;
       }
 
 

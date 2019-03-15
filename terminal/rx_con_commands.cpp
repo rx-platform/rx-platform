@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -241,7 +242,8 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 {
 	out << "System Information\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "Engine Name: " << rx_gate::instance().get_rx_name() << "\r\n";
+	out << "Instance Name: " << rx_gate::instance().get_rx_name() << "\r\n";
+	out << "Node Name: " << rx_get_server_name() << "\r\n";
 	out << "Engine Version: " << rx_gate::instance().get_rx_version() << "\r\n";
 	out << "Library Version: " << rx_gate::instance().get_lib_version() << "\r\n";
 	out << "OS/HW Interface: " << rx_gate::instance().get_hal_version() << "\r\n";
@@ -746,5 +748,4 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
-
 

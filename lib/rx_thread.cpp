@@ -6,23 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
-*
+*  
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
+*  
 ****************************************************************************/
 
 
@@ -65,7 +66,7 @@ void execute_job(void* arg)
 
 
 
-// Class rx::threads::thread
+// Class rx::threads::thread 
 
 thread::thread (const string_type& name, rx_thread_handle_t rx_thread_id)
       : thread_id_(0),
@@ -101,7 +102,7 @@ void thread::start (int priority)
 	handle_ = rx_thread_create(_inner_handler, this, priority, &thread_id_);
 
 	if (handle_ == 0)
-	{// error occured
+	{// error occurred
 		char buff[0x100];
 		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "Error while creating %s thread. Error code: %x", name_.c_str(), errno);
 	}
@@ -109,7 +110,7 @@ void thread::start (int priority)
 }
 
 
-// Class rx::threads::job_thread
+// Class rx::threads::job_thread 
 
 job_thread::job_thread()
 {
@@ -122,7 +123,7 @@ job_thread::~job_thread()
 
 
 
-// Class rx::threads::physical_job_thread
+// Class rx::threads::physical_job_thread 
 
 physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
       : has_job_(false)
@@ -231,22 +232,20 @@ void physical_job_thread::stop (uint32_t timeout)
 }
 
 
-// Class rx::threads::dispatcher_pool
+// Class rx::threads::dispatcher_pool 
 
 dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
       : name_(name)
 {
 	dispatcher_ = rx_create_kernel_dispathcer(count);
 	for (int i = 0; i < count; i++)
-		threads_.emplace_back(new dispatcher_thread(name,rx_thread_id,dispatcher_));
+		threads_.emplace_back(std::make_unique<dispatcher_thread>(name,rx_thread_id,dispatcher_));
 }
 
 
 dispatcher_pool::~dispatcher_pool()
 {
 	rx_destroy_kernel_dispatcher(dispatcher_);
-	for (auto& one : threads_)
-		delete one;
 }
 
 
@@ -273,7 +272,7 @@ void dispatcher_pool::append (job_ptr pjob)
 }
 
 
-// Class rx::threads::dispatcher_thread
+// Class rx::threads::dispatcher_thread 
 
 dispatcher_thread::dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher)
   : thread(name,rx_thread_id)
@@ -299,7 +298,7 @@ uint32_t dispatcher_thread::handler ()
 }
 
 
-// Class rx::threads::timer
+// Class rx::threads::timer 
 
 timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : wake_up_(false),

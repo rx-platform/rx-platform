@@ -20,8 +20,9 @@
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform.  If not, see <http://www.gnu.org/licenses/>.
+*  You should have received a copy of the GNU General Public License  
+*  along with rx-platform. It is also available in any rx-platform console
+*  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
 
@@ -32,6 +33,7 @@
 // rx_internal_builders
 #include "sys_internal/rx_internal_builders.h"
 
+#include "rx_storage_build.h"
 #include "system/server/rx_server.h"
 #include "terminal/rx_commands.h"
 #include "system/server/rx_inf.h"
@@ -47,8 +49,9 @@ namespace sys_internal {
 namespace builders {
 
 template<class T>
-void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what)
+void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool abstract_type)
 {
+	what->complex_data().set_abstract(abstract_type);
 	model::platform_types_manager::instance().internal_get_type_cache<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
@@ -88,16 +91,19 @@ rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform
 	builders.emplace_back(std::make_unique<port_classes_builder>());
 	// objects builders
 	builders.emplace_back(std::make_unique<system_objects_builder>());
+	// storage builder
+	builders.emplace_back(std::make_unique<storage::configuration_storage_builder>());
 
 	auto root = rx_create_reference<sys_internal::internal_ns::platform_root>();
 
 	for (auto& one : builders)
 	{
-		one->build(root);
+		auto result = one->do_build(root);
+		if (!result)
+		{
+			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform!");
+		}
 	}
-
-	
-	
 	return root;
 	/*
 	server_directories_type dirs;
@@ -227,8 +233,9 @@ rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform
 // Class sys_internal::builders::root_folder_builder 
 
 
-void root_folder_builder::build (platform_root::smart_ptr root)
+rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 {
+	BUILD_LOG_INFO("root_folder_builder", 900, "Building root folder structure...");
 	root->add_sub_directory(rx_create_reference<world_directory>());
 	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
@@ -252,45 +259,50 @@ void root_folder_builder::build (platform_root::smart_ptr root)
 	sys_dir->add_sub_directory(plugins_dir);
 
 	root->add_sub_directory(sys_dir);
+	BUILD_LOG_INFO("root_folder_builder", 900, "Root folder structure built.");
+	return true;
 }
 
 
 // Class sys_internal::builders::basic_types_builder 
 
 
-void basic_types_builder::build (platform_root::smart_ptr root)
+rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 {
+	BUILD_LOG_INFO("basic_types_builder", 900, "Building basic types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
 	if (dir)
 	{
 		//build base object type
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, true });
+		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_object_type<object_type>(dir, obj);
 
 		//build derived object types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, true });
+		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_application_type<application_type>(dir, app);
-		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, true });
+		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_domain_type<domain_type>(dir, domain);
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, true });
+		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_port_type<port_type>(dir, port);
 
 		//build base types, user extensible
-		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data { RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, true });
+		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data { RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::struct_type>(dir, str);
-		auto var = rx_create_reference<basic_types::variable_type>(meta::type_creation_data{ RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, true });
+		auto var = rx_create_reference<basic_types::variable_type>(meta::type_creation_data{ RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::variable_type>(dir, var);
 		
 		// build base types, code only extensible
-		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{ RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, true });
+		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{ RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::mapper_type>(dir, map);
-		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{ RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, true });
+		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{ RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::event_type>(dir, evnt);
-		auto filt = rx_create_reference<basic_types::filter_type>(meta::type_creation_data{ RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, true });
+		auto filt = rx_create_reference<basic_types::filter_type>(meta::type_creation_data{ RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::filter_type>(dir, filt);
-		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{ RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, true });
+		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{ RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
 		build_basic_type<basic_types::source_type>(dir, src);
 	}
+	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
+	return true;
 }
 
 template<class T>
@@ -326,86 +338,93 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T>
 // Class sys_internal::builders::system_classes_builder 
 
 
-void system_classes_builder::build (platform_root::smart_ptr root)
+rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 {
+	BUILD_LOG_INFO("system_classes_builder", 900, "Building system types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SYSTEM_CLASSES_NAME);
 	if (dir)
 	{
 		// system application and domain types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true });
-		add_type_to_configuration(dir, app);
-		auto dom = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_DOM_TYPE_NAME, RX_NS_SYSTEM_DOM_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true });
-		add_type_to_configuration(dir, dom);
+		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, app, false);
+		auto dom = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_DOM_TYPE_NAME, RX_NS_SYSTEM_DOM_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, namespace_item_attributes::namespace_item_internal_access });
+		add_type_to_configuration(dir, dom, false);
 		// unassigned application and domain types
-		app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_UNASS_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, true });
-		add_type_to_configuration(dir, app);
-		dom = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_UNASS_TYPE_NAME, RX_NS_SYSTEM_UNASS_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, true });
-		add_type_to_configuration(dir, dom);
+		app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_UNASS_APP_TYPE_NAME, RX_NS_SYSTEM_APP_TYPE_ID, RX_CLASS_APPLICATION_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, app, false);
+		dom = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_NS_SYSTEM_UNASS_TYPE_NAME, RX_NS_SYSTEM_UNASS_TYPE_ID, RX_CLASS_DOMAIN_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, dom, false);
 		// other system object types
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_COMMANDS_MANAGER_TYPE_NAME, RX_COMMANDS_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
-		add_type_to_configuration(dir, obj);
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_NS_SERVER_RT_TYPE_NAME, RX_NS_SERVER_RT_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
-		add_type_to_configuration(dir, obj);
+		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_COMMANDS_MANAGER_TYPE_NAME, RX_COMMANDS_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, obj, false);
+		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_NS_SERVER_RT_TYPE_NAME, RX_NS_SERVER_RT_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, obj, false);
 		// pool type
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_POOL_TYPE_NAME, RX_POOL_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
+		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_POOL_TYPE_NAME, RX_POOL_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_internal });
 		obj->complex_data().register_const_value_static("IOPool", false);
 		obj->complex_data().register_const_value_static("Threads", (uint8_t)1);
 		obj->complex_data().register_simple_value_static("Queue", true, (uint8_t)0);
 		obj->complex_data().register_simple_value_static("CPUTime", true, rx_time());
 		obj->complex_data().register_simple_value_static("CPU", true, (uint8_t)0);
-		add_type_to_configuration(dir, obj);
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_LOG_TYPE_NAME, RX_LOG_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
-		add_type_to_configuration(dir, obj);
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_IO_MANAGER_TYPE_NAME, RX_IO_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, true });
-		add_type_to_configuration(dir, obj);
+		add_type_to_configuration(dir, obj, false);
+		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_LOG_TYPE_NAME, RX_LOG_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, obj, false);
+		obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_IO_MANAGER_TYPE_NAME, RX_IO_MANAGER_TYPE_ID, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_internal });
+		add_type_to_configuration(dir, obj, false);
 	}
+	BUILD_LOG_INFO("system_classes_builder", 900, "System types built.");
+	return true;
 }
 
 
 // Class sys_internal::builders::port_classes_builder 
 
 
-void port_classes_builder::build (platform_root::smart_ptr root)
+rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 {
+	BUILD_LOG_INFO("port_classes_builder", 900, "Building port types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_PORT_CLASSES_NAME);
 	if (dir)
 	{// physical ports
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_PHYSICAL_PORT_TYPE_NAME, RX_PHYSICAL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TTY_PORT_TYPE_NAME, RX_TTY_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_ETHERNET_PORT_TYPE_NAME, RX_ETHENERT_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_UDP_PORT_TYPE_NAME, RX_UDP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_PORT_TYPE_NAME, RX_TCP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
+		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_PHYSICAL_PORT_TYPE_NAME, RX_PHYSICAL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, true);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TTY_PORT_TYPE_NAME, RX_TTY_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_ETHERNET_PORT_TYPE_NAME, RX_ETHENERT_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_UDP_PORT_TYPE_NAME, RX_UDP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_PORT_TYPE_NAME, RX_TCP_PORT_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, true);
 		// tcp/ip port types
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_LISTEN_PORT_TYPE_NAME, RX_TCP_LISTEN_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_SERVER_PORT_TYPE_NAME, RX_TCP_SERVER_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_CLIENT_PORT_TYPE_NAME, RX_TCP_CLIENT_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, true });
-		add_type_to_configuration(dir, port);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_LISTEN_PORT_TYPE_NAME, RX_TCP_LISTEN_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_SERVER_PORT_TYPE_NAME, RX_TCP_SERVER_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TCP_CLIENT_PORT_TYPE_NAME, RX_TCP_CLIENT_PORT_TYPE_ID, RX_TCP_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system });
+		add_type_to_configuration(dir, port, false);
 		// transport ports
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TRANSPORT_PORT_TYPE_NAME, RX_TRANSPORT_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, true} );
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_VT00_TYPE_NAME, RX_VT00_TYPE_ID, RX_TRANSPORT_PORT_TYPE_ID, true} );
-		add_type_to_configuration(dir, port);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_TRANSPORT_PORT_TYPE_NAME, RX_TRANSPORT_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, namespace_item_attributes::namespace_item_system } );
+		add_type_to_configuration(dir, port, true);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_VT00_TYPE_NAME, RX_VT00_TYPE_ID, RX_TRANSPORT_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system } );
+		add_type_to_configuration(dir, port, false);
 		// protocol ports
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_PROTOCOL_PORT_TYPE_NAME, RX_PROTOCOL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, true} );
-		add_type_to_configuration(dir, port);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_CONSOLE_TYPE_NAME, RX_CONSOLE_TYPE_ID, RX_PROTOCOL_PORT_TYPE_ID, true} );
-		add_type_to_configuration(dir, port);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_PROTOCOL_PORT_TYPE_NAME, RX_PROTOCOL_PORT_TYPE_ID, RX_CLASS_PORT_BASE_ID, namespace_item_attributes::namespace_item_system } );
+		add_type_to_configuration(dir, port, true);
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_CONSOLE_TYPE_NAME, RX_CONSOLE_TYPE_ID, RX_PROTOCOL_PORT_TYPE_ID, namespace_item_attributes::namespace_item_system } );
+		add_type_to_configuration(dir, port, false);
 	}
+	BUILD_LOG_INFO("port_classes_builder", 900, "Port types built.");
+	return true;
 }
 
 
 // Class sys_internal::builders::system_objects_builder 
 
 
-void system_objects_builder::build (platform_root::smart_ptr root)
+rx_result system_objects_builder::do_build (platform_root::smart_ptr root)
 {
+	BUILD_LOG_INFO("system_objects_builder", 900, "Building system objects...");
 	//auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
 	//if (dir)
 	//{
@@ -413,6 +432,8 @@ void system_objects_builder::build (platform_root::smart_ptr root)
 	//	auto app = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::application_type>(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, true);
 	//	//add_object_to_configuration(dir, app);
 	//}
+	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
+	return true;
 }
 
 
