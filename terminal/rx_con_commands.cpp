@@ -381,7 +381,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 		uint64_t second_tick = rx_get_us_ticks();
 		double ms = (double)(second_tick - first_tick) / 1000.0;
 		snprintf(buffer, sizeof(buffer), "Console log test %d passed. Delay time: %g ms...", (int)i, ms);
-		CONSOLE_LOG_INFO("log",100,buffer);
+		CONSOLE_LOG_TRACE("log",0,buffer);
 		out << buffer << "\r\n";
 		spans[i] = ms;
 		rx_msleep(10);
@@ -421,12 +421,74 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 	auto ret = rx_gate::instance().read_log(query, result);
 	if (ret)
 	{
-		for (auto one : result)
-		{
-			one.dump_to_stream(out);
-		}
+		list_log_options options;
+		options.list_level = false;
+		options.list_code = false;
+		options.list_library = false;
+		options.list_source = false;
+		options.list_dates = false;
+		dump_log_items(result, options, out, err, ctx);
 	}
 	return true;
+}
+
+bool log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	rx_table_type table(items.size() + 1);
+	table[0].emplace_back("Time");
+	table[0].emplace_back("Type");
+	if (options.list_source)
+		table[0].emplace_back("Source");
+	if (options.list_level)
+		table[0].emplace_back("Level");
+	if (options.list_library)
+		table[0].emplace_back("Library");
+	table[0].emplace_back("Message");
+	if (options.list_code)
+		table[0].emplace_back("Source Code");
+
+	size_t idx = 1;
+	for (const auto& one : items)
+	{
+		table[idx].emplace_back(one.when.get_string(options.list_dates));
+		
+		table[idx].emplace_back(create_log_type_cell(one.event_type));
+		if (options.list_source)
+			table[idx].emplace_back(one.source);
+		if (options.list_level)
+			table[idx].emplace_back(std::to_string(one.level));
+		if (options.list_library)
+			table[idx].emplace_back(one.library);
+		table[idx].emplace_back(one.message);
+		if (options.list_code)
+			table[idx].emplace_back(one.code);
+		idx++;
+	}
+
+	rx_dump_table(table, out, true, false);
+
+	return true;
+}
+
+rx_table_cell_struct log_command::create_log_type_cell (log::log_event_type type)
+{
+	switch (type)
+	{
+	case log::log_event_type::info_log_event:
+		return rx_table_cell_struct{ "INFO", ANSI_RX_LOG_INFO, ANSI_COLOR_RESET };
+	case log::log_event_type::warning_log_event:
+		return rx_table_cell_struct{ "WARNING", ANSI_RX_LOG_WARNING, ANSI_COLOR_RESET };
+	case log::log_event_type::error_log_event:
+		return rx_table_cell_struct{ "ERROR", ANSI_RX_LOG_ERROR, ANSI_COLOR_RESET };
+	case log::log_event_type::critical_log_event:
+		return rx_table_cell_struct{ "CRITICAL", ANSI_RX_LOG_CRITICAL, ANSI_COLOR_RESET };
+	case log::log_event_type::debug_log_event:
+		return rx_table_cell_struct{ "DEBUG", ANSI_RX_LOG_DEBUG, ANSI_COLOR_RESET };
+	case log::log_event_type::trace_log_event:
+		return rx_table_cell_struct{ "TRACE", ANSI_RX_LOG_TRACE, ANSI_COLOR_RESET };
+	default:
+		return rx_table_cell_struct{ "***UNKNOWN***", ANSI_RX_LOG_UNKNOWN, ANSI_COLOR_RESET };
+	}
 }
 
 

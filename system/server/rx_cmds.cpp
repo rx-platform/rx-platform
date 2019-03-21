@@ -381,11 +381,7 @@ bool console_client::is_postponed () const
 
 const string_type& console_client::get_console_terminal ()
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
-	}
+	static string_type ret(get_terminal_info());
 	return ret;
 }
 
@@ -574,6 +570,16 @@ bool console_client::do_commands (string_array&& lines, memory::buffer_ptr out_b
 		, get_executer()
 		);
 	return true;
+}
+
+string_type console_client::get_terminal_info ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
+	}
+	return ret;
 }
 
 

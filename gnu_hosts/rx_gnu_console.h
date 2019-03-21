@@ -79,6 +79,10 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       string_type get_default_name () const;
 
+      string_type defualt_system_storage_reference () const;
+
+      static string_type get_gnu_interactive_info ();
+
 
   protected:
 

@@ -495,20 +495,20 @@ rx_result rx_platform_directory::delete_item (const string_type& path)
 rx_result_with<rx_directory_ptr> rx_platform_directory::add_sub_directory (const string_type& path)
 {
 	if (path.empty())
-		return "Invalid directory name!";
+		return "Invalid directory name:"s + path;
 	auto idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx != string_type::npos)
 	{// plain name just
 		string_type name(path.substr(idx + 1));
 		auto where = get_sub_directory(path.substr(0, idx));
 		if (!where)
-			return "Directory not found!";
+			return "Directory "s + path.substr(0, idx) + " not found!";
 		else
 			return where->add_sub_directory(name);
 	}
 	if (path.empty() || !rx_is_valid_namespace_name(path))
 	{
-		return "Invalid directory name!";
+		return "Invalid directory name:"s + path;
 	}
 	rx_directory_ptr new_dir = rx_create_reference<sys_internal::internal_ns::user_directory>(path);
 	auto result = add_sub_directory(new_dir);

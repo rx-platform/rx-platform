@@ -58,11 +58,13 @@ rx_result simplified_yaml_reader::parse_configuration (const string_type& input_
 	string_type key;
 	string_type value;
 	int level;
+	int line_number = -1;
 	while (std::getline(stream, line))
 	{
+        line_number++;
 		if (line.empty() || line[0] == '#')
 			continue;
-		auto result = parse_yaml_line(line, key, value, level);
+		auto result = parse_yaml_line(line, key, value, line_number, level);
 		if (!result)
 			return result;
 		if (!key.empty())
@@ -71,7 +73,7 @@ rx_result simplified_yaml_reader::parse_configuration (const string_type& input_
 	return true;
 }
 
-rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, string_type& key, string_type& value, int& level)
+rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, string_type& key, string_type& value, const int line_number, int& level)
 {
 
 	static const string_type delimeters(" \t\r\n");
@@ -99,6 +101,11 @@ rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, stri
 				idx_key_start = idx;
 				continue;
 			}
+			else if (one == '-')
+			{
+				return "YAML parser does not support structures!\r\nError at position "s
+					+ std::to_string(line_number) + "," + std::to_string(idx);
+			}
 			else
 			{
 				level++;
@@ -107,11 +114,7 @@ rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, stri
 			break;
 		}
 		case yaml_parsing_state::extracting_key:
-		{
-			if (one == '-')
-			{
-				return "YAML parser does not support structures!";
-			}
+		{			
 			if (!rx_platform::rx_is_valid_name_character(one) && one != '.')
 			{
 				state = yaml_parsing_state::searching_assigment;

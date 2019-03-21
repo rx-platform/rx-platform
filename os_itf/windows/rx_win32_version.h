@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 10
+#define RX_HAL_BUILD_NUMBER 11
 
 /*********************************************************************************
 
@@ -15,5 +15,6 @@
 0.10.8. windows compiler version written in the right way
 0.10.9. changed the name
 0.10.10. pid retried internal
+0.10.11. version reading
 
 *********************************************************************************/

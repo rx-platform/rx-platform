@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_file_storage.h
+*  storage\rx_file_storage.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -32,14 +32,14 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 #define RX_JSON_FILE_EXTESION "rxjson"
 #define RX_BINARY_FILE_EXTESION "rxbin"
 
 
-namespace host {
+namespace storage {
 
 namespace files {
 
@@ -47,56 +47,11 @@ namespace files {
 
 
 
-class file_system_storage : public rx_platform::hosting::rx_platform_storage  
-{
-	DECLARE_REFERENCE_PTR(file_system_storage);
-
-  public:
-      file_system_storage();
-
-      ~file_system_storage();
-
-
-      string_type get_storage_info ();
-
-      sys_handle_t get_host_test_file (const string_type& path);
-
-      sys_handle_t get_host_console_script_file (const string_type& path);
-
-      const string_type& get_license ();
-
-      rx_result init_storage (const string_type& storage_reference);
-
-      rx_result deinit_storage ();
-
-      rx_result list_storage (std::vector<rx_platform::hosting::rx_storage_item_ptr>& items);
-
-      string_type get_storage_reference ();
-
-
-  protected:
-
-  private:
-
-      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_platform::hosting::rx_storage_item_ptr>& items);
-
-
-
-      string_type root_;
-
-
-};
-
-
-
-
-
-
-class rx_file_item : public rx_platform::hosting::rx_storage_item  
+class rx_file_item : public rx_platform::storage_base::rx_storage_item  
 {
 
   public:
-      rx_file_item (const string_type& path, const string_type& file_path);
+      rx_file_item (const string_type& path, const string_type& name, const string_type& serialization_type, const string_type& file_path);
 
       ~rx_file_item();
 
@@ -108,6 +63,8 @@ class rx_file_item : public rx_platform::hosting::rx_storage_item
       size_t get_size () const;
 
       rx_result delete_item ();
+
+      string_type get_file_path () const;
 
 
   protected:
@@ -130,11 +87,72 @@ class rx_file_item : public rx_platform::hosting::rx_storage_item
 
 
 
+class file_system_storage : public rx_platform::storage_base::rx_platform_storage  
+{
+	DECLARE_REFERENCE_PTR(file_system_storage);
+	typedef std::map<string_type, string_type> items_cache_type;
+
+  public:
+      file_system_storage();
+
+      ~file_system_storage();
+
+
+      string_type get_storage_info ();
+
+      sys_handle_t get_host_test_file (const string_type& path);
+
+      sys_handle_t get_host_console_script_file (const string_type& path);
+
+      const string_type& get_license ();
+
+      rx_result init_storage (const string_type& storage_reference);
+
+      rx_result deinit_storage ();
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      string_type get_storage_reference ();
+
+      bool is_valid_storage () const;
+
+      static string_type get_file_storage_info ();
+
+      rx_result_with<rx_storage_item_ptr> get_storage_item (const string_type& path);
+
+
+  protected:
+
+  private:
+
+      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
+
+      void add_item_to_cache (rx_file_item& item);
+
+      string_type get_file_path (const string_type& path);
+
+
+
+      items_cache_type items_cache_;
+
+
+      string_type root_;
+
+      locks::slim_lock cache_lock_;
+
+
+};
+
+
+
+
+
+
 class rx_json_file : public rx_file_item  
 {
 
   public:
-      rx_json_file (const string_type& path, const string_type& file_path);
+      rx_json_file (const string_type& path, const string_type& name, const string_type& file_path);
 
       ~rx_json_file();
 
@@ -171,7 +189,7 @@ class rx_binary_file : public rx_file_item
 {
 
   public:
-      rx_binary_file (const string_type& path, const string_type& file_path);
+      rx_binary_file (const string_type& path, const string_type& name, const string_type& file_path);
 
       ~rx_binary_file();
 
@@ -201,7 +219,7 @@ class rx_binary_file : public rx_file_item
 
 
 } // namespace files
-} // namespace host
+} // namespace storage
 
 
 

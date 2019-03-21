@@ -37,6 +37,7 @@
 #define CONSOLE_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Console",src,lvl,msg)
 #define CONSOLE_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Console",src,lvl,msg)
 #define CONSOLE_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Console",src,lvl,msg)
+#define CONSOLE_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Console",src,lvl,msg)
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
@@ -142,6 +143,14 @@ all about shutdown of a server");
 };
 
 
+struct list_log_options
+{
+	bool list_library;
+	bool list_source;
+	bool list_level;
+	bool list_code;
+	bool list_dates;
+};
 
 
 
@@ -170,6 +179,11 @@ all about doing stuff with log");
 
 
   private:
+
+      bool dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+      rx_table_cell_struct create_log_type_cell (log::log_event_type type);
+
 
 
 };

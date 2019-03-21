@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@ namespace sl_runtime {
 
 namespace instructions_runtime {
 
-// Class sl_runtime::instructions_runtime::sl_invertor 
+// Class sl_runtime::instructions_runtime::sl_invertor
 
 sl_invertor::sl_invertor()
 {
@@ -58,7 +58,7 @@ void sl_invertor::process_instruction (io_program_data& io_data, program_context
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_open_contact 
+// Class sl_runtime::instructions_runtime::sl_open_contact
 
 sl_open_contact::sl_open_contact (const bit_value& bit)
   : bit_instruction(bit)
@@ -86,7 +86,7 @@ bool sl_open_contact::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_closed_contact 
+// Class sl_runtime::instructions_runtime::sl_closed_contact
 
 sl_closed_contact::sl_closed_contact (const bit_value& bit)
   : bit_instruction(bit)
@@ -114,7 +114,7 @@ bool sl_closed_contact::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::bit_instruction 
+// Class sl_runtime::instructions_runtime::bit_instruction
 
 bit_instruction::bit_instruction (const bit_value& bit)
       : bit_(bit)
@@ -135,7 +135,7 @@ void bit_instruction::process_instruction (io_program_data& io_data, program_con
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_pos_contact 
+// Class sl_runtime::instructions_runtime::sl_pos_contact
 
 sl_pos_contact::sl_pos_contact (const bit_value& bit)
   : bit_instruction(bit)
@@ -163,7 +163,7 @@ bool sl_pos_contact::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_neg_contact 
+// Class sl_runtime::instructions_runtime::sl_neg_contact
 
 sl_neg_contact::sl_neg_contact (const bit_value& bit)
   : bit_instruction(bit)
@@ -191,7 +191,7 @@ bool sl_neg_contact::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_latch 
+// Class sl_runtime::instructions_runtime::sl_latch
 
 sl_latch::sl_latch (const bit_value& bit)
   : bit_instruction(bit)
@@ -218,7 +218,7 @@ bool sl_latch::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_unlatch 
+// Class sl_runtime::instructions_runtime::sl_unlatch
 
 sl_unlatch::sl_unlatch (const bit_value& bit)
   : bit_instruction(bit)
@@ -245,7 +245,7 @@ bool sl_unlatch::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_coil 
+// Class sl_runtime::instructions_runtime::sl_coil
 
 sl_coil::sl_coil (const bit_value& bit)
   : bit_instruction(bit)
@@ -271,7 +271,7 @@ bool sl_coil::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_closed_coil 
+// Class sl_runtime::instructions_runtime::sl_closed_coil
 
 sl_closed_coil::sl_closed_coil (const bit_value& bit)
   : bit_instruction(bit)
@@ -297,7 +297,7 @@ bool sl_closed_coil::is_active (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_compare 
+// Class sl_runtime::instructions_runtime::sl_compare
 
 sl_compare::sl_compare (const argument_value& arg1, const argument_value& arg2)
 {
@@ -346,7 +346,7 @@ void sl_compare::process_instruction (io_program_data& io_data, program_context*
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_small_compare 
+// Class sl_runtime::instructions_runtime::sl_small_compare
 
 sl_small_compare::sl_small_compare (compare_type inst_type, const argument_value& arg1, const argument_value& arg2)
       : inst_type_(inst_type)
@@ -436,7 +436,7 @@ void sl_small_compare::process_instruction (io_program_data& io_data, program_co
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_mov 
+// Class sl_runtime::instructions_runtime::sl_mov
 
 sl_mov::sl_mov (const register_value& result, const argument_value& argument)
       : argument_(argument),
@@ -476,7 +476,7 @@ void sl_mov::process_instruction (io_program_data& io_data, program_context* con
 }
 
 
-// Class sl_runtime::instructions_runtime::subprogram_instruction 
+// Class sl_runtime::instructions_runtime::subprogram_instruction
 
 subprogram_instruction::subprogram_instruction (const string_type& sub_name, int inputs, int outputs, const std::vector<argument_value>& arguments, const std::vector<register_value>& out_arguments, const rx_uuid& guid, int height)
       : sub_name_(sub_name),
@@ -570,7 +570,7 @@ int subprogram_instruction::get_ladder_size ()
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_arithmetic 
+// Class sl_runtime::instructions_runtime::sl_arithmetic
 
 sl_arithmetic::sl_arithmetic (arithmetic_type inst_type, const argument_value& arg1, const argument_value& arg2, const register_value& result)
       : inst_type_(inst_type),
@@ -616,6 +616,8 @@ void sl_arithmetic::process_instruction (io_program_data& io_data, program_conte
 				case rem_type:
 					res=val1%val2;
 					break;
+                default:
+                    res=0;
 			}
 			result_.set_value(context,res);
 		}
@@ -650,7 +652,7 @@ void sl_arithmetic::process_instruction (io_program_data& io_data, program_conte
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_logic 
+// Class sl_runtime::instructions_runtime::sl_logic
 
 sl_logic::sl_logic (logic_type inst_type, const argument_value& arg1, const argument_value& arg2, const register_value& result)
       : inst_type_(inst_type),
@@ -692,7 +694,7 @@ void sl_logic::process_instruction (io_program_data& io_data, program_context* c
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_up_counter 
+// Class sl_runtime::instructions_runtime::sl_up_counter
 
 sl_up_counter::sl_up_counter (dword number, const argument_value& preset)
   : sl_counter(number,preset)
@@ -721,7 +723,7 @@ void sl_up_counter::process_instruction (io_program_data& io_data, program_conte
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_counter 
+// Class sl_runtime::instructions_runtime::sl_counter
 
 sl_counter::sl_counter (dword number, const argument_value& preset)
       : preset_(preset),
@@ -818,7 +820,7 @@ void sl_counter::begin (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_down_counter 
+// Class sl_runtime::instructions_runtime::sl_down_counter
 
 sl_down_counter::sl_down_counter (dword number, const argument_value& preset)
   : sl_counter(number,preset)
@@ -847,7 +849,7 @@ void sl_down_counter::process_instruction (io_program_data& io_data, program_con
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_up_down_counter 
+// Class sl_runtime::instructions_runtime::sl_up_down_counter
 
 sl_up_down_counter::sl_up_down_counter (dword number, const argument_value& preset)
   : sl_counter(number,preset)
@@ -882,7 +884,7 @@ void sl_up_down_counter::process_instruction (io_program_data& io_data, program_
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_inc_dec 
+// Class sl_runtime::instructions_runtime::sl_inc_dec
 
 sl_inc_dec::sl_inc_dec (bool inc, const register_value& value)
       : value_(value),
@@ -937,7 +939,7 @@ void sl_inc_dec::process_instruction (io_program_data& io_data, program_context*
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_monostabile 
+// Class sl_runtime::instructions_runtime::sl_monostabile
 
 sl_monostabile::sl_monostabile (dword number, const argument_value& preset, dword base)
       : preset_(preset),
@@ -1004,7 +1006,7 @@ void sl_monostabile::begin (program_context* context)
 }
 
 
-// Class sl_runtime::instructions_runtime::sl_timer_inst 
+// Class sl_runtime::instructions_runtime::sl_timer_inst
 
 sl_timer_inst::sl_timer_inst (dword number, const argument_value& preset, dword base)
       : preset_(preset),

@@ -59,11 +59,10 @@ class rx_platform_builder
 
       static rx_directory_ptr buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data);
 
-
-  protected:
-
       virtual rx_result do_build (platform_root::smart_ptr root) = 0;
 
+
+  protected:
 
   private:
       rx_platform_builder(const rx_platform_builder &right);

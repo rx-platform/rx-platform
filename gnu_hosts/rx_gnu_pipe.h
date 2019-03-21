@@ -61,6 +61,8 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
 
       void get_host_info (string_array& hosts);
 
+      static string_type get_gnu_pipe_info ();
+
 
   protected:
 

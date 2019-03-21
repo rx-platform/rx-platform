@@ -33,7 +33,7 @@
 
 
 // rx_file_storage
-#include "host/rx_file_storage.h"
+#include "storage/rx_file_storage.h"
 
 
 
@@ -43,7 +43,7 @@ namespace win32 {
 
 
 
-class win32_file_system_storage : public host::files::file_system_storage  
+class win32_file_system_storage : public storage::files::file_system_storage  
 {
 	DECLARE_REFERENCE_PTR(win32_file_system_storage);
 

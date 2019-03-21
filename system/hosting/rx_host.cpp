@@ -108,19 +108,27 @@ std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type
 
 rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
 {
-	string_type config_path = rx_combine_paths(get_config_path(), "platform.yml");
+	string_type config_path = rx_combine_paths(get_config_path(), "rx-platform.yml");
 	if (!config_path.empty())
 	{
 		string_type settings_buff;
-		bool ret = false;
+		rx_result ret = false;
 		{
 			rx_source_file file;
 			if (file.open(config_path.c_str()))
 			{
 				ret = file.read_string(settings_buff);
+				if (!ret)
+				{
+					ret.register_error("error reading configuration file: "s + config_path);
+				}
+			}
+			else
+			{
+				return "error opening configuration file: "s + config_path;
 			}
 		}
-		if(ret)
+		if (ret)// just in case :)
 		{
 			std::map<string_type, string_type> config_values;
 			ret = reader.parse_configuration(settings_buff, config_values);
@@ -128,23 +136,30 @@ rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_p
 			{
 				for (auto& row : config_values)
 				{
-					if (config.namespace_data.system_storage_reference.empty() && row.first == "storage.system")
+					if (row.first == "storage.system"
+						&& config.namespace_data.system_storage_reference.empty())
 						config.namespace_data.system_storage_reference = row.second;
-					else if (config.namespace_data.user_storage_reference.empty() && row.first == "storage.user")
+					else if (row.first == "storage.user"
+						&& config.namespace_data.user_storage_reference.empty())
 						config.namespace_data.user_storage_reference = row.second;
-					else if (config.namespace_data.test_storage_reference.empty() && row.first == "storage.test")
+					else if (row.first == "storage.test"
+						&& config.namespace_data.test_storage_reference.empty())
 						config.namespace_data.test_storage_reference = row.second;
 				}
 			}
 		}
 		return ret;
 	}
+	else
+		return "configuration file not specified!";
 	return false;
 }
 
 rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config)
 {
 	rx_result ret;
+	if (config.namespace_data.system_storage_reference.empty())
+		config.namespace_data.system_storage_reference = defualt_system_storage_reference();
 	if (config.namespace_data.system_storage_reference.empty())
 		ret = "No valid system storage reference!";
 	else
@@ -186,6 +201,11 @@ rx_result rx_platform_host::deinitialize_storages ()
 	return true;
 }
 
+string_type rx_platform_host::defualt_system_storage_reference () const
+{
+	return "<embedded>";
+}
+
 
 // Class rx_platform::hosting::host_security_context 
 
@@ -211,47 +231,10 @@ bool host_security_context::is_system () const
 }
 
 
-// Class rx_platform::hosting::rx_platform_storage 
-
-rx_platform_storage::rx_platform_storage()
-{
-}
-
-
-rx_platform_storage::~rx_platform_storage()
-{
-}
-
-
-
-rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
-{
-	return false;
-}
-
-rx_result rx_platform_storage::deinit_storage ()
-{
-	return true;
-}
-
-
-// Class rx_platform::hosting::rx_storage_item 
-
-rx_storage_item::rx_storage_item (const string_type& path)
-      : path_(path)
-{
-}
-
-
-rx_storage_item::~rx_storage_item()
-{
-}
-
-
-
 // Class rx_platform::hosting::configuration_reader 
 
 
 } // namespace hosting
 } // namespace rx_platform
+
 

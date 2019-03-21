@@ -256,6 +256,14 @@ std::string rx_get_extension(const std::string& path)
 	else
 		return path.substr(idx + 1);
 }
+std::string rx_remove_extension(const std::string& path)
+{
+	auto idx = path.find_last_of(".\\/");
+	if (idx == string_type::npos || path[idx] != '.')
+		return string_type(path);
+	else
+		return path.substr(0, idx);
+}
 std::string rx_combine_paths(const std::string& path1, const std::string& path2)
 {
 	std::string path;
@@ -1247,7 +1255,7 @@ int64_t rx_time::get_useconds() const
 	return (t_value / 10);
 }
 
-std::string rx_time::get_string() const
+std::string rx_time::get_string(bool with_date) const
 {
 	if (is_null())
 		return "<null>";
@@ -1257,8 +1265,17 @@ std::string rx_time::get_string() const
 	rx_os_split_time(this, &full);
 
 	std::string ret;
-	snprintf(buff, sizeof(buff), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
-		full.year, full.month, full.day, full.hour, full.minute, full.second, full.milliseconds);
+	if (with_date)
+	{
+		snprintf(buff, sizeof(buff), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+			full.year, full.month, full.day, full.hour, full.minute, full.second, full.milliseconds);
+	}
+	else
+	{
+		snprintf(buff, sizeof(buff), "%02d:%02d:%02d.%03d",
+			full.hour, full.minute, full.second, full.milliseconds);
+	}
+
 	ret = buff;
 
 	return ret;

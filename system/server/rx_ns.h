@@ -100,7 +100,8 @@ enum namespace_item_attributes
 	namespace_item_system = 0x20,
 	namespace_item_internal = 0x40,
 	// combinations
-	namespace_item_full_access = 7,
+	namespace_item_full_type_access = 7,
+	namespace_item_full_access = 0x17,
 	namespace_item_system_access = 0x21,
 	namespace_item_internal_access = 0x61
 };

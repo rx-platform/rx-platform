@@ -36,12 +36,14 @@
 #define BUILD_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Build",src,lvl,msg)
 #define BUILD_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Build",src,lvl,msg)
 #define BUILD_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Build",src,lvl,msg)
+#define BUILD_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Build",src,lvl,msg)
 #define BUILD_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Build",src,lvl,msg)
 #define BUILD_LOG_TRACE(src,lvl,msg) RX_TRACE("Build",src,lvl,msg)
 
 // rx_internal_builders
 #include "sys_internal/rx_internal_builders.h"
 
+#include "system/storage_base/rx_storage.h"
 
 
 namespace sys_internal {
@@ -64,6 +66,29 @@ class configuration_storage_builder : public rx_platform_builder
 
 
       rx_result do_build (platform_root::smart_ptr root);
+
+
+  protected:
+
+      rx_result build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class directory_creator 
+{
+
+  public:
+
+      rx_result_with<rx_directory_ptr> get_or_create_direcotry (rx_directory_ptr from, const string_type& path);
 
 
   protected:

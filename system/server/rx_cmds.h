@@ -44,9 +44,9 @@
 
 namespace rx_platform {
 namespace prog {
-class console_program_context;
 class console_client;
 class server_console_program;
+class console_program_context;
 
 } // namespace prog
 } // namespace rx_platform
@@ -291,6 +291,8 @@ class console_client : public runtime::objects::port_runtime
       virtual void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer) = 0;
 
       void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
+
+      static string_type get_terminal_info ();
 
 
   protected:

@@ -46,9 +46,11 @@ const char* event_type_to_string(log_event_type type)
 	case info_log_event:
 		return "INFO";
 	case warning_log_event:
-		return "WARRNING";
+		return "WARNING";
 	case error_log_event:
 		return "ERROR";
+	case critical_log_event:
+		return "CRITICAL";
 	case debug_log_event:
 		return "DEBUG";
 	case trace_log_event:

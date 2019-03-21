@@ -38,6 +38,8 @@
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 
+#define RX_JSON_SERIALIZATION_TYPE "json"
+#define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
 using rx::memory::byte_order_type;
 
 

@@ -34,14 +34,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_vt100
-#include "host/rx_vt100.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_vt100
+#include "host/rx_vt100.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace host {
 namespace interactive {
@@ -185,6 +185,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       virtual rx_result setup_console (int argc, char* argv[]);
 
       virtual rx_result restore_console ();
+
+      static string_type get_interactive_info ();
 
 
   protected:

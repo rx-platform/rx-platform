@@ -36,7 +36,8 @@
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
-#include "host/rx_file_storage.h"
+#include "storage/rx_file_storage.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace testing {
@@ -63,7 +64,7 @@ storage_test_category::~storage_test_category()
 // Class testing::basic_tests::storage_test::storage_list_test 
 
 storage_list_test::storage_list_test()
-	: test_case("storage-list")
+	: test_case("list-storage")
 {
 }
 
@@ -76,70 +77,45 @@ storage_list_test::~storage_list_test()
 
 bool storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	std::vector<hosting::rx_storage_item_ptr> storage_items;
+	std::vector<rx_storage_item_ptr> storage_items;
 	auto storage = rx_gate::instance().get_host()->get_test_storage();
 	if (!storage || storage->get_storage_reference().empty())
 	{// no test storage
 		out << "Test storage not defined in platform\r\n";
 		return true;
 	}
+	out << "Listing test storage " ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+		<< storage->get_storage_info()
+		<< ANSI_COLOR_RESET "\r\nStorage reference: " ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+		<< storage->get_storage_reference()
+		<< ANSI_COLOR_RESET "\r\n\r\n";
 	auto result = storage->list_storage(storage_items);
-
-	for (auto& one : storage_items)
+	if (result)
 	{
-		rx_directory_ptr current_dir = rx_platform::rx_gate::instance().get_root_directory();
-		rx_directory_ptr temp_dir;
-		string_type path = one->get_path();
-		string_type temp_path;
-		size_t last = 0;
-		size_t next = 0;
-		while ((next = path.find(RX_DIR_DELIMETER, last)) != string_type::npos)
+		out << "Storage list succeeded:\r\n\r\n";
+		rx_table_type table;
+		rx_row_type header
 		{
-			temp_path = path.substr(last, next - last);
-			temp_dir = current_dir->get_sub_directory(temp_path);
-			if (temp_dir)
+			rx_table_cell_struct("Name [Type]"),
+			rx_table_cell_struct("Path")
+		};
+		table.emplace_back(std::move(header));
+		for (auto& one : storage_items)
+		{
+			rx_row_type row
 			{
-				current_dir = temp_dir;
-			}
-			else
-			{
-				current_dir = current_dir->add_sub_directory(temp_path);
-			}
-			last = next + 1;
+				rx_table_cell_struct(one->get_name() + "[" + one->get_serialization_type() + "]", ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET),
+				rx_table_cell_struct(one->get_path(), ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET)
+			};
+			table.emplace_back(std::move(row));
 		}
-		temp_path = path.substr(last);
-		temp_dir = current_dir->get_sub_directory(temp_path);
-		if (temp_dir)
-		{
-			current_dir = temp_dir;
-		}
-		else
-		{
-			current_dir = current_dir->add_sub_directory(temp_path);
-		}
-		rx_result result = one->open_for_read();
-		if (result)
-		{
-			auto& stream = one->read_stream();
-			int type = 0;
-			result = stream.read_header(type);
-			if (result)
-			{
-				switch (type)
-				{
-				case STREAMING_TYPE_TYPE:
-					result = read_type_from_storage(stream, current_dir);
-					break;
-				case STREAMING_TYPE_OBJECT:
-					result = read_object_from_storage(stream, current_dir);
-					break;
-				default:
-					out << "Invalid serialization type!";
-				}
-			}
-			one->close();
-		}
+		rx_dump_table(table, out, true, false);
+		out << "\r\n";
+		ctx->set_passed();
+		return true;
 	}
+	out << "Error listing storage:";
+	rx_dump_error_result(out, std::move(result));
 	ctx->set_failed();
 	return true;
 }
@@ -167,9 +143,30 @@ rx_result storage_list_test::read_type_from_storage (base_meta_reader& stream, r
 		return result;
 	if (target_type == "object_type")
 	{
-		auto dummy = rx_create_reference<meta::object_types::object_type>();
-		dummy->meta_data() = meta_data;
-		result = dummy->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+		auto created = rx_create_reference<meta::object_types::object_type>();
+		created->meta_data() = meta_data;
+		result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+		/*if (result)
+		{
+			auto create_result = result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
+				"test_object_type", "ObjectBase", created, dir
+				, ns::namespace_item_attributes::namespace_item_full_access
+				, tl::type2type< rx_platform::meta::object_types::object_type>());
+			if (create_result)
+			{
+				auto rx_type_item = create_result.value()->get_item_ptr();
+				if (rx_type_item->generate_json(out, err))
+				{
+					id = test_type->meta_data().get_id();
+					out << "Object type created\r\n";
+				}
+			}
+			else
+			{
+				out << "Error creating derived object type\r\n";
+				dump_error_result(out, result);
+			}
+		}*/
 	}
 	return result;
 }

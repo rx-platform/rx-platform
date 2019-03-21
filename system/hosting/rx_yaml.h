@@ -57,7 +57,7 @@ class simplified_yaml_reader : public configuration_reader
 
   private:
 
-      rx_result parse_yaml_line (const string_type& line, string_type& key, string_type& value, int& level);
+      rx_result parse_yaml_line (const string_type& line, string_type& key, string_type& value, const int line_number, int& level);
 
 
 

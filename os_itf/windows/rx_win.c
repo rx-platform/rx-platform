@@ -464,7 +464,15 @@ void test_client_lpc()
 	Status = NtClose(PortHandle);
 	printf("Client: NtClose result 0x%08lX\n", Status);
 }
-
+void rx_init_hal_version()
+{
+	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
+	g_ositf_version = ver_buffer;
+	SYSTEM_INFO sys;
+	ZeroMemory(&sys, sizeof(sys));
+	GetSystemInfo(&sys);
+	g_page_size = sys.dwPageSize;
+}
 void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);

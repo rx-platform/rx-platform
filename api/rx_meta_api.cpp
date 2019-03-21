@@ -73,7 +73,7 @@ rx_result rx_create_object_type(const string_type& name
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().create_type<object_type, pointers::reference_object::smart_ptr>(
-		name, base_name, prototype, ctx.directory, attributes| ns::namespace_item_attributes::namespace_item_full_access, callback, ctx.object);
+		name, base_name, prototype, ctx.directory, attributes| ns::namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
 

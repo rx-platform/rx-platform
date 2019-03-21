@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,6 +38,7 @@
 namespace rx {
 
 namespace memory {
+
 
 template<>
 bool rx_byte_swap(bool val)
@@ -87,20 +88,20 @@ uint64_t rx_byte_swap(uint64_t val)
 template<>
 float rx_byte_swap(float val)
 {
-	uint32_t temp = *((uint32_t*)&val);
+	uint32_t temp = alias_cast<uint32_t>(val);
 	temp = rx_swap_4bytes(temp);
-	return *((float*)&temp);
+	return alias_cast<float>(temp);
 }
 template<>
 double rx_byte_swap(double val)
 {
-	uint64_t temp = *((uint64_t*)&val);
+    uint64_t temp = alias_cast<uint64_t>(val);
 	temp = rx_swap_8bytes(temp);
-	return *((double*)&temp);
+	return alias_cast<double>(temp);;
 }
 
 
-// Class rx::memory::std_vector_allocator 
+// Class rx::memory::std_vector_allocator
 
 ref_counting_type std_vector_allocator::g_memory_consuption;
 
@@ -160,7 +161,7 @@ char* std_vector_allocator::get_char_buffer () const
 }
 
 
-// Class rx::memory::backward_simple_allocator 
+// Class rx::memory::backward_simple_allocator
 
 ref_counting_type backward_simple_allocator::g_memory_consuption;
 

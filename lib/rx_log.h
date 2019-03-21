@@ -35,7 +35,7 @@
 // log macros defined here
 
 #define RX_LOG_CONFIG_NAME "log"
-#define RX_LOG_SELF_PRIORITY 0x8000
+#define RX_LOG_SELF_PRIORITY 9999
 #define RELEASE_CODE_INFO ""
 
 /* if*/
@@ -54,7 +54,7 @@
 
 #define RX_LOG_TEST(msg,ev)\
  LOG_CODE_PREFIX\
- rx::log::log_object::instance().log_event_fast(rx::log::info_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY,LOG_CODE_INFO,ev, msg)\
+ rx::log::log_object::instance().log_event_fast(rx::log::trace_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, 0,LOG_CODE_INFO,ev, msg)\
  LOG_CODE_POSTFIX
 #define RX_LOG_INFO(lib,src,lvl,msg)\
  LOG_CODE_PREFIX\
@@ -67,6 +67,10 @@
 #define RX_LOG_ERROR(lib,src,lvl,msg)\
  LOG_CODE_PREFIX\
  rx::log::log_object::instance().log_event_fast(rx::log::error_log_event, lib, src, lvl,LOG_CODE_INFO,nullptr,msg)\
+ LOG_CODE_POSTFIX
+#define RX_LOG_CRITICAL(lib,src,lvl,msg)\
+ LOG_CODE_PREFIX\
+ rx::log::log_object::instance().log_event_fast(rx::log::critical_log_event, lib, src, lvl,LOG_CODE_INFO,nullptr,msg)\
  LOG_CODE_POSTFIX
 #define RX_LOG_DEBUG(lib,src,lvl,msg)\
  LOG_CODE_PREFIX\
@@ -97,8 +101,9 @@ enum log_event_type
 	info_log_event=1,
 	warning_log_event=2,
 	error_log_event=3,
-	debug_log_event=4,
-	trace_log_event=5
+	critical_log_event = 4,
+	debug_log_event=5,
+	trace_log_event=6
 };
 const char* event_type_to_string(log_event_type type);
 

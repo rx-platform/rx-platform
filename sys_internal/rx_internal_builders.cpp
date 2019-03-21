@@ -235,7 +235,6 @@ rx_directory_ptr rx_platform_builder::buid_platform_system (hosting::rx_platform
 
 rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 {
-	BUILD_LOG_INFO("root_folder_builder", 900, "Building root folder structure...");
 	root->add_sub_directory(rx_create_reference<world_directory>());
 	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
@@ -269,7 +268,6 @@ rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 
 rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 {
-	BUILD_LOG_INFO("basic_types_builder", 900, "Building basic types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
 	if (dir)
 	{
@@ -340,7 +338,6 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T>
 
 rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 {
-	BUILD_LOG_INFO("system_classes_builder", 900, "Building system types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SYSTEM_CLASSES_NAME);
 	if (dir)
 	{
@@ -382,7 +379,6 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 
 rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 {
-	BUILD_LOG_INFO("port_classes_builder", 900, "Building port types...");
 	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_PORT_CLASSES_NAME);
 	if (dir)
 	{// physical ports
@@ -424,7 +420,6 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 
 rx_result system_objects_builder::do_build (platform_root::smart_ptr root)
 {
-	BUILD_LOG_INFO("system_objects_builder", 900, "Building system objects...");
 	//auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
 	//if (dir)
 	//{

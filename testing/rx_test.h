@@ -48,6 +48,7 @@ using namespace rx;
 #define TEST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Test",src,lvl,msg)
 #define TEST_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Test",src,lvl,msg)
 #define TEST_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Test",src,lvl,msg)
+#define TEST_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Test",src,lvl,msg)
 #define TEST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Test",src,lvl,msg)
 #define TEST_LOG_TRACE(src,lvl,msg) RX_TRACE("Test",src,lvl,msg)
 

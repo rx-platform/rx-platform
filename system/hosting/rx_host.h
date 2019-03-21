@@ -42,13 +42,14 @@ struct configuration_data_t;
 #define HOST_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Host",src,lvl,msg)
 #define HOST_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Host",src,lvl,msg)
 #define HOST_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Host",src,lvl,msg)
+#define HOST_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Host",src,lvl,msg)
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
 // rx_security
 #include "lib/security/rx_security.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 
@@ -59,9 +60,9 @@ namespace rx_platform {
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // IP addresses
-	int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
-	int rx_remove_ip_address(ip_addr_ctx_t ctx);
-	int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
+int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
+int rx_remove_ip_address(ip_addr_ctx_t ctx);
+int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
 
 
 
@@ -78,90 +79,6 @@ class host_security_context : public rx::security::built_in_security_context
 
 
       bool is_system () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-class rx_storage_item;
-typedef std::unique_ptr<rx_storage_item> rx_storage_item_ptr;
-
-
-
-
-class rx_storage_item 
-{
-
-  public:
-      rx_storage_item (const string_type& path);
-
-      virtual ~rx_storage_item();
-
-
-      virtual rx_result open_for_read () = 0;
-
-      virtual rx_result open_for_write () = 0;
-
-      virtual rx_result close () = 0;
-
-      virtual base_meta_reader& read_stream () = 0;
-
-      virtual base_meta_writer& write_stream () = 0;
-
-      virtual rx_result delete_item () = 0;
-
-
-      const string_type& get_path () const
-      {
-        return path_;
-      }
-
-
-	  rx_storage_item() = delete;
-	  rx_storage_item(const rx_storage_item&) = delete;
-	  rx_storage_item(rx_storage_item&&) = delete;
-	  rx_storage_item& operator=(const rx_storage_item&) = delete;
-	  rx_storage_item& operator=(rx_storage_item&&) = delete;
-  protected:
-
-  private:
-
-
-      string_type path_;
-
-
-};
-
-
-
-
-
-
-
-class rx_platform_storage : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(rx_platform_storage);
-
-  public:
-      rx_platform_storage();
-
-      ~rx_platform_storage();
-
-
-      virtual string_type get_storage_info () = 0;
-
-      virtual rx_result init_storage (const string_type& storage_reference);
-
-      virtual rx_result deinit_storage ();
-
-      virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
-
-      virtual string_type get_storage_reference () = 0;
 
 
   protected:
@@ -194,9 +111,9 @@ class configuration_reader
 
 struct rx_host_storages
 {
-	rx_platform_storage::smart_ptr system_storage;
-	rx_platform_storage::smart_ptr user_storage;
-	rx_platform_storage::smart_ptr test_storage;
+	storage_base::rx_platform_storage::smart_ptr system_storage;
+	storage_base::rx_platform_storage::smart_ptr user_storage;
+	storage_base::rx_platform_storage::smart_ptr test_storage;
 };
 
 
@@ -238,6 +155,8 @@ class rx_platform_host
 
       virtual string_type get_default_name () const = 0;
 
+      virtual string_type defualt_system_storage_reference () const;
+
 
       rx_platform_host * get_parent ()
       {
@@ -245,19 +164,19 @@ class rx_platform_host
       }
 
 
-      rx_reference<rx_platform_storage> get_system_storage () const
+      rx_reference<storage_base::rx_platform_storage> get_system_storage () const
       {
         return system_storage_;
       }
 
 
-      rx_reference<rx_platform_storage> get_user_storage () const
+      rx_reference<storage_base::rx_platform_storage> get_user_storage () const
       {
         return user_storage_;
       }
 
 
-      rx_reference<rx_platform_storage> get_test_storage () const
+      rx_reference<storage_base::rx_platform_storage> get_test_storage () const
       {
         return test_storage_;
       }
@@ -282,11 +201,11 @@ class rx_platform_host
 
       rx_platform_host *parent_;
 
-      rx_reference<rx_platform_storage> system_storage_;
+      rx_reference<storage_base::rx_platform_storage> system_storage_;
 
-      rx_reference<rx_platform_storage> user_storage_;
+      rx_reference<storage_base::rx_platform_storage> user_storage_;
 
-      rx_reference<rx_platform_storage> test_storage_;
+      rx_reference<storage_base::rx_platform_storage> test_storage_;
 
 
 };

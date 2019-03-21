@@ -91,7 +91,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& options, rx_directory_ptr one, const string_type& name)
 {
 
-	row.emplace_back(name, ANSI_COLOR_CYAN ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+	row.emplace_back(name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
 	if (options.list_type)
 	{
 		row.emplace_back(one->get_type_name());

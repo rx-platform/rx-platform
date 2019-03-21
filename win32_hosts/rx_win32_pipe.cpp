@@ -69,13 +69,18 @@ string_type win32_pipe_host::get_default_name () const
 
 void win32_pipe_host::get_host_info (string_array& hosts)
 {
+	hosts.emplace_back(get_pipe_info());
+	host::pipe::rx_pipe_host::get_host_info(hosts);
+}
+
+string_type win32_pipe_host::get_win32_pipe_info ()
+{
 	static string_type ret;
 	if (ret.empty())
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_WIN32_PIPE_HOST_NAME, RX_WIN32_PIPE_HOST_MAJOR_VERSION, RX_WIN32_PIPE_HOST_MINOR_VERSION, RX_WIN32_PIPE_HOST_BUILD_NUMBER);
 	}
-	hosts.emplace_back(ret);
-	host::pipe::rx_pipe_host::get_host_info(hosts);
+	return ret;
 }
 
 

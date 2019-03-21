@@ -86,12 +86,7 @@ bool gnu_console_host::shutdown (const string_type& msg)
 
 void gnu_console_host::get_host_info (string_array& hosts)
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_GNU_CON_HOST_NAME, RX_GNU_CON_HOST_MAJOR_VERSION, RX_GNU_CON_HOST_MINOR_VERSION, RX_GNU_CON_HOST_BUILD_NUMBER);
-	}
-	hosts.emplace_back(ret);
+	hosts.emplace_back(get_gnu_interactive_info());
 	host::interactive::interactive_console_host::get_host_info(hosts);
 }
 
@@ -198,15 +193,34 @@ rx_result gnu_console_host::restore_console ()
 
 string_type gnu_console_host::get_config_path () const
 {
+#ifdef _DEBUG
 	string_type ret;
 	get_full_path("config", ret);
 	return ret;
+#else //_DEBUG
+	return "/etc/rx-platform/config";
+#endif //_DEBUG
 }
 
 string_type gnu_console_host::get_default_name () const
 {
 	string_type ret;
 	get_host_name(ret);
+	return ret;
+}
+
+string_type gnu_console_host::defualt_system_storage_reference () const
+{
+  return "";
+}
+
+string_type gnu_console_host::get_gnu_interactive_info ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_GNU_CON_HOST_NAME, RX_GNU_CON_HOST_MAJOR_VERSION, RX_GNU_CON_HOST_MINOR_VERSION, RX_GNU_CON_HOST_BUILD_NUMBER);
+	}
 	return ret;
 }
 

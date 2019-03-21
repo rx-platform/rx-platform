@@ -41,13 +41,20 @@ void get_full_path(const std::string& base, std::string& path)
 
 	if (GetModuleFileNameA(NULL, buff, 1024))
 	{
+		int found = 0;
 		size_t j = strlen(buff);
 		for (size_t i = j - 1; i > 0; i--)
 		{
 			if (buff[i] == L'\\')
 			{
-				buff[i + 1] = L'\0';
-				break;
+				found++;
+#ifndef _DEBUG
+				if (found == 2)
+#endif
+				{
+					buff[i + 1] = L'\0';
+					break;
+				}
 			}
 		}
 

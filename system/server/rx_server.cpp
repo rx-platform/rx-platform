@@ -83,6 +83,7 @@ rx_gate::rx_gate()
 	if(sname)
 		rx_name_ = sname;
 	lib_version_ = g_lib_version;
+	rx_init_hal_version();
 	hal_version_ = g_ositf_version;
 	
 	

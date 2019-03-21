@@ -94,6 +94,12 @@ const char* rx_get_server_name()
 const char* g_ositf_version = "ERROR!!!";
 char ver_buffer[0x100];
 rx_pid_t rx_pid;
+
+void rx_init_hal_version()
+{
+	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
+	g_ositf_version = ver_buffer;
+}
 void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
@@ -922,9 +928,15 @@ sys_handle_t rx_file(const char* path, int access, int creation)
 		break;
 	}
 
-	int mode = S_IRWXU | S_IRWXG | S_IROTH;
+	if (access != RX_FILE_OPEN_READ)
+	{
+		int mode = S_IRWXU | S_IRWXG | S_IROTH;
 
-	ret = open(path, flags, mode);
+		ret = open(path, flags, mode);
+	}
+	else
+		ret = open(path, flags);
+
 	if (ret == -1)
 	{
 		return 0;
@@ -1064,8 +1076,7 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 	char* filter;
 	DIR* dir;
 
-	strcpy(path, "/");
-	strcat(path, ipath);
+	strcpy(path, ipath);
 
 	dir = opendir(path);
 	if (dir)

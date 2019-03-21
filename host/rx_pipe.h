@@ -72,6 +72,8 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       int pipe_main (int argc, char* argv[]);
 
+      static string_type get_pipe_info ();
+
 
   protected:
 

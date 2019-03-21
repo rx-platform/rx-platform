@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_pipe.h
+*  system\storage_base\rx_storage.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,53 +27,58 @@
 ****************************************************************************/
 
 
-#ifndef rx_win32_pipe_h
-#define rx_win32_pipe_h 1
+#include "pch.h"
+
+
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 
-// rx_pipe
-#include "host/rx_pipe.h"
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
+namespace rx_platform {
 
+namespace storage_base {
 
+// Class rx_platform::storage_base::rx_platform_storage 
 
-namespace win32 {
-
-
-
-
-
-
-class win32_pipe_host : public host::pipe::rx_pipe_host  
+rx_platform_storage::rx_platform_storage()
 {
-
-  public:
-      win32_pipe_host (hosting::rx_host_storages& storage);
-
-      ~win32_pipe_host();
+}
 
 
-      string_type get_config_path () const;
-
-      string_type get_default_name () const;
-
-      void get_host_info (string_array& hosts);
-
-      static string_type get_win32_pipe_info ();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace win32
+rx_platform_storage::~rx_platform_storage()
+{
+}
 
 
 
-#endif
+rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
+{
+	return "Not implemented!!!";
+}
+
+rx_result rx_platform_storage::deinit_storage ()
+{
+	return "Not implemented!!!";
+}
+
+
+// Class rx_platform::storage_base::rx_storage_item 
+
+rx_storage_item::rx_storage_item (const string_type& path, const string_type& name, const string_type& serialization_type)
+      : path_(path),
+        name_(name),
+        serialization_type_(serialization_type)
+{
+}
+
+
+rx_storage_item::~rx_storage_item()
+{
+}
+
+
+
+} // namespace storage_base
+} // namespace rx_platform
+

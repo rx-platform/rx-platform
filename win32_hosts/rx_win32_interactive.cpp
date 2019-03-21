@@ -252,12 +252,7 @@ bool win32_console_host::shutdown (const string_type& msg)
 
 void win32_console_host::get_host_info (string_array& hosts)
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_WIN32_CON_HOST_NAME, RX_WIN32_CON_HOST_MAJOR_VERSION, RX_WIN32_CON_HOST_MINOR_VERSION, RX_WIN32_CON_HOST_BUILD_NUMBER);
-	}
-	hosts.emplace_back(ret);
+	hosts.emplace_back(get_win32_interactive_info());
 	host::interactive::interactive_console_host::get_host_info(hosts);
 }
 
@@ -357,15 +352,44 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 
 string_type win32_console_host::get_config_path () const
 {
+//#ifdef _DEBUG
 	string_type ret;
 	get_full_path("config", ret);
 	return ret;	
+//#else
+//	const char* app_data = getenv("ALLUSERSPROFILE");
+//	if (app_data)
+//	{
+//		return rx_combine_paths(app_data, "rx-platform\\config");
+//	}
+//	else
+//	{
+//		return "";
+//	}
+//#endif
 }
 
 string_type win32_console_host::get_default_name () const
 {
 	string_type ret;
 	get_host_name(ret);
+	return ret;
+}
+
+string_type win32_console_host::defualt_system_storage_reference () const
+{
+	string_type ret;
+	get_full_path("storage/rx-system-storage", ret);
+	return ret;
+}
+
+string_type win32_console_host::get_win32_interactive_info ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_WIN32_CON_HOST_NAME, RX_WIN32_CON_HOST_MAJOR_VERSION, RX_WIN32_CON_HOST_MINOR_VERSION, RX_WIN32_CON_HOST_BUILD_NUMBER);
+	}
 	return ret;
 }
 

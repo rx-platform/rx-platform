@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_file_storage.cpp
+*  storage\rx_file_storage.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -31,18 +31,18 @@
 
 
 // rx_file_storage
-#include "host/rx_file_storage.h"
+#include "storage/rx_file_storage.h"
 
 #include "rx_configuration.h"
 #include "rx_file_storage_version.h"
 #include "testing/rx_test_storage.h"
 
 
-namespace host {
+namespace storage {
 
 namespace files {
 
-// Class host::files::file_system_storage 
+// Class storage::files::file_system_storage 
 
 file_system_storage::file_system_storage()
 {
@@ -60,12 +60,7 @@ file_system_storage::~file_system_storage()
 
 string_type file_system_storage::get_storage_info ()
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
-	}
-	return ret;
+	return get_file_storage_info();
 }
 
 sys_handle_t file_system_storage::get_host_test_file (const string_type& path)
@@ -113,6 +108,10 @@ rx_result file_system_storage::init_storage (const string_type& storage_referenc
 	root_ = storage_reference;
 	string_array files, directories;
 	auto result = rx_list_files(root_, "*", files, directories);
+	if(!result)
+	{
+		result.register_error("error reading storage directory at: "s + storage_reference);
+	}
 	return result;
 }
 
@@ -121,38 +120,46 @@ rx_result file_system_storage::deinit_storage ()
 	return true;
 }
 
-rx_result file_system_storage::list_storage (std::vector<rx_platform::hosting::rx_storage_item_ptr>& items)
+rx_result file_system_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
 {
 	return recursive_list_storage("/", root_, items);
 }
 
-rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_platform::hosting::rx_storage_item_ptr>& items)
+rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
 {
 	string_type result_path;
 	string_array file_names, directory_names;
-	rx_list_files(file_path, "*", file_names, directory_names);
-	for (auto& one : directory_names)
+	auto result = rx_list_files(file_path, "*", file_names, directory_names);
+	if (result)
 	{
-		if (one == ".git")
-			continue;// skip git's folder
-		result_path = rx_combine_paths(file_path, one);
-		auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
-	}
-	for (auto& one : file_names)
-	{
-		string_type ext = rx_get_extension(one);
-		if (ext == RX_JSON_FILE_EXTESION)
+		for (auto& one : directory_names)
 		{
+			if (one == ".git")
+				continue;// skip git's folder
 			result_path = rx_combine_paths(file_path, one);
-			items.emplace_back(new rx_json_file(path, result_path));
+			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
+			if (!ret)
+				return ret;
 		}
-		else if (ext == RX_BINARY_FILE_EXTESION)
+		for (auto& one : file_names)
 		{
-			result_path = rx_combine_paths(file_path, one);
-			items.emplace_back(new rx_binary_file(path + one, result_path));
+			string_type ext = rx_get_extension(one);
+			if (ext == RX_JSON_FILE_EXTESION)
+			{
+				result_path = rx_combine_paths(file_path, one);
+				std::unique_ptr<rx_file_item> temp = std::make_unique<rx_json_file>(path, rx_remove_extension(one), result_path);
+				add_item_to_cache(*temp);
+				items.emplace_back(std::move(temp));
+				
+			}
+			else if (ext == RX_BINARY_FILE_EXTESION)
+			{
+				result_path = rx_combine_paths(file_path, one);
+				items.emplace_back(std::make_unique<rx_binary_file>(path, rx_remove_extension(one), result_path));
+			}
 		}
 	}
-	return true;
+	return result;
 }
 
 string_type file_system_storage::get_storage_reference ()
@@ -160,13 +167,51 @@ string_type file_system_storage::get_storage_reference ()
     return root_;
 }
 
+bool file_system_storage::is_valid_storage () const
+{
+	return !root_.empty();
+}
 
-// Class host::files::rx_file_item 
+string_type file_system_storage::get_file_storage_info ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
+	}
+	return ret;
+}
 
-rx_file_item::rx_file_item (const string_type& path, const string_type& file_path)
+rx_result_with<rx_storage_item_ptr> file_system_storage::get_storage_item (const string_type& path)
+{
+	locks::auto_slim_lock _(&cache_lock_);
+	string_type file_path = rx_combine_paths(root_, path);
+	return "Fuck it TODO!!!";
+}
+
+void file_system_storage::add_item_to_cache (rx_file_item& item)
+{
+	locks::auto_slim_lock _(&cache_lock_);
+	items_cache_[item.get_path()] = item.get_file_path();
+}
+
+string_type file_system_storage::get_file_path (const string_type& path)
+{
+	locks::auto_slim_lock _(&cache_lock_);
+	auto it = items_cache_.find(path);
+	if (it == items_cache_.end())
+		return "";
+	else
+		return it->second;
+}
+
+
+// Class storage::files::rx_file_item 
+
+rx_file_item::rx_file_item (const string_type& path, const string_type& name, const string_type& serialization_type, const string_type& file_path)
       : valid_(false),
         file_path_(file_path)
-	, rx_storage_item(path)
+	, rx_storage_item(path, name, serialization_type)
 {
 }
 
@@ -201,11 +246,16 @@ rx_result rx_file_item::delete_item ()
 	return result == RX_OK ? true : false;
 }
 
+string_type rx_file_item::get_file_path () const
+{
+	return file_path_;
+}
 
-// Class host::files::rx_json_file 
 
-rx_json_file::rx_json_file (const string_type& path, const string_type& file_path)
-	: rx_file_item(path, file_path)
+// Class storage::files::rx_json_file 
+
+rx_json_file::rx_json_file (const string_type& path, const string_type& name, const string_type& file_path)
+	: rx_file_item(path, name, RX_JSON_SERIALIZATION_TYPE, file_path)
 {
 }
 
@@ -290,10 +340,10 @@ rx_result rx_json_file::close ()
 }
 
 
-// Class host::files::rx_binary_file 
+// Class storage::files::rx_binary_file 
 
-rx_binary_file::rx_binary_file (const string_type& path, const string_type& file_path)
-	: rx_file_item(path, file_path)
+rx_binary_file::rx_binary_file (const string_type& path, const string_type& name, const string_type& file_path)
+	: rx_file_item(path, name, RX_BINARY_SERIALIZATION_TYPE, file_path)
 {
 }
 
@@ -335,5 +385,5 @@ rx_result rx_binary_file::close ()
 
 
 } // namespace files
-} // namespace host
+} // namespace storage
 

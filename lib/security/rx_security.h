@@ -44,6 +44,7 @@
 #define SECURITY_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Security",src,lvl,msg)
 #define SECURITY_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Security",src,lvl,msg)
 #define SECURITY_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Security",src,lvl,msg)
+#define SECURITY_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Security",src,lvl,msg)
 #define SECURITY_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Security",src,lvl,msg)
 #define SECURITY_LOG_TRACE(src,lvl,msg) RX_TRACE("Security",src,lvl,msg)
 

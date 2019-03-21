@@ -101,14 +101,31 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 			std::cout << ANSI_STATUS_OK "\r\n";
 			interactive.run_interactive(config);
 
-			rx_platform::rx_gate::instance().stop();
+			std::cout << "Stopping rx-platform...";
+			result = rx_platform::rx_gate::instance().stop();
+			if(result)
+				std::cout << ANSI_STATUS_OK "\r\n";
+			else
+			{
+				std::cout << ANSI_STATUS_ERROR "\r\nError stopping rx-platform:\r\n";
+				rx_dump_error_result(std::cout, result);
+			}
+
 		}
 		else
 		{
 			std::cout << ANSI_STATUS_ERROR "\r\nError starting rx-platform:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
-		rx_platform::rx_gate::instance().deinitialize();
+		std::cout << "De-initializing rx-platform...";
+		result = rx_platform::rx_gate::instance().deinitialize();
+		if (result)
+			std::cout << ANSI_STATUS_OK "\r\n";
+		else
+		{
+			std::cout << ANSI_STATUS_ERROR "\r\nError deinitialize rx-platform:\r\n";
+			rx_dump_error_result(std::cout, result);
+		}
 	}
 	else
 	{
@@ -121,12 +138,8 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 
 void interactive_console_host::get_host_info (string_array& hosts)
 {
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
-	}
-	hosts.emplace_back(ret);
+	
+	hosts.emplace_back(get_interactive_info());
 	rx_platform_host::get_host_info(hosts);
 }
 
@@ -297,7 +310,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 	rx_result ret = setup_console(argc, argv);
 
 	std::cout << "\r\n"
-		<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console client"
+		<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console Host"
 		<< "\r\n======================================\r\n";
 
 	rx_platform::configuration_data_t config;
@@ -308,7 +321,7 @@ int interactive_console_host::console_main (int argc, char* argv[])
 		std::cout << "Reading configuration file...";
 		ret = read_config_file(reader, config);
 		if (ret)
-		{
+		{			
 			std::cout << ANSI_STATUS_OK "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
@@ -334,8 +347,6 @@ int interactive_console_host::console_main (int argc, char* argv[])
 					console_loop(config);
 					HOST_LOG_INFO("Main", 999, "Console Host exited.");
 					
-					std::cout << "Stopping rx-platform...";
-
 					deinitialize_storages();
 				}
 				else
@@ -367,6 +378,16 @@ rx_result interactive_console_host::setup_console (int argc, char* argv[])
 rx_result interactive_console_host::restore_console ()
 {
 	return true;
+}
+
+string_type interactive_console_host::get_interactive_info ()
+{
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
+	}
+	return ret;
 }
 
 

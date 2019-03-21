@@ -167,6 +167,7 @@ public:
 rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
 std::string rx_combine_paths(const std::string& path1, const std::string& path2);
 std::string rx_get_extension(const std::string& path);
+std::string rx_remove_extension(const std::string& path);
 
 rx_result create_directory(const std::string& dir, bool fail_on_exsists);
 rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);
@@ -519,7 +520,7 @@ public:
 	void to_asn_generalized_time(asn_generalized_time& tv) const;
 	void to_asn_binary_time(asn_binary_time& tv) const;
 	void to_timeval(timeval& tv) const;
-	std::string get_string() const;
+	std::string get_string(bool with_date = true) const;
 	void get_time_string(char* buff, size_t len) const;
 	std::string get_IEC_string() const;
 	static rx_time_struct from_IEC_string(const char* str);

@@ -70,6 +70,10 @@ void gnu_pipe_host::get_host_info (string_array& hosts)
 	host::pipe::rx_pipe_host::get_host_info(hosts);
 }
 
+string_type gnu_pipe_host::get_gnu_pipe_info ()
+{
+}
+
 
 } // namespace gnu
 
