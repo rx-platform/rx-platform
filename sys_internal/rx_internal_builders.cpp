@@ -268,35 +268,89 @@ rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 
 rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 {
-	auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
+	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
 		//build base object type
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{ RX_CLASS_OBJECT_BASE_NAME, RX_CLASS_OBJECT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+			RX_CLASS_OBJECT_BASE_NAME
+			, RX_CLASS_OBJECT_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_OBJECT_BASE_NAME
+			});
 		build_basic_object_type<object_type>(dir, obj);
 
 		//build derived object types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{ RX_CLASS_APPLICATION_BASE_NAME, RX_CLASS_APPLICATION_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
+			RX_CLASS_APPLICATION_BASE_NAME
+			, RX_CLASS_APPLICATION_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_system
+			, path + RX_DIR_DELIMETER + RX_CLASS_APPLICATION_BASE_NAME
+			});
 		build_basic_application_type<application_type>(dir, app);
-		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{ RX_CLASS_DOMAIN_BASE_NAME, RX_CLASS_DOMAIN_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{
+			RX_CLASS_DOMAIN_BASE_NAME
+			, RX_CLASS_DOMAIN_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_DOMAIN_BASE_NAME
+			});
 		build_basic_domain_type<domain_type>(dir, domain);
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{ RX_CLASS_PORT_BASE_NAME, RX_CLASS_PORT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
+			RX_CLASS_PORT_BASE_NAME
+			, RX_CLASS_PORT_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_PORT_BASE_NAME
+			});
 		build_basic_port_type<port_type>(dir, port);
 
 		//build base types, user extensible
-		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data { RX_CLASS_STRUCT_BASE_NAME, RX_CLASS_STRUCT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data {
+			RX_CLASS_STRUCT_BASE_NAME
+			, RX_CLASS_STRUCT_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_STRUCT_BASE_NAME
+			});
 		build_basic_type<basic_types::struct_type>(dir, str);
-		auto var = rx_create_reference<basic_types::variable_type>(meta::type_creation_data{ RX_CLASS_VARIABLE_BASE_NAME, RX_CLASS_VARIABLE_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto var = rx_create_reference<basic_types::variable_type>(meta::type_creation_data{
+			RX_CLASS_VARIABLE_BASE_NAME
+			, RX_CLASS_VARIABLE_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_STRUCT_BASE_NAME
+			});
 		build_basic_type<basic_types::variable_type>(dir, var);
 		
 		// build base types, code only extensible
-		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{ RX_CLASS_MAPPER_BASE_NAME, RX_CLASS_MAPPER_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{
+			RX_CLASS_MAPPER_BASE_NAME
+			, RX_CLASS_MAPPER_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_MAPPER_BASE_NAME
+			});
 		build_basic_type<basic_types::mapper_type>(dir, map);
-		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{ RX_CLASS_EVENT_BASE_NAME, RX_CLASS_EVENT_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{
+			RX_CLASS_EVENT_BASE_NAME
+			, RX_CLASS_EVENT_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_EVENT_BASE_NAME
+			});
 		build_basic_type<basic_types::event_type>(dir, evnt);
-		auto filt = rx_create_reference<basic_types::filter_type>(meta::type_creation_data{ RX_CLASS_FILTER_BASE_NAME, RX_CLASS_FILTER_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto filt = rx_create_reference<basic_types::filter_type>(meta::type_creation_data{
+			RX_CLASS_FILTER_BASE_NAME
+			, RX_CLASS_FILTER_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_FILTER_BASE_NAME
+			});
 		build_basic_type<basic_types::filter_type>(dir, filt);
-		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{ RX_CLASS_SOURCE_BASE_NAME, RX_CLASS_SOURCE_BASE_ID, rx_node_id::null_id, namespace_item_attributes::namespace_item_system });
+		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+			RX_CLASS_SOURCE_BASE_NAME
+			, RX_CLASS_SOURCE_BASE_ID
+			, rx_node_id::null_id, namespace_item_attributes::namespace_item_system
+			, "/"s + path + RX_DIR_DELIMETER + RX_CLASS_SOURCE_BASE_NAME
+			});
 		build_basic_type<basic_types::source_type>(dir, src);
 	}
 	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");

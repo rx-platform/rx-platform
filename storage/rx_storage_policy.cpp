@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\storage_base\rx_storage.cpp
+*  storage\rx_storage_policy.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,60 +30,42 @@
 #include "pch.h"
 
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
+// rx_storage_policy
+#include "storage/rx_storage_policy.h"
 
 
 
-namespace rx_platform {
+namespace storage {
 
-namespace storage_base {
+namespace storage_policy {
 
-// Class rx_platform::storage_base::rx_platform_storage 
+// Class storage::storage_policy::file_path_addresing_policy 
 
-rx_platform_storage::rx_platform_storage()
+
+string_type file_path_addresing_policy::get_file_path (const meta::meta_data& meta) const
 {
+	locks::const_auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
+	auto it = items_cache_.find(meta.get_id());
+	if (it == items_cache_.end())
+		return "";
+	else
+		return it->second;
+}
+
+string_type file_path_addresing_policy::get_new_file_path (const meta::meta_data& meta, const string_type& root)
+{
+	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
+	string_type file_path = rx_combine_paths(root, meta.get_path());
+	return "Fuck it TODO!!!";
+}
+
+void file_path_addresing_policy::add_file_path (const meta::meta_data& meta, const string_type& path)
+{
+	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
+	items_cache_[meta.get_id()] = path;
 }
 
 
-rx_platform_storage::~rx_platform_storage()
-{
-}
-
-
-
-rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
-{
-	return "Not implemented!!!";
-}
-
-rx_result rx_platform_storage::deinit_storage ()
-{
-	return "Not implemented!!!";
-}
-
-rx_result_with<rx_storage_item_ptr> rx_platform_storage::get_storage_item (const string_type& path)
-{
-	return"Dummy";
-}
-
-
-// Class rx_platform::storage_base::rx_storage_item 
-
-rx_storage_item::rx_storage_item (const string_type& path, const string_type& name, const string_type& serialization_type)
-      : path_(path),
-        name_(name),
-        serialization_type_(serialization_type)
-{
-}
-
-
-rx_storage_item::~rx_storage_item()
-{
-}
-
-
-
-} // namespace storage_base
-} // namespace rx_platform
+} // namespace storage_policy
+} // namespace storage
 

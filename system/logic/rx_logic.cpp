@@ -50,7 +50,7 @@ program_runtime::program_runtime()
 }
 
 program_runtime::program_runtime (const string_type& name, const rx_node_id& id, bool system)
-	: meta_data_(name, id, rx_node_id::null_id, create_attributes_from_flags(system))
+	: meta_info_(name, id, rx_node_id::null_id, create_attributes_from_flags(system), "")
 {
 }
 
@@ -98,7 +98,7 @@ bool program_runtime::load_program (base_meta_reader& stream, uint8_t type)
 
 void program_runtime::get_value (values::rx_value& val) const
 {
-	val.assign_static(0u, meta_data_.get_modified_time());
+	val.assign_static(0u, meta_info_.get_modified_time());
 }
 
 platform_item_ptr program_runtime::get_item_ptr ()
@@ -109,18 +109,18 @@ platform_item_ptr program_runtime::get_item_ptr ()
 values::rx_value program_runtime::get_value () const
 {
 	rx_value temp;
-	temp.assign_static(0u, meta_data_.get_modified_time());
+	temp.assign_static(0u, meta_info_.get_modified_time());
 	return temp;
 }
 
 rx_time program_runtime::get_created_time () const
 {
-	return meta_data_.get_created_time();
+	return meta_info_.get_created_time();
 }
 
 string_type program_runtime::get_name () const
 {
-	return meta_data_.get_name();
+	return meta_info_.get_name();
 }
 
 size_t program_runtime::get_size () const
@@ -146,9 +146,9 @@ sl_runtime::sl_program_holder& program_runtime::my_program ()
   return my_program_;
 }
 
-const meta::checkable_data& program_runtime::meta_data () const
+const meta::meta_data& program_runtime::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 

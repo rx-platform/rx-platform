@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\storage_base\rx_storage.cpp
+*  storage\rx_storage_policy.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,63 +27,51 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_storage
-#include "system/storage_base/rx_storage.h"
+#ifndef rx_storage_policy_h
+#define rx_storage_policy_h 1
 
 
 
-namespace rx_platform {
 
-namespace storage_base {
 
-// Class rx_platform::storage_base::rx_platform_storage 
 
-rx_platform_storage::rx_platform_storage()
+namespace storage {
+
+namespace storage_policy {
+
+
+
+
+
+class file_path_addresing_policy 
 {
-}
+	typedef std::map<rx_node_id, string_type> items_cache_type;
+
+  public:
+
+      string_type get_file_path (const meta::meta_data& meta) const;
+
+      string_type get_new_file_path (const meta::meta_data& meta, const string_type& root);
+
+      void add_file_path (const meta::meta_data& meta, const string_type& path);
 
 
-rx_platform_storage::~rx_platform_storage()
-{
-}
+  protected:
+
+  private:
 
 
+      locks::slim_lock cache_lock_;
 
-rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
-{
-	return "Not implemented!!!";
-}
-
-rx_result rx_platform_storage::deinit_storage ()
-{
-	return "Not implemented!!!";
-}
-
-rx_result_with<rx_storage_item_ptr> rx_platform_storage::get_storage_item (const string_type& path)
-{
-	return"Dummy";
-}
+      items_cache_type items_cache_;
 
 
-// Class rx_platform::storage_base::rx_storage_item 
-
-rx_storage_item::rx_storage_item (const string_type& path, const string_type& name, const string_type& serialization_type)
-      : path_(path),
-        name_(name),
-        serialization_type_(serialization_type)
-{
-}
+};
 
 
-rx_storage_item::~rx_storage_item()
-{
-}
+} // namespace storage_policy
+} // namespace storage
 
 
 
-} // namespace storage_base
-} // namespace rx_platform
-
+#endif

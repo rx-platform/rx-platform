@@ -35,7 +35,8 @@
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
-#define RX_JSON_FILE_EXTESION "rxjson"
+#include "rx_storage_policy.h"
+#define RX_JSON_FILE_EXTESION "json"
 #define RX_BINARY_FILE_EXTESION "rxbin"
 
 
@@ -66,6 +67,8 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       string_type get_file_path () const;
 
+      static string_type get_file_storage_info ();
+
 
   protected:
 
@@ -87,10 +90,11 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
 
 
+
+template <class policyT>
 class file_system_storage : public rx_platform::storage_base::rx_platform_storage  
 {
 	DECLARE_REFERENCE_PTR(file_system_storage);
-	typedef std::map<string_type, string_type> items_cache_type;
 
   public:
       file_system_storage();
@@ -116,10 +120,6 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       bool is_valid_storage () const;
 
-      static string_type get_file_storage_info ();
-
-      rx_result_with<rx_storage_item_ptr> get_storage_item (const string_type& path);
-
 
   protected:
 
@@ -127,18 +127,11 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
 
-      void add_item_to_cache (rx_file_item& item);
-
-      string_type get_file_path (const string_type& path);
-
-
-
-      items_cache_type items_cache_;
 
 
       string_type root_;
 
-      locks::slim_lock cache_lock_;
+      policyT cache_;
 
 
 };

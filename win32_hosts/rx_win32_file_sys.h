@@ -43,7 +43,8 @@ namespace win32 {
 
 
 
-class win32_file_system_storage : public storage::files::file_system_storage  
+template <class policyT>
+class win32_file_system_storage : public storage::files::file_system_storage<policyT>  
 {
 	DECLARE_REFERENCE_PTR(win32_file_system_storage);
 

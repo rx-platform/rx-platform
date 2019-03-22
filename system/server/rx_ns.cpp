@@ -438,6 +438,10 @@ rx_result rx_platform_directory::add_item (platform_item_ptr who)
 	auto it = sub_items_.find(name);
 	if (it == sub_items_.end())
 	{
+		// check if name is reserved
+		auto it = reserved_.find(name);
+		if (it != reserved_.end())
+			reserved_.erase(it);
 		sub_items_.emplace(name, who);
 		who->set_parent(smart_this());
 	}
@@ -563,6 +567,40 @@ bool rx_platform_directory::empty () const
 	ret = sub_directories_.empty() && sub_items_.empty();
 	structure_unlock();
 	return ret;
+}
+
+rx_result rx_platform_directory::reserve_name (const string_type& name, string_type& path)
+{
+	rx_result ret;
+	structure_lock();
+	auto it = sub_items_.find(name);
+	if (it == sub_items_.end())
+	{
+		auto it2 = reserved_.find(name);
+		if (it2 == reserved_.end())
+		{
+			reserved_.insert(name);
+			ret = true;;
+		}
+		else
+		{
+			ret.register_error("Item " + name + " already reserved");
+		}
+	}
+	else
+		ret.register_error("Item " + name + " already exists");
+	structure_unlock();
+	if (ret)
+		fill_path(path);
+	return ret;
+}
+
+rx_result rx_platform_directory::cancel_reserve (const string_type& name)
+{
+	structure_lock();
+	reserved_.erase(name);
+	structure_unlock();
+	return true;
 }
 
 template<class TImpl>

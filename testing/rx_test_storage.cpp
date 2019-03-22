@@ -36,7 +36,6 @@
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
-#include "storage/rx_file_storage.h"
 #include "model/rx_meta_internals.h"
 
 
@@ -118,57 +117,6 @@ bool storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostr
 	rx_dump_error_result(out, std::move(result));
 	ctx->set_failed();
 	return true;
-}
-
-rx_result storage_list_test::read_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
-{
-	meta::checkable_data meta_data;
-	string_type target_type;
-	auto result = stream.start_object("Meta");
-	if (!result)
-		return result;
-	result = meta_data.deserialize_checkable_definition(stream, STREAMING_TYPE_OBJECT, target_type);
-	if (!result)
-		return result;
-	result = stream.end_object();
-	return result;
-}
-
-rx_result storage_list_test::read_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir)
-{
-	meta::checkable_data meta_data;
-	string_type target_type;
-	auto result = meta_data.deserialize_checkable_definition(stream, STREAMING_TYPE_TYPE, target_type);
-	if (!result)
-		return result;
-	if (target_type == "object_type")
-	{
-		auto created = rx_create_reference<meta::object_types::object_type>();
-		created->meta_data() = meta_data;
-		result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
-		/*if (result)
-		{
-			auto create_result = result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
-				"test_object_type", "ObjectBase", created, dir
-				, ns::namespace_item_attributes::namespace_item_full_access
-				, tl::type2type< rx_platform::meta::object_types::object_type>());
-			if (create_result)
-			{
-				auto rx_type_item = create_result.value()->get_item_ptr();
-				if (rx_type_item->generate_json(out, err))
-				{
-					id = test_type->meta_data().get_id();
-					out << "Object type created\r\n";
-				}
-			}
-			else
-			{
-				out << "Error creating derived object type\r\n";
-				dump_error_result(out, result);
-			}
-		}*/
-	}
-	return result;
 }
 
 

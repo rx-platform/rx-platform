@@ -82,14 +82,14 @@
  LOG_CODE_POSTFIX
 //////////////////////////////////////////////////////////////////////////////
 
-// rx_job
-#include "lib/rx_job.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_lock
 #include "lib/rx_lock.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_job
+#include "lib/rx_job.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 
 

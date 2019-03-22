@@ -32,10 +32,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>

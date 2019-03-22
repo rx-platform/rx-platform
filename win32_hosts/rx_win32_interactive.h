@@ -37,6 +37,7 @@
 // rx_win32_file_sys
 #include "win32_hosts/rx_win32_file_sys.h"
 
+#include "storage/rx_storage_policy.h"
 
 
 namespace win32 {

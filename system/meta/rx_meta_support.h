@@ -195,6 +195,8 @@ struct object_type_creation_data
 
       ns::namespace_item_attributes attributes;
 
+      string_type path;
+
   public:
 
   protected:
@@ -220,6 +222,8 @@ struct type_creation_data
       rx_node_id base_id;
 
       ns::namespace_item_attributes attributes;
+
+      string_type path;
 
   public:
 

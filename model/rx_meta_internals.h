@@ -288,9 +288,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data = nullptr, bool prototype = false);
-
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (const string_type& name, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data = nullptr);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (meta_data& meta, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
       query_result get_derived_types (const rx_node_id& id) const;
 
@@ -585,27 +583,35 @@ class platform_types_manager
 	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name,
 		  data::runtime_values_data* init_data, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
+		  string_type path;
+		  auto dir_result = dir->reserve_name(name, path);
+		  if (!dir_result)
+			  return dir_result.errors();
 		  std::unique_ptr<data::runtime_values_data> temp;
 		  if (init_data)
 			  temp = std::unique_ptr<data::runtime_values_data>(init_data);
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
 		  if (!item)
-		  {// TODO error, type does not exists
+		  {
+			  dir->cancel_reserve(name);
 			  return "Type "s + type_name + " does not exists!";
 		  }
 		  auto id = item->get_node_id();
 		  if (id.is_null())
-		  {// TODO error, item does not have id
+		  {
+			  dir->cancel_reserve(name);
 			  return type_name + " does not have valid Id!";
 		  }
-		  auto ret = internal_get_type_cache<T>().create_runtime(name, id, attributes, init_data);
+		  meta_data meta;
+		  meta.construct(name, rx_node_id::null_id, id, attributes, path);
+		  auto ret = internal_get_type_cache<T>().create_runtime(meta, init_data);
 		  if (ret)
 		  {
 			  if (!dir->add_item(ret.value()->get_item_ptr()))
 			  {
+				  dir->cancel_reserve(name);
 				  internal_get_type_cache<T>().delete_runtime(id);
 				  return "Unable to add "s + name + " to directory!";
-				  // TODO error, can't add this name
 			  }
 		  }
 		  return ret;
@@ -624,6 +630,12 @@ class platform_types_manager
 	  rx_result_with<typename T::RTypePtr> create_prototype_helper(const string_type& name, const rx_node_id& instance_id,
 		  const string_type& type_name, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
+		  string_type path;
+		  auto dir_result = dir->reserve_name(name, path);
+		  if (!dir_result)
+			  return dir_result.errors();
+		  else
+			  dir->cancel_reserve(name);// cancel it straight away;
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
 		  if (!item)
 		  {// TODO error, type does not exists
@@ -634,7 +646,9 @@ class platform_types_manager
 		  {// TODO error, item does not have id
 			  return type_name + " does not have valid Id!";
 		  }
-		  auto ret = internal_get_type_cache<T>().create_runtime(name, instance_id, id, attributes, nullptr, true);
+		  meta_data meta;
+		  meta.construct(name, rx_node_id::null_id, id, attributes, path);
+		  auto ret = internal_get_type_cache<T>().create_runtime(meta, nullptr, true);
 
 		  return ret;
 	  }
@@ -653,32 +667,50 @@ class platform_types_manager
 	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name
 		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
-		  if (!item)
-		  {// TODO error, type does not exists
-			  return "Type "s + base_name + " does not exists!";
+		  string_type path;
+		  auto dir_result = dir->reserve_name(name, path);
+		  if (!dir_result)
+			  return dir_result.errors();
+		  rx_node_id base_id = prototype->meta_info().get_parent();
+		  rx_node_id item_id = prototype->meta_info().get_id();
+		  string_type type_name = prototype->meta_info().get_name();
+		  if (!base_id)
+		  {
+			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
+			  if (!item)
+			  {// TODO error, type does not exists
+				  dir->cancel_reserve(name);
+				  return "Type "s + base_name + " does not exists!";
+			  }
+			  base_id = item->get_node_id();
+			  if (base_id.is_null())
+			  {// TODO error, item does not have id
+				  dir->cancel_reserve(name);
+				  return base_name + " does not have valid Id!";
+			  }
 		  }
-		  auto base_id = item->get_node_id();
-		  if (base_id.is_null())
-		  {// TODO error, item does not have id
-			  return base_name + " does not have valid Id!";
-		  }
-		  rx_node_id item_id = rx_node_id::generate_new();
+		  if(!item_id)
+			  item_id = rx_node_id::generate_new();		  
+
+		  prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
 
 		  auto result = prototype->resolve(dir);
 		  if (!result)
+		  {
+			  dir->cancel_reserve(name);
 			  return result.errors();
-
-		  prototype->meta_data().construct(name, item_id, base_id, attributes);
+		  }
 
 		  auto ret = internal_get_type_cache<T>().register_type(prototype);
 		  if (!ret)
 		  {// TODO error, didn't created runtime
+			  dir->cancel_reserve(name);
 			  return ret.errors();
 		  }
 		  if (!dir->add_item(prototype->get_item_ptr()))
 		  {
-			  internal_get_type_cache<T>().delete_type(prototype->meta_data().get_id());
+			  dir->cancel_reserve(name);
+			  internal_get_type_cache<T>().delete_type(prototype->meta_info().get_id());
 			  // TODO error, can't add this name
 			  return "Unable to add "s + name + " to directory!";
 		  }
@@ -694,7 +726,7 @@ class platform_types_manager
 		  }
 		  if (!dir->add_item(what->get_item_ptr()))
 		  {
-			  if (internal_get_simple_type_cache<T>().delete_type(what->meta_data().get_id()))
+			  if (internal_get_simple_type_cache<T>().delete_type(what->meta_info().get_id()))
 			  {
 
 			  }
@@ -888,17 +920,17 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_
 template <class typeT>
 rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 {
-	const auto& id = what->meta_data().get_id();
+	const auto& id = what->meta_info().get_id();
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_data().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_data().get_parent());
+		registered_types_.emplace(what->meta_info().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		return true;
 	}
 	else
 	{
-		return false;
+		return "Duplicated Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name();
 	}
 }
 
@@ -910,25 +942,25 @@ rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::fun
 }
 
 template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& id, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (meta_data& meta, data::runtime_values_data* init_data, bool prototype)
 {
-	rx_node_id to_create;
-	if (id.is_null() || prototype)
-		to_create = rx_node_id::generate_new(RX_USER_NAMESPACE);
+	if (meta.get_id().is_null() || prototype)
+	{
+		meta.resolve_id();
+	}
 	else
 	{
-		if (registered_objects_.find(id) != registered_objects_.end())
+		if (registered_objects_.find(meta.get_id()) != registered_objects_.end())
 		{
 			return "Duplicate Id!";
 		}
-		to_create = id;
 	}
 
 	RTypePtr ret;
 
 	rx_node_ids base;
-	base.emplace_back(type_id);
-	auto base_result = inheritance_hash_.get_base_types(type_id,base);
+	base.emplace_back(meta.get_parent());
+	auto base_result = inheritance_hash_.get_base_types(meta.get_parent(),base);
 	if (!base_result)
 		return base_result.errors();
 	for(const auto& one : base)
@@ -944,7 +976,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		ret = default_constructor_();
 
 	construct_context ctx;
-	ret->meta_data().construct(name, to_create, type_id, attributes);
+	ret->meta_info() = meta;
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -964,16 +996,10 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	}
 	if (!prototype)
 	{
-		registered_objects_.emplace(to_create, ret);
-		instance_hash_.add_to_hash_data(to_create, type_id, base);
+		registered_objects_.emplace(meta.get_id(), ret);
+		instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 	}
 	return ret;
-}
-
-template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (const string_type& name, const rx_node_id& type_id, ns::namespace_item_attributes attributes, data::runtime_values_data* init_data)
-{
-	return create_runtime(name, rx_node_id::null_id, type_id, attributes, init_data);
 }
 
 template <class typeT>
@@ -988,7 +1014,7 @@ query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 
 		if (type!=registered_types_.end())
 		{
-			ret.details.emplace_back(query_result_detail { one, type->second->meta_data().get_name() });
+			ret.details.emplace_back(query_result_detail { one, type->second->meta_info().get_name() });
 		}
 	}
 	return ret;
@@ -1034,7 +1060,7 @@ rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
 	{
-		auto type_id = it->second->meta_data().get_parent();
+		auto type_id = it->second->meta_info().get_parent();
 		rx_node_ids base;
 		base.emplace_back(type_id);
 		inheritance_hash_.get_base_types(type_id, base);
@@ -1054,7 +1080,7 @@ rx_result type_hash<typeT>::delete_type (rx_node_id id)
     auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_data().get_parent();
+		auto type_id = it->second->meta_info().get_parent();
 		rx_node_ids base;
 		base.emplace_back(type_id);
 		inheritance_hash_.get_base_types(type_id, base);
@@ -1163,12 +1189,12 @@ typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (co
 template <class typeT>
 rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 {
-	const auto& id = what->meta_data().get_id();
+	const auto& id = what->meta_info().get_id();
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_data().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_data().get_parent());
+		registered_types_.emplace(what->meta_info().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		return true;
 	}
 	else
@@ -1257,7 +1283,7 @@ rx_result simple_type_hash<typeT>::delete_type (rx_node_id id)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_data().get_parent();
+		auto type_id = it->second->meta_info().get_parent();
 		rx_node_ids base;
 		base.emplace_back(type_id);
 		inheritance_hash_.get_base_types(type_id, base);

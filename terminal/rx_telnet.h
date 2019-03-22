@@ -32,18 +32,18 @@
 
 
 
-// rx_io
-#include "lib/rx_io.h"
-// rx_commands
-#include "terminal/rx_commands.h"
-// rx_vt100
-#include "host/rx_vt100.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_io
+#include "lib/rx_io.h"
+// rx_commands
+#include "terminal/rx_commands.h"
+// rx_vt100
+#include "host/rx_vt100.h"
 
 
 
@@ -90,7 +90,7 @@ class telnet_client : public rx_platform::prog::console_client
 	typedef std::queue<buffer_ptr> running_buffers_type;
 
   public:
-      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr);
+      telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, const string_type& path);
 
       ~telnet_client();
 

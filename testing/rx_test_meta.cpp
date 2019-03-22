@@ -161,7 +161,7 @@ namespace meta_test {
 		 ctx->get_current_directory()->add_item(rx_type_item);
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Variable type created\r\n";
 		 }
 	 }
@@ -182,7 +182,7 @@ namespace meta_test {
 		 ctx->get_current_directory()->add_item(rx_type_item);
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
 	 }
@@ -206,7 +206,7 @@ namespace meta_test {
 		 auto rx_type_item = result.value()->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -231,7 +231,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Filter type created\r\n";
 		 }
 	 }
@@ -251,7 +251,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Event type created\r\n";
 		 }
 	 }
@@ -271,7 +271,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Source type created\r\n";
 		 }
 	 }
@@ -291,7 +291,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Mapper type created\r\n";
 		 }
 	 }
@@ -375,7 +375,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -401,7 +401,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
 	 }
@@ -423,7 +423,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Variable type created\r\n";
 		 }
 	 }
@@ -444,7 +444,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -566,7 +566,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -592,7 +592,7 @@ namespace meta_test {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 if (rx_type_item->generate_json(out, err))
 		 {
-			 id = test_type->meta_data().get_id();
+			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
 	 }

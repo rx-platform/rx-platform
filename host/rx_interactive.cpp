@@ -398,8 +398,13 @@ string_type interactive_console_client::license_message = RX_LICENSE_MESSAGE;
 interactive_console_client::interactive_console_client (interactive_console_host* host)
       : host_(host),
         exit_(false)
-		, security_context_(pointers::_create_new)
-		, console_client(runtime::objects::port_creation_data { RX_INTERACTIVE_NAME, RX_INTERACTIVE_ID, RX_CONSOLE_TYPE_ID, rx_system_application() })
+	, security_context_(pointers::_create_new)
+	, console_client(runtime::objects::port_creation_data {
+		RX_INTERACTIVE_NAME
+		, RX_INTERACTIVE_ID
+		, RX_CONSOLE_TYPE_ID
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME RX_DIR_DELIMETER_STR RX_INTERACTIVE_NAME
+		, rx_system_application() })
 {
 	security_context_->login();
 	auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);

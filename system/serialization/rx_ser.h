@@ -33,10 +33,10 @@
 
 #include "third-party/jsoncpp/json/json.h"
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 #define RX_JSON_SERIALIZATION_TYPE "json"
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"

@@ -37,18 +37,20 @@
 
 namespace gnu {
 
-// Class gnu::gnu_file_system_storage 
+// Parameterized Class gnu::gnu_file_system_storage 
 
-gnu_file_system_storage::gnu_file_system_storage()
+template <class policyT>
+gnu_file_system_storage<policyT>::gnu_file_system_storage()
 {
 }
 
 
-gnu_file_system_storage::~gnu_file_system_storage()
+template <class policyT>
+gnu_file_system_storage<policyT>::~gnu_file_system_storage()
 {
 }
 
 
-
+template class gnu_file_system_storage<storage::storage_policy::file_path_addresing_policy>;
 } // namespace gnu
 

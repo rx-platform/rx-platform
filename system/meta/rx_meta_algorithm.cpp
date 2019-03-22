@@ -198,7 +198,7 @@ template class meta_blocks_algorithm<mapper_attribute>;
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, typeT::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
@@ -247,7 +247,7 @@ rx_result basic_types_algorithm<typeT>::resolve_basic_type (typeT& whose, rx_dir
 template <>
 rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, variable_type::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
@@ -264,7 +264,7 @@ rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const varia
 template <>
 rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, variable_type::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
@@ -378,14 +378,13 @@ template class basic_types_algorithm<basic_types::source_type>;
 template class basic_types_algorithm<basic_types::mapper_type>;
 template class basic_types_algorithm<basic_types::filter_type>;
 template class basic_types_algorithm<basic_types::event_type>;
-
 // Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm 
 
 
 template <class typeT>
 rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_data_.serialize_checkable_definition(stream, type, typeT::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;

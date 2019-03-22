@@ -2,6 +2,8 @@
 
 #define RX_DIR_DELIMETER '/'
 #define RX_OBJECT_DELIMETER '.'
+#define RX_DIR_DELIMETER_STR "/"
+#define RX_OBJECT_DELIMETER_STR "."
 #define RX_DEFAULT_VARIABLE_NAME "_"
 
 // directories stuff

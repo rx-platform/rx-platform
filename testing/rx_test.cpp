@@ -472,9 +472,9 @@ size_t test_case::get_size () const
 }
 
 
-const rx_platform::meta::checkable_data& test_case::meta_data () const
+const rx_platform::meta::meta_data& test_case::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 

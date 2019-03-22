@@ -37,18 +37,20 @@
 
 namespace win32 {
 
-// Class win32::win32_file_system_storage 
+// Parameterized Class win32::win32_file_system_storage 
 
-win32_file_system_storage::win32_file_system_storage()
+template <class policyT>
+win32_file_system_storage<policyT>::win32_file_system_storage()
 {
 }
 
 
-win32_file_system_storage::~win32_file_system_storage()
+template <class policyT>
+win32_file_system_storage<policyT>::~win32_file_system_storage()
 {
 }
 
 
-
+template class win32_file_system_storage<storage::storage_policy::file_path_addresing_policy>;
 } // namespace win32
 

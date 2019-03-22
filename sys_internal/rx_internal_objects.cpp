@@ -64,7 +64,14 @@ namespace_item_attributes system_application::get_attributes () const
 // Class sys_internal::sys_objects::system_domain 
 
 system_domain::system_domain()
-	: domain_runtime(runtime::objects::domain_creation_data{ RX_NS_SYSTEM_DOM_NAME, RX_NS_SYSTEM_DOM_ID, RX_NS_SYSTEM_DOM_TYPE_ID, true, rx_application_ptr::null_ptr })
+	: domain_runtime(runtime::objects::domain_creation_data{
+	RX_NS_SYSTEM_DOM_NAME
+	, RX_NS_SYSTEM_DOM_ID
+	, RX_NS_SYSTEM_DOM_TYPE_ID
+	, true
+	, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_DOM_NAME
+	, rx_application_ptr::null_ptr 
+	})
 {
 	init_object();
 }
@@ -106,7 +113,14 @@ namespace_item_attributes unassigned_application::get_attributes () const
 // Class sys_internal::sys_objects::unssigned_domain 
 
 unssigned_domain::unssigned_domain()
-	: domain_runtime(runtime::objects::domain_creation_data{ RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, true, rx_application_ptr::null_ptr } )
+	: domain_runtime(runtime::objects::domain_creation_data{
+		RX_NS_SYSTEM_UNASS_NAME
+		, RX_NS_SYSTEM_DOM_ID
+		, RX_NS_SYSTEM_DOM_TYPE_ID
+		, true
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_UNASS_NAME
+		, rx_application_ptr::null_ptr
+	})
 {
 	my_application_ = rx_gate::instance().get_manager().get_system_app();
 	init_object();

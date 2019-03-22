@@ -35,9 +35,7 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
+#include "lib/rx_ser_lib.h"
 namespace rx_platform
 {
 struct configuration_data_t;
@@ -152,7 +150,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual bool is_valid_storage () const = 0;
 
-      virtual rx_result_with<rx_storage_item_ptr> get_storage_item (const string_type& path) = 0;
+      virtual rx_result_with<rx_storage_item_ptr> get_storage_item (const string_type& path);
 
 
   protected:

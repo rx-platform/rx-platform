@@ -73,7 +73,15 @@ bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 // Class terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
-	: runtime::objects::server_object(runtime::objects::object_creation_data{ NS_RX_COMMANDS_MANAGER_NAME, RX_COMMANDS_MANAGER_ID, RX_COMMANDS_MANAGER_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_application_ptr::null_ptr })
+	: runtime::objects::server_object(runtime::objects::object_creation_data{
+		NS_RX_COMMANDS_MANAGER_NAME
+		, RX_NS_SYSTEM_DOM_ID
+		, RX_NS_SYSTEM_DOM_TYPE_ID
+		, true
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR NS_RX_COMMANDS_MANAGER_NAME
+		, rx_application_ptr::null_ptr
+		, rx_domain_ptr::null_ptr
+		})
 {
 }
 

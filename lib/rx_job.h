@@ -32,10 +32,10 @@
 
 
 
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 
 

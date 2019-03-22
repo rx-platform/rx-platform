@@ -32,16 +32,16 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
-// rx_checkable
-#include "system/meta/rx_checkable.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 using rx_platform::meta::construct_context;
 
@@ -90,7 +90,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -100,10 +100,12 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
+
 
       const def_blocks::complex_data_type& complex_data () const;
 
-      const checkable_data& meta_data () const;
+      const meta_data& meta_info () const;
 
 
       static string_type get_type_name ()
@@ -123,7 +125,10 @@ public:
 
       def_blocks::complex_data_type complex_data_;
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
+
+
+      meta::storage_data storage_;
 
 
 };
@@ -158,7 +163,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -168,10 +173,12 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
+
 
       const def_blocks::complex_data_type& complex_data () const;
 
-      const checkable_data& meta_data () const;
+      const meta_data& meta_info () const;
 
 
       static string_type get_type_name ()
@@ -191,7 +198,10 @@ public:
 
       def_blocks::complex_data_type complex_data_;
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
+
+
+      meta::storage_data storage_;
 
 
 };
@@ -226,7 +236,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -236,8 +246,10 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
 
-      const checkable_data& meta_data () const;
+
+      const meta_data& meta_info () const;
 
       const def_blocks::complex_data_type& complex_data () const;
 
@@ -257,9 +269,12 @@ public:
   private:
 
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
 
       def_blocks::complex_data_type complex_data_;
+
+
+      meta::storage_data storage_;
 
 
 };
@@ -294,7 +309,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -304,10 +319,12 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
+
 
       const def_blocks::complex_data_type& complex_data () const;
 
-      const checkable_data& meta_data () const;
+      const meta_data& meta_info () const;
 
 
       static string_type get_type_name ()
@@ -327,7 +344,10 @@ public:
 
       def_blocks::complex_data_type complex_data_;
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
+
+
+      meta::storage_data storage_;
 
 
 };
@@ -364,7 +384,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -374,12 +394,14 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
+
 
       const def_blocks::complex_data_type& complex_data () const;
 
       const def_blocks::mapped_data_type& mapping_data () const;
 
-      const checkable_data& meta_data () const;
+      const meta_data& meta_info () const;
 
 
       static string_type get_type_name ()
@@ -401,7 +423,10 @@ public:
 
       def_blocks::mapped_data_type mapping_data_;
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
+
+
+      meta::storage_data storage_;
 
 
 };
@@ -440,7 +465,7 @@ public:
 
       rx_value get_value () const;
 
-      checkable_data& meta_data ();
+      meta_data& meta_info ();
 
       def_blocks::complex_data_type& complex_data ();
 
@@ -452,8 +477,10 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
 
-      const checkable_data& meta_data () const;
+
+      const meta_data& meta_info () const;
 
       const def_blocks::variable_data_type& variable_data () const;
 
@@ -477,13 +504,16 @@ public:
   private:
 
 
-      checkable_data meta_data_;
+      meta_data meta_info_;
 
       def_blocks::variable_data_type variable_data_;
 
       def_blocks::mapped_data_type mapping_data_;
 
       def_blocks::complex_data_type complex_data_;
+
+
+      meta::storage_data storage_;
 
 
 };

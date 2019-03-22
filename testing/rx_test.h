@@ -32,14 +32,14 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
-// rx_checkable
-#include "system/meta/rx_checkable.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_commands
+#include "terminal/rx_commands.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 
 using namespace rx;
 
@@ -202,7 +202,7 @@ public:
       size_t get_size () const;
 
 
-      const rx_platform::meta::checkable_data& meta_data () const;
+      const rx_platform::meta::meta_data& meta_info () const;
 
 
       const rx_time get_modified_time () const
@@ -232,7 +232,7 @@ public:
 
 
 
-      rx_platform::meta::checkable_data meta_data_;
+      rx_platform::meta::meta_data meta_info_;
 
 
       uint64_t start_tick_;

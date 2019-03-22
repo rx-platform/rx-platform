@@ -53,7 +53,7 @@ event_type::event_type()
 }
 
 event_type::event_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -75,9 +75,9 @@ rx_result event_type::deserialize_definition (base_meta_reader& stream, uint8_t 
 	return basic_types_algorithm<event_type>::deserialize_basic_type(*this, stream, type);
 }
 
-checkable_data& event_type::meta_data ()
+meta_data& event_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -102,15 +102,20 @@ rx_result event_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<event_type>::resolve_basic_type(*this, dir);
 }
 
+rx_result event_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const def_blocks::complex_data_type& event_type::complex_data () const
 {
   return complex_data_;
 }
 
-const checkable_data& event_type::meta_data () const
+const meta_data& event_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 
@@ -123,7 +128,7 @@ filter_type::filter_type()
 }
 
 filter_type::filter_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -145,9 +150,9 @@ rx_result filter_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return basic_types_algorithm<filter_type>::deserialize_basic_type(*this, stream, type);
 }
 
-checkable_data& filter_type::meta_data ()
+meta_data& filter_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -172,15 +177,20 @@ rx_result filter_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<filter_type>::resolve_basic_type(*this, dir);
 }
 
+rx_result filter_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const def_blocks::complex_data_type& filter_type::complex_data () const
 {
   return complex_data_;
 }
 
-const checkable_data& filter_type::meta_data () const
+const meta_data& filter_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 
@@ -193,7 +203,7 @@ mapper_type::mapper_type()
 }
 
 mapper_type::mapper_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -215,9 +225,9 @@ rx_result mapper_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return basic_types_algorithm<mapper_type>::deserialize_basic_type(*this, stream, type);
 }
 
-checkable_data& mapper_type::meta_data ()
+meta_data& mapper_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -242,10 +252,15 @@ rx_result mapper_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<mapper_type>::resolve_basic_type(*this, dir);
 }
 
-
-const checkable_data& mapper_type::meta_data () const
+rx_result mapper_type::assign_storage (rx_storage_item_ptr&& item)
 {
-  return meta_data_;
+	return storage_.assign_storage(std::move(item));
+}
+
+
+const meta_data& mapper_type::meta_info () const
+{
+  return meta_info_;
 }
 
 const def_blocks::complex_data_type& mapper_type::complex_data () const
@@ -263,7 +278,7 @@ source_type::source_type()
 }
 
 source_type::source_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -285,9 +300,9 @@ rx_result source_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return basic_types_algorithm<source_type>::deserialize_basic_type(*this, stream, type);
 }
 
-checkable_data& source_type::meta_data ()
+meta_data& source_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -312,15 +327,20 @@ rx_result source_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<source_type>::resolve_basic_type(*this, dir);
 }
 
+rx_result source_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const def_blocks::complex_data_type& source_type::complex_data () const
 {
   return complex_data_;
 }
 
-const checkable_data& source_type::meta_data () const
+const meta_data& source_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 
@@ -333,7 +353,7 @@ struct_type::struct_type()
 }
 
 struct_type::struct_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -360,9 +380,9 @@ rx_result struct_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return basic_types_algorithm<struct_type>::deserialize_basic_type(*this, stream, type);
 }
 
-checkable_data& struct_type::meta_data ()
+meta_data& struct_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -388,6 +408,11 @@ rx_result struct_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<struct_type>::resolve_basic_type(*this, dir);
 }
 
+rx_result struct_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const def_blocks::complex_data_type& struct_type::complex_data () const
 {
@@ -399,9 +424,9 @@ const def_blocks::mapped_data_type& struct_type::mapping_data () const
   return mapping_data_;
 }
 
-const checkable_data& struct_type::meta_data () const
+const meta_data& struct_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 
@@ -414,7 +439,7 @@ variable_type::variable_type()
 }
 
 variable_type::variable_type (const type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -444,13 +469,13 @@ platform_item_ptr variable_type::get_item_ptr ()
 rx_value variable_type::get_value () const
 {
 	rx_value temp;
-	temp.assign_static(meta_data_.get_version(), meta_data_.get_created_time());
+	temp.assign_static(meta_info_.get_version(), meta_info_.get_created_time());
 	return temp;
 }
 
-checkable_data& variable_type::meta_data ()
+meta_data& variable_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -482,10 +507,15 @@ rx_result variable_type::resolve (rx_directory_ptr dir)
 	return basic_types_algorithm<variable_type>::resolve_basic_type(*this, dir);
 }
 
-
-const checkable_data& variable_type::meta_data () const
+rx_result variable_type::assign_storage (rx_storage_item_ptr&& item)
 {
-  return meta_data_;
+	return storage_.assign_storage(std::move(item));
+}
+
+
+const meta_data& variable_type::meta_info () const
+{
+  return meta_info_;
 }
 
 const def_blocks::variable_data_type& variable_type::variable_data () const

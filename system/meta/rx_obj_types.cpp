@@ -54,7 +54,7 @@ application_type::application_type()
 }
 
 application_type::application_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -86,9 +86,9 @@ rx_result application_type::deserialize_definition (base_meta_reader& stream, ui
 	return object_types_algorithm<application_type>::deserialize_object_type(*this, stream, type);
 }
 
-checkable_data& application_type::meta_data ()
+meta_data& application_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -114,15 +114,20 @@ rx_result application_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<application_type>::resolve_object_type(*this, dir);
 }
 
+rx_result application_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const object_data_type& application_type::object_data () const
 {
   return object_data_;
 }
 
-const checkable_data& application_type::meta_data () const
+const meta_data& application_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 const def_blocks::complex_data_type& application_type::complex_data () const
@@ -145,7 +150,7 @@ domain_type::domain_type()
 }
 
 domain_type::domain_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -177,9 +182,9 @@ rx_result domain_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return object_types_algorithm<domain_type>::deserialize_object_type(*this, stream, type);
 }
 
-checkable_data& domain_type::meta_data ()
+meta_data& domain_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -205,15 +210,20 @@ rx_result domain_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<domain_type>::resolve_object_type(*this, dir);
 }
 
+rx_result domain_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const object_data_type& domain_type::object_data () const
 {
   return object_data_;
 }
 
-const checkable_data& domain_type::meta_data () const
+const meta_data& domain_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 const def_blocks::complex_data_type& domain_type::complex_data () const
@@ -236,7 +246,7 @@ object_type::object_type()
 }
 
 object_type::object_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -272,9 +282,9 @@ rx_result object_type::deserialize_definition (base_meta_reader& stream, uint8_t
 	return object_types_algorithm<object_type>::deserialize_object_type(*this, stream, type);
 }
 
-checkable_data& object_type::meta_data ()
+meta_data& object_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -305,15 +315,20 @@ rx_result object_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<object_type>::resolve_object_type(*this, dir);
 }
 
+rx_result object_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const object_data_type& object_type::object_data () const
 {
   return object_data_;
 }
 
-const checkable_data& object_type::meta_data () const
+const meta_data& object_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 const def_blocks::complex_data_type& object_type::complex_data () const
@@ -379,7 +394,7 @@ port_type::port_type()
 }
 
 port_type::port_type (const object_type_creation_data& data)
-	: meta_data_(data.name, data.id, data.base_id, data.attributes)
+	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
 {
 }
 
@@ -411,9 +426,9 @@ rx_result port_type::deserialize_definition (base_meta_reader& stream, uint8_t t
 	return object_types_algorithm<port_type>::deserialize_object_type(*this, stream, type);
 }
 
-checkable_data& port_type::meta_data ()
+meta_data& port_type::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -439,15 +454,20 @@ rx_result port_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<port_type>::resolve_object_type(*this, dir);
 }
 
+rx_result port_type::assign_storage (rx_storage_item_ptr&& item)
+{
+	return storage_.assign_storage(std::move(item));
+}
+
 
 const object_data_type& port_type::object_data () const
 {
   return object_data_;
 }
 
-const checkable_data& port_type::meta_data () const
+const meta_data& port_type::meta_info () const
 {
-  return meta_data_;
+  return meta_info_;
 }
 
 const def_blocks::complex_data_type& port_type::complex_data () const

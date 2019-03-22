@@ -33,12 +33,12 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -120,7 +120,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(rx_platform_directory);
 	typedef std::map<string_type, rx_platform_directory::smart_ptr>  sub_directories_type;
 	typedef std::map<string_type, platform_item_ptr> sub_items_type;
-
+	typedef std::unordered_set<string_type> reserved_type;
 
   public:
       rx_platform_directory();
@@ -182,6 +182,10 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       bool empty () const;
 
+      rx_result reserve_name (const string_type& name, string_type& path);
+
+      rx_result cancel_reserve (const string_type& name);
+
 
       const rx_time get_created () const
       {
@@ -208,6 +212,8 @@ class rx_platform_directory : public rx::pointers::reference_object
       rx_time created_;
 
       rx::locks::slim_lock structure_lock_;
+
+      reserved_type reserved_;
 
 
 };

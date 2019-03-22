@@ -48,7 +48,15 @@ namespace infrastructure {
 // Class rx_platform::infrastructure::server_rt 
 
 server_rt::server_rt()
-	: server_object(runtime::objects::object_creation_data{ RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID, RX_NS_SERVER_RT_TYPE_ID, true, rx_application_ptr::null_ptr, rx_domain_ptr::null_ptr })
+	: server_object(runtime::objects::object_creation_data{
+		RX_NS_SERVER_RT_NAME
+		, RX_NS_SYSTEM_DOM_ID
+		, RX_NS_SYSTEM_DOM_TYPE_ID
+		, true
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SERVER_RT_NAME
+		, rx_application_ptr::null_ptr
+		, rx_domain_ptr::null_ptr
+	})
 {
 }
 
@@ -250,7 +258,16 @@ rx_time server_rt::get_created_time (values::rx_value& val) const
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
       : threads_count_(count)
-	, pool_(count, name, rx_thread_id), server_object(runtime::objects::object_creation_data{ name,id, RX_POOL_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_domain_ptr::null_ptr })
+	, server_object(runtime::objects::object_creation_data{
+		name
+		, RX_NS_SYSTEM_DOM_ID
+		, RX_NS_SYSTEM_DOM_TYPE_ID
+		, true
+		, ""s + RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR + name
+		, rx_application_ptr::null_ptr
+		, rx_domain_ptr::null_ptr
+		})
+	, pool_(count, name, rx_thread_id)
 {
 	//register_const_value("count", count);
 }
@@ -285,7 +302,15 @@ void dispatcher_subscribers_job::process ()
 
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
-	, server_object(runtime::objects::object_creation_data{ WORKER_POOL_NAME, WORKER_POOL_ID, RX_POOL_TYPE_ID, true,  rx_application_ptr::null_ptr, rx_domain_ptr::null_ptr })
+	, server_object(runtime::objects::object_creation_data{
+		WORKER_POOL_NAME
+		, RX_NS_SYSTEM_DOM_ID
+		, RX_NS_SYSTEM_DOM_TYPE_ID
+		, true
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR WORKER_POOL_NAME
+		, rx_application_ptr::null_ptr
+		, rx_domain_ptr::null_ptr
+		})
 {
 }
 

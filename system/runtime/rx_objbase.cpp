@@ -98,15 +98,15 @@ string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
 
 object_runtime::object_runtime()
       : change_time_(rx_time::now())
-	, meta_data_(namespace_item_pull_access)
+	, meta_info_(namespace_item_pull_access)
 {
 }
 
 object_runtime::object_runtime (object_creation_data&& data)
       : change_time_(rx_time::now())
-	, meta_data_(data.name, data.id, data.type_id, create_attributes_from_creation_data<object_creation_data>(data) | namespace_item_pull_access)
-	, my_application_(data.application)
-	, my_domain_(data.domain)
+	, meta_info_(std::move(data.name), std::move(data.id), std::move(data.type_id), create_attributes_from_creation_data<object_creation_data>(data) | namespace_item_pull_access, std::move(data.path))
+	, my_application_(std::move(data.application))
+	, my_domain_(std::move(data.domain))
 {
 }
 
@@ -122,7 +122,7 @@ rx_value object_runtime::get_value (const string_type path) const
 	if (path.empty())
 	{
 		rx_value ret;
-		ret.assign_static(meta_data_.get_name(), get_modified_time());
+		ret.assign_static(meta_info_.get_name(), get_modified_time());
 		ret.adapt_quality_to_mode(mode_);
 		return ret;
 	}
@@ -160,7 +160,7 @@ values::rx_value object_runtime::get_value () const
 {
 	// this static object improves performance its, created only once and it is empty
 	rx_value temp;
-	temp.assign_static(meta_data_.get_version(), meta_data_.get_modified_time());
+	temp.assign_static(meta_info_.get_version(), meta_info_.get_modified_time());
 	return temp;
 }
 
@@ -176,7 +176,7 @@ bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_data_.serialize_checkable_definition(stream, type, RX_CPP_OBJECT_TYPE_NAME))
+	if (!meta_info_.serialize_meta_data(stream, type, RX_CPP_OBJECT_TYPE_NAME))
 		return false;
 	
 	data::runtime_values_data temp_data;
@@ -234,17 +234,17 @@ platform_item_ptr object_runtime::get_item_ptr ()
 
 rx_time object_runtime::get_created_time () const
 {
-	return meta_data_.get_created_time();
+	return meta_info_.get_created_time();
 }
 
 rx_time object_runtime::get_modified_time () const
 {
-	return meta_data_.get_modified_time();
+	return meta_info_.get_modified_time();
 }
 
 string_type object_runtime::get_name () const
 {
-	return meta_data_.get_name();
+	return meta_info_.get_name();
 }
 
 size_t object_runtime::get_size () const
@@ -252,9 +252,9 @@ size_t object_runtime::get_size () const
 	return sizeof(*this);
 }
 
-meta::checkable_data& object_runtime::meta_data ()
+meta::meta_data& object_runtime::meta_info ()
 {
-  return meta_data_;
+  return meta_info_;
 
 }
 
@@ -283,10 +283,15 @@ void object_runtime::fill_data (const data::runtime_values_data& data)
 	item_->fill_data(data, ctx);
 }
 
-
-const meta::checkable_data& object_runtime::meta_data () const
+rx_result object_runtime::assign_storage (rx_storage_item_ptr&& item)
 {
-  return meta_data_;
+	return storage_.assign_storage(std::move(item));
+}
+
+
+const meta::meta_data& object_runtime::meta_info () const
+{
+  return meta_info_;
 }
 
 
@@ -301,7 +306,7 @@ application_runtime::application_runtime()
 }
 
 application_runtime::application_runtime (application_creation_data&& data)
-	: domain_runtime(domain_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), data.system, rx_application_ptr::null_ptr })
+	: domain_runtime(domain_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), data.system, std::move(data.path), rx_application_ptr::null_ptr })
 {
 	my_application_ = smart_this();
 }
@@ -345,7 +350,7 @@ domain_runtime::domain_runtime()
 }
 
 domain_runtime::domain_runtime (domain_creation_data&& data)
-	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, data.application,rx_domain_ptr::null_ptr })
+	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, std::move(data.path), data.application,rx_domain_ptr::null_ptr })
 {
 	my_domain_ = smart_this();
 }
@@ -388,7 +393,7 @@ port_runtime::port_runtime()
 }
 
 port_runtime::port_runtime (port_creation_data&& data)
-	: object_runtime(object_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), true, std::move(data.application), std::move(data.application) })// every port is system objects
+	: object_runtime(object_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), true, std::move(data.path), std::move(data.application), std::move(data.application) })// every port is system objects
 {
 }
 

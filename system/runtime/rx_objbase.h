@@ -32,16 +32,16 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
-// rx_checkable
-#include "system/meta/rx_checkable.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -107,6 +107,8 @@ struct application_creation_data
 
       bool system;
 
+      string_type path;
+
   public:
 
   protected:
@@ -132,6 +134,8 @@ struct domain_creation_data
       rx_node_id type_id;
 
       bool system;
+
+      string_type path;
 
       rx_application_ptr application;
 
@@ -161,6 +165,8 @@ struct object_creation_data
 
       bool system;
 
+      string_type path;
+
       rx_application_ptr application;
 
       rx_domain_ptr domain;
@@ -189,9 +195,9 @@ object class. basic implementation of an object");
 
 	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
 	typedef std::map<string_type, size_t> items_cache_type;
-	typedef std::vector<logic::program_runtime_ptr> programs_type;
+	typedef std::vector<program_runtime_ptr> programs_type;
 
-	friend class meta::checkable_data;
+	friend class meta::meta_data;
 	friend class meta::object_types::object_type;
 
   public:
@@ -230,7 +236,7 @@ object class. basic implementation of an object");
 
       size_t get_size () const;
 
-      meta::checkable_data& meta_data ();
+      meta::meta_data& meta_info ();
 
       virtual rx_thread_handle_t get_executer () const;
 
@@ -240,8 +246,10 @@ object class. basic implementation of an object");
 
       void fill_data (const data::runtime_values_data& data);
 
+      rx_result assign_storage (rx_storage_item_ptr&& item);
 
-      const meta::checkable_data& meta_data () const;
+
+      const meta::meta_data& meta_info () const;
 
 
       const rx_mode_type& get_mode () const
@@ -283,7 +291,7 @@ object class. basic implementation of an object");
 
       programs_type programs_;
 
-      meta::checkable_data meta_data_;
+      meta::meta_data meta_info_;
 
       structure::runtime_item::smart_ptr item_;
 
@@ -291,6 +299,8 @@ object class. basic implementation of an object");
       rx_mode_type mode_;
 
       rx_time change_time_;
+
+      meta::storage_data storage_;
 
 
 };
@@ -411,6 +421,8 @@ struct port_creation_data
 
       rx_node_id type_id;
 
+      string_type path;
+
       rx_application_ptr application;
 
   public:
@@ -435,7 +447,7 @@ system port class. basic implementation of a port");
 
 	DECLARE_REFERENCE_PTR(port_runtime);
 
-	friend class meta::checkable_data;
+	friend class meta::meta_data;
 
   public:
       port_runtime (port_creation_data&& data);
@@ -480,7 +492,7 @@ system application class. contains system default application");
 	typedef std::vector<domain_runtime::smart_ptr> domains_type;
 	typedef std::vector<port_runtime::smart_ptr> ports_type;
 
-	friend class meta::checkable_data;
+	friend class meta::meta_data;
 
   public:
       application_runtime (application_creation_data&& data);

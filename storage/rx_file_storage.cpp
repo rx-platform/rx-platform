@@ -35,49 +35,52 @@
 
 #include "rx_configuration.h"
 #include "rx_file_storage_version.h"
-#include "testing/rx_test_storage.h"
 
 
 namespace storage {
 
 namespace files {
 
-// Class storage::files::file_system_storage 
+// Parameterized Class storage::files::file_system_storage 
 
-file_system_storage::file_system_storage()
-{
-#ifndef EXCLUDE_TEST_CODE
-	testing::testing_enviroment::instance().register_test_category(std::make_unique<testing::basic_tests::storage_test::storage_test_category>());
-#endif //EXCLUDE_TEST_CODE
-}
-
-
-file_system_storage::~file_system_storage()
+template <class policyT>
+file_system_storage<policyT>::file_system_storage()
 {
 }
 
 
-
-string_type file_system_storage::get_storage_info ()
+template <class policyT>
+file_system_storage<policyT>::~file_system_storage()
 {
-	return get_file_storage_info();
 }
 
-sys_handle_t file_system_storage::get_host_test_file (const string_type& path)
+
+
+template <class policyT>
+string_type file_system_storage<policyT>::get_storage_info ()
+{
+	// this function is moved there because of the template nature of file storage!!!
+	return rx_file_item::get_file_storage_info();
+}
+
+template <class policyT>
+sys_handle_t file_system_storage<policyT>::get_host_test_file (const string_type& path)
 {
 	string_type full_path = rx_combine_paths(root_ + "_test/", path);
 	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	return file;
 }
 
-sys_handle_t file_system_storage::get_host_console_script_file (const string_type& path)
+template <class policyT>
+sys_handle_t file_system_storage<policyT>::get_host_console_script_file (const string_type& path)
 {
 	string_type full_path = rx_combine_paths(root_ + "_script/", path);
 	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	return file;
 }
 
-const string_type& file_system_storage::get_license ()
+template <class policyT>
+const string_type& file_system_storage<policyT>::get_license ()
 {
 	static string_type lic_cached;
 	static bool tried_get = false;
@@ -103,7 +106,8 @@ const string_type& file_system_storage::get_license ()
 	return lic_cached;
 }
 
-rx_result file_system_storage::init_storage (const string_type& storage_reference)
+template <class policyT>
+rx_result file_system_storage<policyT>::init_storage (const string_type& storage_reference)
 {
 	root_ = storage_reference;
 	string_array files, directories;
@@ -115,17 +119,20 @@ rx_result file_system_storage::init_storage (const string_type& storage_referenc
 	return result;
 }
 
-rx_result file_system_storage::deinit_storage ()
+template <class policyT>
+rx_result file_system_storage<policyT>::deinit_storage ()
 {
 	return true;
 }
 
-rx_result file_system_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
+template <class policyT>
+rx_result file_system_storage<policyT>::list_storage (std::vector<rx_storage_item_ptr>& items)
 {
 	return recursive_list_storage("/", root_, items);
 }
 
-rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
+template <class policyT>
+rx_result file_system_storage<policyT>::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
 {
 	string_type result_path;
 	string_array file_names, directory_names;
@@ -148,7 +155,7 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 			{
 				result_path = rx_combine_paths(file_path, one);
 				std::unique_ptr<rx_file_item> temp = std::make_unique<rx_json_file>(path, rx_remove_extension(one), result_path);
-				add_item_to_cache(*temp);
+				//add_item_to_cache(*temp);
 				items.emplace_back(std::move(temp));
 				
 			}
@@ -162,50 +169,19 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 	return result;
 }
 
-string_type file_system_storage::get_storage_reference ()
+template <class policyT>
+string_type file_system_storage<policyT>::get_storage_reference ()
 {
     return root_;
 }
 
-bool file_system_storage::is_valid_storage () const
+template <class policyT>
+bool file_system_storage<policyT>::is_valid_storage () const
 {
 	return !root_.empty();
 }
 
-string_type file_system_storage::get_file_storage_info ()
-{
-	static string_type ret;
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
-	}
-	return ret;
-}
-
-rx_result_with<rx_storage_item_ptr> file_system_storage::get_storage_item (const string_type& path)
-{
-	locks::auto_slim_lock _(&cache_lock_);
-	string_type file_path = rx_combine_paths(root_, path);
-	return "Fuck it TODO!!!";
-}
-
-void file_system_storage::add_item_to_cache (rx_file_item& item)
-{
-	locks::auto_slim_lock _(&cache_lock_);
-	items_cache_[item.get_path()] = item.get_file_path();
-}
-
-string_type file_system_storage::get_file_path (const string_type& path)
-{
-	locks::auto_slim_lock _(&cache_lock_);
-	auto it = items_cache_.find(path);
-	if (it == items_cache_.end())
-		return "";
-	else
-		return it->second;
-}
-
-
+template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
 // Class storage::files::rx_file_item 
 
 rx_file_item::rx_file_item (const string_type& path, const string_type& name, const string_type& serialization_type, const string_type& file_path)
@@ -249,6 +225,17 @@ rx_result rx_file_item::delete_item ()
 string_type rx_file_item::get_file_path () const
 {
 	return file_path_;
+}
+
+string_type rx_file_item::get_file_storage_info ()
+{
+	// this function is here because of the template nature of file storage!!!
+	static string_type ret;
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
+	}
+	return ret;
 }
 
 

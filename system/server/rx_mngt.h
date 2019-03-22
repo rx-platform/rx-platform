@@ -33,14 +33,14 @@
 
 #include "lib/rx_lib.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_types.h"

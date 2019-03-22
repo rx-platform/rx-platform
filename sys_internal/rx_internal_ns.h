@@ -32,12 +32,12 @@
 
 
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -314,7 +314,7 @@ values::rx_value rx_item_implementation<TImpl>::get_value () const
 template <class TImpl>
 namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
 {
-	return impl_->meta_data().get_attributes();
+	return impl_->meta_info().get_attributes();
 }
 
 template <class TImpl>
@@ -360,7 +360,7 @@ size_t rx_item_implementation<TImpl>::get_size () const
 template <class TImpl>
 rx_node_id rx_item_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_data().get_id();
+	return impl_->meta_info().get_id();
 }
 
 
@@ -388,13 +388,13 @@ string_type rx_meta_item_implementation<TImpl>::get_type_name () const
 template <class TImpl>
 values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 {
-	return impl_->meta_data().get_value();
+	return impl_->meta_info().get_value();
 }
 
 template <class TImpl>
 namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () const
 {
-	return impl_->meta_data().get_attributes();
+	return impl_->meta_info().get_attributes();
 }
 
 template <class TImpl>
@@ -427,13 +427,13 @@ rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, 
 template <class TImpl>
 rx_time rx_meta_item_implementation<TImpl>::get_created_time () const
 {
-	return impl_->meta_data().get_created_time();
+	return impl_->meta_info().get_created_time();
 }
 
 template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_name () const
 {
-	return impl_->meta_data().get_name();
+	return impl_->meta_info().get_name();
 }
 
 template <class TImpl>
@@ -451,7 +451,7 @@ void rx_meta_item_implementation<TImpl>::fill_code_info (std::ostream& info, con
 template <class TImpl>
 rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_data().get_id();
+	return impl_->meta_info().get_id();
 }
 
 

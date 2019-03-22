@@ -32,12 +32,12 @@
 
 
 
-// rx_checkable
-#include "system/meta/rx_checkable.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
+// soft_plc
+#include "soft_logic/soft_plc.h"
 
 
 
@@ -88,7 +88,7 @@ public:
 
       sl_runtime::sl_program_holder& my_program ();
 
-      const meta::checkable_data& meta_data () const;
+      const meta::meta_data& meta_info () const;
 
 
       static string_type type_name;
@@ -106,12 +106,11 @@ public:
 
       sl_runtime::sl_program_holder my_program_;
 
-      meta::checkable_data meta_data_;
+      meta::meta_data meta_info_;
 
 
 };
 
-typedef program_runtime::smart_ptr program_runtime_ptr;
 
 
 
@@ -152,6 +151,10 @@ ladder program class.");
 } // namespace logic
 } // namespace rx_platform
 
+namespace rx_platform
+{
+typedef logic::program_runtime::smart_ptr program_runtime_ptr;
+}
 
 
 #endif

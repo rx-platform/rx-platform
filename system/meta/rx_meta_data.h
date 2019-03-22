@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\meta\rx_checkable.h
+*  system\meta\rx_meta_data.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,8 +27,8 @@
 ****************************************************************************/
 
 
-#ifndef rx_checkable_h
-#define rx_checkable_h 1
+#ifndef rx_meta_data_h
+#define rx_meta_data_h 1
 
 
 
@@ -39,6 +39,8 @@
 
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -63,30 +65,32 @@ namespace meta {
 
 
 
-class checkable_data 
+class meta_data 
 {
 
   public:
-      checkable_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, rx_time now = rx_time::now());
+      meta_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, const string_type& path, rx_time now = rx_time::now());
 
-      checkable_data (namespace_item_attributes attrs = namespace_item_null, rx_time now = rx_time::now());
+      meta_data (namespace_item_attributes attrs = namespace_item_null, rx_time now = rx_time::now());
 
 
-      bool check_in (base_meta_reader& stream);
+      rx_result check_in (base_meta_reader& stream);
 
-      bool check_out (base_meta_writer& stream) const;
+      rx_result check_out (base_meta_writer& stream) const;
 
-      bool serialize_checkable_definition (base_meta_writer& stream, uint8_t type, const string_type& object_type) const;
+      rx_result serialize_meta_data (base_meta_writer& stream, uint8_t type, const string_type& object_type) const;
 
-      bool deserialize_checkable_definition (base_meta_reader& stream, uint8_t type, string_type& object_type);
+      rx_result deserialize_meta_data (base_meta_reader& stream, uint8_t type, string_type& object_type);
 
       values::rx_value get_value () const;
 
-      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, ns::namespace_item_attributes& attributes);
+      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, ns::namespace_item_attributes& attributes, const string_type& path);
 
       bool get_system () const;
 
       static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
+
+      rx_result resolve_id ();
 
 
       const rx_node_id& get_parent () const
@@ -131,6 +135,12 @@ class checkable_data
       }
 
 
+      string_type get_path () const
+      {
+        return path_;
+      }
+
+
 
   protected:
 
@@ -150,6 +160,38 @@ class checkable_data
       rx_node_id id_;
 
       namespace_item_attributes attributes_;
+
+      string_type path_;
+
+
+};
+
+
+
+
+
+
+class storage_data 
+{
+
+  public:
+      storage_data (rx_storage_item_ptr&& item);
+
+
+      rx_result assign_storage (rx_storage_item_ptr&& item);
+
+	  storage_data() = default;
+	  ~storage_data() = default;
+	  storage_data(const storage_data&) = delete;
+	  storage_data(storage_data&&) = delete;
+	  storage_data& operator=(const storage_data&) = delete;
+	  storage_data& operator=(storage_data&&) = delete;
+  protected:
+
+  private:
+
+
+      rx_storage_item_ptr storage_;
 
 
 };

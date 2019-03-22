@@ -85,11 +85,6 @@ class storage_list_test : public test_case
 
   private:
 
-      rx_result read_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir);
-
-      rx_result read_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir);
-
-
 
 };
 

@@ -173,7 +173,7 @@ io::tcp_socket_std_buffer::smart_ptr server_telnet_socket::make_client (sys_hand
 
 // Class terminal::console::telnet_client 
 
-telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr)
+telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, const string_type& path)
       : security_context_(*addr,*local_addr),
         send_echo_(true),
         cancel_current_(false),
@@ -181,7 +181,7 @@ telnet_client::telnet_client (sys_handle_t handle, sockaddr_in* addr, sockaddr_i
         exit_(false)
 	//TODOIO
   //, io::tcp_socket_std_buffer(handle, addr,local_addr, dispatcher)
-	, console_client(runtime::objects::port_creation_data{ "telnet_stuff",55,56, rx_system_application() })
+	, console_client(runtime::objects::port_creation_data{ "telnet_stuff",55,56, path, rx_system_application() })
 {
 	vt100_parser_.set_password_mode(true);
 }
