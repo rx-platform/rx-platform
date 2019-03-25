@@ -289,13 +289,6 @@ rx_result file_exist(const std::string& file)
 	return rx_file_exsist(file.c_str())!=0;
 }
 
-
-//rx_result::rx_result(const rx_result& right)// because of the unique_ptr!
-//{
-//	OutputDebugStringA("****Called move constructor\n");
-//	if(right.result_value_)
-//		result_value_ = std::make_unique<result_erros_t>((*right.result_value_));
-//}
 rx_result::rx_result(bool value)
 {
 	if (!value)
@@ -327,6 +320,27 @@ void rx_result::register_error(string_type&& error)
 		result_value_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
 	else
 		result_value_->emplace_back(std::move(error));
+}
+
+void rx_result::register_errors(const result_erros_t& errors)
+{
+	if (!result_value_)
+		result_value_ = std::make_unique<result_erros_t>(errors);
+	else
+	{
+		for (const auto& one : errors)
+			result_value_->emplace_back(one);
+	}
+}
+void rx_result::register_errors(result_erros_t&& errors)
+{
+	if (!result_value_)
+		result_value_ = std::make_unique<result_erros_t>(std::move(errors));
+	else
+	{
+		for (auto& one : errors)
+			result_value_->emplace_back(std::move(one));
+	}
 }
 const rx_result::result_erros_t& rx_result::errors() const
 {

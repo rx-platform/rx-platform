@@ -44,9 +44,9 @@ namespace
 {
 bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
 {
-	if ((one->get_attributes()&namespace_item_execute_access) != 0)
+	if ((one->meta_info().get_attributes()&namespace_item_execute_access) != 0)
 		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_EXECUTE_COLOR, ANSI_COLOR_RESET });
-	else if ((one->get_attributes()&namespace_item_pull_access) != 0)
+	else if ((one->meta_info().get_attributes()&namespace_item_pull_access) != 0)
 		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_PULL_COLOR, ANSI_COLOR_RESET });
 	else
 		row.emplace_back(one->get_name());
@@ -57,7 +57,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 	if (options.list_attributes)
 	{
 		string_type attrs;
-		ns::fill_attributes_string(one->get_attributes(), attrs);
+		ns::fill_attributes_string(one->meta_info().get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
 	if (options.list_qualities || options.list_timestamps)
@@ -81,7 +81,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 	}
 	if (options.list_created)
 	{
-		row.emplace_back(one->get_created_time().get_string());
+		row.emplace_back(one->meta_info().get_created_time().get_string());
 	}
 
 	return true;
@@ -219,15 +219,15 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 		}
 		for (auto& one : items)
 		{
-			if ((one->get_attributes()&namespace_item_execute_access) != 0)
+			if ((one->meta_info().get_attributes()&namespace_item_execute_access) != 0)
 				row.emplace_back(one->get_name(), ANSI_RX_EXECUTE_COLOR, ANSI_COLOR_RESET);
-			else if ((one->get_attributes()&namespace_item_pull_access) != 0)
+			else if ((one->meta_info().get_attributes()&namespace_item_pull_access) != 0)
 				row.emplace_back(one->get_name(), ANSI_RX_PULL_COLOR, ANSI_COLOR_RESET);
 			else
 				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 
 		}
-		rx_dump_large_row(row, out, 60);
+		rx_dump_large_row(row, out, RX_CONSOLE_WIDTH);
 		return true;
 
 	}
@@ -388,6 +388,28 @@ bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std
 		return false;
 	}
 	return true;
+}
+
+
+// Class sys_internal::internal_ns::namespace_commands::clone_system_command 
+
+clone_system_command::clone_system_command()
+	: server_command("clone-system")
+{
+}
+
+
+clone_system_command::~clone_system_command()
+{
+}
+
+
+
+bool clone_system_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	out << "Cloning rx-platform system types and objects...\r\n";
+	err << "Nema jos jebiga!!!\r\n";
+	return false;
 }
 
 

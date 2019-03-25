@@ -76,6 +76,8 @@ public:
 	rx_result(const string_type& error);
 	rx_result(string_type&& error);
 	void register_error(string_type&& error);
+	void register_errors(result_erros_t&& errors);
+	void register_errors(const result_erros_t& errors);
 	operator bool() const;
 	const result_erros_t& errors()const;
 	rx_result(const rx_result& right) = delete;// because of the unique_ptr!
@@ -134,6 +136,26 @@ public:
 			errors_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
 		else
 			errors_->emplace_back(std::move(error));
+	}
+	void register_errors(const result_erros_t& errors)
+	{
+		if (!errors_)
+			errors_ = std::make_unique<result_erros_t>(errors);
+		else
+		{
+			for (const auto& one : errors)
+				errors_->emplace_back(one);
+		}
+	}
+	void register_errors(result_erros_t&& errors)
+	{
+		if (!errors_)
+			errors_ = std::make_unique<result_erros_t>(std::move(errors));
+		else
+		{
+			for (auto& one : errors)
+				errors_->emplace_back(std::move(one));
+		}
 	}
 	operator T() const
 	{

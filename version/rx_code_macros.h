@@ -79,6 +79,8 @@ private:\
 const char* get_help() const { return comment; }\
 DECLARE_CODE_INFO("test",maj,min,build,"class intendend for testing puprposes\r\n" comment)\
 
+#define DECLARE_CONSOLE_CODE_INFO2(maj,min,build,comment) \
+DECLARE_CODE_INFO("console",maj,min,build,"class intendend for console usage\r\n" comment)\
 
 #define DECLARE_CONSOLE_CODE_INFO(maj,min,build,comment) \
 const char* get_help() const { return comment; }\

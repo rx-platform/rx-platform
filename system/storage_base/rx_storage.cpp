@@ -62,18 +62,11 @@ rx_result rx_platform_storage::deinit_storage ()
 	return "Not implemented!!!";
 }
 
-rx_result_with<rx_storage_item_ptr> rx_platform_storage::get_storage_item (const string_type& path)
-{
-	return"Dummy";
-}
-
 
 // Class rx_platform::storage_base::rx_storage_item 
 
-rx_storage_item::rx_storage_item (const string_type& path, const string_type& name, const string_type& serialization_type)
-      : path_(path),
-        name_(name),
-        serialization_type_(serialization_type)
+rx_storage_item::rx_storage_item (const string_type& serialization_type)
+      : serialization_type_(serialization_type)
 {
 }
 

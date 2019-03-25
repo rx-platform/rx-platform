@@ -185,7 +185,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_object(name, class_name, init_data, namespace_item_attributes::namespace_item_full_access, 
+				rx_platform::api::meta::rx_create_object(name, class_name, &init_data, namespace_item_attributes::namespace_item_full_access, 
 					[=](rx_result_with<rx_object_ptr>&& result)
 					{
 						if (!result)
@@ -227,8 +227,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		data::runtime_values_data init_data;
-		rx_platform::api::meta::rx_create_object(name, class_name, init_data, namespace_item_attributes::namespace_item_full_access,
+		rx_platform::api::meta::rx_create_object(name, class_name, nullptr, namespace_item_attributes::namespace_item_full_access,
 			[=](rx_result_with<rx_object_ptr>&& result)
 			{
 				if (!result)
@@ -829,6 +828,90 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
+// Class model::meta_commands::save_command 
+
+save_command::save_command()
+	: server_command("save")
+{
+}
+
+
+save_command::~save_command()
+{
+}
+
+
+
+bool save_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	rx_reference<save_data_t> data = ctx->get_instruction_data<save_data_t>();
+	if (!data)
+	{// we just entered to command
+		bool ret = false;
+		if (!in.eof())
+		{
+			string_type path;
+			in >> path;
+			if (!path.empty())
+			{
+				api::rx_context rx_ctx = ctx->create_api_context();
+				rx_platform::api::meta::rx_save_item(path,
+					[ctx, path, this](rx_result result)
+					{
+						if (!result)
+						{
+							auto& err = ctx->get_stderr();
+							err << "Error saving item\r\n";
+							rx_dump_error_result(err, std::move(result));
+						}
+						else
+						{
+							ctx->get_stdout() << "Saved item "
+								<< ANSI_RX_OBJECT_COLOR << path << ANSI_COLOR_RESET
+								<< ".\r\n";
+						}
+						ctx->send_results(result);
+					}
+					, rx_ctx
+					);
+				ctx->set_waiting();
+				ret = true;
+			}
+			else
+				err << "Specify item to save!\r\n";
+		}
+		else
+			err << "Specify item to save!\r\n";
+
+		if (ret)
+		{
+			data = rx_create_reference<save_data_t>();
+			data->started = rx_get_us_ticks();
+			ctx->set_instruction_data(data);
+			ctx->set_waiting();
+		}
+		return ret;
+	}
+	else
+	{// we are returned here
+		uint64_t lasted = rx_get_us_ticks() - data->started;
+		if (ctx->is_canceled())
+		{
+			out << "Save was canceled after ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		else
+		{
+			out << "Save lasted ";
+			rx_dump_ticks_to_stream(out, lasted);
+			out << ".\r\n";
+		}
+		return true;
+	}
+}
+
+
 } // namespace meta_commands
 } // namespace model
 

@@ -34,8 +34,6 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_meta_algorithm
@@ -46,6 +44,8 @@
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using rx_platform::meta::construct_context;
 
@@ -154,7 +154,7 @@ public:
 
       rx_result construct (rx_application_ptr& what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -169,8 +169,6 @@ public:
       rx_result check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const object_data_type& object_data () const;
@@ -204,9 +202,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       def_blocks::mapped_data_type mapping_data_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -238,7 +233,7 @@ public:
 
       rx_result construct (rx_domain_ptr what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -253,8 +248,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const object_data_type& object_data () const;
@@ -288,9 +281,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       def_blocks::mapped_data_type mapping_data_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -324,7 +314,7 @@ public:
 
       rx_result construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -341,8 +331,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const object_data_type& object_data () const;
@@ -376,9 +364,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       def_blocks::mapped_data_type mapping_data_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -410,7 +395,7 @@ public:
 
       rx_result construct (rx_port_ptr what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -425,8 +410,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const object_data_type& object_data () const;
@@ -460,9 +443,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       def_blocks::mapped_data_type mapping_data_;
-
-
-      meta::storage_data storage_;
 
 
 };

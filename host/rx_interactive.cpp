@@ -40,6 +40,7 @@
 #include "host/rx_interactive.h"
 
 #include "system/constructors/rx_construct.h"
+#include "api/rx_meta_api.h"
 
 //#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
@@ -99,8 +100,12 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 
 			std::cout << "Starting interactive console...";
 			std::cout << ANSI_STATUS_OK "\r\n";
-			interactive.run_interactive(config);
-
+			result = interactive.run_interactive(config);
+			if (!result)
+			{
+				std::cout << ANSI_STATUS_ERROR "\r\nError running Interactive Console:\r\n";
+				rx_dump_error_result(std::cout, result);
+			}
 			std::cout << "Stopping rx-platform...";
 			result = rx_platform::rx_gate::instance().stop();
 			if(result)
@@ -259,9 +264,10 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
 		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
 		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_data.instance_name))
+		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration_data.instance_name))
 		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.general.test_log))
 		("v,version", "Displays platform version")
+		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.namespace_data.build_system_from_code))
 		("h,help", "Print help")
 		;
 
@@ -403,13 +409,21 @@ interactive_console_client::interactive_console_client (interactive_console_host
 		RX_INTERACTIVE_NAME
 		, RX_INTERACTIVE_ID
 		, RX_CONSOLE_TYPE_ID
-		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME RX_DIR_DELIMETER_STR RX_INTERACTIVE_NAME
+		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME
 		, rx_system_application() })
 {
 	security_context_->login();
-	auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);
+
+	/*auto result = api::meta::rx_create_port(
+		RX_INTERACTIVE_NAME
+		, RX_INTERACTIVE_TYPE_NAME
+		, nullptr
+		,
+	)*/
+	
+	/*auto directory = rx_gate::instance().get_root_directory()->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME);
 	if(directory)
-		directory->add_item(smart_this()->get_item_ptr());
+		directory->add_item(smart_this()->get_item_ptr());*/
 }
 
 
@@ -425,8 +439,12 @@ const string_type& interactive_console_client::get_console_name ()
 	return temp;
 }
 
-void interactive_console_client::run_interactive (configuration_data_t& config)
+rx_result interactive_console_client::run_interactive (configuration_data_t& config)
 {
+
+	auto result = check_validity();
+	if (!result)
+		return result;
 
 	security::security_auto_context dummy(security_context_);
 
@@ -527,6 +545,8 @@ void interactive_console_client::run_interactive (configuration_data_t& config)
 
 	}
 	security_context_->logout();
+
+	return true;
 }
 
 security::security_context::smart_ptr interactive_console_client::get_current_security_context ()
@@ -543,23 +563,21 @@ void interactive_console_client::process_result (bool result, memory::buffer_ptr
 {
 	if (!result)
 	{
-		if (!err_buffer->empty())
-			host_->write_stdout(err_buffer->pbase(), err_buffer->get_size());
+		if (!out_buffer->empty())
+			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
 		if (!exit_ && !host_->exit())
 		{
 			host_->write_stdout(
 				"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
 			);
 		}
-		if (!out_buffer->empty())
-			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
+		if (!err_buffer->empty())
+			host_->write_stdout(err_buffer->pbase(), err_buffer->get_size());
 	}
 	else
 	{
-
 		if (!out_buffer->empty())
 			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
-
 	}
 
 	if (!rx_gate::instance().is_shutting_down())

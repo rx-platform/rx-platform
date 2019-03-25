@@ -621,8 +621,21 @@ Json::Value& json_reader::get_current_value (int& index)
 
 bool json_reader::parse_data (const string_type& data)
 {
+	errors_.clear();
 	Json::Reader reader;
-	return reader.parse(data, envelope_, false);
+	auto ret = reader.parse(data, envelope_, false);
+	if (!ret)
+	{
+		std::istringstream stream(reader.getFormattedErrorMessages());
+		while (!stream.eof())
+		{
+			string_type temp;
+			std::getline(stream, temp);
+			if (!temp.empty())
+				errors_.emplace_back(temp);
+		}
+	}
+	return ret;
 }
 
 bool json_reader::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
@@ -767,6 +780,11 @@ bool json_reader::internal_read_init_values (data::runtime_values_data& values, 
 		}
 	}
 	return true;
+}
+
+string_array json_reader::get_errors () const
+{
+	return errors_;
 }
 
 

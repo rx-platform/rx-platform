@@ -34,6 +34,7 @@
 #include "terminal/rx_con_commands.h"
 
 #include "terminal/rx_terminal_style.h"
+#include "help/rx_help_security.h"
 #include "testing/testing.h"
 
 #include "system/server/rx_server.h"
@@ -55,23 +56,27 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	values::rx_value val(item->get_value());
 	ns::fill_quality_string(val, quality_string);
 	string_type attrs;
-	ns::fill_attributes_string(item->get_attributes(), attrs);
+	ns::fill_attributes_string(item->meta_info().get_attributes(), attrs);
 	string_type cls_name;
 	bool has_code = false;
 	string_type console;
 	item->get_class_info(cls_name, console, has_code);
 	cls_name=item->get_class_name();
+	string_type storage_name = item->meta_info().storage_info.storage_name();
+	if (storage_name.empty())
+		storage_name = ANSI_STATUS_ERROR;
 
 
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Name       : " << item->get_name() << "\r\n";
-	out << "Full Path  : " << item->get_path() << "\r\n";
+	out << "Full Path  : " << item->meta_info().get_path() << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
 	out << "Type       : " << item->get_type_name() << "\r\n";
-	out << "Attributes : " << attrs << "\r\n\r\n";
+	out << "Attributes : " << attrs << "\r\n";
+	out << "Storage    : " << storage_name << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : ";
 	val.get_storage().dump_to_stream(out);
@@ -255,7 +260,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	char buff[0x100];
 	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]));
 	out << "CPU: " << buff
-		<< ( rx_big_endian ? " [BE]" : " [LE]" )
+		<< ( rx_big_endian ? "; Big-endian" : "; Little-endian" )
 		<< "\r\n";
 	/////////////////////////////////////////////////////////////////////////
 	// memory
@@ -265,11 +270,11 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	rx_collect_memory_info(&total, &free, &process);
 	out << "Memory: Total "
 		<< (int)(total / 1048576ull)
-		<< "MB / Free "
+		<< "MiB / Free "
 		<< (int)(free / 1048576ull)
-		<< "MB / Process " 
+		<< "MiB / Process " 
 		<< (int)(process / 1024ull)
-		<< "KB \r\n";
+		<< "KiB \r\n";
 	/////////////////////////////////////////////////////////////////////////
 	out << "Page size: " << (int)rx_os_page_size() << " bytes\r\n";
 
@@ -515,8 +520,27 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 		out << get_help();
 	}
 	else if (sub_command == "active")
-	{// testing stuff
+	{
 		do_active_command(in, out, err, ctx);
+	}
+	else if (sub_command == "help")
+	{
+		sub_command.clear();
+		in >> sub_command;
+		if(sub_command.empty())
+		{
+			out << get_help();
+		}
+		else if (sub_command == "active")
+		{
+			out << "\r\n";
+			out << HELP_RX_SEC_ACTIVE_COMMAND;
+		}
+		else
+		{
+			err << "Unknown sub-command";
+			return false;
+		}
 	}
 	return true;
 }
@@ -575,6 +599,11 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 	rx_dump_table(table, out,true,true);
 
 	return true;
+}
+
+const char* sec_command::get_help () const
+{
+	return HELP_RX_SEC_COMMAND;
 }
 
 
@@ -804,6 +833,87 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 		err << "No LICENSE!!!";
 		return false;
 	}
+}
+
+
+// Class terminal::console::console_commands::help_command 
+
+help_command::help_command()
+	: server_command("help")
+{
+}
+
+
+help_command::~help_command()
+{
+}
+
+
+
+bool help_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type command_name;
+	in >> command_name;
+	out << "Printing help, second variant now,\r\n";
+	out << RX_CONSOLE_HEADER_LINE "\r\n";
+	if (command_name.empty())
+	{
+		out << get_help();
+		return true;
+	}
+	else
+	{//try to find a command
+		auto command = terminal::commands::server_command_manager::instance()->get_command_by_name(command_name);
+		if (command)
+		{
+			out << ANSI_COLOR_GREEN << ":>";
+			out << ANSI_COLOR_YELLOW ANSI_COLOR_BOLD << command->get_name() << ANSI_COLOR_RESET << "\r\n";
+			out << RX_CONSOLE_HEADER_LINE "\r\n";
+			out << command->get_help();
+			out << "\r\nhope this helps...\r\n";
+			return true;
+		}
+		else
+		{
+			err << "Unknown command!";
+			return false;
+		}
+	}
+}
+
+const char* help_command::get_help () const
+{
+	static string_type help;
+	static locks::slim_lock lock;
+	if (help.empty())
+	{
+		// double lock here, just in case
+		locks::auto_lock_t<decltype(lock)> _(&lock);
+		if (help.empty())
+		{
+			std::ostringstream out;
+			out << "Well, this is a list of commands:\r\n\r\n";
+
+			std::vector<command_ptr> commands;
+			commands::server_command_manager::instance()->get_commands(commands);
+
+			rx_row_type names;
+			names.reserve(commands.size());
+			for (auto one : commands)
+				names.emplace_back(one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
+
+			rx_dump_large_row(names, out, RX_CONSOLE_WIDTH);
+			
+			out << "\r\nchoose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
+			out << "\r\n\r\nThese are actually code comment dump, at least most of them." ANSI_COLOR_GREEN ANSI_COLOR_BOLD ":)" ANSI_COLOR_RESET "\r\n";
+			out << ANSI_COLOR_MAGENTA "Don't know what to tell you, sorry, try reading some other reference...\r\n" ANSI_COLOR_RESET;
+			out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
+				<< "  sinclair ZX Spectrum!!!\r\n\r\n";
+			out.flush();
+			help = out.str();
+		}
+	}
+	return help.c_str();
 }
 
 

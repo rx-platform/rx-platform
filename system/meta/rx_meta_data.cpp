@@ -36,6 +36,7 @@
 #include "system/meta/rx_meta_data.h"
 
 #include "system/meta/rx_obj_types.h"
+#include "system/server/rx_server.h"
 
 
 namespace rx_platform {
@@ -65,6 +66,7 @@ meta_data::meta_data (const string_type& name, const rx_node_id& id, const rx_no
 	, name_(name)
 	, id_(id)
 	, parent_(parent)
+	, path_(path)
 {
 	if (id_.is_null())
 		id_ = rx_node_id(rx_uuid::create_new().uuid());
@@ -114,6 +116,8 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return false;
 	if (!stream.write_id("SuperId", parent_))
 		return false;
+	if (!stream.write_string("Path", path_.c_str()))
+		return false;
 	if (!stream.write_version("Ver", version_))
 		return false;
 	if (!stream.end_object())
@@ -136,6 +140,8 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 	if (!stream.read_string("Name", name_))
 		return false;
 	if (!stream.read_id("SuperId", parent_))
+		return false; 
+	if (!stream.read_string("Path", path_))
 		return false;
 	if (!stream.read_version("Ver", version_))
 		return false;
@@ -156,6 +162,8 @@ void meta_data::construct (const string_type& name, const rx_node_id& id, rx_nod
 	name_ = name;
 	id_ = id;
 	parent_ = type_id;
+	path_ = path;
+	attributes_ = attributes;
 }
 
 bool meta_data::get_system () const
@@ -206,8 +214,21 @@ rx_result_with<platform_item_ptr> meta_data::deserialize_runtime_item (base_meta
 		return type_name + " is unknown type name";
 }
 
-rx_result meta_data::resolve_id ()
+rx_result meta_data::resolve ()
 {
+	// resolve storage type by attributes
+	if (storage_info.get_storage_type() == rx_storage_type::invalid_storage)
+	{
+		if (attributes_ & namespace_item_system_storage)
+		{
+			storage_info.assign_storage(rx_storage_type::system_storage);
+		}
+		else
+		{
+			storage_info.assign_storage(rx_storage_type::user_storage);
+		}
+	}
+	// now handle null id
 	if (id_.is_null())
 	{
 		id_ = rx_node_id::generate_new(RX_USER_NAMESPACE);
@@ -220,16 +241,46 @@ rx_result meta_data::resolve_id ()
 
 // Class rx_platform::meta::storage_data 
 
-storage_data::storage_data (rx_storage_item_ptr&& item)
+
+rx_result_with<rx_storage_ptr> storage_data::resolve_storage () const
 {
+	switch (storage_type_)
+	{
+	case rx_storage_type::system_storage:
+		return rx_gate::instance().get_host()->get_system_storage();
+	case rx_storage_type::user_storage:
+		return rx_gate::instance().get_host()->get_user_storage();
+	case rx_storage_type::test_storage:
+		return rx_gate::instance().get_host()->get_test_storage();
+	case rx_storage_type::extern_storage:
+		return "Unable to get storage for extern items!";
+	case rx_storage_type::invalid_storage:
+	default:
+		return "Item does not have valid storage type defined!";
+	}
 }
 
-
-
-rx_result storage_data::assign_storage (rx_storage_item_ptr&& item)
+string_type storage_data::storage_name () const
 {
-	storage_ = std::move(item);
-	return true;
+	switch (storage_type_)
+	{
+	case rx_storage_type::system_storage:
+		return "system";
+	case rx_storage_type::user_storage:
+		return "user";
+	case rx_storage_type::test_storage:
+		return "test";
+	case rx_storage_type::extern_storage:
+		return "extern";
+	case rx_storage_type::invalid_storage:
+	default:
+		return "";
+	}
+}
+
+void storage_data::assign_storage (rx_storage_type storage_type)
+{
+	storage_type_ = storage_type;
 }
 
 

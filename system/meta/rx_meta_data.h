@@ -37,10 +37,10 @@
 
 #include "system/server/rx_ns.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -59,6 +59,49 @@ using namespace rx_platform::ns;
 namespace rx_platform {
 
 namespace meta {
+
+enum rx_storage_type
+{
+	invalid_storage = 0,
+	system_storage,
+	user_storage,
+	extern_storage,
+	test_storage
+};
+
+
+
+
+
+class storage_data 
+{
+
+  public:
+
+      rx_result_with<rx_storage_ptr> resolve_storage () const;
+
+      string_type storage_name () const;
+
+      void assign_storage (rx_storage_type storage_type);
+
+
+      rx_storage_type get_storage_type () const
+      {
+        return storage_type_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      rx_storage_type storage_type_;
+
+
+};
+
 
 
 
@@ -90,7 +133,7 @@ class meta_data
 
       static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
 
-      rx_result resolve_id ();
+      rx_result resolve ();
 
 
       const rx_node_id& get_parent () const
@@ -142,6 +185,9 @@ class meta_data
 
 
 
+      storage_data storage_info;
+
+
   protected:
 
   private:
@@ -162,36 +208,6 @@ class meta_data
       namespace_item_attributes attributes_;
 
       string_type path_;
-
-
-};
-
-
-
-
-
-
-class storage_data 
-{
-
-  public:
-      storage_data (rx_storage_item_ptr&& item);
-
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
-
-	  storage_data() = default;
-	  ~storage_data() = default;
-	  storage_data(const storage_data&) = delete;
-	  storage_data(storage_data&&) = delete;
-	  storage_data& operator=(const storage_data&) = delete;
-	  storage_data& operator=(storage_data&&) = delete;
-  protected:
-
-  private:
-
-
-      rx_storage_item_ptr storage_;
 
 
 };

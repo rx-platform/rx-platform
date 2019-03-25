@@ -668,11 +668,12 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 			else
 			{
 				string_type prompt;
+				// funny but useful
 				get_prompt(prompt);
-				out << prompt;
-
-				write(err_buffer);
+				err << prompt;
+				// now dump all
 				write(out_buffer);
+				write(err_buffer);
 			}
 		}
 	}
@@ -684,13 +685,12 @@ void telnet_client::process_result (bool result, memory::buffer_ptr out_buffer, 
 		}
 		else
 		{
+			write(out_buffer);
 			err << "\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n";
 			string_type prompt;
 			get_prompt(prompt);
-			out << prompt;
-
+			err << prompt;
 			write(err_buffer);
-			write(out_buffer);
 		}
 	}
 }

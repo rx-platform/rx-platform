@@ -32,8 +32,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
@@ -42,6 +40,8 @@
 #include "system/callbacks/rx_callback.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -246,7 +246,7 @@ object class. basic implementation of an object");
 
       void fill_data (const data::runtime_values_data& data);
 
-      rx_result assign_storage (rx_storage_item_ptr&& item);
+      virtual rx_result check_validity ();
 
 
       const meta::meta_data& meta_info () const;
@@ -299,8 +299,6 @@ object class. basic implementation of an object");
       rx_mode_type mode_;
 
       rx_time change_time_;
-
-      meta::storage_data storage_;
 
 
 };

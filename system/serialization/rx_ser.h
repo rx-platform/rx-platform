@@ -33,10 +33,10 @@
 
 #include "third-party/jsoncpp/json/json.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 #define RX_JSON_SERIALIZATION_TYPE "json"
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
@@ -116,6 +116,8 @@ class json_reader : public rx::base_meta_reader
 
       bool read_init_values (const char* name, data::runtime_values_data& values);
 
+      string_array get_errors () const;
+
 
   protected:
 
@@ -138,6 +140,8 @@ class json_reader : public rx::base_meta_reader
       Json::Value envelope_;
 
       string_type result_;
+
+      string_array errors_;
 
 
 };

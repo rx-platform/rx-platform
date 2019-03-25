@@ -116,12 +116,14 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::def_command>());
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
+	register_command(rx_create_reference<console::console_commands::help_command>());
 	// namespace commands
 	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::dir_command>());
 	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::ls_command>());
 	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::cd_command>());
 	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::mkdir_command>());
 	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::rmdir_command>());
+	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::clone_system_command>());
 	// test command
 	register_command(rx_create_reference<testing::test_command>());
 	// meta commands
@@ -131,6 +133,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::prototype_command>());
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 	register_command(rx_create_reference<model::meta_commands::check_command>());
+	register_command(rx_create_reference<model::meta_commands::save_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
@@ -166,26 +169,6 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 	sub_items.reserve(registered_commands_.size());
 	for (const auto& one : registered_commands_)
 		sub_items.emplace_back(one.second);
-}
-
-bool server_command_manager::get_help (std::ostream& out, std::ostream& err)
-{
-
-	out << "Printing help, well the beginning of making help :)\r\n";
-	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "This is a list of commands:\r\n";
-
-	for (const auto& one : registered_commands_)
-	{
-		out << "\r\n" ANSI_COLOR_YELLOW;
-		out <<one.first;
-		out << ANSI_COLOR_RESET "\r\n" << one.second->get_help()<<"\r\n";
-	}
-
-	out << "\r\n\r\nThis is actually code comment dump :)\r\n";
-	out << "Don't know what to tell you, try reading the reference...\r\n";
-
-	return true;
 }
 
 

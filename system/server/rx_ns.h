@@ -33,12 +33,12 @@
 
 #include "lib/rx_lock.h"
 
+// cpp_lib
+#include "system/libraries/cpp_lib.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 
 namespace rx_platform {
 namespace ns {
@@ -55,6 +55,12 @@ using namespace rx_platform;
 
 
 namespace rx_platform {
+
+namespace meta
+{
+class meta_data;
+}
+typedef typename meta::meta_data meta_data_t;
 
 bool rx_is_valid_name_character(char ch);
 bool rx_is_valid_namespace_name(const string_type& name);
@@ -82,10 +88,12 @@ struct namespace_data_t
 {
 	namespace_data_t()
 	{
+		build_system_from_code = false;
 	}
 	string_type system_storage_reference;
 	string_type user_storage_reference;
 	string_type test_storage_reference;
+	bool build_system_from_code;
 };
 
 enum namespace_item_attributes
@@ -103,7 +111,8 @@ enum namespace_item_attributes
 	namespace_item_full_type_access = 7,
 	namespace_item_full_access = 0x17,
 	namespace_item_system_access = 0x21,
-	namespace_item_internal_access = 0x61
+	namespace_item_internal_access = 0x61,
+	namespace_item_system_storage = 0x60
 };
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
@@ -248,27 +257,25 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual values::rx_value get_value () const = 0;
 
-      virtual namespace_item_attributes get_attributes () const = 0;
-
       rx_directory_ptr get_parent () const;
 
       void set_parent (rx_directory_ptr parent);
 
-      string_type get_path () const;
-
       virtual rx_result generate_json (std::ostream& def, std::ostream& err) const = 0;
 
-      virtual rx_result serialize (base_meta_writer& stream) const;
+      virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
-      virtual rx_result deserialize (base_meta_reader& stream);
-
-      virtual rx_time get_created_time () const = 0;
+      virtual rx_result deserialize (base_meta_reader& stream) = 0;
 
       virtual string_type get_name () const = 0;
 
       virtual size_t get_size () const = 0;
 
-      virtual rx_node_id get_node_id () const = 0;
+      virtual rx_result save () const = 0;
+
+      virtual const meta_data_t& meta_info () const = 0;
+
+      string_type callculate_path () const;
 
 
   protected:

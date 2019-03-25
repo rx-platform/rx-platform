@@ -34,14 +34,14 @@
 
 #include "system/server/rx_server.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 namespace host {
 namespace interactive {
@@ -107,7 +107,7 @@ class interactive_console_client : public rx_platform::prog::console_client
 
       const string_type& get_console_name ();
 
-      void run_interactive (configuration_data_t& config);
+      rx_result run_interactive (configuration_data_t& config);
 
       security::security_context::smart_ptr get_current_security_context ();
 

@@ -44,34 +44,48 @@ namespace meta
 
 
 rx_result rx_delete_object(
-	const string_type& name
+	const string_type& name // item's path
 	, std::function<void(rx_result&&)> callback
 	, rx_context ctx);
 
 
 rx_result rx_create_object(
-	const string_type& name
-	, const string_type& type_name
-	, data::runtime_values_data& init_data
-	, ns::namespace_item_attributes attributes
+	const string_type& name // item's path
+	, const string_type& type_name // type's path
+	, data::runtime_values_data* init_data  // initialization data
+	, ns::namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_create_port(
+	const string_type& name // item's path
+	, const string_type& type_name // type's path
+	, data::runtime_values_data* init_data  // initialization data
+	, ns::namespace_item_attributes attributes // required attributes
+	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback
 	, rx_context ctx);
 
 
 rx_result rx_create_prototype(
-	const string_type& name
-	, const rx_node_id& instance_id
-	, const string_type& type_name
+	const string_type& name // item's path
+	, const rx_node_id& instance_id // prototype's id
+	, const string_type& type_name  // type's path
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
 	, rx_context ctx);
 
 
 rx_result rx_create_object_type(
-	const string_type& name
-	, const string_type& base_name
-	, rx_object_type_ptr prototype
-	, ns::namespace_item_attributes attributes
+	const string_type& name // type's path
+	, const string_type& base_name // base type's path
+	, rx_object_type_ptr prototype // prototype
+	, ns::namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
+	, rx_context ctx);
+
+
+rx_result rx_save_item(
+	const string_type& name // item's path
+	, std::function<void(rx_result&&)> callback
 	, rx_context ctx);
 
 

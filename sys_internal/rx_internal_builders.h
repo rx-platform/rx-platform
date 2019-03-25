@@ -57,7 +57,7 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_directory_ptr buid_platform_system (hosting::rx_platform_host* host, namespace_data_t& data);
+      static rx_result_with<rx_directory_ptr> buid_platform (hosting::rx_platform_host* host, namespace_data_t& data);
 
       virtual rx_result do_build (platform_root::smart_ptr root) = 0;
 
@@ -68,6 +68,15 @@ class rx_platform_builder
       rx_platform_builder(const rx_platform_builder &right);
 
       rx_platform_builder & operator=(const rx_platform_builder &right);
+
+
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data);
+
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_user_builders (namespace_data_t& data);
+
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_test_builders (namespace_data_t& data);
+
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_other_builders (namespace_data_t& data);
 
 
 

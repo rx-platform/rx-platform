@@ -212,6 +212,39 @@ removes directory from namespace");
 };
 
 
+
+
+
+
+class clone_system_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(clone_system_command);
+	struct clone_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for cloning system types and objects of this rx-platform instance\r\n\
+\
+");
+
+  public:
+      clone_system_command();
+
+      ~clone_system_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
 } // namespace namespace_commands
 } // namespace internal_ns
 } // namespace sys_internal

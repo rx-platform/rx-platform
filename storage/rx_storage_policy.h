@@ -33,6 +33,8 @@
 
 
 
+#define RX_JSON_FILE_EXTESION "json"
+#define RX_BINARY_FILE_EXTESION "rxbin"
 
 
 namespace storage {
@@ -49,9 +51,7 @@ class file_path_addresing_policy
 
   public:
 
-      string_type get_file_path (const meta::meta_data& meta) const;
-
-      string_type get_new_file_path (const meta::meta_data& meta, const string_type& root);
+      string_type get_file_path (const meta::meta_data& meta, const string_type& root);
 
       void add_file_path (const meta::meta_data& meta, const string_type& path);
 

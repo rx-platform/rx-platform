@@ -42,21 +42,26 @@ namespace storage_policy {
 // Class storage::storage_policy::file_path_addresing_policy 
 
 
-string_type file_path_addresing_policy::get_file_path (const meta::meta_data& meta) const
+string_type file_path_addresing_policy::get_file_path (const meta::meta_data& meta, const string_type& root)
 {
+	if (meta.get_path().empty())
+		return "";
 	locks::const_auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
 	auto it = items_cache_.find(meta.get_id());
 	if (it == items_cache_.end())
-		return "";
+	{// we don't have this one yet
+		size_t idx = meta.get_path().find(RX_DIR_DELIMETER, 1);
+		string_type file_path;
+		if (idx != string_type::npos)
+			file_path = rx_combine_paths(root, meta.get_path().substr(idx+1));
+		else
+			file_path = rx_combine_paths(root, meta.get_path());
+		file_path = rx_combine_paths(file_path, meta.get_name() + "." + RX_JSON_FILE_EXTESION);
+		items_cache_.emplace(meta.get_id(), file_path);
+		return file_path;
+	}
 	else
 		return it->second;
-}
-
-string_type file_path_addresing_policy::get_new_file_path (const meta::meta_data& meta, const string_type& root)
-{
-	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
-	string_type file_path = rx_combine_paths(root, meta.get_path());
-	return "Fuck it TODO!!!";
 }
 
 void file_path_addresing_policy::add_file_path (const meta::meta_data& meta, const string_type& path)

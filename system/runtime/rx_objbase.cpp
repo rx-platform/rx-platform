@@ -283,9 +283,9 @@ void object_runtime::fill_data (const data::runtime_values_data& data)
 	item_->fill_data(data, ctx);
 }
 
-rx_result object_runtime::assign_storage (rx_storage_item_ptr&& item)
+rx_result object_runtime::check_validity ()
 {
-	return storage_.assign_storage(std::move(item));
+	return true;
 }
 
 

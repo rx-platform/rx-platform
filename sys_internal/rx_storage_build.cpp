@@ -44,7 +44,8 @@ namespace storage {
 
 // Class sys_internal::builders::storage::configuration_storage_builder 
 
-configuration_storage_builder::configuration_storage_builder()
+configuration_storage_builder::configuration_storage_builder (meta::rx_storage_type storage_type)
+      : storage_type_(storage_type)
 {
 }
 
@@ -57,64 +58,68 @@ configuration_storage_builder::~configuration_storage_builder()
 
 rx_result configuration_storage_builder::do_build (platform_root::smart_ptr root)
 {
-	using storage_items = std::vector<rx_storage_item_ptr>;
-	auto storage = rx_gate::instance().get_host()->get_system_storage();
-	auto result = build_from_storage(root, *storage);
+	rx_storage_ptr storage;
+	switch (storage_type_)
+	{
+	case rx_storage_type::system_storage:
+		storage = rx_gate::instance().get_host()->get_system_storage();
+		break;
+	case rx_storage_type::user_storage:
+		storage = rx_gate::instance().get_host()->get_user_storage();
+		break;
+	case rx_storage_type::test_storage:
+		storage = rx_gate::instance().get_host()->get_test_storage();
+		break;
+	default:
+		return "Unexpected storage type as parameter for storage building!";
+	}
+	auto result = build_from_storage(root, *storage, storage_type_);
 	if (result)
 	{
-		BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from system storage done.");
-		storage = rx_gate::instance().get_host()->get_user_storage();
-		result = build_from_storage(root, *storage);
-		if (result)
+		// log the right thing to be aware of system building status
+		switch (storage_type_)
 		{
+		case rx_storage_type::system_storage:
+			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from system storage done.");
+			break;
+		case rx_storage_type::user_storage:
 			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from user storage done.");
-			storage = rx_gate::instance().get_host()->get_test_storage();
-			if (!storage->is_valid_storage())
-			{
-				// just return true, we can run without test storage
-				BUILD_LOG_WARNING("configuration_storage_builder", 900, "Test storage not initialized!");
-			}
-			else
-			{
-				result = build_from_storage(root, *storage);
-				if (result)
-				{
-
-					BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from test storage done.");
-				}
-				else
-				{
-					for (auto& err : result.errors())
-						BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
-					BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from test storage");
-					// we still can start without test storage so just return success!!!
-					result = true;
-				}
-			}
-		}
-		else
-		{
-			for (auto& err : result.errors())
-				BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
-			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from user storage");
-		}
+			break;
+		case rx_storage_type::test_storage:
+			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from test storage done.");
+			break;
+		default://this should really not happened (look at the first switch case in the function!!!
+			RX_ASSERT(false);
+		}	
 	}
 	else
 	{
 		for (auto& err : result.errors())
 			BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
-		BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from system storage");
+		// log the right thing to be aware of system building status
+		switch (storage_type_)
+		{
+		case rx_storage_type::system_storage:
+			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from system storage");
+			break;
+		case rx_storage_type::user_storage:
+			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from user storage");
+			break;
+		case rx_storage_type::test_storage:
+			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from test storage");
+			break;
+		default://this should really not happened (look at the first switch case in the function!!!
+			RX_ASSERT(false);
+		}
 	}
 	return result;
 }
 
-rx_result configuration_storage_builder::build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage)
+rx_result configuration_storage_builder::build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage, meta::rx_storage_type storage_type)
 {
 	if (!storage.is_valid_storage())
 		return "Storage not initialized!";
-
-	directory_creator creator;
-
+	
 	using storage_items = std::vector<rx_storage_item_ptr>;
 	storage_items items;
 	auto result = storage.list_storage(items);
@@ -122,50 +127,45 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 	{
 		for (auto& item : items)
 		{
-			auto dir = creator.get_or_create_direcotry(root, item->get_path());
-			if (dir)
+			result = item->open_for_read();
+			if (result)
 			{
-				result = item->open_for_read();
+				auto& stream = item->read_stream();
+				int type = 0;
+				result = stream.read_header(type);
 				if (result)
 				{
-					auto& stream = item->read_stream();
-					int type = 0;
-					result = stream.read_header(type);
-					if (result)
+					switch (type)
 					{
-						switch (type)
-						{
-						case STREAMING_TYPE_TYPE:
-							result = create_type_from_storage(stream, dir, std::move(item));
-							break;
-						case STREAMING_TYPE_OBJECT:
-							result = create_object_from_storage(stream, dir, std::move(item));
-							break;
-						default:
-							result = "Invalid serialization type!";
-						}
-					}
-					if (!result)
+					case STREAMING_TYPE_TYPE:
+						result = create_type_from_storage(stream,  std::move(item), storage_type, root);
 						break;
+					case STREAMING_TYPE_OBJECT:
+						result = create_object_from_storage(stream, std::move(item), storage_type, root);
+						break;
+					default:
+						result = "Invalid serialization type!";
+					}
 				}
 			}
-			else
+			if (result)
 			{
-				result = dir.errors();
-				result.register_error("Error retrieving directory for the new item!");
+
 			}
-			if (!result)
+			else
+			{// we had an error
 				break;
+			}
 		}
 	}
 	else
 	{
-		result.register_error("Error listing storage");		
+		result.register_error("Error listing storage");
 	}
 	return result;
 }
 
-rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage)
+rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
 	string_type target_type;
@@ -179,33 +179,73 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	return result;
 }
 
-rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage)
+rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
 	string_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, target_type);
 	if (!result)
 		return result;
-	if (target_type == "object_type")
+
+	directory_creator creator;
+	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
+	if (dir)
 	{
-		result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
-	}
-	else if (target_type == "port_type")
-	{
-		result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
-	}
-	else if (target_type == "application_type")
-	{
-		result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
-	}
-	else if (target_type == "domain_type")
-	{
-		result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
+		meta.storage_info.assign_storage(storage_type);
+		// object types
+		if (target_type == RX_CPP_OBJECT_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
+		}
+		else if (target_type == RX_CPP_PORT_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
+		}
+		else if (target_type == RX_CPP_APPLICATION_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
+		}
+		else if (target_type == RX_CPP_DOMAIN_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
+		}
+		// simple types
+		else if (target_type == RX_CPP_STRUCT_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<struct_type>());
+		}
+		else if (target_type == RX_CPP_VARIABLE_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<variable_type>());
+		}
+		else if (target_type == RX_CPP_MAPPER_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
+		}
+		// variable sub-types
+		else if (target_type == RX_CPP_SOURCE_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<source_type>());
+		}
+		else if (target_type == RX_CPP_FILTER_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<filter_type>());
+		}
+		else if (target_type == RX_CPP_EVENT_CLASS_TYPE_NAME)
+		{
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<event_type>());
+		}
+		// unknown...
+		else
+		{
+			storage->close();
+			result = "Unknown type: "s + target_type;
+		}
 	}
 	else
 	{
-		storage->close();
-		result = "Unknown type: "s + target_type;
+		result = dir.errors();
+		result.register_error("Error retrieving directory for the new item!");
 	}
 	return result;
 }
@@ -220,10 +260,36 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 	storage->close();
 	if (result)
 	{
-		created->assign_storage(std::move(storage));
 		auto create_result = model::platform_types_manager::instance().create_type_helper<T>(
 			"", "", created, dir
-			, ns::namespace_item_attributes::namespace_item_full_access
+			, created->meta_info().get_attributes()
+			, tl::type2type<T>());
+		if (create_result)
+		{
+			auto rx_type_item = create_result.value()->get_item_ptr();
+			BUILD_LOG_INFO("configuration_storage_builder", 100, ("Created "s + T::type_name + " "s + rx_type_item->get_name()).c_str());
+			return true;
+		}
+		else
+		{
+			return create_result.errors();
+		}
+	}
+	return result;
+}
+
+template<class T>
+rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
+{
+	auto created = rx_create_reference<T>();
+	created->meta_info() = meta;
+	auto result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	storage->close();
+	if (result)
+	{
+		auto create_result = model::platform_types_manager::instance().create_simple_type_helper<T>(
+			"", "", created, dir
+			, created->meta_info().get_attributes()
 			, tl::type2type<T>());
 		if (create_result)
 		{

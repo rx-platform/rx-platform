@@ -195,16 +195,17 @@ all about doing stuff with log");
 
 class sec_command : public commands::server_command  
 {
-
 	DECLARE_REFERENCE_PTR(sec_command);
-
-	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
+	DECLARE_CONSOLE_CODE_INFO2( 0,5,0, "\
 all about doing stuff with security");
 
   public:
       sec_command();
 
       ~sec_command();
+
+
+      const char* get_help () const;
 
 
   protected:
@@ -436,6 +437,36 @@ displays license info");
       license_command();
 
       ~license_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class help_command : public commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(help_command);
+	DECLARE_CODE_INFO("console", 0, 1, 0, "\
+This is ugly code comment, type help in console for more details.");
+
+  public:
+      help_command();
+
+      ~help_command();
+
+
+      const char* get_help () const;
 
 
   protected:

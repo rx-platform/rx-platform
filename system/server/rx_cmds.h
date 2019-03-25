@@ -33,14 +33,14 @@
 
 #include "lib/security/rx_security.h"
 
+// sl_script
+#include "soft_logic/sl_script.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// sl_script
-#include "soft_logic/sl_script.h"
 
 namespace rx_platform {
 namespace prog {
@@ -51,6 +51,8 @@ class console_program_context;
 } // namespace prog
 } // namespace rx_platform
 
+
+#include "api/rx_platform_api.h"
 
 using namespace rx;
 using namespace rx_platform::ns;
@@ -101,6 +103,8 @@ public:
       void set_waiting ();
 
       void cancel_execution ();
+
+      api::rx_context create_api_context ();
 
 
       rx_reference<console_client> get_client ()
@@ -293,6 +297,8 @@ class console_client : public runtime::objects::port_runtime
       void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
 
       static string_type get_terminal_info ();
+
+      rx_result check_validity ();
 
 
   protected:

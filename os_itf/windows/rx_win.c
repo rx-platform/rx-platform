@@ -1444,7 +1444,7 @@ int rx_file_rename(const char* old_path, const char* new_path)
 
 int rx_file_exsist(const char* path)
 {
-	return _access(path, 0x7fffffff) == 0;
+	return _access(path, 0) == 0;
 }
 
 

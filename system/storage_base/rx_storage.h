@@ -36,9 +36,15 @@
 #include "lib/rx_ptr.h"
 
 #include "lib/rx_ser_lib.h"
+#include "system/server/rx_ns.h"
+
 namespace rx_platform
 {
 struct configuration_data_t;
+namespace meta
+{
+class meta_data;
+}
 }
 /////////////////////////////////////////////////////////////
 // logging macros for storage library
@@ -54,8 +60,11 @@ namespace rx_platform {
 namespace storage_base
 {
 class rx_storage_item;
+class rx_platform_storage;
 }
 typedef std::unique_ptr<storage_base::rx_storage_item> rx_storage_item_ptr;
+typedef rx_reference<storage_base::rx_platform_storage> rx_storage_ptr;
+
 
 namespace storage_base {
 
@@ -67,7 +76,7 @@ class rx_storage_item
 {
 
   public:
-      rx_storage_item (const string_type& path, const string_type& name, const string_type& serialization_type);
+      rx_storage_item (const string_type& serialization_type);
 
       virtual ~rx_storage_item();
 
@@ -85,18 +94,6 @@ class rx_storage_item
       virtual rx_result delete_item () = 0;
 
 
-      const string_type& get_path () const
-      {
-        return path_;
-      }
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
       const string_type& get_serialization_type () const
       {
         return serialization_type_;
@@ -112,10 +109,6 @@ class rx_storage_item
 
   private:
 
-
-      string_type path_;
-
-      string_type name_;
 
       string_type serialization_type_;
 
@@ -150,7 +143,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual bool is_valid_storage () const = 0;
 
-      virtual rx_result_with<rx_storage_item_ptr> get_storage_item (const string_type& path);
+      virtual rx_result save_item (const rx_platform::platform_item_ptr item) = 0;
 
 
   protected:

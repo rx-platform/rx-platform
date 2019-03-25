@@ -36,8 +36,6 @@
 #include "system/storage_base/rx_storage.h"
 
 #include "rx_storage_policy.h"
-#define RX_JSON_FILE_EXTESION "json"
-#define RX_BINARY_FILE_EXTESION "rxbin"
 
 
 namespace storage {
@@ -52,7 +50,7 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 {
 
   public:
-      rx_file_item (const string_type& path, const string_type& name, const string_type& serialization_type, const string_type& file_path);
+      rx_file_item (const string_type& serialization_type, const string_type& file_path);
 
       ~rx_file_item();
 
@@ -120,12 +118,20 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       bool is_valid_storage () const;
 
+      rx_result save_item (const platform_item_ptr item);
+
 
   protected:
 
   private:
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
+
+      std::unique_ptr<rx_file_item> get_storage_item (const string_type& path);
+
+      rx_result ensure_path_exsistence (const string_type& path);
+
+      rx_result recursive_create_directory (const string_type& path);
 
 
 
@@ -145,7 +151,7 @@ class rx_json_file : public rx_file_item
 {
 
   public:
-      rx_json_file (const string_type& path, const string_type& name, const string_type& file_path);
+      rx_json_file (const string_type& file_path);
 
       ~rx_json_file();
 
@@ -182,7 +188,7 @@ class rx_binary_file : public rx_file_item
 {
 
   public:
-      rx_binary_file (const string_type& path, const string_type& name, const string_type& file_path);
+      rx_binary_file (const string_type& file_path);
 
       ~rx_binary_file();
 

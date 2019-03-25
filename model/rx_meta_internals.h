@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -107,7 +107,7 @@ struct query_result
 
 
 
-class relations_hash_data 
+class relations_hash_data
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -170,7 +170,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash 
+class inheritance_hash
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -225,7 +225,7 @@ class inheritance_hash
 
 
 
-class instance_hash 
+class instance_hash
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -262,7 +262,7 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash 
+class type_hash
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -326,7 +326,7 @@ public:
 
 
 template <class typeT>
-class simple_type_hash 
+class simple_type_hash
 {
 	simple_type_hash(const simple_type_hash&) = delete;
 	simple_type_hash(simple_type_hash&&) = delete;
@@ -412,7 +412,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager 
+class platform_types_manager
 {
 	//friend class worker_registration_object;
 	template<class T>
@@ -495,11 +495,11 @@ class platform_types_manager
 
       static platform_types_manager& instance ();
 
-      rx_result initialize (hosting::rx_platform_host* host, meta_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
       rx_result deinitialize ();
 
-      rx_result start (hosting::rx_platform_host* host, const meta_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
       rx_result stop ();
 
@@ -538,7 +538,7 @@ class platform_types_manager
 		  {// TODO error, item does not exists
 			  return T::smart_ptr::null_ptr;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return T::smart_ptr::null_ptr;
@@ -558,7 +558,7 @@ class platform_types_manager
 		  {// TODO error, item does not exists
 			  return T::RTypePtr::null_ptr;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return T::RTypePtr::null_ptr;
@@ -596,7 +596,7 @@ class platform_types_manager
 			  dir->cancel_reserve(name);
 			  return "Type "s + type_name + " does not exists!";
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {
 			  dir->cancel_reserve(name);
@@ -641,7 +641,7 @@ class platform_types_manager
 		  {// TODO error, type does not exists
 			  return "Type "s + type_name + " does not exists!";
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return type_name + " does not have valid Id!";
@@ -667,73 +667,126 @@ class platform_types_manager
 	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name
 		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
 	  {
-		  string_type path;
-		  auto dir_result = dir->reserve_name(name, path);
-		  if (!dir_result)
-			  return dir_result.errors();
 		  rx_node_id base_id = prototype->meta_info().get_parent();
 		  rx_node_id item_id = prototype->meta_info().get_id();
 		  string_type type_name = prototype->meta_info().get_name();
+		  if (type_name.empty())
+			  type_name = name;
+
+		  string_type path;
+		  auto dir_result = dir->reserve_name(type_name, path);
+		  if (!dir_result)
+			  return dir_result.errors();
+
 		  if (!base_id)
 		  {
 			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
 			  if (!item)
 			  {// TODO error, type does not exists
-				  dir->cancel_reserve(name);
+				  dir->cancel_reserve(type_name);
 				  return "Type "s + base_name + " does not exists!";
 			  }
-			  base_id = item->get_node_id();
+			  base_id = item->meta_info().get_id();
 			  if (base_id.is_null())
 			  {// TODO error, item does not have id
-				  dir->cancel_reserve(name);
+				  dir->cancel_reserve(type_name);
 				  return base_name + " does not have valid Id!";
 			  }
 		  }
 		  if(!item_id)
-			  item_id = rx_node_id::generate_new();		  
+			  item_id = rx_node_id::generate_new();
 
 		  prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
 
 		  auto result = prototype->resolve(dir);
 		  if (!result)
 		  {
-			  dir->cancel_reserve(name);
+			  dir->cancel_reserve(type_name);
 			  return result.errors();
 		  }
 
 		  auto ret = internal_get_type_cache<T>().register_type(prototype);
 		  if (!ret)
 		  {// TODO error, didn't created runtime
-			  dir->cancel_reserve(name);
+			  dir->cancel_reserve(type_name);
 			  return ret.errors();
 		  }
 		  if (!dir->add_item(prototype->get_item_ptr()))
 		  {
-			  dir->cancel_reserve(name);
+			  dir->cancel_reserve(type_name);
 			  internal_get_type_cache<T>().delete_type(prototype->meta_info().get_id());
 			  // TODO error, can't add this name
-			  return "Unable to add "s + name + " to directory!";
+			  return "Unable to add "s + type_name + " to directory!";
 		  }
 		  return prototype;
 	  }
-	  template<class T>
-	  rx_result_with<typename T::smart_ptr> create_simple_type(typename T::smart_ptr what, rx_directory_ptr dir)
+
+	  template<class T, class refT>
+	  void create_simple_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
+		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
 	  {
-		  auto ret = internal_get_simple_type_cache<T>().register_type(what);
+		  using result_t = rx_result_with<typename T::smart_ptr>;
+		  std::function<result_t(void)> func = [=]() {
+			  return create_simple_type_helper<T>(name, base_name, prototype, dir, attributes, tl::type2type<T>());
+		  };
+		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
+	  }
+	  template<class T>
+	  rx_result_with<typename T::smart_ptr> create_simple_type_helper(const string_type& name, const string_type& base_name
+		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
+	  {
+		  rx_node_id base_id = prototype->meta_info().get_parent();
+		  rx_node_id item_id = prototype->meta_info().get_id();
+		  string_type type_name = prototype->meta_info().get_name();
+		  if (type_name.empty())
+			  type_name = name;
+
+		  string_type path;
+		  auto dir_result = dir->reserve_name(type_name, path);
+		  if (!dir_result)
+			  return dir_result.errors();
+
+		  if (!base_id)
+		  {
+			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
+			  if (!item)
+			  {// TODO error, type does not exists
+				  dir->cancel_reserve(type_name);
+				  return "Type "s + base_name + " does not exists!";
+			  }
+			  base_id = item->meta_info().get_id();
+			  if (base_id.is_null())
+			  {// TODO error, item does not have id
+				  dir->cancel_reserve(type_name);
+				  return base_name + " does not have valid Id!";
+			  }
+		  }
+		  if (!item_id)
+			  item_id = rx_node_id::generate_new();
+
+		  prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
+
+		  auto result = prototype->resolve(dir);
+		  if (!result)
+		  {
+			  dir->cancel_reserve(type_name);
+			  return result.errors();
+		  }
+
+		  auto ret = internal_get_simple_type_cache<T>().register_type(prototype);
 		  if (!ret)
 		  {// TODO error, didn't created runtime
-			  return T::smart_ptr::null_ptr;
+			  dir->cancel_reserve(type_name);
+			  return ret.errors();
 		  }
-		  if (!dir->add_item(what->get_item_ptr()))
+		  if (!dir->add_item(prototype->get_item_ptr()))
 		  {
-			  if (internal_get_simple_type_cache<T>().delete_type(what->meta_info().get_id()))
-			  {
-
-			  }
+			  dir->cancel_reserve(type_name);
+			  internal_get_simple_type_cache<T>().delete_type(prototype->meta_info().get_id());
 			  // TODO error, can't add this name
-			  return T::smart_ptr::null_ptr;
+			  return "Unable to add "s + type_name + " to directory!";
 		  }
-		  return what;
+		  return prototype;
 	  }
 
 	  template<class T, class refT>
@@ -790,7 +843,7 @@ class platform_types_manager
 		  {
 			  return name + " does not exists!";
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return name + " does not have valid " + T::type_name + " id!";
@@ -811,7 +864,7 @@ class platform_types_manager
 		  {// TODO error, item does not exists
 			  return false;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return false;
@@ -832,7 +885,7 @@ class platform_types_manager
 		  {// TODO error, item does not exists
 			  return false;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  return false;
@@ -855,7 +908,7 @@ class platform_types_manager
 			  ret.add_error(name + " does not exists!");
 			  return ret;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
@@ -874,7 +927,7 @@ class platform_types_manager
 			  ret.add_error(name + " does not exists!");
 			  return ret;
 		  }
-		  auto id = item->get_node_id();
+		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
 			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
@@ -890,7 +943,7 @@ class platform_types_manager
 };
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -946,7 +999,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 {
 	if (meta.get_id().is_null() || prototype)
 	{
-		meta.resolve_id();
+		meta.resolve();
 	}
 	else
 	{
@@ -1159,7 +1212,7 @@ public:
 	}
 };
 */
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()

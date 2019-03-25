@@ -302,6 +302,14 @@ void console_program_context::cancel_execution ()
 	canceled_ = true;
 }
 
+api::rx_context console_program_context::create_api_context ()
+{
+	api::rx_context ret;
+	ret.directory = current_directory_;
+	ret.object = client_;
+	return ret;
+}
+
 
 // Class rx_platform::prog::server_console_program 
 
@@ -413,20 +421,15 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		out << "Hello to you too!!!";
 		ret = true;
 	}
-	else if (line == "help")
-	{
-		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(out_buffer.unsafe_ptr());
-		ret = terminal::commands::server_command_manager::instance()->get_help(out, err);
-	}
 	else if (line == "term")
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(out_buffer.unsafe_ptr());
 
 		out << "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << get_console_name() << " Console\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << get_console_terminal() << "\r\n";
+		out << "Info: " << get_console_terminal() << "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Console: ";
+		out << get_console_name() << " Console\r\n";
+		
 		ret = true;
 	}
 	else if (line == "host")
@@ -580,6 +583,14 @@ string_type console_client::get_terminal_info ()
 		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
 	}
 	return ret;
+}
+
+rx_result console_client::check_validity ()
+{
+	if (!current_directory_)
+		return "No valid directory for Terminal";
+	else
+		return true;
 }
 
 

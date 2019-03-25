@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -41,7 +41,7 @@ namespace storage {
 
 namespace files {
 
-// Parameterized Class storage::files::file_system_storage 
+// Parameterized Class storage::files::file_system_storage
 
 template <class policyT>
 file_system_storage<policyT>::file_system_storage()
@@ -150,20 +150,10 @@ rx_result file_system_storage<policyT>::recursive_list_storage (const string_typ
 		}
 		for (auto& one : file_names)
 		{
-			string_type ext = rx_get_extension(one);
-			if (ext == RX_JSON_FILE_EXTESION)
-			{
-				result_path = rx_combine_paths(file_path, one);
-				std::unique_ptr<rx_file_item> temp = std::make_unique<rx_json_file>(path, rx_remove_extension(one), result_path);
-				//add_item_to_cache(*temp);
-				items.emplace_back(std::move(temp));
-				
-			}
-			else if (ext == RX_BINARY_FILE_EXTESION)
-			{
-				result_path = rx_combine_paths(file_path, one);
-				items.emplace_back(std::make_unique<rx_binary_file>(path, rx_remove_extension(one), result_path));
-			}
+			result_path = rx_combine_paths(file_path, one);
+			auto storage_item = get_storage_item(result_path);
+			if(storage_item)
+				items.emplace_back(std::move(storage_item));
 		}
 	}
 	return result;
@@ -181,13 +171,123 @@ bool file_system_storage<policyT>::is_valid_storage () const
 	return !root_.empty();
 }
 
-template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
-// Class storage::files::rx_file_item 
+template <class policyT>
+rx_result file_system_storage<policyT>::save_item (const platform_item_ptr item)
+{
+	string_type path = cache_.get_file_path(item->meta_info(), root_);
+	if (path.empty())
+		return "Unable to get file path for the file storage item!";
+	auto result = ensure_path_exsistence(path);
+	if (result)
+	{
+		auto storage_item = get_storage_item(path);
+		if (storage_item)
+		{
+			result = storage_item->open_for_write();
+			if (result)
+			{
+				result = item->serialize(storage_item->write_stream());
+				if (!result)
+				{// first error is on serialize so pack all errors (we have to close file)
+					auto result_close = storage_item->close();
+					if (!result_close)
+					{
+						for (const auto& one : result_close.errors())
+						{
+							result.register_error(string_type(one));
+						}
+					}
+				}
+				else
+					result = storage_item->close();
+			}
+			return result;
+		}
+		else
+			return "Unable to get storage item for file " + path;
+	}
+	else
+	{
+		result.register_error("Unable to create needed directories!");
+		return result;
+	}
+}
 
-rx_file_item::rx_file_item (const string_type& path, const string_type& name, const string_type& serialization_type, const string_type& file_path)
+template <class policyT>
+std::unique_ptr<rx_file_item> file_system_storage<policyT>::get_storage_item (const string_type& path)
+{
+	string_type ext = rx_get_extension(path);
+
+	if (ext == RX_JSON_FILE_EXTESION)
+	{
+		return std::make_unique<rx_json_file>(path);
+
+	}
+	else if (ext == RX_BINARY_FILE_EXTESION)
+	{
+		return std::make_unique<rx_binary_file>(path);
+	}
+	else
+	{
+		return std::unique_ptr<rx_file_item>();
+	}
+}
+
+template <class policyT>
+rx_result file_system_storage<policyT>::ensure_path_exsistence (const string_type& path)
+{
+	if (!rx_file_exsist(path.c_str()))
+	{
+		string_type sub_path;
+		size_t idx = path.find_last_of("\\/");
+		if (idx == string_type::npos)
+			return "Something wrong with the path "s + path;
+		sub_path = path.substr(0, idx);
+		auto result = recursive_create_directory(sub_path);
+
+		return result;
+	}
+	else
+		return true;
+}
+
+template <class policyT>
+rx_result file_system_storage<policyT>::recursive_create_directory (const string_type& path)
+{
+	if (!rx_file_exsist(path.c_str()))
+	{
+		string_type sub_path;
+		size_t idx = path.find_last_of("\\/");
+		if (idx == string_type::npos)
+			return "Something wrong with the path "s + path;
+		sub_path = path.substr(0, idx);
+		auto result = recursive_create_directory(sub_path);
+		if (result)
+		{// now create our directory
+			auto result = rx_create_directory(path.c_str(), false);
+			if (result == RX_OK)
+			{
+				return true;
+			}
+			else
+			{
+				return "Error creating directory "s + sub_path;
+			}
+		}
+		else
+			return result;
+	}
+	else
+		return true;
+}
+
+template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
+// Class storage::files::rx_file_item
+
+rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path)
       : valid_(false),
         file_path_(file_path)
-	, rx_storage_item(path, name, serialization_type)
+	, rx_storage_item(serialization_type)
 {
 }
 
@@ -239,10 +339,10 @@ string_type rx_file_item::get_file_storage_info ()
 }
 
 
-// Class storage::files::rx_json_file 
+// Class storage::files::rx_json_file
 
-rx_json_file::rx_json_file (const string_type& path, const string_type& name, const string_type& file_path)
-	: rx_file_item(path, name, RX_JSON_SERIALIZATION_TYPE, file_path)
+rx_json_file::rx_json_file (const string_type& file_path)
+	: rx_file_item(RX_JSON_SERIALIZATION_TYPE, file_path)
 {
 }
 
@@ -281,7 +381,11 @@ rx_result rx_json_file::open_for_read ()
 			if (reader_->parse_data(data))
 				return true;
 			else
-				return "Error parsing Json file "s + file_path_ + "!";
+			{
+				rx_result ret = reader_->get_errors();
+				ret.register_error("Error parsing Json file "s + file_path_ + "!");
+				return ret;
+			}
 		}
 		else
 			return "Error reading file "s + file_path_ + "!";
@@ -318,6 +422,8 @@ rx_result rx_json_file::close ()
 					ret = "Error writing Json to file "s + file_path_ + "!";
 			}
 		}
+		else
+			ret = "Error opening Json file "s + file_path_ + "!";
 		writer_.release();
 		return ret;
 	}
@@ -327,10 +433,10 @@ rx_result rx_json_file::close ()
 }
 
 
-// Class storage::files::rx_binary_file 
+// Class storage::files::rx_binary_file
 
-rx_binary_file::rx_binary_file (const string_type& path, const string_type& name, const string_type& file_path)
-	: rx_file_item(path, name, RX_BINARY_SERIALIZATION_TYPE, file_path)
+rx_binary_file::rx_binary_file (const string_type& file_path)
+	: rx_file_item(RX_BINARY_SERIALIZATION_TYPE, file_path)
 {
 }
 

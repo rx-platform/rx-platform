@@ -32,8 +32,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
@@ -42,6 +40,8 @@
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using rx_platform::meta::construct_context;
 
@@ -51,7 +51,7 @@ namespace rx_platform {
 namespace meta {
 // had to do forward declaration because of back template pattern
 
-struct meta_data_t
+struct meta_configuration_data_t
 {
 	string_type instance_name;
 	uint32_t wd_timer_period = 1000;
@@ -84,7 +84,7 @@ public:
       event_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -99,8 +99,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -126,9 +124,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       meta_data meta_info_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -157,7 +152,7 @@ public:
       filter_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -172,8 +167,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -199,9 +192,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       meta_data meta_info_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -230,7 +220,7 @@ public:
       mapper_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -245,8 +235,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const meta_data& meta_info () const;
@@ -272,9 +260,6 @@ public:
       meta_data meta_info_;
 
       def_blocks::complex_data_type complex_data_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -303,7 +288,7 @@ public:
       source_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -318,8 +303,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -345,9 +328,6 @@ public:
       def_blocks::complex_data_type complex_data_;
 
       meta_data meta_info_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -378,7 +358,7 @@ public:
 
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
@@ -393,8 +373,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -424,9 +402,6 @@ public:
       def_blocks::mapped_data_type mapping_data_;
 
       meta_data meta_info_;
-
-
-      meta::storage_data storage_;
 
 
 };
@@ -461,7 +436,7 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_value get_value () const;
 
@@ -476,8 +451,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
-
-      rx_result assign_storage (rx_storage_item_ptr&& item);
 
 
       const meta_data& meta_info () const;
@@ -511,9 +484,6 @@ public:
       def_blocks::mapped_data_type mapping_data_;
 
       def_blocks::complex_data_type complex_data_;
-
-
-      meta::storage_data storage_;
 
 
 };

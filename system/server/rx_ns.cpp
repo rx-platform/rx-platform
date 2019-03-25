@@ -158,7 +158,7 @@ void rx_platform_item::set_parent (rx_directory_ptr parent)
 	parent_ = parent;
 }
 
-string_type rx_platform_item::get_path () const
+string_type rx_platform_item::callculate_path () const
 {
 	string_type ret;
 	locks::auto_lock_t<rx_platform_item> dummy(const_cast<rx_platform_item*>(this));
@@ -167,24 +167,6 @@ string_type rx_platform_item::get_path () const
 		parent_->fill_path(ret);
 	}
 	return ret + get_name();
-}
-
-rx_result rx_platform_item::serialize (base_meta_writer& stream) const
-{
-	if (!stream.write_string("Name", get_name().c_str()))
-		return false;
-
-	return true;
-}
-
-rx_result rx_platform_item::deserialize (base_meta_reader& stream)
-{
-	string_type temp;
-
-	if (!stream.read_string("Name", temp))
-		return false;
-
-	return true;
 }
 
 

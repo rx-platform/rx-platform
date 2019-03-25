@@ -32,10 +32,10 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
@@ -102,7 +102,7 @@ class server_command_manager : public rx_platform::runtime::objects::server_obje
 server commands managment object\r\n\
 bin folder in file hierarcyh\
 ")
-	typedef std::unordered_map<string_type, server_command_base_ptr > registered_commands_type;
+	typedef std::map<string_type, server_command_base_ptr > registered_commands_type;
 
   public:
       server_command_manager();
@@ -123,8 +123,6 @@ bin folder in file hierarcyh\
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       void get_commands (std::vector<command_ptr>& sub_items) const;
-
-      bool get_help (std::ostream& out, std::ostream& err);
 
 
   protected:

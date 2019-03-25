@@ -120,7 +120,7 @@ rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose,
 	{
 		return whose.target_name_ + " does not exists!";
 	}
-	auto id = item->get_node_id();
+	auto id = item->meta_info().get_id();
 	if (id.is_null())
 	{// TODO error, item does not have id
 		return whose.target_name_ + " does not have valid id!";
@@ -202,8 +202,9 @@ rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.serialize_complex_definition(stream, type))
-		return false;
+	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -214,8 +215,9 @@ rx_result basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, ba
 {
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-		return false;
+	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -251,12 +253,15 @@ rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const varia
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.serialize_complex_definition(stream, type))
-		return false;
-	if (!whose.variable_data_.serialize_variable_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-		return false;
+	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
+	ret = whose.variable_data_.serialize_variable_definition(stream, type);
+	if (!ret)
+		return ret;
+	ret = whose.mapping_data_.serialize_mapped_definition(stream, type);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -264,14 +269,16 @@ rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const varia
 template <>
 rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, struct_type::type_name))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.serialize_complex_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
-		return false;
+	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
+	ret = whose.mapping_data_.serialize_mapped_definition(stream, type);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -282,12 +289,15 @@ rx_result basic_types_algorithm<variable_type>::deserialize_basic_type(variable_
 {
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-		return false;
-	if (!whose.variable_data_.deserialize_variable_definition(stream, type, whose.complex_data_))
-		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
-		return false;
+	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
+	ret = whose.variable_data_.deserialize_variable_definition(stream, type, whose.complex_data_);
+	if (!ret)
+		return ret;
+	ret = whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -298,10 +308,12 @@ rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type
 {
 	if (!stream.start_object("Def"))
 		return false;
-	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
-		return false;
-	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
-		return false;
+	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
+	if (!ret)
+		return ret;
+	ret = whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_);
+	if (!ret)
+		return ret;
 	if (!stream.end_object())
 		return false;
 	return true;

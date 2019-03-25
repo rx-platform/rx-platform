@@ -32,17 +32,18 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_types.h"
+#include "system/storage_base/rx_storage.h"
 using namespace rx_platform::ns;
 
 
@@ -187,17 +188,23 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       values::rx_value get_value () const;
 
-      namespace_item_attributes get_attributes () const;
-
       rx_result generate_json (std::ostream& def, std::ostream& err) const;
-
-      rx_time get_created_time () const;
 
       string_type get_name () const;
 
       size_t get_size () const;
 
       rx_node_id get_node_id () const;
+
+      rx_result save () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const meta_data_t& meta_info () const;
+
+      void fill_code_info (std::ostream& info, const string_type& name);
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -229,11 +236,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       values::rx_value get_value () const;
 
-      namespace_item_attributes get_attributes () const;
-
       rx_result generate_json (std::ostream& def, std::ostream& err) const;
-
-      rx_time get_created_time () const;
 
       string_type get_name () const;
 
@@ -242,6 +245,14 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       void fill_code_info (std::ostream& info, const string_type& name);
 
       rx_node_id get_node_id () const;
+
+      rx_result save () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const meta_data_t& meta_info () const;
 
 
   protected:
@@ -312,12 +323,6 @@ values::rx_value rx_item_implementation<TImpl>::get_value () const
 }
 
 template <class TImpl>
-namespace_item_attributes rx_item_implementation<TImpl>::get_attributes () const
-{
-	return impl_->meta_info().get_attributes();
-}
-
-template <class TImpl>
 rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writer writer;
@@ -340,12 +345,6 @@ rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 }
 
 template <class TImpl>
-rx_time rx_item_implementation<TImpl>::get_created_time () const
-{
-	return impl_->get_created_time();
-}
-
-template <class TImpl>
 string_type rx_item_implementation<TImpl>::get_name () const
 {
 	return impl_->get_name();
@@ -361,6 +360,65 @@ template <class TImpl>
 rx_node_id rx_item_implementation<TImpl>::get_node_id () const
 {
 	return impl_->meta_info().get_id();
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::save () const
+{
+	const auto& meta = impl_->meta_info();
+	auto storage_result = meta.storage_info.resolve_storage();
+	if (storage_result)
+	{
+		return "Error not implemented for this one!!!";
+		/*auto result = storage_result.value()->save_item(impl_->get_item_ptr());
+		if (!result)
+			result.register_error("Error saving item "s + meta.get_path());
+		return result;*/
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		result.register_error("Error saving item "s + meta.get_path());
+		return result;
+	}
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
+{
+	auto ret = stream.write_header(STREAMING_TYPE_TYPE, 0);	
+	if (ret)
+	{
+		ret = impl_->serialize_definition(stream, STREAMING_TYPE_TYPE);
+		if (ret)
+			stream.write_footer();
+	}
+	return ret;
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
+{
+	int type;
+	auto ret = stream.read_header(type);
+	if (ret)
+	{
+		ret = impl_->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+		if (ret)
+			stream.read_footer();
+	}
+	return ret;
+}
+
+template <class TImpl>
+const meta_data_t& rx_item_implementation<TImpl>::meta_info () const
+{
+	return impl_->meta_info();
+}
+
+template <class TImpl>
+void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
+{
 }
 
 
@@ -392,12 +450,6 @@ values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 }
 
 template <class TImpl>
-namespace_item_attributes rx_meta_item_implementation<TImpl>::get_attributes () const
-{
-	return impl_->meta_info().get_attributes();
-}
-
-template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
 {
 	rx_platform::serialization::json_writer writer;
@@ -425,12 +477,6 @@ rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, 
 }
 
 template <class TImpl>
-rx_time rx_meta_item_implementation<TImpl>::get_created_time () const
-{
-	return impl_->meta_info().get_created_time();
-}
-
-template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_name () const
 {
 	return impl_->meta_info().get_name();
@@ -439,7 +485,7 @@ string_type rx_meta_item_implementation<TImpl>::get_name () const
 template <class TImpl>
 size_t rx_meta_item_implementation<TImpl>::get_size () const
 {
-	return sizeof(*this);
+	return sizeof(*this)+sizeof(TImpl);
 }
 
 template <class TImpl>
@@ -454,10 +500,65 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 	return impl_->meta_info().get_id();
 }
 
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::save () const
+{
+	const auto& meta = impl_->meta_info();
+	auto storage_result = meta.storage_info.resolve_storage();
+	if (storage_result)
+	{
+		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
+		if (!result)
+			result.register_error("Error saving type item "s + meta.get_path());
+		return result;
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		result.register_error("Error saving type item "s + meta.get_path());
+		return result;
+	}
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
+{
+	stream.write_header(STREAMING_TYPE_TYPE, 0);
+	auto ret = impl_->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	stream.write_footer();
+	return ret;
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
+{
+	return false;
+}
+
+template <class TImpl>
+const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
+{
+	return impl_->meta_info();
+}
+
 
 } // namespace internal_ns
 } // namespace sys_internal
 
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return impl_->meta_info().get_attributes();
+
+	return impl_->get_created_time();
+
+	return impl_->meta_info().get_attributes();
+
+	return impl_->meta_info().get_created_time();
 
 #endif

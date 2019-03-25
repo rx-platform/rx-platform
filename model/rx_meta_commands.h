@@ -260,6 +260,39 @@ command for prototyping objects in platform\r\n\
 };
 
 
+
+
+
+
+class save_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(save_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for saving items to storage\r\n\
+\
+");
+	struct save_data_t : public pointers::struct_reference
+	{
+		uint64_t started;
+	};
+
+  public:
+      save_command();
+
+      ~save_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
 } // namespace meta_commands
 } // namespace model
 

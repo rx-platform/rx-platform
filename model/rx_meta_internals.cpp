@@ -53,7 +53,7 @@ platform_types_manager& platform_types_manager::instance ()
 	return g_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, meta_data_t& data)
+rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
 {
 	return true;
 }
@@ -63,7 +63,7 @@ rx_result platform_types_manager::deinitialize ()
 	return true;
 }
 
-rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_data_t& data)
+rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
 {
 	worker_.start(RX_PRIORITY_IDLE);
 	return true;

@@ -70,7 +70,7 @@ rx_result application_type::construct (rx_application_ptr& what, construct_conte
 	return object_types_algorithm<application_type>::construct_object(*this, what, ctx);
 }
 
-platform_item_ptr application_type::get_item_ptr ()
+platform_item_ptr application_type::get_item_ptr () const
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
@@ -112,11 +112,6 @@ rx_result application_type::check_type (type_check_context& ctx)
 rx_result application_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<application_type>::resolve_object_type(*this, dir);
-}
-
-rx_result application_type::assign_storage (rx_storage_item_ptr&& item)
-{
-	return storage_.assign_storage(std::move(item));
 }
 
 
@@ -166,7 +161,7 @@ rx_result domain_type::construct (rx_domain_ptr what, construct_context& ctx) co
 	return object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
 }
 
-platform_item_ptr domain_type::get_item_ptr ()
+platform_item_ptr domain_type::get_item_ptr () const
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
@@ -208,11 +203,6 @@ bool domain_type::check_type (type_check_context& ctx)
 rx_result domain_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<domain_type>::resolve_object_type(*this, dir);
-}
-
-rx_result domain_type::assign_storage (rx_storage_item_ptr&& item)
-{
-	return storage_.assign_storage(std::move(item));
 }
 
 
@@ -266,7 +256,7 @@ rx_result object_type::construct (runtime::object_runtime_ptr what, construct_co
 	return object_types_algorithm<object_type>::construct_object(*this, what, ctx);
 }
 
-platform_item_ptr object_type::get_item_ptr ()
+platform_item_ptr object_type::get_item_ptr () const
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
@@ -313,11 +303,6 @@ bool object_type::check_type (type_check_context& ctx)
 rx_result object_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<object_type>::resolve_object_type(*this, dir);
-}
-
-rx_result object_type::assign_storage (rx_storage_item_ptr&& item)
-{
-	return storage_.assign_storage(std::move(item));
 }
 
 
@@ -410,7 +395,7 @@ rx_result port_type::construct (rx_port_ptr what, construct_context& ctx) const
 	return object_types_algorithm<port_type>::construct_object(*this, what, ctx);
 }
 
-platform_item_ptr port_type::get_item_ptr ()
+platform_item_ptr port_type::get_item_ptr () const
 {
   return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
@@ -452,11 +437,6 @@ bool port_type::check_type (type_check_context& ctx)
 rx_result port_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<port_type>::resolve_object_type(*this, dir);
-}
-
-rx_result port_type::assign_storage (rx_storage_item_ptr&& item)
-{
-	return storage_.assign_storage(std::move(item));
 }
 
 

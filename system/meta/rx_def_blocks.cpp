@@ -541,19 +541,20 @@ rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& str
 		string_type item_type;
 		if (!stream.read_string("Type", item_type))
 			return false;
-		if (item_type == RX_CPP_MAPPER_CLASS_TYPE_NAME)
+
+		if (item_type != RX_CPP_MAPPER_CLASS_TYPE_NAME)
+			return item_type + " is wrong item type for a mapper!";
+
+		mapper_attribute temp;
+		if (!temp.deserialize_definition(stream, type))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
+		if (ret)
 		{
-			mapper_attribute temp;
-			if (!temp.deserialize_definition(stream, type))
-				return false;
-			auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
-			if (ret)
-			{
-				mappers_.emplace_back(std::move(temp));
-			}
+			mappers_.emplace_back(std::move(temp));
 		}
 		else
-			return item_type + "is unknown type!";
+			return ret;
 
 		if (!stream.end_object())
 			return false;
@@ -915,19 +916,7 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 	}
 	if (!stream.end_array())
 		return false;
-	if (!stream.start_array("Events", events_.size()))
-		return false;
-	for (const auto& one : events_)
-	{
-		if (!stream.start_object("Item"))
-			return false;
-		if (!one.serialize_definition(stream, type))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
+
 	if (!stream.start_array("Filters", filters_.size()))
 		return false;
 	for (const auto& one : filters_)
@@ -941,12 +930,107 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 	}
 	if (!stream.end_array())
 		return false;
+
+	if (!stream.start_array("Events", events_.size()))
+		return false;
+	for (const auto& one : events_)
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		if (!one.serialize_definition(stream, type))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
 	return true;
 }
 
 rx_result variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data)
 {
-	return false;
+	if (!stream.start_array("Sources"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		string_type item_type;
+		if (!stream.read_string("Type", item_type))
+			return false;
+		if (item_type != RX_CPP_SOURCE_TYPE_NAME)
+			return item_type + " is wrong item type for a source!";
+
+		source_attribute temp;
+		if (!temp.deserialize_definition(stream, type))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(sources_.size() | complex_data_type::sources_mask)));
+		if (ret)
+		{
+			sources_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+
+	if (!stream.start_array("Filters"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		string_type item_type;
+		if (!stream.read_string("Type", item_type))
+			return false;
+		if (item_type != RX_CPP_FILTER_TYPE_NAME)
+			return item_type + " is wrong item type for a filter!";
+
+		filter_attribute temp;
+		if (!temp.deserialize_definition(stream, type))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(filters_.size() | complex_data_type::filters_mask)));
+		if (ret)
+		{
+			filters_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+
+	if (!stream.start_array("Events"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("Item"))
+			return false;
+		string_type item_type;
+		if (!stream.read_string("Type", item_type))
+			return false;
+		if (item_type != RX_CPP_EVENT_TYPE_NAME)
+			return item_type + " is wrong item type for a event!";
+
+		event_attribute temp;
+		if (!temp.deserialize_definition(stream, type))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(events_.size() | complex_data_type::events_mask)));
+		if (ret)
+		{
+			events_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
 }
 
 rx_result variable_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)

@@ -60,7 +60,7 @@ class configuration_storage_builder : public rx_platform_builder
 {
 
   public:
-      configuration_storage_builder();
+      configuration_storage_builder (meta::rx_storage_type storage_type);
 
       ~configuration_storage_builder();
 
@@ -70,18 +70,23 @@ class configuration_storage_builder : public rx_platform_builder
 
   protected:
 
-      rx_result build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage);
+      rx_result build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage, meta::rx_storage_type storage_type);
 
 
   private:
 
-      rx_result create_object_from_storage (base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage);
+      rx_result create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root);
 
-      rx_result create_type_from_storage (base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage);
+      rx_result create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root);
 
+
+
+      meta::rx_storage_type storage_type_;
 
 	  template<class T>
 	  rx_result create_concrete_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>);
+	  template<class T>
+	  rx_result create_concrete_simple_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>);
 };
 
 
