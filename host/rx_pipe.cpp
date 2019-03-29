@@ -58,7 +58,6 @@ rx_pipe_host::~rx_pipe_host()
 
 void rx_pipe_host::get_host_info (string_array& hosts)
 {
-	
 	hosts.emplace_back(get_pipe_info());
 	rx_platform_host::get_host_info(hosts);
 }
@@ -109,6 +108,21 @@ string_type rx_pipe_host::get_pipe_info ()
 		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
 	}
 	return ret;
+}
+
+bool rx_pipe_host::is_canceling () const
+{
+	return false;
+}
+
+bool rx_pipe_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
+{
+	return false;
+}
+
+bool rx_pipe_host::write_stdout (const void* data, size_t size)
+{
+	return false;
 }
 
 

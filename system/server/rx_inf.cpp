@@ -48,7 +48,8 @@ namespace infrastructure {
 // Class rx_platform::infrastructure::server_rt 
 
 server_rt::server_rt()
-	: server_object(runtime::objects::object_creation_data{
+      : extern_executer_(nullptr)
+	, server_object(runtime::objects::object_creation_data{
 		RX_NS_SERVER_RT_NAME
 		, RX_NS_SYSTEM_DOM_ID
 		, RX_NS_SYSTEM_DOM_TYPE_ID
@@ -86,12 +87,16 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 	if (data.has_callculation_timer)
 		callculation_timer_ = std::make_unique<rx::threads::timer>("Calc",0);
 
+	extern_executer_ = data.extern_executer;
 
 	return true;
 }
 
 rx_result server_rt::deinitialize ()
 {
+	if (extern_executer_)
+		extern_executer_ = nullptr;
+
 	if (io_pool_)
 		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
 	if (general_pool_)
@@ -202,6 +207,9 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 		return &io_pool_->get_pool();
 	case RX_DOMAIN_META:
 		return &model::platform_types_manager::instance().get_worker();
+	case RX_DOMAIN_EXTERN:
+		if (extern_executer_)
+			return extern_executer_;
 	default:
 		if(workers_)
 			return workers_->get_executer(domain);

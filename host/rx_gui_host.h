@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_pipe.h
+*  host\rx_gui_host.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,31 +27,64 @@
 ****************************************************************************/
 
 
-#ifndef rx_pipe_h
-#define rx_pipe_h 1
+#ifndef rx_gui_host_h
+#define rx_gui_host_h 1
 
 
 
+// rx_interactive
+#include "host/rx_interactive.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 
 
 namespace host {
 
-namespace pipe {
+namespace gui {
+
+typedef std::function<void(jobs::job_ptr)> synchronize_callback_t;
 
 
 
 
-
-class rx_pipe_host : public rx_platform::hosting::rx_platform_host  
+class gui_thread_synchronizer : public rx::threads::job_thread  
 {
 
   public:
-      rx_pipe_host (hosting::rx_host_storages& storage);
 
-      ~rx_pipe_host();
+      void append (jobs::job_ptr pjob);
+
+      void init_callback (synchronize_callback_t callback);
+
+      void deinit_callback ();
+
+
+  protected:
+
+  private:
+
+
+      synchronize_callback_t synchronize_callback_;
+
+
+};
+
+
+
+
+
+
+
+class gui_platform_host : public rx_platform::hosting::rx_platform_host  
+{
+
+  public:
+      gui_platform_host (hosting::rx_host_storages& storage);
+
+      ~gui_platform_host();
 
 
       void get_host_info (string_array& hosts);
@@ -70,9 +103,9 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int pipe_main (int argc, char* argv[]);
+      int gui_initialize (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback);
 
-      static string_type get_pipe_info ();
+      static string_type get_gui_info ();
 
       bool is_canceling () const;
 
@@ -80,10 +113,26 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool write_stdout (const void* data, size_t size);
 
+      int gui_deinitialize ();
+
+      rx_result gui_loop ();
+
 
   protected:
 
   private:
+
+      rx_result set_gui_thread_security ();
+
+      rx_result remove_gui_thread_security ();
+
+
+
+      rx_reference<rx_platform::hosting::host_security_context> host_security_context_;
+
+      rx_reference<interactive::interactive_security_context> user_security_context_;
+
+      gui_thread_synchronizer thread_synchronizer_;
 
 
       bool exit_;
@@ -92,7 +141,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 };
 
 
-} // namespace pipe
+} // namespace gui
 } // namespace host
 
 

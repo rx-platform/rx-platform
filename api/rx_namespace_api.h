@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  api\rx_namespace_api.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,38 +27,35 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#ifndef rx_namespace_api_h
+#define rx_namespace_api_h 1
 
 
 
 
-#include "rx_library.h"
+#include "rx_platform_api.h"
 #include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
 namespace rx_platform
 {
 namespace api
 {
-
-
-
-struct query_result_detail
+namespace ns
 {
-	rx_node_id id;
-	string_type name; 
-	rx_node_id parent;
-	uint32_t version;
-	rx_time created_time;
-	rx_time modified_time;
-	namespace_item_attributes attributes;
-	string_type path;
-};
 
-struct query_result
+rx_result rx_get_directory(
+	const string_type& name // directories's path
+	, std::function<void(rx_result_with<rx_directory_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_item(
+	const string_type& name // directories's path
+	, std::function<void(rx_result_with<platform_item_ptr>&&)> callback
+	, rx_context ctx);
+
+struct directory_browse_result
 {
-	std::vector<query_result_detail> details;
+	platform_directories_type directories;
+	platform_items_type items;
 
 	bool success = false;
 	operator bool() const
@@ -67,14 +64,12 @@ struct query_result
 	}
 };
 
+rx_result rx_list_directory(
+	const string_type& name // directories's path
+	, std::function<void(rx_result_with<directory_browse_result>&&)> callback
+	, rx_context ctx);
 
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_object_ptr object;
-};
-
+}
 }
 }
 

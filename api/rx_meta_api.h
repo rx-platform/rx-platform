@@ -89,6 +89,12 @@ rx_result rx_save_item(
 	, rx_context ctx);
 
 
+rx_result rx_get_derived_object_types(
+	const rx_node_id& id // item's path
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx);
+
+
 }
 }
 }

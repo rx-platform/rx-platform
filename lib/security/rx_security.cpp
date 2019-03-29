@@ -64,9 +64,10 @@ void security_context::logout ()
 	handle_ = security_manager::instance().context_deactivated(smart_this());
 }
 
-void security_context::login ()
+rx_result security_context::login ()
 {
 	handle_ = security_manager::instance().context_activated(smart_this());
+	return true;
 }
 
 bool security_context::has_console () const
@@ -97,6 +98,29 @@ bool security_context::is_interactive () const
 {
   return false;
 
+}
+
+rx_result security_context::impersonate ()
+{
+	auto ctx = get_handle();
+	if (ctx)
+	{
+		if (!rx_push_security_context(ctx))
+			return "Internal error while activating security context!";
+		else
+			return true;
+	}
+	else
+	{
+		return "Impersonation error, context not logged in!";
+	}
+}
+
+void security_context::revert ()
+{
+	auto ctx = get_handle();
+	if (ctx)
+		rx_pop_security_context();
 }
 
 

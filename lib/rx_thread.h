@@ -114,10 +114,6 @@ class job_thread
 
       virtual void append (job_ptr pjob) = 0;
 
-      virtual void run (int priority = RX_PRIORITY_NORMAL) = 0;
-
-      virtual void end (uint32_t timeout = RX_INFINITE) = 0;
-
 
   protected:
 

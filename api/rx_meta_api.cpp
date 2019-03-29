@@ -141,6 +141,19 @@ rx_result rx_save_item(const string_type& name
 }
 
 
+rx_result rx_get_derived_object_types(const rx_node_id& id // item's path
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	std::function<rx_result_with<query_result>()> func = [=]() {
+		return model::platform_types_manager::instance().get_type_cache<object_type>().get_derived_types(id);
+	};
+	rx_do_with_callback<rx_result_with<query_result>, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
+
+	return true;
+}
+
+
 }
 }
 }

@@ -43,12 +43,6 @@
 // rx_security
 #include "lib/security/rx_security.h"
 
-namespace host {
-namespace interactive {
-class interactive_console_host;
-
-} // namespace interactive
-} // namespace host
 
 
 using namespace rx;
@@ -100,7 +94,7 @@ class interactive_console_client : public rx_platform::prog::console_client
 
 
   public:
-      interactive_console_client (interactive_console_host* host);
+      interactive_console_client (hosting::rx_platform_host* host);
 
       ~interactive_console_client();
 
@@ -129,7 +123,7 @@ class interactive_console_client : public rx_platform::prog::console_client
 
       rx_reference<interactive_security_context> security_context_;
 
-      interactive_console_host *host_;
+      rx_platform::hosting::rx_platform_host *host_;
 
       rx_vt100::vt100_transport vt100_transport_;
 
@@ -167,14 +161,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
-
-      virtual bool is_canceling () const = 0;
-
-      virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
-
-      virtual bool write_stdout (const void* data, size_t size) = 0;
-
-      bool write_stdout (const string_type& lines);
 
       std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 

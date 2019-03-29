@@ -32,18 +32,19 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "lib/rx_job.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 
 
 #include "system/hosting/rx_host.h"
 using rx_platform::ns::namespace_item_attributes;
 
+#define RX_DOMAIN_EXTERN 0xfffb
 #define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
@@ -180,6 +181,7 @@ struct runtime_data_t
 	int slow_pool_size = -1;
 	bool has_callculation_timer = false;
 	uint32_t io_timer_period = 200;
+	threads::job_thread* extern_executer = nullptr;
 };
 
 
@@ -275,6 +277,9 @@ callculation ( normal priority)");
       rx_reference<dispatcher_subscribers_job> dispatcher_timer_;
 
       rx_reference<domains_pool> workers_;
+
+
+      threads::job_thread* extern_executer_;
 
 
 };

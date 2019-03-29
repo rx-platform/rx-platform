@@ -319,7 +319,7 @@ template<typename T>
 bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	string_type indent_str(indent * 4, ' ');
-	const auto& result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
+	auto result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
 	for (auto one : result.details)
 	{
 		out << indent_str << one.name << " [" << one.id.to_string() << "]\r\n";

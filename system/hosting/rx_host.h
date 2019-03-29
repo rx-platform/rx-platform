@@ -46,10 +46,10 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 
 
@@ -156,6 +156,16 @@ class rx_platform_host
       virtual string_type get_default_name () const = 0;
 
       virtual string_type defualt_system_storage_reference () const;
+
+      virtual bool is_canceling () const = 0;
+
+      virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
+
+      virtual bool write_stdout (const void* data, size_t size) = 0;
+
+      bool write_stdout (const string_type& lines);
+
+      virtual bool exit () const = 0;
 
 
       rx_platform_host * get_parent ()

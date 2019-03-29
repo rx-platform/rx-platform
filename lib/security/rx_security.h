@@ -76,7 +76,7 @@ class security_context : public pointers::reference_object
 
       void logout ();
 
-      void login ();
+      rx_result login ();
 
       virtual bool has_console () const;
 
@@ -87,6 +87,10 @@ class security_context : public pointers::reference_object
       virtual bool is_hosted () const;
 
       virtual bool is_interactive () const;
+
+      rx_result impersonate ();
+
+      void revert ();
 
 
       const rx_security_handle_t get_handle () const

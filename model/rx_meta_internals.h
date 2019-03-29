@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -89,25 +89,11 @@ typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object
 //typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
 
-struct query_result_detail
-{
-	rx_node_id id;
-	string_type name;
-};
-
-struct query_result
-{
-	uint32_t error_code;
-	std::vector<query_result_detail> details;
-};
 
 
 
 
-
-
-
-class relations_hash_data
+class relations_hash_data 
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -170,7 +156,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash
+class inheritance_hash 
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -225,7 +211,7 @@ class inheritance_hash
 
 
 
-class instance_hash
+class instance_hash 
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -262,7 +248,7 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash
+class type_hash 
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -286,11 +272,11 @@ public:
 
       rx_result register_type (typename type_hash<typeT>::Tptr what);
 
-      rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
+      rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
       rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (meta_data& meta, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
-      query_result get_derived_types (const rx_node_id& id) const;
+      api::query_result get_derived_types (const rx_node_id& id) const;
 
       rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
 
@@ -326,7 +312,7 @@ public:
 
 
 template <class typeT>
-class simple_type_hash
+class simple_type_hash 
 {
 	simple_type_hash(const simple_type_hash&) = delete;
 	simple_type_hash(simple_type_hash&&) = delete;
@@ -350,11 +336,11 @@ public:
 
       rx_result register_type (typename type_hash<typeT>::Tptr what);
 
-      rx_result register_constructor (const rx_node_id& id, std::function<RType()> f);
+      rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
       rx_result_with<typename simple_type_hash<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id) const;
 
-      query_result get_derived_types (const rx_node_id& id) const;
+      api::query_result get_derived_types (const rx_node_id& id) const;
 
       rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
 
@@ -412,7 +398,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager
+class platform_types_manager 
 {
 	//friend class worker_registration_object;
 	template<class T>
@@ -941,433 +927,6 @@ class platform_types_manager
 
 
 };
-
-
-// Parameterized Class model::type_hash
-
-template <class typeT>
-type_hash<typeT>::type_hash()
-{
-	default_constructor_ = []()
-	{
-		return rx_create_reference<RType>();
-	};
-}
-
-
-
-template <class typeT>
-typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id) const
-{
-	auto it = registered_types_.find(id);
-	if (it != registered_types_.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return Tptr::null_ptr;
-	}
-}
-
-template <class typeT>
-rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
-{
-	const auto& id = what->meta_info().get_id();
-	auto it = registered_types_.find(id);
-	if (it == registered_types_.end())
-	{
-		registered_types_.emplace(what->meta_info().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		return true;
-	}
-	else
-	{
-		return "Duplicated Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name();
-	}
-}
-
-template <class typeT>
-rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RType()> f)
-{
-	constructors_.emplace(id, f);
-	return true;
-}
-
-template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (meta_data& meta, data::runtime_values_data* init_data, bool prototype)
-{
-	if (meta.get_id().is_null() || prototype)
-	{
-		meta.resolve();
-	}
-	else
-	{
-		if (registered_objects_.find(meta.get_id()) != registered_objects_.end())
-		{
-			return "Duplicate Id!";
-		}
-	}
-
-	RTypePtr ret;
-
-	rx_node_ids base;
-	base.emplace_back(meta.get_parent());
-	auto base_result = inheritance_hash_.get_base_types(meta.get_parent(),base);
-	if (!base_result)
-		return base_result.errors();
-	for(const auto& one : base)
-	{
-		auto it = constructors_.find(one);
-		if (it != constructors_.end())
-		{
-			ret = (it->second)();
-			break;
-		}
-	}
-	if (!ret)
-		ret = default_constructor_();
-
-	construct_context ctx;
-	ret->meta_info() = meta;
-	for (auto one_id : base)
-	{
-		auto my_class = get_type_definition(one_id);
-		if (my_class)
-		{
-			auto result = my_class->construct(ret, ctx);
-			if (!result)
-			{// error constructing object
-				return result.errors();
-			}
-		}
-	}
-	object_type::set_object_runtime_data(ctx.runtime_data, ret);
-	if (init_data)
-	{
-		ret->fill_data(*init_data);
-	}
-	if (!prototype)
-	{
-		registered_objects_.emplace(meta.get_id(), ret);
-		instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
-	}
-	return ret;
-}
-
-template <class typeT>
-query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
-{
-	query_result ret;
-	std::vector<rx_node_id> temp;
-	inheritance_hash_.get_derived_from(id, temp);
-	for (auto one : temp)
-	{
-		auto type = registered_types_.find(one);
-
-		if (type!=registered_types_.end())
-		{
-			ret.details.emplace_back(query_result_detail { one, type->second->meta_info().get_name() });
-		}
-	}
-	return ret;
-}
-
-template <class typeT>
-rx_result type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
-{
-	auto temp = get_type_definition(id);
-	if (temp)
-	{
-		return temp->check_type(ctx);
-	}
-	else
-	{
-		std::ostringstream ss;
-		ss << "Not existing "
-			<< typeT::type_name
-			<< " with node_id "
-			<< id;
-		ctx.add_error(ss.str());
-		return false;
-	}
-}
-
-template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node_id& id) const
-{
-	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return Tptr::null_ptr;
-	}
-}
-
-template <class typeT>
-rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
-{
-	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end())
-	{
-		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
-		registered_objects_.erase(it);
-		instance_hash_.remove_from_hash_data(id, type_id, base);
-		return true;
-	}
-	else
-	{
-		return "Object does not exists!";
-	}
-}
-
-template <class typeT>
-rx_result type_hash<typeT>::delete_type (rx_node_id id)
-{
-    auto it = registered_types_.find(id);
-	if (it != registered_types_.end())
-	{
-		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
-		registered_types_.erase(it);
-		inheritance_hash_.remove_from_hash_data(id, type_id);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-/*
-class type_safe_class
-{
-	static int32_t next_id()
-	{
-		static int32_t g_id(0);
-		return g_id++;
-	}
-	template<class T, class Tbase>
-	int32_t id_for()
-	{
-		static int result(next_id());
-	}
-};
-
-private:
-	template <typename T_>
-	struct type_safe_object_type
-	{
-		virtual ~SomethingValueBase()
-		{
-		}
-	};
-
-	struct SomethingValueBase
-	{
-		std::string type_info_name;
-
-		SomethingValueBase(const std::string & t) :
-			type_info_name(t)
-		{
-		}
-	};
-
-	template <typename T_>
-	struct SomethingValue :
-		SomethingValueBase
-	{
-		T_ value;
-
-		SomethingValue(const T_ & v) :
-			SomethingValueBase(typeid(type_safe_object_type<T_>()).name()),
-			value(v)
-		{
-		}
-	};
-
-	std::shared_ptr<SomethingValueBase> _value;
-
-public:
-	template <typename T_>
-	type_safe_class(const T_ & t) :
-		_value(new SomethingValue<T_>(t))
-	{
-	}
-
-	template <typename T_>
-	const T_ & as() const
-	{
-		if (typeid(type_safe_object_type<T_>()).name() != _value->type_info_name)
-			throw SomethingIsSomethingElse();
-		return std::static_pointer_cast<const SomethingValue<T_> >(_value)->value;
-	}
-};
-*/
-// Parameterized Class model::simple_type_hash
-
-template <class typeT>
-simple_type_hash<typeT>::simple_type_hash()
-{
-	default_constructor_ = []()
-	{
-		return rx_create_reference<RType>();
-	};
-}
-
-
-
-template <class typeT>
-typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
-{
-	auto it = registered_types_.find(id);
-	if (it != registered_types_.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return Tptr::null_ptr;
-	}
-}
-
-template <class typeT>
-rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
-{
-	const auto& id = what->meta_info().get_id();
-	auto it = registered_types_.find(id);
-	if (it == registered_types_.end())
-	{
-		registered_types_.emplace(what->meta_info().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-template <class typeT>
-rx_result simple_type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RType()> f)
-{
-	constructors_.emplace(id, f);
-	return true;
-}
-
-template <class typeT>
-rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id) const
-{
-	RTypePtr ret;
-
-	rx_node_ids base;
-	base.emplace_back(type_id);
-	auto base_result = inheritance_hash_.get_base_types(type_id, base);
-	if (!base_result)
-		return base_result.errors();
-
-	for (const auto& one : base)
-	{
-		auto it = constructors_.find(one);
-		if (it != constructors_.end())
-		{
-			ret = (it->second)();
-			break;
-		}
-	}
-	if (!ret)
-		ret = default_constructor_();
-
-	construct_context ctx;
-	for (auto one_id : base)
-	{
-		auto my_class = get_type_definition(one_id);
-		if (my_class)
-		{
-			auto result = my_class->construct(ret, ctx);
-			if (!result)
-			{// error constructing object
-				return result.errors();
-			}
-		}
-	}
-
-	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), std::move(ret) };
-}
-
-template <class typeT>
-query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) const
-{
-	query_result ret;
-	return ret;
-}
-
-template <class typeT>
-rx_result simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
-{
-	auto temp = get_type_definition(id);
-	if (temp)
-	{
-		return temp->check_type(ctx);
-	}
-	else
-	{
-		std::ostringstream ss;
-		ss << "Not existing "
-			<< typeT::type_name
-			<< " with node_id "
-			<< id;
-		ctx.add_error(ss.str());
-		return false;
-	}
-}
-
-template <class typeT>
-rx_result simple_type_hash<typeT>::delete_type (rx_node_id id)
-{
-	auto it = registered_types_.find(id);
-	if (it != registered_types_.end())
-	{
-		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
-		registered_types_.erase(it);
-		inheritance_hash_.remove_from_hash_data(id, type_id);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-template <class typeT>
-rx_result simple_type_hash<typeT>::type_exists (rx_node_id id) const
-{
-	auto it = registered_types_.find(id);
-	if (it != registered_types_.end())
-	{
-		return true;
-	}
-	else
-	{
-		std::ostringstream ss;
-		ss << "Not existing "
-			<< typeT::type_name
-			<< " with node_id "
-			<< id;
-		return ss.str();
-	}
-}
 
 
 } // namespace model

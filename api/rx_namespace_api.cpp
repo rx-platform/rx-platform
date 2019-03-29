@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  api\rx_namespace_api.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,58 +27,49 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#include "pch.h"
 
 
+// rx_namespace_api
+#include "api/rx_namespace_api.h"
 
+#include "system/meta/rx_meta_data.h"
+#include "model/rx_meta_internals.h"
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
 namespace rx_platform
 {
 namespace api
 {
-
-
-
-struct query_result_detail
+namespace ns
 {
-	rx_node_id id;
-	string_type name; 
-	rx_node_id parent;
-	uint32_t version;
-	rx_time created_time;
-	rx_time modified_time;
-	namespace_item_attributes attributes;
-	string_type path;
-};
 
-struct query_result
+
+rx_result rx_get_directory(const string_type& name // directory's path
+	, std::function<void(rx_result_with<rx_directory_ptr>&&)> callback
+	, rx_context ctx)
 {
-	std::vector<query_result_detail> details;
-
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
-};
-
-
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_object_ptr object;
-};
-
+	return true;
 }
+
+
+rx_result rx_get_item(const string_type& name // item's path
+	, std::function<void(rx_result_with<platform_item_ptr>&&)> callback
+	, rx_context ctx)
+{
+	return true;
+}
+
+rx_result rx_list_directory(const string_type& name // directory's path
+	, std::function<void(rx_result_with<directory_browse_result>&&)> callback
+	, rx_context ctx)
+{
+	return true;
 }
 
 
 
+}
+}
+}
 
-#endif
+

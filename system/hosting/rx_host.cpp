@@ -206,6 +206,11 @@ string_type rx_platform_host::defualt_system_storage_reference () const
 	return "<embedded>";
 }
 
+bool rx_platform_host::write_stdout (const string_type& lines)
+{
+	return write_stdout(lines.c_str(), lines.size());
+}
+
 
 // Class rx_platform::hosting::host_security_context 
 
@@ -236,5 +241,4 @@ bool host_security_context::is_system () const
 
 } // namespace hosting
 } // namespace rx_platform
-
 

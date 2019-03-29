@@ -110,7 +110,7 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 		auto result = one->do_build(root);
 		if (!result)
 		{
-			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform user configuration!");
+			BUILD_LOG_ERROR("rx_platform_builder", 900, "There were error while building platform user configuration!");
 		}
 	}
 	for (auto& one : test_builders)
@@ -118,7 +118,7 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 		auto result = one->do_build(root);
 		if (!result)
 		{
-			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform test configuration!");
+			BUILD_LOG_WARNING("rx_platform_builder", 900, "There were error while building platform test configuration!");
 		}
 	}
 	for (auto& one : other_builders)
@@ -126,7 +126,7 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 		auto result = one->do_build(root);
 		if (!result)
 		{
-			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform additional configuration!");
+			BUILD_LOG_WARNING("rx_platform_builder", 900, "Error building platform additional configuration!");
 		}
 	}
 

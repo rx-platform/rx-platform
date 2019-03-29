@@ -250,6 +250,213 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
+// Parameterized Class model::type_hash 
+
+template <class typeT>
+type_hash<typeT>::type_hash()
+{
+	default_constructor_ = []()
+	{
+		return rx_create_reference<RType>();
+	};
+}
+
+
+
+template <class typeT>
+typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id) const
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return Tptr::null_ptr;
+	}
+}
+
+template <class typeT>
+rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
+{
+	const auto& id = what->meta_info().get_id();
+	auto it = registered_types_.find(id);
+	if (it == registered_types_.end())
+	{
+		registered_types_.emplace(what->meta_info().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		return true;
+	}
+	else
+	{
+		return "Duplicated Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name();
+	}
+}
+
+template <class typeT>
+rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
+{
+	constructors_.emplace(id, f);
+	return true;
+}
+
+template <class typeT>
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (meta_data& meta, data::runtime_values_data* init_data, bool prototype)
+{
+	if (meta.get_id().is_null() || prototype)
+	{
+		meta.resolve();
+	}
+	else
+	{
+		if (registered_objects_.find(meta.get_id()) != registered_objects_.end())
+		{
+			return "Duplicate Id!";
+		}
+	}
+
+	RTypePtr ret;
+
+	rx_node_ids base;
+	base.emplace_back(meta.get_parent());
+	auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
+	if (!base_result)
+		return base_result.errors();
+	for (const auto& one : base)
+	{
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
+		{
+			ret = (it->second)();
+			break;
+		}
+	}
+	if (!ret)
+		ret = default_constructor_();
+
+	construct_context ctx;
+	ret->meta_info() = meta;
+	for (auto one_id : base)
+	{
+		auto my_class = get_type_definition(one_id);
+		if (my_class)
+		{
+			auto result = my_class->construct(ret, ctx);
+			if (!result)
+			{// error constructing object
+				return result.errors();
+			}
+		}
+	}
+	object_type::set_object_runtime_data(ctx.runtime_data, ret);
+	if (init_data)
+	{
+		ret->fill_data(*init_data);
+	}
+	if (!prototype)
+	{
+		registered_objects_.emplace(meta.get_id(), ret);
+		instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
+	}
+	return ret;
+}
+
+template <class typeT>
+api::query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) const
+{
+	api::query_result ret;
+	std::vector<rx_node_id> temp;
+	inheritance_hash_.get_derived_from(id, temp);
+	for (auto one : temp)
+	{
+		auto type = registered_types_.find(one);
+
+		if (type != registered_types_.end())
+		{
+			api::query_result_detail item;
+			type->second->meta_info().fill_query_result(item);
+			ret.details.emplace_back(std::move(item));
+		}
+	}
+	return ret;
+}
+
+template <class typeT>
+rx_result type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
+{
+	auto temp = get_type_definition(id);
+	if (temp)
+	{
+		return temp->check_type(ctx);
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		ctx.add_error(ss.str());
+		return false;
+	}
+}
+
+template <class typeT>
+typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node_id& id) const
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return RTypePtr::null_ptr;
+	}
+}
+
+template <class typeT>
+rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		auto type_id = it->second->meta_info().get_parent();
+		rx_node_ids base;
+		base.emplace_back(type_id);
+		inheritance_hash_.get_base_types(type_id, base);
+		registered_objects_.erase(it);
+		instance_hash_.remove_from_hash_data(id, type_id, base);
+		return true;
+	}
+	else
+	{
+		return "Object does not exists!";
+	}
+}
+
+template <class typeT>
+rx_result type_hash<typeT>::delete_type (rx_node_id id)
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		auto type_id = it->second->meta_info().get_parent();
+		rx_node_ids base;
+		base.emplace_back(type_id);
+		inheritance_hash_.get_base_types(type_id, base);
+		registered_types_.erase(it);
+		inheritance_hash_.remove_from_hash_data(id, type_id);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
 // Class model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
@@ -404,5 +611,175 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 }
 
 
+// Parameterized Class model::simple_type_hash 
+
+template <class typeT>
+simple_type_hash<typeT>::simple_type_hash()
+{
+	default_constructor_ = []()
+	{
+		return rx_create_reference<RType>();
+	};
+}
+
+
+
+template <class typeT>
+typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return Tptr::null_ptr;
+	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
+{
+	const auto& id = what->meta_info().get_id();
+	auto it = registered_types_.find(id);
+	if (it == registered_types_.end())
+	{
+		registered_types_.emplace(what->meta_info().get_id(), what);
+		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
+{
+	constructors_.emplace(id, f);
+	return true;
+}
+
+template <class typeT>
+rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id) const
+{
+	RTypePtr ret;
+
+	rx_node_ids base;
+	base.emplace_back(type_id);
+	auto base_result = inheritance_hash_.get_base_types(type_id, base);
+	if (!base_result)
+		return base_result.errors();
+
+	for (const auto& one : base)
+	{
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
+		{
+			ret = (it->second)();
+			break;
+		}
+	}
+	if (!ret)
+		ret = default_constructor_();
+
+	construct_context ctx;
+	for (auto one_id : base)
+	{
+		auto my_class = get_type_definition(one_id);
+		if (my_class)
+		{
+			auto result = my_class->construct(ret, ctx);
+			if (!result)
+			{// error constructing object
+				return result.errors();
+			}
+		}
+	}
+
+	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), std::move(ret) };
+}
+
+template <class typeT>
+api::query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) const
+{
+	api::query_result ret;
+	return ret;
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
+{
+	auto temp = get_type_definition(id);
+	if (temp)
+	{
+		return temp->check_type(ctx);
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		ctx.add_error(ss.str());
+		return false;
+	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::delete_type (rx_node_id id)
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		auto type_id = it->second->meta_info().get_parent();
+		rx_node_ids base;
+		base.emplace_back(type_id);
+		inheritance_hash_.get_base_types(type_id, base);
+		registered_types_.erase(it);
+		inheritance_hash_.remove_from_hash_data(id, type_id);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::type_exists (rx_node_id id) const
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return true;
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< typeT::type_name
+			<< " with node_id "
+			<< id;
+		return ss.str();
+	}
+}
+
+
 } // namespace model
 
+// explicit template instantiation here!!!
+template class model::type_hash<object_type>;
+template class model::type_hash<application_type>;
+template class model::type_hash<domain_type>;
+template class model::type_hash<port_type>;
+
+template class model::simple_type_hash<struct_type>;
+template class model::simple_type_hash<variable_type>;
+template class model::simple_type_hash<mapper_type>;
+template class model::simple_type_hash<filter_type>;
+template class model::simple_type_hash<event_type>;
+template class model::simple_type_hash<source_type>;

@@ -36,6 +36,8 @@
 #include "terminal/rx_terminal_style.h"
 #include "system/hosting/rx_yaml.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_interactive
 #include "host/rx_interactive.h"
 
@@ -143,7 +145,6 @@ void interactive_console_host::console_loop (configuration_data_t& config)
 
 void interactive_console_host::get_host_info (string_array& hosts)
 {
-	
 	hosts.emplace_back(get_interactive_info());
 	rx_platform_host::get_host_info(hosts);
 }
@@ -234,11 +235,6 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 		err << "Unknown command:" ANSI_COLOR_YELLOW << command << ANSI_COLOR_RESET << ".\r\n";
 	}
 	return ret;
-}
-
-bool interactive_console_host::write_stdout (const string_type& lines)
-{
-	return write_stdout(lines.c_str(), lines.size());
 }
 
 std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
@@ -401,7 +397,7 @@ string_type interactive_console_host::get_interactive_info ()
 
 string_type interactive_console_client::license_message = RX_LICENSE_MESSAGE;
 
-interactive_console_client::interactive_console_client (interactive_console_host* host)
+interactive_console_client::interactive_console_client (hosting::rx_platform_host* host)
       : host_(host),
         exit_(false)
 	, security_context_(pointers::_create_new)

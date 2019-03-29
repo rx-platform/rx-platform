@@ -37,6 +37,7 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "system/server/rx_server.h"
+#include "api/rx_platform_api.h"
 
 
 namespace rx_platform {
@@ -236,6 +237,18 @@ rx_result meta_data::resolve ()
 	}
 	else
 		return false;
+}
+
+void meta_data::fill_query_result (api::query_result_detail& item) const
+{
+	item.name = name_;
+	item.id = id_;
+	item.parent = parent_;
+	item.version = version_;
+	item.created_time = created_time_;
+	item.modified_time = modified_time_;
+	item.attributes = attributes_;
+	item.path = path_;
 }
 
 

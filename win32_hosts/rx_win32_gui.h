@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  win32_hosts\rx_win32_gui.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,57 +27,50 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#ifndef rx_win32_gui_h
+#define rx_win32_gui_h 1
+
+
+
+// rx_gui_host
+#include "host/rx_gui_host.h"
+
+
+
+namespace win32 {
 
 
 
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
-namespace rx_platform
+
+class win32_gui_host : public host::gui::gui_platform_host  
 {
-namespace api
-{
+
+  public:
+      win32_gui_host (hosting::rx_host_storages& storage);
+
+      ~win32_gui_host();
 
 
+      string_type get_config_path () const;
 
-struct query_result_detail
-{
-	rx_node_id id;
-	string_type name; 
-	rx_node_id parent;
-	uint32_t version;
-	rx_time created_time;
-	rx_time modified_time;
-	namespace_item_attributes attributes;
-	string_type path;
+      string_type get_default_name () const;
+
+      void get_host_info (string_array& hosts);
+
+
+  protected:
+
+      static string_type get_win32_gui_info ();
+
+
+  private:
+
+
 };
 
-struct query_result
-{
-	std::vector<query_result_detail> details;
 
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
-};
-
-
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_object_ptr object;
-};
-
-}
-}
-
+} // namespace win32
 
 
 

@@ -57,6 +57,10 @@ using namespace rx_platform::ns;
 
 
 namespace rx_platform {
+namespace api
+{
+struct query_result_detail;
+}
 
 namespace meta {
 
@@ -134,6 +138,8 @@ class meta_data
       static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
 
       rx_result resolve ();
+
+      void fill_query_result (api::query_result_detail& item) const;
 
 
       const rx_node_id& get_parent () const
