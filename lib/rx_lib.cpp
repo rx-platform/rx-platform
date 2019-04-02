@@ -693,21 +693,13 @@ void rx_node_id::to_string(string_type& val) const
 		}
 		break;
 	}
-	if (namespace_ == DEFAULT_NAMESPACE)
-	{
-		val = type;
-		val += ':';
-		val += value;
-	}
-	else
-	{
-		char buffer[0x20];
-		snprintf(buffer,0x20,"%d",(int)namespace_);
-		val = buffer;
-		val = type;
-		val += ':';
-		val += value;
-	}
+	
+	char buffer[0x20];
+	snprintf(buffer,0x20,"%d",(int)namespace_);
+	val = buffer;
+	val = type;
+	val += ':';
+	val += value;
 }
 string_type rx_node_id::to_string() const
 {

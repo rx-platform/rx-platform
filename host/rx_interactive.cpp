@@ -70,7 +70,6 @@ interactive_console_host::~interactive_console_host()
 
 void interactive_console_host::console_loop (configuration_data_t& config)
 {
-
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	sec_ctx->login();
 

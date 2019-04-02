@@ -688,7 +688,7 @@ int rx_write_pipe_server(struct pipe_server_t* pipes, const void* data, size_t s
 {
 	DWORD writen = 0;
 	BOOL ret = WriteFile(pipes->server_write, &size, sizeof(size), &writen, NULL);
-	if (!ret || writen != sizeof(size))
+	if (!ret || writen != size)
 	{
 		return RX_ERROR;
 	}
@@ -700,7 +700,7 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
 {
 	DWORD writen = 0;
 	BOOL ret = WriteFile(pipes->client_write, data, (DWORD)size, &writen, NULL);
-	if (!ret || writen != sizeof(size))
+	if (!ret || writen != size)
 	{
 		return RX_ERROR;
 	}
@@ -708,26 +708,30 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
 
 	return RX_OK;
 }
-int rx_read_pipe_server(struct pipe_server_t* pipes, uint8_t* data, size_t size)
+int rx_read_pipe_server(struct pipe_server_t* pipes, uint8_t* data, size_t* size)
 {
 	DWORD read = 0;
-
-	BOOL ret = ReadFile(pipes->server_read, data, (DWORD)size, &read, NULL);
-	if (!ret || read != size)
+	DWORD to_read = (DWORD)(*size);
+	BOOL ret = ReadFile(pipes->server_read, data, to_read, &read, NULL);
+	if (!ret)
 	{
 		return RX_ERROR;
 	}
+	*size = read;
 	return RX_OK;
 }
-int rx_read_pipe_client(struct pipe_client_t* pipes, uint8_t* data, size_t size)
+int rx_read_pipe_client(struct pipe_client_t* pipes, uint8_t* data, size_t* size)
 {
 	DWORD read = 0;
-
-	BOOL ret = ReadFile(pipes->client_read, data, (DWORD)size, &read, NULL);
-	if (!ret || read != size)
+	DWORD to_read = (DWORD)(*size);
+	BOOL ret = ReadFile(pipes->client_read, data, to_read, &read, NULL);
+	if (!ret)
 	{
+		DWORD err = GetLastError();
+		printf("***Pipe error %x\r\n", err);
 		return RX_ERROR;
 	}
+	*size = read;
 	return RX_OK;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////}

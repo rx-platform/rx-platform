@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 12
+#define RX_HAL_BUILD_NUMBER 13
 
 /*********************************************************************************
 
@@ -17,5 +17,6 @@
 0.10.10. pid retried internal
 0.10.11. version reading
 0.10.12. added some file system changes
+0.10.13. corrected some pipe errors
 
 *********************************************************************************/

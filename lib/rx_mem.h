@@ -476,6 +476,43 @@ class backward_simple_allocator
 typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
+
+
+
+
+class page_aligned_buffer 
+{
+
+  public:
+      page_aligned_buffer();
+
+      page_aligned_buffer (size_t size);
+
+      ~page_aligned_buffer();
+
+
+      void alloc_buffer (size_t size);
+
+      void free_buffer ();
+
+      uint8_t* buffer ();
+
+      const uint8_t* buffer () const;
+
+
+  protected:
+
+  private:
+
+
+      uint8_t* buffer_;
+
+      size_t size_;
+
+
+};
+
+
 // Parameterized Class rx::memory::memory_buffer_base 
 
 template <class allocT, bool swap_bytes>

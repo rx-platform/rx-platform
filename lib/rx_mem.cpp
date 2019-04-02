@@ -207,6 +207,61 @@ char* backward_simple_allocator::get_char_buffer () const
 }
 
 
+// Class rx::memory::page_aligned_buffer 
+
+page_aligned_buffer::page_aligned_buffer()
+	: size_(0)
+	, buffer_(nullptr)
+{
+}
+
+page_aligned_buffer::page_aligned_buffer (size_t size)
+	: size_(size)
+{
+	if (size != 0)
+		buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
+	else
+		buffer_ = nullptr;
+}
+
+
+page_aligned_buffer::~page_aligned_buffer()
+{
+	if (buffer_)
+		rx_deallocate_os_memory(buffer_, size_);
+}
+
+
+
+void page_aligned_buffer::alloc_buffer (size_t size)
+{
+	if (buffer_)
+		free_buffer();
+	size_ = size;
+	buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
+}
+
+void page_aligned_buffer::free_buffer ()
+{
+	if (buffer_)
+	{
+		rx_deallocate_os_memory(buffer_, size_);
+		buffer_ = nullptr;
+		size_ = 0;
+	}
+}
+
+uint8_t* page_aligned_buffer::buffer ()
+{
+	return buffer_;
+}
+
+const uint8_t* page_aligned_buffer::buffer () const
+{
+	return buffer_;
+}
+
+
 } // namespace memory
 } // namespace rx
 

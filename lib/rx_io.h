@@ -387,6 +387,29 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
+
+
+
+
+template <class headerT, class bufferT>
+class stream_chuks_decoder 
+{
+
+  public:
+      stream_chuks_decoder (std::function<void(const bufferT&)> callback);
+
+
+  protected:
+
+  private:
+
+
+      std::function<void(const bufferT&)> chunk_callback_;
+
+
+};
+
+
 // Parameterized Class rx::io::full_duplex_comm 
 
 template <class buffT>
@@ -981,6 +1004,16 @@ bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool& di
 {
 	return bind_socket(0, dispatcher);
 }
+
+
+// Parameterized Class rx::io::stream_chuks_decoder 
+
+template <class headerT, class bufferT>
+stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<void(const bufferT&)> callback)
+      : chunk_callback_(callback)
+{
+}
+
 
 
 } // namespace io

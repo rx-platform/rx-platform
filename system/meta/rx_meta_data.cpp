@@ -111,9 +111,9 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return false;
 	if (!stream.write_id("NodeId", id_))
 		return false;
-	if (!stream.write_byte("Attrs", (uint8_t)attributes_))
-		return false;
 	if (!stream.write_string("Name", name_.c_str()))
+		return false;
+	if (!stream.write_byte("Attrs", (uint8_t)attributes_))
 		return false;
 	if (!stream.write_id("SuperId", parent_))
 		return false;
@@ -134,12 +134,12 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 		return false;
 	if (!stream.read_id("NodeId", id_))
 		return false;
+	if (!stream.read_string("Name", name_))
+		return false;
 	uint8_t temp_byte;
 	if (!stream.read_byte("Attrs", temp_byte))
 		return false;
 	attributes_ = (namespace_item_attributes)temp_byte;
-	if (!stream.read_string("Name", name_))
-		return false;
 	if (!stream.read_id("SuperId", parent_))
 		return false; 
 	if (!stream.read_string("Path", path_))

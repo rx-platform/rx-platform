@@ -31,15 +31,30 @@
 #define rx_pipe_h 1
 
 
+#include "protocols/rx_opcua_impl.h"
 
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_thread
+#include "lib/rx_thread.h"
+// rx_interactive
+#include "host/rx_interactive.h"
 
+namespace host {
+namespace pipe {
+class anonymus_pipe_client;
+
+} // namespace pipe
+} // namespace host
+
+
+#define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
 
 namespace host {
 
 namespace pipe {
+
 
 
 
@@ -83,10 +98,61 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
   protected:
 
+      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes);
+
+      void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes);
+
+      void receive_loop (anonymus_pipe_client& pipe);
+
+
   private:
 
 
+      rx::threads::physical_job_thread pipe_sender_;
+
+      std::unique_ptr<anonymus_pipe_client> pipe_client_;
+
+
       bool exit_;
+
+      opcua_transport_protocol_type transport_;
+
+
+};
+
+
+
+
+
+
+class anonymus_pipe_client 
+{
+	typedef memory::page_aligned_buffer pipe_buffer_type;
+
+  public:
+      anonymus_pipe_client (const pipe_client_t& pipes);
+
+      ~anonymus_pipe_client();
+
+
+      rx_result write_pipe (const void* buffer, const size_t size);
+
+      rx_result read_pipe (void*& buffer, size_t& size);
+
+      rx_result close_pipe ();
+
+	  anonymus_pipe_client(const anonymus_pipe_client&) = delete;
+	  anonymus_pipe_client(anonymus_pipe_client&&) = delete;
+	  anonymus_pipe_client& operator=(const anonymus_pipe_client&) = delete;
+	  anonymus_pipe_client& operator=(anonymus_pipe_client&&) = delete;
+  protected:
+
+  private:
+
+
+      pipe_client_t handles_;
+
+      pipe_buffer_type buffer_;
 
 
 };

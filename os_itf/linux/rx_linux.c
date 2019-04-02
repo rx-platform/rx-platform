@@ -194,7 +194,7 @@ int rx_create_server_side_pipe(struct pipe_server_t* pipes,size_t size)
     pipes->server_read=pipe1[0];
     pipes->server_write=pipe2[1];
     pipes->client_read=pipe2[0];
-    pipes->client_read=pipe1[1];
+    pipes->client_write=pipe1[1];
 
     return RX_OK;
 }
@@ -246,19 +246,53 @@ int rx_destry_client_side_pipe(struct pipe_client_t* pipes)
 
 int rx_write_pipe_server(struct pipe_server_t* pipes, const void* data, size_t size)
 {
-    return RX_ERROR;
+    int ret = write(pipes->server_write, data, size);
+    if(ret<0 || ret!=(int)size)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        return RX_OK;
+    }
 }
 int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t size)
 {
-    return RX_ERROR;
+    int ret = write(pipes->client_write, data, size);
+    if(ret<0 || ret!=(int)size)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        return RX_OK;
+    }
 }
-int rx_read_pipe_server(struct pipe_server_t* pipes, void* data, size_t size)
+int rx_read_pipe_server(struct pipe_server_t* pipes, void* data, size_t* size)
 {
-    return RX_ERROR;
+    int ret = read(pipes->server_write, data, *size);
+    if(ret<0)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        *size=(size_t)ret;
+        return RX_OK;
+    }
 }
-int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t size)
+int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t* size)
 {
-    return RX_ERROR;
+    int ret = write(pipes->client_read, data, *size);
+    if(ret<0)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        *size=(size_t)ret;
+        return RX_OK;
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // IP addresses
