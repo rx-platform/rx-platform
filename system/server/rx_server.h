@@ -51,6 +51,14 @@
 // rx_host
 #include "system/hosting/rx_host.h"
 
+namespace interfaces {
+namespace io_endpoints {
+class rx_io_manager;
+
+} // namespace io_endpoints
+} // namespace interfaces
+
+
 
 #include "lib/rx_log.h"
 using namespace rx;
@@ -206,6 +214,8 @@ class rx_gate
       hosting::rx_platform_host *host_;
 
       scripts_type scripts_;
+
+      std::unique_ptr<interfaces::io_endpoints::rx_io_manager> io_manager_;
 
 
       static rx_gate* g_instance;

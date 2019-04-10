@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_opcua_transport.cpp
+*  protocols\ansi_c\opcua_c\rx_opcua_binary_ser.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,11 +27,14 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_opcua_transport
-#include "protocols/rx_opcua_transport.h"
+#ifndef rx_opcua_binary_ser_h
+#define rx_opcua_binary_ser_h 1
 
 
 
+
+
+
+
+
+#endif

@@ -253,18 +253,7 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 	
 	cxxopts::Options options("rx-interactive", "");
 
-	options.add_options()
-		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
-		("s,startup", "Startup script", cxxopts::value<string_type>(config.general.startup_script))
-		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
-		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
-		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration_data.instance_name))
-		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.general.test_log))
-		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.namespace_data.build_system_from_code))
-		("h,help", "Print help")
-		;
+	add_command_line_options(options, config);
 
 	try
 	{

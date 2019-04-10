@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_protocol_errors.h
+*  protocols\opcua\rx_opcua_mapping.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,31 +27,23 @@
 ****************************************************************************/
 
 
-#ifndef rx_protocol_errors_h
-#define rx_protocol_errors_h 1
+#include "pch.h"
 
 
-#define RX_PROTOCOL_OK 0
-#define RX_PROTOCOL_EMPTY 1
-#define RX_PROTOCOL_WRONG_STATE 2
-#define RX_PROTOCOL_PARSING_ERROR 3
-#define RX_PROTOCOL_BUFFER_NEGOTIATE_ERROR 4
-#define RX_PROTOCOL_NOT_IMPLEMENTED 5
-#define RX_PROTOCOL_OUT_OF_MEMORY 6
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-typedef uint_fast8_t rx_transport_result_t;
+// rx_opcua_mapping
+#include "protocols/opcua/rx_opcua_mapping.h"
 
 
 
-#ifdef __cplusplus
-}
-#endif
+namespace protocols {
+
+namespace opc_ua {
+
+// Class protocols::opc_ua::opc_ua_trasport 
 
 
-#endif
+opc_ua_endpoint test;
+
+} // namespace opc_ua
+} // namespace protocols
+

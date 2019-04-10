@@ -50,7 +50,6 @@ namespace pipe {
 rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
       : exit_(false)
 	, hosting::rx_platform_host(storage)
-	, pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
 {
 }
 
@@ -103,7 +102,8 @@ bool rx_pipe_host::break_host (const string_type& msg)
 int rx_pipe_host::pipe_main (int argc, char* argv[])
 {
 	std::cout << "\r\n"
-		<< "rx-platform Pipe Child Console Host"
+		<< "rx-platform\r\n\r\n"
+		<< get_pipe_info()
 		<< "\r\n======================================\r\n";
 
 
@@ -193,7 +193,7 @@ bool rx_pipe_host::write_stdout (const void* data, size_t size)
 bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes)
 {
 
-	cxxopts::Options options("rx-interactive", "");
+	cxxopts::Options options("rx-pipe", "");
 
 	intptr_t read_handle;
 	intptr_t write_handle;
@@ -201,17 +201,9 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 	options.add_options()
 		("input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
 		("output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
-		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
-		("s,startup", "Startup script", cxxopts::value<string_type>(config.general.startup_script))
-		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
-		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
-		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration_data.instance_name))
-		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.general.test_log))
-		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.namespace_data.build_system_from_code))
-		("h,help", "Print help")
 		;
+
+	add_command_line_options(options, config);
 
 	try
 	{
@@ -286,59 +278,41 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 		{
 			std::cout << "OK\r\n";
 			std::cout << "Starting pipe communication...";
-			pipe_client_ = std::make_unique<anonymus_pipe_client>(pipes);
 
-
-			pipe_sender_.start();
-
-			rx_protocol_client protocol_client;
-			protocol_client.reference = this;
-			protocol_client.send_function = [] (void* reference, uint8_t* buffer, size_t buffer_size) -> rx_transport_result_t
-			{
-				rx_pipe_host* self = reinterpret_cast<rx_pipe_host*>(reference);
-
-				byte_string data(buffer, &buffer[buffer_size - 1]);
-				self->pipe_sender_.append(
-					rx_create_reference<jobs::lambda_job<byte_string> >(
-						[&](byte_string data)
-						{
-							self->pipe_client_->write_pipe(&data[0], data.size());
-							std::cout << "Host sent " << (int)data.size() << "bytes\r\n";
-						},
-						data
-					)
-				);
-				return RX_PROTOCOL_OK;
-			};
-			protocol_client.collected_callback = [](void* reference, uint8_t* buffer, size_t buffer_size) -> rx_transport_result_t
-			{
-				rx_pipe_host* self = reinterpret_cast<rx_pipe_host*>(reference);
-				
-				return RX_PROTOCOL_OK;
-			};
-
-			rx_memory_functions memory;
-			memory.alloc_buffer_function = rx_c_alloc_buffer;
-			memory.alloc_function = rx_c_alloc_buffer;
-			memory.free_buffer_function = rx_c_free_buffer;
-			memory.free_function = rx_c_free_buffer;
-
-			rx_transport_result_t res = opcua_bin_init_server_transport(&transport_, &protocol_client, 0x10000, 0x10, 1, &memory);
+			rx_protocol_result_t res = opcua_bin_init_pipe_transport(&transport_, 0x10000, 0x10);
+			
 			if (res == RX_PROTOCOL_OK)
 			{
-				std::cout << "OK\r\n";
-				receive_loop(*pipe_client_);
+				result = pipes_.open(pipes);
+				if (result)
+				{
+					std::cout << "OK\r\n";
+					pipes_.receive_loop();
 
-				opcua_bin_deinit_transport(&transport_, &memory);
+					pipes_.close();
+
+					opcua_bin_deinit_transport(&transport_);
+				}
+				else
+				{
+					std::cout << "ERROR\r\nError initializing pipe endpoint!\r\n";
+					rx_dump_error_result(std::cout, result);
+				}
 			}
 			else
 				std::cout << "ERROR\r\nError initializing transport protocol!\r\n";
 
 
-			pipe_sender_.end();
-
-			pipe_client_->close_pipe();
-			pipe_client_.release();
+			
+			std::cout << "Stopping rx-platform...";
+			result = rx_platform::rx_gate::instance().stop();
+			if (result)
+				std::cout << "OK\r\n";
+			else
+			{
+				std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+				rx_dump_error_result(std::cout, result);
+			}
 		}
 		else
 		{
@@ -362,81 +336,6 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
-}
-
-void rx_pipe_host::receive_loop (anonymus_pipe_client& pipe)
-{
-	rx_result result;
-
-	rx_memory_functions memory;
-	memory.alloc_buffer_function = rx_c_alloc_buffer;
-	memory.alloc_function = rx_c_alloc_buffer;
-	memory.free_buffer_function = rx_c_free_buffer;
-	memory.free_function = rx_c_free_buffer;
-
-	while (!exit())
-	{
-		size_t size;
-		void* buffer;
-		result = pipe.read_pipe(buffer, size);
-		if (!result)
-		{
-			std::cout << "Error reading pipe, exiting!\r\n";
-			HOST_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
-			break;
-		}
-		std::cout << "Host received " << size << " bytes\r\n";
-		auto res = opcua_bin_bytes_received(&transport_, RX_PROTOCOL_OK, (uint8_t*)buffer, size, &memory);
-		if (res != RX_PROTOCOL_OK)
-		{
-			std::cout << "Error code " << res << " returned by transport!\r\n";
-			break;
-		}
-	}
-}
-
-
-// Class host::pipe::anonymus_pipe_client 
-
-anonymus_pipe_client::anonymus_pipe_client (const pipe_client_t& pipes)
-      : handles_(pipes)
-	, buffer_(RX_PIPE_BUFFER_SIZE)
-{
-}
-
-
-anonymus_pipe_client::~anonymus_pipe_client()
-{
-}
-
-
-
-rx_result anonymus_pipe_client::write_pipe (const void* buffer, const size_t size)
-{
-	auto ret = rx_write_pipe_client(&handles_, buffer, size);
-	if (ret == RX_OK)
-		return true;
-	else
-		return "Error writing pipe";
-}
-
-rx_result anonymus_pipe_client::read_pipe (void*& buffer, size_t& size)
-{
-	size = RX_PIPE_BUFFER_SIZE;
-	auto ret = rx_read_pipe_client(&handles_, buffer_.buffer(), &size);
-	if (ret == RX_OK)
-	{
-		buffer = buffer_.buffer();
-		return true;
-	}
-	else
-		return "Error reading pipe";
-}
-
-rx_result anonymus_pipe_client::close_pipe ()
-{
-	rx_destry_client_side_pipe(&handles_);
-	return true;
 }
 
 

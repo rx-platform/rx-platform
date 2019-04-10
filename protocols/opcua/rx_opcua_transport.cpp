@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_transport_base.c
+*  protocols\opcua\rx_opcua_transport.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -29,11 +29,9 @@
 
 #include "pch.h"
 
-#include "rx_protocol_errors.h"
 
-// rx_transport_base
-#include "protocols/rx_transport_base.h"
-
+// rx_opcua_transport
+#include "protocols/opcua/rx_opcua_transport.h"
 
 
 

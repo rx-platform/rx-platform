@@ -295,6 +295,68 @@ rx_result gui_platform_host::remove_gui_thread_security ()
 	return true;
 }
 
+string_type gui_platform_host::just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
+{
+	string_type server_name;
+
+	std::cout << "\r\n"
+		<< "rx-platform GUI Host"
+		<< "\r\n======================================\r\n";
+
+	bool ret = parse_command_line(argc, argv, config);
+	if (ret)
+	{
+		rx_platform::hosting::simplified_yaml_reader reader;
+		std::cout << "Reading configuration file...";
+		ret = read_config_file(reader, config);
+		if (ret)
+		{
+			std::cout << "OK\r\n";
+			server_name = get_default_name();
+		}
+	}
+	return server_name;
+}
+
+int gui_platform_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
+{
+	cxxopts::Options options("rx-gui", "");
+	
+	add_command_line_options(options, config);
+
+	try
+	{
+		auto result = options.parse(argc, argv);
+		if (result.count("help"))
+		{
+			std::cout << options.help({ "" });
+			std::cout << "\r\n\r\n";
+
+			// don't execute
+			return false;
+		}
+		else if (result.count("version"))
+		{
+
+			string_type version = rx_gate::instance().get_rx_version();
+
+			std::cout << "\r\n"
+				<< version << "\r\n\r\n";
+
+			// don't execute
+			return false;
+		}
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		std::cout << "\r\nError parsing command line:\r\n"
+			<< ex.what() << "\r\n";
+
+		return false;
+	}
+}
+
 
 // Class host::gui::gui_thread_synchronizer 
 

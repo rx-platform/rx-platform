@@ -31,6 +31,8 @@
 
 #include "lib/rx_lib_version.h"
 
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
 // rx_server
 #include "system/server/rx_server.h"
 
@@ -39,6 +41,7 @@
 #include "system/python/py_support.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
+#include "interfaces/rx_endpoints.h"
 
 
 namespace rx_platform {
@@ -84,9 +87,7 @@ rx_gate::rx_gate()
 		rx_name_ = sname;
 	lib_version_ = g_lib_version;
 	rx_init_hal_version();
-	hal_version_ = g_ositf_version;
-	
-	
+	hal_version_ = g_ositf_version;	
 
 	sprintf(buff, "%s %d.%d.%d",
 		RX_COMPILER_NAME,
@@ -95,6 +96,8 @@ rx_gate::rx_gate()
 		RX_COMPILER_BUILD);
 	comp_version_ = buff;
 
+	// create io manager instance
+	io_manager_ = std::make_unique<interfaces::io_endpoints::rx_io_manager>();
 }
 
 
@@ -133,8 +136,8 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 		result = manager_.initialize(host, data.managment_data);
 		if (result)
 		{
-			// result = io_manager_.initialize(host, data.io_manager_data);
-			if (true)//)
+			result = io_manager_->initialize(host, data.io_manager_data);
+			if (result)
 			{
 				auto build_result =	sys_internal::builders::rx_platform_builder::buid_platform(host, data.namespace_data);
 
@@ -159,6 +162,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 					//io_manager_.deinitialize();
 					manager_.deinitialize();
 					runtime_.deinitialize();
+					io_manager_->deinitialize();
 				}
 			}
 			else

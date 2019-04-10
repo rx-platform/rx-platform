@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_opcua_impl.h
+*  protocols\ansi_c\opcua_c\rx_opcua_transport.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,13 +27,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_impl_h
-#define rx_opcua_impl_h 1
+#ifndef rx_opcua_transport_h
+#define rx_opcua_transport_h 1
 
 
 #define RX_OPCUA_MAX_VERSION 0
 #define RX_OPCUA_MIN_BUFFER 8192
-#include "rx_transport_base.h"
+#include "protocols/ansi_c/common_c/rx_transport_base.h"
 
 
 #ifdef __cplusplus
@@ -47,21 +47,26 @@ extern "C" {
 typedef struct opcua_transport_header_def
 {
 	uint8_t message_type[3];
-	uint8_t reserved;
+	uint8_t is_final;
 	uint32_t message_size;
 
 } opcua_transport_header;
 
-const uint32_t opcua_hello_msg_type = ('H' << 16) | ('E' << 8) | 'L';
-const uint32_t opcua_reverse_hello_msg_type = ('R' << 16) | ('H' << 8) | 'E';
-const uint32_t opcua_ack_msg_type = ('A' << 16) | ('C' << 8) | 'K';
-const uint32_t opcua_open_msg_type = ('O' << 16) | ('P' << 8) | 'N';
-const uint32_t opcua_close_msg_type = ('C' << 16) | ('C' << 8) | 'S';
-const uint32_t opcua_error_msg_type = ('E' << 16) | ('R' << 8) | 'R';
-const uint32_t opcua_regular_msg_type = ('M' << 16) | ('S' << 8) | 'G';
-
-// !!!!!! IMPLEMENTATION SPECIFIC, NO SECURITY, LOCAL PIPE
-const uint32_t opcua_pipe_msg_type = ('L' << 16) | ('O' << 8) | 'C';
+enum opcua_message_types
+{
+	// transport level messages
+	opcua_hello_msg_type = ('H' << 16) | ('E' << 8) | 'L',
+	opcua_reverse_hello_msg_type = ('R' << 16) | ('H' << 8) | 'E',
+	opcua_ack_msg_type = ('A' << 16) | ('C' << 8) | 'K',
+	opcua_error_msg_type = ('E' << 16) | ('R' << 8) | 'R',
+	// secure channel messages
+	opcua_open_msg_type = ('O' << 16) | ('P' << 8) | 'N',
+	opcua_close_msg_type = ('C' << 16) | ('C' << 8) | 'S',
+	// regular messages
+	opcua_regular_msg_type = ('M' << 16) | ('S' << 8) | 'G',
+	// RX IMPLEMENTATION SPECIFIC, NO SECURITY, LOCAL PIPE !!!
+	rx_pipe_msg_type = ('L' << 16) | ('O' << 8) | 'C'
+};
 
 
 typedef struct opcua_hello_message_def
@@ -87,19 +92,19 @@ typedef struct opcua_acknowledge_message_def
 } opcua_acknowledge_message;
 
 
-typedef struct security_simetric_header_def
+typedef struct opcua_security_simetric_header_def
 {
 	uint32_t channel_id;
 	uint32_t token_id;
 
-} security_simetric_header;
+} opcua_security_simetric_header;
 
-typedef struct sequence_header_def
+typedef struct opcua_sequence_header_def
 {
 	uint32_t sequence_number;
 	uint32_t request_id;
 
-} sequence_header;
+} opcua_sequence_header;
 
 typedef struct opcua_transport_error_def
 {
@@ -126,42 +131,37 @@ enum opcua_transport_state
 // definition of transport struct
 typedef struct opcua_transport_protocol_def
 {
+	// protocol stack data
+	struct rx_protocol_stack_entry protocol_stack_entry;
 	// settings
 	int supports_pipe;
 	int server_side;
 	// state
 	enum opcua_transport_state current_state;
 	opcua_acknowledge_message connection_data;
-	// protocol callbacks
-	rx_protocol_client protocol_client;
+	uint32_t current_request_id;
+	uint32_t current_sequence_id;
+	int last_chunk_received;
+	// memory handling
+	size_t initial_packet_size;
+	rx_packet_stack free_buffers;
 	// send queue
-	rx_transport_queue send_queue;
+	rx_packet_queue send_queue;
 	// receive collector
-	rx_transport_packet_collector collector;
+	rx_packet_buffer receive_buffer;
 
 } opcua_transport_protocol_type;
 // initialize and deinitialize of transport
-rx_transport_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport
-	, rx_protocol_client* protocol_client
+rx_protocol_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport
 	, size_t buffer_size
-	, size_t queue_size
-	, int supports_pipe
-	, rx_memory_functions* memory);
-rx_transport_result_t opcua_bin_init_server_transport(opcua_transport_protocol_type* transport
-	, rx_protocol_client* protocol_client
+	, size_t queue_size);
+rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_type* transport
 	, size_t buffer_size
-	, size_t queue_size
-	, int supports_pipe
-	, rx_memory_functions* memory);
-rx_transport_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport
-	, rx_memory_functions* memory);
-
-// i/o for data
-rx_transport_result_t opcua_bin_bytes_sent(opcua_transport_protocol_type* transport, rx_transport_result_t result, rx_memory_functions* memory);
-rx_transport_result_t opcua_bin_bytes_received(opcua_transport_protocol_type* transport, rx_transport_result_t result, const uint8_t* buffer, size_t buffer_size, rx_memory_functions* memory);
-rx_transport_result_t opcua_bin_cloced(opcua_transport_protocol_type* transport, rx_transport_result_t result, rx_memory_functions* memory);
-// split and send
-rx_transport_result_t opcua_bin_send_packets(opcua_transport_protocol_type* transport, const uint8_t* buffer, size_t buffer_size, rx_memory_functions* memory);
+	, size_t queue_size);
+rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type* transport
+	, size_t buffer_size
+	, size_t queue_size);
+rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
 
 
 

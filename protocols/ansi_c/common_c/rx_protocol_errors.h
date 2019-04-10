@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_transport_base.h
+*  protocols\ansi_c\common_c\rx_protocol_errors.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,32 +27,29 @@
 ****************************************************************************/
 
 
-#ifndef rx_transport_base_h
-#define rx_transport_base_h 1
+#ifndef rx_protocol_errors_h
+#define rx_protocol_errors_h 1
 
 
-#include "rx_protocol_errors.h"
-#include "rx_containers.h"
+#define RX_PROTOCOL_OK 0
+#define RX_PROTOCOL_EMPTY 1
+#define RX_PROTOCOL_WRONG_STATE 2
+#define RX_PROTOCOL_PARSING_ERROR 3
+#define RX_PROTOCOL_BUFFER_SIZE_ERROR 4
+#define RX_PROTOCOL_NOT_IMPLEMENTED 5
+#define RX_PROTOCOL_OUT_OF_MEMORY 6
+#define RX_PROTOCOL_INVALID_SEQUENCE 7
+#define RX_PROTOCOL_COLLECT_ERROR 8
+#define RX_PROTOCOL_STACK_STRUCTURE_ERROR 9
+#define RX_PROTOCOL_INSUFFICIENT_DATA 10
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	
 
-typedef rx_transport_result_t(*rx_send_function_type)(void* reference, uint8_t* buffer, size_t buffer_size);
-typedef rx_transport_result_t(*rx_collected_function_type)(void* reference, uint8_t* buffer, size_t buffer_size);
-
-// callbacks
-typedef struct rx_protocol_client_type
-{
-	void* reference;
-	rx_send_function_type send_function;
-	rx_collected_function_type collected_callback;
-
-} rx_protocol_client;
-
+typedef uint_fast8_t rx_protocol_result_t;
 
 
 

@@ -33,14 +33,14 @@
 
 #include "lib/security/rx_security.h"
 
-// sl_script
-#include "soft_logic/sl_script.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// sl_script
+#include "soft_logic/sl_script.h"
 
 namespace rx_platform {
 namespace prog {

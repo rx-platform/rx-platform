@@ -117,8 +117,13 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       rx_result gui_loop ();
 
+      string_type just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
+
 
   protected:
+
+      int parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
+
 
   private:
 

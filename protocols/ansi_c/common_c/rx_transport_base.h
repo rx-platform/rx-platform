@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_opcua_transport.h
+*  protocols\ansi_c\common_c\rx_transport_base.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,14 +27,22 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_transport_h
-#define rx_opcua_transport_h 1
+#ifndef rx_transport_base_h
+#define rx_transport_base_h 1
+
+
+#include "rx_protocol_base.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 
-
-
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

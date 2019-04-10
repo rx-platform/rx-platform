@@ -31,7 +31,20 @@
 #define rx_endpoints_h 1
 
 
+#include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
+
+/////////////////////////////////////////////////////////////
+// logging macros for host library
+#define ITF_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Interface",src,lvl,msg)
+#define ITF_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Interface",src,lvl,msg)
+#define ITF_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Interface",src,lvl,msg)
+#define ITF_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Interface",src,lvl,msg)
+#define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
+#define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
+
+// dummy
+#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
@@ -50,7 +63,38 @@ namespace io_endpoints {
 
 
 
-class rx_io_endpoint 
+
+template <typename defT>
+class rx_io_address 
+{
+
+  public:
+      rx_io_address();
+
+      rx_io_address (size_t value_size);
+
+
+      protocol_endpoint* get_endpoint ();
+
+      const protocol_endpoint* get_endpoint () const;
+
+	  ~rx_io_address() = default;
+  protected:
+
+  private:
+
+
+      uint8_t value_[sizeof(defT)];
+
+
+};
+
+
+
+
+
+
+class rx_io_endpoint : public rx_protocol_stack_entry  
 {
 public:
 
@@ -91,7 +135,7 @@ physical port class. basic implementation of a port");
   private:
 
 
-      rx_io_endpoint *my_endpoint_;
+      rx_io_endpoint *my_endpoints_;
 
 
 };
@@ -134,6 +178,71 @@ class rx_io_manager : public rx_platform::runtime::objects::server_object
 
 
 };
+
+
+
+
+
+
+class rx_io_buffer : public rx_packet_buffer  
+{
+
+  public:
+      rx_io_buffer();
+
+      rx_io_buffer (size_t initial_capacity, rx_protocol_stack_entry* stack_entry);
+
+      ~rx_io_buffer();
+
+
+      bool valid () const;
+
+      void attach (rx_packet_buffer* buffer);
+
+      void detach (rx_packet_buffer* buffer);
+
+      void release ();
+
+	  // disable copy semantics
+	  rx_io_buffer(const rx_io_buffer&) = delete;
+	  rx_io_buffer& operator=(const rx_io_buffer&) = delete;
+	  // enable move semantics
+	  rx_io_buffer(rx_io_buffer&& right) noexcept;
+	  rx_io_buffer& operator=(rx_io_buffer&& right) noexcept;
+  protected:
+
+  private:
+
+
+};
+
+
+// Parameterized Class interfaces::io_endpoints::rx_io_address 
+
+template <typename defT>
+rx_io_address<defT>::rx_io_address()
+{
+}
+
+template <typename defT>
+rx_io_address<defT>::rx_io_address (size_t value_size)
+{
+	rx_init_endpoint(get_endpoint(), value_size);
+}
+
+
+
+template <typename defT>
+protocol_endpoint* rx_io_address<defT>::get_endpoint ()
+{
+	return reinterpret_cast<protocol_endpoint*>(this);
+}
+
+template <typename defT>
+const protocol_endpoint* rx_io_address<defT>::get_endpoint () const
+{
+	return reinterpret_cast<protocol_endpoint*>(this);
+}
 
 
 } // namespace io_endpoints

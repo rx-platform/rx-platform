@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_protocol_errors.c
+*  protocols\ansi_c\opcua_c\rx_opcua_binary_ser.c
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,8 +30,25 @@
 #include "pch.h"
 
 
-// rx_protocol_errors
-#include "protocols/rx_protocol_errors.h"
+// rx_opcua_binary_ser
+#include "protocols/ansi_c/opcua_c/rx_opcua_binary_ser.h"
 
+size_t opcua_write_string(uint8_t* buffer, size_t from, const char* str)
+{
+	size_t len;
+	if (str)
+	{
+		len = strlen(str);
+		*((uint32_t*)&buffer[from]) = (uint32_t)len;
+		if (len)
+			memcpy(&buffer[from + sizeof(uint32_t)], str, len);
+		return from + sizeof(uint32_t) + len;
+	}
+	else
+	{// empty string just write -1
+		*((uint32_t*)&buffer[from]) = (uint32_t)(-1);
+		return from + sizeof(uint32_t);
+	}
+}
 
 

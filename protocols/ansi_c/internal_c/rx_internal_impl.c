@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\rx_transport_base.cpp
+*  protocols\ansi_c\internal_c\rx_internal_impl.c
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,8 +30,30 @@
 #include "pch.h"
 
 
-// rx_transport_base
-#include "protocols/rx_transport_base.h"
+// rx_internal_impl
+#include "protocols/ansi_c/internal_c/rx_internal_impl.h"
+
+rx_memory_functions g_memory;
+
+
+rx_protocol_result_t rx_c_alloc_buffer(void** buffer, size_t buffer_size)
+{
+	*buffer = malloc(buffer_size);
+	if (buffer)
+	{
+		return RX_PROTOCOL_OK;
+	}
+	else
+	{
+		return RX_PROTOCOL_OUT_OF_MEMORY;
+	}
+}
+rx_protocol_result_t rx_c_free_buffer(void* buffer, size_t buffer_size)
+{
+	free(buffer);
+	return RX_PROTOCOL_OK;
+}
+
 
 
 

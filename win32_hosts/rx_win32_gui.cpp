@@ -27,7 +27,7 @@
 ****************************************************************************/
 
 
-#include "pch.h"
+#include "stdafx.h"
 
 #include "rx_win32_gui_version.h"
 #include "rx_win32_common.h"

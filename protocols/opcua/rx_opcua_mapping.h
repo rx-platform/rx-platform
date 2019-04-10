@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  interfaces\rx_interfaces.h
+*  protocols\opcua\rx_opcua_mapping.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,35 +27,40 @@
 ****************************************************************************/
 
 
-#ifndef rx_interfaces_h
-#define rx_interfaces_h 1
+#ifndef rx_opcua_mapping_h
+#define rx_opcua_mapping_h 1
+
+
+
+// dummy
+#include "dummy.h"
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
+
+
+
+namespace protocols {
+
+namespace opc_ua {
+
+constexpr size_t opc_ua_endpoint_name_len = 0x100;
+
+
+
+
+typedef interfaces::io_endpoints::rx_io_address< std::array<char, opc_ua_endpoint_name_len>  > opc_ua_endpoint;
 
 
 
 
 
 
-namespace interfaces {
 
-namespace ip_endpoints {
-
-
-
-
-
-class rx_ip_address 
+class opc_ua_trasport : public rx_protocol_stack_entry  
 {
 
   public:
-      rx_ip_address();
-
-      rx_ip_address(const rx_ip_address &right);
-
-      virtual ~rx_ip_address();
-
-      rx_ip_address & operator=(const rx_ip_address &right);
-
-	  rx_ip_address & operator=(rx_ip_address &&right);
+	  
   protected:
 
   private:
@@ -64,37 +69,8 @@ class rx_ip_address
 };
 
 
-
-
-
-
-class rx_ethernet_card 
-{
-	typedef std::vector<rx_ip_address> addresses_type;
-
-  public:
-      rx_ethernet_card();
-
-      virtual ~rx_ethernet_card();
-
-	  rx_ethernet_card & operator=(rx_ethernet_card &&right);
-  protected:
-
-  private:
-      rx_ethernet_card(const rx_ethernet_card &right);
-
-      rx_ethernet_card & operator=(const rx_ethernet_card &right);
-
-
-
-      addresses_type addresses_;
-
-
-};
-
-
-} // namespace ip_endpoints
-} // namespace interfaces
+} // namespace opc_ua
+} // namespace protocols
 
 
 

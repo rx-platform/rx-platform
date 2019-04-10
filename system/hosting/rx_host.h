@@ -33,6 +33,14 @@
 
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
+
+
+
+// adding command line parsing library
+// see <https://github.com/jarro2783/cxxopts>
+#include "third-party/cxxopts/include/cxxopts.hpp"
+
+
 namespace rx_platform
 {
 struct configuration_data_t;
@@ -115,6 +123,7 @@ struct rx_host_storages
 	storage_base::rx_platform_storage::smart_ptr user_storage;
 	storage_base::rx_platform_storage::smart_ptr test_storage;
 };
+typedef cxxopts::Options command_line_options_t;
 
 
 
@@ -166,6 +175,8 @@ class rx_platform_host
       bool write_stdout (const string_type& lines);
 
       virtual bool exit () const = 0;
+
+      virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
 
 
       rx_platform_host * get_parent ()
