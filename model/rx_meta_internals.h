@@ -163,18 +163,19 @@ class inheritance_hash
 	void operator=(const inheritance_hash&) = delete;
 	void operator=(inheritance_hash&&) = delete;
 
+
+	typedef std::set<rx_node_id> hash_elements_type;
+
 	struct relation_elements_data
 	{
-		std::set<rx_node_id> unordered;
+		hash_elements_type unordered;
 		rx_node_ids ordered;
 	};
 
-	// these are mostly static data, so we keep it ordered to find quickly
-	typedef std::set<rx_node_id> hash_elements_type;
 	// this here is pointer type so we don't have copying of whole set just pointer
-	typedef std::map<rx_node_id, std::unique_ptr<relation_elements_data> > relation_map_type;
+	typedef std::map<rx_node_id, relation_elements_data> relation_map_type;
 
-	typedef std::map<rx_node_id, std::unique_ptr<hash_elements_type> > relation_hash_type;
+	typedef std::map<rx_node_id, hash_elements_type> relation_hash_type;
 
   public:
       inheritance_hash();
@@ -190,16 +191,22 @@ class inheritance_hash
 
       rx_result remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id);
 
+      rx_result add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items);
+
 
   protected:
 
   private:
 
 
+      //	contains base types of a type, it has ordered and
+      //	unordered data
       relation_map_type hash_data_;
 
+      //	contains all types derived from this particular type
       relation_hash_type derived_hash_;
 
+      //	contains types derived exactly from this particular type
       relation_hash_type derived_first_hash_;
 
 
@@ -286,6 +293,8 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
+      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
 
   protected:
 
@@ -347,6 +356,8 @@ public:
       rx_result delete_type (rx_node_id id);
 
       rx_result type_exists (rx_node_id id) const;
+
+      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
 
   protected:
@@ -558,7 +569,7 @@ class platform_types_manager
 	  }
 	  template<class T, class refT>
 	  void create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data,
-		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
+		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
 	  {
 		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, type_name, init_data, dir, attributes]() mutable {
 			  return create_runtime_helper<T>(name, type_name, init_data, dir, attributes, tl::type2type<T>());
@@ -567,7 +578,7 @@ class platform_types_manager
 	  }
 	  template<class T>
 	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name,
-		  data::runtime_values_data* init_data, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
+		  data::runtime_values_data* init_data, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  string_type path;
 		  auto dir_result = dir->reserve_name(name, path);
@@ -605,7 +616,7 @@ class platform_types_manager
 
 	  template<class T, class refT>
 	  void create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name,
-		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
+		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
 	  {
 		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, instance_id, type_name, dir, attributes]() mutable {
 			  return create_prototype_helper<T>(name, instance_id, type_name, dir, attributes, tl::type2type<T>());
@@ -614,7 +625,7 @@ class platform_types_manager
 	  }
 	  template<class T>
 	  rx_result_with<typename T::RTypePtr> create_prototype_helper(const string_type& name, const rx_node_id& instance_id,
-		  const string_type& type_name, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
+		  const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  string_type path;
 		  auto dir_result = dir->reserve_name(name, path);
@@ -641,7 +652,7 @@ class platform_types_manager
 
 	  template<class T, class refT>
 	  void create_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
-		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
+		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
 	  {
 		  using result_t = rx_result_with<typename T::smart_ptr>;
 		  std::function<result_t(void)> func = [=]() {
@@ -651,7 +662,7 @@ class platform_types_manager
 	  }
 	  template<class T>
 	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name
-		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
+		  , typename T::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  rx_node_id base_id = prototype->meta_info().get_parent();
 		  rx_node_id item_id = prototype->meta_info().get_id();
@@ -664,7 +675,7 @@ class platform_types_manager
 		  if (!dir_result)
 			  return dir_result.errors();
 
-		  if (!base_id)
+		  if (!base_id && !base_name.empty())
 		  {
 			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
 			  if (!item)
@@ -709,7 +720,7 @@ class platform_types_manager
 
 	  template<class T, class refT>
 	  void create_simple_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
-		  rx_directory_ptr dir, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
+		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
 	  {
 		  using result_t = rx_result_with<typename T::smart_ptr>;
 		  std::function<result_t(void)> func = [=]() {
@@ -719,7 +730,7 @@ class platform_types_manager
 	  }
 	  template<class T>
 	  rx_result_with<typename T::smart_ptr> create_simple_type_helper(const string_type& name, const string_type& base_name
-		  , typename T::smart_ptr prototype, rx_directory_ptr dir, ns::namespace_item_attributes attributes, tl::type2type<T>)
+		  , typename T::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
 	  {
 		  rx_node_id base_id = prototype->meta_info().get_parent();
 		  rx_node_id item_id = prototype->meta_info().get_id();
@@ -732,7 +743,7 @@ class platform_types_manager
 		  if (!dir_result)
 			  return dir_result.errors();
 
-		  if (!base_id)
+		  if (!base_id && !base_name.empty())
 		  {
 			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
 			  if (!item)

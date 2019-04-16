@@ -35,7 +35,7 @@
 
 #include "protocols/ansi_c/internal_c/rx_internal_impl.h"
 
-rx_protocol_result_t rx_init_protocols(rx_memory_functions* memory)
+rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory)
 {
 	if (memory)
 	{
@@ -62,6 +62,33 @@ rx_protocol_result_t rx_deinit_protocols()
 {
 	return RX_PROTOCOL_OK;
 }
+
+rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_entry* where_to, struct rx_protocol_stack_entry* what)
+{
+	if (where_to->upward || what->downward)
+	{
+		return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
+	}
+	else
+	{
+		where_to->upward = what;
+		what->downward = where_to;
+		return RX_PROTOCOL_OK;
+	}
+}
+rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_entry* what)
+{
+	if (what->downward)
+	{
+		if (what->downward->upward)
+		{
+			what->downward->upward = NULL;
+			what->downward = NULL;
+		}
+	}
+	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
+}
+
 rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	while (stack->downward != NULL)
@@ -80,7 +107,7 @@ rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, pr
 	{
 		if (stack->upward->received_function)
 		{
-			return stack->upward->received_function(stack->downward, end_point, buffer);
+			return stack->upward->received_function(stack->upward, end_point, buffer);
 		}
 		stack = stack->upward;
 	}
@@ -92,7 +119,7 @@ rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, pr
 	{
 		if (stack->upward->sent_function)
 		{
-			return stack->upward->sent_function(stack->downward, end_point, result);
+			return stack->upward->sent_function(stack->upward, end_point, result);
 		}
 		stack = stack->upward;
 	}

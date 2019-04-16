@@ -42,6 +42,7 @@
 #include "sys_internal/rx_internal_objects.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
+#include "sys_internal/rx_internal_protocol.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -76,7 +77,9 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managment
 	unassigned_app_ = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
 	system_app_ = rx_create_reference<sys_internal::sys_objects::system_application>();
 	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
-	return true;
+	// handle rx protocol stuff!
+	auto result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
+	return result;
 }
 
 rx_result server_manager::deinitialize ()

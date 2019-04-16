@@ -34,4 +34,28 @@
 #include "protocols/ansi_c/common_c/rx_protocol_errors.h"
 
 
+const char* error_messages[] =
+{
+	"OK",
+	"Container is empty",
+	"Wrong protocol state",
+	"Protocol parsing error",
+	"Buffer size error",
+	"Not implemented",
+	"Out of memory",
+	"Invalid parsing sequence",
+	"Transport collecting state error",
+	"Protocol stack not defined completely",
+	"Insufficient data"
+};
+
+
+const char* rx_protocol_error_message(rx_protocol_result_t code)
+{
+	if (code < sizeof(error_messages) / sizeof(error_messages[0]))
+		return error_messages[code];
+	else
+		return "Unknown error code!";
+}
+
 

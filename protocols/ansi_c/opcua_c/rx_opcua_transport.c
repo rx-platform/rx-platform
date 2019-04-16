@@ -54,8 +54,10 @@ rx_protocol_result_t opcua_init_transport_state(opcua_transport_protocol_type* t
 	transport->current_state = opcua_transport_idle;
 	memset(&transport->connection_data, 0, sizeof(opcua_acknowledge_message));
 	transport->connection_data.protocol_version = RX_OPCUA_MAX_VERSION;
-	transport->current_sequence_id = invalid_sequence_id;
+	transport->received_sequence_id = invalid_sequence_id;
 	transport->last_chunk_received = 0;
+	transport->current_request_id = 1;
+	transport->current_sequence_id = 1;
 
 	return RX_PROTOCOL_OK;
 }
@@ -123,13 +125,13 @@ rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* tra
 		return RX_PROTOCOL_PARSING_ERROR;
 
 	// sequence header
-	if (transport->current_sequence_id != invalid_sequence_id)
+	if (transport->received_sequence_id != invalid_sequence_id)
 	{
 		// TODO - handle rollover
-		transport->current_sequence_id++;
-		if (transport->current_sequence_id != sequence_header->sequence_number)
+		transport->received_sequence_id++;
+		if (transport->received_sequence_id != sequence_header->sequence_number)
 			return RX_PROTOCOL_INVALID_SEQUENCE;
-		if (transport->current_request_id != sequence_header->request_id)
+		if (transport->received_request_id != sequence_header->request_id)
 		{// new request
 			if (!transport->last_chunk_received)
 				return RX_PROTOCOL_COLLECT_ERROR;
@@ -141,8 +143,8 @@ rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* tra
 	else
 	{
 		// this is a first regular transport packet
-		transport->current_sequence_id = sequence_header->sequence_number;
-		transport->current_request_id = sequence_header->request_id;
+		transport->received_sequence_id = sequence_header->sequence_number;
+		transport->received_request_id = sequence_header->request_id;
 		result = rx_reinit_packet_buffer(&transport->receive_buffer);
 		if (result != RX_PROTOCOL_OK)
 			return result;
@@ -175,6 +177,7 @@ rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* tra
 			result = rx_init_const_from_packet_buffer(&upward_buffer, &transport->receive_buffer);
 			if (result != RX_PROTOCOL_OK)
 				return result;//TODO //not sure if this is enough
+			
 			result = rx_move_packet_up(&transport->protocol_stack_entry, end_point, &upward_buffer);
 			if (result == RX_PROTOCOL_OK)
 				rx_reinit_packet_buffer(&transport->receive_buffer);
@@ -293,19 +296,30 @@ rx_protocol_result_t opcua_bin_allocate_buffer(struct rx_protocol_stack_entry* r
 {
 	rx_protocol_result_t result;
 	void* temp_ptr;
-	size_t temp;
 
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference;
-	temp = (initial_size > transport->initial_packet_size) ? initial_size : transport->initial_packet_size;
-	temp=max(5,8);
-	result = rx_init_packet_buffer(buffer, temp, reference->downward);
-	if (result == RX_PROTOCOL_OK)
+	if (rx_stack_empty(&transport->free_buffers))
 	{
-		temp_ptr = rx_alloc_from_packet(buffer, opcua_regular_headers_size, &result);
-		if (!temp_ptr)
-			result = rx_deinit_packet_buffer(buffer);
+		result = rx_init_packet_buffer(buffer, max(initial_size , transport->initial_packet_size), reference->downward);
+		if (result == RX_PROTOCOL_OK)
+		{
+			temp_ptr = rx_alloc_from_packet(buffer, opcua_regular_headers_size, &result);
+			if (!temp_ptr)
+				result = rx_deinit_packet_buffer(buffer);
+		}
+		return result;
 	}
-	return result;
+	else
+	{
+		result = rx_pop(&transport->free_buffers, buffer);
+		if(result == RX_PROTOCOL_OK)
+		{
+			temp_ptr = rx_alloc_from_packet(buffer, opcua_regular_headers_size, &result);
+			if (!temp_ptr)
+				result = rx_deinit_packet_buffer(buffer);
+		}
+		return result;
+	}
 }
 rx_protocol_result_t opcua_bin_free_buffer(struct rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
@@ -326,6 +340,7 @@ rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* tra
 
 	memset(transport, 0, sizeof(opcua_transport_protocol_type));
 	// fill protocol stack header
+	transport->protocol_stack_entry.received_function = opcua_bin_bytes_received;
 	transport->protocol_stack_entry.send_function = opcua_bin_bytes_send;
 	transport->protocol_stack_entry.sent_function = opcua_bin_bytes_sent;
 	transport->protocol_stack_entry.closed_function = opcua_bin_closed;
@@ -347,6 +362,13 @@ rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* tra
 	result = rx_init_packet_buffer(&transport->receive_buffer, buffer_size, NULL);
 	if (result != RX_PROTOCOL_OK)
 	{
+		rx_deinit_queue(&transport->send_queue);
+		return result;
+	}
+	result = rx_init_stack(&transport->free_buffers, queue_size);
+	if (result != RX_PROTOCOL_OK)
+	{
+		rx_deinit_packet_buffer(&transport->receive_buffer);
 		rx_deinit_queue(&transport->send_queue);
 		return result;
 	}
@@ -380,6 +402,7 @@ rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport
 	)
 {
+	rx_deinit_stack(&transport->free_buffers);
 	rx_deinit_queue(&transport->send_queue);
 	rx_deinit_packet_buffer(&transport->receive_buffer);
 
@@ -390,7 +413,49 @@ rx_protocol_result_t opcua_bin_bytes_send(
 	, protocol_endpoint* end_point
 	, rx_packet_buffer* buffer)
 {
-	return RX_PROTOCOL_NOT_IMPLEMENTED;
+	rx_protocol_result_t result;
+	opcua_transport_header* header;
+	opcua_security_simetric_header* sec_header;
+	opcua_sequence_header* sequence_header;
+	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference;
+
+	size_t size = rx_get_packet_usable_data(buffer);
+	if (size <= transport->connection_data.receive_buffer_size)
+	{// one packet, just handle header stuff
+		header = (opcua_transport_header*)rx_get_packet_data_at(buffer, 0, &result);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+		sec_header = (opcua_security_simetric_header*)rx_get_packet_data_at(buffer, sizeof(opcua_transport_header), &result);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+		sequence_header = (opcua_sequence_header*)rx_get_packet_data_at(buffer, sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header), &result);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+		// header
+		header->is_final = 'F';
+		header->message_type[0] = 'M';
+		header->message_type[1] = 'S';
+		header->message_type[2] = 'G';
+		header->message_size = (uint32_t)rx_get_packet_usable_data(buffer);
+		// security header
+		sec_header->channel_id = 0;
+		sec_header->token_id = 0;
+		// sequence header
+		sequence_header->request_id = transport->current_request_id;
+		transport->current_request_id++;
+		sequence_header->sequence_number = transport->current_sequence_id;
+		// TODO - handle rollover
+		transport->current_sequence_id++;
+
+		result = rx_enqueue(&transport->send_queue, buffer);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+
+	}
+	else
+		return RX_PROTOCOL_NOT_IMPLEMENTED;
+
+	return opcua_bin_bytes_sent(reference, end_point, RX_PROTOCOL_OK);
 }
 rx_protocol_result_t opcua_bin_bytes_sent(
 	struct rx_protocol_stack_entry* reference
@@ -403,10 +468,10 @@ rx_protocol_result_t opcua_bin_bytes_sent(
 	if (!rx_queue_empty(&transport->send_queue))
 	{// send another next packet from queue
 		result = rx_dequeue(&transport->send_queue, &buffer);
-		if (!result)
+		if (result != RX_PROTOCOL_OK)
 			return result;
 		result = rx_move_packet_down(&transport->protocol_stack_entry, end_point, &buffer);
-		if (!result)
+		if (result != RX_PROTOCOL_OK)
 		{
 			result = rx_deinit_packet_buffer(&buffer);
 			return result;

@@ -35,6 +35,8 @@
 
 #include "rx_platform_api.h"
 #include "system/server/rx_ns.h"
+#include "system/meta/rx_queries.h"
+
 namespace rx_platform
 {
 namespace api
@@ -65,8 +67,16 @@ struct directory_browse_result
 };
 
 rx_result rx_list_directory(
-	const string_type& name // directories's path
+	const string_type& name // directory's path
+	, const string_type& pattern // search pattern
 	, std::function<void(rx_result_with<directory_browse_result>&&)> callback
+	, rx_context ctx);
+
+
+
+rx_result rx_query_model(
+	std::vector<rx_platform::meta::query_ptr> queries
+	, std::function<void(rx_result_with<query_result>&&)> callback
 	, rx_context ctx);
 
 }

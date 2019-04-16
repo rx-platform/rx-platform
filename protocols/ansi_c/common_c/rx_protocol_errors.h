@@ -50,6 +50,7 @@ extern "C" {
 
 
 typedef uint_fast8_t rx_protocol_result_t;
+const char* rx_protocol_error_message(rx_protocol_result_t code);
 
 
 

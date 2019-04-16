@@ -67,7 +67,7 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 	transport->connection_data.max_chunk_count = message->max_chunk_count;
 
 	// allocate the response
-	result = rx_init_packet_buffer(&response, 0x1000, &transport->protocol_stack_entry);
+	result = rx_init_packet_buffer(&response, 0x1000, transport->protocol_stack_entry.downward);
 	if (result != RX_PROTOCOL_OK)
 		return result;
 	// fill the response header
@@ -80,7 +80,7 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 	response_header->message_type[2] = 'K';
 	response_header->is_final = 'F';
 	// fill the message
-	ack_message = (opcua_acknowledge_message*)rx_alloc_from_packet(&response, sizeof(opcua_transport_header), &result);
+	ack_message = (opcua_acknowledge_message*)rx_alloc_from_packet(&response, sizeof(opcua_acknowledge_message), &result);
 	if (!ack_message)
 		return result;
 	ack_message->protocol_version = transport->connection_data.protocol_version;

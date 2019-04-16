@@ -272,6 +272,7 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 		}
 		else
 		{
+			create_result.register_error("Error creating "s + T::type_name + " " + meta.get_name());
 			return create_result.errors();
 		}
 	}
@@ -299,6 +300,7 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 		}
 		else
 		{
+			create_result.register_error("Error creating "s + T::type_name + " " + meta.get_name());
 			return create_result.errors();
 		}
 	}

@@ -53,7 +53,7 @@ rx_result rx_create_object(
 	const string_type& name // item's path
 	, const string_type& type_name // type's path
 	, data::runtime_values_data* init_data  // initialization data
-	, ns::namespace_item_attributes attributes // required attributes
+	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
 	, rx_context ctx);
 
@@ -61,7 +61,7 @@ rx_result rx_create_port(
 	const string_type& name // item's path
 	, const string_type& type_name // type's path
 	, data::runtime_values_data* init_data  // initialization data
-	, ns::namespace_item_attributes attributes // required attributes
+	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback
 	, rx_context ctx);
 
@@ -78,7 +78,7 @@ rx_result rx_create_object_type(
 	const string_type& name // type's path
 	, const string_type& base_name // base type's path
 	, rx_object_type_ptr prototype // prototype
-	, ns::namespace_item_attributes attributes // required attributes
+	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
 	, rx_context ctx);
 
@@ -90,10 +90,28 @@ rx_result rx_save_item(
 
 
 rx_result rx_get_derived_object_types(
-	const rx_node_id& id // item's path
+	const rx_node_id& id // item's id
+	, const string_type name
 	, std::function<void(rx_result_with<query_result>&&)> callback
 	, rx_context ctx);
 
+rx_result rx_get_derived_domain_types(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_derived_application_types(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_derived_port_types(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx);
 
 }
 }

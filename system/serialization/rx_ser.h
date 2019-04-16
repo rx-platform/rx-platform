@@ -33,10 +33,10 @@
 
 #include "third-party/jsoncpp/json/json.h"
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 #define RX_JSON_SERIALIZATION_TYPE "json"
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
@@ -170,7 +170,7 @@ class json_writer : public rx::base_meta_writer
 
       bool write_id (const char* name, const rx_node_id& id);
 
-      bool write_string (const char* name, const char* str);
+      bool write_string (const char* name, const string_type& str);
 
       bool write_bool (const char* name, bool val);
 
@@ -346,7 +346,7 @@ class binary_writer : public rx::base_meta_writer
 
       bool write_id (const char* name, const rx_node_id& id);
 
-      bool write_string (const char* name, const char* str);
+      bool write_string (const char* name, const string_type& str);
 
       bool write_bool (const char* name, bool val);
 
@@ -792,7 +792,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writer<allocT,swap_bytes>::write_string (const char* name, const char* str)
+bool binary_writer<allocT,swap_bytes>::write_string (const char* name, const string_type& str)
 {
 	buffer_.push_data(string_type(str));
 	return true;

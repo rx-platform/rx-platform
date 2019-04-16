@@ -499,6 +499,8 @@ class page_aligned_buffer
 
       const uint8_t* buffer () const;
 
+      size_t get_size () const;
+
 
   protected:
 

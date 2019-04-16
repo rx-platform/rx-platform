@@ -43,10 +43,10 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -58,37 +58,6 @@ using namespace rx_platform::runtime;
 namespace interfaces {
 
 namespace io_endpoints {
-
-
-
-
-
-
-template <typename defT>
-class rx_io_address 
-{
-
-  public:
-      rx_io_address();
-
-      rx_io_address (size_t value_size);
-
-
-      protocol_endpoint* get_endpoint ();
-
-      const protocol_endpoint* get_endpoint () const;
-
-	  ~rx_io_address() = default;
-  protected:
-
-  private:
-
-
-      uint8_t value_[sizeof(defT)];
-
-
-};
-
 
 
 
@@ -135,7 +104,7 @@ physical port class. basic implementation of a port");
   private:
 
 
-      rx_io_endpoint *my_endpoints_;
+      rx_protocol_stack_entry *my_endpoints_;
 
 
 };
@@ -147,7 +116,7 @@ physical port class. basic implementation of a port");
 
 class rx_io_manager : public rx_platform::runtime::objects::server_object  
 {
-	typedef std::map<string_type, rx_io_endpoint::smart_ptr> endpoints_type;
+	typedef std::map<string_type, rx_protocol_stack_entry*> endpoints_type;
 	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;
 
   public:
@@ -184,34 +153,28 @@ class rx_io_manager : public rx_platform::runtime::objects::server_object
 
 
 
-class rx_io_buffer : public rx_packet_buffer  
+
+template <typename defT>
+class rx_io_address 
 {
 
   public:
-      rx_io_buffer();
+      rx_io_address();
 
-      rx_io_buffer (size_t initial_capacity, rx_protocol_stack_entry* stack_entry);
-
-      ~rx_io_buffer();
+      rx_io_address (size_t value_size);
 
 
-      bool valid () const;
+      protocol_endpoint* get_endpoint ();
 
-      void attach (rx_packet_buffer* buffer);
+      const protocol_endpoint* get_endpoint () const;
 
-      void detach (rx_packet_buffer* buffer);
-
-      void release ();
-
-	  // disable copy semantics
-	  rx_io_buffer(const rx_io_buffer&) = delete;
-	  rx_io_buffer& operator=(const rx_io_buffer&) = delete;
-	  // enable move semantics
-	  rx_io_buffer(rx_io_buffer&& right) noexcept;
-	  rx_io_buffer& operator=(rx_io_buffer&& right) noexcept;
+	  ~rx_io_address() = default;
   protected:
 
   private:
+
+
+      uint8_t value_[sizeof(defT)];
 
 
 };

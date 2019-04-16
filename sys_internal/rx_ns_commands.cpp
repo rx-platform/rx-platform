@@ -124,7 +124,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 	}
 	if (options.list_created)
 	{
-		row.emplace_back(one->get_created().get_string());
+		row.emplace_back(one->meta_info().get_created_time().get_string());
 	}
 
 	return true;

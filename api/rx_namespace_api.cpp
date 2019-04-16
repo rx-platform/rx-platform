@@ -35,6 +35,7 @@
 
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
+#include "system/server/rx_server.h"
 
 namespace rx_platform
 {
@@ -60,9 +61,63 @@ rx_result rx_get_item(const string_type& name // item's path
 }
 
 rx_result rx_list_directory(const string_type& name // directory's path
+	, const string_type& pattern // search pattern
 	, std::function<void(rx_result_with<directory_browse_result>&&)> callback
 	, rx_context ctx)
 {
+	std::function<rx_result_with<directory_browse_result>(const string_type, rx_directory_ptr)> func = [=](const string_type path, rx_directory_ptr dir) mutable -> rx_result_with<directory_browse_result> {
+		directory_browse_result ret_val;
+		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
+		rx_directory_ptr who = from->get_sub_directory(path);
+		if (who)
+		{
+			who->get_content(ret_val.directories, ret_val.items, pattern);
+			ret_val.success = true;
+			return ret_val;
+		}
+		else
+		{
+			return (path + " not found!");
+		}
+	};
+	rx_do_with_callback<rx_result_with<directory_browse_result>, rx_object_ptr, string_type, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, name, ctx.directory);
+	return true;
+}
+
+
+rx_result rx_query_model(std::vector<meta::query_ptr> queries
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	std::function<rx_result_with<query_result>(std::vector<meta::query_ptr>, rx_directory_ptr)> func = [=]
+	(std::vector<rx_platform::meta::query_ptr> queries, rx_directory_ptr dir) mutable -> rx_result_with<query_result> {
+
+		query_result ret_val;
+		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
+		
+		size_t count = queries.size();
+		std::vector<platform_items_type> results(count, platform_items_type());
+
+		for (size_t i = 0; i < count; i++)
+		{
+			query_result temp;
+			auto one_ret = queries[i]->do_query(temp, from);
+			if (!one_ret)
+				return one_ret.errors();
+			results[i] = std::move(temp.items);
+		}
+
+		if (count == 1)
+		{
+			ret_val.items = std::move(results[0]);
+			ret_val.success = true;
+		}
+
+		return ret_val;
+
+	};
+	rx_do_with_callback<rx_result_with<query_result>, rx_object_ptr, std::vector<meta::query_ptr>, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, queries, ctx.directory);
+	
 	return true;
 }
 

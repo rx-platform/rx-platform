@@ -679,6 +679,11 @@ bool json_reader::safe_read_string (int idx, const string_type& name, string_typ
 				val = temp.asCString();
 				return true;
 			}
+			else if (temp.isNull())
+			{
+				val.clear();
+				return true;
+			}
 		}
 	}
 	else
@@ -689,6 +694,11 @@ bool json_reader::safe_read_string (int idx, const string_type& name, string_typ
 			if (temp.isString())
 			{
 				val = temp.asCString();
+				return true;
+			}
+			else if (temp.isNull())
+			{
+				val.clear();
 				return true;
 			}
 		}
@@ -817,7 +827,7 @@ bool json_writer::write_id (const char* name, const rx_node_id& id)
 	return true;
 }
 
-bool json_writer::write_string (const char* name, const char* str)
+bool json_writer::write_string (const char* name, const string_type& str)
 {
 	bool is_array;
 	Json::Value& value = get_current_value(is_array);
@@ -944,6 +954,15 @@ bool json_writer::end_array ()
 bool json_writer::write_header (int type, size_t size)
 {
 	type_ = type;
+	if (type_ == STREAMING_TYPE_MESSAGE)
+	{
+		json_write_stack_data data;
+		data.is_array = false;
+		data.name = "perica";
+		stack_.push(data);
+		return true;
+	}
+
 	string_type ver;
 	if (!get_version_string(ver, (uint32_t)get_version()))
 		return false;
@@ -999,13 +1018,20 @@ bool json_writer::write_header (int type, size_t size)
 
 bool json_writer::write_footer ()
 {
-	if (stack_.empty())
-		return false;
+	if (type_ == STREAMING_TYPE_MESSAGE)
+	{
+		return true;
+	}
+	else
+	{
+		if (stack_.empty())
+			return false;
 
-	json_write_stack_data data = stack_.top();
-	envelope_[data.name] = data.value;
+		json_write_stack_data data = stack_.top();
+		envelope_[data.name] = data.value;
 
-	return true;
+		return true;
+	}
 }
 
 bool json_writer::start_object (const char* name)
@@ -1107,7 +1133,8 @@ Json::Value& json_writer::get_current_value (bool& is_array)
 {
 	if (stack_.empty())
 	{
-		assert(false);
+		if(type_!= STREAMING_TYPE_MESSAGE)
+			assert(false);
 		return envelope_;
 	}
 	else
@@ -1122,8 +1149,14 @@ bool json_writer::get_string (string_type& result, bool decorated)
 {
 	if (decorated)
 	{
-		Json::StyledWriter writer;
-		result = writer.write(envelope_);
+		json_writer_type writer;
+
+		if (stack_.empty())
+			return false;
+
+		json_write_stack_data data = stack_.top();
+
+		result = writer.write(data.value);
 	}
 	else
 	{

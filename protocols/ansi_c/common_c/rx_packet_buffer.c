@@ -57,15 +57,23 @@ rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t init
 {
 	rx_protocol_result_t result;
 
-	if (whose && whose->allocate_packet_function
-		&& whose->free_packet_function)// we're in problem if this is not 
+	while (whose)
 	{
-		result = whose->allocate_packet_function(whose, buffer, initial_capacity);
+		if (whose->allocate_packet_function
+			&& whose->free_packet_function)// we're in problem if this is not 
+		{
+			result = whose->allocate_packet_function(whose, buffer, initial_capacity);
+			buffer->whose = whose;
+			
+			return result;
+		}
+		else
+			whose = whose->downward;
 	}
-	else
-	{
-		result = g_memory.alloc_buffer_function((void**)&(buffer->buffer_ptr), initial_capacity);
-	}
+
+	result = g_memory.alloc_buffer_function((void**)&(buffer->buffer_ptr), initial_capacity);
+	buffer->whose = NULL;
+
 	if (result != RX_PROTOCOL_OK)
 		return result;
 	buffer->capacity = initial_capacity;
@@ -95,6 +103,19 @@ rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffe
 size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer)
 {
 	return buffer->size;
+}
+void* rx_get_packet_data_at(rx_packet_buffer* buffer, size_t pos, rx_protocol_result_t* result)
+{
+	if (pos < buffer->size)
+	{
+		*result = RX_PROTOCOL_OK;
+		return &buffer->buffer_ptr[pos];
+	}
+	else
+	{
+		*result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+		return NULL;
+	}
 }
 size_t rx_get_packet_available_data(const rx_const_packet_buffer* buffer)
 {

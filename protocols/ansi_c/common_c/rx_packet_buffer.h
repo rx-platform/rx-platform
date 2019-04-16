@@ -72,6 +72,7 @@ void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_re
 rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
 // data for "write-to"
 size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer);
+void* rx_get_packet_data_at(rx_packet_buffer* buffer, size_t pos, rx_protocol_result_t* result);
 // reading from const buffer
 const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
 rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size);

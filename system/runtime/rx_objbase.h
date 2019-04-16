@@ -31,6 +31,7 @@
 #define rx_objbase_h 1
 
 
+#include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
@@ -42,6 +43,8 @@
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -459,18 +462,22 @@ system port class. basic implementation of a port");
 
       platform_item_ptr get_item_ptr ();
 
+      virtual rx_protocol_stack_entry* get_stack_entry ();
+
+      rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
+
 
       static string_type type_name;
 
 
   protected:
+      port_runtime();
+
 
       virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
 
 
   private:
-      port_runtime();
-
 
 
 };

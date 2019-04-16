@@ -66,6 +66,57 @@ class std::streambuf
 } // namespace memory
 } // namespace rx
 
+
+
+
+
+class rx_protocol_stack_entry 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class protocol_endpoint 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_packet_buffer 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
 */
 
 

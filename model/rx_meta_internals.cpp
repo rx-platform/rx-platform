@@ -55,7 +55,38 @@ platform_types_manager& platform_types_manager::instance ()
 
 rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
 {
-	return true;
+	auto result = internal_get_type_cache<object_types::object_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::application_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::domain_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::port_type>().initialize(host, data);
+	if (!result)
+		return result;
+
+	result = internal_get_simple_type_cache<basic_types::struct_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_simple_type_cache<basic_types::variable_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_simple_type_cache<basic_types::source_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_simple_type_cache<basic_types::filter_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_simple_type_cache<basic_types::event_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_simple_type_cache<basic_types::mapper_type>().initialize(host, data);
+	if (!result)
+		return result;
+	return result;
 }
 
 rx_result platform_types_manager::deinitialize ()
@@ -285,7 +316,8 @@ rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		if(rx_gate::instance().get_platform_status()==rx_platform_running)
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		return true;
 	}
 	else
@@ -357,7 +389,8 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	if (!prototype)
 	{
 		registered_objects_.emplace(meta.get_id(), ret);
-		instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
+		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 	}
 	return ret;
 }
@@ -374,11 +407,10 @@ api::query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) con
 
 		if (type != registered_types_.end())
 		{
-			api::query_result_detail item;
-			type->second->meta_info().fill_query_result(item);
-			ret.details.emplace_back(std::move(item));
+			ret.items.emplace_back(std::move(type->second->get_item_ptr()));
 		}
 	}
+	ret.success = true;
 	return ret;
 }
 
@@ -456,6 +488,19 @@ rx_result type_hash<typeT>::delete_type (rx_node_id id)
 	}
 }
 
+template <class typeT>
+rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+{
+	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	to_add.reserve(registered_types_.size());
+	for (const auto& one : registered_types_)
+	{
+		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
+	}
+	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	return result;
+}
+
 
 // Class model::inheritance_hash 
 
@@ -477,35 +522,35 @@ rx_result inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx
 		if (base_data_it == hash_data_.end())
 			return "Base node does not exists!";
 	}
-	auto new_data_it = hash_data_.emplace(new_id, std::make_unique<relation_elements_data>()).first;
+	auto new_data_it = hash_data_.emplace(new_id, relation_elements_data()).first;
 	if (!base_id.is_null())
 	{
-		new_data_it->second->ordered.emplace_back(base_id);
+		new_data_it->second.ordered.emplace_back(base_id);
 		if (base_data_it != hash_data_.end())
 		{// copy data from base id
-			std::copy(base_data_it->second->ordered.begin()
-				, base_data_it->second->ordered.end()
-				, std::back_inserter(new_data_it->second->ordered));
-			new_data_it->second->unordered = base_data_it->second->unordered;
+			std::copy(base_data_it->second.ordered.begin()
+				, base_data_it->second.ordered.end()
+				, std::back_inserter(new_data_it->second.ordered));
+			new_data_it->second.unordered = base_data_it->second.unordered;
 		}
-		new_data_it->second->unordered.emplace(base_id);
+		new_data_it->second.unordered.emplace(base_id);
 	}
 	// now add data to other caches
 	auto hash_it = derived_first_hash_.find(base_id);
 	if (hash_it == derived_first_hash_.end())
 	{
-		hash_it = derived_first_hash_.emplace(base_id, std::make_unique<hash_elements_type>()).first;
+		hash_it = derived_first_hash_.emplace(base_id, hash_elements_type()).first;
 	}
-	hash_it->second->emplace(new_id);
+	hash_it->second.emplace(new_id);
 
-	for (auto one : new_data_it->second->ordered)
+	for (auto one : new_data_it->second.ordered)
 	{
 		hash_it = derived_hash_.find(one);
 		if (hash_it == derived_hash_.end())
 		{
-			hash_it = derived_hash_.emplace(base_id, std::make_unique<hash_elements_type>()).first;
+			hash_it = derived_hash_.emplace(base_id, hash_elements_type()).first;
 		}
-		hash_it->second->emplace(new_id);
+		hash_it->second.emplace(new_id);
 	}
 
 	return true;
@@ -516,7 +561,7 @@ rx_result inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& r
 	auto it = hash_data_.find(id);
 	if (it != hash_data_.end())
 	{
-		std::copy(it->second->ordered.begin(), it->second->ordered.end(), std::back_inserter(result));
+		std::copy(it->second.ordered.begin(), it->second.ordered.end(), std::back_inserter(result));
 		return true;
 	}
 	else
@@ -530,7 +575,7 @@ rx_result inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids&
 	auto it = derived_first_hash_.find(id);
 	if (it != derived_first_hash_.end())
 	{
-		std::copy(it->second->begin(), it->second->end(), std::back_inserter(result));
+		std::copy(it->second.begin(), it->second.end(), std::back_inserter(result));
 		return true;
 	}
 	else
@@ -544,7 +589,7 @@ rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_
 	auto it = derived_hash_.find(id);
 	if (it != derived_hash_.end())
 	{
-		std::copy(it->second->begin(), it->second->end(), std::back_inserter(result));
+		std::copy(it->second.begin(), it->second.end(), std::back_inserter(result));
 		return true;
 	}
 	else
@@ -557,6 +602,38 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& new_id, con
 {
 	RX_ASSERT(false);
 	return false;
+}
+
+rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items)
+{
+	std::unordered_set<rx_node_id> to_add;
+	std::vector<std::pair<rx_node_id, rx_node_id> > local_to_add(items);
+	// first add all items to set for faster search
+	for (const auto& one : items)
+		to_add.insert(one.first);
+
+	rx_result result(true);
+
+	while (!to_add.empty())
+	{
+		// check for items not dependent on any items and add them next
+		for (auto& one : local_to_add)
+		{
+			if (one.first)
+			{
+				auto it_help = to_add.find(one.second);
+				if (it_help == to_add.end())
+				{
+					result = add_to_hash_data(one.first, one.second);
+					if (!result)
+						return result;
+					to_add.erase(one.first);
+					one.first = rx_node_id::null_id;
+				}
+			}
+		}
+	}
+	return true;
 }
 
 
@@ -646,7 +723,8 @@ rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tpt
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
-		inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		return true;
 	}
 	else
@@ -706,6 +784,18 @@ template <class typeT>
 api::query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& id) const
 {
 	api::query_result ret;
+	std::vector<rx_node_id> temp;
+	inheritance_hash_.get_derived_from(id, temp);
+	for (auto one : temp)
+	{
+		auto type = registered_types_.find(one);
+
+		if (type != registered_types_.end())
+		{
+			ret.items.emplace_back(std::move(type->second->get_item_ptr()));
+		}
+	}
+	ret.success = true;
 	return ret;
 }
 
@@ -766,6 +856,19 @@ rx_result simple_type_hash<typeT>::type_exists (rx_node_id id) const
 			<< id;
 		return ss.str();
 	}
+}
+
+template <class typeT>
+rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+{
+	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	to_add.reserve(registered_types_.size());
+	for (const auto& one : registered_types_)
+	{
+		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
+	}
+	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	return result;
 }
 
 

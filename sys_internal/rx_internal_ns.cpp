@@ -44,7 +44,7 @@ namespace internal_ns {
 // Class sys_internal::internal_ns::platform_root 
 
 platform_root::platform_root()
-	: rx_platform_directory("")
+	: rx_platform_directory("", namespace_item_internal_access)
 {
 }
 
@@ -55,16 +55,10 @@ platform_root::~platform_root()
 
 
 
-namespace_item_attributes platform_root::get_attributes () const
-{
-	return namespace_item_internal_access;
-}
-
-
 // Class sys_internal::internal_ns::user_directory 
 
 user_directory::user_directory (const string_type& name)
-	: rx_platform_directory(name)
+	: rx_platform_directory(name, namespace_item_read_access | namespace_item_write_access | namespace_item_delete_access)
 {
 }
 
@@ -75,16 +69,10 @@ user_directory::~user_directory()
 
 
 
-namespace_item_attributes user_directory::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_write_access | namespace_item_system | namespace_item_delete_access);
-}
-
-
 // Class sys_internal::internal_ns::unassigned_directory 
 
 unassigned_directory::unassigned_directory()
-	: rx_platform_directory(RX_NS_UNASSIGNED_NAME)
+	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access)
 {
 }
 
@@ -95,16 +83,10 @@ unassigned_directory::~unassigned_directory()
 
 
 
-namespace_item_attributes unassigned_directory::get_attributes () const
-{
-	return namespace_item_internal_access;
-}
-
-
 // Class sys_internal::internal_ns::world_directory 
 
 world_directory::world_directory()
-	: rx_platform_directory(RX_NS_WORLD_NAME)
+	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access)
 {
 }
 
@@ -115,16 +97,10 @@ world_directory::~world_directory()
 
 
 
-namespace_item_attributes world_directory::get_attributes () const
-{
-	return namespace_item_internal_access;
-}
-
-
 // Class sys_internal::internal_ns::internal_directory 
 
 internal_directory::internal_directory (const string_type& name)
-	: rx_platform_directory(name)
+	: rx_platform_directory(name, namespace_item_internal_access)
 {
 }
 
@@ -133,12 +109,6 @@ internal_directory::~internal_directory()
 {
 }
 
-
-
-namespace_item_attributes internal_directory::get_attributes () const
-{
-	return namespace_item_internal_access;
-}
 
 
 } // namespace internal_ns

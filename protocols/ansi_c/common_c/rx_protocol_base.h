@@ -65,8 +65,19 @@ typedef rx_protocol_result_t(*rx_closed_function_type)(
 	struct rx_protocol_stack_entry* reference
 	, rx_protocol_result_t result);
 
-typedef rx_protocol_result_t(*rx_allocate_packet_type)(struct rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, size_t size);
-typedef rx_protocol_result_t(*rx_modify_packet_type)(struct rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+typedef rx_protocol_result_t(*rx_allocate_packet_type)(
+	struct rx_protocol_stack_entry* reference
+	, rx_packet_buffer* buffer
+	, size_t size);
+typedef rx_protocol_result_t(*rx_modify_packet_type)(
+	struct rx_protocol_stack_entry* reference
+	, rx_packet_buffer* buffer);
+
+typedef rx_protocol_result_t(*rx_add_reference_type)(
+	struct rx_protocol_stack_entry* reference);
+
+typedef rx_protocol_result_t(*rx_release_reference_type)(
+	struct rx_protocol_stack_entry* reference);
 
 // stack
 struct rx_protocol_stack_entry
@@ -81,6 +92,9 @@ struct rx_protocol_stack_entry
 
 	rx_allocate_packet_type allocate_packet_function;
 	rx_modify_packet_type free_packet_function;
+
+	rx_add_reference_type add_reference_func;
+	rx_release_reference_type release_reference_func;
 	
 	struct rx_protocol_stack_entry* upward;
 	struct rx_protocol_stack_entry* downward;
@@ -96,8 +110,11 @@ rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, pr
 typedef rx_protocol_result_t(*rx_alloc_buffer_type)(void** buffer, size_t buffer_size);
 typedef rx_protocol_result_t(*rx_free_buffer_type)(void* buffer, size_t buffer_size);
 
+typedef uint32_t (*rx_protocol_atomic_inc_type)(volatile uint32_t* val);
+typedef uint32_t (*rx_protocol_atomic_dec_type)(volatile uint32_t* val);
 
-typedef struct rx_memory_functions_type
+
+struct rx_hosting_functions
 {
 	rx_alloc_buffer_type alloc_function;
 	rx_free_buffer_type free_function;
@@ -105,10 +122,16 @@ typedef struct rx_memory_functions_type
 	rx_alloc_buffer_type alloc_buffer_function;
 	rx_free_buffer_type free_buffer_function;
 
-} rx_memory_functions;
+	rx_protocol_atomic_inc_type atomic_inc_function;
+	rx_protocol_atomic_inc_type atomic_dec_function;
 
-rx_protocol_result_t rx_init_protocols(rx_memory_functions* memory);
+};
+
+rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
 rx_protocol_result_t rx_deinit_protocols();
+
+rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_entry* where_to, struct rx_protocol_stack_entry* what);
+rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_entry* what);
 
 
 

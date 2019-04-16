@@ -63,7 +63,7 @@ rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue)
 
 int rx_queue_empty(const rx_packet_queue* queue)
 {
-	return queue->size == 0 ? 0 : 1;
+	return queue->size == 0 ? 1 : 0;
 }
 rx_protocol_result_t rx_handle_queue_resize(rx_packet_queue* queue, size_t to_add)
 {
@@ -148,7 +148,7 @@ rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack)
 
 int rx_stack_empty(const rx_packet_stack* stack)
 {
-	return stack->size == 0 ? 0 : 1;
+	return stack->size == 0 ? 1 : 0;
 }
 rx_protocol_result_t rx_handle_stack_resize(rx_packet_stack* stack, size_t to_add)
 {

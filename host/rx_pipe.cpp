@@ -39,6 +39,7 @@
 #include "third-party/cxxopts/include/cxxopts.hpp"
 #include "system/server/rx_server.h"
 #include "system/hosting/rx_yaml.h"
+#include "sys_internal/rx_internal_protocol.h"
 
 
 namespace host {
@@ -121,6 +122,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[])
 			std::cout << "OK\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
+
+			//config.namespace_data.build_system_from_code = true;
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
@@ -286,6 +289,11 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 				result = pipes_.open(pipes);
 				if (result)
 				{
+					res = rx_push_stack(&pipes_, &transport_.protocol_stack_entry);
+
+					auto json = rx_create_reference< sys_internal::rx_protocol::rx_protocol_port>();
+					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
+
 					std::cout << "OK\r\n";
 					pipes_.receive_loop();
 

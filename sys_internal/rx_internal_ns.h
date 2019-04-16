@@ -71,9 +71,6 @@ contains root server folders\
       ~platform_root();
 
 
-      namespace_item_attributes get_attributes () const;
-
-
   protected:
 
   private:
@@ -98,9 +95,6 @@ used to create user defined folders...\
       user_directory (const string_type& name);
 
       ~user_directory();
-
-
-      namespace_item_attributes get_attributes () const;
 
 
   protected:
@@ -129,9 +123,6 @@ All objects here are with unassigned state and hawing a bad quality\
       ~unassigned_directory();
 
 
-      namespace_item_attributes get_attributes () const;
-
-
   protected:
 
   private:
@@ -156,9 +147,6 @@ used to create user defined folders...\
       world_directory();
 
       ~world_directory();
-
-
-      namespace_item_attributes get_attributes () const;
 
 
   protected:
@@ -282,9 +270,6 @@ used to create system defined folders...\
       internal_directory (const string_type& name);
 
       ~internal_directory();
-
-
-      namespace_item_attributes get_attributes () const;
 
 
   protected:
@@ -546,19 +531,5 @@ const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
 } // namespace sys_internal
 
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return impl_->meta_info().get_attributes();
-
-	return impl_->get_created_time();
-
-	return impl_->meta_info().get_attributes();
-
-	return impl_->meta_info().get_created_time();
 
 #endif

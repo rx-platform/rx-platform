@@ -363,7 +363,7 @@ bool console_client::do_command (string_type&& line, memory::buffer_ptr out_buff
 void console_client::get_prompt (string_type& prompt)
 {
 	prompt = "\r\n";
-	prompt += current_directory_->get_path();
+	prompt += current_directory_->meta_info().get_path();
 	prompt += "\r\n" ANSI_RX_USER;
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;

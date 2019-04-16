@@ -40,6 +40,8 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -48,8 +50,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 
 namespace interfaces {
 namespace io_endpoints {
@@ -85,6 +85,15 @@ struct configuration_data_t
 	meta::meta_configuration_data_t meta_configuration_data;
 	io_manager_data_t io_manager_data;
 	general_data_t general;
+};
+
+enum rx_platform_status
+{
+	rx_platform_initializing,
+	rx_platform_starting,
+	rx_platform_running,
+	rx_platform_stopping,
+	rx_platform_deinitializing
 };
 
 
@@ -190,6 +199,12 @@ class rx_gate
       }
 
 
+      rx_platform_status get_platform_status () const
+      {
+        return platform_status_;
+      }
+
+
 
   protected:
 
@@ -239,6 +254,8 @@ class rx_gate
       security::security_guard_ptr security_guard_;
 
       bool shutting_down_;
+
+      rx_platform_status platform_status_;
 
 
 };

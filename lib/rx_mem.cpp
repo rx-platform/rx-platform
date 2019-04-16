@@ -218,7 +218,7 @@ page_aligned_buffer::page_aligned_buffer()
 page_aligned_buffer::page_aligned_buffer (size_t size)
 	: size_(size)
 {
-	if (size != 0)
+	if (size)
 		buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
 	else
 		buffer_ = nullptr;
@@ -238,7 +238,8 @@ void page_aligned_buffer::alloc_buffer (size_t size)
 	if (buffer_)
 		free_buffer();
 	size_ = size;
-	buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
+	if(size_)
+		buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
 }
 
 void page_aligned_buffer::free_buffer ()
@@ -259,6 +260,11 @@ uint8_t* page_aligned_buffer::buffer ()
 const uint8_t* page_aligned_buffer::buffer () const
 {
 	return buffer_;
+}
+
+size_t page_aligned_buffer::get_size () const
+{
+	return size_;
 }
 
 

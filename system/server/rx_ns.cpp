@@ -35,7 +35,6 @@
 
 #include "rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
-
 //IMPLEMENT_CODE_BEHIND_CLASS(rx_platform::ns::rx_server_directory, IEC61850 Engine, IEC61850 Ed 2 Goose Control Block - Stack Based, 1.0.0.0);
 
 
@@ -172,15 +171,8 @@ string_type rx_platform_item::callculate_path () const
 
 // Class rx_platform::ns::rx_platform_directory 
 
-rx_platform_directory::rx_platform_directory()
-      : created_(rx_time::now())
-	, name_("<unnamed>")
-{
-}
-
-rx_platform_directory::rx_platform_directory (const string_type& name)
-      : created_(rx_time::now())
-	, name_(name)
+rx_platform_directory::rx_platform_directory (const string_type& name, namespace_item_attributes attrs)
+	: meta_(name, rx_node_id::null_id, rx_node_id::null_id, attrs, "")
 {
 }
 
@@ -276,39 +268,37 @@ rx_directory_ptr rx_platform_directory::get_sub_directory (const string_type& pa
 	}
 }
 
-string_type rx_platform_directory::get_path () const
-{
-	string_type path;
-	fill_path(path);
-	return path;
-}
-
 string_type rx_platform_directory::get_name () const
 {
-	locks::const_auto_slim_lock dummy(&structure_lock_);
-	if (name_.empty())
-		return "/";
+	string_type ret;
+	{
+		locks::const_auto_slim_lock dummy(&structure_lock_);
+		ret = meta_.get_name();
+	}
+	if (ret.empty())
+		return string_type({ RX_DIR_DELIMETER });
 	else
-		return name_;
+		return ret;
 }
 
 void rx_platform_directory::fill_path (string_type& path) const
 {
-
+	string_type name;
 	structure_lock();
 	if (parent_)
 	{
 		parent_->fill_path(path);
 	}
-	if (name_.empty())
+	name = meta_.get_name();
+	structure_unlock();
+	if (name.empty())
 		path = RX_DIR_DELIMETER;
 	else
 	{
 		if (path != "/")
 			path += RX_DIR_DELIMETER;
-		path += name_;
+		path += name;
 	}
-	structure_unlock();
 }
 
 void rx_platform_directory::set_parent (rx_directory_ptr parent)
@@ -320,8 +310,20 @@ void rx_platform_directory::set_parent (rx_directory_ptr parent)
 	}
 	else
 		RX_ASSERT(false);*/
-	locks::auto_slim_lock dummy(&structure_lock_);
+
+	string_type path;
+	parent->fill_path(path);
+	locks::auto_lock_t<decltype(structure_lock_)> _(&structure_lock_);
 	parent_ = parent;
+	meta_.set_path(path);
+	for (auto& one : sub_directories_)
+		one.second->set_parent(smart_this());
+}
+
+namespace_item_attributes rx_platform_directory::get_attributes () const
+{
+	locks::const_auto_lock_t<decltype(structure_lock_)> _(&structure_lock_);
+	return meta_.get_attributes();
 }
 
 void rx_platform_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -379,12 +381,12 @@ void rx_platform_directory::structure_unlock () const
 
 void rx_platform_directory::get_value (rx_value& value)
 {
-	value.assign_static(get_name(), get_created());
+	value.assign_static(get_name(), meta_.get_created_time());
 }
 
 void rx_platform_directory::fill_code_info (std::ostream& info)
 {
-	string_type name = get_path();
+	string_type name = meta_.get_path();
 	fill_code_info(info, name);
 }
 
@@ -396,17 +398,15 @@ rx_result rx_platform_directory::add_sub_directory (rx_directory_ptr who)
 {
 	rx_result ret;
 	structure_lock();
-	auto it = sub_directories_.find(who->name_);
+	auto it = sub_directories_.find(who->meta_.get_name());
 	if (it == sub_directories_.end())
 	{
-		sub_directories_.emplace(who->name_, who);
-		who->structure_lock();
-		who->parent_ = smart_this();
-		who->structure_unlock();
+		sub_directories_.emplace(who->meta_.get_name(), who);
+		who->set_parent(smart_this());
 	}
 	else
 	{
-		ret.register_error("Directory " + who->name_ + " already exists");
+		ret.register_error("Directory " + who->meta_.get_name() + " already exists");
 	}
 	structure_unlock();
 	return ret;
@@ -583,6 +583,11 @@ rx_result rx_platform_directory::cancel_reserve (const string_type& name)
 	reserved_.erase(name);
 	structure_unlock();
 	return true;
+}
+
+meta_data_t rx_platform_directory::meta_info () const
+{
+	return meta_;
 }
 
 template<class TImpl>

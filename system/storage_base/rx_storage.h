@@ -36,7 +36,6 @@
 #include "lib/rx_ptr.h"
 
 #include "lib/rx_ser_lib.h"
-#include "system/server/rx_ns.h"
 
 namespace rx_platform
 {
@@ -64,6 +63,22 @@ class rx_platform_storage;
 }
 typedef std::unique_ptr<storage_base::rx_storage_item> rx_storage_item_ptr;
 typedef rx_reference<storage_base::rx_platform_storage> rx_storage_ptr;
+
+
+namespace ns
+{
+class rx_platform_directory;
+class rx_platform_item;
+}
+namespace prog
+{
+class server_command_base;
+}
+typedef rx::pointers::reference<prog::server_command_base> server_command_base_ptr;
+typedef rx::pointers::reference<ns::rx_platform_item> platform_item_ptr;
+typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
+typedef std::vector<platform_item_ptr> platform_items_type;
+typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 
 namespace storage_base {

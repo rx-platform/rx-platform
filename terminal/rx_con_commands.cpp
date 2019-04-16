@@ -161,19 +161,19 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 	string_type console;
 	directory->get_class_info(cls_name, console, has_code);
 
-
+	meta::meta_data info = directory->meta_info();
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << directory->get_name() << "\r\n";
-	out << "Full Path  : " << directory->get_path() << "\r\n";
+	out << "Name       : " << info.get_name() << "\r\n";
+	out << "Full Path  : " << info.get_path() << "\r\n";
 	out << "Type       : " << directory->get_type_name() << "\r\n";
 	out << "Attributes : " << attrs << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : " << "<<null>>" << "\r\n";
 	out << "Quality	   : " << quality_stirng << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";
-	out << "Created    : " << directory->get_created().get_string() << "\r\n";
+	out << "Created    : " << info.get_created_time().get_string() << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Class      : " << cls_name << "\r\n";
 	out << "Has Code   : " << (has_code ? "true" : "false") << "\r\n";

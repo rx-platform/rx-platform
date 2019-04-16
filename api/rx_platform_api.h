@@ -58,7 +58,7 @@ struct query_result_detail
 
 struct query_result
 {
-	std::vector<query_result_detail> details;
+	platform_items_type items;
 
 	bool success = false;
 	operator bool() const

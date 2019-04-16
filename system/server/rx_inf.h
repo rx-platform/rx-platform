@@ -42,7 +42,7 @@
 
 
 #include "system/hosting/rx_host.h"
-using rx_platform::ns::namespace_item_attributes;
+using rx_platform::namespace_item_attributes;
 
 #define RX_DOMAIN_EXTERN 0xfffb
 #define RX_DOMAIN_META 0xfffc

@@ -88,16 +88,6 @@ uint32_t rx_io_manager::stop ()
 }
 
 
-// Class interfaces::io_endpoints::physical_port 
-
-physical_port::physical_port (objects::port_creation_data&& data)
-      : my_endpoints_(nullptr)
-	, port_runtime(std::move(data))
-{
-}
-
-
-
 // Class interfaces::io_endpoints::rx_io_endpoint 
 
 rx_io_endpoint::rx_io_endpoint()
@@ -111,78 +101,17 @@ rx_io_endpoint::~rx_io_endpoint()
 
 
 
-// Class interfaces::io_endpoints::rx_io_buffer 
+// Class interfaces::io_endpoints::physical_port 
 
-rx_io_buffer::rx_io_buffer()
+physical_port::physical_port (objects::port_creation_data&& data)
+      : my_endpoints_(nullptr)
+	, port_runtime(std::move(data))
 {
-	memzero(this, sizeof(rx_packet_buffer));
-}
-
-rx_io_buffer::rx_io_buffer (size_t initial_capacity, rx_protocol_stack_entry* stack_entry)
-{
-	auto result = rx_init_packet_buffer(this, initial_capacity, stack_entry);
-	if (result != RX_PROTOCOL_OK)
-	{
-		memzero(this, sizeof(rx_packet_buffer));
-	}
-}
-
-
-rx_io_buffer::~rx_io_buffer()
-{
-	if (buffer_ptr)
-		rx_deinit_packet_buffer(this);
 }
 
 
 
-bool rx_io_buffer::valid () const
-{
-	return (buffer_ptr != nullptr);
-}
-
-void rx_io_buffer::attach (rx_packet_buffer* buffer)
-{
-	if (buffer_ptr)
-		rx_deinit_packet_buffer(this);
-	if (buffer)
-		memcpy(this, buffer, sizeof(rx_packet_buffer));
-	else
-		memzero(this, sizeof(rx_packet_buffer));
-}
-
-void rx_io_buffer::detach (rx_packet_buffer* buffer)
-{
-	if (buffer)
-		memcpy(buffer, this, sizeof(rx_packet_buffer));
-	memzero(this, sizeof(rx_packet_buffer));
-}
-
-void rx_io_buffer::release ()
-{
-	if (buffer_ptr)
-		rx_deinit_packet_buffer(this);
-	memzero(this, sizeof(rx_packet_buffer));
-}
-
-rx_io_buffer::rx_io_buffer(rx_io_buffer&& right) noexcept
-{
-	if(right.buffer_ptr)
-		memcpy(this, &right, sizeof(rx_packet_buffer));
-	else
-		memzero(this, sizeof(rx_packet_buffer));
-}
-rx_io_buffer& rx_io_buffer::operator=(rx_io_buffer&& right) noexcept
-{
-	if (buffer_ptr)
-		rx_deinit_packet_buffer(this);
-	if (right.buffer_ptr)
-		memcpy(this, &right, sizeof(rx_packet_buffer));
-	else
-		memzero(this, sizeof(rx_packet_buffer));
-
-	return *this;
-}
 } // namespace io_endpoints
 } // namespace interfaces
+
 

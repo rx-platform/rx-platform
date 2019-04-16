@@ -139,9 +139,11 @@ typedef struct opcua_transport_protocol_def
 	// state
 	enum opcua_transport_state current_state;
 	opcua_acknowledge_message connection_data;
+	uint32_t received_request_id;
+	uint32_t received_sequence_id;
+	int last_chunk_received;
 	uint32_t current_request_id;
 	uint32_t current_sequence_id;
-	int last_chunk_received;
 	// memory handling
 	size_t initial_packet_size;
 	rx_packet_stack free_buffers;

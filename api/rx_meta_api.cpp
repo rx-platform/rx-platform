@@ -53,7 +53,7 @@ rx_result rx_delete_object(const string_type& name
 }
 
 rx_result rx_create_object(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
+	, namespace_item_attributes attributes, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if(init_data)// copy values to resolve lifetime
@@ -64,7 +64,7 @@ rx_result rx_create_object(const string_type& name, const string_type& type_name
 }
 
 rx_result rx_create_port(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, ns::namespace_item_attributes attributes, std::function<void(rx_result_with<rx_port_ptr>&&)> callback, rx_context ctx)
+	, namespace_item_attributes attributes, std::function<void(rx_result_with<rx_port_ptr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
@@ -78,16 +78,16 @@ rx_result rx_create_prototype(const string_type& name, const rx_node_id& instanc
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().create_prototype<object_type, pointers::reference_object::smart_ptr>(
-		name, instance_id, type_name, ctx.directory, ns::namespace_item_attributes::namespace_item_null, callback, ctx.object);
+		name, instance_id, type_name, ctx.directory, namespace_item_attributes::namespace_item_null, callback, ctx.object);
 	return true;
 }
 
 rx_result rx_create_object_type(const string_type& name
-	, const string_type& base_name, rx_object_type_ptr prototype, ns::namespace_item_attributes attributes
+	, const string_type& base_name, rx_object_type_ptr prototype, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
 {
 	model::platform_types_manager::instance().create_type<object_type, pointers::reference_object::smart_ptr>(
-		name, base_name, prototype, ctx.directory, attributes| ns::namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+		name, base_name, prototype, ctx.directory, attributes| namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
 rx_result recursive_save_directory(rx_directory_ptr dir)
@@ -140,18 +140,53 @@ rx_result rx_save_item(const string_type& name
 	return true;
 }
 
-
-rx_result rx_get_derived_object_types(const rx_node_id& id // item's path
+template<class T>
+rx_result rx_get_derived_types(const rx_node_id& id // item's id
+	, const string_type name
 	, std::function<void(rx_result_with<query_result>&&)> callback
-	, rx_context ctx)
+	, rx_context ctx, tl::type2type<T>)
 {
 	std::function<rx_result_with<query_result>()> func = [=]() {
-		return model::platform_types_manager::instance().get_type_cache<object_type>().get_derived_types(id);
+		return model::platform_types_manager::instance().get_type_cache<T>().get_derived_types(id);
 	};
 	rx_do_with_callback<rx_result_with<query_result>, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
 
 	return true;
 }
+
+
+rx_result rx_get_derived_object_types(const rx_node_id& id // item's path
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	return rx_get_derived_types(id, name, callback, ctx, tl::type2type<object_type>());
+}
+
+rx_result rx_get_derived_domain_types(const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	return rx_get_derived_types(id, name, callback, ctx, tl::type2type<domain_type>());
+}
+
+rx_result rx_get_derived_application_types(const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	return rx_get_derived_types(id, name, callback, ctx, tl::type2type<application_type>());
+}
+
+rx_result rx_get_derived_port_types(const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<query_result>&&)> callback
+	, rx_context ctx)
+{
+	return rx_get_derived_types(id, name, callback, ctx, tl::type2type<port_type>());
+}
+
 
 
 }

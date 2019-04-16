@@ -158,7 +158,7 @@ values::rx_value meta_data::get_value () const
 	return temp;
 }
 
-void meta_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, ns::namespace_item_attributes& attributes, const string_type& path)
+void meta_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, namespace_item_attributes attributes, const string_type& path)
 {
 	name_ = name;
 	id_ = id;
@@ -249,6 +249,11 @@ void meta_data::fill_query_result (api::query_result_detail& item) const
 	item.modified_time = modified_time_;
 	item.attributes = attributes_;
 	item.path = path_;
+}
+
+void meta_data::set_path (const string_type& path)
+{
+	path_ = path;
 }
 
 

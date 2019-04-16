@@ -35,7 +35,7 @@
 // initial version of an item
 #define RX_INITIAL_ITEM_VERSION 0x10000
 
-#include "system/server/rx_ns.h"
+//#include "system/server/rx_ns.h"
 
 // rx_storage
 #include "system/storage_base/rx_storage.h"
@@ -57,6 +57,26 @@ using namespace rx_platform::ns;
 
 
 namespace rx_platform {
+
+enum namespace_item_attributes
+{
+	namespace_item_null = 0,
+	namespace_item_read_access = 1,
+	namespace_item_write_access = 2,
+	namespace_item_delete_access = 4,
+	namespace_item_pull_access = 8,
+	namespace_item_execute_access = 0x10,
+	// special type of item
+	namespace_item_system = 0x20,
+	namespace_item_internal = 0x40,
+	// combinations
+	namespace_item_full_type_access = 7,
+	namespace_item_full_access = 0x17,
+	namespace_item_system_access = 0x21,
+	namespace_item_internal_access = 0x61,
+	namespace_item_system_storage = 0x60
+};
+
 namespace api
 {
 struct query_result_detail;
@@ -131,7 +151,7 @@ class meta_data
 
       values::rx_value get_value () const;
 
-      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, ns::namespace_item_attributes& attributes, const string_type& path);
+      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, namespace_item_attributes attributes, const string_type& path);
 
       bool get_system () const;
 
@@ -140,6 +160,8 @@ class meta_data
       rx_result resolve ();
 
       void fill_query_result (api::query_result_detail& item) const;
+
+      void set_path (const string_type& path);
 
 
       const rx_node_id& get_parent () const
@@ -166,7 +188,7 @@ class meta_data
       }
 
 
-      string_type get_name () const
+      const string_type& get_name () const
       {
         return name_;
       }
@@ -184,7 +206,7 @@ class meta_data
       }
 
 
-      string_type get_path () const
+      const string_type& get_path () const
       {
         return path_;
       }

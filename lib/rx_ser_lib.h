@@ -85,7 +85,7 @@ public:
 
       virtual bool write_id (const char* name, const rx_node_id& id) = 0;
 
-      virtual bool write_string (const char* name, const char* str) = 0;
+      virtual bool write_string (const char* name, const string_type& str) = 0;
 
       virtual bool write_bool (const char* name, bool val) = 0;
 

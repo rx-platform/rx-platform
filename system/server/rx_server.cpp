@@ -73,7 +73,8 @@ rx_gate::rx_gate()
         started_(rx_time::now()),
         pid_(0),
         security_guard_(std::make_unique<security::security_guard>()),
-        shutting_down_(false)
+        shutting_down_(false),
+        platform_status_(rx_platform_initializing)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
@@ -182,6 +183,8 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	{
 		result.register_error("Error initializing platform runtime!");
 	}
+	if (result)
+		platform_status_ = rx_platform_starting;
 	return result;
 }
 
@@ -209,6 +212,7 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			result = model::platform_types_manager::instance().start(host, data.meta_configuration_data);
 			if (result)
 			{
+				platform_status_ = rx_platform_running;
 				host->server_started_event();
 				return true;
 			}
@@ -234,9 +238,11 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 
 rx_result rx_gate::stop ()
 {
+	platform_status_ = rx_platform_stopping;
 	model::platform_types_manager::instance().stop();
 	manager_.stop();
 	runtime_.stop();
+	platform_status_ = rx_platform_deinitializing;
 	return true;
 }
 

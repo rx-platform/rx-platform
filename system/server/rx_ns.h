@@ -35,6 +35,8 @@
 
 // cpp_lib
 #include "system/libraries/cpp_lib.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
@@ -96,24 +98,6 @@ struct namespace_data_t
 	bool build_system_from_code;
 };
 
-enum namespace_item_attributes
-{
-	namespace_item_null = 0,
-	namespace_item_read_access = 1,
-	namespace_item_write_access = 2,
-	namespace_item_delete_access = 4,
-	namespace_item_pull_access = 8,
-	namespace_item_execute_access = 0x10,
-	// special type of item
-	namespace_item_system = 0x20,
-	namespace_item_internal = 0x40,
-	// combinations
-	namespace_item_full_type_access = 7,
-	namespace_item_full_access = 0x17,
-	namespace_item_system_access = 0x21,
-	namespace_item_internal_access = 0x61,
-	namespace_item_system_storage = 0x60
-};
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
 void fill_quality_string(values::rx_value val, string_type& q);
@@ -132,9 +116,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 	typedef std::unordered_set<string_type> reserved_type;
 
   public:
-      rx_platform_directory();
-
-      rx_platform_directory (const string_type& name);
+      rx_platform_directory (const string_type& name, namespace_item_attributes attrs);
 
       ~rx_platform_directory();
 
@@ -149,15 +131,13 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       virtual rx_directory_ptr get_sub_directory (const string_type& path) const;
 
-      string_type get_path () const;
-
       string_type get_name () const;
 
       void fill_path (string_type& path) const;
 
       void set_parent (rx_directory_ptr parent);
 
-      virtual namespace_item_attributes get_attributes () const = 0;
+      namespace_item_attributes get_attributes () const;
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -195,12 +175,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       rx_result cancel_reserve (const string_type& name);
 
-
-      const rx_time get_created () const
-      {
-        return created_;
-      }
-
+      virtual meta_data_t meta_info () const;
 
 	  template<class TImpl>
 	  rx_result add_item(TImpl who);
@@ -215,10 +190,8 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       sub_items_type sub_items_;
 
+      meta::meta_data meta_;
 
-      string_type name_;
-
-      rx_time created_;
 
       rx::locks::slim_lock structure_lock_;
 

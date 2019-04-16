@@ -261,10 +261,133 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 template<class T>
 bool create_command::create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
 {
-	string_type def;
-	std::getline(in, def, '\0');
-	out << "Hello from create type!!!\r\n";
-	return true;
+	string_type name;
+	string_type from_command;
+	string_type base_name;
+	string_type as_command;
+	string_type def_command;
+	in >> name
+		>> from_command
+		>> base_name
+		>> as_command
+		>> def_command;
+	// read the rest of it
+	string_type definition;
+	if (!in.eof())
+		std::getline(in, definition, '\0');
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::smart_ptr prototype_definition;
+	typename T::RTypePtr object_ptr;
+
+	// try to acquire the type
+	if (from_command == "from")
+	{
+		type_definition = platform_types_manager::instance().get_type<T>(base_name, ctx->get_current_directory());
+	}
+	else
+	{
+		err << "Unknown base "
+			<< T::RType::type_name
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
+	// do we have type
+	if (!type_definition)
+	{
+		err << "Undefined "
+			<< T::type_name
+			<< ":"
+			<< base_name << "!";
+		return false;
+	}
+	// try to acquire definition
+	if (as_command == "with")
+	{
+		if (def_command == "json")
+		{
+			serialization::json_reader reader;
+			reader.parse_data(definition);
+			data::runtime_values_data init_data;
+			if (reader.read_init_values("Values", init_data))
+			{
+				rx_context rxc;
+				rxc.object = ctx->get_client();
+				rxc.directory = ctx->get_current_directory();
+				rx_platform::api::meta::rx_create_object_type(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+					[=](rx_result_with<typename T::smart_ptr>&& result)
+					{
+						if (!result)
+						{
+							ctx->get_stderr() << "Error creating "
+								<< T::RType::type_name << ":\r\n";
+							dump_error_result(ctx->get_stderr(), result);
+						}
+						else
+						{
+							ctx->get_stdout() << "Created " << T::type_name << " "
+								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+								<< ".\r\n";
+						}
+						ctx->send_results(result);
+					}
+				, rxc);
+				return true;
+			}
+			else
+			{
+				err << "Error deserialization of initialization data for "
+					<< T::RType::type_name
+					<< " as " << def_command << "!";
+				return false;
+			}
+		}
+		else
+		{
+			err << "Unknown "
+				<< T::RType::type_name
+				<< " definition specifier:"
+				<< def_command << "!";
+			return false;
+		}
+	}
+	else if (as_command.empty())
+	{
+		rx_context rxc;
+		rxc.object = ctx->get_client();
+		rxc.directory = ctx->get_current_directory();
+		rx_platform::api::meta::rx_create_object_type(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+			[=](rx_result_with<typename T::smart_ptr>&& result)
+			{
+				if (!result)
+				{
+					auto& err = ctx->get_stderr();
+					err << "Error creating "
+						<< T::type_name << ":\r\n";
+					dump_error_result(err, result);
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					out << "Created " << T::type_name << " "
+						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+						<< ".\r\n";
+				}
+				ctx->send_results(result);
+			}
+		, rxc);
+		return true;
+	}
+	else
+	{
+		err << "Unknown "
+			<< T::type_name
+			<< " creation type:"
+			<< as_command << "!";
+		return false;
+	}
 }
 // Class model::meta_commands::dump_types_command 
 
@@ -320,10 +443,10 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 {
 	string_type indent_str(indent * 4, ' ');
 	auto result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
-	for (auto one : result.details)
+	for (auto one : result.items)
 	{
-		out << indent_str << one.name << " [" << one.id.to_string() << "]\r\n";
-		dump_types_recursive(tl::type2type<T>(), one.id, indent + 1, in, out, err, ctx);
+		out << indent_str << one->get_name() << " [" << one->meta_info().get_id().to_string() << "]\r\n";
+		dump_types_recursive(tl::type2type<T>(), one->meta_info().get_id(), indent + 1, in, out, err, ctx);
 	}
 	return true;
 }

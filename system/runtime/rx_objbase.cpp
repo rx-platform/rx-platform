@@ -384,6 +384,18 @@ platform_item_ptr domain_runtime::get_item_ptr ()
 }
 
 
+// Class rx_platform::runtime::objects::application_creation_data 
+
+
+// Class rx_platform::runtime::objects::domain_creation_data 
+
+
+// Class rx_platform::runtime::objects::object_creation_data 
+
+
+// Class rx_platform::runtime::objects::port_creation_data 
+
+
 // Class rx_platform::runtime::objects::port_runtime 
 
 string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
@@ -425,17 +437,21 @@ platform_item_ptr port_runtime::get_item_ptr ()
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
+rx_protocol_stack_entry* port_runtime::get_stack_entry ()
+{
+	RX_ASSERT(false);
+	return nullptr;
+}
 
-// Class rx_platform::runtime::objects::application_creation_data 
-
-
-// Class rx_platform::runtime::objects::domain_creation_data 
-
-
-// Class rx_platform::runtime::objects::object_creation_data 
-
-
-// Class rx_platform::runtime::objects::port_creation_data 
+rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t initial_capacity)
+{
+	io_types::rx_io_buffer ret;
+	auto result = rx_init_packet_buffer(&ret, initial_capacity, get_stack_entry());
+	if (result == RX_PROTOCOL_OK)
+		return ret;
+	else
+		return rx_protocol_error_message(result);
+}
 
 
 } // namespace objects

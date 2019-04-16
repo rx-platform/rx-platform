@@ -487,7 +487,10 @@ rx_node_id::rx_node_id(uint32_t id, uint16_t namesp)
 	node_type_(numeric_rx_node_id)
 {
 	value_.int_value = id;
-	namespace_ = namesp;
+	if (id)
+		namespace_ = namesp;
+	else
+		namespace_ = 0;
 }
 
 rx_node_id::rx_node_id(const char* id, uint16_t namesp)
@@ -736,6 +739,8 @@ rx_node_id rx_node_id::from_string(const char* value)
 		{
 			ret.node_type_ = numeric_rx_node_id;
 			ret.value_.int_value = atoi(strid.substr(idx2 + 1).c_str());
+			if (ret.value_.int_value == 0)
+				ret.namespace_ = 0;
 		}
 		else if (type == "s")
 		{

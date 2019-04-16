@@ -171,7 +171,7 @@ public:
 	}
 	operator bool() const
 	{
-		return value_;
+		return static_cast<bool>(value_);
 	}
 	const result_erros_t& errors()const
 	{

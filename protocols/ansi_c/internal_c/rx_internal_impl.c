@@ -33,7 +33,7 @@
 // rx_internal_impl
 #include "protocols/ansi_c/internal_c/rx_internal_impl.h"
 
-rx_memory_functions g_memory;
+struct rx_hosting_functions g_memory;
 
 
 rx_protocol_result_t rx_c_alloc_buffer(void** buffer, size_t buffer_size)
