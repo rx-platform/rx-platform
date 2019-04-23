@@ -55,6 +55,8 @@ rx_result derived_types_query::serialize (base_meta_writer& stream) const
 		return "Error serializing base_type";
 	if(!stream.write_bool("subTypes", include_subtypes))
 		return "Error serializing subtypes";
+	if (!stream.write_string("subfolder", subfolder))
+		return "Error serializing subfolder";
 
 	return true;
 }
@@ -67,6 +69,8 @@ rx_result derived_types_query::deserialize (base_meta_reader& stream)
 		return "Error reading base_type";
 	if (!stream.read_bool("subTypes", include_subtypes))
 		return "Error reading subtypes";
+	if (!stream.read_string("subfolder", subfolder))
+		return "Error reading subfolder";
 
 	return true;
 }
@@ -178,6 +182,7 @@ rx_result_with<query_ptr> rx_query::create_query_from_name (const string_type& t
 rx_result rx_query::init_query_types ()
 {
 	registered_queries_.emplace(derived_types_query::query_name, [] { return std::make_shared<derived_types_query>(); });
+	registered_queries_.emplace(runtime_objects_query::query_name, [] { return std::make_shared<runtime_objects_query>(); });
 
 	return true;
 }
@@ -212,12 +217,26 @@ string_type runtime_objects_query::query_name = "runtime";
 
 rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
-	return "Not implemented";
+	if (!stream.write_string("typeName", type_name))
+		return "Error serializing type_name";
+	if (!stream.write_string("baseType", base_type))
+		return "Error serializing base_type";
+	if (!stream.write_string("subfolder", subfolder))
+		return "Error serializing subfolder";
+
+	return true;
 }
 
 rx_result runtime_objects_query::deserialize (base_meta_reader& stream)
 {
-	return "Not implemented";
+	if (!stream.read_string("typeName", type_name))
+		return "Error reading type_name";
+	if (!stream.read_string("baseType", base_type))
+		return "Error reading base_type";
+	if (!stream.read_string("subfolder", subfolder))
+		return "Error reading subfolder";
+
+	return true;
 }
 
 const string_type& runtime_objects_query::get_query_type ()
@@ -228,9 +247,44 @@ const string_type& runtime_objects_query::get_query_type ()
 
 rx_result runtime_objects_query::do_query (api::query_result& result, rx_directory_ptr dir)
 {
-	return "Not implemented";
+	if (type_name == "object")
+	{
+		return do_query(result, dir, tl::type2type<object_types::object_type>());
+	}
+	else if (type_name == "domain")
+	{
+		return do_query(result, dir, tl::type2type<object_types::domain_type>());
+	}
+	else if (type_name == "port")
+	{
+		return do_query(result, dir, tl::type2type<object_types::port_type>());
+	}
+	else if (type_name == "application")
+	{
+		return do_query(result, dir, tl::type2type<object_types::application_type>());
+	}
+	else
+	{
+		return type_name + " is unknown type name!";
+	}
+	return true;
 }
 
+template<typename T>
+rx_result runtime_objects_query::do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>)
+{
+	rx_node_id id = rx_node_id::null_id;
+	if (!base_type.empty())
+	{
+		auto item = dir->get_sub_item(base_type);
+		if (!item)
+			return base_type + " not found!";
+		id = item->meta_info().get_id();
+	}
+	result = model::platform_types_manager::instance().get_type_cache<T>().get_derived_types(id);
+
+	return result.success;
+}
 
 } // namespace queries
 } // namespace meta

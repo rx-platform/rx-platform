@@ -37,6 +37,7 @@
 #include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
+#include "system/meta/rx_types.h"
 namespace rx_platform
 {
 namespace api

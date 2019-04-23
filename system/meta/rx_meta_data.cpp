@@ -105,21 +105,27 @@ rx_result meta_data::check_out (base_meta_writer& stream) const
 
 rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type, const string_type& object_type) const
 {
-	if (!stream.start_object("Meta"))
+	if (!stream.start_object("meta"))
 		return false;
-	if (!stream.write_string("Type", object_type.c_str()))
+	if (!stream.write_string("type", object_type.c_str()))
 		return false;
-	if (!stream.write_id("NodeId", id_))
+	if (!stream.write_id("nodeId", id_))
 		return false;
-	if (!stream.write_string("Name", name_.c_str()))
+	if (!stream.write_string("name", name_.c_str()))
 		return false;
-	if (!stream.write_byte("Attrs", (uint8_t)attributes_))
+	if (!stream.write_byte("attrs", (uint8_t)attributes_))
 		return false;
-	if (!stream.write_id("SuperId", parent_))
+	if (!stream.write_id("superId", parent_))
 		return false;
-	if (!stream.write_string("Path", path_.c_str()))
+	if (!stream.write_string("path", path_.c_str()))
 		return false;
-	if (!stream.write_version("Ver", version_))
+	if (!stream.write_time("created", created_time_))
+		return false;
+	if (!stream.write_time("modified", modified_time_))
+		return false;
+	if (!stream.write_string("path", path_.c_str()))
+		return false;
+	if (!stream.write_version("ver", version_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -128,23 +134,27 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 
 rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t type, string_type& object_type)
 {
-	if (!stream.start_object("Meta"))
+	if (!stream.start_object("meta"))
 		return false;
-	if (!stream.read_string("Type", object_type))
+	if (!stream.read_string("type", object_type))
 		return false;
-	if (!stream.read_id("NodeId", id_))
+	if (!stream.read_id("nodeId", id_))
 		return false;
-	if (!stream.read_string("Name", name_))
+	if (!stream.read_string("name", name_))
 		return false;
 	uint8_t temp_byte;
-	if (!stream.read_byte("Attrs", temp_byte))
+	if (!stream.read_byte("attrs", temp_byte))
 		return false;
 	attributes_ = (namespace_item_attributes)temp_byte;
-	if (!stream.read_id("SuperId", parent_))
-		return false; 
-	if (!stream.read_string("Path", path_))
+	if (!stream.read_id("superId", parent_))
 		return false;
-	if (!stream.read_version("Ver", version_))
+	if (!stream.read_time("created", created_time_))
+		return false;
+	if (!stream.read_time("modified", modified_time_))
+		return false;
+	if (!stream.read_string("path", path_))
+		return false;
+	if (!stream.read_version("ver", version_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -254,6 +264,25 @@ void meta_data::fill_query_result (api::query_result_detail& item) const
 void meta_data::set_path (const string_type& path)
 {
 	path_ = path;
+}
+
+string_type meta_data::get_full_path () const
+{
+	if (!path_.empty() && *path_.rbegin() == RX_DIR_DELIMETER)
+	{
+		string_type ret(path_);
+		ret += name_;
+		return ret;
+
+	}
+	else
+	{
+		string_type ret(path_);
+		ret.reserve(path_.size() + name_.size() + 1);
+		ret += RX_DIR_DELIMETER;
+		ret += name_;
+		return ret;
+	}
 }
 
 

@@ -654,6 +654,12 @@ bool rx_node_id::operator < (const rx_node_id& right) const
 
 void rx_node_id::to_string(string_type& val) const
 {
+	if (is_null())
+	{
+		val.clear();
+		return;
+	}
+
 	char buff[0x40];
 	const char* type = "err";
 	switch (node_type_)
@@ -696,11 +702,14 @@ void rx_node_id::to_string(string_type& val) const
 		}
 		break;
 	}
-	
-	char buffer[0x20];
-	snprintf(buffer,0x20,"%d",(int)namespace_);
-	val = buffer;
-	val = type;
+	val.clear();
+	if (namespace_ != DEFAULT_NAMESPACE)
+	{
+		char buffer[0x10];
+		snprintf(buffer, 0x10, "%d:", (int)namespace_);
+		val = buffer;
+	}
+	val += type;
 	val += ':';
 	val += value;
 }
@@ -716,9 +725,12 @@ rx_node_id rx_node_id::generate_new(uint16_t namesp)
 }
 rx_node_id rx_node_id::from_string(const char* value)
 {
-
-	string_type strid(value);
 	rx_node_id ret;
+	if (value == nullptr || *value == '\0')
+	{
+
+	}
+	string_type strid(value);
 	size_t idx = strid.find(':');
 	if (idx != string_type::npos)
 	{
@@ -1415,7 +1427,7 @@ string_type rx_time::get_IEC_string() const
 	rx_full_time os_time;
 	if (rx_os_split_time(&temp, &os_time))
 	{
-		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "%04d%02d%02dT%02d%02d%02d.%03dZ",
+		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
 			os_time.year, os_time.month, os_time.day,
 			os_time.hour, os_time.minute, os_time.second, os_time.milliseconds);
 		ret += buff;

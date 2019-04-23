@@ -163,6 +163,8 @@ class meta_data
 
       void set_path (const string_type& path);
 
+      string_type get_full_path () const;
+
 
       const rx_node_id& get_parent () const
       {

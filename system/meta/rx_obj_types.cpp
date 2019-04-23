@@ -341,14 +341,14 @@ object_data_type::object_data_type (const string_type& name, const rx_node_id& i
 
 rx_result object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.write_bool("Constructible", constructible_))
+	if (!stream.write_bool("constructible", constructible_))
 		return false;
 	return true;
 }
 
 rx_result object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.read_bool("Constructible", constructible_))
+	if (!stream.read_bool("constructible", constructible_))
 		return false;
 	return true;
 }

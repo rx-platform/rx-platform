@@ -32,10 +32,10 @@
 
 
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_queries
 #include "system/meta/rx_queries.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 
 namespace sys_internal {
 namespace rx_protocol {
@@ -85,7 +85,7 @@ class rx_message_base
       virtual const string_type& get_type_name () = 0;
 
 
-      int reguestId;
+      int requestId;
 
 
   protected:
@@ -227,6 +227,41 @@ class browse_request_message : public rx_request_message
 
 
 
+class query_request_message : public rx_request_message  
+{
+	typedef std::vector<meta::query_ptr> queries_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+
+      queries_type queries;
+
+
+      static string_type type_name;
+
+      bool intersection;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class query_response_message : public rx_message_base  
 {
 	typedef std::vector<std::pair<string_type, meta::meta_data> > query_result_items_type;
@@ -258,9 +293,8 @@ class query_response_message : public rx_message_base
 
 
 
-class query_request_message : public rx_request_message  
+class get_type_request : public rx_request_message  
 {
-	typedef std::vector<meta::query_ptr> queries_type;
 
   public:
 
@@ -273,12 +307,44 @@ class query_request_message : public rx_request_message
       const string_type& get_type_name ();
 
 
-      queries_type queries;
+      meta_data meta;
 
+      string_type item_type;
 
       static string_type type_name;
 
-      bool intersection;
+
+  protected:
+
+  private:
+	  template<typename T>
+	  message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	  template<typename T>
+	  message_ptr do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+
+};
+
+
+
+
+
+
+template <class itemT>
+class get_type_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+
+      typename itemT::smart_ptr item;
+
+      static string_type type_name;
 
 
   protected:

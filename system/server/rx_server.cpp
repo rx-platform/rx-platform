@@ -124,12 +124,13 @@ void rx_gate::cleanup ()
 
 rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
+
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
 #endif	
 	host_ = host;
-	rx_name_ = data.meta_configuration_data.instance_name;
+	rx_name_ = data.meta_configuration_data.instance_name.empty() ? host_->get_default_name() : data.meta_configuration_data.instance_name;
 
 	auto result = runtime_.initialize(host, data.runtime_data);
 	if (result)
@@ -160,7 +161,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 				}
 				if(!result)
 				{
-					//io_manager_.deinitialize();
+					io_manager_->deinitialize();
 					manager_.deinitialize();
 					runtime_.deinitialize();
 					io_manager_->deinitialize();
@@ -196,6 +197,7 @@ rx_result rx_gate::deinitialize ()
 
 	model::platform_types_manager::instance().deinitialize();
 
+	io_manager_->deinitialize();
 	manager_.deinitialize();
 	runtime_.deinitialize();
 	return RX_OK;

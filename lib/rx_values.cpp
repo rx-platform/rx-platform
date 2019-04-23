@@ -195,15 +195,15 @@ void rx_value::set_test ()
 
 bool rx_value::serialize (base_meta_writer& stream) const
 {
-	if (!stream.start_object("Value"))
+	if (!stream.start_object("value"))
 		return false;
 	if (!storage_.serialize(stream))
 		return false;
-	if (!stream.write_time("TS", time_))
+	if (!stream.write_time("ts", time_))
 		return false;
-	if (!stream.write_uint("Quality", quality_))
+	if (!stream.write_uint("quality", quality_))
 		return false;
-	if (!stream.write_uint("Origin", origin_))
+	if (!stream.write_uint("origin", origin_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -212,15 +212,15 @@ bool rx_value::serialize (base_meta_writer& stream) const
 
 bool rx_value::deserialize (base_meta_reader& stream)
 {
-	if (!stream.start_object("Value"))
+	if (!stream.start_object("value"))
 		return false;
 	if (!storage_.deserialize(stream))
 		return false;
-	if (!stream.read_time("TS", time_))
+	if (!stream.read_time("ts", time_))
 		return false;
-	if (!stream.read_uint("Quality", quality_))
+	if (!stream.read_uint("quality", quality_))
 		return false;
-	if (!stream.read_uint("Origin", origin_))
+	if (!stream.read_uint("origin", origin_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -481,11 +481,11 @@ rx_value_storage::~rx_value_storage()
 
 bool rx_value_storage::serialize (base_meta_writer& writer) const
 {
-	if (!writer.start_object("_Val"))
+	if (!writer.start_object("_val"))
 		return false;
-	if (!writer.write_byte("Type", value_type_))
+	if (!writer.write_byte("type", value_type_))
 		return false;
-	if (!serialize_value(writer, value_, value_type_, "Val"))
+	if (!serialize_value(writer, value_, value_type_, "val"))
 		return false;
 	if (!writer.end_object())
 		return false;
@@ -497,9 +497,9 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 	// first destroy eventual values already inside
 	destroy_value(value_, value_type_);
 	value_type_ = RX_NULL_TYPE;
-	if (!reader.start_object("_Val"))
+	if (!reader.start_object("_val"))
 		return false;
-	if (!reader.read_byte("Type", value_type_))
+	if (!reader.read_byte("type", value_type_))
 		return false;
 	if (!deserialize_value(reader, value_, value_type_))
 		return false;
@@ -957,8 +957,8 @@ bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_
 		writer.start_array(name.c_str(), who.array_value->size());
 		for (const auto& one : *who.array_value)
 		{
-			writer.start_object("Item");
-			serialize_value(writer, one, type&RX_STRIP_ARRAY_MASK, "Val");
+			writer.start_object("item");
+			serialize_value(writer, one, type&RX_STRIP_ARRAY_MASK, "val");
 			writer.end_object();
 		}
 		writer.end_array();
@@ -1069,21 +1069,21 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 		case RX_NULL_TYPE:
 			break;
 		case RX_BOOL_TYPE:
-			return reader.read_bool("Val", who.bool_value);
+			return reader.read_bool("val", who.bool_value);
 		case RX_INT8_TYPE:
 		{
 			uint8_t temp;
-			if (!reader.read_byte("Val", temp))
+			if (!reader.read_byte("val", temp))
 				return false;
 			who.int8_value = temp;
 			return true;
 		}
 		case RX_UINT8_TYPE:
-			return reader.read_byte("Val", who.uint8_value);
+			return reader.read_byte("val", who.uint8_value);
 		case RX_INT16_TYPE:
 		{
 			int32_t temp;
-			if (!reader.read_int("Val", temp))
+			if (!reader.read_int("val", temp))
 				return false;
 			who.int16_value = temp;
 			return true;
@@ -1091,39 +1091,39 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 		case RX_UINT16_TYPE:
 		{
 			uint32_t temp;
-			if(!reader.read_uint("Val", temp))
+			if(!reader.read_uint("val", temp))
 				return false;
 			who.uint16_value = temp;
 			return true;
 		}
 		case RX_INT32_TYPE:
-			return reader.read_int("Val", who.int32_value);
+			return reader.read_int("val", who.int32_value);
 		case RX_UINT32_TYPE:
-			return reader.read_uint("Val", who.uint32_value);
+			return reader.read_uint("val", who.uint32_value);
 		case RX_INT64_TYPE:
-			return reader.read_int64("Val", who.int64_value);
+			return reader.read_int64("val", who.int64_value);
 		case RX_UINT64_TYPE:
-			return reader.read_uint64("Val", who.uint64_value);
+			return reader.read_uint64("val", who.uint64_value);
 		case RX_FLOAT_TYPE:
 		{
 			double temp;
-			if(!reader.read_double("Val", temp))
+			if(!reader.read_double("val", temp))
 				return false;
 			who.float_value = static_cast<float>(temp);
 			return true;
 		}
 		case RX_DOUBLE_TYPE:
-			return reader.read_double("Val", who.double_value);
+			return reader.read_double("val", who.double_value);
 		case RX_STRING_TYPE:
 		{
 			string_type val;
-			if(!reader.read_string("Val", val))
+			if(!reader.read_string("val", val))
 				return false;
 			who.string_value = new string_type(std::move(val));
 			return true;
 		}
 		case RX_TIME_TYPE:
-			return reader.read_time("Val", who.time_value);
+			return reader.read_time("val", who.time_value);
 		case RX_OBJECT_TYPE:
 		case RX_CLASS_TYPE:
 		{
@@ -1132,7 +1132,7 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 			case RX_BINARY_VALUE:
 			{
 				byte_string val;
-				if (!reader.read_bytes("Val", val))
+				if (!reader.read_bytes("val", val))
 					return false;
 				who.bytes_value = new byte_string(std::move(val));
 				return true;
@@ -1141,7 +1141,7 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 			case RX_SCRIPT_VALUE:
 			{
 				string_type val;
-				if (!reader.read_string("Val", val))
+				if (!reader.read_string("val", val))
 					return false;
 				who.string_value = new string_type(std::move(val));
 				return true;
@@ -2639,11 +2639,11 @@ void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode
 
 bool rx_timed_value::serialize (base_meta_writer& writter) const
 {
-	if (!writter.start_object("Timed"))
+	if (!writter.start_object("timed"))
 		return false;
 	if (!storage_.serialize(writter))
 		return false;
-	if (!writter.write_time("TS", time_))
+	if (!writter.write_time("ts", time_))
 		return false;
 	if (!writter.end_object())
 		return false;
@@ -2652,11 +2652,11 @@ bool rx_timed_value::serialize (base_meta_writer& writter) const
 
 bool rx_timed_value::deserialize (base_meta_reader& reader)
 {
-	if (!reader.start_object("Timed_"))
+	if (!reader.start_object("timed_"))
 		return false;
 	if (!storage_.deserialize(reader))
 		return false;
-	if (!reader.read_time("TS", time_))
+	if (!reader.read_time("ts", time_))
 		return false;
 	if (!reader.end_object())
 		return false;

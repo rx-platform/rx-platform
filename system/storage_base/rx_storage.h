@@ -108,6 +108,8 @@ class rx_storage_item
 
       virtual rx_result delete_item () = 0;
 
+      virtual const string_type& get_item_reference () const = 0;
+
 
       const string_type& get_serialization_type () const
       {
@@ -158,7 +160,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual bool is_valid_storage () const = 0;
 
-      virtual rx_result save_item (const rx_platform::platform_item_ptr item) = 0;
+      virtual rx_result save_item (const platform_item_ptr item) = 0;
 
 
   protected:

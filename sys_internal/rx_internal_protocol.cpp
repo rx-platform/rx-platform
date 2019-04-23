@@ -90,7 +90,7 @@ void rx_protocol_port::data_received (const string_type& data)
 		if (result_msg)
 		{
 			serialization::json_writer writter;
-			auto result = serialize_message(writter, received.value()->reguestId, *result_msg);
+			auto result = serialize_message(writter, received.value()->requestId, *result_msg);
 			if (result)
 			{
 				auto buff_result = allocate_io_buffer();
@@ -121,7 +121,7 @@ rx_protocol_stack_entry* rx_protocol_port::get_stack_entry ()
 void rx_protocol_port::data_processed (message_ptr result)
 {
 	serialization::json_writer writter;
-	auto res = serialize_message(writter, result->reguestId, *result);
+	auto res = serialize_message(writter, result->requestId, *result);
 	if (res)
 	{
 		auto buff_result = allocate_io_buffer();

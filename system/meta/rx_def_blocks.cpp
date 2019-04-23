@@ -77,13 +77,13 @@ complex_data_type::complex_data_type (const string_type& name, const rx_node_id&
 
 rx_result complex_data_type::serialize_complex_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.write_bool("Sealed", sealed_))
+	if (!stream.write_bool("sealed", sealed_))
 		return false;
 
-	if (!stream.write_bool("Abstract", abstract_))
+	if (!stream.write_bool("abstract", abstract_))
 		return false;
 
-	if (!stream.start_array("Items", names_cache_.size()))
+	if (!stream.start_array("items", names_cache_.size()))
 		return false;
 	for (const auto& one : names_cache_)
 	{
@@ -92,9 +92,9 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		case structs_mask:
 		{
 
-			if (!stream.start_object("Item"))
+			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("Type",basic_types::struct_type::type_name.c_str()))
+			if (!stream.write_string("type",basic_types::struct_type::type_name.c_str()))
 				return false;
 			if (!structs_[one.second&index_mask].serialize_definition(stream,type))
 				return false;
@@ -105,9 +105,9 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		case variables_mask:
 		{
 
-			if (!stream.start_object("Item"))
+			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("Type", basic_types::variable_type::type_name.c_str()))
+			if (!stream.write_string("type", basic_types::variable_type::type_name.c_str()))
 				return false;
 			if (!variables_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
@@ -117,9 +117,9 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		break;
 		case simple_values_mask:
 		{
-			if (!stream.start_object("Item"))
+			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("Type", simple_value_def::type_name.c_str()))
+			if (!stream.write_string("type", simple_value_def::type_name.c_str()))
 				return false;
 			if (!simple_values_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
@@ -129,9 +129,9 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		break;
 		case const_values_mask:
 		{
-			if (!stream.start_object("Item"))
+			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("Type", const_value_def::type_name.c_str()))
+			if (!stream.write_string("type", const_value_def::type_name.c_str()))
 				return false;
 			if (!const_values_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
@@ -150,21 +150,21 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 
 rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.read_bool("Sealed", sealed_))
+	if (!stream.read_bool("sealed", sealed_))
 		return false;
 
-	if (!stream.read_bool("Abstract", abstract_))
+	if (!stream.read_bool("abstract", abstract_))
 		return false;
 
-	if (!stream.start_array("Items"))
+	if (!stream.start_array("items"))
 		return false;
 
 	while(!stream.array_end())	
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		string_type item_type;
-		if (!stream.read_string("Type", item_type))
+		if (!stream.read_string("type", item_type))
 			return false;
 		if (item_type == RX_CONST_VALUE_TYPE_NAME)
 		{
@@ -391,7 +391,7 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 
 rx_result const_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.write_string("Name", name_.c_str()))
+	if (!stream.write_string("name", name_.c_str()))
 		return false;
 	if (!storage_.serialize(stream))
 		return false;
@@ -400,7 +400,7 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream, uint8
 
 rx_result const_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.read_string("Name", name_))
+	if (!stream.read_string("name", name_))
 		return false;
 	if (!storage_.deserialize(stream))
 		return false;
@@ -514,11 +514,11 @@ mapped_data_type::mapped_data_type (const string_type& name, const rx_node_id& i
 
 rx_result mapped_data_type::serialize_mapped_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_array("Mappers", mappers_.size()))
+	if (!stream.start_array("mappers", mappers_.size()))
 		return false;
 	for (const auto& one : mappers_)
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		if (!one.serialize_definition(stream, type))
 			return false;
@@ -532,14 +532,14 @@ rx_result mapped_data_type::serialize_mapped_definition (base_meta_writer& strea
 
 rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data)
 {
-	if (!stream.start_array("Mappers"))
+	if (!stream.start_array("mappers"))
 		return false;
 	while (!stream.array_end())
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		string_type item_type;
-		if (!stream.read_string("Type", item_type))
+		if (!stream.read_string("type", item_type))
 			return false;
 
 		if (item_type != RX_CPP_MAPPER_CLASS_TYPE_NAME)
@@ -680,9 +680,9 @@ simple_value_def::simple_value_def (const string_type& name, bool read_only, con
 
 rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.write_string("Name", name_.c_str()))
+	if (!stream.write_string("name", name_.c_str()))
 		return false;
-	if (!stream.write_bool("RO", read_only_))
+	if (!stream.write_bool("ro", read_only_))
 		return false;
 	if (!storage_.serialize(stream))
 		return false;
@@ -691,9 +691,9 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint
 
 rx_result simple_value_def::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.read_string("Name", name_))
+	if (!stream.read_string("name", name_))
 		return false;
-	if (!stream.read_bool("RO", read_only_))
+	if (!stream.read_bool("ro", read_only_))
 		return false;
 	if (!storage_.deserialize(stream))
 		return false;
@@ -903,11 +903,11 @@ rx_result variable_data_type::construct (const names_cahce_type& names, construc
 
 rx_result variable_data_type::serialize_variable_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!stream.start_array("Sources", sources_.size()))
+	if (!stream.start_array("sources", sources_.size()))
 		return false;
 	for (const auto& one : sources_)
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		if (!one.serialize_definition(stream, type))
 			return false;
@@ -917,11 +917,11 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Filters", filters_.size()))
+	if (!stream.start_array("filters", filters_.size()))
 		return false;
 	for (const auto& one : filters_)
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		if (!one.serialize_definition(stream, type))
 			return false;
@@ -931,11 +931,11 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 	if (!stream.end_array())
 		return false;
 
-	if (!stream.start_array("Events", events_.size()))
+	if (!stream.start_array("events", events_.size()))
 		return false;
 	for (const auto& one : events_)
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		if (!one.serialize_definition(stream, type))
 			return false;
@@ -950,14 +950,14 @@ rx_result variable_data_type::serialize_variable_definition (base_meta_writer& s
 
 rx_result variable_data_type::deserialize_variable_definition (base_meta_reader& stream, uint8_t type, complex_data_type& complex_data)
 {
-	if (!stream.start_array("Sources"))
+	if (!stream.start_array("sources"))
 		return false;
 	while (!stream.array_end())
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		string_type item_type;
-		if (!stream.read_string("Type", item_type))
+		if (!stream.read_string("type", item_type))
 			return false;
 		if (item_type != RX_CPP_SOURCE_TYPE_NAME)
 			return item_type + " is wrong item type for a source!";
@@ -977,14 +977,14 @@ rx_result variable_data_type::deserialize_variable_definition (base_meta_reader&
 			return false;
 	}
 
-	if (!stream.start_array("Filters"))
+	if (!stream.start_array("filters"))
 		return false;
 	while (!stream.array_end())
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		string_type item_type;
-		if (!stream.read_string("Type", item_type))
+		if (!stream.read_string("type", item_type))
 			return false;
 		if (item_type != RX_CPP_FILTER_TYPE_NAME)
 			return item_type + " is wrong item type for a filter!";
@@ -1004,14 +1004,14 @@ rx_result variable_data_type::deserialize_variable_definition (base_meta_reader&
 			return false;
 	}
 
-	if (!stream.start_array("Events"))
+	if (!stream.start_array("events"))
 		return false;
 	while (!stream.array_end())
 	{
-		if (!stream.start_object("Item"))
+		if (!stream.start_object("item"))
 			return false;
 		string_type item_type;
-		if (!stream.read_string("Type", item_type))
+		if (!stream.read_string("type", item_type))
 			return false;
 		if (item_type != RX_CPP_EVENT_TYPE_NAME)
 			return item_type + " is wrong item type for a event!";

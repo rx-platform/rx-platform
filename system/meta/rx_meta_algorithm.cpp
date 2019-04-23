@@ -51,13 +51,9 @@ namespace meta_algorithm {
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
-	if (!stream.start_object(typeT::TargetType::type_name.c_str()))
+	if (!stream.write_id("id", whose.target_id_))
 		return false;
-	if (!stream.write_id("Id", whose.target_id_))
-		return false;
-	if (!stream.write_string("Name", whose.name_.c_str()))
-		return false;
-	if (!stream.end_object())
+	if (!stream.write_string("name", whose.name_.c_str()))
 		return false;
 	return true;
 }
@@ -65,13 +61,9 @@ rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
 {
-	if (!stream.start_object(typeT::TargetType::type_name.c_str()))
+	if (!stream.read_id("id", whose.target_id_))
 		return false;
-	if (!stream.read_id("Id", whose.target_id_))
-		return false;
-	if (!stream.read_string("Name", whose.name_))
-		return false;
-	if (!stream.end_object())
+	if (!stream.read_string("name", whose.name_))
 		return false;
 	return true;
 }
@@ -139,34 +131,26 @@ rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose,
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
 {
-	if (!stream.start_object(variable_attribute::TargetType::type_name.c_str()))
+	if (!stream.write_id("id", whose.target_id_))
 		return false;
-	if (!stream.write_id("Id", whose.target_id_))
+	if (!stream.write_string("name", whose.name_.c_str()))
 		return false;
-	if (!stream.write_string("Name", whose.name_.c_str()))
-		return false;
-	if (!stream.write_bool("RO", whose.read_only_))
+	if (!stream.write_bool("ro", whose.read_only_))
 		return false;
 	if (!whose.storage_.serialize(stream))
-		return false;
-	if (!stream.end_object())
 		return false;
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_attribute(def_blocks::variable_attribute& whose, base_meta_reader& stream)
 {
-	if (!stream.start_object(variable_attribute::TargetType::type_name.c_str()))
+	if (!stream.read_id("id", whose.target_id_))
 		return false;
-	if (!stream.read_id("Id", whose.target_id_))
+	if (!stream.read_string("name", whose.name_))
 		return false;
-	if (!stream.read_string("Name", whose.name_))
-		return false;
-	if (!stream.read_bool("RO", whose.read_only_))
+	if (!stream.read_bool("ro", whose.read_only_))
 		return false;
 	if (!whose.storage_.deserialize(stream))
-		return false;
-	if (!stream.end_object())
 		return false;
 	return true;
 }
@@ -200,7 +184,7 @@ rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose
 {
 	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
 		return false;
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
 	if (!ret)
@@ -213,7 +197,7 @@ rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
 	if (!ret)
@@ -251,7 +235,7 @@ rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const varia
 {
 	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_name))
 		return false;
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
 	if (!ret)
@@ -287,7 +271,7 @@ rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_
 template <>
 rx_result basic_types_algorithm<variable_type>::deserialize_basic_type(variable_type& whose, base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
 	if (!ret)
@@ -398,7 +382,7 @@ rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& who
 {
 	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
 		return false;
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	if (!whose.complex_data_.serialize_complex_definition(stream, type))
 		return false;
@@ -414,7 +398,7 @@ rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& who
 template <class typeT>
 rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	if (!whose.complex_data_.deserialize_complex_definition(stream, type))
 		return false;

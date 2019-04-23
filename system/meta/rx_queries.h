@@ -116,6 +116,8 @@ class derived_types_query : public rx_query
 
       static string_type query_name;
 
+      string_type subfolder;
+
 
   protected:
 
@@ -158,6 +160,8 @@ class runtime_objects_query : public rx_query
   protected:
 
   private:
+	  template<typename T>
+	  rx_result do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
 
 
 };

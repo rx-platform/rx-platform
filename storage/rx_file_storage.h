@@ -67,6 +67,8 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       static string_type get_file_storage_info ();
 
+      const string_type& get_item_reference () const;
+
 
   protected:
 

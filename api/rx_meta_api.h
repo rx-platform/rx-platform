@@ -88,29 +88,77 @@ rx_result rx_save_item(
 	, std::function<void(rx_result&&)> callback
 	, rx_context ctx);
 
+template<class T>
+rx_result rx_get_type(const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback
+	, rx_context ctx, tl::type2type<T>);
 
-rx_result rx_get_derived_object_types(
+rx_result rx_get_object_type(
 	const rx_node_id& id // item's id
 	, const string_type name
-	, std::function<void(rx_result_with<query_result>&&)> callback
+	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
 	, rx_context ctx);
 
-rx_result rx_get_derived_domain_types(
+rx_result rx_get_domain_type(
 	const rx_node_id& id // item's id
 	, const string_type name
-	, std::function<void(rx_result_with<query_result>&&)> callback
+	, std::function<void(rx_result_with<rx_domain_type_ptr>&&)> callback
 	, rx_context ctx);
 
-rx_result rx_get_derived_application_types(
+rx_result rx_get_application_type(
 	const rx_node_id& id // item's id
 	, const string_type name
-	, std::function<void(rx_result_with<query_result>&&)> callback
+	, std::function<void(rx_result_with<rx_application_type_ptr>&&)> callback
 	, rx_context ctx);
 
-rx_result rx_get_derived_port_types(
+rx_result rx_get_port_type(
 	const rx_node_id& id // item's id
 	, const string_type name
-	, std::function<void(rx_result_with<query_result>&&)> callback
+	, std::function<void(rx_result_with<rx_port_type_ptr>&&)> callback
+	, rx_context ctx);
+
+
+template<class T>
+rx_result rx_get_simple_type(const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback
+	, rx_context ctx, tl::type2type<T>);
+
+rx_result rx_get_struct_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<struct_type_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_variable_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<variable_type_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_source_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<source_type_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_filter_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<filter_type_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_event_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<event_type_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_get_mapper_type(
+	const rx_node_id& id // item's id
+	, const string_type name
+	, std::function<void(rx_result_with<mapper_type_ptr>&&)> callback
 	, rx_context ctx);
 
 }

@@ -1147,7 +1147,7 @@ Json::Value& json_writer::get_current_value (bool& is_array)
 
 bool json_writer::get_string (string_type& result, bool decorated)
 {
-	if (decorated)
+	if (type_ == STREAMING_TYPE_MESSAGE)
 	{
 		json_writer_type writer;
 
@@ -1160,8 +1160,16 @@ bool json_writer::get_string (string_type& result, bool decorated)
 	}
 	else
 	{
-		json_writer_type writer;
-		result = writer.write(envelope_);
+		if (decorated)
+		{
+			Json::StyledWriter writer;
+			result = writer.write(envelope_);
+		}
+		else
+		{
+			json_writer_type writer;
+			result = writer.write(envelope_);
+		}
 	}
 	return true;
 }

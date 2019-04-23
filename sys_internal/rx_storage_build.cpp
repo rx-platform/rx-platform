@@ -138,7 +138,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 					switch (type)
 					{
 					case STREAMING_TYPE_TYPE:
-						result = create_type_from_storage(stream,  std::move(item), storage_type, root);
+						result = create_type_from_storage(stream, std::move(item), storage_type, root);
 						break;
 					case STREAMING_TYPE_OBJECT:
 						result = create_object_from_storage(stream, std::move(item), storage_type, root);
@@ -147,13 +147,12 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 						result = "Invalid serialization type!";
 					}
 				}
-			}
-			if (result)
-			{
-
+				else
+					result.register_error("Error in deserialization from " + item->get_item_reference());
 			}
 			else
 			{// we had an error
+				result.register_error("Error in opening item " + item->get_item_reference());
 				break;
 			}
 		}
