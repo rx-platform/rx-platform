@@ -125,6 +125,8 @@ public:
 
       virtual bool write_init_values (const char* name, const data::runtime_values_data& values) = 0;
 
+      virtual bool is_string_based () const = 0;
+
 
       const size_t get_version () const
       {
@@ -208,6 +210,8 @@ class base_meta_reader
       virtual bool read_version (const char* name, uint32_t& val) = 0;
 
       virtual bool read_init_values (const char* name, data::runtime_values_data& values) = 0;
+
+      virtual bool is_string_based () const = 0;
 
 
       const uint32_t get_version () const

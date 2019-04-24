@@ -43,7 +43,7 @@ namespace logic {
 
 // Class rx_platform::logic::program_runtime 
 
-string_type program_runtime::type_name = RX_CPP_PROGRAM_TYPE_NAME;
+rx_item_type program_runtime::type_id = rx_program;
 
 program_runtime::program_runtime()
 {
@@ -69,12 +69,6 @@ bool program_runtime::serialize_definition (base_meta_writer& stream, uint8_t ty
 bool program_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return true;
-}
-
-string_type program_runtime::get_type_name () const
-{
-  return type_name;
-
 }
 
 namespace_item_attributes program_runtime::get_attributes () const
@@ -184,12 +178,6 @@ bool ladder_program::deserialize_definition (base_meta_reader& stream, uint8_t t
 		return false;
 
 	return true;
-}
-
-string_type ladder_program::get_type_name () const
-{
-  return type_name;
-
 }
 
 

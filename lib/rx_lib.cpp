@@ -49,6 +49,70 @@ namespace rx
 {
 
 
+rx_source_file::rx_source_file()
+	: m_handle(0)
+{
+}
+rx_result rx_source_file::open(const char* file_name)
+{
+	m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+	return m_handle != 0;
+}
+rx_result rx_source_file::open_write(const char* file_name)
+{
+	m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
+	return m_handle != 0;
+}
+rx_result rx_source_file::read_string(std::string& buff)
+{
+	if (m_handle == 0)
+	{
+		RX_ASSERT(false);
+		return "File not opened!";
+	}
+	uint64_t size;
+	if (rx_file_get_size(m_handle, &size) != RX_OK)
+		return "Unable to get file size!";
+
+	char* temp = new char[size];
+
+	uint32_t readed = 0;
+	if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)
+	{
+		buff.assign(temp, size);
+		delete[] temp;
+		return true;
+	}
+	else
+	{
+		delete[] temp;
+		return "Error reading file!";
+	}
+}
+rx_result rx_source_file::write_string(const std::string& buff)
+{
+	if (m_handle == 0)
+	{
+		RX_ASSERT(false);
+		return "File not opened!";
+	}
+
+	uint32_t size = (uint32_t)buff.size();
+	uint32_t written = 0;
+	if (rx_file_write(m_handle, buff.c_str(), size, &written) == RX_OK)
+	{
+		return true;
+	}
+	else
+	{
+		return "Error writing to file!";
+	}
+}
+rx_source_file::~rx_source_file()
+{
+	if (m_handle != 0)
+		rx_file_close(m_handle);
+}
 
 void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width)
 {
@@ -500,11 +564,11 @@ rx_node_id::rx_node_id(const char* id, uint16_t namesp)
 	namespace_ = namesp;
 }
 /*
-rx_node_id::rx_node_id(const rx_uuid_t& id, uint16_t namesp)
+rx_node_id::rx_node_id(const rx_uuid_t& id, uint16_t namespace)
 {
 	value_.uuid_value = id;
 	node_type_ = uuid_rx_node_id;
-	namespace_ = namesp;
+	namespace_ = namespace;
 }
 */
 rx_node_id::rx_node_id(rx_uuid_t id, uint16_t namesp)
@@ -728,7 +792,7 @@ rx_node_id rx_node_id::from_string(const char* value)
 	rx_node_id ret;
 	if (value == nullptr || *value == '\0')
 	{
-
+		return rx_node_id();
 	}
 	string_type strid(value);
 	size_t idx = strid.find(':');
@@ -975,7 +1039,20 @@ void extract_next(const string_type& path, string_type& name, string_type& rest,
 	}
 }
 
-//
+void rx_trim_string(string_type& what)
+{
+	static const string_type delimeters(" \t\r\n");
+	size_t idx1 = what.find_first_not_of(delimeters);
+	size_t idx2 = what.find_last_not_of(delimeters);
+
+	if (idx1 != string_type::npos && idx2 != string_type::npos)
+		what = what.substr(idx1, idx2 - idx1 + 1);
+	else if (idx1 != string_type::npos && idx2 == string_type::npos)
+		what = what.substr(idx1);
+	else if (idx1 == string_type::npos && idx2 != string_type::npos)
+		what = what.substr(0, idx2 + 1);
+}
+
 
 string_type get_code_module(const string_type& full)
 {
@@ -990,6 +1067,127 @@ string_type get_code_module(const string_type& full)
 		}
 	}
 	return full;
+}
+
+rx_mode_type::rx_mode_type()
+{
+	raw_format = 0;
+}
+bool rx_mode_type::is_on() const
+{
+	return (raw_format&RX_MODE_MASK_OFF) == 0;
+}
+bool rx_mode_type::is_test() const
+{
+	return is_on() && (raw_format&RX_MODE_MASK_TEST) != 0;
+}
+bool rx_mode_type::is_blocked() const
+{
+	return is_on() && (raw_format&RX_MODE_MASK_BLOCKED) != 0;
+}
+bool rx_mode_type::is_simulate() const
+{
+	return is_on() && (raw_format&RX_MODE_MASK_SIMULATE) != 0;
+}
+bool rx_mode_type::is_unassigned() const
+{
+	return (raw_format&RX_MODE_MASK_UNASSIGNED) != 0;
+}
+bool rx_mode_type::is_off() const
+{
+	return (raw_format&RX_MODE_MASK_OFF) != 0;
+}
+bool rx_mode_type::set_test()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format | (RX_MODE_MASK_TEST);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+
+bool rx_mode_type::reset_test()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format & (!RX_MODE_MASK_TEST);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+bool rx_mode_type::set_simulate()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format | (RX_MODE_MASK_SIMULATE);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+bool rx_mode_type::ret_simulate()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format & (~RX_MODE_MASK_SIMULATE);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+bool rx_mode_type::set_unassigned()
+{
+	uint32_t old_stuff = raw_format;
+	raw_format = raw_format | (RX_MODE_MASK_UNASSIGNED);
+	return (old_stuff != raw_format);
+}
+
+bool rx_mode_type::reset_unassigned()
+{
+	uint32_t old_stuff = raw_format;
+	raw_format = raw_format & (~RX_MODE_MASK_UNASSIGNED);
+	return (old_stuff != raw_format);
+}
+
+bool rx_mode_type::is_good() const
+{
+	return (raw_format&(RX_MODE_MASK_OFF | RX_MODE_MASK_UNASSIGNED)) != 0;
+}
+
+bool rx_mode_type::set_blocked()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format | (RX_MODE_MASK_BLOCKED);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+bool rx_mode_type::reset_blocked()
+{
+	if (!is_off())
+	{
+		uint32_t old_stuff = raw_format;
+		raw_format = raw_format & (~RX_MODE_MASK_BLOCKED);
+		return (old_stuff != raw_format);
+	}
+	return false;
+}
+bool rx_mode_type::turn_on()
+{
+	uint32_t old_stuff = raw_format;
+	raw_format = 0;
+	return (old_stuff != raw_format);
+}
+bool rx_mode_type::turn_off()
+{
+	uint32_t old_stuff = raw_format;
+	raw_format = RX_MODE_MASK_OFF;
+	return (old_stuff != raw_format);
 }
 
 namespace

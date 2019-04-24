@@ -135,6 +135,16 @@ bool rx_is_valid_item_name(const string_type& name);
 namespace meta {
 
 namespace def_blocks {
+enum rx_subitem_type : uint8_t
+{
+	rx_const_value_subitem = 0,
+	rx_value_subitem = 1,
+	rx_struct_subitem = 2,
+	rx_variable_subitem = 3,
+
+	rx_first_invalid_subitem = 4,
+	rx_invalid_subitem = 0xff
+};
 
 
 
@@ -166,15 +176,6 @@ public:
         return name_;
       }
 
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-      static string_type type_name;
 
 
   protected:
@@ -428,15 +429,6 @@ public:
         return name_;
       }
 
-
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
-
-      static string_type type_name;
 
 
   protected:

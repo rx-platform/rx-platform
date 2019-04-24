@@ -180,14 +180,14 @@ public:
       const def_blocks::mapped_data_type& mapping_data () const;
 
 
-      static string_type get_type_name ()
+      static rx_item_type get_type_id ()
       {
-        return type_name;
+        return type_id;
       }
 
 
 
-      static string_type type_name;
+      static rx_item_type type_id;
 
 
   protected:
@@ -259,14 +259,14 @@ public:
       const def_blocks::mapped_data_type& mapping_data () const;
 
 
-      static string_type get_type_name ()
+      static rx_item_type get_type_id ()
       {
-        return type_name;
+        return type_id;
       }
 
 
 
-      static string_type type_name;
+      static rx_item_type type_id;
 
 
   protected:
@@ -342,14 +342,14 @@ public:
       const def_blocks::mapped_data_type& mapping_data () const;
 
 
-      static string_type get_type_name ()
+      static rx_item_type get_type_id ()
       {
-        return type_name;
+        return type_id;
       }
 
 
 
-      static string_type type_name;
+      static rx_item_type type_id;
 
 
   protected:
@@ -421,14 +421,14 @@ public:
       const def_blocks::mapped_data_type& mapping_data () const;
 
 
-      static string_type get_type_name ()
+      static rx_item_type get_type_id ()
       {
-        return type_name;
+        return type_id;
       }
 
 
 
-      static string_type type_name;
+      static rx_item_type type_id;
 
 
   protected:

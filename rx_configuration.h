@@ -169,6 +169,7 @@
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
 #define RX_CPP_OBJECT_TYPE_NAME "object"
+#define RX_CPP_OBJECT_TYPE_ID "object"
 #define RX_CPP_DOMAIN_CLASS_TYPE_NAME "domain_type"
 #define RX_CPP_DOMAIN_TYPE_NAME "domain"
 #define RX_CPP_APPLICATION_CLASS_TYPE_NAME "application_type"
@@ -180,6 +181,7 @@
 #define RX_CPP_DIRECORY_TYPE_NAME "directory"
 #define RX_CPP_COMMAND_TYPE_NAME "command"
 #define RX_CPP_PROGRAM_TYPE_NAME "program"
+#define RX_CPP_METHOD_TYPE_NAME "method"
 
 #define RX_CONST_VALUE_TYPE_NAME "const_value"
 #define RX_VALUE_TYPE_NAME "value"

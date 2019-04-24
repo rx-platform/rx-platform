@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,7 +38,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager 
+// Class model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 	: worker_("config",0)
@@ -107,7 +107,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data 
+// Class model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -281,7 +281,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -426,7 +426,7 @@ rx_result type_hash<typeT>::check_type (const rx_node_id& id, type_check_context
 	{
 		std::ostringstream ss;
 		ss << "Not existing "
-			<< typeT::type_name
+			<< rx_item_type_name(typeT::type_id)
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str());
@@ -502,7 +502,7 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 }
 
 
-// Class model::inheritance_hash 
+// Class model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -637,7 +637,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash 
+// Class model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -656,7 +656,7 @@ bool instance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id
 
 	for (const auto& one : all_type_ids)
 	{
-		type_data_it = instance_hash_.find(type_id);
+		type_data_it = instance_hash_.find(one);
 		if (type_data_it == instance_hash_.end())
 		{// type node id does not exists
 			type_data_it = instance_hash_.emplace(type_id, std::make_unique<hash_elements_type>()).first;
@@ -677,7 +677,7 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 
 	for (const auto& one : all_type_ids)
 	{
-		type_data_it = instance_hash_.find(type_id);
+		type_data_it = instance_hash_.find(one);
 		if (type_data_it != instance_hash_.end())
 		{
 			type_data_it->second->erase(new_id);
@@ -688,7 +688,7 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 }
 
 
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -811,7 +811,7 @@ rx_result simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_
 	{
 		std::ostringstream ss;
 		ss << "Not existing "
-			<< typeT::type_name
+			<< rx_item_type_name(typeT::type_id)
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str());
@@ -851,7 +851,7 @@ rx_result simple_type_hash<typeT>::type_exists (rx_node_id id) const
 	{
 		std::ostringstream ss;
 		ss << "Not existing "
-			<< typeT::type_name
+			<< rx_item_type_name(typeT::type_id)
 			<< " with node_id "
 			<< id;
 		return ss.str();

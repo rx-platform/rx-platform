@@ -158,7 +158,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	else
 	{
 		err << "Unknown base "
-			<< T::RType::type_name
+			<< rx_item_type_name(T::RType::type_id)
 			<< " specifier:"
 			<< from_command << "!";
 		return false;
@@ -167,7 +167,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	if (!type_definition)
 	{
 		err << "Undefined "
-			<< T::type_name
+			<< rx_item_type_name(T::type_id)
 			<< ":"
 			<< class_name << "!";
 		return false;
@@ -191,12 +191,12 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
-								<< T::RType::type_name << ":\r\n";
+								<< rx_item_type_name(T::RType::type_id) << ":\r\n";
 							dump_error_result(ctx->get_stderr(), result);
 						}
 						else
 						{
-							ctx->get_stdout() << "Created " << T::RType::type_name << " "
+							ctx->get_stdout() << "Created " << rx_item_type_name(T::RType::type_id) << " "
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
@@ -208,7 +208,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			else
 			{
 				err << "Error deserialization of initialization data for "
-					<< T::RType::type_name
+					<< rx_item_type_name(T::RType::type_id)
 					<< " as " << def_command << "!";
 				return false;
 			}
@@ -216,7 +216,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		else
 		{
 			err << "Unknown "
-				<< T::RType::type_name
+				<< rx_item_type_name(T::RType::type_id)
 				<< " definition specifier:"
 				<< def_command << "!";
 			return false;
@@ -234,13 +234,13 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
-						<< T::RType::type_name << ":\r\n";
+						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
 					dump_error_result(err, result);
 				}
 				else
 				{
 					auto& out = ctx->get_stdout();
-					out << "Created " << T::RType::type_name << " "
+					out << "Created " << rx_item_type_name(T::RType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
@@ -252,7 +252,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	else
 	{
 		err << "Unknown "
-			<< T::RType::type_name
+			<< rx_item_type_name(T::RType::type_id)
 			<< " creation type:"
 			<< as_command << "!";
 		return false;
@@ -289,7 +289,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	else
 	{
 		err << "Unknown base "
-			<< T::RType::type_name
+			<< rx_item_type_name(T::RType::type_id)
 			<< " specifier:"
 			<< from_command << "!";
 		return false;
@@ -298,7 +298,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	if (!type_definition)
 	{
 		err << "Undefined "
-			<< T::type_name
+			<< rx_item_type_name(T::type_id)
 			<< ":"
 			<< base_name << "!";
 		return false;
@@ -322,12 +322,12 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
-								<< T::RType::type_name << ":\r\n";
+								<< rx_item_type_name(T::RType::type_id) << ":\r\n";
 							dump_error_result(ctx->get_stderr(), result);
 						}
 						else
 						{
-							ctx->get_stdout() << "Created " << T::type_name << " "
+							ctx->get_stdout() << "Created " << rx_item_type_name(T::type_id) << " "
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
@@ -339,7 +339,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			else
 			{
 				err << "Error deserialization of initialization data for "
-					<< T::RType::type_name
+					<< rx_item_type_name(T::RType::type_id)
 					<< " as " << def_command << "!";
 				return false;
 			}
@@ -347,7 +347,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		else
 		{
 			err << "Unknown "
-				<< T::RType::type_name
+				<< rx_item_type_name(T::RType::type_id)
 				<< " definition specifier:"
 				<< def_command << "!";
 			return false;
@@ -365,13 +365,13 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
-						<< T::type_name << ":\r\n";
+						<< rx_item_type_name(T::type_id) << ":\r\n";
 					dump_error_result(err, result);
 				}
 				else
 				{
 					auto& out = ctx->get_stdout();
-					out << "Created " << T::type_name << " "
+					out << "Created " << rx_item_type_name(T::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
@@ -383,7 +383,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	else
 	{
 		err << "Unknown "
-			<< T::type_name
+			<< rx_item_type_name(T::type_id)
 			<< " creation type:"
 			<< as_command << "!";
 		return false;
@@ -429,7 +429,7 @@ bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& i
 	{
 		start = rx_node_id::from_string(where_from.c_str());
 	}
-	out << "Listing of " << T::get_type_name() << "s\r\n";
+	out << "Listing of " << rx_item_type_name(T::type_id) << "s\r\n";
 	out << RX_CONSOLE_HEADER_LINE << "\r\n";
 	out << "Starting from id " << start.to_string() << "\r\n";
 
@@ -539,7 +539,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	if (name.empty())
 	{
 		err << "Error deleting "
-			<< T::type_name << ", name of object is empty";
+			<< rx_item_type_name(T::type_id) << ", name of object is empty";
 		return false;
 	}
 
@@ -556,7 +556,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 			{
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
-					<< T::RType::type_name << ":\r\n";
+					<< rx_item_type_name(T::RType::type_id) << ":\r\n";
 				rx_dump_error_result(err, std::move(result));
 			}
 			else
@@ -581,7 +581,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	if (name.empty())
 	{
 		err << "Error deleting "
-			<< T::type_name << " type, name of type is empty";
+			<< rx_item_type_name(T::type_id) << " type, name of type is empty";
 		return false;
 	}
 
@@ -596,7 +596,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 			{
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
-					<< T::type_name << " type:\r\n";
+					<< rx_item_type_name(T::type_id) << " type:\r\n";
 				rx_dump_error_result(err, std::move(result));
 			}
 			else
@@ -729,13 +729,13 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 				if (!result.is_check_ok())
 				{
 					auto& out = ctx->get_stdout();
-					out << T::type_name << " has errors:\r\n";
+					out << rx_item_type_name(T::type_id) << " has errors:\r\n";
 					for(auto& one : result.get_errors())
 						out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 				}
 				else
 				{
-					ctx->get_stdout() << T::type_name << " "
+					ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
 						<< name << "O.K.\r\n";
 				}
 				ctx->send_results(true);
@@ -762,13 +762,13 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 			if (!result.is_check_ok())
 			{
 				auto& out = ctx->get_stdout();
-				out << T::type_name << " has errors:\r\n";
+				out << rx_item_type_name(T::type_id) << " has errors:\r\n";
 				for (auto& one : result.get_errors())
 					out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 			}
 			else
 			{
-				ctx->get_stdout() << T::type_name << " "
+				ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
 					<< name << " O.K.\r\n";
 			}
 			ctx->send_results(true);
@@ -886,7 +886,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	else
 	{
 		err << "Unknown base "
-			<< T::RType::type_name
+			<< rx_item_type_name(T::RType::type_id)
 			<< " specifier:"
 			<< from_command << "!";
 		return false;
@@ -895,7 +895,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	if (!type_definition)
 	{
 		err << "Undefined "
-			<< T::type_name
+			<< rx_item_type_name(T::type_id)
 			<< ":"
 			<< class_name << "!";
 		return false;
@@ -917,7 +917,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error prototyping "
-						<< T::RType::type_name << ":\r\n";
+						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
 					dump_error_result(err, result);
 				}
 				else
@@ -925,7 +925,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 					auto& out = ctx->get_stdout();
 					auto& err = ctx->get_stderr();
 
-					out << "Prototyped " << T::RType::type_name << " "
+					out << "Prototyped " << rx_item_type_name(T::RType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 					ret = result.value()->get_item_ptr()->generate_json(out, err);
@@ -938,7 +938,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		else
 		{
 			err << "Unknown "
-				<< T::RType::type_name
+				<< rx_item_type_name(T::RType::type_id)
 				<< " target type!";
 			return false;
 		}
@@ -946,7 +946,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	else
 	{
 		err << "Unknown "
-			<< T::RType::type_name
+			<< rx_item_type_name(T::RType::type_id)
 			<< " target!";
 		return false;
 	}

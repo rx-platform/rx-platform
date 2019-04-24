@@ -99,6 +99,8 @@ enum rx_platform_status
 
 
 
+
+
 class rx_gate 
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;

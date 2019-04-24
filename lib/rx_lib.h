@@ -194,10 +194,18 @@ std::string rx_remove_extension(const std::string& path);
 rx_result create_directory(const std::string& dir, bool fail_on_exsists);
 rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);
 
-rx_result file_exist(const std::string& path, const std::string& file);
-rx_result file_exist(const std::string& file);
-rx_result rx_get_full_path(const std::string& base, std::string& path);
+class rx_source_file
+{
+	sys_handle_t m_handle;
+public:
+	rx_source_file();
+	rx_result open(const char* file_name);
+	rx_result open_write(const char* file_name);
+	rx_result read_string(std::string& buff);
+	rx_result write_string(const std::string& buff);
+	~rx_source_file();
 
+};
 
 extern const char* g_complie_time;
 extern const char* g_lib_version;
@@ -401,127 +409,25 @@ typedef std::vector<rx_node_id> rx_node_ids;
 
 struct rx_mode_type
 {
-	rx_mode_type()
-	{
-		raw_format = 0;
-	}
+	rx_mode_type();
 	uint32_t raw_format;
-	bool is_on() const
-	{
-		return (raw_format&RX_MODE_MASK_OFF) == 0;
-	}
-	bool is_test() const
-	{
-		return is_on() && (raw_format&RX_MODE_MASK_TEST) != 0;
-	}
-	bool is_blocked() const
-	{
-		return is_on() && (raw_format&RX_MODE_MASK_BLOCKED) != 0;
-	}
-	bool is_simulate() const
-	{
-		return is_on() && (raw_format&RX_MODE_MASK_SIMULATE) != 0;
-	}
-	bool is_unassigned() const
-	{
-		return (raw_format&RX_MODE_MASK_UNASSIGNED) != 0;
-	}
-	bool is_off() const
-	{
-		return (raw_format&RX_MODE_MASK_OFF) != 0;
-	}
-	bool set_test()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format | (RX_MODE_MASK_TEST);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-
-	bool reset_test()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format & (!RX_MODE_MASK_TEST);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-	bool set_simulate()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format | (RX_MODE_MASK_SIMULATE);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-	bool ret_simulate()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format & (~RX_MODE_MASK_SIMULATE);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-	bool set_unassigned()
-	{
-		uint32_t old_stuff = raw_format;
-		raw_format = raw_format | (RX_MODE_MASK_UNASSIGNED);
-		return (old_stuff != raw_format);
-	}
-
-	bool reset_unassigned()
-	{
-		uint32_t old_stuff = raw_format;
-		raw_format = raw_format & (~RX_MODE_MASK_UNASSIGNED);
-		return (old_stuff != raw_format);
-	}
-
-	bool is_good() const
-	{
-		return (raw_format&(RX_MODE_MASK_OFF | RX_MODE_MASK_UNASSIGNED)) != 0;
-	}
-
-	bool set_blocked()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format | (RX_MODE_MASK_BLOCKED);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-	bool reset_blocked()
-	{
-		if (!is_off())
-		{
-			uint32_t old_stuff = raw_format;
-			raw_format = raw_format & (~RX_MODE_MASK_BLOCKED);
-			return (old_stuff != raw_format);
-		}
-		return false;
-	}
-	bool turn_on()
-	{
-		uint32_t old_stuff = raw_format;
-		raw_format = 0;
-		return (old_stuff != raw_format);
-	}
-	bool turn_off()
-	{
-		uint32_t old_stuff = raw_format;
-		raw_format = RX_MODE_MASK_OFF;
-		return (old_stuff != raw_format);
-	}
+	bool is_on() const;
+	bool is_test() const;
+	bool is_blocked() const;
+	bool is_simulate() const;
+	bool is_unassigned() const;
+	bool is_off() const;
+	bool set_test();
+	bool reset_test();
+	bool set_simulate();
+	bool ret_simulate();
+	bool set_unassigned();
+	bool reset_unassigned();
+	bool is_good() const;
+	bool set_blocked();
+	bool reset_blocked();
+	bool turn_on();
+	bool turn_off();
 };
 
 ///////////////////////////////////////////////////////////////
@@ -624,79 +530,7 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
-
-
-
-class rx_source_file
-{
-	sys_handle_t m_handle;
-public:
-	rx_source_file()
-		: m_handle(0)
-	{
-	}
-	rx_result open(const char* file_name)
-	{
-		m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-		return m_handle != 0;
-	}
-	rx_result open_write(const char* file_name)
-	{
-		m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
-		return m_handle != 0;
-	}
-	rx_result read_string(std::string& buff)
-	{
-		if (m_handle == 0)
-		{
-			RX_ASSERT(false);
-			return "File not opened!";
-		}
-		uint64_t size;
-		if (rx_file_get_size(m_handle, &size) != RX_OK)
-			return "Unable to get file size!";
-
-		char* temp = new char[size];
-
-		uint32_t readed = 0;
-		if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)
-		{
-			buff.assign(temp, size);
-			delete[] temp;
-			return true;
-		}
-		else
-		{
-			delete[] temp;
-			return "Error reading file!";
-		}
-	}
-	rx_result write_string(const std::string& buff)
-	{
-		if (m_handle == 0)
-		{
-			RX_ASSERT(false);
-			return "File not opened!";
-		}
-
-		uint32_t size = (uint32_t)buff.size();
-		uint32_t written = 0;
-		if (rx_file_write(m_handle, buff.c_str(), size, &written) == RX_OK)
-		{
-			return true;
-		}
-		else
-		{
-			return "Error writing to file!";
-		}
-	}
-	~rx_source_file()
-	{
-		if (m_handle != 0)
-			rx_file_close(m_handle);
-	}
-
-};
+void rx_trim_string(string_type& what);
 
 }// namespace rx
 

@@ -332,11 +332,11 @@ void rx_platform_directory::get_class_info (string_type& class_name, string_type
 	has_own_code_info = true;
 }
 
-const string_type& rx_platform_directory::get_type_name () const
+rx_item_type rx_platform_directory::get_type_id () const
 {
   // generated from ROSE!!!
   static string_type type_name = "DIR";
-  return type_name;
+  return rx_item_type::rx_directory;
 
 
 }

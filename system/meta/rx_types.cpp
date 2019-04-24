@@ -46,7 +46,7 @@ namespace basic_types {
 
 // Class rx_platform::meta::basic_types::event_type 
 
-string_type event_type::type_name = RX_CPP_EVENT_CLASS_TYPE_NAME;
+rx_item_type event_type::type_id = rx_item_type::rx_event_type;
 
 event_type::event_type()
 {
@@ -116,7 +116,7 @@ const meta_data& event_type::meta_info () const
 
 // Class rx_platform::meta::basic_types::filter_type 
 
-string_type filter_type::type_name = RX_CPP_FILTER_CLASS_TYPE_NAME;
+rx_item_type filter_type::type_id = rx_item_type::rx_filter_type;
 
 filter_type::filter_type()
 {
@@ -186,7 +186,7 @@ const meta_data& filter_type::meta_info () const
 
 // Class rx_platform::meta::basic_types::mapper_type 
 
-string_type mapper_type::type_name = RX_CPP_MAPPER_CLASS_TYPE_NAME;
+rx_item_type mapper_type::type_id = rx_item_type::rx_mapper_type;
 
 mapper_type::mapper_type()
 {
@@ -256,7 +256,7 @@ const def_blocks::complex_data_type& mapper_type::complex_data () const
 
 // Class rx_platform::meta::basic_types::source_type 
 
-string_type source_type::type_name = RX_CPP_SOURCE_CLASS_TYPE_NAME;
+rx_item_type source_type::type_id = rx_item_type::rx_source_type;
 
 source_type::source_type()
 {
@@ -326,7 +326,7 @@ const meta_data& source_type::meta_info () const
 
 // Class rx_platform::meta::basic_types::struct_type 
 
-string_type struct_type::type_name = RX_CPP_STRUCT_CLASS_TYPE_NAME;
+rx_item_type struct_type::type_id = rx_item_type::rx_struct_type;
 
 struct_type::struct_type()
 {
@@ -407,7 +407,7 @@ const meta_data& struct_type::meta_info () const
 
 // Class rx_platform::meta::basic_types::variable_type 
 
-string_type variable_type::type_name = RX_CPP_VARIABLE_CLASS_TYPE_NAME;
+rx_item_type variable_type::type_id = rx_item_type::rx_variable_type;
 
 variable_type::variable_type()
 {

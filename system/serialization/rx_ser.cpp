@@ -797,6 +797,12 @@ string_array json_reader::get_errors () const
 	return errors_;
 }
 
+bool json_reader::is_string_based () const
+{
+  return true;
+
+}
+
 
 // Class rx_platform::serialization::json_writer 
 
@@ -1209,6 +1215,12 @@ bool json_writer::write_init_values (const char* name, const data::runtime_value
 	if (!end_object())
 		return false;
 	return true;
+}
+
+bool json_writer::is_string_based () const
+{
+  return true;
+
 }
 
 

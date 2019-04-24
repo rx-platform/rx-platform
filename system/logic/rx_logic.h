@@ -32,10 +32,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
 
@@ -65,8 +65,6 @@ public:
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      string_type get_type_name () const;
-
       namespace_item_attributes get_attributes () const;
 
       bool save_program (base_meta_writer& stream, uint8_t type) const;
@@ -91,7 +89,14 @@ public:
       const meta::meta_data& meta_info () const;
 
 
-      static string_type type_name;
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      static rx_item_type type_id;
 
 
   protected:
@@ -128,9 +133,6 @@ ladder program class.");
       ladder_program (const string_type& name, const rx_node_id& id, bool system = false);
 
       ~ladder_program();
-
-
-      string_type get_type_name () const;
 
 
   protected:

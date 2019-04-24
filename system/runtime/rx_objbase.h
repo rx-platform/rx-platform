@@ -33,6 +33,8 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
@@ -43,8 +45,6 @@
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -261,20 +261,20 @@ object class. basic implementation of an object");
       }
 
 
-      static string_type get_type_name ()
-      {
-        return type_name;
-      }
-
-
       const rx_time get_change_time () const
       {
         return change_time_;
       }
 
 
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
 
-      static string_type type_name;
+
+
+      static rx_item_type type_id;
 
 
   protected:
@@ -380,8 +380,6 @@ public:
       ~domain_runtime();
 
 
-      string_type get_type_name () const;
-
       rx_thread_handle_t get_executer () const;
 
       bool connect_domain (rx_domain_ptr&& domain);
@@ -389,7 +387,14 @@ public:
       platform_item_ptr get_item_ptr ();
 
 
-      static string_type type_name;
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      static rx_item_type type_id;
 
 
   protected:
@@ -456,8 +461,6 @@ system port class. basic implementation of a port");
       ~port_runtime();
 
 
-      string_type get_type_name () const;
-
       bool write (buffer_ptr what);
 
       platform_item_ptr get_item_ptr ();
@@ -467,7 +470,14 @@ system port class. basic implementation of a port");
       rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
 
 
-      static string_type type_name;
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      static rx_item_type type_id;
 
 
   protected:
@@ -505,8 +515,6 @@ system application class. contains system default application");
       ~application_runtime();
 
 
-      string_type get_type_name () const;
-
       bool connect_application (rx_application_ptr&& app);
 
       bool connect_domain (rx_domain_ptr&& domain);
@@ -514,7 +522,14 @@ system application class. contains system default application");
       platform_item_ptr get_item_ptr ();
 
 
-      static string_type type_name;
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      static rx_item_type type_id;
 
 
   protected:

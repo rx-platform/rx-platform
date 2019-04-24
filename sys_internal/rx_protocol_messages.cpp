@@ -47,6 +47,17 @@ namespace sys_internal {
 namespace rx_protocol {
 
 namespace messages {
+namespace
+{
+const rx_message_type_t rx_get_type_request_id = 0x0001;
+const rx_message_type_t rx_get_type_response_id = 0x8001;
+const rx_message_type_t rx_query_request_id = 0x0002;
+const rx_message_type_t rx_query_response_id = 0x8002;
+const rx_message_type_t rx_browse_request_id = 0x0003;
+const rx_message_type_t rx_browse_response_id = 0x8003;
+
+const rx_message_type_t rx_error_message_id = 0xffff;
+}
 
 // Class sys_internal::rx_protocol::messages::rx_message_base 
 
@@ -74,6 +85,8 @@ rx_result rx_message_base::init_messages ()
 // Class sys_internal::rx_protocol::messages::browse_request_message 
 
 string_type browse_request_message::type_name = "brwReq";
+
+rx_message_type_t browse_request_message::type_id = rx_browse_request_id;
 
 
 rx_result browse_request_message::serialize (base_meta_writer& stream) const
@@ -105,11 +118,11 @@ message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_por
 				auto response = std::make_unique<browse_response_message>();
 				for (const auto one : result.value().directories)
 				{
-					response->items.emplace_back(one->get_type_name(), one->meta_info());
+					response->items.emplace_back(one->get_type_id(), one->meta_info());
 				}
 				for (const auto one : result.value().items)
 				{
-					response->items.emplace_back(one->get_type_name(), one->meta_info());
+					response->items.emplace_back(one->get_type_id(), one->meta_info());
 				}
 				response->requestId = requestId;
 				port->data_processed(std::move(response));
@@ -149,10 +162,18 @@ const string_type& browse_request_message::get_type_name ()
 
 }
 
+rx_message_type_t browse_request_message::get_type_id ()
+{
+  return type_id;
+
+}
+
 
 // Class sys_internal::rx_protocol::messages::error_message 
 
 string_type error_message::type_name = "error";
+
+rx_message_type_t error_message::type_id = rx_error_message_id;
 
 
 rx_result error_message::serialize (base_meta_writer& stream) const
@@ -179,10 +200,18 @@ const string_type& error_message::get_type_name ()
 
 }
 
+rx_message_type_t error_message::get_type_id ()
+{
+  return type_id;
+
+}
+
 
 // Class sys_internal::rx_protocol::messages::browse_response_message 
 
 string_type browse_response_message::type_name = "brwResp";
+
+rx_message_type_t browse_response_message::type_id = rx_browse_response_id;
 
 
 rx_result browse_response_message::serialize (base_meta_writer& stream) const
@@ -211,7 +240,7 @@ rx_result browse_response_message::deserialize (base_meta_reader& stream)
 	items.clear();
 	while(!stream.array_end())
 	{
-		string_type type;
+		rx_item_type type;
 		meta::meta_data one;
 		auto result = one.deserialize_meta_data(stream, 0, type);
 		if (!result)
@@ -219,7 +248,7 @@ rx_result browse_response_message::deserialize (base_meta_reader& stream)
 			result.register_error("Error serializing meta item "s + one.get_name());
 			return result;
 		}
-		items.emplace_back(std::move(type), std::move(one));
+		items.emplace_back(type, std::move(one));
 	}
 
 	return true;
@@ -231,8 +260,16 @@ const string_type& browse_response_message::get_type_name ()
 
 }
 
+rx_message_type_t browse_response_message::get_type_id ()
+{
+  return type_id;
+
+}
+
 
 // Class sys_internal::rx_protocol::messages::rx_request_message 
+
+rx_request_message::registered_string_messages_type rx_request_message::registered_string_messages_;
 
 rx_request_message::registered_messages_type rx_request_message::registered_messages_;
 
@@ -277,8 +314,8 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_from_json
 
 rx_result_with<request_message_ptr> rx_request_message::create_request_message (const string_type& type)
 {
-	auto it = registered_messages_.find(type);
-	if (it == registered_messages_.end())
+	auto it = registered_string_messages_.find(type);
+	if (it == registered_string_messages_.end())
 		return type + " is unknown message type!";
 	else
 		return it->second();
@@ -286,19 +323,34 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_message (
 
 rx_result rx_request_message::init_request_messages ()
 {
-	registered_messages_.emplace(browse_request_message::type_name, [] { return std::make_unique<browse_request_message>(); });
-	registered_messages_.emplace(query_request_message::type_name, [] { return std::make_unique<query_request_message>(); });
-	registered_messages_.emplace(get_type_request::type_name, [] { return std::make_unique<get_type_request>(); });
+	registered_messages_.emplace(browse_request_message::type_id, [] { return std::make_unique<browse_request_message>(); });
+	registered_messages_.emplace(query_request_message::type_id, [] { return std::make_unique<query_request_message>(); });
+	registered_messages_.emplace(get_type_request::type_id, [] { return std::make_unique<get_type_request>(); });
+
+	registered_string_messages_.emplace(browse_request_message::type_name, [] { return std::make_unique<browse_request_message>(); });
+	registered_string_messages_.emplace(query_request_message::type_name, [] { return std::make_unique<query_request_message>(); });
+	registered_string_messages_.emplace(get_type_request::type_name, [] { return std::make_unique<get_type_request>(); });
 	
 	auto ret = meta::queries::rx_query::init_query_types();
 
 	return ret;
 }
 
+rx_result_with<request_message_ptr> rx_request_message::create_request_message (rx_message_type_t type)
+{
+	auto it = registered_messages_.find(type);
+	if (it == registered_messages_.end())
+		return type + " is unknown message type!";
+	else
+		return it->second();
+}
+
 
 // Class sys_internal::rx_protocol::messages::query_request_message 
 
 string_type query_request_message::type_name = "queryReq";
+
+rx_message_type_t query_request_message::type_id = rx_query_request_id;
 
 
 rx_result query_request_message::serialize (base_meta_writer& stream) const
@@ -351,7 +403,7 @@ message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_port
 
 			for (const auto one : result.value().items)
 			{
-				response->items.emplace_back(one->get_type_name(), one->meta_info());
+				response->items.emplace_back(one->get_type_id(), one->meta_info());
 			}
 			response->requestId = requestId;
 			port->data_processed(std::move(response));
@@ -393,10 +445,18 @@ const string_type& query_request_message::get_type_name ()
 
 }
 
+rx_message_type_t query_request_message::get_type_id ()
+{
+  return type_id;
+
+}
+
 
 // Class sys_internal::rx_protocol::messages::query_response_message 
 
 string_type query_response_message::type_name = "queryResp";
+
+rx_message_type_t query_response_message::type_id = rx_query_response_id;
 
 
 rx_result query_response_message::serialize (base_meta_writer& stream) const
@@ -425,7 +485,7 @@ rx_result query_response_message::deserialize (base_meta_reader& stream)
 	items.clear();
 	while (!stream.array_end())
 	{
-		string_type type;
+		rx_item_type type;
 		meta::meta_data one;
 		auto result = one.deserialize_meta_data(stream, 0, type);
 		if (!result)
@@ -433,7 +493,7 @@ rx_result query_response_message::deserialize (base_meta_reader& stream)
 			result.register_error("Error serializing meta item "s + one.get_name());
 			return result;
 		}
-		items.emplace_back(std::move(type), std::move(one));
+		items.emplace_back(type, std::move(one));
 	}
 
 	return true;
@@ -445,10 +505,18 @@ const string_type& query_response_message::get_type_name ()
 
 }
 
+rx_message_type_t query_response_message::get_type_id ()
+{
+  return type_id;
+
+}
+
 
 // Class sys_internal::rx_protocol::messages::get_type_request 
 
 string_type get_type_request::type_name = "getTypeReq";
+
+rx_message_type_t get_type_request::type_id = rx_get_type_request_id;
 
 
 rx_result get_type_request::serialize (base_meta_writer& stream) const
@@ -471,59 +539,49 @@ rx_result get_type_request::deserialize (base_meta_reader& stream)
 
 message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	if (item_type == "object_type")
+	switch (item_type)
 	{
+	case rx_item_type::rx_object_type:
 		return do_job(ctx, port, tl::type2type<object_types::object_type>());
-	}
-	else if (item_type == "struct_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
-	}
-	else if (item_type == "variable_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
-	}
-	else if (item_type == "source_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
-	}
-	else if (item_type == "filter_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
-	}
-	else if (item_type == "event_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
-	}
-	else if (item_type == "mapper_type")
-	{
-		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
-	}
-	else if (item_type == "domain_type")
-	{
+	case rx_item_type::rx_domain_type:
 		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
-	}
-	else if (item_type == "port_type")
-	{
+	case rx_item_type::rx_port_type:
 		return do_job(ctx, port, tl::type2type<object_types::port_type>());
-	}
-	else if (item_type == "application_type")
-	{
+	case rx_item_type::rx_application_type:
 		return do_job(ctx, port, tl::type2type<object_types::application_type>());
-	}
-	else
-	{
-		auto ret_value = std::make_unique<error_message>();
-		ret_value->errorMessage = item_type + " is unknown type";
-		ret_value->errorCode = 15;
-		ret_value->requestId = requestId;
-		return ret_value;
+
+	case rx_item_type::rx_struct_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
+	case rx_item_type::rx_variable_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
+	case rx_item_type::rx_source_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
+	case rx_item_type::rx_filter_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
+	case rx_item_type::rx_event_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
+	case rx_item_type::rx_mapper_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
+	default:
+		{
+			auto ret_value = std::make_unique<error_message>();
+			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
+			ret_value->errorCode = 15;
+			ret_value->requestId = requestId;
+			return ret_value;
+		}
 	}
 }
 
 const string_type& get_type_request::get_type_name ()
 {
   return type_name;
+
+}
+
+rx_message_type_t get_type_request::get_type_id ()
+{
+  return type_id;
 
 }
 
@@ -622,6 +680,9 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 template <class itemT>
 string_type get_type_response<itemT>::type_name = "getTypeResp";
 
+template <class itemT>
+uint16_t get_type_response<itemT>::type_id = rx_get_type_response_id;
+
 
 template <class itemT>
 rx_result get_type_response<itemT>::serialize (base_meta_writer& stream) const
@@ -653,6 +714,13 @@ template <class itemT>
 const string_type& get_type_response<itemT>::get_type_name ()
 {
   return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t get_type_response<itemT>::get_type_id ()
+{
+  return type_id;
 
 }
 

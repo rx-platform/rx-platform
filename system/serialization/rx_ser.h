@@ -118,6 +118,8 @@ class json_reader : public rx::base_meta_reader
 
       string_array get_errors () const;
 
+      bool is_string_based () const;
+
 
   protected:
 
@@ -212,6 +214,8 @@ class json_writer : public rx::base_meta_writer
 
       bool write_init_values (const char* name, const data::runtime_values_data& values);
 
+      bool is_string_based () const;
+
 
   protected:
 
@@ -302,6 +306,8 @@ class binary_reader : public rx::base_meta_reader
 
       bool read_init_values (const char* name, data::runtime_values_data& values);
 
+      bool is_string_based () const;
+
 
   protected:
 
@@ -387,6 +393,8 @@ class binary_writer : public rx::base_meta_writer
       void dump_to_stream (std::ostream& out);
 
       bool write_init_values (const char* name, const data::runtime_values_data& values);
+
+      bool is_string_based () const;
 
 		bool is_string()
 		{
@@ -709,6 +717,13 @@ bool binary_reader<allocT,swap_bytes>::read_init_values (const char* name, data:
 	return false;
 }
 
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::is_string_based () const
+{
+  return false;
+
+}
+
 
 // Parameterized Class rx_platform::serialization::binary_writer 
 
@@ -934,6 +949,13 @@ template <typename allocT, bool swap_bytes>
 bool binary_writer<allocT,swap_bytes>::write_init_values (const char* name, const data::runtime_values_data& values)
 {
 	return false;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::is_string_based () const
+{
+  return false;
+
 }
 
 

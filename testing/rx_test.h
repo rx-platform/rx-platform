@@ -32,14 +32,14 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 using namespace rx;
 
@@ -179,7 +179,7 @@ public:
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      string_type get_type_name () const;
+      rx_item_type get_type_id () const;
 
       values::rx_value get_value () const;
 

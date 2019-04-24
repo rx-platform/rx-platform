@@ -74,7 +74,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	out << "Full Path  : " << item->meta_info().get_path() << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
-	out << "Type       : " << item->get_type_name() << "\r\n";
+	out << "Type       : " << rx_item_type_name(item->get_type_id()) << "\r\n";
 	out << "Attributes : " << attrs << "\r\n";
 	out << "Storage    : " << storage_name << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
@@ -167,7 +167,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Name       : " << info.get_name() << "\r\n";
 	out << "Full Path  : " << info.get_path() << "\r\n";
-	out << "Type       : " << directory->get_type_name() << "\r\n";
+	out << "Type       : "  RX_CPP_DIRECORY_TYPE_NAME "\r\n";
 	out << "Attributes : " << attrs << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : " << "<<null>>" << "\r\n";

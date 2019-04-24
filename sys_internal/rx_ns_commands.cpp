@@ -52,7 +52,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 		row.emplace_back(one->get_name());
 	if (options.list_type)
 	{
-		row.emplace_back(one->get_type_name());
+		row.emplace_back(rx_item_type_name(one->get_type_id()));
 	}
 	if (options.list_attributes)
 	{
@@ -94,7 +94,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 	row.emplace_back(name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
 	if (options.list_type)
 	{
-		row.emplace_back(one->get_type_name());
+		row.emplace_back(RX_CPP_DIRECORY_TYPE_NAME);
 	}
 	if (options.list_attributes)
 	{

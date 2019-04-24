@@ -141,7 +141,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      virtual const string_type& get_type_name () const;
+      virtual rx_item_type get_type_id () const;
 
       virtual platform_item_ptr get_sub_item (const string_type& path) const;
 
@@ -222,7 +222,7 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      virtual string_type get_type_name () const = 0;
+      virtual rx_item_type get_type_id () const = 0;
 
       void lock ();
 

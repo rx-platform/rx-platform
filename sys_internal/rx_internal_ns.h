@@ -172,7 +172,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      string_type get_type_name () const;
+      rx_item_type get_type_id () const;
 
       values::rx_value get_value () const;
 
@@ -220,7 +220,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      string_type get_type_name () const;
+      rx_item_type get_type_id () const;
 
       values::rx_value get_value () const;
 
@@ -296,9 +296,9 @@ void rx_item_implementation<TImpl>::get_class_info (string_type& class_name, str
 }
 
 template <class TImpl>
-string_type rx_item_implementation<TImpl>::get_type_name () const
+rx_item_type rx_item_implementation<TImpl>::get_type_id () const
 {
-	return impl_->get_type_name();
+	return impl_->get_type_id();
 }
 
 template <class TImpl>
@@ -423,9 +423,9 @@ void rx_meta_item_implementation<TImpl>::get_class_info (string_type& class_name
 }
 
 template <class TImpl>
-string_type rx_meta_item_implementation<TImpl>::get_type_name () const
+rx_item_type rx_meta_item_implementation<TImpl>::get_type_id () const
 {
-	return impl_->get_type_name();
+	return impl_->get_type_id();
 }
 
 template <class TImpl>

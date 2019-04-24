@@ -76,7 +76,7 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 	{
 		std::ostringstream ss;
 		ss << "Not existing "
-			<< typeT::TargetType::type_name
+			<< rx_item_type_name(typeT::TargetType::type_id)
 			<< " in attribute "
 			<< whose.name_;
 		
@@ -182,7 +182,7 @@ template class meta_blocks_algorithm<mapper_attribute>;
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::serialize_basic_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_id))
 		return false;
 	if (!stream.start_object("def"))
 		return false;
@@ -233,7 +233,7 @@ rx_result basic_types_algorithm<typeT>::resolve_basic_type (typeT& whose, rx_dir
 template <>
 rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, variable_type::type_id))
 		return false;
 	if (!stream.start_object("def"))
 		return false;
@@ -253,7 +253,7 @@ rx_result basic_types_algorithm<variable_type>::serialize_basic_type(const varia
 template <>
 rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info_.serialize_meta_data(stream, type, struct_type::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, struct_type::type_id))
 		return false;
 	if (!stream.start_object("Def"))
 		return false;
@@ -380,7 +380,7 @@ template class basic_types_algorithm<basic_types::event_type>;
 template <class typeT>
 rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_name))
+	if (!whose.meta_info_.serialize_meta_data(stream, type, typeT::type_id))
 		return false;
 	if (!stream.start_object("def"))
 		return false;

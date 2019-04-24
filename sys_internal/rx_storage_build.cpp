@@ -167,7 +167,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
-	string_type target_type;
+	rx_item_type target_type;
 	auto result = stream.start_object("Meta");
 	if (!result)
 		return result;
@@ -181,7 +181,7 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
-	string_type target_type;
+	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, target_type);
 	if (!result)
 		return result;
@@ -191,54 +191,45 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 	if (dir)
 	{
 		meta.storage_info.assign_storage(storage_type);
+
+		switch (target_type)
+		{
 		// object types
-		if (target_type == RX_CPP_OBJECT_CLASS_TYPE_NAME)
-		{
+		case rx_item_type::rx_object_type:
 			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
-		}
-		else if (target_type == RX_CPP_PORT_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_port_type:
 			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
-		}
-		else if (target_type == RX_CPP_APPLICATION_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_application_type:
 			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
-		}
-		else if (target_type == RX_CPP_DOMAIN_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_domain_type:
 			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
-		}
+			break;
 		// simple types
-		else if (target_type == RX_CPP_STRUCT_CLASS_TYPE_NAME)
-		{
+		case rx_item_type::rx_struct_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<struct_type>());
-		}
-		else if (target_type == RX_CPP_VARIABLE_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_variable_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<variable_type>());
-		}
-		else if (target_type == RX_CPP_MAPPER_CLASS_TYPE_NAME)
-		{
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
-		}
+			break;
 		// variable sub-types
-		else if (target_type == RX_CPP_SOURCE_CLASS_TYPE_NAME)
-		{
+		case rx_item_type::rx_source_type:
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
+			break;
+		case rx_item_type::rx_filter_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<source_type>());
-		}
-		else if (target_type == RX_CPP_FILTER_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_event_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<filter_type>());
-		}
-		else if (target_type == RX_CPP_EVENT_CLASS_TYPE_NAME)
-		{
+			break;
+		case rx_item_type::rx_mapper_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<event_type>());
-		}
-		// unknown...
-		else
-		{
+			break;
+		default:
 			storage->close();
-			result = "Unknown type: "s + target_type;
+			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
 	}
 	else
@@ -266,12 +257,12 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
-			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + T::type_name + " "s + rx_type_item->get_name()).c_str());
+			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::type_id) + " "s + rx_type_item->get_name()).c_str());
 			return true;
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + T::type_name + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_name());
 			return create_result.errors();
 		}
 	}
@@ -294,12 +285,12 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
-			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + T::type_name + " "s + rx_type_item->get_name()).c_str());
+			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::type_id) + " "s + rx_type_item->get_name()).c_str());
 			return true;
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + T::type_name + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_name());
 			return create_result.errors();
 		}
 	}

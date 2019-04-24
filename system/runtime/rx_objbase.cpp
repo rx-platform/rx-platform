@@ -94,7 +94,7 @@ server_object::~server_object()
 
 // Class rx_platform::runtime::objects::object_runtime 
 
-string_type object_runtime::type_name = RX_CPP_OBJECT_TYPE_NAME;
+rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
 object_runtime::object_runtime()
       : change_time_(rx_time::now())
@@ -176,7 +176,7 @@ bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_info_.serialize_meta_data(stream, type, RX_CPP_OBJECT_TYPE_NAME))
+	if (!meta_info_.serialize_meta_data(stream, type, type_id))
 		return false;
 	
 	data::runtime_values_data temp_data;
@@ -297,7 +297,7 @@ const meta::meta_data& object_runtime::meta_info () const
 
 // Class rx_platform::runtime::objects::application_runtime 
 
-string_type application_runtime::type_name = RX_CPP_APPLICATION_TYPE_NAME;
+rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
 application_runtime::application_runtime()
 {
@@ -318,12 +318,6 @@ application_runtime::~application_runtime()
 
 
 
-string_type application_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
 bool application_runtime::connect_application (rx_application_ptr&& app)
 {
 	return false;
@@ -342,7 +336,7 @@ platform_item_ptr application_runtime::get_item_ptr ()
 
 // Class rx_platform::runtime::objects::domain_runtime 
 
-string_type domain_runtime::type_name = RX_CPP_DOMAIN_TYPE_NAME;
+rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
 domain_runtime::domain_runtime()
 {
@@ -362,12 +356,6 @@ domain_runtime::~domain_runtime()
 
 
 
-string_type domain_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
 rx_thread_handle_t domain_runtime::get_executer () const
 {
 	return executer_;
@@ -384,21 +372,9 @@ platform_item_ptr domain_runtime::get_item_ptr ()
 }
 
 
-// Class rx_platform::runtime::objects::application_creation_data 
-
-
-// Class rx_platform::runtime::objects::domain_creation_data 
-
-
-// Class rx_platform::runtime::objects::object_creation_data 
-
-
-// Class rx_platform::runtime::objects::port_creation_data 
-
-
 // Class rx_platform::runtime::objects::port_runtime 
 
-string_type port_runtime::type_name = RX_CPP_PORT_TYPE_NAME;
+rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
 {
@@ -415,12 +391,6 @@ port_runtime::~port_runtime()
 }
 
 
-
-string_type port_runtime::get_type_name () const
-{
-  return type_name;
-
-}
 
 bool port_runtime::write (buffer_ptr what)
 {
@@ -452,6 +422,18 @@ rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t 
 	else
 		return rx_protocol_error_message(result);
 }
+
+
+// Class rx_platform::runtime::objects::application_creation_data 
+
+
+// Class rx_platform::runtime::objects::domain_creation_data 
+
+
+// Class rx_platform::runtime::objects::object_creation_data 
+
+
+// Class rx_platform::runtime::objects::port_creation_data 
 
 
 } // namespace objects

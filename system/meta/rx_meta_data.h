@@ -58,6 +58,36 @@ using namespace rx_platform::ns;
 
 namespace rx_platform {
 
+
+enum rx_item_type : uint8_t
+{
+	rx_directory = 0,
+	rx_application = 1,
+	rx_application_type = 2,
+	rx_domain = 3,
+	rx_domain_type = 4,
+	rx_object = 5,
+	rx_object_type = 6,
+	rx_port = 7,
+	rx_port_type = 8,
+	rx_struct_type = 9,
+	rx_variable_type = 10,
+	rx_source_type = 11,
+	rx_filter_type = 12,
+	rx_event_type = 13,
+	rx_mapper_type = 14,
+	rx_program = 15,
+	rx_method = 16,
+
+	rx_first_invalid = 17,
+
+	rx_test_case_type = 0xfe,
+	rx_invalid_type = 0xff
+};
+
+string_type rx_item_type_name(rx_item_type type);
+rx_item_type rx_parse_type_name(const string_type name);
+
 enum namespace_item_attributes
 {
 	namespace_item_null = 0,
@@ -145,9 +175,9 @@ class meta_data
 
       rx_result check_out (base_meta_writer& stream) const;
 
-      rx_result serialize_meta_data (base_meta_writer& stream, uint8_t type, const string_type& object_type) const;
+      rx_result serialize_meta_data (base_meta_writer& stream, uint8_t type, rx_item_type object_type) const;
 
-      rx_result deserialize_meta_data (base_meta_reader& stream, uint8_t type, string_type& object_type);
+      rx_result deserialize_meta_data (base_meta_reader& stream, uint8_t type, rx_item_type& object_type);
 
       values::rx_value get_value () const;
 

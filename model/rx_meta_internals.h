@@ -843,7 +843,7 @@ class platform_types_manager
 		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
-			  return name + " does not have valid " + T::type_name + " id!";
+			  return name + " does not have valid " + rx_item_type_name(T::type_id) + " id!";
 		  }
 		  auto ret = internal_get_type_cache<T>().delete_runtime(id);
 		  if (!ret)
@@ -908,7 +908,7 @@ class platform_types_manager
 		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
-			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
+			  ret.add_error(name + " does not have valid " + rx_item_type_name(T::type_id) + " id!");
 			  return ret;
 		  }
 		  internal_get_type_cache<T>().check_type(id, ret);
@@ -927,7 +927,7 @@ class platform_types_manager
 		  auto id = item->meta_info().get_id();
 		  if (id.is_null())
 		  {// TODO error, item does not have id
-			  ret.add_error(name + " does not have valid " + T::type_name + " id!");
+			  ret.add_error(name + " does not have valid " + rx_item_type_name(T::type_id) + " id!");
 			  return ret;
 		  }
 		  internal_get_simple_type_cache<T>().check_type(id, ret);

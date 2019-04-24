@@ -47,7 +47,7 @@ namespace object_types {
 
 // Class rx_platform::meta::object_types::application_type 
 
-string_type application_type::type_name = RX_CPP_APPLICATION_CLASS_TYPE_NAME;
+rx_item_type application_type::type_id = rx_item_type::rx_application_type;
 
 application_type::application_type()
 {
@@ -138,7 +138,7 @@ const def_blocks::mapped_data_type& application_type::mapping_data () const
 
 // Class rx_platform::meta::object_types::domain_type 
 
-string_type domain_type::type_name = RX_CPP_DOMAIN_CLASS_TYPE_NAME;
+rx_item_type domain_type::type_id = rx_item_type::rx_domain_type;
 
 domain_type::domain_type()
 {
@@ -229,7 +229,7 @@ const def_blocks::mapped_data_type& domain_type::mapping_data () const
 
 // Class rx_platform::meta::object_types::object_type 
 
-string_type object_type::type_name = RX_CPP_OBJECT_CLASS_TYPE_NAME;
+rx_item_type object_type::type_id = rx_item_type::rx_object_type;
 
 object_type::object_type()
 {
@@ -372,7 +372,7 @@ rx_result object_data_type::resolve (rx_directory_ptr dir)
 
 // Class rx_platform::meta::object_types::port_type 
 
-string_type port_type::type_name = RX_CPP_PORT_CLASS_TYPE_NAME;
+rx_item_type port_type::type_id = rx_item_type::rx_port_type;
 
 port_type::port_type()
 {

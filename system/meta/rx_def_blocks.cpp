@@ -62,6 +62,38 @@ bool rx_is_valid_item_name(const string_type& name)
 namespace meta {
 
 namespace def_blocks {
+namespace
+{
+rx_subitem_type parse_subitem_type(const string_type& name)
+{
+	if (name == RX_CONST_VALUE_TYPE_NAME)
+		return rx_subitem_type::rx_const_value_subitem;
+	else if (name == RX_VALUE_TYPE_NAME)
+		return rx_subitem_type::rx_value_subitem;
+	else if (name == RX_CPP_STRUCT_TYPE_NAME)
+		return rx_subitem_type::rx_struct_subitem;
+	else if (name == RX_CPP_VARIABLE_TYPE_NAME)
+		return rx_subitem_type::rx_variable_subitem;
+	else
+		return rx_subitem_type::rx_invalid_subitem;
+}
+string_type get_subitem_type_name(rx_subitem_type type)
+{
+	switch (type)
+	{
+	case rx_subitem_type::rx_const_value_subitem:
+		return RX_CONST_VALUE_TYPE_NAME;
+	case rx_subitem_type::rx_value_subitem:
+		return RX_VALUE_TYPE_NAME;
+	case rx_subitem_type::rx_struct_subitem:
+		return RX_CPP_STRUCT_TYPE_NAME;
+	case rx_subitem_type::rx_variable_subitem:
+		return RX_CPP_VARIABLE_TYPE_NAME;
+	default:
+		return string_type();
+	}
+}
+}
 
 // Class rx_platform::meta::def_blocks::complex_data_type 
 
@@ -94,8 +126,16 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 
 			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("type",basic_types::struct_type::type_name.c_str()))
-				return false;
+			if (stream.is_string_based())
+			{
+				if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_struct_subitem)))
+					return false;
+			}
+			else
+			{
+				if (!stream.write_byte("type", rx_subitem_type::rx_struct_subitem))
+					return false;
+			}
 			if (!structs_[one.second&index_mask].serialize_definition(stream,type))
 				return false;
 			if (!stream.end_object())
@@ -107,8 +147,16 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 
 			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("type", basic_types::variable_type::type_name.c_str()))
-				return false;
+			if (stream.is_string_based())
+			{
+				if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_variable_subitem)))
+					return false;
+			}
+			else
+			{
+				if (!stream.write_byte("type", rx_subitem_type::rx_variable_subitem))
+					return false;
+			}
 			if (!variables_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
 			if (!stream.end_object())
@@ -119,8 +167,16 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		{
 			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("type", simple_value_def::type_name.c_str()))
-				return false;
+			if (stream.is_string_based())
+			{
+				if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_value_subitem)))
+					return false;
+			}
+			else
+			{
+				if (!stream.write_byte("type", rx_subitem_type::rx_value_subitem))
+					return false;
+			}
 			if (!simple_values_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
 			if (!stream.end_object())
@@ -131,8 +187,16 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 		{
 			if (!stream.start_object("item"))
 				return false;
-			if (!stream.write_string("type", const_value_def::type_name.c_str()))
-				return false;
+			if (stream.is_string_based())
+			{
+				if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_const_value_subitem)))
+					return false;
+			}
+			else
+			{
+				if (!stream.write_byte("type", rx_subitem_type::rx_const_value_subitem))
+					return false;
+			}
 			if (!const_values_[one.second&index_mask].serialize_definition(stream, type))
 				return false;
 			if (!stream.end_object())
@@ -163,55 +227,79 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 	{
 		if (!stream.start_object("item"))
 			return false;
-		string_type item_type;
-		if (!stream.read_string("type", item_type))
-			return false;
-		if (item_type == RX_CONST_VALUE_TYPE_NAME)
+		rx_subitem_type item_type;
+		if (stream.is_string_based())
 		{
-			const_value_def temp;
-			if (!temp.deserialize_definition(stream, type))
+			string_type temp;
+			if (!stream.read_string("type", temp))
 				return false;
-			auto ret = check_name(temp.get_name(), (static_cast<int>(const_values_.size() | const_values_mask)));
-			if (ret)
-			{
-				const_values_.emplace_back(std::move(temp));
-			}
-		}
-		else if (item_type == RX_VALUE_TYPE_NAME)
-		{
-			simple_value_def temp;
-			if (!temp.deserialize_definition(stream, type))
-				return false;
-			auto ret = check_name(temp.get_name(), (static_cast<int>(simple_values_.size() | simple_values_mask)));
-			if (ret)
-			{
-				simple_values_.emplace_back(std::move(temp));
-			}
-		}
-		else if (item_type == RX_CPP_STRUCT_CLASS_TYPE_NAME)
-		{
-			meta::def_blocks::struct_attribute temp;
-			if (!temp.deserialize_definition(stream, type))
-				return false;
-			auto ret = check_name(temp.get_name(), (static_cast<int>(structs_.size() | structs_mask)));
-			if (ret)
-			{
-				structs_.emplace_back(std::move(temp));
-			}
-		}
-		else if (item_type == RX_CPP_VARIABLE_CLASS_TYPE_NAME)
-		{
-			meta::def_blocks::variable_attribute temp;
-			if (!temp.deserialize_definition(stream, type))
-				return false;
-			auto ret = check_name(temp.get_name(), (static_cast<int>(variables_.size() | variables_mask)));
-			if (ret)
-			{
-				variables_.emplace_back(std::move(temp));
-			}
+			item_type = parse_subitem_type(temp);
+			if (item_type >= rx_subitem_type::rx_first_invalid_subitem)
+				return temp + " is invalid item type";
 		}
 		else
-			return item_type + "is unknown type!";
+		{
+			uint8_t temp;
+			if (!stream.read_byte("type", temp))
+				return false;
+			if (item_type >= rx_subitem_type::rx_first_invalid_subitem)
+				return "Invalid item type";
+			item_type = (rx_subitem_type)temp;
+		}
+		switch (item_type)
+		{
+		case rx_subitem_type::rx_const_value_subitem:
+			{
+				const_value_def temp;
+				if (!temp.deserialize_definition(stream, type))
+					return false;
+				auto ret = check_name(temp.get_name(), (static_cast<int>(const_values_.size() | const_values_mask)));
+				if (ret)
+				{
+					const_values_.emplace_back(std::move(temp));
+				}
+			}
+			break;
+		case rx_subitem_type::rx_value_subitem:
+			{
+				simple_value_def temp;
+				if (!temp.deserialize_definition(stream, type))
+					return false;
+				auto ret = check_name(temp.get_name(), (static_cast<int>(simple_values_.size() | simple_values_mask)));
+				if (ret)
+				{
+					simple_values_.emplace_back(std::move(temp));
+				}
+			}
+			break;
+		case rx_subitem_type::rx_struct_subitem:
+			{
+				meta::def_blocks::struct_attribute temp;
+				if (!temp.deserialize_definition(stream, type))
+					return false;
+				auto ret = check_name(temp.get_name(), (static_cast<int>(structs_.size() | structs_mask)));
+				if (ret)
+				{
+					structs_.emplace_back(std::move(temp));
+				}
+			}
+			break;
+		case rx_subitem_type::rx_variable_subitem:
+			{
+				meta::def_blocks::variable_attribute temp;
+				if (!temp.deserialize_definition(stream, type))
+					return false;
+				auto ret = check_name(temp.get_name(), (static_cast<int>(variables_.size() | variables_mask)));
+				if (ret)
+				{
+					variables_.emplace_back(std::move(temp));
+				}
+
+			}
+			break;
+		default:
+			return get_subitem_type_name(item_type) + "is unknown type!";
+		}
 
 		if (!stream.end_object())
 			return false;
@@ -372,8 +460,6 @@ rx_result complex_data_type::resolve (rx_directory_ptr dir)
 
 
 // Class rx_platform::meta::def_blocks::const_value_def 
-
-string_type const_value_def::type_name = RX_CONST_VALUE_TYPE_NAME;
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
 	: name_(name)
@@ -659,8 +745,6 @@ rx_result mapper_attribute::resolve (rx_directory_ptr dir)
 
 
 // Class rx_platform::meta::def_blocks::simple_value_def 
-
-string_type simple_value_def::type_name = RX_VALUE_TYPE_NAME;
 
 simple_value_def::simple_value_def (const string_type& name, bool read_only, rx_simple_value&& value)
 	: name_(name)

@@ -125,13 +125,13 @@ class rx_io_manager : public rx_platform::runtime::objects::server_object
       ~rx_io_manager();
 
 
-      uint32_t initialize (hosting::rx_platform_host* host, io_manager_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, io_manager_data_t& data);
 
-      uint32_t deinitialize ();
+      rx_result deinitialize ();
 
-      uint32_t start (hosting::rx_platform_host* host, const io_manager_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const io_manager_data_t& data);
 
-      uint32_t stop ();
+      rx_result stop ();
 
 
   protected:

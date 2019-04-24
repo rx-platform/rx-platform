@@ -397,11 +397,11 @@ void test_case::get_class_info (string_type& class_name, string_type& console, b
 	has_own_code_info = true;
 }
 
-string_type test_case::get_type_name () const
+rx_item_type test_case::get_type_id () const
 {
   // generated from ROSE!!!
   static string_type type_name = "TEST CASE";
-  return type_name;
+  return rx_item_type::rx_test_case_type;
 
 
 }

@@ -63,6 +63,7 @@ typedef reference<rx_protocol::rx_protocol_port> rx_protocol_port_ptr;
 
 namespace messages {
 
+typedef uint16_t rx_message_type_t;
 
 
 
@@ -83,6 +84,8 @@ class rx_message_base
       virtual rx_result deserialize (base_meta_reader& stream) = 0;
 
       virtual const string_type& get_type_name () = 0;
+
+      virtual rx_message_type_t get_type_id () = 0;
 
 
       int requestId;
@@ -111,12 +114,16 @@ class error_message : public rx_message_base
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       uint32_t errorCode;
 
       string_type errorMessage;
 
       static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -133,7 +140,7 @@ class error_message : public rx_message_base
 
 class browse_response_message : public rx_message_base  
 {
-	typedef std::vector<std::pair<string_type, meta::meta_data> > browse_result_items_type;
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > browse_result_items_type;
 
   public:
 
@@ -143,11 +150,15 @@ class browse_response_message : public rx_message_base
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       browse_result_items_type items;
 
 
       static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -165,7 +176,8 @@ class browse_response_message : public rx_message_base
 
 class rx_request_message : public rx_message_base  
 {
-	typedef std::map<string_type, std::function<request_message_ptr()> > registered_messages_type;
+	typedef std::map<rx_message_type_t, std::function<request_message_ptr()> > registered_messages_type;
+	typedef std::map<string_type, std::function<request_message_ptr()> > registered_string_messages_type;
 
   public:
 
@@ -182,7 +194,11 @@ class rx_request_message : public rx_message_base
 
       static rx_result_with<request_message_ptr> create_request_message (const string_type& type);
 
+      static rx_result_with<request_message_ptr> create_request_message (rx_message_type_t type);
 
+
+
+      static rx_request_message::registered_string_messages_type registered_string_messages_;
 
       static rx_request_message::registered_messages_type registered_messages_;
 
@@ -207,12 +223,16 @@ class browse_request_message : public rx_request_message
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       string_type path;
 
       string_type filter;
 
       static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -241,6 +261,8 @@ class query_request_message : public rx_request_message
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       queries_type queries;
 
@@ -248,6 +270,8 @@ class query_request_message : public rx_request_message
       static string_type type_name;
 
       bool intersection;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -264,7 +288,7 @@ class query_request_message : public rx_request_message
 
 class query_response_message : public rx_message_base  
 {
-	typedef std::vector<std::pair<string_type, meta::meta_data> > query_result_items_type;
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
 
   public:
 
@@ -274,11 +298,15 @@ class query_response_message : public rx_message_base
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       query_result_items_type items;
 
 
       static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -306,12 +334,16 @@ class get_type_request : public rx_request_message
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       meta_data meta;
 
-      string_type item_type;
+      rx_item_type item_type;
 
       static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -341,10 +373,14 @@ class get_type_response : public rx_message_base
 
       const string_type& get_type_name ();
 
+      rx_message_type_t get_type_id ();
+
 
       typename itemT::smart_ptr item;
 
       static string_type type_name;
+
+      static uint16_t type_id;
 
 
   protected:
