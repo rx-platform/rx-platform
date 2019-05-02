@@ -36,6 +36,7 @@
 
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 
 namespace rx_platform
 {
@@ -47,7 +48,7 @@ namespace meta
 rx_result rx_delete_object(const string_type& name
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::platform_types_manager::instance().delete_runtime<object_type, pointers::reference_object::smart_ptr>(
+	model::algorithms::runtime_model_algorithm<object_type>::delete_runtime(
 		name, ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -58,7 +59,7 @@ rx_result rx_create_object(const string_type& name, const string_type& type_name
 	data::runtime_values_data* ptr_copy = nullptr;
 	if(init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::platform_types_manager::instance().create_runtime<object_type, pointers::reference_object::smart_ptr>(
+	model::algorithms::runtime_model_algorithm<object_type>::create_runtime(
 		name, type_name, ptr_copy, ctx.directory, attributes, callback, ctx.object);
 	return true;
 }
@@ -69,7 +70,7 @@ rx_result rx_create_port(const string_type& name, const string_type& type_name, 
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::platform_types_manager::instance().create_runtime<port_type, pointers::reference_object::smart_ptr>(
+	model::algorithms::runtime_model_algorithm<port_type>::create_runtime(
 		name, type_name, ptr_copy, ctx.directory, attributes, callback, ctx.object);
 	return true;
 }
@@ -77,8 +78,8 @@ rx_result rx_create_port(const string_type& name, const string_type& type_name, 
 rx_result rx_create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
 {
-	model::platform_types_manager::instance().create_prototype<object_type, pointers::reference_object::smart_ptr>(
-		name, instance_id, type_name, ctx.directory, namespace_item_attributes::namespace_item_null, callback, ctx.object);
+	model::algorithms::runtime_model_algorithm<object_type>::create_prototype(
+		name, type_name, ctx.directory, namespace_item_attributes::namespace_item_null, callback, ctx.object);
 	return true;
 }
 
@@ -86,7 +87,7 @@ rx_result rx_create_object_type(const string_type& name
 	, const string_type& base_name, rx_object_type_ptr prototype, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
 {
-	model::platform_types_manager::instance().create_type<object_type, pointers::reference_object::smart_ptr>(
+	model::algorithms::types_model_algorithm<object_type>::create_type(
 		name, base_name, prototype, ctx.directory, attributes| namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }

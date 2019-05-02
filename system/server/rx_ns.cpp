@@ -346,6 +346,11 @@ platform_item_ptr rx_platform_directory::get_sub_item (const string_type& path) 
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
 	{// plain item
+		auto ret_ptr = sys_internal::internal_ns::platform_root::get_cached_item(path);
+		if (ret_ptr)
+		{// found it in cache, return!
+			return ret_ptr;
+		}
 		locks::const_auto_slim_lock dummy(&structure_lock_);
 		auto it = sub_items_.find(path);
 		if (it != sub_items_.end())
@@ -432,6 +437,37 @@ rx_result rx_platform_directory::add_item (platform_item_ptr who)
 		ret.register_error("Item " + name + " already exists");
 	}
 	structure_unlock();
+	if (ret && rx_names_cache::should_cache(who))
+	{		
+		auto cache_result = sys_internal::internal_ns::platform_root::insert_cached_item(name, who);
+		if (!cache_result)
+		{
+			std::ostringstream stream;
+			stream << "Unable to register item "
+				<< who->meta_info().get_full_path()
+				<< " to names cache! Details: ";
+			bool first = true;
+			for (auto one : cache_result.errors())
+			{
+				if (first)
+					first = false;
+				else
+					stream << ", ";
+				stream << one;
+			}
+			stream << " ";
+			NAMESPACE_LOG_WARNING("root", 900, stream.str().c_str());
+		}
+		else
+		{
+			std::ostringstream stream;
+			stream << "Item "
+				<< name
+				<< " registered in cache";
+			NAMESPACE_LOG_TRACE("root", 500, stream.str().c_str());
+		}
+	}
+		
 	return ret;
 }
 
@@ -601,6 +637,47 @@ rx_names_cache::rx_names_cache()
 {
 }
 
+
+
+platform_item_ptr rx_names_cache::get_cached_item (const string_type& name) const
+{
+	const auto it = name_items_hash_.find(name);
+	if (it != name_items_hash_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return platform_item_ptr::null_ptr;
+	}
+}
+
+rx_result rx_names_cache::insert_cached_item (const string_type& name, platform_item_ptr item)
+{
+	auto it = name_items_hash_.find(name);
+	if (it != name_items_hash_.end())
+	{
+		return name + "is already registered name.";
+	}
+	else
+	{
+		name_items_hash_.emplace(name, item);
+		return true;
+	}
+}
+
+bool rx_names_cache::should_cache (const platform_item_ptr& item)
+{
+	// stupid algorithm here, should be checked!!!
+	if (item->meta_info().get_attributes()& namespace_item_system_mask)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 } // namespace ns

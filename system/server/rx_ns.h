@@ -51,6 +51,16 @@ class rx_platform_item;
 
 
 
+
+/////////////////////////////////////////////////////////////
+// logging macros for host library
+#define NAMESPACE_LOG_INFO(src,lvl,msg) RX_LOG_INFO("NS",src,lvl,msg)
+#define NAMESPACE_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("NS",src,lvl,msg)
+#define NAMESPACE_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("NS",src,lvl,msg)
+#define NAMESPACE_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("NS",src,lvl,msg)
+#define NAMESPACE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("NS",src,lvl,msg)
+#define NAMESPACE_LOG_TRACE(src,lvl,msg) RX_TRACE("NS",src,lvl,msg)
+
 using namespace rx;
 using namespace rx::values;
 using namespace rx_platform;
@@ -271,10 +281,17 @@ class rx_platform_item : public rx::pointers::reference_object
 
 class rx_names_cache 
 {
-	  typedef std::unordered_map<string_type, rx_node_id> name_ids_hash_type;
+	  typedef std::unordered_map<string_type, platform_item_ptr> name_items_hash_type;
 
   public:
       rx_names_cache();
+
+
+      platform_item_ptr get_cached_item (const string_type& name) const;
+
+      rx_result insert_cached_item (const string_type& name, platform_item_ptr item);
+
+      static bool should_cache (const platform_item_ptr& item);
 
 
   protected:
@@ -282,7 +299,7 @@ class rx_names_cache
   private:
 
 
-      name_ids_hash_type name_ids_hash_;
+      name_items_hash_type name_items_hash_;
 
 
 };

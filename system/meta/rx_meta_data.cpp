@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -146,7 +146,7 @@ rx_result_with<typename T::RTypePtr> deserialize_runtime(const meta_data& meta, 
 	return ret;
 }
 
-// Class rx_platform::meta::meta_data
+// Class rx_platform::meta::meta_data 
 
 meta_data::meta_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, const string_type& path, rx_time now)
       : version_(RX_INITIAL_ITEM_VERSION),
@@ -351,7 +351,7 @@ rx_result meta_data::resolve ()
 	// resolve storage type by attributes
 	if (storage_info.get_storage_type() == rx_storage_type::invalid_storage)
 	{
-		if (attributes_ & namespace_item_system_storage)
+		if (attributes_ & namespace_item_system_storage_mask)
 		{
 			storage_info.assign_storage(rx_storage_type::system_storage);
 		}
@@ -406,8 +406,13 @@ string_type meta_data::get_full_path () const
 	}
 }
 
+bool meta_data::is_system () const
+{
+	return attributes_ & namespace_item_attributes::namespace_item_system_mask;
+}
 
-// Class rx_platform::meta::storage_data
+
+// Class rx_platform::meta::storage_data 
 
 
 rx_result_with<rx_storage_ptr> storage_data::resolve_storage () const

@@ -43,6 +43,8 @@ namespace internal_ns {
 
 // Class sys_internal::internal_ns::platform_root 
 
+rx_platform::ns::rx_names_cache platform_root::cache_;
+
 platform_root::platform_root()
 	: rx_platform_directory("", namespace_item_internal_access)
 {
@@ -53,6 +55,17 @@ platform_root::~platform_root()
 {
 }
 
+
+
+platform_item_ptr platform_root::get_cached_item (const string_type& name)
+{
+	return cache_.get_cached_item(name);
+}
+
+rx_result platform_root::insert_cached_item (const string_type& name, platform_item_ptr item)
+{
+	return cache_.insert_cached_item(name, item);
+}
 
 
 // Class sys_internal::internal_ns::user_directory 

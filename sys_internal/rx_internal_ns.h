@@ -71,9 +71,17 @@ contains root server folders\
       ~platform_root();
 
 
+      static platform_item_ptr get_cached_item (const string_type& name);
+
+      static rx_result insert_cached_item (const string_type& name, platform_item_ptr item);
+
+
   protected:
 
   private:
+
+
+      static rx_platform::ns::rx_names_cache cache_;
 
 
 };

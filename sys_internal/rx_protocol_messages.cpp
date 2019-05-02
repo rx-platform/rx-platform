@@ -38,6 +38,7 @@
 #include "system/serialization/rx_ser.h"
 #include "api/rx_namespace_api.h"
 #include "api/rx_meta_api.h"
+#include "system/server/rx_server.h"
 
 using namespace rx_platform;
 
@@ -51,10 +52,18 @@ namespace
 {
 const rx_message_type_t rx_get_type_request_id = 0x0001;
 const rx_message_type_t rx_get_type_response_id = 0x8001;
+
 const rx_message_type_t rx_query_request_id = 0x0002;
 const rx_message_type_t rx_query_response_id = 0x8002;
+
 const rx_message_type_t rx_browse_request_id = 0x0003;
 const rx_message_type_t rx_browse_response_id = 0x8003;
+
+const rx_message_type_t rx_translate_request_id = 0x0004;
+const rx_message_type_t rx_translate_response_id = 0x8004;
+
+const rx_message_type_t rx_connection_context_request_id = 0x0005;
+const rx_message_type_t rx_connection_context_response_id = 0x8005;
 
 const rx_message_type_t rx_error_message_id = 0xffff;
 }
@@ -326,10 +335,14 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(browse_request_message::type_id, [] { return std::make_unique<browse_request_message>(); });
 	registered_messages_.emplace(query_request_message::type_id, [] { return std::make_unique<query_request_message>(); });
 	registered_messages_.emplace(get_type_request::type_id, [] { return std::make_unique<get_type_request>(); });
+	registered_messages_.emplace(rx_translate_request::type_id, [] { return std::make_unique<rx_translate_request>(); });
+	registered_messages_.emplace(rx_connection_context_request::type_id, [] { return std::make_unique<rx_connection_context_request>(); });
 
 	registered_string_messages_.emplace(browse_request_message::type_name, [] { return std::make_unique<browse_request_message>(); });
 	registered_string_messages_.emplace(query_request_message::type_name, [] { return std::make_unique<query_request_message>(); });
 	registered_string_messages_.emplace(get_type_request::type_name, [] { return std::make_unique<get_type_request>(); });
+	registered_string_messages_.emplace(rx_translate_request::type_name, [] { return std::make_unique<rx_translate_request>(); });
+	registered_string_messages_.emplace(rx_connection_context_request::type_name, [] { return std::make_unique<rx_connection_context_request>(); });
 	
 	auto ret = meta::queries::rx_query::init_query_types();
 
@@ -719,6 +732,223 @@ const string_type& get_type_response<itemT>::get_type_name ()
 
 template <class itemT>
 rx_message_type_t get_type_response<itemT>::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::rx_translate_request 
+
+string_type rx_translate_request::type_name = "translateReq";
+
+rx_message_type_t rx_translate_request::type_id = rx_translate_request_id;
+
+
+rx_result rx_translate_request::serialize (base_meta_writer& stream) const
+{
+	return "Not implemented!";
+}
+
+rx_result rx_translate_request::deserialize (base_meta_reader& stream)
+{
+	return "Not implemented!";
+}
+
+message_ptr rx_translate_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	return message_ptr();
+}
+
+const string_type& rx_translate_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_translate_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::rx_connection_context_request 
+
+string_type rx_connection_context_request::type_name = "connCtxReq";
+
+rx_message_type_t rx_connection_context_request::type_id = rx_connection_context_request_id;
+
+
+rx_result rx_connection_context_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("dir", directory))
+		return "Error writing directory";
+	if (!stream.write_string("app", application))
+		return "Error writing application";
+	if (!stream.write_string("domain", domain))
+		return "Error writing domain";
+	return true;
+}
+
+rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("dir", directory))
+		return "Error reading directory";
+	if (!stream.read_string("app", application))
+		return "Error reading application";
+	if (!stream.read_string("domain", domain))
+		return "Error reading domain";
+	return true;
+}
+
+message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	auto requestId = this->requestId;
+	if (!directory.empty())
+	{
+		auto result = port->set_current_directory(directory);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<error_message>();
+			for (const auto& one : result.errors())
+				ret_value->errorMessage += one;
+			ret_value->errorCode = 13;
+			ret_value->requestId = requestId;
+			return ret_value;
+		}
+	}
+	auto response = std::make_unique<rx_connection_context_response>();
+	response->directory = port->get_current_directory_path();
+	return response;
+}
+
+const string_type& rx_connection_context_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_connection_context_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::translate_response 
+
+string_type translate_response::type_name = "translateResp";
+
+rx_message_type_t translate_response::type_id = rx_translate_response_id;
+
+
+rx_result translate_response::serialize (base_meta_writer& stream) const
+{
+	return "Not implemented!";
+}
+
+rx_result translate_response::deserialize (base_meta_reader& stream)
+{
+	return "Not implemented!";
+}
+
+const string_type& translate_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t translate_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::rx_connection_context_response 
+
+string_type rx_connection_context_response::type_name = "connCtxResp";
+
+rx_message_type_t rx_connection_context_response::type_id = rx_connection_context_response_id;
+
+
+rx_result rx_connection_context_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("dir", directory))
+		return "Error writing directory";
+	if (!stream.write_string("app", application))
+		return "Error writing application";
+	if (!stream.write_string("domain", domain))
+		return "Error writing domain";
+	if (!stream.write_id("appid", application_id))
+		return "Error writing application id";
+	if (!stream.write_id("domainid", domain_id))
+		return "Error writing domain id";
+	return true;
+}
+
+rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("dir", directory))
+		return "Error reading directory";
+	if (!stream.read_string("app", application))
+		return "Error reading application";
+	if (!stream.read_string("domain", domain))
+		return "Error reading domain";
+	if (!stream.read_id("appid", application_id))
+		return "Error reading application";
+	if (!stream.read_id("domainid", domain_id))
+		return "Error reading domain id";
+	return true;
+}
+
+const string_type& rx_connection_context_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_connection_context_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Parameterized Class sys_internal::rx_protocol::messages::save_type_request 
+
+template <class itemT>
+string_type save_type_request<itemT>::type_name = "getTypeResp";
+
+template <class itemT>
+uint16_t save_type_request<itemT>::type_id = rx_get_type_response_id;
+
+
+template <class itemT>
+rx_result save_type_request<itemT>::serialize (base_meta_writer& stream) const
+{
+}
+
+template <class itemT>
+rx_result save_type_request<itemT>::deserialize (base_meta_reader& stream)
+{
+}
+
+template <class itemT>
+message_ptr save_type_request<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+}
+
+template <class itemT>
+const string_type& save_type_request<itemT>::get_type_name ()
+{
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t save_type_request<itemT>::get_type_id ()
 {
   return type_id;
 

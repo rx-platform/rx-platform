@@ -36,6 +36,7 @@
 #include "model/rx_meta_internals.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/meta/rx_obj_types.h"
+#include "rx_model_algorithms.h"
 
 using namespace rx_platform::api;
 using namespace rx_platform::api::meta;
@@ -146,32 +147,29 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 	if (!in.eof())
 		std::getline(in, definition, '\0');
 
-	// these are type definition and stream for creation
-	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
 	// try to acquire the type
-	if (from_command == "from")
-	{
-		type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
-	}
-	else
-	{
-		err << "Unknown base "
-			<< rx_item_type_name(T::RType::type_id)
-			<< " specifier:"
-			<< from_command << "!";
-		return false;
-	}
-	// do we have type
-	if (!type_definition)
-	{
-		err << "Undefined "
-			<< rx_item_type_name(T::type_id)
-			<< ":"
-			<< class_name << "!";
-		return false;
-	}
+	//if (from_command == "from")
+	//{
+	//}
+	//else
+	//{
+	//	err << "Unknown base "
+	//		<< rx_item_type_name(T::RType::type_id)
+	//		<< " specifier:"
+	//		<< from_command << "!";
+	//	return false;
+	//}
+	//// do we have type
+	//if (!type_definition)
+	//{
+	//	err << "Undefined "
+	//		<< rx_item_type_name(T::type_id)
+	//		<< ":"
+	//		<< class_name << "!";
+	//	return false;
+	//}
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -281,28 +279,28 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	typename T::smart_ptr prototype_definition;
 	typename T::RTypePtr object_ptr;
 
-	// try to acquire the type
-	if (from_command == "from")
-	{
-		type_definition = platform_types_manager::instance().get_type<T>(base_name, ctx->get_current_directory());
-	}
-	else
-	{
-		err << "Unknown base "
-			<< rx_item_type_name(T::RType::type_id)
-			<< " specifier:"
-			<< from_command << "!";
-		return false;
-	}
-	// do we have type
-	if (!type_definition)
-	{
-		err << "Undefined "
-			<< rx_item_type_name(T::type_id)
-			<< ":"
-			<< base_name << "!";
-		return false;
-	}
+	//// try to acquire the type
+	//if (from_command == "from")
+	//{
+	//	type_definition = platform_types_manager::instance().get_type<T>(base_name, ctx->get_current_directory());
+	//}
+	//else
+	//{
+	//	err << "Unknown base "
+	//		<< rx_item_type_name(T::RType::type_id)
+	//		<< " specifier:"
+	//		<< from_command << "!";
+	//	return false;
+	//}
+	//// do we have type
+	//if (!type_definition)
+	//{
+	//	err << "Undefined "
+	//		<< rx_item_type_name(T::type_id)
+	//		<< ":"
+	//		<< base_name << "!";
+	//	return false;
+	//}
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -589,7 +587,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	platform_types_manager::instance().delete_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+	algorithms::types_model_algorithm<T>::delete_type(name, ctx->get_current_directory(),
 		[ctx, name, this](rx_result result)
 		{
 			if (!result)
@@ -723,7 +721,7 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 	in >> name;
 	if (!name.empty())
 	{
-		platform_types_manager::instance().check_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+		algorithms::types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
 			[ctx, name, this](type_check_context result)
 			{
 				if (!result.is_check_ok())
@@ -756,7 +754,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 	in >> name;
 	if (!name.empty())
 	{
-		platform_types_manager::instance().check_simple_type<T, console_client::smart_ptr>(name, ctx->get_current_directory(),
+		algorithms::simple_types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
 			[ctx, name, this](type_check_context result)
 		{
 			if (!result.is_check_ok())
@@ -879,27 +877,27 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	typename T::RTypePtr object_ptr;
 
 	// try to acquire the type
-	if (from_command == "from")
-	{
-		type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
-	}
-	else
-	{
-		err << "Unknown base "
-			<< rx_item_type_name(T::RType::type_id)
-			<< " specifier:"
-			<< from_command << "!";
-		return false;
-	}
-	// do we have type
-	if (!type_definition)
-	{
-		err << "Undefined "
-			<< rx_item_type_name(T::type_id)
-			<< ":"
-			<< class_name << "!";
-		return false;
-	}
+	//if (from_command == "from")
+	//{
+	//	type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
+	//}
+	//else
+	//{
+	//	err << "Unknown base "
+	//		<< rx_item_type_name(T::RType::type_id)
+	//		<< " specifier:"
+	//		<< from_command << "!";
+	//	return false;
+	//}
+	//// do we have type
+	//if (!type_definition)
+	//{
+	//	err << "Undefined "
+	//		<< rx_item_type_name(T::type_id)
+	//		<< ":"
+	//		<< class_name << "!";
+	//	return false;
+	//}
 	// try to acquire definition
 	if (to_command == "to")
 	{

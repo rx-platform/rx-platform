@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_hashes.h
+*  lib\rx_node_id_hash.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,43 +27,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_hashes_h
-#define rx_hashes_h 1
+#ifndef rx_node_id_hash_h
+#define rx_node_id_hash_h 1
 
 
 
 
 
-
-namespace rx {
-
-namespace rx_hashes {
-typedef uint32_t hash_handle_t;
-
-
-
-
-
-class binary_hash_key 
-{
-
-  public:
-	  // default
-	  binary_hash_key() = default;
-	  binary_hash_key(const binary_hash_key&) = default;
-	  binary_hash_key(binary_hash_key&&) = default;
-	  binary_hash_key& operator=(const binary_hash_key&) = default;
-	  binary_hash_key& operator=(binary_hash_key&&) = default;
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace rx_hashes
-} // namespace rx
 
 
 

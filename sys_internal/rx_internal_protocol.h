@@ -32,12 +32,12 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 namespace sys_internal {
 namespace rx_protocol {
@@ -104,6 +104,15 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
       void data_processed (message_ptr result);
 
+      rx_result set_current_directory (const string_type& path);
+
+
+      const string_type& get_current_directory_path () const
+      {
+        return current_directory_path_;
+      }
+
+
 
   protected:
 
@@ -111,6 +120,11 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
 
       rx_json_protocol stack_entry_;
+
+
+      rx_directory_ptr current_directory_;
+
+      string_type current_directory_path_;
 
 
 };

@@ -34,6 +34,7 @@
 #include "sys_internal/rx_storage_build.h"
 
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace sys_internal {
@@ -216,16 +217,16 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 			break;
 		// variable sub-types
 		case rx_item_type::rx_source_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
-			break;
-		case rx_item_type::rx_filter_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<source_type>());
 			break;
-		case rx_item_type::rx_event_type:
+		case rx_item_type::rx_filter_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<filter_type>());
 			break;
-		case rx_item_type::rx_mapper_type:
+		case rx_item_type::rx_event_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<event_type>());
+			break;
+		case rx_item_type::rx_mapper_type:
+			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
 			break;
 		default:
 			storage->close();
@@ -250,10 +251,9 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 	storage->close();
 	if (result)
 	{
-		auto create_result = model::platform_types_manager::instance().create_type_helper<T>(
+		auto create_result = model::algorithms::types_model_algorithm<T>::create_type_sync(
 			"", "", created, dir
-			, created->meta_info().get_attributes()
-			, tl::type2type<T>());
+			, created->meta_info().get_attributes());
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
@@ -278,10 +278,9 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	storage->close();
 	if (result)
 	{
-		auto create_result = model::platform_types_manager::instance().create_simple_type_helper<T>(
+		auto create_result = model::algorithms::simple_types_model_algorithm<T>::create_type_sync(
 			"", "", created, dir
-			, created->meta_info().get_attributes()
-			, tl::type2type<T>());
+			, created->meta_info().get_attributes());
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();

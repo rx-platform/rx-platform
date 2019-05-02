@@ -348,7 +348,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_OBJECT_BASE_NAME
 			, RX_CLASS_OBJECT_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_object_type<object_type>(dir, obj);
@@ -358,7 +358,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_APPLICATION_BASE_NAME
 			, RX_CLASS_APPLICATION_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_application_type<application_type>(dir, app);
@@ -366,7 +366,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_DOMAIN_BASE_NAME
 			, RX_CLASS_DOMAIN_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_domain_type<domain_type>(dir, domain);
@@ -374,7 +374,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_PORT_BASE_NAME
 			, RX_CLASS_PORT_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_port_type<port_type>(dir, port);
@@ -384,7 +384,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_STRUCT_BASE_NAME
 			, RX_CLASS_STRUCT_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::struct_type>(dir, str);
@@ -392,7 +392,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_VARIABLE_BASE_NAME
 			, RX_CLASS_VARIABLE_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::variable_type>(dir, var);
@@ -402,7 +402,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_MAPPER_BASE_NAME
 			, RX_CLASS_MAPPER_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::mapper_type>(dir, map);
@@ -410,7 +410,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_EVENT_BASE_NAME
 			, RX_CLASS_EVENT_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::event_type>(dir, evnt);
@@ -418,7 +418,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_FILTER_BASE_NAME
 			, RX_CLASS_FILTER_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::filter_type>(dir, filt);
@@ -426,7 +426,7 @@ rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
 			RX_CLASS_SOURCE_BASE_NAME
 			, RX_CLASS_SOURCE_BASE_ID
 			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		build_basic_type<basic_types::source_type>(dir, src);
@@ -481,7 +481,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_NS_SYSTEM_APP_TYPE_NAME
 			, RX_NS_SYSTEM_APP_TYPE_ID
 			, RX_CLASS_APPLICATION_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, app, false);
@@ -498,7 +498,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_NS_SYSTEM_UNASS_APP_TYPE_NAME
 			, RX_NS_SYSTEM_APP_TYPE_ID
 			, RX_CLASS_APPLICATION_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, app, false);
@@ -506,7 +506,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_NS_SYSTEM_UNASS_TYPE_NAME
 			, RX_NS_SYSTEM_UNASS_TYPE_ID
 			, RX_CLASS_DOMAIN_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, dom, false);
@@ -515,7 +515,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_COMMANDS_MANAGER_TYPE_NAME
 			, RX_COMMANDS_MANAGER_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
@@ -523,7 +523,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_NS_SERVER_RT_TYPE_NAME
 			, RX_NS_SERVER_RT_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
@@ -532,7 +532,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_POOL_TYPE_NAME
 			, RX_POOL_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		obj->complex_data().register_const_value_static("IOPool", false);
@@ -545,7 +545,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_LOG_TYPE_NAME
 			, RX_LOG_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
@@ -553,7 +553,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_IO_MANAGER_TYPE_NAME
 			, RX_IO_MANAGER_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
@@ -577,7 +577,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_PHYSICAL_PORT_TYPE_NAME
 			, RX_PHYSICAL_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, true);
@@ -585,7 +585,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TTY_PORT_TYPE_NAME
 			, RX_TTY_PORT_TYPE_ID
 			, RX_PHYSICAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -593,7 +593,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_ETHERNET_PORT_TYPE_NAME
 			, RX_ETHENERT_PORT_TYPE_ID
 			, RX_PHYSICAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -601,7 +601,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_UDP_PORT_TYPE_NAME
 			, RX_UDP_PORT_TYPE_ID
 			, RX_PHYSICAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -609,7 +609,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TCP_PORT_TYPE_NAME
 			, RX_TCP_PORT_TYPE_ID
 			, RX_PHYSICAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, true);
@@ -618,7 +618,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TCP_LISTEN_PORT_TYPE_NAME
 			, RX_TCP_LISTEN_PORT_TYPE_ID
 			, RX_TCP_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -626,7 +626,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TCP_SERVER_PORT_TYPE_NAME
 			, RX_TCP_SERVER_PORT_TYPE_ID
 			, RX_TCP_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -634,7 +634,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TCP_CLIENT_PORT_TYPE_NAME
 			, RX_TCP_CLIENT_PORT_TYPE_ID
 			, RX_TCP_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -643,7 +643,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_TRANSPORT_PORT_TYPE_NAME
 			, RX_TRANSPORT_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, true);
@@ -651,7 +651,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_VT00_TYPE_NAME
 			, RX_VT00_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
@@ -660,7 +660,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_PROTOCOL_PORT_TYPE_NAME
 			, RX_PROTOCOL_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, true);
@@ -668,7 +668,7 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 			RX_CONSOLE_TYPE_NAME
 			, RX_CONSOLE_TYPE_ID
 			, RX_PROTOCOL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_system
+			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);

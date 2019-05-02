@@ -37,6 +37,7 @@
 #include "model/rx_meta_internals.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "system/server/rx_server.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace testing {
@@ -113,9 +114,9 @@ namespace meta_test {
 	 if (object_type_id)
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_result = model::platform_types_manager::instance().create_runtime_helper<rx_platform::meta::object_types::object_type>(
+		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
 			 "test_object", "test_object_type", nullptr, ctx->get_current_directory()
-			 , namespace_item_attributes::namespace_item_full_access, tl::type2type<rx_platform::meta::object_types::object_type>());
+			 , namespace_item_attributes::namespace_item_full_access);
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object=test_result;
@@ -137,6 +138,11 @@ namespace meta_test {
 				 }
 			 }
 		 }
+		 else
+		 {
+			 out << "Error creating object\r\n";
+			 dump_error_result(out, test_result);
+		 }
 	 }
 	 
 	 ctx->set_failed();
@@ -152,9 +158,9 @@ namespace meta_test {
 	 test_type->variable_data().register_source("sourceName", source_id, test_type->complex_data());
 	 test_type->variable_data().register_filter("filterName", filter_id, test_type->complex_data());
 	 test_type->variable_data().register_event("eventName", event_id, test_type->complex_data());
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::variable_type>::create_type_sync(
 		 "test_variable", "VariableBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::variable_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -164,6 +170,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Variable type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -175,9 +186,9 @@ namespace meta_test {
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::struct_type>();
 	 test_type->complex_data().register_simple_value_static("structVal", false, false);
 	 test_type->complex_data().register_variable_static("variableName", variable_id, 456u, true);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::struct_type>::create_type_sync(
 		 "test_struct", "StructBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::struct_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -187,6 +198,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -199,10 +215,10 @@ namespace meta_test {
 	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
 	 test_type->complex_data().register_const_value_static("constVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
-	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
-	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
+	 //test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
+	 auto result = model::algorithms::types_model_algorithm<rx_platform::meta::object_types::object_type>::create_type_sync(
 		 "test_object_type", "ObjectBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::object_types::object_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = result.value()->get_item_ptr();
@@ -226,9 +242,9 @@ namespace meta_test {
 	 out << "Creating filter type\r\n";
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::filter_type>();
 	 test_type->complex_data().register_simple_value_static("filterVal", false, false);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::filter_type>::create_type_sync(
 		 "test_filter", "FilterBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::filter_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -237,6 +253,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Filter type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating filter type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -247,9 +268,9 @@ namespace meta_test {
 	 out << "Creating event type\r\n";
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::event_type>();
 	 test_type->complex_data().register_simple_value_static("eventVal", false, false);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::event_type>::create_type_sync(
 		 "test_event", "EventBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::event_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -258,6 +279,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Event type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating event type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -268,9 +294,9 @@ namespace meta_test {
 	 out << "Creating source type\r\n";
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::source_type>();
 	 test_type->complex_data().register_simple_value_static("sourceVal", false, false);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::source_type>::create_type_sync(
 		 "test_source", "SourceBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::source_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -279,6 +305,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Source type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -289,9 +320,9 @@ namespace meta_test {
 	 out << "Creating mapper type\r\n";
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::mapper_type>();
 	 test_type->complex_data().register_simple_value_static("mapperVal", false, "Test"s);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
-		 "test_mapper", "SourceBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::mapper_type>());
+	 auto result = model::algorithms::simple_types_model_algorithm<mapper_type>::create_type_sync(
+		 "test_mapper", "MapperBase", test_type, ctx->get_current_directory()
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -300,6 +331,11 @@ namespace meta_test {
 			 id = test_type->meta_info().get_id();
 			 out << "Mapper type created\r\n";
 		 }
+	 }
+	 else
+	 {
+		 out << "Error creating derived object type\r\n";
+		 dump_error_result(out, result);
 	 }
 	 return id;
  }
@@ -345,9 +381,9 @@ namespace meta_test {
 	 if (object_type_id)
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_result = model::platform_types_manager::instance().create_runtime_helper<rx_platform::meta::object_types::object_type>(
+		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
 			 "inh_test_object", "derived_test_object_type", nullptr, ctx->get_current_directory()
-			 , namespace_item_attributes::namespace_item_full_access, tl::type2type<object_type>());
+			 , namespace_item_attributes::namespace_item_full_access);
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object = test_result;
@@ -373,9 +409,9 @@ namespace meta_test {
 	 test_type->complex_data().register_simple_value_static("constVal", false, true);
 	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
-	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
+	 auto result = model::algorithms::types_model_algorithm<object_type>::create_type_sync(
 		 "base_test_object_type", "ObjectBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type<rx_platform::meta::object_types::object_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -400,9 +436,9 @@ namespace meta_test {
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::struct_type>();
 	 test_type->complex_data().register_simple_value_static("structVal", false, false);
 	 test_type->complex_data().register_variable_static("variableName", variable_id, 456u, true);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(
 		 "inh_test_struct", "StructBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::struct_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -422,9 +458,9 @@ namespace meta_test {
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::variable_type>();
 	 test_type->complex_data().register_simple_value_static("variableVal", false, 66.9);
 
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<variable_type>::create_type_sync(
 		 "inh_test_variable", "VariableBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::variable_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -443,9 +479,9 @@ namespace meta_test {
 	 out << "Creating object type\r\n";
 	 auto test_type = rx_create_reference<meta::object_types::object_type>();
 	 test_type->complex_data().register_variable_static("simpleVal", variable_id, 114.8, false);
-	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
+	 auto result = model::algorithms::types_model_algorithm<object_type>::create_type_sync(
 		 "derived_test_object_type", "base_test_object_type", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type<rx_platform::meta::object_types::object_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -525,9 +561,9 @@ namespace meta_test {
 			 {
 				 out << one << "\r\n";
 			 }
-			 auto obj = model::platform_types_manager::instance().create_runtime_helper<object_type>(
+			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
 				 "perica", "check_test_object_type", nullptr, ctx->get_current_directory()
-				 , namespace_item_attributes::namespace_item_full_access, tl::type2type< object_type>());
+				 , namespace_item_attributes::namespace_item_full_access);
 			 if (!obj)
 			 {
 				 out << ANSI_COLOR_YELLOW "create returned following errors:\r\n" ANSI_COLOR_RESET;
@@ -565,9 +601,9 @@ namespace meta_test {
 	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
 	 test_type->complex_data().register_struct("structName", struct_id);
 	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
-	 auto result = model::platform_types_manager::instance().create_type_helper<rx_platform::meta::object_types::object_type>(
+	 auto result = model::algorithms::types_model_algorithm<object_type>::create_type_sync(
 		 "check_test_object_type", "/_sys/types/base/ObjectBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< object_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
@@ -592,9 +628,9 @@ namespace meta_test {
 	 auto test_type = rx_create_reference<rx_platform::meta::basic_types::struct_type>();
 	 test_type->complex_data().register_simple_value_static("structVal", false, false);
 	 test_type->complex_data().register_variable_static("variableName", variable_id, 'a', true);
-	 auto result = model::platform_types_manager::instance().create_simple_type_helper(
+	 auto result = model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(
 		 "check_test_struct", "StructBase", test_type, ctx->get_current_directory()
-		 , namespace_item_attributes::namespace_item_full_access, tl::type2type< rx_platform::meta::basic_types::struct_type>());
+		 , namespace_item_attributes::namespace_item_full_access);
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();

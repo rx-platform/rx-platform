@@ -58,7 +58,11 @@ using namespace rx_platform::meta::object_types;
 
 namespace model {
 
-
+namespace algorithms
+{
+template <class typeT>
+class types_model_algorithm;
+}
 
 #define DECLARE_META_TYPE \
 public:\
@@ -378,6 +382,36 @@ public:
 
 
 
+
+
+class types_resolver 
+{
+	typedef std::map<rx_node_id, rx_item_type> types_hash_t;
+
+  public:
+
+      rx_result add_id (const rx_node_id& id, rx_item_type type);
+
+      rx_item_type get_item_type (const rx_node_id& id) const;
+
+      bool is_available_id (const rx_node_id& id) const;
+
+      rx_result remove_id (const rx_node_id& id);
+
+
+  protected:
+
+  private:
+
+
+      types_hash_t hash_;
+
+
+};
+
+
+
+
 struct names_hash_element
 {
 	rx_node_id id;
@@ -507,6 +541,12 @@ class platform_types_manager
       }
 
 
+      types_resolver& get_types_resolver ()
+      {
+        return types_resolver_;
+      }
+
+
 	  template<class T>
 	  type_hash<T>& internal_get_type_cache()
 	  {
@@ -528,7 +568,7 @@ class platform_types_manager
 		  return _simple_types_container.get_internal_const<T>(tl::type2type<T>());
 	  }
 	  template<class T>
-	  typename T::smart_ptr get_type(const string_type& path, rx_directory_ptr dir)
+	  typename T::smart_ptr get_type_sync(const string_type& path, rx_directory_ptr dir)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
 		  if (!item)
@@ -548,7 +588,7 @@ class platform_types_manager
 		  return ret;
 	  }
 	  template<class T>
-	  typename T::RTypePtr get_runtime(const string_type& path, rx_directory_ptr dir)
+	  typename T::RTypePtr get_runtime_sync(const string_type& path, rx_directory_ptr dir)
 	  {
 		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
 		  if (!item)
@@ -567,376 +607,18 @@ class platform_types_manager
 		  }
 		  return ret;
 	  }
-	  template<class T, class refT>
-	  void create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data,
-		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
-	  {
-		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, type_name, init_data, dir, attributes]() mutable {
-			  return create_runtime_helper<T>(name, type_name, init_data, dir, attributes, tl::type2type<T>());
-		  };
-		  rx_do_with_callback<rx_result_with<typename T::RTypePtr>, refT>(std::move(func), RX_DOMAIN_META, callback, ref);
-	  }
-	  template<class T>
-	  rx_result_with<typename T::RTypePtr> create_runtime_helper(const string_type& name, const string_type& type_name,
-		  data::runtime_values_data* init_data, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
-	  {
-		  string_type path;
-		  auto dir_result = dir->reserve_name(name, path);
-		  if (!dir_result)
-			  return dir_result.errors();
-		  std::unique_ptr<data::runtime_values_data> temp;
-		  if (init_data)
-			  temp = std::unique_ptr<data::runtime_values_data>(init_data);
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
-		  if (!item)
-		  {
-			  dir->cancel_reserve(name);
-			  return "Type "s + type_name + " does not exists!";
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {
-			  dir->cancel_reserve(name);
-			  return type_name + " does not have valid Id!";
-		  }
-		  meta_data meta;
-		  meta.construct(name, rx_node_id::null_id, id, attributes, path);
-		  auto ret = internal_get_type_cache<T>().create_runtime(meta, init_data);
-		  if (ret)
-		  {
-			  if (!dir->add_item(ret.value()->get_item_ptr()))
-			  {
-				  dir->cancel_reserve(name);
-				  internal_get_type_cache<T>().delete_runtime(id);
-				  return "Unable to add "s + name + " to directory!";
-			  }
-		  }
-		  return ret;
-	  }
-
-	  template<class T, class refT>
-	  void create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name,
-		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::RTypePtr>&&)> callback, refT ref)
-	  {
-		  std::function<rx_result_with<typename T::RTypePtr>()> func = [this, name, instance_id, type_name, dir, attributes]() mutable {
-			  return create_prototype_helper<T>(name, instance_id, type_name, dir, attributes, tl::type2type<T>());
-		  };
-		  rx_do_with_callback<rx_result_with<typename T::RTypePtr>, refT>(std::move(func), RX_DOMAIN_META, callback, ref);
-	  }
-	  template<class T>
-	  rx_result_with<typename T::RTypePtr> create_prototype_helper(const string_type& name, const rx_node_id& instance_id,
-		  const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
-	  {
-		  string_type path;
-		  auto dir_result = dir->reserve_name(name, path);
-		  if (!dir_result)
-			  return dir_result.errors();
-		  else
-			  dir->cancel_reserve(name);// cancel it straight away;
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
-		  if (!item)
-		  {// TODO error, type does not exists
-			  return "Type "s + type_name + " does not exists!";
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return type_name + " does not have valid Id!";
-		  }
-		  meta_data meta;
-		  meta.construct(name, rx_node_id::null_id, id, attributes, path);
-		  auto ret = internal_get_type_cache<T>().create_runtime(meta, nullptr, true);
-
-		  return ret;
-	  }
-
-	  template<class T, class refT>
-	  void create_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
-		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
-	  {
-		  using result_t = rx_result_with<typename T::smart_ptr>;
-		  std::function<result_t(void)> func = [=]() {
-			  return create_type_helper<T>(name, base_name, prototype, dir, attributes, tl::type2type<T>());
-		  };
-		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
-	  }
-	  template<class T>
-	  rx_result_with<typename T::smart_ptr> create_type_helper(const string_type& name, const string_type& base_name
-		  , typename T::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
-	  {
-		  rx_node_id base_id = prototype->meta_info().get_parent();
-		  rx_node_id item_id = prototype->meta_info().get_id();
-		  string_type type_name = prototype->meta_info().get_name();
-		  if (type_name.empty())
-			  type_name = name;
-
-		  string_type path;
-		  auto dir_result = dir->reserve_name(type_name, path);
-		  if (!dir_result)
-			  return dir_result.errors();
-
-		  if (!base_id && !base_name.empty())
-		  {
-			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
-			  if (!item)
-			  {// TODO error, type does not exists
-				  dir->cancel_reserve(type_name);
-				  return "Type "s + base_name + " does not exists!";
-			  }
-			  base_id = item->meta_info().get_id();
-			  if (base_id.is_null())
-			  {// TODO error, item does not have id
-				  dir->cancel_reserve(type_name);
-				  return base_name + " does not have valid Id!";
-			  }
-		  }
-		  if(!item_id)
-			  item_id = rx_node_id::generate_new();
-
-		  prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
-
-		  auto result = prototype->resolve(dir);
-		  if (!result)
-		  {
-			  dir->cancel_reserve(type_name);
-			  return result.errors();
-		  }
-
-		  auto ret = internal_get_type_cache<T>().register_type(prototype);
-		  if (!ret)
-		  {// TODO error, didn't created runtime
-			  dir->cancel_reserve(type_name);
-			  return ret.errors();
-		  }
-		  if (!dir->add_item(prototype->get_item_ptr()))
-		  {
-			  dir->cancel_reserve(type_name);
-			  internal_get_type_cache<T>().delete_type(prototype->meta_info().get_id());
-			  // TODO error, can't add this name
-			  return "Unable to add "s + type_name + " to directory!";
-		  }
-		  return prototype;
-	  }
-
-	  template<class T, class refT>
-	  void create_simple_type(const string_type& name, const string_type& base_name, typename T::smart_ptr prototype,
-		  rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, refT ref)
-	  {
-		  using result_t = rx_result_with<typename T::smart_ptr>;
-		  std::function<result_t(void)> func = [=]() {
-			  return create_simple_type_helper<T>(name, base_name, prototype, dir, attributes, tl::type2type<T>());
-		  };
-		  rx_do_with_callback<result_t, refT>(func, RX_DOMAIN_META, callback, ref);
-	  }
-	  template<class T>
-	  rx_result_with<typename T::smart_ptr> create_simple_type_helper(const string_type& name, const string_type& base_name
-		  , typename T::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, tl::type2type<T>)
-	  {
-		  rx_node_id base_id = prototype->meta_info().get_parent();
-		  rx_node_id item_id = prototype->meta_info().get_id();
-		  string_type type_name = prototype->meta_info().get_name();
-		  if (type_name.empty())
-			  type_name = name;
-
-		  string_type path;
-		  auto dir_result = dir->reserve_name(type_name, path);
-		  if (!dir_result)
-			  return dir_result.errors();
-
-		  if (!base_id && !base_name.empty())
-		  {
-			  rx_platform_item::smart_ptr item = dir->get_sub_item(base_name);
-			  if (!item)
-			  {// TODO error, type does not exists
-				  dir->cancel_reserve(type_name);
-				  return "Type "s + base_name + " does not exists!";
-			  }
-			  base_id = item->meta_info().get_id();
-			  if (base_id.is_null())
-			  {// TODO error, item does not have id
-				  dir->cancel_reserve(type_name);
-				  return base_name + " does not have valid Id!";
-			  }
-		  }
-		  if (!item_id)
-			  item_id = rx_node_id::generate_new();
-
-		  prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
-
-		  auto result = prototype->resolve(dir);
-		  if (!result)
-		  {
-			  dir->cancel_reserve(type_name);
-			  return result.errors();
-		  }
-
-		  auto ret = internal_get_simple_type_cache<T>().register_type(prototype);
-		  if (!ret)
-		  {// TODO error, didn't created runtime
-			  dir->cancel_reserve(type_name);
-			  return ret.errors();
-		  }
-		  if (!dir->add_item(prototype->get_item_ptr()))
-		  {
-			  dir->cancel_reserve(type_name);
-			  internal_get_simple_type_cache<T>().delete_type(prototype->meta_info().get_id());
-			  // TODO error, can't add this name
-			  return "Unable to add "s + type_name + " to directory!";
-		  }
-		  return prototype;
-	  }
-
-	  template<class T, class refT>
-	  void check_type(const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, refT ref)
-	  {
-		  std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
-			  return check_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
-		  };
-		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
-	  }
-	  template<class T, class refT>
-	  void check_simple_type(const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, refT ref)
-	  {
-		  std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
-			  return check_simple_type_helper<T>(loc_name, loc_dir, tl::type2type<T>());
-		  };
-		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
-	  }
-
-	  template<class T, class refT>
-	  void delete_runtime(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result&&)> callback, refT ref)
-	  {
-		  std::function<rx_result()> func = [=]() {
-			  return delete_runtime_helper<T>(name, dir, tl::type2type<T>());
-		  };
-		  rx_do_with_callback<rx_result, refT>(func, RX_DOMAIN_META, callback, ref);
-	  }
-	  template<class T, class refT>
-	  void delete_type(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, refT ref)
-	  {
-		  std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
-			  return delete_type_helper<T>(name, dir, tl::type2type<T>());
-		  };
-		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
-	  }
-	  template<class T, class refT>
-	  void delete_simple_type(const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, refT ref)
-	  {
-		  std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
-			  return delete_simple_type_helper<T>(name, dir, tl::type2type<T>());
-		  };
-		  rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
-	  }
   protected:
 
   private:
       platform_types_manager();
 
-	  template<class T>
-	  rx_result delete_runtime_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
-	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
-		  if (!item)
-		  {
-			  return name + " does not exists!";
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return name + " does not have valid " + rx_item_type_name(T::type_id) + " id!";
-		  }
-		  auto ret = internal_get_type_cache<T>().delete_runtime(id);
-		  if (!ret)
-		  {// TODO error, didn't deleted runtime
-			  return ret;
-		  }
-		  dir->delete_item(name);
-		  return true;
-	  }
-	  template<class T>
-	  rx_result delete_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
-	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
-		  if (!item)
-		  {// TODO error, item does not exists
-			  return false;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return false;
-		  }
-		  auto ret = internal_get_type_cache<T>().delete_type(id);
-		  if (!ret)
-		  {// TODO error, didn't deleted runtime
-			  return false;
-		  }
-		  dir->delete_item(name);
-		  return true;
-	  }
-	  template<class T>
-	  rx_result delete_simple_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
-	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
-		  if (!item)
-		  {// TODO error, item does not exists
-			  return false;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return false;
-		  }
-		  auto ret = internal_get_simple_type_cache<T>().delete_type(id);
-		  if (!ret)
-		  {// TODO error, didn't deleted runtime
-			  return false;
-		  }
-		  dir->delete_item(name);
-		  return true;
-	  }
-	  template<class T>
-	  type_check_context check_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
-	  {
-		  type_check_context ret;
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
-		  if (!item)
-		  {
-			  ret.add_error(name + " does not exists!");
-			  return ret;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  ret.add_error(name + " does not have valid " + rx_item_type_name(T::type_id) + " id!");
-			  return ret;
-		  }
-		  internal_get_type_cache<T>().check_type(id, ret);
-		  return ret;
-	  }
-	  template<class T>
-	  type_check_context check_simple_type_helper(const string_type& name, rx_directory_ptr dir, tl::type2type<T>)
-	  {
-		  type_check_context ret;
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(name);
-		  if (!item)
-		  {
-			  ret.add_error(name + " does not exists!");
-			  return ret;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  ret.add_error(name + " does not have valid " + rx_item_type_name(T::type_id) + " id!");
-			  return ret;
-		  }
-		  internal_get_simple_type_cache<T>().check_type(id, ret);
-		  return ret;
-	  }
 
       rx::threads::physical_job_thread worker_;
 
+      types_resolver types_resolver_;
 
+	  template <class typeT>
+	  friend class algorithms::types_model_algorithm;
 };
 
 

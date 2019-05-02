@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_hashes.h
+*  lib\rx_id_hash.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,10 +27,12 @@
 ****************************************************************************/
 
 
-#ifndef rx_hashes_h
-#define rx_hashes_h 1
+#ifndef rx_id_hash_h
+#define rx_id_hash_h 1
 
 
+#include "rx_hashes.h"
+#include "rx_lib.h"
 
 
 
@@ -38,25 +40,34 @@
 namespace rx {
 
 namespace rx_hashes {
-typedef uint32_t hash_handle_t;
 
 
 
 
 
-class binary_hash_key 
+class rx_node_id_hash 
 {
+	typedef std::map<hash_handle_t, rx_node_id> ids_hash_type;
 
   public:
-	  // default
-	  binary_hash_key() = default;
-	  binary_hash_key(const binary_hash_key&) = default;
-	  binary_hash_key(binary_hash_key&&) = default;
-	  binary_hash_key& operator=(const binary_hash_key&) = default;
-	  binary_hash_key& operator=(binary_hash_key&&) = default;
+      ~rx_node_id_hash();
+
+
+      static rx_node_id_hash& instance ();
+
+
   protected:
 
   private:
+      rx_node_id_hash();
+
+	  rx_node_id_hash(const rx_node_id_hash &right) = delete;
+	  rx_node_id_hash & operator=(const rx_node_id_hash &right) = delete;
+
+	  rx_node_id_hash(rx_node_id_hash &&right) = delete;
+	  rx_node_id_hash & operator=(rx_node_id_hash &&right) = delete;
+
+      ids_hash_type hash_;
 
 
 };

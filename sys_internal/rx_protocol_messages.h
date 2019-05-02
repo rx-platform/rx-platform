@@ -391,6 +391,200 @@ class get_type_response : public rx_message_base
 };
 
 
+
+
+
+
+class rx_translate_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      rx_item_type item_type;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+      string_array paths_;
+
+      rx_node_ids ids_;
+
+
+};
+
+
+
+
+
+
+class rx_connection_context_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      rx_item_type item_type;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class translate_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+      string_array paths_;
+
+      rx_node_ids ids_;
+
+
+};
+
+
+
+
+
+
+class rx_connection_context_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+      rx_node_id application_id;
+
+      rx_node_id domain_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <class itemT>
+class save_type_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      typename itemT::smart_ptr item;
+
+      static string_type type_name;
+
+      static uint16_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace messages
 } // namespace rx_protocol
 } // namespace sys_internal

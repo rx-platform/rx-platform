@@ -72,8 +72,10 @@ rx_result serialize_message(base_meta_writer& stream, int requestId, messages::r
 // Class sys_internal::rx_protocol::rx_protocol_port 
 
 rx_protocol_port::rx_protocol_port()
+      : current_directory_path_("/world")
 {
 	stack_entry_.my_port_ = smart_this();
+	//current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
 }
 
 
@@ -84,7 +86,7 @@ void rx_protocol_port::data_received (const string_type& data)
 	if (received)
 	{
 		api::rx_context ctx;
-		ctx.directory = rx_directory_ptr::null_ptr;
+		ctx.directory = current_directory_;
 		ctx.object = smart_this();
 		auto result_msg =received.value()->do_job(ctx, smart_this());
 		if (result_msg)
@@ -140,6 +142,15 @@ void rx_protocol_port::data_processed (message_ptr result)
 		else
 			buff_result.value().detach(nullptr);
 	}
+}
+
+rx_result rx_protocol_port::set_current_directory (const string_type& path)
+{
+	auto temp = rx_gate::instance().get_root_directory()->get_sub_directory(path);
+	if (!temp)
+		return "Directory " + path + " not exists!";
+	else
+		return true;
 }
 
 

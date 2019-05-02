@@ -100,11 +100,13 @@ enum namespace_item_attributes
 	namespace_item_system = 0x20,
 	namespace_item_internal = 0x40,
 	// combinations
-	namespace_item_full_type_access = 7,
-	namespace_item_full_access = 0x17,
-	namespace_item_system_access = 0x21,
+	namespace_item_full_type_access = 0xf,
+	namespace_item_full_access = 0x1f,
+	namespace_item_system_access = 0x29,
 	namespace_item_internal_access = 0x61,
-	namespace_item_system_storage = 0x60
+	// masks
+	namespace_item_system_storage_mask = 0x60,
+	namespace_item_system_mask = 0x60
 };
 
 namespace api
@@ -194,6 +196,8 @@ class meta_data
       void set_path (const string_type& path);
 
       string_type get_full_path () const;
+
+      bool is_system () const;
 
 
       const rx_node_id& get_parent () const
