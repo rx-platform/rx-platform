@@ -53,6 +53,7 @@ cpp_classes_manager::cpp_classes_manager(const cpp_classes_manager &right)
 
 cpp_classes_manager::~cpp_classes_manager()
 {
+
 }
 
 
