@@ -624,12 +624,6 @@ rx_result mapped_data_type::deserialize_mapped_definition (base_meta_reader& str
 	{
 		if (!stream.start_object("item"))
 			return false;
-		string_type item_type;
-		if (!stream.read_string("type", item_type))
-			return false;
-
-		if (item_type != RX_CPP_MAPPER_CLASS_TYPE_NAME)
-			return item_type + " is wrong item type for a mapper!";
 
 		mapper_attribute temp;
 		if (!temp.deserialize_definition(stream, type))
@@ -1040,11 +1034,6 @@ rx_result variable_data_type::deserialize_variable_definition (base_meta_reader&
 	{
 		if (!stream.start_object("item"))
 			return false;
-		string_type item_type;
-		if (!stream.read_string("type", item_type))
-			return false;
-		if (item_type != RX_CPP_SOURCE_TYPE_NAME)
-			return item_type + " is wrong item type for a source!";
 
 		source_attribute temp;
 		if (!temp.deserialize_definition(stream, type))
@@ -1067,11 +1056,6 @@ rx_result variable_data_type::deserialize_variable_definition (base_meta_reader&
 	{
 		if (!stream.start_object("item"))
 			return false;
-		string_type item_type;
-		if (!stream.read_string("type", item_type))
-			return false;
-		if (item_type != RX_CPP_FILTER_TYPE_NAME)
-			return item_type + " is wrong item type for a filter!";
 
 		filter_attribute temp;
 		if (!temp.deserialize_definition(stream, type))
@@ -1094,11 +1078,6 @@ rx_result variable_data_type::deserialize_variable_definition (base_meta_reader&
 	{
 		if (!stream.start_object("item"))
 			return false;
-		string_type item_type;
-		if (!stream.read_string("type", item_type))
-			return false;
-		if (item_type != RX_CPP_EVENT_TYPE_NAME)
-			return item_type + " is wrong item type for a event!";
 
 		event_attribute temp;
 		if (!temp.deserialize_definition(stream, type))

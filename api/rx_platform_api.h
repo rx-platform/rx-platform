@@ -47,19 +47,13 @@ namespace api
 
 struct query_result_detail
 {
-	rx_node_id id;
-	string_type name; 
-	rx_node_id parent;
-	uint32_t version;
-	rx_time created_time;
-	rx_time modified_time;
-	namespace_item_attributes attributes;
-	string_type path;
+	rx_item_type type;
+	meta_data data;
 };
 
 struct query_result
 {
-	platform_items_type items;
+	std::vector<query_result_detail> items;
 
 	bool success = false;
 	operator bool() const

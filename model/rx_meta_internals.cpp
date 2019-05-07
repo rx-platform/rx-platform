@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,7 +38,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager 
+// Class model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 	: worker_("config",0)
@@ -107,7 +107,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data 
+// Class model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -281,7 +281,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -318,7 +318,7 @@ rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 		registered_types_.emplace(what->meta_info().get_id(), what);
 		if(rx_gate::instance().get_platform_status()==rx_platform_running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
 	}
@@ -354,9 +354,27 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 
 	rx_node_ids base;
 	base.emplace_back(meta.get_parent());
-	auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
-	if (!base_result)
-		return base_result.errors();
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
+		if (!base_result)
+			return base_result.errors();
+	}
+	else
+	{
+		rx_node_id temp_base = meta.get_parent();
+		while (!temp_base.is_null())
+		{
+			auto temp_type = get_type_definition(temp_base);
+			if (temp_type)
+			{
+				temp_base = temp_type->meta_info().get_parent();
+				base.emplace_back(temp_base);
+			}
+			else
+				return "PEERRRRR";
+		}
+	}
 	for (const auto& one : base)
 	{
 		auto it = constructors_.find(one);
@@ -393,7 +411,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		registered_objects_.emplace(meta.get_id(), ret);
 		if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id);
+		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id, meta);
 		RX_ASSERT(type_ret);// has to be, we checked earlier
 	}
 	return ret;
@@ -411,7 +429,7 @@ api::query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) con
 
 		if (type != registered_types_.end())
 		{
-			ret.items.emplace_back(std::move(type->second->get_item_ptr()));
+			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
 		}
 	}
 	ret.success = true;
@@ -509,8 +527,26 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 	return result;
 }
 
+template <class typeT>
+rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
+{
+	const auto& id = what->meta_info().get_id();
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		it->second = what;
+		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		return true;
+	}
+	else
+	{
+		return "Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name() + " does not exists";
+	}
+}
 
-// Class model::inheritance_hash 
+
+// Class model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -645,7 +681,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash 
+// Class model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -696,7 +732,7 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 }
 
 
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -733,7 +769,7 @@ rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tpt
 		registered_types_.emplace(what->meta_info().get_id(), what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
 	}
@@ -757,9 +793,27 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 
 	rx_node_ids base;
 	base.emplace_back(type_id);
-	auto base_result = inheritance_hash_.get_base_types(type_id, base);
-	if (!base_result)
-		return base_result.errors();
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		auto base_result = inheritance_hash_.get_base_types(type_id, base);
+		if (!base_result)
+			return base_result.errors();
+	}
+	else
+	{
+		rx_node_id temp_base = type_id;
+		while (!temp_base.is_null())
+		{
+			auto temp_type = get_type_definition(temp_base);
+			if (temp_type)
+			{
+				temp_base = temp_type->meta_info().get_parent();
+				base.emplace_back(temp_base);
+			}
+			else
+				return "PEERRRRR";
+		}
+	}
 
 	for (const auto& one : base)
 	{
@@ -802,7 +856,7 @@ api::query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& 
 
 		if (type != registered_types_.end())
 		{
-			ret.items.emplace_back(std::move(type->second->get_item_ptr()));
+			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
 		}
 	}
 	ret.success = true;
@@ -884,15 +938,15 @@ rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, 
 }
 
 
-// Class model::types_resolver 
+// Class model::types_resolver
 
 
-rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type)
+rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
 {
 	auto it = hash_.find(id);
 	if (it != hash_.end())
 		return "Duplicated id";
-	hash_.emplace(id, type);
+	hash_.emplace(id, resolver_data{ type, data });
 	return true;
 }
 
@@ -902,7 +956,7 @@ rx_item_type types_resolver::get_item_type (const rx_node_id& id) const
 	if (it == hash_.end())
 		return rx_item_type::rx_invalid_type;
 	else
-		return it->second;
+		return it->second.type;
 }
 
 bool types_resolver::is_available_id (const rx_node_id& id) const
@@ -920,6 +974,15 @@ rx_result types_resolver::remove_id (const rx_node_id& id)
 		hash_.erase(it);
 		return true;
 	}
+}
+
+rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& data) const
+{
+	auto it = hash_.find(id);
+	if (it == hash_.end())
+		return rx_invalid_type;
+	data = it->second.data;
+	return it->second.type;
 }
 
 

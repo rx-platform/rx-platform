@@ -96,7 +96,7 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
 		
 		size_t count = queries.size();
-		std::vector<platform_items_type> results(count, platform_items_type());
+		std::vector<std::vector<query_result_detail> > results(count, std::vector<query_result_detail>());
 
 		for (size_t i = 0; i < count; i++)
 		{
@@ -104,15 +104,12 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 			auto one_ret = queries[i]->do_query(temp, from);
 			if (!one_ret)
 				return one_ret.errors();
-			results[i] = std::move(temp.items);
+			std::copy(temp.items.begin(), temp.items.end(), std::back_inserter(ret_val.items));
 		}
-
-		if (count == 1)
-		{
-			ret_val.items = std::move(results[0]);
+		if (!ret_val.items.empty())
 			ret_val.success = true;
-		}
-
+		else
+			return "Empty Result";
 		return ret_val;
 
 	};

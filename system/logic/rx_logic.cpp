@@ -95,7 +95,7 @@ void program_runtime::get_value (values::rx_value& val) const
 	val.assign_static(0u, meta_info_.get_modified_time());
 }
 
-platform_item_ptr program_runtime::get_item_ptr ()
+platform_item_ptr program_runtime::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
@@ -132,6 +132,10 @@ namespace_item_attributes program_runtime::create_attributes_from_flags (bool sy
 	{
 		return namespace_item_full_access | namespace_item_execute_access;
 	}
+}
+
+void program_runtime::fill_code_info (std::ostream& info, const string_type& name)
+{
 }
 
 

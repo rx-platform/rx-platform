@@ -193,7 +193,7 @@ public:
 
       rx_time get_created_time () const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 

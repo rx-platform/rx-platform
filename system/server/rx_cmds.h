@@ -33,12 +33,12 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_mem
+#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -196,6 +196,7 @@ public:
 
 class server_command_base : public logic::program_runtime  
 {
+	DECLARE_REFERENCE_PTR(server_command_base);
 
   public:
       server_command_base (const string_type& name, const rx_node_id& id);
@@ -225,7 +226,7 @@ class server_command_base : public logic::program_runtime
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       string_type get_name () const;
 
@@ -234,6 +235,8 @@ class server_command_base : public logic::program_runtime
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      virtual void fill_code_info (std::ostream& info, const string_type& name);
 
 
       const string_type& get_console_name () const

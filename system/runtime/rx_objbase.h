@@ -229,7 +229,7 @@ object class. basic implementation of an object");
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       rx_time get_created_time () const;
 
@@ -250,6 +250,8 @@ object class. basic implementation of an object");
       void fill_data (const data::runtime_values_data& data);
 
       virtual rx_result check_validity ();
+
+      virtual rx_item_type get_type () const;
 
 
       const meta::meta_data& meta_info () const;
@@ -384,7 +386,9 @@ public:
 
       bool connect_domain (rx_domain_ptr&& domain);
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
+
+      rx_item_type get_type () const;
 
 
       static rx_item_type get_type_id ()
@@ -463,11 +467,13 @@ system port class. basic implementation of a port");
 
       bool write (buffer_ptr what);
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
 
       virtual rx_protocol_stack_entry* get_stack_entry ();
 
       rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
+
+      rx_item_type get_type () const;
 
 
       static rx_item_type get_type_id ()
@@ -501,7 +507,7 @@ system port class. basic implementation of a port");
 class application_runtime : public domain_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system application class. contains system default application");
+system application class. basic implementation of a application");
 
 	DECLARE_REFERENCE_PTR(application_runtime);
 	typedef std::vector<domain_runtime::smart_ptr> domains_type;
@@ -519,7 +525,9 @@ system application class. contains system default application");
 
       bool connect_domain (rx_domain_ptr&& domain);
 
-      platform_item_ptr get_item_ptr ();
+      platform_item_ptr get_item_ptr () const;
+
+      rx_item_type get_type () const;
 
 
       static rx_item_type get_type_id ()

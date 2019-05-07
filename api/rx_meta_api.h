@@ -49,38 +49,45 @@ rx_result rx_delete_object(
 	, rx_context ctx);
 
 
-rx_result rx_create_object(
+template<class typeT>
+rx_result rx_create_runtime(
 	const string_type& name // item's path
 	, const string_type& type_name // type's path
 	, data::runtime_values_data* init_data  // initialization data
 	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);
 
-rx_result rx_create_port(
-	const string_type& name // item's path
-	, const string_type& type_name // type's path
-	, data::runtime_values_data* init_data  // initialization data
-	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback
-	, rx_context ctx);
-
-
+template<class typeT>
 rx_result rx_create_prototype(
 	const string_type& name // item's path
 	, const rx_node_id& instance_id // prototype's id
 	, const string_type& type_name  // type's path
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);
 
-
-rx_result rx_create_object_type(
+template<class typeT>
+rx_result rx_create_type(
 	const string_type& name // type's path
 	, const string_type& base_name // base type's path
-	, rx_object_type_ptr prototype // prototype
+	, typename typeT::smart_ptr prototype // prototype
 	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx);
+
+template<class typeT>
+rx_result rx_update_type(typename typeT::smart_ptr prototype
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+//
+//rx_result rx_create_object_type(
+//	const string_type& name // type's path
+//	, const string_type& base_name // base type's path
+//	, rx_object_type_ptr prototype // prototype
+//	, namespace_item_attributes attributes // required attributes
+//	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
+//	, rx_context ctx);
 
 
 rx_result rx_save_item(

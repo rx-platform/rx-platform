@@ -451,7 +451,7 @@ rx_time test_case::get_created_time () const
 	return rx_gate::instance().get_started();
 }
 
-platform_item_ptr test_case::get_item_ptr ()
+platform_item_ptr test_case::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }

@@ -362,11 +362,10 @@ rx_result rx_item_implementation<TImpl>::save () const
 	auto storage_result = meta.storage_info.resolve_storage();
 	if (storage_result)
 	{
-		return "Error not implemented for this one!!!";
-		/*auto result = storage_result.value()->save_item(impl_->get_item_ptr());
+		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
 		if (!result)
 			result.register_error("Error saving item "s + meta.get_path());
-		return result;*/
+		return result;
 	}
 	else // !storage_result
 	{
@@ -379,10 +378,11 @@ rx_result rx_item_implementation<TImpl>::save () const
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
 {
-	auto ret = stream.write_header(STREAMING_TYPE_TYPE, 0);	
+
+	auto ret = stream.write_header(STREAMING_TYPE_OBJECT, 0);
 	if (ret)
 	{
-		ret = impl_->serialize_definition(stream, STREAMING_TYPE_TYPE);
+		ret = impl_->serialize_definition(stream, STREAMING_TYPE_OBJECT);
 		if (ret)
 			stream.write_footer();
 	}
@@ -396,7 +396,7 @@ rx_result rx_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
 	auto ret = stream.read_header(type);
 	if (ret)
 	{
-		ret = impl_->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+		ret = impl_->deserialize_definition(stream, STREAMING_TYPE_OBJECT);
 		if (ret)
 			stream.read_footer();
 	}
@@ -412,6 +412,7 @@ const meta_data_t& rx_item_implementation<TImpl>::meta_info () const
 template <class TImpl>
 void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
 {
+	impl_->fill_code_info(info, name);
 }
 
 

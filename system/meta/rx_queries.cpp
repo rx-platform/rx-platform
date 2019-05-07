@@ -183,7 +183,7 @@ rx_result rx_query::init_query_types ()
 {
 	registered_queries_.emplace(derived_types_query::query_name, [] { return std::make_shared<derived_types_query>(); });
 	registered_queries_.emplace(runtime_objects_query::query_name, [] { return std::make_shared<runtime_objects_query>(); });
-
+	registered_queries_.emplace(translate_query::query_name, [] { return std::make_shared<translate_query>(); });
 	return true;
 }
 
@@ -285,6 +285,86 @@ rx_result runtime_objects_query::do_query(api::query_result& result, rx_director
 
 	return result.success;
 }
+// Class rx_platform::meta::queries::translate_query 
+
+string_type translate_query::query_name = "translate";
+
+
+rx_result translate_query::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_array("paths", paths.size()))
+		return "Error writing array of paths";
+	for(const auto& one : paths)
+	{
+		if (!stream.write_string("path", one))
+			return "Error writing path";
+	}if (!stream.end_array())
+		return "Error writing end of paths array";
+	if (!stream.start_array("ids", ids.size()))
+		return "Error writing array of ids";
+	for (const auto& one : ids)
+	{
+		if (!stream.write_id("path", one))
+			return "Error writing id";
+	}
+	if (!stream.end_array())
+		return "Error writing end of ids array";
+	return true;
+}
+
+rx_result translate_query::deserialize (base_meta_reader& stream)
+{
+	if (!stream.start_array("paths"))
+		return "Error reading array of paths";
+	paths.clear();
+	while (!stream.array_end())
+	{
+		string_type temp;
+		if (!stream.read_string("path", temp))
+			return "Error reading path";
+		paths.emplace_back(std::move(temp));
+	}
+	if (!stream.start_array("ids"))
+		return "Error reading array of ids";
+	ids.clear();
+	while (!stream.array_end())
+	{
+		rx_node_id temp;
+		if (!stream.read_id("id", temp))
+			return "Error reading path";
+		ids.emplace_back(std::move(temp));
+	}
+	return true;
+}
+
+const string_type& translate_query::get_query_type ()
+{
+  return query_name;
+
+}
+
+rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr dir)
+{
+	for (const auto& one : paths)
+	{
+		auto item = dir->get_sub_item(one);
+		if (item)
+		{
+			result.items.emplace_back(api::query_result_detail{ item->get_type_id(), item->meta_info() });
+		}
+	}
+	for (const auto& one : ids)
+	{
+		meta_data temp;
+		auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(one, temp);
+		if(type!=rx_item_type::rx_invalid_type)
+		{
+			result.items.emplace_back(api::query_result_detail{ type, temp });
+		}
+	}
+	return true;
+}
+
 
 } // namespace queries
 } // namespace meta

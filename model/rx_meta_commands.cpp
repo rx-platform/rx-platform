@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace model {
 
 namespace meta_commands {
 
-// Class model::meta_commands::create_command 
+// Class model::meta_commands::create_command
 
 create_command::create_command()
 	: server_command("create")
@@ -183,8 +183,8 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_object(name, class_name, &init_data, namespace_item_attributes::namespace_item_full_access, 
-					[=](rx_result_with<rx_object_ptr>&& result)
+				rx_platform::api::meta::rx_create_runtime<T>(name, class_name, &init_data, namespace_item_attributes::namespace_item_full_access,
+					[=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
 						{
@@ -225,8 +225,8 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_object(name, class_name, nullptr, namespace_item_attributes::namespace_item_full_access,
-			[=](rx_result_with<rx_object_ptr>&& result)
+		rx_platform::api::meta::rx_create_runtime<T>(name, class_name, nullptr, namespace_item_attributes::namespace_item_full_access,
+			[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				if (!result)
 				{
@@ -314,7 +314,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_object_type(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+				rx_platform::api::meta::rx_create_type<T>(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
 					[=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
@@ -356,7 +356,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_object_type(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+		rx_platform::api::meta::rx_create_type<T>(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
 			[=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
@@ -387,7 +387,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		return false;
 	}
 }
-// Class model::meta_commands::dump_types_command 
+// Class model::meta_commands::dump_types_command
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -443,12 +443,12 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	auto result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
 	for (auto one : result.items)
 	{
-		out << indent_str << one->get_name() << " [" << one->meta_info().get_id().to_string() << "]\r\n";
-		dump_types_recursive(tl::type2type<T>(), one->meta_info().get_id(), indent + 1, in, out, err, ctx);
+		out << indent_str << one.data.get_name() << " [" << one.data.get_id().to_string() << "]\r\n";
+		dump_types_recursive(tl::type2type<T>(), one.data.get_id(), indent + 1, in, out, err, ctx);
 	}
 	return true;
 }
-// Class model::meta_commands::delete_command 
+// Class model::meta_commands::delete_command
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -610,7 +610,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	ctx->set_waiting();
 	return true;
 }
-// Class model::meta_commands::rm_command 
+// Class model::meta_commands::rm_command
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -619,7 +619,7 @@ rm_command::rm_command()
 
 
 
-// Class model::meta_commands::del_command 
+// Class model::meta_commands::del_command
 
 del_command::del_command()
 	: delete_command("del")
@@ -628,7 +628,7 @@ del_command::del_command()
 
 
 
-// Class model::meta_commands::check_command 
+// Class model::meta_commands::check_command
 
 check_command::check_command()
 	: server_command("check")
@@ -780,7 +780,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class model::meta_commands::prototype_command 
+// Class model::meta_commands::prototype_command
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -907,8 +907,8 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 			rx_context rxc;
 			rxc.object = ctx->get_client();
 			rxc.directory = ctx->get_current_directory();
-			rx_platform::api::meta::rx_create_prototype(name, rx_node_id::null_id, class_name,
-				[=](rx_result_with<rx_object_ptr>&& result)
+			rx_platform::api::meta::rx_create_prototype<T>(name, rx_node_id::null_id, class_name,
+				[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				bool ret = result;
 				if (!result)
@@ -949,7 +949,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
-// Class model::meta_commands::save_command 
+// Class model::meta_commands::save_command
 
 save_command::save_command()
 	: server_command("save")

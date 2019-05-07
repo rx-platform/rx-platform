@@ -133,6 +133,8 @@ class storage_data
 {
 
   public:
+      storage_data();
+
 
       rx_result_with<rx_storage_ptr> resolve_storage () const;
 
@@ -190,8 +192,6 @@ class meta_data
       static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
 
       rx_result resolve ();
-
-      void fill_query_result (api::query_result_detail& item) const;
 
       void set_path (const string_type& path);
 

@@ -163,6 +163,38 @@ class runtime_objects_query : public rx_query
 	  template<typename T>
 	  rx_result do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
 
+};
+
+
+
+
+
+
+class translate_query : public rx_query  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_query_type ();
+
+      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+
+
+      static string_type query_name;
+
+      string_array paths;
+
+      rx_node_ids ids;
+
+
+  protected:
+
+  private:
+
 
 };
 

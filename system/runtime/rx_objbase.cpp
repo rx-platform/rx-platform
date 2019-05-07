@@ -176,7 +176,7 @@ bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 
 bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
-	if (!meta_info_.serialize_meta_data(stream, type, type_id))
+	if (!meta_info_.serialize_meta_data(stream, type, get_type()))
 		return false;
 	
 	data::runtime_values_data temp_data;
@@ -227,7 +227,7 @@ bool object_runtime::init_object ()
 	return true;
 }
 
-platform_item_ptr object_runtime::get_item_ptr ()
+platform_item_ptr object_runtime::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
@@ -288,6 +288,12 @@ rx_result object_runtime::check_validity ()
 	return true;
 }
 
+rx_item_type object_runtime::get_type () const
+{
+  return type_id;
+
+}
+
 
 const meta::meta_data& object_runtime::meta_info () const
 {
@@ -328,9 +334,15 @@ bool application_runtime::connect_domain (rx_domain_ptr&& domain)
 	return false;
 }
 
-platform_item_ptr application_runtime::get_item_ptr ()
+platform_item_ptr application_runtime::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+rx_item_type application_runtime::get_type () const
+{
+  return type_id;
+
 }
 
 
@@ -366,9 +378,15 @@ bool domain_runtime::connect_domain (rx_domain_ptr&& domain)
 	return false;
 }
 
-platform_item_ptr domain_runtime::get_item_ptr ()
+platform_item_ptr domain_runtime::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+rx_item_type domain_runtime::get_type () const
+{
+  return type_id;
+
 }
 
 
@@ -402,7 +420,7 @@ bool port_runtime::readed (buffer_ptr what, rx_thread_handle_t destination)
 	return true;
 }
 
-platform_item_ptr port_runtime::get_item_ptr ()
+platform_item_ptr port_runtime::get_item_ptr () const
 {
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
@@ -421,6 +439,12 @@ rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t 
 		return ret;
 	else
 		return rx_protocol_error_message(result);
+}
+
+rx_item_type port_runtime::get_type () const
+{
+  return type_id;
+
 }
 
 

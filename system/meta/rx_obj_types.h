@@ -107,9 +107,9 @@ class object_data_type
       rx_result resolve (rx_directory_ptr dir);
 
 
-      const bool is_constructible () const
+      const bool is_constructable () const
       {
-        return constructible_;
+        return constructable_;
       }
 
 
@@ -122,7 +122,7 @@ class object_data_type
       programs_type programs_;
 
 
-      bool constructible_;
+      bool constructable_;
 
 
 };

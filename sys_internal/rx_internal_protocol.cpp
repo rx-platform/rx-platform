@@ -82,7 +82,8 @@ rx_protocol_port::rx_protocol_port()
 
 void rx_protocol_port::data_received (const string_type& data)
 {
-	auto received=messages::rx_request_message::create_request_from_json(data);
+	messages::rx_request_id_t request_id = 0;
+	auto received=messages::rx_request_message::create_request_from_json(data, request_id);
 	if (received)
 	{
 		api::rx_context ctx;
@@ -92,7 +93,7 @@ void rx_protocol_port::data_received (const string_type& data)
 		if (result_msg)
 		{
 			serialization::json_writer writter;
-			auto result = serialize_message(writter, received.value()->requestId, *result_msg);
+			auto result = serialize_message(writter, received.value()->request_id, *result_msg);
 			if (result)
 			{
 				auto buff_result = allocate_io_buffer();
@@ -113,6 +114,35 @@ void rx_protocol_port::data_received (const string_type& data)
 			}
 		}
 	}
+	else
+	{
+		auto result_msg = std::make_unique<messages::error_message>();
+		for (const auto& one : received.errors())
+			result_msg->errorMessage += one;
+		result_msg->errorCode = 21;
+		result_msg->request_id = request_id;
+
+		serialization::json_writer writter;
+		auto result = serialize_message(writter, request_id, *result_msg);
+		if (result)
+		{
+			auto buff_result = allocate_io_buffer();
+			buff_result.value().write_to_buffer((uint8_t)1);
+			string_type ret_data;
+			writter.get_string(ret_data, true);
+			auto ret = buff_result.value().write_string(ret_data);
+
+			auto protocol_res = rx_move_packet_down(get_stack_entry(), nullptr, &buff_result.value());
+			if (protocol_res != RX_PROTOCOL_OK)
+			{
+				std::cout << "Error returned from move_down:"
+					<< rx_protocol_error_message(protocol_res)
+					<< "\r\n";
+			}
+			else
+				buff_result.value().detach(nullptr);
+		}
+	}
 }
 
 rx_protocol_stack_entry* rx_protocol_port::get_stack_entry ()
@@ -123,7 +153,7 @@ rx_protocol_stack_entry* rx_protocol_port::get_stack_entry ()
 void rx_protocol_port::data_processed (message_ptr result)
 {
 	serialization::json_writer writter;
-	auto res = serialize_message(writter, result->requestId, *result);
+	auto res = serialize_message(writter, result->request_id, *result);
 	if (res)
 	{
 		auto buff_result = allocate_io_buffer();
@@ -148,9 +178,14 @@ rx_result rx_protocol_port::set_current_directory (const string_type& path)
 {
 	auto temp = rx_gate::instance().get_root_directory()->get_sub_directory(path);
 	if (!temp)
+	{
 		return "Directory " + path + " not exists!";
+	}
 	else
+	{
+		//current_directory_ = temp;
 		return true;
+	}
 }
 
 

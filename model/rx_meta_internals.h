@@ -299,6 +299,8 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
+      rx_result update_type (typename type_hash<typeT>::Tptr what);
+
 
   protected:
 
@@ -386,17 +388,24 @@ public:
 
 class types_resolver 
 {
-	typedef std::map<rx_node_id, rx_item_type> types_hash_t;
+	struct resolver_data
+	{
+		rx_item_type type;
+		meta_data data;
+	};
+	typedef std::map<rx_node_id, resolver_data> types_hash_t;
 
   public:
 
-      rx_result add_id (const rx_node_id& id, rx_item_type type);
+      rx_result add_id (const rx_node_id& id, rx_item_type type, const meta_data& data);
 
       rx_item_type get_item_type (const rx_node_id& id) const;
 
       bool is_available_id (const rx_node_id& id) const;
 
       rx_result remove_id (const rx_node_id& id);
+
+      rx_item_type get_item_data (const rx_node_id& id, meta_data& data) const;
 
 
   protected:
@@ -611,6 +620,7 @@ class platform_types_manager
 
   private:
       platform_types_manager();
+
 
 
       rx::threads::physical_job_thread worker_;

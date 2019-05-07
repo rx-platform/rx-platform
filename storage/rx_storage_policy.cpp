@@ -53,9 +53,9 @@ string_type file_path_addresing_policy::get_file_path (const meta::meta_data& me
 		size_t idx = meta.get_path().find(RX_DIR_DELIMETER, 1);
 		string_type file_path;
 		if (idx != string_type::npos)
-			file_path = rx_combine_paths(root, meta.get_path().substr(idx+1));
+			file_path = rx_combine_paths(root, meta.get_path().substr(idx + 1));
 		else
-			file_path = rx_combine_paths(root, meta.get_path());
+			file_path = root;
 		file_path = rx_combine_paths(file_path, meta.get_name() + "." + RX_JSON_FILE_EXTESION);
 		items_cache_.emplace(meta.get_id(), file_path);
 		return file_path;

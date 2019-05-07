@@ -53,44 +53,109 @@ rx_result rx_delete_object(const string_type& name
 	return true;
 }
 
-rx_result rx_create_object(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
-{
-	data::runtime_values_data* ptr_copy = nullptr;
-	if(init_data)// copy values to resolve lifetime
-		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::algorithms::runtime_model_algorithm<object_type>::create_runtime(
-		name, type_name, ptr_copy, ctx.directory, attributes, callback, ctx.object);
-	return true;
-}
-
-rx_result rx_create_port(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes, std::function<void(rx_result_with<rx_port_ptr>&&)> callback, rx_context ctx)
+template<class typeT>
+rx_result rx_create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
+	, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::algorithms::runtime_model_algorithm<port_type>::create_runtime(
-		name, type_name, ptr_copy, ctx.directory, attributes, callback, ctx.object);
+	model::algorithms::runtime_model_algorithm<typeT>::create_runtime(
+		name, type_name, attributes, ptr_copy, ctx.directory, callback, ctx.object);
 	return true;
 }
 
+template rx_result rx_create_runtime<object_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
+template rx_result rx_create_runtime<domain_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_create_runtime<application_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_create_runtime<port_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
+
+
+template<class typeT>
 rx_result rx_create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
-	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx)
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<object_type>::create_prototype(
+	model::algorithms::runtime_model_algorithm<typeT>::create_prototype(
 		name, type_name, ctx.directory, namespace_item_attributes::namespace_item_null, callback, ctx.object);
 	return true;
 }
+template rx_result rx_create_prototype<object_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
+template rx_result rx_create_prototype<domain_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_create_prototype<application_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_create_prototype<port_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback, rx_context ctx);
 
-rx_result rx_create_object_type(const string_type& name
-	, const string_type& base_name, rx_object_type_ptr prototype, namespace_item_attributes attributes
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback, rx_context ctx)
+
+template<class typeT>
+rx_result rx_create_type(const string_type& name
+	, const string_type& base_name
+	, typename typeT::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx)
 {
-	model::algorithms::types_model_algorithm<object_type>::create_type(
-		name, base_name, prototype, ctx.directory, attributes| namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+	model::algorithms::types_model_algorithm<typeT>::create_type(
+		name, base_name, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
+template rx_result rx_create_type<object_type>(const string_type& name, const string_type& base_name
+	, object_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<object_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_type<domain_type>(const string_type& name
+	, const string_type& base_name
+	, domain_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<domain_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_type<port_type>(const string_type& name
+	, const string_type& base_name
+	, port_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<port_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_type<application_type>(const string_type& name
+	, const string_type& base_name
+	, application_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<application_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template<class typeT>
+rx_result rx_update_type(typename typeT::smart_ptr prototype
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx)
+{
+	model::algorithms::types_model_algorithm<typeT>::update_type(
+		prototype, ctx.directory, callback, ctx.object);
+	return true;
+}
+template rx_result rx_update_type<object_type>(object_type::smart_ptr prototype
+	, std::function<void(rx_result_with<object_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_type<domain_type>(domain_type::smart_ptr prototype
+	, std::function<void(rx_result_with<domain_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_type<port_type>(port_type::smart_ptr prototype
+	, std::function<void(rx_result_with<port_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_type<application_type>(application_type::smart_ptr prototype
+	, std::function<void(rx_result_with<application_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+
 rx_result recursive_save_directory(rx_directory_ptr dir)
 {
 	platform_directories_type dirs;

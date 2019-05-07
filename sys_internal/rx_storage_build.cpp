@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace builders {
 
 namespace storage {
 
-// Class sys_internal::builders::storage::configuration_storage_builder 
+// Class sys_internal::builders::storage::configuration_storage_builder
 
 configuration_storage_builder::configuration_storage_builder (meta::rx_storage_type storage_type)
       : storage_type_(storage_type)
@@ -91,7 +91,7 @@ rx_result configuration_storage_builder::do_build (platform_root::smart_ptr root
 			break;
 		default://this should really not happened (look at the first switch case in the function!!!
 			RX_ASSERT(false);
-		}	
+		}
 	}
 	else
 	{
@@ -120,7 +120,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 {
 	if (!storage.is_valid_storage())
 		return "Storage not initialized!";
-	
+
 	using storage_items = std::vector<rx_storage_item_ptr>;
 	storage_items items;
 	auto result = storage.list_storage(items);
@@ -142,20 +142,56 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 						result = create_type_from_storage(stream, std::move(item), storage_type, root);
 						break;
 					case STREAMING_TYPE_OBJECT:
-						result = create_object_from_storage(stream, std::move(item), storage_type, root);
-						break;
+						item->close();
+						continue;
 					default:
+						item->close();
 						result = "Invalid serialization type!";
 					}
 				}
-				else
+				if(!result)
 					result.register_error("Error in deserialization from " + item->get_item_reference());
 			}
 			else
 			{// we had an error
 				result.register_error("Error in opening item " + item->get_item_reference());
-				break;
 			}
+			if (!result)
+				dump_errors_to_log(result.errors());
+		}
+		for (auto& item : items)
+		{
+			result = item->open_for_read();
+			if (result)
+			{
+				auto& stream = item->read_stream();
+				int type = 0;
+				result = stream.read_header(type);
+				if (result)
+				{
+					switch (type)
+					{
+					case STREAMING_TYPE_TYPE:
+						item->close();
+						continue;
+						break;
+					case STREAMING_TYPE_OBJECT:
+						result = create_object_from_storage(stream, std::move(item), storage_type, root);
+						break;
+					default:
+						item->close();
+						result = "Invalid serialization type!";
+					}
+				}
+				if (!result)
+					result.register_error("Error in deserialization from " + item->get_item_reference());
+			}
+			else
+			{// we had an error
+				result.register_error("Error in opening item " + item->get_item_reference());
+			}
+			if (!result)
+				dump_errors_to_log(result.errors());
 		}
 	}
 	else
@@ -169,13 +205,41 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
-	auto result = stream.start_object("Meta");
+	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
 		return result;
-	result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
-	if (!result)
-		return result;
-	result = stream.end_object();
+
+	directory_creator creator;
+	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
+	if (dir)
+	{
+		meta.storage_info.assign_storage(storage_type);
+
+		switch (target_type)
+		{
+			// objects
+		case rx_item_type::rx_object:
+			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
+			break;
+		case rx_item_type::rx_port:
+			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
+			break;
+		case rx_item_type::rx_application:
+			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
+			break;
+		case rx_item_type::rx_domain:
+			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
+			break;
+		default:
+			storage->close();
+			result = "Unknown type: "s + rx_item_type_name(target_type);
+		}
+	}
+	else
+	{
+		result = dir.errors();
+		result.register_error("Error retrieving directory for the new item!");
+	}
 	return result;
 }
 
@@ -241,6 +305,12 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 	return result;
 }
 
+void configuration_storage_builder::dump_errors_to_log (const string_array& errors)
+{
+	for (auto& err : errors)
+		BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
+}
+
 
 template<class T>
 rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
@@ -295,7 +365,35 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	}
 	return result;
 }
-// Class sys_internal::builders::storage::directory_creator 
+
+
+template<class T>
+rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
+{
+	auto init_data = std::make_unique< data::runtime_values_data>();
+	auto ret = stream.read_init_values("Values", *init_data);
+	storage->close();
+	if (ret)
+	{
+		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
+			meta, init_data.release(), dir);
+		if (create_result)
+		{
+			auto rx_type_item = create_result.value()->get_item_ptr();
+			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::RType::type_id) + " "s + rx_type_item->get_name()).c_str());
+			return true;
+		}
+		else
+		{
+			create_result.register_error("Error creating "s + rx_item_type_name(T::RType::type_id) + " " + meta.get_name());
+			return create_result.errors();
+		}
+	}
+	else
+		return "Error reading initialize values";
+}
+
+// Class sys_internal::builders::storage::directory_creator
 
 
 rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_directory_ptr from, const string_type& path)

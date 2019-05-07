@@ -166,9 +166,9 @@ bool server_command_base::generate_json (std::ostream& def, std::ostream& err) c
 	return false;
 }
 
-platform_item_ptr server_command_base::get_item_ptr ()
+platform_item_ptr server_command_base::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<server_command_base*> >(this);
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 string_type server_command_base::get_name () const
@@ -189,6 +189,10 @@ bool server_command_base::serialize_definition (base_meta_writer& stream, uint8_
 bool server_command_base::deserialize_definition (base_meta_reader& stream, uint8_t type)
 {
 	return false;
+}
+
+void server_command_base::fill_code_info (std::ostream& info, const string_type& name)
+{
 }
 
 
@@ -333,7 +337,7 @@ console_client::console_client (runtime::objects::port_creation_data&& data)
 	, runtime::objects::port_runtime(std::move(data))
 {
 #ifdef _DEBUG
-	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("_sys");
+	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");
 #else
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif

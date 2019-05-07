@@ -146,27 +146,78 @@ rx_result_with<typename T::RTypePtr> deserialize_runtime(const meta_data& meta, 
 	return ret;
 }
 
+// Class rx_platform::meta::storage_data 
+
+storage_data::storage_data()
+      : storage_type_(rx_storage_type::invalid_storage)
+{
+}
+
+
+
+rx_result_with<rx_storage_ptr> storage_data::resolve_storage () const
+{
+	switch (storage_type_)
+	{
+	case rx_storage_type::system_storage:
+		return rx_gate::instance().get_host()->get_system_storage();
+	case rx_storage_type::user_storage:
+		return rx_gate::instance().get_host()->get_user_storage();
+	case rx_storage_type::test_storage:
+		return rx_gate::instance().get_host()->get_test_storage();
+	case rx_storage_type::extern_storage:
+		return "Unable to get storage for extern items!";
+	case rx_storage_type::invalid_storage:
+	default:
+		return "Item does not have valid storage type defined!";
+	}
+}
+
+string_type storage_data::storage_name () const
+{
+	switch (storage_type_)
+	{
+	case rx_storage_type::system_storage:
+		return "system";
+	case rx_storage_type::user_storage:
+		return "user";
+	case rx_storage_type::test_storage:
+		return "test";
+	case rx_storage_type::extern_storage:
+		return "extern";
+	case rx_storage_type::invalid_storage:
+	default:
+		return "";
+	}
+}
+
+void storage_data::assign_storage (rx_storage_type storage_type)
+{
+	storage_type_ = storage_type;
+}
+
+
 // Class rx_platform::meta::meta_data 
 
 meta_data::meta_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, const string_type& path, rx_time now)
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(now),
-        modified_time_(now),
-        attributes_(attrs)
+      : version_(RX_INITIAL_ITEM_VERSION)
 	, name_(name)
 	, id_(id)
 	, parent_(parent)
 	, path_(path)
+	, created_time_(now)
+	, modified_time_(now)
+	, attributes_(attrs)
 {
 	if (id_.is_null())
 		id_ = rx_node_id(rx_uuid::create_new().uuid());
 }
 
 meta_data::meta_data (namespace_item_attributes attrs, rx_time now)
-      : version_(RX_INITIAL_ITEM_VERSION),
-        created_time_(now),
-        modified_time_(now),
-        attributes_(attrs)
+      : version_(RX_INITIAL_ITEM_VERSION)
+	, created_time_(now)
+	, modified_time_(now)
+	, attributes_(attrs)
 {
 }
 
@@ -349,6 +400,7 @@ rx_result_with<platform_item_ptr> meta_data::deserialize_runtime_item (base_meta
 rx_result meta_data::resolve ()
 {
 	// resolve storage type by attributes
+	modified_time_ = rx_time::now();
 	if (storage_info.get_storage_type() == rx_storage_type::invalid_storage)
 	{
 		if (attributes_ & namespace_item_system_storage_mask)
@@ -368,18 +420,6 @@ rx_result meta_data::resolve ()
 	}
 	else
 		return false;
-}
-
-void meta_data::fill_query_result (api::query_result_detail& item) const
-{
-	item.name = name_;
-	item.id = id_;
-	item.parent = parent_;
-	item.version = version_;
-	item.created_time = created_time_;
-	item.modified_time = modified_time_;
-	item.attributes = attributes_;
-	item.path = path_;
 }
 
 void meta_data::set_path (const string_type& path)
@@ -409,51 +449,6 @@ string_type meta_data::get_full_path () const
 bool meta_data::is_system () const
 {
 	return attributes_ & namespace_item_attributes::namespace_item_system_mask;
-}
-
-
-// Class rx_platform::meta::storage_data 
-
-
-rx_result_with<rx_storage_ptr> storage_data::resolve_storage () const
-{
-	switch (storage_type_)
-	{
-	case rx_storage_type::system_storage:
-		return rx_gate::instance().get_host()->get_system_storage();
-	case rx_storage_type::user_storage:
-		return rx_gate::instance().get_host()->get_user_storage();
-	case rx_storage_type::test_storage:
-		return rx_gate::instance().get_host()->get_test_storage();
-	case rx_storage_type::extern_storage:
-		return "Unable to get storage for extern items!";
-	case rx_storage_type::invalid_storage:
-	default:
-		return "Item does not have valid storage type defined!";
-	}
-}
-
-string_type storage_data::storage_name () const
-{
-	switch (storage_type_)
-	{
-	case rx_storage_type::system_storage:
-		return "system";
-	case rx_storage_type::user_storage:
-		return "user";
-	case rx_storage_type::test_storage:
-		return "test";
-	case rx_storage_type::extern_storage:
-		return "extern";
-	case rx_storage_type::invalid_storage:
-	default:
-		return "";
-	}
-}
-
-void storage_data::assign_storage (rx_storage_type storage_type)
-{
-	storage_type_ = storage_type;
 }
 
 
