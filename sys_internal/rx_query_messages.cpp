@@ -135,14 +135,14 @@ rx_message_type_t browse_request_message::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::query_messages::query_response_message 
+// Class sys_internal::rx_protocol::messages::query_messages::browse_response_message 
 
-string_type query_response_message::type_name = "queryResp";
+string_type browse_response_message::type_name = "brwResp";
 
-rx_message_type_t query_response_message::type_id = rx_query_response_id;
+rx_message_type_t browse_response_message::type_id = rx_browse_response_id;
 
 
-rx_result query_response_message::serialize (base_meta_writer& stream) const
+rx_result browse_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
 		return "Error serializing array of items";
@@ -161,7 +161,7 @@ rx_result query_response_message::serialize (base_meta_writer& stream) const
 	return true;
 }
 
-rx_result query_response_message::deserialize (base_meta_reader& stream)
+rx_result browse_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
 		return "Error reading array of items";
@@ -182,13 +182,200 @@ rx_result query_response_message::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-const string_type& query_response_message::get_type_name ()
+const string_type& browse_response_message::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t query_response_message::get_type_id ()
+rx_message_type_t browse_response_message::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::query_messages::get_type_request 
+
+string_type get_type_request::type_name = "getTypeReq";
+
+rx_message_type_t get_type_request::type_id = rx_get_type_request_id;
+
+
+rx_result get_type_request::serialize (base_meta_writer& stream) const
+{
+	auto result = meta.serialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+rx_result get_type_request::deserialize (base_meta_reader& stream)
+{
+	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	switch (item_type)
+	{
+	case rx_item_type::rx_object_type:
+		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+	case rx_item_type::rx_domain_type:
+		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+	case rx_item_type::rx_port_type:
+		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+	case rx_item_type::rx_application_type:
+		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+
+	case rx_item_type::rx_struct_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
+	case rx_item_type::rx_variable_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
+	case rx_item_type::rx_source_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
+	case rx_item_type::rx_filter_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
+	case rx_item_type::rx_event_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
+	case rx_item_type::rx_mapper_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
+	default:
+		{
+			auto ret_value = std::make_unique<error_message>();
+			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
+			ret_value->errorCode = 15;
+			ret_value->request_id = request_id;
+			return ret_value;
+		}
+	}
+}
+
+const string_type& get_type_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t get_type_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+template<typename T>
+message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<get_type_response<T> >();
+			response->item = result.value();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>();
+			for (const auto& one : result.errors())
+				ret_value->errorMessage += one;
+			ret_value->errorCode = 14;
+			ret_value->request_id = request_id;
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_get_type<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>();
+		for (const auto& one : result.errors())
+			ret_value->errorMessage += one;
+		ret_value->errorCode = 13;
+		ret_value->request_id = request_id;
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+template<typename T>
+message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<get_type_response<T> >();
+			response->item = result.value();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>();
+			for (const auto& one : result.errors())
+				ret_value->errorMessage += one;
+			ret_value->errorCode = 14;
+			ret_value->request_id = request_id;
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_get_simple_type<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>();
+		for (const auto& one : result.errors())
+			ret_value->errorMessage += one;
+		ret_value->errorCode = 13;
+		ret_value->request_id = request_id;
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_type_response 
+
+template <class itemT>
+string_type get_type_response<itemT>::type_name = "getTypeResp";
+
+template <class itemT>
+uint16_t get_type_response<itemT>::type_id = rx_get_type_response_id;
+
+
+template <class itemT>
+const string_type& get_type_response<itemT>::get_type_name ()
+{
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t get_type_response<itemT>::get_type_id ()
 {
   return type_id;
 
@@ -300,201 +487,14 @@ rx_message_type_t query_request_message::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_type_response 
+// Class sys_internal::rx_protocol::messages::query_messages::query_response_message 
 
-template <class itemT>
-string_type get_type_response<itemT>::type_name = "getTypeResp";
+string_type query_response_message::type_name = "queryResp";
 
-template <class itemT>
-uint16_t get_type_response<itemT>::type_id = rx_get_type_response_id;
+rx_message_type_t query_response_message::type_id = rx_query_response_id;
 
 
-template <class itemT>
-const string_type& get_type_response<itemT>::get_type_name ()
-{
-  return type_name;
-
-}
-
-template <class itemT>
-rx_message_type_t get_type_response<itemT>::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::query_messages::get_type_request 
-
-string_type get_type_request::type_name = "getTypeReq";
-
-rx_message_type_t get_type_request::type_id = rx_get_type_request_id;
-
-
-rx_result get_type_request::serialize (base_meta_writer& stream) const
-{
-	auto result = meta.serialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
-	if (!result)
-		return result;
-
-	return result;
-}
-
-rx_result get_type_request::deserialize (base_meta_reader& stream)
-{
-	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
-	if (!result)
-		return result;
-
-	return result;
-}
-
-message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
-{
-	switch (item_type)
-	{
-	case rx_item_type::rx_object_type:
-		return do_job(ctx, port, tl::type2type<object_types::object_type>());
-	case rx_item_type::rx_domain_type:
-		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
-	case rx_item_type::rx_port_type:
-		return do_job(ctx, port, tl::type2type<object_types::port_type>());
-	case rx_item_type::rx_application_type:
-		return do_job(ctx, port, tl::type2type<object_types::application_type>());
-
-	case rx_item_type::rx_struct_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
-	case rx_item_type::rx_variable_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
-	case rx_item_type::rx_source_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
-	case rx_item_type::rx_filter_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
-	case rx_item_type::rx_event_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
-	case rx_item_type::rx_mapper_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
-	default:
-		{
-			auto ret_value = std::make_unique<error_message>();
-			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
-			ret_value->errorCode = 15;
-			ret_value->request_id = request_id;
-			return ret_value;
-		}
-	}
-}
-
-const string_type& get_type_request::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t get_type_request::get_type_id ()
-{
-  return type_id;
-
-}
-
-template<typename T>
-message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
-{
-	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
-
-	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
-	{
-		if (result)
-		{
-			auto response = std::make_unique<get_type_response<T> >();
-			response->item = result.value();
-			response->request_id = request_id;
-			port->data_processed(std::move(response));
-
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-
-	rx_result result = api::meta::rx_get_type(meta.get_id(), meta.get_full_path(), callback, ctx, tl::type2type<T>());
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
-}
-template<typename T>
-message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
-{
-	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
-
-	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
-	{
-		if (result)
-		{
-			auto response = std::make_unique<get_type_response<T> >();
-			response->item = result.value();
-			response->request_id = request_id;
-			port->data_processed(std::move(response));
-
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-
-	rx_result result = api::meta::rx_get_simple_type(meta.get_id(), meta.get_full_path(), callback, ctx, tl::type2type<T>());
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
-}
-// Class sys_internal::rx_protocol::messages::query_messages::browse_response_message 
-
-string_type browse_response_message::type_name = "brwResp";
-
-rx_message_type_t browse_response_message::type_id = rx_browse_response_id;
-
-
-rx_result browse_response_message::serialize (base_meta_writer& stream) const
+rx_result query_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
 		return "Error serializing array of items";
@@ -513,7 +513,7 @@ rx_result browse_response_message::serialize (base_meta_writer& stream) const
 	return true;
 }
 
-rx_result browse_response_message::deserialize (base_meta_reader& stream)
+rx_result query_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
 		return "Error reading array of items";
@@ -534,13 +534,13 @@ rx_result browse_response_message::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-const string_type& browse_response_message::get_type_name ()
+const string_type& query_response_message::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t browse_response_message::get_type_id ()
+rx_message_type_t query_response_message::get_type_id ()
 {
   return type_id;
 
@@ -583,6 +583,168 @@ rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 }
 
 
+// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_object_response 
+
+template <class itemT>
+string_type get_object_response<itemT>::type_name = "getObjResp";
+
+template <class itemT>
+uint16_t get_object_response<itemT>::type_id = rx_get_object_response_id;
+
+
+template <class itemT>
+rx_result get_object_response<itemT>::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_object("item"))
+		return "Error starting item object";
+	
+	auto result = item->serialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
+
+	return true;
+}
+
+template <class itemT>
+rx_result get_object_response<itemT>::deserialize (base_meta_reader& stream)
+{
+	if (!stream.start_object("item"))
+		return "Error starting item object";
+
+	auto result = item->deserialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
+
+	return result;
+}
+
+template <class itemT>
+const string_type& get_object_response<itemT>::get_type_name ()
+{
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t get_object_response<itemT>::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::query_messages::get_object_request 
+
+string_type get_object_request::type_name = "getObjReq";
+
+rx_message_type_t get_object_request::type_id = rx_get_object_request_id;
+
+
+rx_result get_object_request::serialize (base_meta_writer& stream) const
+{
+	auto result = meta.serialize_meta_data(stream, STREAMING_TYPE_OBJECT, item_type);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+rx_result get_object_request::deserialize (base_meta_reader& stream)
+{
+	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, item_type);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+message_ptr get_object_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	switch (item_type)
+	{
+	case rx_item_type::rx_object:
+		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+	case rx_item_type::rx_domain:
+		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+	case rx_item_type::rx_port:
+		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+	case rx_item_type::rx_application:
+		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+	default:
+		{
+			auto ret_value = std::make_unique<error_message>();
+			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
+			ret_value->errorCode = 15;
+			ret_value->request_id = request_id;
+			return ret_value;
+		}
+	}
+}
+
+const string_type& get_object_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t get_object_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+template<typename T>
+message_ptr get_object_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result_with<typename T::RTypePtr>&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<get_object_response<T> >();
+			response->item = result.value();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>();
+			for (const auto& one : result.errors())
+				ret_value->errorMessage += one;
+			ret_value->errorCode = 14;
+			ret_value->request_id = request_id;
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_get_runtime<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>();
+		for (const auto& one : result.errors())
+			ret_value->errorMessage += one;
+		ret_value->errorCode = 13;
+		ret_value->request_id = request_id;
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
 } // namespace query_messages
 } // namespace messages
 } // namespace rx_protocol

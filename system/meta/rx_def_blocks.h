@@ -36,13 +36,15 @@
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
+// rx_rt_data
+#include "lib/rx_rt_data.h"
 
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
+class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
-class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -456,7 +458,7 @@ typedef std::unordered_map<string_type, int> names_cahce_type;
 
 class complex_data_type 
 {
-
+	
 	typedef std::vector<const_value_def> const_values_type;
 	typedef std::vector<simple_value_def> simple_values_type;
 	typedef std::vector<struct_attribute> structs_type;
@@ -497,6 +499,12 @@ class complex_data_type
       const const_values_type& get_const_values () const
       {
         return const_values_;
+      }
+
+
+      const rx::data::runtime_values_data& get_overrides () const
+      {
+        return overrides_;
       }
 
 
@@ -561,6 +569,8 @@ class complex_data_type
       structs_type structs_;
 
       variables_type variables_;
+
+      rx::data::runtime_values_data overrides_;
 
 
       bool sealed_;

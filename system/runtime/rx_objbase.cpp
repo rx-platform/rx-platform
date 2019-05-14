@@ -171,44 +171,70 @@ void object_runtime::get_class_info (string_type& class_name, string_type& conso
 bool object_runtime::connect_domain (rx_domain_ptr&& domain)
 {
 	my_domain_ = std::move(domain);
+	domain_id_ = my_application_->meta_info().get_id();
 	return true;
 }
 
-bool object_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool object_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	if (!meta_info_.serialize_meta_data(stream, type, get_type()))
+		return false;
+
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!stream.start_object("runtime"))
+		return false;	
+	if (!stream.write_id("domain", domain_id_))
+		return false;
+	if (!stream.write_id("app", app_id_))
+		return false;
+	if (!stream.end_object())
 		return false;
 	
 	data::runtime_values_data temp_data;
 	item_->collect_data(temp_data);
-	if (!stream.write_init_values("Values", temp_data))
+	if (!stream.write_init_values("values", temp_data))
 		return false;
 
-	if (!stream.start_array("Programs", programs_.size()))
+	if (!stream.start_array("programs", programs_.size()))
 		return false;
-
 	for (const auto& one : programs_)
 	{
 		if (!one->save_program(stream, type))
 			return false;
 	}
-
 	if (!stream.end_array())
+		return false;
+
+	if (!stream.end_object())
 		return false;
 
 	return true;
 }
 
-bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool object_runtime::deserialize (base_meta_reader& stream, uint8_t type)
 {
+
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!stream.start_object("runtime"))
+		return false;
+	if (!stream.read_id("domain", domain_id_))
+		return false;
+	if (!stream.read_id("app", app_id_))
+		return false;
+	if (!stream.end_object())
+		return false;
 	
 	data::runtime_values_data temp_data;
-	if (!stream.read_init_values("Values", temp_data))
+	if (!stream.read_init_values("values", temp_data))
 		return false;
 	structure::init_context ctx;
 	item_->fill_data(temp_data, ctx);
 
-	if (!stream.start_array("Programs"))
+	if (!stream.start_array("programs"))
 		return false;
 
 	while (!stream.array_end())
@@ -218,6 +244,9 @@ bool object_runtime::deserialize_definition (base_meta_reader& stream, uint8_t t
 			return false;
 		programs_.push_back(one);
 	}
+
+	if (!stream.end_object())
+		return false;
 
 	return true;
 }
@@ -269,6 +298,7 @@ rx_thread_handle_t object_runtime::get_executer () const
 bool object_runtime::connect_application (rx_application_ptr&& app)
 {
 	my_application_ = std::move(app);
+	app_id_ = my_application_->meta_info().get_id();
 	return true;
 }
 
@@ -308,13 +338,14 @@ rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 application_runtime::application_runtime()
 {
 	my_application_ = smart_this();
-	my_domain_ = smart_this();
+	app_id_ = meta_info().get_id();
 }
 
 application_runtime::application_runtime (application_creation_data&& data)
 	: domain_runtime(domain_creation_data{ std::move(data.name), std::move(data.id), std::move(data.type_id), data.system, std::move(data.path), rx_application_ptr::null_ptr })
 {
 	my_application_ = smart_this();
+	app_id_ = meta_info().get_id();
 }
 
 
@@ -353,12 +384,14 @@ rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 domain_runtime::domain_runtime()
 {
 	my_domain_ = smart_this();
+	domain_id_ = meta_info().get_id();
 }
 
 domain_runtime::domain_runtime (domain_creation_data&& data)
 	: object_runtime(object_creation_data{ std::move(data.name),std::move(data.id), std::move(data.type_id), data.system, std::move(data.path), data.application,rx_domain_ptr::null_ptr })
 {
 	my_domain_ = smart_this();
+	domain_id_ = meta_info().get_id();
 }
 
 

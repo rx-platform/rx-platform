@@ -41,8 +41,6 @@ namespace api
 namespace meta
 {
 
-
-
 rx_result rx_delete_object(
 	const string_type& name // item's path
 	, std::function<void(rx_result&&)> callback
@@ -67,6 +65,10 @@ rx_result rx_create_prototype(
 	, rx_context ctx);
 
 template<class typeT>
+rx_result rx_get_runtime(const rx_node_id& id, const string_type name
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx);
+
+template<class typeT>
 rx_result rx_create_type(
 	const string_type& name // type's path
 	, const string_type& base_name // base type's path
@@ -80,15 +82,6 @@ rx_result rx_update_type(typename typeT::smart_ptr prototype
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx);
 
-//
-//rx_result rx_create_object_type(
-//	const string_type& name // type's path
-//	, const string_type& base_name // base type's path
-//	, rx_object_type_ptr prototype // prototype
-//	, namespace_item_attributes attributes // required attributes
-//	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-//	, rx_context ctx);
-
 
 rx_result rx_save_item(
 	const string_type& name // item's path
@@ -96,77 +89,13 @@ rx_result rx_save_item(
 	, rx_context ctx);
 
 template<class T>
-rx_result rx_get_type(const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback
-	, rx_context ctx, tl::type2type<T>);
-
-rx_result rx_get_object_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<rx_object_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_domain_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<rx_domain_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_application_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<rx_application_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_port_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<rx_port_type_ptr>&&)> callback
-	, rx_context ctx);
+rx_result rx_get_type(const rx_node_id& id, const string_type name
+	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
 
 
 template<class T>
-rx_result rx_get_simple_type(const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback
-	, rx_context ctx, tl::type2type<T>);
-
-rx_result rx_get_struct_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<struct_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_variable_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<variable_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_source_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<source_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_filter_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<filter_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_event_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<event_type_ptr>&&)> callback
-	, rx_context ctx);
-
-rx_result rx_get_mapper_type(
-	const rx_node_id& id // item's id
-	, const string_type name
-	, std::function<void(rx_result_with<mapper_type_ptr>&&)> callback
-	, rx_context ctx);
+rx_result rx_get_simple_type(const rx_node_id& id, const string_type name
+	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
 
 }
 }

@@ -61,9 +61,9 @@ public:
       ~program_runtime();
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       namespace_item_attributes get_attributes () const;
 
@@ -141,9 +141,9 @@ ladder program class.");
       ladder_program();
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
   private:

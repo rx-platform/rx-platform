@@ -71,8 +71,8 @@ const rx_message_type_t rx_query_response_id = 0x8002;
 const rx_message_type_t rx_browse_request_id = 0x0003;
 const rx_message_type_t rx_browse_response_id = 0x8003;
 
-//const rx_message_type_t rx_translate_request_id = 0x0004;
-//const rx_message_type_t rx_translate_response_id = 0x8004;
+const rx_message_type_t rx_get_object_request_id = 0x0004;
+const rx_message_type_t rx_get_object_response_id = 0x8004;
 
 const rx_message_type_t rx_connection_context_request_id = 0x0005;
 const rx_message_type_t rx_connection_context_response_id = 0x8005;

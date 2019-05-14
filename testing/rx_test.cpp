@@ -456,12 +456,12 @@ platform_item_ptr test_case::get_item_ptr () const
 	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
-bool test_case::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool test_case::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
 }
 
-bool test_case::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool test_case::deserialize (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }

@@ -178,7 +178,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 			serialization::json_reader reader;
 			reader.parse_data(definition);
 			data::runtime_values_data init_data;
-			if (reader.read_init_values("Values", init_data))
+			if (reader.read_init_values("values", init_data))
 			{
 				rx_context rxc;
 				rxc.object = ctx->get_client();
@@ -309,7 +309,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			serialization::json_reader reader;
 			reader.parse_data(definition);
 			data::runtime_values_data init_data;
-			if (reader.read_init_values("Values", init_data))
+			if (reader.read_init_values("values", init_data))
 			{
 				rx_context rxc;
 				rxc.object = ctx->get_client();

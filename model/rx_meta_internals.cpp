@@ -353,6 +353,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	RTypePtr ret;
 
 	rx_node_ids base;
+	std::vector<const data::runtime_values_data*> overrides;
 	base.emplace_back(meta.get_parent());
 	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
@@ -394,6 +395,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
+			overrides.push_back(&my_class->complex_data().get_overrides());
 			auto result = my_class->construct(ret, ctx);
 			if (!result)
 			{// error constructing object
@@ -402,6 +404,11 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		}
 	}
 	object_type::set_object_runtime_data(ctx.runtime_data, ret);
+	for (const auto& one : overrides)
+	{
+		if (one)
+			ret->fill_data(*one);
+	}
 	if (init_data)
 	{
 		ret->fill_data(*init_data);

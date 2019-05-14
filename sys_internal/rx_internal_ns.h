@@ -322,7 +322,7 @@ rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::
 
 	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
-	impl_->serialize_definition(writer, STREAMING_TYPE_OBJECT);
+	impl_->serialize(writer, STREAMING_TYPE_OBJECT);
 
 	writer.write_footer();
 
@@ -382,7 +382,7 @@ rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) co
 	auto ret = stream.write_header(STREAMING_TYPE_OBJECT, 0);
 	if (ret)
 	{
-		ret = impl_->serialize_definition(stream, STREAMING_TYPE_OBJECT);
+		ret = impl_->serialize(stream, STREAMING_TYPE_OBJECT);
 		if (ret)
 			stream.write_footer();
 	}
@@ -396,7 +396,7 @@ rx_result rx_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
 	auto ret = stream.read_header(type);
 	if (ret)
 	{
-		ret = impl_->deserialize_definition(stream, STREAMING_TYPE_OBJECT);
+		ret = impl_->deserialize(stream, STREAMING_TYPE_OBJECT);
 		if (ret)
 			stream.read_footer();
 	}

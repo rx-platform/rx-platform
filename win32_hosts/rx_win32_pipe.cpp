@@ -83,6 +83,13 @@ string_type win32_pipe_host::get_win32_pipe_info ()
 	return ret;
 }
 
+string_type win32_pipe_host::defualt_system_storage_reference () const
+{
+	string_type ret;
+	get_full_path("storage/rx-system-storage", ret);
+	return ret;
+}
+
 
 } // namespace win32
 

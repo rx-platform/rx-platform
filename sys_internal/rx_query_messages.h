@@ -32,12 +32,12 @@
 
 
 
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 // rx_queries
 #include "system/meta/rx_queries.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 
 
 
@@ -90,9 +90,9 @@ class browse_request_message : public rx_request_message
 
 
 
-class query_response_message : public rx_message_base  
+class browse_response_message : public rx_message_base  
 {
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > browse_result_items_type;
 
   public:
 
@@ -105,49 +105,10 @@ class query_response_message : public rx_message_base
       rx_message_type_t get_type_id ();
 
 
-      query_result_items_type items;
+      browse_result_items_type items;
 
 
       static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class query_request_message : public rx_request_message  
-{
-	typedef std::vector<meta::query_ptr> queries_type;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      queries_type queries;
-
-
-      static string_type type_name;
-
-      bool intersection;
 
       static rx_message_type_t type_id;
 
@@ -205,9 +166,48 @@ class get_type_request : public rx_request_message
 
 
 
-class browse_response_message : public rx_message_base  
+class query_request_message : public rx_request_message  
 {
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > browse_result_items_type;
+	typedef std::vector<meta::query_ptr> queries_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      queries_type queries;
+
+
+      static string_type type_name;
+
+      bool intersection;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class query_response_message : public rx_message_base  
+{
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
 
   public:
 
@@ -220,7 +220,7 @@ class browse_response_message : public rx_message_base
       rx_message_type_t get_type_id ();
 
 
-      browse_result_items_type items;
+      query_result_items_type items;
 
 
       static string_type type_name;
@@ -280,6 +280,79 @@ class get_type_response : public type_response_message<itemT>
       static string_type type_name;
 
       static uint16_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <class itemT>
+class get_object_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      typename itemT::RTypePtr item;
+
+      static string_type type_name;
+
+      static uint16_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class get_object_request : public rx_request_message  
+{
+	template<typename T>
+	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      meta_data meta;
+
+      rx_item_type item_type;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:

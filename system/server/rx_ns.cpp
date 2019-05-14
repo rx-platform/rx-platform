@@ -168,6 +168,19 @@ string_type rx_platform_item::callculate_path () const
 	return ret + get_name();
 }
 
+bool rx_platform_item::is_object () const
+{
+	auto type = get_type_id();
+	return type == rx_application || type == rx_object || type == rx_port || type == rx_domain;
+}
+
+bool rx_platform_item::is_type () const
+{
+	auto type = get_type_id();
+	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
+		|| type >= rx_port_type && type <= rx_mapper_type;
+}
+
 
 // Class rx_platform::ns::rx_platform_directory 
 

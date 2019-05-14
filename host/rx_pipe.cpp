@@ -103,7 +103,9 @@ bool rx_pipe_host::break_host (const string_type& msg)
 int rx_pipe_host::pipe_main (int argc, char* argv[])
 {
 	std::cout << "\r\n"
-		<< "rx-platform\r\n\r\n"
+		<< "rx-platform " 
+		<< rx_gate::instance().get_rx_version()
+		<< "\r\n\r\n"
 		<< get_pipe_info()
 		<< "\r\n======================================\r\n";
 
@@ -137,6 +139,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[])
 
 				std::cout << "Initializing storages...";
 				ret = initialize_storages(config);
+
 				if (ret)
 				{
 					std::cout << "OK\r\n";
@@ -295,6 +298,22 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
 
 					std::cout << "OK\r\n";
+					
+					string_type sys_info = get_system_storage()->get_storage_info();
+					string_type sys_ref = get_system_storage()->get_storage_reference();
+					string_type user_info = get_user_storage()->get_storage_info();
+					string_type user_ref = get_user_storage()->get_storage_reference();
+					string_type test_info = get_test_storage()->get_storage_info();
+					string_type test_ref = get_test_storage()->get_storage_reference();
+
+					std::cout << "Storage Information:\r\n============================\r\n";
+					std::cout << "System Storage: " << sys_info << "\r\n";
+					std::cout << "System Reference: " << sys_ref << "\r\n";
+					std::cout << "User Storage: " << user_info << "\r\n";
+					std::cout << "User Reference: " << user_ref << "\r\n";
+					std::cout << "Test Storage: " << test_info << "\r\n";
+					std::cout << "Test Reference: " << test_ref << "\r\n";
+
 					pipes_.receive_loop();
 
 					pipes_.close();

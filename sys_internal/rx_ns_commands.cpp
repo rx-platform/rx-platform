@@ -44,10 +44,10 @@ namespace
 {
 bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
 {
-	if ((one->meta_info().get_attributes()&namespace_item_execute_access) != 0)
-		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_EXECUTE_COLOR, ANSI_COLOR_RESET });
-	else if ((one->meta_info().get_attributes()&namespace_item_pull_access) != 0)
-		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_PULL_COLOR, ANSI_COLOR_RESET });
+	if (one->is_type())
+		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET });
+	else if (one->is_object())
+		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
 	else
 		row.emplace_back(one->get_name());
 	if (options.list_type)
@@ -215,14 +215,14 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 
 		for (auto& one : dirs)
 		{
-			row.emplace_back(one->get_name(), ANSI_COLOR_BOLD ANSI_COLOR_CYAN, ANSI_COLOR_RESET);
+			row.emplace_back(one->get_name(), ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
 		}
 		for (auto& one : items)
 		{
-			if ((one->meta_info().get_attributes()&namespace_item_execute_access) != 0)
-				row.emplace_back(one->get_name(), ANSI_RX_EXECUTE_COLOR, ANSI_COLOR_RESET);
-			else if ((one->meta_info().get_attributes()&namespace_item_pull_access) != 0)
-				row.emplace_back(one->get_name(), ANSI_RX_PULL_COLOR, ANSI_COLOR_RESET);
+			if (one->is_type())
+				row.emplace_back(one->get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
+			else if (one->is_object())
+				row.emplace_back(one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
 			else
 				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 

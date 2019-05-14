@@ -371,7 +371,14 @@ template<class T>
 rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
 {
 	auto init_data = std::make_unique< data::runtime_values_data>();
-	auto ret = stream.read_init_values("Values", *init_data);
+	bool ret = false;
+	if (stream.start_object("def"))
+	{
+		if (stream.read_init_values("values", *init_data))
+		{
+			ret = true;
+		}
+	}
 	storage->close();
 	if (ret)
 	{

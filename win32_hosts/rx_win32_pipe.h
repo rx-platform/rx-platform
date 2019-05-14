@@ -64,6 +64,8 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
 
       static string_type get_win32_pipe_info ();
 
+      string_type defualt_system_storage_reference () const;
+
 
   protected:
 

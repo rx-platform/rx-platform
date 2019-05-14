@@ -209,6 +209,10 @@ rx_result complex_data_type::serialize_complex_definition (base_meta_writer& str
 	if (!stream.end_array())
 		return false;
 
+
+	if (!stream.write_init_values("overrides", overrides_))
+		return false;
+
 	return true;
 }
 
@@ -304,6 +308,10 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 		if (!stream.end_object())
 			return false;
 	}
+
+	if (!stream.read_init_values("overrides", overrides_))
+		return false;
+
 	return true;//!!!! NOT DONE
 }
 

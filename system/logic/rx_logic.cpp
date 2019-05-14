@@ -61,12 +61,12 @@ program_runtime::~program_runtime()
 
 
 
-bool program_runtime::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool program_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
 }
 
-bool program_runtime::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool program_runtime::deserialize (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
@@ -82,12 +82,12 @@ namespace_item_attributes program_runtime::get_attributes () const
 
 bool program_runtime::save_program (base_meta_writer& stream, uint8_t type) const
 {
-	return serialize_definition(stream, type);
+	return serialize(stream, type);
 }
 
 bool program_runtime::load_program (base_meta_reader& stream, uint8_t type)
 {
-	return deserialize_definition(stream, type);
+	return deserialize(stream, type);
 }
 
 void program_runtime::get_value (values::rx_value& val) const
@@ -168,17 +168,17 @@ ladder_program::~ladder_program()
 
 
 
-bool ladder_program::serialize_definition (base_meta_writer& stream, uint8_t type) const
+bool ladder_program::serialize (base_meta_writer& stream, uint8_t type) const
 {
-	if (!program_runtime::serialize_definition(stream, type))
+	if (!program_runtime::serialize(stream, type))
 		return false;
 
 	return true;
 }
 
-bool ladder_program::deserialize_definition (base_meta_reader& stream, uint8_t type)
+bool ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
 {
-	if (!program_runtime::deserialize_definition(stream, type))
+	if (!program_runtime::deserialize(stream, type))
 		return false;
 
 	return true;

@@ -297,6 +297,12 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	return temp != rt_const_index_type && temp != rt_value_index_type && temp;
 }
 
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return true;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 

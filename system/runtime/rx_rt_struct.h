@@ -615,6 +615,8 @@ class runtime_data : public runtime_item
 
       void object_state_changed (const hosting_object_data& state);
 
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
 
       variables_type variables;
 

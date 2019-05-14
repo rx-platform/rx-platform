@@ -260,6 +260,10 @@ class rx_platform_item : public rx::pointers::reference_object
 
       string_type callculate_path () const;
 
+      bool is_object () const;
+
+      bool is_type () const;
+
 
   protected:
 

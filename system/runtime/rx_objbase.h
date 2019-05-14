@@ -225,9 +225,9 @@ object class. basic implementation of an object");
 
       virtual bool connect_domain (rx_domain_ptr&& domain);
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+      virtual bool serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+      virtual bool deserialize (base_meta_reader& stream, uint8_t type);
 
       platform_item_ptr get_item_ptr () const;
 
@@ -289,6 +289,11 @@ object class. basic implementation of an object");
       rx_application_ptr my_application_;
 
       rx_domain_ptr my_domain_;
+
+
+      rx_node_id domain_id_;
+
+      rx_node_id app_id_;
 
 
   private:
