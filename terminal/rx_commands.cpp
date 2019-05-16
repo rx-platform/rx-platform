@@ -38,6 +38,7 @@
 #include "testing/rx_test.h"
 #include "model/rx_meta_commands.h"
 #include "sys_internal/rx_ns_commands.h"
+#include "runtime_internal/rx_runtime_commands.h"
 
 
 namespace terminal {
@@ -69,19 +70,16 @@ bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 	return true;
 }
 
+void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
+{
+	for (const auto& one : result.errors())
+		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+}
+
 
 // Class terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
-	: runtime::objects::server_object(runtime::objects::object_creation_data{
-		NS_RX_COMMANDS_MANAGER_NAME
-		, RX_NS_SYSTEM_DOM_ID
-		, RX_NS_SYSTEM_DOM_TYPE_ID
-		, true
-		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME RX_DIR_DELIMETER_STR NS_RX_COMMANDS_MANAGER_NAME
-		, rx_application_ptr::null_ptr
-		, rx_domain_ptr::null_ptr
-		})
 {
 }
 
@@ -101,7 +99,6 @@ void server_command_manager::register_command (server_command_base_ptr cmd)
 
 void server_command_manager::register_internal_commands ()
 {
-
 	// console commands
 	register_command(rx_create_reference<echo_server_command>());
 	register_command(rx_create_reference<console::console_commands::info_command>());
@@ -134,6 +131,10 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 	register_command(rx_create_reference<model::meta_commands::check_command>());
 	register_command(rx_create_reference<model::meta_commands::save_command>());
+	// runtime commands
+	register_command(rx_create_reference<sys_runtime::runtime_commands::read_command>());
+	register_command(rx_create_reference<sys_runtime::runtime_commands::write_command>());
+	register_command(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)

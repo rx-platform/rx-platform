@@ -114,6 +114,10 @@ rx_result application_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<application_type>::resolve_object_type(*this, dir);
 }
 
+void application_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
+}
+
 
 const object_data_type& application_type::object_data () const
 {
@@ -205,6 +209,10 @@ rx_result domain_type::resolve (rx_directory_ptr dir)
 	return object_types_algorithm<domain_type>::resolve_object_type(*this, dir);
 }
 
+void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
+}
+
 
 const object_data_type& domain_type::object_data () const
 {
@@ -284,9 +292,9 @@ def_blocks::complex_data_type& object_type::complex_data ()
 
 }
 
-void object_type::set_object_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+void object_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
-	where->item_ = std::move(create_runtime_data(prototype));
+	where->runtime_.runtime.set_runtime_data(prototype);
 }
 
 def_blocks::mapped_data_type& object_type::mapping_data ()
@@ -353,7 +361,7 @@ rx_result object_data_type::deserialize_object_definition (base_meta_reader& str
 	return true;
 }
 
-rx_result object_data_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
+rx_result object_data_type::construct (runtime::blocks::runtime_object& what, construct_context& ctx) const
 {
 	return true;
 }
@@ -437,6 +445,10 @@ bool port_type::check_type (type_check_context& ctx)
 rx_result port_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<port_type>::resolve_object_type(*this, dir);
+}
+
+void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
 }
 
 

@@ -115,7 +115,7 @@ namespace meta_test {
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
-			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory());
+			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object=test_result;
@@ -125,9 +125,9 @@ namespace meta_test {
 			 {
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
-				 test_object->collect_data(init_data);
+				 test_object->get_runtime().runtime.collect_data(init_data);
 				 init_data.children["structName"].values["structVal"].value.assign_static(113);
-				 test_object->fill_data(init_data);
+				 test_object->get_runtime().runtime.fill_data(init_data);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
 				 if (test_object->get_item_ptr()->generate_json(out, err))
@@ -381,7 +381,7 @@ namespace meta_test {
 	 {
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
-			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory());
+			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object = test_result;
@@ -560,7 +560,8 @@ namespace meta_test {
 				 out << one << "\r\n";
 			 }
 			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
-				 "perica", "check_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory());
+				 "perica", "check_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
+				 , ctx->get_current_directory(), ctx->get_client());
 			 if (!obj)
 			 {
 				 out << ANSI_COLOR_YELLOW "create returned following errors:\r\n" ANSI_COLOR_RESET;

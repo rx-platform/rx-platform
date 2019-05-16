@@ -74,6 +74,8 @@ class server_command : public rx_platform::prog::server_command_base
 
       bool generate_json (std::ostream& def, std::ostream& err) const;
 
+      void dump_error_result (std::ostream& err, const rx_result& result) const;
+
 
   protected:
 	  template<typename T>
@@ -95,7 +97,7 @@ class server_command : public rx_platform::prog::server_command_base
 
 
 
-class server_command_manager : public rx_platform::runtime::objects::server_object  
+class server_command_manager : public rx_platform::runtime::objects::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\

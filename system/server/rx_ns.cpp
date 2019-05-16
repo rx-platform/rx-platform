@@ -89,26 +89,6 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 		str[6] = 'i';
 }
 
-void fill_quality_string(values::rx_value val, string_type& str)
-{
-	str = "-";
-	str += " - - ";
-	//if(is detailed quality)
-	//	str += "--------------- --";
-	//if(is high lo quality)
-	//	str += "--";
-	if (val.is_good())
-		str[0] = 'g';
-	else if (val.is_uncertain())
-		str[0] = 'u';
-	else if (val.is_bad())
-		str[0] = 'b';
-	if (val.is_test())
-		str[2] = 't';
-	if (val.is_substituted())
-		str[4] = 's';
-}
-
 // Class rx_platform::ns::rx_platform_item 
 
 rx_platform_item::rx_platform_item()
@@ -178,7 +158,7 @@ bool rx_platform_item::is_type () const
 {
 	auto type = get_type_id();
 	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
-		|| type >= rx_port_type && type <= rx_mapper_type;
+		|| (type >= rx_port_type && type <= rx_mapper_type);
 }
 
 
@@ -451,7 +431,7 @@ rx_result rx_platform_directory::add_item (platform_item_ptr who)
 	}
 	structure_unlock();
 	if (ret && rx_names_cache::should_cache(who))
-	{		
+	{
 		auto cache_result = sys_internal::internal_ns::platform_root::insert_cached_item(name, who);
 		if (!cache_result)
 		{
@@ -480,7 +460,7 @@ rx_result rx_platform_directory::add_item (platform_item_ptr who)
 			NAMESPACE_LOG_TRACE("root", 500, stream.str().c_str());
 		}
 	}
-		
+
 	return ret;
 }
 

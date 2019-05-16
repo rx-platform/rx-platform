@@ -288,9 +288,9 @@ public:
 
       bool deserialize (base_meta_reader& reader);
 
-      void dump_to_stream (std::ostream& out) const;
+      string_type to_string () const;
 
-      void parse_from_stream (std::istream& in);
+      void parse (const string_type& str);
 
       rx_value_t get_value_type () const;
 
@@ -424,6 +424,10 @@ class rx_simple_value
 
       rx_value_t get_type () const;
 
+      void parse (const string_type& str);
+
+      bool is_null () const;
+
 
       const rx_value_storage& get_storage () const
       {
@@ -503,11 +507,13 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
       rx_value_t get_type () const;
+
+      void dump_to_stream (std::ostream& out) const;
 
 
       const rx_value_storage& get_storage () const
@@ -620,7 +626,7 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -660,6 +666,10 @@ public:
 } // namespace values
 } // namespace rx
 
+namespace rx
+{
+void fill_quality_string(values::rx_value val, string_type& q);
+}
 
 
 #endif

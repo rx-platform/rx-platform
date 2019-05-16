@@ -42,8 +42,6 @@ using namespace rx_platform::meta::meta_algorithm;
 
 
 namespace rx_platform {
-
-
 bool rx_is_valid_item_name(const string_type& name)
 {
 	if (name.empty() || name== RX_DEFAULT_VARIABLE_NAME)

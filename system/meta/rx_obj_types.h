@@ -100,7 +100,7 @@ class object_data_type
 
       rx_result deserialize_object_definition (base_meta_reader& stream, uint8_t type);
 
-      rx_result construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
+      rx_result construct (runtime::blocks::runtime_object& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
@@ -169,6 +169,8 @@ public:
       rx_result check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
+
+      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -249,6 +251,8 @@ public:
 
       rx_result resolve (rx_directory_ptr dir);
 
+      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+
 
       const object_data_type& object_data () const;
 
@@ -324,7 +328,7 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static void set_object_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
       def_blocks::mapped_data_type& mapping_data ();
 
@@ -410,6 +414,8 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
+
+      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
 
       const object_data_type& object_data () const;

@@ -110,7 +110,6 @@ struct namespace_data_t
 
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
-void fill_quality_string(values::rx_value val, string_type& q);
 
 
 
@@ -263,6 +262,10 @@ class rx_platform_item : public rx::pointers::reference_object
       bool is_object () const;
 
       bool is_type () const;
+
+      virtual rx_result read_value (const string_type& path, rx_value& val) const = 0;
+
+      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
 
 
   protected:

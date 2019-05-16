@@ -111,6 +111,7 @@ enum namespace_item_attributes
 
 namespace api
 {
+struct rx_context;
 struct query_result_detail;
 }
 

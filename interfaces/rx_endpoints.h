@@ -96,7 +96,7 @@ physical port class. basic implementation of a port");
 
 
   public:
-      physical_port (objects::port_creation_data&& data);
+      physical_port();
 
 
   protected:
@@ -114,7 +114,7 @@ physical port class. basic implementation of a port");
 
 
 
-class rx_io_manager : public rx_platform::runtime::objects::server_object  
+class rx_io_manager : public rx_platform::runtime::objects::object_runtime  
 {
 	typedef std::map<string_type, rx_protocol_stack_entry*> endpoints_type;
 	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;

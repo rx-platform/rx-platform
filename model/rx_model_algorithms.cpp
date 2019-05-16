@@ -33,6 +33,7 @@
 // rx_model_algorithms
 #include "model/rx_model_algorithms.h"
 
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace model {
@@ -62,7 +63,7 @@ template class runtime_model_algorithm<application_type>;
 
 
 template <class typeT>
-void types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_object_ptr ref)
+void types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
 {
 	std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
 		return check_type_sync(loc_name, loc_dir);
@@ -91,13 +92,13 @@ type_check_context types_model_algorithm<typeT>::check_type_sync (const string_t
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref)
+void types_model_algorithm<typeT>::create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
 		return create_type_sync(name, base_name, prototype, dir, attributes);
 	};
-	rx_do_with_callback<result_t, rx_object_ptr>(func, RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
@@ -190,7 +191,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref)
+void types_model_algorithm<typeT>::delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
 		return delete_type_sync(name, dir);
@@ -221,13 +222,13 @@ rx_result types_model_algorithm<typeT>::delete_type_sync (const string_type& nam
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref)
+void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
 		return update_type_sync(prototype, dir);
 	};
-	rx_do_with_callback<result_t, rx_object_ptr>(func, RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
@@ -269,7 +270,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_object_ptr ref)
+void simple_types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
 {
 	std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
 		return check_type_sync(loc_name, loc_dir);
@@ -298,13 +299,13 @@ type_check_context simple_types_model_algorithm<typeT>::check_type_sync (const s
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref)
+void simple_types_model_algorithm<typeT>::create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
 		return create_type_sync(name, base_name, prototype, dir, attributes);
 	};
-	rx_do_with_callback<result_t, rx_object_ptr>(func, RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
@@ -398,7 +399,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref)
+void simple_types_model_algorithm<typeT>::delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result(string_type, rx_directory_ptr)> func = [=](string_type name, rx_directory_ptr dir) {
 		return delete_type_sync(name, dir);
@@ -433,16 +434,16 @@ rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const string_ty
 
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::delete_runtime (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref)
+void runtime_model_algorithm<typeT>::delete_runtime (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result()> func = [=]() {
-		return delete_runtime_sync(name, dir);
+		return delete_runtime_sync(name, dir, ref);
 	};
 	rx_do_with_callback(func, RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
-rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const string_type& name, rx_directory_ptr dir)
+rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 	if (!item)
@@ -464,16 +465,16 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const string_type
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_runtime (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref)
+void runtime_model_algorithm<typeT>::create_runtime (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
-	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [info, init_data, dir]() mutable {
-		return create_runtime_sync(info, init_data, dir);
+	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [info, init_data, dir, ref]() mutable {
+		return create_runtime_sync(info, init_data, dir, ref);
 	};
-	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_object_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 
 	std::unique_ptr<data::runtime_values_data> temp;
@@ -496,6 +497,16 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		dir->cancel_reserve(name);
 		return ret.errors();
 	}
+	sys_runtime::runtime_init_context ctx;
+	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(ret, ctx);
+	if (!init_result)
+	{
+		dir->cancel_reserve(name);
+		platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(ret.value()->meta_info().get_id());
+		init_result.register_error("Unable to initialize "s + rx_item_type_name(typeT::RType::type_id) + " " + name);
+		return init_result.errors();
+	}
+	
 	if (!dir->add_item(ret.value()->get_item_ptr()))
 	{
 		dir->cancel_reserve(name);
@@ -509,7 +520,10 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		{
 			auto result = storage_result.value()->save_item(ret.value()->get_item_ptr());
 			if (!result)
-				result.register_error("Error saving type item "s + ret.value()->meta_info().get_full_path());
+			{
+				result.register_error("Error saving item "s + ret.value()->meta_info().get_full_path());
+				return result.errors();
+			}
 		}
 		else // !storage_result
 		{
@@ -522,12 +536,12 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref)
+void runtime_model_algorithm<typeT>::create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [name, type_name, dir, attributes]() mutable {
 		return create_prototype_sync(name, type_name, dir, attributes);
 	};
-	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_object_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
@@ -557,17 +571,17 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_runtime (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref)
+void runtime_model_algorithm<typeT>::create_runtime (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
-	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [name, type_name, attributes, init_data, dir]() mutable {
-		return create_runtime_sync(name, type_name, attributes, init_data, dir);
+	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [name, type_name, attributes, init_data, dir, ref]() mutable {
+		return create_runtime_sync(name, type_name, attributes, init_data, dir, ref);
 	};
-	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_object_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
+	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
 
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 	string_type path;
 	dir->fill_path(path);
@@ -586,7 +600,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	}
 	meta_data info;
 	info.construct(name, rx_node_id::null_id, type_id, attributes, path);
-	return create_runtime_sync(info, init_data, dir);
+	return create_runtime_sync(info, init_data, dir, ref);
 }
 
 

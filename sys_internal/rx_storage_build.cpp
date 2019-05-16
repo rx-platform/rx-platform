@@ -149,7 +149,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 						result = "Invalid serialization type!";
 					}
 				}
-				if(!result)
+				else
 					result.register_error("Error in deserialization from " + item->get_item_reference());
 			}
 			else
@@ -183,7 +183,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 						result = "Invalid serialization type!";
 					}
 				}
-				if (!result)
+				else
 					result.register_error("Error in deserialization from " + item->get_item_reference());
 			}
 			else
@@ -383,7 +383,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 	if (ret)
 	{
 		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
-			meta, init_data.release(), dir);
+			meta, init_data.release(), dir, rx_object_ptr::null_ptr);
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();

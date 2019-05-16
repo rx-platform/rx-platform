@@ -35,6 +35,16 @@
 // rx_values
 #include "lib/rx_values.h"
 
+namespace rx_platform {
+namespace runtime {
+namespace blocks {
+class runtime_object;
+
+} // namespace blocks
+} // namespace runtime
+} // namespace rx_platform
+
+
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
@@ -42,7 +52,9 @@ using namespace rx;
 using namespace rx::values;
 
 
+
 namespace rx_platform {
+using runtime::blocks::runtime_object;
 
 namespace runtime {
 namespace blocks
@@ -156,6 +168,7 @@ class has
 
 
 
+
 class hosting_object_data 
 {
 
@@ -168,7 +181,7 @@ class hosting_object_data
 
       rx_time time;
 
-      object_runtime_ptr object;
+      const runtime_object* object;
 
 
   protected:
@@ -188,7 +201,7 @@ class init_context
 
   public:
 
-      static init_context create_initialization_context (object_runtime_ptr whose);
+      static init_context create_initialization_context (runtime_object* whose);
 
 
       const string_type& get_current_path () const
@@ -210,6 +223,32 @@ class init_context
 
 
       string_type current_path_;
+
+
+};
+
+
+
+
+
+
+class write_context 
+{
+
+  public:
+
+      static write_context create_write_context (runtime_object* whose);
+
+
+      hosting_object_data object_data;
+
+
+      rx_time now;
+
+
+  protected:
+
+  private:
 
 
 };
@@ -258,6 +297,10 @@ class value_data
 
       void set_value (rx_simple_value&& val, const init_context& ctx);
 
+      void object_state_changed (const hosting_object_data& state);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
 
       rx::values::rx_timed_value value;
 
@@ -289,9 +332,11 @@ class runtime_item
 
       virtual void fill_data (const data::runtime_values_data& data, init_context& ctx) = 0;
 
-      virtual rx_value get_value (const hosting_object_data& state, const string_type& path) const = 0;
+      virtual rx_result get_value (const hosting_object_data& state, const string_type& path, rx_value& val) const = 0;
 
       virtual void object_state_changed (const hosting_object_data& state) = 0;
+
+      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx) = 0;
 
 
   protected:
@@ -334,6 +379,8 @@ class variable_data
       void set_value (rx_value&& value);
 
       void set_value (rx_simple_value&& val, const init_context& ctx);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
 
 
       rx::values::rx_value value;
@@ -611,11 +658,13 @@ class runtime_data : public runtime_item
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
-      rx_value get_value (const hosting_object_data& state, const string_type& path) const;
+      rx_result get_value (const hosting_object_data& state, const string_type& path, rx_value& val) const;
 
       void object_state_changed (const hosting_object_data& state);
 
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx);
 
 
       variables_type variables;

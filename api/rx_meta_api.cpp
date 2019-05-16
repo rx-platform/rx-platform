@@ -104,7 +104,7 @@ rx_result rx_get_runtime(const rx_node_id& id, const string_type name
 	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [=]() {
 		return model::platform_types_manager::instance().get_type_cache<typeT>().get_runtime(id);
 	};
-	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
+	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
 
 	return true;
 }
@@ -223,7 +223,7 @@ rx_result rx_save_item(const string_type& name
 	std::function<rx_result()> func = [=]() {
 		return save_item_helper(name, ctx.directory);
 	};
-	rx_do_with_callback<rx_result, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
+	rx_do_with_callback<rx_result, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
 	
 	return true;
 }
@@ -235,7 +235,7 @@ rx_result rx_get_type(const rx_node_id& id, const string_type name
 	std::function<rx_result_with<typename T::smart_ptr>()> func = [=]() {
 		return model::platform_types_manager::instance().get_type_cache<T>().get_type_definition(id);
 	};
-	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
+	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
 
 	return true;
 }
@@ -258,7 +258,7 @@ rx_result rx_get_simple_type(const rx_node_id& id, const string_type name
 	std::function<rx_result_with<typename T::smart_ptr>()> func = [=]() {
 		return model::platform_types_manager::instance().get_simple_type_cache<T>().get_type_definition(id);
 	};
-	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_object_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
+	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
 
 	return true;
 }

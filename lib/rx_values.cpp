@@ -39,9 +39,27 @@
 
 
 namespace rx {
+void fill_quality_string(values::rx_value val, string_type& str)
+{
+	str = "-";
+	str += " - - ";
+	//if(is detailed quality)
+	//	str += "--------------- --";
+	//if(is high lo quality)
+	//	str += "--";
+	if (val.is_good())
+		str[0] = 'g';
+	else if (val.is_uncertain())
+		str[0] = 'u';
+	else if (val.is_bad())
+		str[0] = 'b';
+	if (val.is_test())
+		str[2] = 't';
+	if (val.is_substituted())
+		str[4] = 's';
+}
 
 namespace values {
-
 template<>
 rx_value_t inner_get_type(tl::type2type<bool>)
 {
@@ -277,7 +295,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -290,6 +308,15 @@ bool rx_value::convert_to (rx_value_t type)
 rx_value_t rx_value::get_type () const
 {
 	return storage_.get_value_type();
+}
+
+void rx_value::dump_to_stream (std::ostream& out) const
+{
+	out << storage_.to_string()
+		<< " [" << time_.get_string() << "] ";
+	string_type q;
+	fill_quality_string(*this, q);
+	out << q;
 }
 
 
@@ -402,17 +429,19 @@ bool rx_simple_value::deserialize (base_meta_reader& reader)
 
 void rx_simple_value::dump_to_stream (std::ostream& out) const
 {
-	storage_.dump_to_stream(out);
+	out << storage_.to_string();
 }
 
 void rx_simple_value::parse_from_stream (std::istream& in)
 {
-	storage_.parse_from_stream(in);
+	string_type temp;
+	in >> temp;
+	storage_.parse(temp);
 }
 
 void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	val.set_time(ts);
+	val = rx_value::from_simple(*this, ts);
 	if (mode.is_off())
 		val.set_quality(RX_BAD_QUALITY_OFFLINE);
 	else
@@ -443,6 +472,16 @@ bool rx_simple_value::convert_to (rx_value_t type)
 rx_value_t rx_simple_value::get_type () const
 {
 	return storage_.get_value_type();
+}
+
+void rx_simple_value::parse (const string_type& str)
+{
+	storage_.parse(str);
+}
+
+bool rx_simple_value::is_null () const
+{
+	return storage_.get_value_type() == RX_NULL_TYPE;
 }
 
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
@@ -508,54 +547,47 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 	return true;
 }
 
-void rx_value_storage::dump_to_stream (std::ostream& out) const
+string_type rx_value_storage::to_string () const
 {
 	switch (value_type_)
 	{
 	case RX_NULL_TYPE:
-		out << "<null>";
-		break;
+		return "<null>";
 	case RX_BOOL_TYPE:
-		out << (value_.bool_value ? "true" : "false");
-		break;
+		return (value_.bool_value ? "true" : "false");
 	case RX_INT8_TYPE:
-		out << value_.int8_value <<"b";
-		break;
+		return std::to_string(value_.int8_value) + "b";
 	case RX_UINT8_TYPE:
-		out << value_.uint8_value << "ub";
-		break;
+		return std::to_string(value_.uint8_value) + "ub";
 	case RX_INT16_TYPE:
-		out << value_.int16_value << "s";
-		break;
+		return std::to_string(value_.int16_value) + "s";
 	case RX_UINT16_TYPE:
-		out << value_.uint16_value << "us";
-		break;
+		return std::to_string(value_.uint16_value) + "us";
 	case RX_INT32_TYPE:
-		out << value_.int32_value << "i";
-		break;
+		return std::to_string(value_.int32_value) + "i";
 	case RX_UINT32_TYPE:
-		out << value_.uint32_value << "ui";
-		break;
+		return std::to_string(value_.uint32_value) + "ui";
 	case RX_INT64_TYPE:
-		out << value_.int64_value << "l";
-		break;
+		return std::to_string(value_.int64_value) + "l";
 	case RX_UINT64_TYPE:
-		out << value_.uint64_value << "ul";
-		break;
+		return std::to_string(value_.uint64_value) + "ul";
 	case RX_FLOAT_TYPE:
-		out << value_.float_value << "f";
-		break;
+		return std::to_string(value_.float_value) + "f";
 	case RX_DOUBLE_TYPE:
-		out << value_.double_value << "d";
-		break;
+		return std::to_string(value_.double_value) + "d";
 	case RX_STRING_TYPE:
-		out << "\"" << *value_.string_value << "\"";
-		break;
+		return "\""s + *value_.string_value + "\"";
+	default:
+		return "not valid";
 	}
 }
 
-void rx_value_storage::parse_from_stream (std::istream& in)
+void rx_value_storage::parse (const string_type& str)
 {
+	if (str == "true")
+		assign_static(true);
+	else if (str == "false")
+		assign_static(false);
 }
 
 rx_value_t rx_value_storage::get_value_type () const
@@ -2626,9 +2658,7 @@ bool rx_timed_value::can_operate (bool test_mode) const
 
 void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	//TODONOW
-	//storage_.g
-	val.set_time(ts);
+	val = rx_value::from_simple(to_simple(), std::max(ts, time_));
 	if (mode.is_off())
 		val.set_quality(RX_BAD_QUALITY_OFFLINE);
 	else
@@ -2665,13 +2695,15 @@ bool rx_timed_value::deserialize (base_meta_reader& reader)
 
 void rx_timed_value::dump_to_stream (std::ostream& out) const
 {
-	storage_.dump_to_stream(out);
+	out << storage_.to_string();
 	out << " [" << time_.get_string() << "]";
 }
 
 void rx_timed_value::parse_from_stream (std::istream& in)
 {
-	storage_.parse_from_stream(in);
+	string_type temp;
+	in >> temp;
+	storage_.parse(temp);
 }
 
 rx_time rx_timed_value::set_time (rx_time time)
@@ -2713,7 +2745,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

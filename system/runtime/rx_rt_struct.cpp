@@ -30,6 +30,8 @@
 #include "pch.h"
 
 
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
@@ -214,7 +216,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_value runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_value (const hosting_object_data& state, const string_type& path) const
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_value (const hosting_object_data& state, const string_type& path, rx_value& val) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
 	string_type mine;
@@ -228,48 +230,57 @@ rx_value runtime_data<variables_type,structs_type,sources_type,mappers_type,filt
 			switch (idx&rt_type_mask)
 			{
 			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return variables.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			case rt_struct_index_type:
-				return structs.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return structs.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			case rt_source_index_type:
-				return sources.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return sources.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			case rt_mapper_index_type:
-				return mappers.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return mappers.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			case rt_filter_index_type:
-				return filters.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return filters.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			case rt_event_index_type:
-				return events.collection[idx >> rt_type_shift].item->get_value(state, bellow);
+				return events.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
 			}
 		}
 	}
 	else// its' ours
 	{
-		auto idx = internal_get_index(mine);
+		auto idx = internal_get_index(path);
 		if (idx && is_value_index(idx))
 		{
 			switch (idx&rt_type_mask)
 			{
 			case rt_const_index_type:
-				return const_values[idx >> rt_type_shift].get_value(state);
+				val = const_values[idx >> rt_type_shift].get_value(state);
+				return true;
 			case rt_value_index_type:
-				return values[idx >> rt_type_shift].get_value(state);
+				val = values[idx >> rt_type_shift].get_value(state);
+				return true;
 			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].get_value(state);
+				val = variables.collection[idx >> rt_type_shift].get_value(state);
+				return true;
 			}
 		}
 	}
-
-	rx_value ret;
-	ret.set_time(rx_time::now());
-	ret.set_quality(RX_BAD_QUALITY_CONFIG_ERROR);
-	return ret;
+	return mine + " not found!";
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::object_state_changed (const hosting_object_data& state)
 {
-	for (auto& one : variables.collection)
-		one.item->object_state_changed(state);
+	if (has_structs())
+	{
+		for (auto& one : structs.collection)
+			one.item->object_state_changed(state);
+	}
+	if (has_variables())
+	{
+		for (auto& one : variables.collection)
+			one.item->object_state_changed(state);
+	}
+	for (auto& one : values)
+		one.object_state_changed(state);
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
@@ -301,6 +312,55 @@ template <class variables_type, class structs_type, class sources_type, class ma
 bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::serialize_definition (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx)
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	string_type mine;
+	if (idx != string_type::npos)
+	{// bellow us, split it
+		mine = path.substr(0, idx);
+		string_type bellow = path.substr(idx + 1);
+		auto idx = internal_get_index(mine);
+		if (idx && !is_value_index(idx))
+		{
+			switch (idx&rt_type_mask)
+			{
+			case rt_variable_index_type:
+				return variables.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			case rt_struct_index_type:
+				return structs.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			case rt_source_index_type:
+				return sources.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			case rt_mapper_index_type:
+				return mappers.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			case rt_filter_index_type:
+				return filters.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			case rt_event_index_type:
+				return events.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
+			}
+		}
+	}
+	else// its' ours
+	{
+		auto idx = internal_get_index(path);
+		if (idx && is_value_index(idx))
+		{
+			switch (idx&rt_type_mask)
+			{
+			case rt_const_index_type:
+				return "Not valid for this";
+				return true;
+			case rt_value_index_type:
+				return values[idx >> rt_type_shift].write_value(std::move(val), ctx);
+			case rt_variable_index_type:
+				return variables.collection[idx >> rt_type_shift].write_value(std::move(val), ctx);
+			}
+		}
+	}
+	return path + " not found!";
 }
 
 
@@ -496,6 +556,11 @@ void variable_data::set_value (rx_simple_value&& val, const init_context& ctx)
 	}
 }
 
+rx_result variable_data::write_value (rx_simple_value&& val, const write_context& ctx)
+{
+	return "Not implemented!";
+}
+
 
 // Class rx_platform::runtime::structure::struct_data 
 
@@ -620,10 +685,28 @@ rx_value value_data::get_value (const hosting_object_data& state) const
 
 void value_data::set_value (rx_simple_value&& val, const init_context& ctx)
 {
-	rx_simple_value temp(val);
-	if (temp.convert_to(value.get_type()))
+	if (val.convert_to(value.get_type()))
 	{
-		value = rx_timed_value::from_simple(std::move(temp), ctx.now);
+		value = rx_timed_value::from_simple(std::move(val), ctx.now);
+	}
+}
+
+void value_data::object_state_changed (const hosting_object_data& state)
+{
+	if (state.time > value.get_time())
+		value.set_time(state.time);
+}
+
+rx_result value_data::write_value (rx_simple_value&& val, const write_context& ctx)
+{
+	if (val.convert_to(value.get_type()))
+	{
+		value = rx_timed_value::from_simple(std::move(val), ctx.now);
+		return true;
+	}
+	else
+	{
+		return "Conversion error!";
 	}
 }
 
@@ -640,13 +723,10 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 }
 
 
-// Class rx_platform::runtime::structure::runtime_item 
-
-
 // Class rx_platform::runtime::structure::init_context 
 
 
-init_context init_context::create_initialization_context (object_runtime_ptr whose)
+init_context init_context::create_initialization_context (runtime_object* whose)
 {
 	init_context ret;
 	ret.now = rx_time::now();
@@ -655,6 +735,23 @@ init_context init_context::create_initialization_context (object_runtime_ptr who
 	ret.object_data.mode = whose->get_mode();
 	return ret;
 }
+
+
+// Class rx_platform::runtime::structure::write_context 
+
+
+write_context write_context::create_write_context (runtime_object* whose)
+{
+	write_context ret;
+	ret.now = rx_time::now();
+	ret.object_data.object = whose;
+	ret.object_data.time = whose->get_change_time();
+	ret.object_data.mode = whose->get_mode();
+	return ret;
+}
+
+
+// Class rx_platform::runtime::structure::runtime_item 
 
 
 } // namespace structure

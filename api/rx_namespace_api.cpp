@@ -80,7 +80,7 @@ rx_result rx_list_directory(const string_type& name // directory's path
 			return (path + " not found!");
 		}
 	};
-	rx_do_with_callback<rx_result_with<directory_browse_result>, rx_object_ptr, string_type, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, name, ctx.directory);
+	rx_do_with_callback<rx_result_with<directory_browse_result>, rx_reference_ptr, string_type, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, name, ctx.directory);
 	return true;
 }
 
@@ -113,7 +113,7 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 		return ret_val;
 
 	};
-	rx_do_with_callback<rx_result_with<query_result>, rx_object_ptr, std::vector<meta::query_ptr>, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, queries, ctx.directory);
+	rx_do_with_callback<rx_result_with<query_result>, rx_reference_ptr, std::vector<meta::query_ptr>, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, queries, ctx.directory);
 	
 	return true;
 }

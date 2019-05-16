@@ -403,15 +403,15 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 			}
 		}
 	}
-	object_type::set_object_runtime_data(ctx.runtime_data, ret);
+	typeT::set_runtime_data(ctx.runtime_data, ret);
 	for (const auto& one : overrides)
 	{
 		if (one)
-			ret->fill_data(*one);
+			ret->get_runtime().runtime.fill_data(*one);
 	}
 	if (init_data)
 	{
-		ret->fill_data(*init_data);
+		ret->get_runtime().runtime.fill_data(*init_data);
 	}
 	if (!prototype)
 	{
@@ -542,8 +542,9 @@ rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
 	if (it != registered_types_.end())
 	{
 		it->second = what;
-		if (rx_gate::instance().get_platform_status() == rx_platform_running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+		// TODO Should check and change if parent iz different
+		/*if (rx_gate::instance().get_platform_status() == rx_platform_running) 
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
 		return true;
 	}
 	else
@@ -733,7 +734,6 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 		{
 			type_data_it->second->erase(new_id);
 		}
-		type_data_it->second->emplace(new_id);
 	}
 	return true;
 }

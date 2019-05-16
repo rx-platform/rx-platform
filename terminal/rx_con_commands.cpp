@@ -54,7 +54,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 {
 	string_type quality_string;
 	values::rx_value val(item->get_value());
-	ns::fill_quality_string(val, quality_string);
+	fill_quality_string(val, quality_string);
 	string_type attrs;
 	ns::fill_attributes_string(item->meta_info().get_attributes(), attrs);
 	string_type cls_name;
@@ -79,7 +79,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	out << "Storage    : " << storage_name << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : ";
-	val.get_storage().dump_to_stream(out);
+	out << val.get_storage().to_string();
 	out << "\r\n";
 	out << "Quality	   : " << quality_string << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";
@@ -153,7 +153,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 	string_type quality_stirng;
 	values::rx_value val;
 	directory->get_value(val);
-	ns::fill_quality_string(val, quality_stirng);
+	fill_quality_string(val, quality_stirng);
 	string_type attrs;
 	ns::fill_attributes_string(directory->get_attributes(), attrs);
 	string_type cls_name;

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  runtime_internal\rx_runtime_internal.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,53 +27,25 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#include "pch.h"
+
+
+// rx_runtime_internal
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 
+namespace sys_runtime {
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
-#include "system/meta/rx_types.h"
-namespace rx_platform
+// Class sys_runtime::platform_runtime_manager 
+
+
+platform_runtime_manager& platform_runtime_manager::instance ()
 {
-namespace api
-{
-
-
-
-struct query_result_detail
-{
-	rx_item_type type;
-	meta_data data;
-};
-
-struct query_result
-{
-	std::vector<query_result_detail> items;
-
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
-};
-
-
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_reference<reference_object> object;
-};
-
-}
+	static platform_runtime_manager g_instance;
+	return g_instance;
 }
 
 
+} // namespace sys_runtime
 
-
-#endif

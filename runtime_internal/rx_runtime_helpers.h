@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  runtime_internal\rx_runtime_helpers.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,52 +27,85 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#ifndef rx_runtime_helpers_h
+#define rx_runtime_helpers_h 1
 
 
 
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
-#include "system/meta/rx_types.h"
-namespace rx_platform
+
+
+namespace sys_runtime {
+
+
+
+
+
+class runtime_start_context 
 {
-namespace api
-{
+
+  public:
+
+  protected:
+
+  private:
 
 
-
-struct query_result_detail
-{
-	rx_item_type type;
-	meta_data data;
-};
-
-struct query_result
-{
-	std::vector<query_result_detail> items;
-
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
 };
 
 
 
-struct rx_context
+
+
+
+class runtime_stop_context 
 {
-	rx_directory_ptr directory;
-	rx_reference<reference_object> object;
+
+  public:
+
+  protected:
+
+  private:
+
+
 };
 
-}
-}
 
+
+
+
+
+class runtime_deinit_context 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class runtime_init_context 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace sys_runtime
 
 
 

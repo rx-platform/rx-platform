@@ -32,6 +32,12 @@
 
 
 
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -44,6 +50,8 @@ using namespace rx::values;
 namespace rx_platform {
 namespace meta
 {
+class runtime_data_prototype;
+
 namespace def_blocks
 {
 	class complex_data_type;
@@ -264,6 +272,106 @@ event runtime. basic implementation of an event runtime");
 
 
       static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class runtime_object 
+{
+	typedef std::vector<program_runtime_ptr> programs_type;
+
+  public:
+
+      void turn_on ();
+
+      void turn_off ();
+
+      void set_blocked ();
+
+      void set_test ();
+
+      void collect_data (data::runtime_values_data& data) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result read_value (const string_type& path, rx_value& val) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, api::rx_context ctx);
+
+      rx_result initialize_object ();
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      void set_runtime_data (meta::runtime_data_prototype& prototype);
+
+
+      const rx_mode_type& get_mode () const
+      {
+        return mode_;
+      }
+
+
+      rx_time get_change_time () const
+      {
+        return change_time_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      structure::hosting_object_data get_object_state () const;
+
+
+
+      structure::runtime_item::smart_ptr item_;
+
+      programs_type programs_;
+
+
+      rx_mode_type mode_;
+
+      rx_time change_time_;
+
+
+};
+
+
+
+
+
+
+template <class T>
+class runtime_holder 
+{
+
+  public:
+
+      rx_result read_value (const string_type& path, rx_value& val, const T& whose) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, T& whose);
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      runtime_object runtime;
 
 
   protected:

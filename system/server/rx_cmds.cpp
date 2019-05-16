@@ -168,7 +168,7 @@ bool server_command_base::generate_json (std::ostream& def, std::ostream& err) c
 
 platform_item_ptr server_command_base::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 string_type server_command_base::get_name () const
@@ -332,9 +332,8 @@ server_console_program::~server_console_program()
 
 // Class rx_platform::prog::console_client 
 
-console_client::console_client (runtime::objects::port_creation_data&& data)
+console_client::console_client()
       : current_context_(nullptr)
-	, runtime::objects::port_runtime(std::move(data))
 {
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");

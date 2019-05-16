@@ -67,7 +67,7 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 		if (options.list_qualities)
 		{
 			string_type quality_stirng;
-			ns::fill_quality_string(val, quality_stirng);
+			fill_quality_string(val, quality_stirng);
 			row.emplace_back(quality_stirng);
 		}
 		if (options.list_timestamps)
@@ -110,7 +110,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 		if (options.list_qualities)
 		{
 			string_type quality_stirng;
-			ns::fill_quality_string(val, quality_stirng);
+			fill_quality_string(val, quality_stirng);
 			row.emplace_back(quality_stirng);
 		}
 		if (options.list_timestamps)

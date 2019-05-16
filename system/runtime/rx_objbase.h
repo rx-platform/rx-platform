@@ -35,12 +35,8 @@
 
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
@@ -66,6 +62,8 @@ using rx::values::rx_simple_value;
 
 namespace rx_platform {
 
+void split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path);
+
 typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 
@@ -75,6 +73,11 @@ namespace object_types
 {
 	class object_type;
 }
+namespace meta_algorithm
+{
+template <class typeT>
+class object_types_algorithm;
+}
 }
 namespace runtime {
 namespace objects {
@@ -83,6 +86,7 @@ namespace objects {
 
 } // namespace object_types
 }
+typedef rx_reference<pointers::reference_object> rx_reference_ptr;
 typedef rx_reference<runtime::objects::domain_runtime> rx_domain_ptr;
 typedef rx_reference<runtime::objects::port_runtime> rx_port_ptr;
 typedef rx_reference<runtime::objects::object_runtime> rx_object_ptr;
@@ -98,239 +102,19 @@ namespace objects {
 
 
 
-struct application_creation_data 
+class object_instance_data 
 {
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
-
-      string_type path;
 
   public:
 
-  protected:
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
 
-  private:
+      bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
-};
+      rx_node_id domain_id;
 
-
-
-
-
-
-struct domain_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
-
-      string_type path;
-
-      rx_application_ptr application;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct object_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      bool system;
-
-      string_type path;
-
-      rx_application_ptr application;
-
-      rx_domain_ptr domain;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class object_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-object class. basic implementation of an object");
-	
-	DECLARE_REFERENCE_PTR(object_runtime);
-
-	//typedef std::vector<runtime_item::smart_ptr> items_order_type;
-	typedef std::map<string_type, size_t> items_cache_type;
-	typedef std::vector<program_runtime_ptr> programs_type;
-
-	friend class meta::meta_data;
-	friend class meta::object_types::object_type;
-
-  public:
-      object_runtime (object_creation_data&& data);
-
-      ~object_runtime();
-
-
-      rx_value get_value (const string_type path) const;
-
-      void turn_on ();
-
-      void turn_off ();
-
-      void set_blocked ();
-
-      void set_test ();
-
-      values::rx_value get_value () const;
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      virtual bool connect_domain (rx_domain_ptr&& domain);
-
-      virtual bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      virtual bool deserialize (base_meta_reader& stream, uint8_t type);
-
-      platform_item_ptr get_item_ptr () const;
-
-      rx_time get_created_time () const;
-
-      rx_time get_modified_time () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      meta::meta_data& meta_info ();
-
-      virtual rx_thread_handle_t get_executer () const;
-
-      virtual bool connect_application (rx_application_ptr&& app);
-
-      void collect_data (data::runtime_values_data& data) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      virtual rx_result check_validity ();
-
-      virtual rx_item_type get_type () const;
-
-
-      const meta::meta_data& meta_info () const;
-
-
-      const rx_mode_type& get_mode () const
-      {
-        return mode_;
-      }
-
-
-      const rx_time get_change_time () const
-      {
-        return change_time_;
-      }
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static rx_item_type type_id;
-
-
-  protected:
-      object_runtime();
-
-
-      bool init_object ();
-
-
-      rx_application_ptr my_application_;
-
-      rx_domain_ptr my_domain_;
-
-
-      rx_node_id domain_id_;
-
-      rx_node_id app_id_;
-
-
-  private:
-
-
-      programs_type programs_;
-
-      meta::meta_data meta_info_;
-
-      structure::runtime_item::smart_ptr item_;
-
-
-      rx_mode_type mode_;
-
-      rx_time change_time_;
-
-
-};
-
-
-
-
-
-
-class user_object : public object_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0,1,0, "\
-user object class. basic implementation of a user object");
-
-	DECLARE_REFERENCE_PTR(user_object);
-
-  public:
-      user_object();
-
-      user_object (object_creation_data&& data);
-
-      ~user_object();
+      rx_node_id app_id;
 
 
   protected:
@@ -345,17 +129,17 @@ user object class. basic implementation of a user object");
 
 
 
-class server_object : public object_runtime  
+class port_instance_data 
 {
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-system object class. basic implementation of a system object");
-
-	DECLARE_REFERENCE_PTR(server_object);
 
   public:
-      server_object (object_creation_data&& data);
 
-      ~server_object();
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      rx_node_id app_id;
 
 
   protected:
@@ -371,91 +155,7 @@ system object class. basic implementation of a system object");
 
 
 
-class domain_runtime : public object_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system domain class. basic implementation of a domain");
-
-	DECLARE_REFERENCE_PTR(domain_runtime);
-	typedef std::vector<object_runtime::smart_ptr> objects_type;
-
-public:
-
-  public:
-      domain_runtime (domain_creation_data&& data);
-
-      ~domain_runtime();
-
-
-      rx_thread_handle_t get_executer () const;
-
-      bool connect_domain (rx_domain_ptr&& domain);
-
-      platform_item_ptr get_item_ptr () const;
-
-      rx_item_type get_type () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static rx_item_type type_id;
-
-
-  protected:
-      domain_runtime();
-
-
-  private:
-
-
-      objects_type objects_;
-
-
-      rx_thread_handle_t executer_;
-
-
-};
-
-
-
-
-
-
-struct port_creation_data 
-{
-
-
-      string_type name;
-
-      rx_node_id id;
-
-      rx_node_id type_id;
-
-      string_type path;
-
-      rx_application_ptr application;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class port_runtime : public object_runtime  
+class port_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system port class. basic implementation of a port");
@@ -463,9 +163,13 @@ system port class. basic implementation of a port");
 	DECLARE_REFERENCE_PTR(port_runtime);
 
 	friend class meta::meta_data;
+	template <class typeT>
+	friend class meta::meta_algorithm::object_types_algorithm;
 
   public:
-      port_runtime (port_creation_data&& data);
+      port_runtime();
+
+      port_runtime (const meta::meta_data& meta, const port_instance_data& instance);
 
       ~port_runtime();
 
@@ -480,10 +184,53 @@ system port class. basic implementation of a port");
 
       rx_item_type get_type () const;
 
+      meta::meta_data& meta_info ();
+
+      values::rx_value get_value () const;
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+      rx_thread_handle_t get_executer () const;
+
+      rx_result check_validity ();
+
+      rx_result initialize_object ();
+
+      rx_result read_value (const string_type& path, rx_value& val) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      bool connect_application (rx_application_ptr&& app);
+
+
+      const port_instance_data& get_instance_data () const
+      {
+        return instance_data_;
+      }
+
+
 
       static rx_item_type get_type_id ()
       {
         return type_id;
+      }
+
+
+      blocks::runtime_holder<port_runtime>& get_runtime ()
+      {
+        return runtime_;
+      }
+
+
+      const meta::meta_data& meta_info () const
+      {
+        return meta_info_;
       }
 
 
@@ -492,11 +239,44 @@ system port class. basic implementation of a port");
 
 
   protected:
-      port_runtime();
-
 
       virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
 
+
+  private:
+
+
+      rx_application_ptr my_application_;
+
+      port_instance_data instance_data_;
+
+
+      blocks::runtime_holder<port_runtime> runtime_;
+
+      meta::meta_data meta_info_;
+
+
+};
+
+
+
+
+
+
+class application_instance_data 
+{
+
+  public:
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      int processor;
+
+
+  protected:
 
   private:
 
@@ -508,36 +288,219 @@ system port class. basic implementation of a port");
 
 
 
-
-class application_runtime : public domain_runtime  
+class domain_instance_data 
 {
-	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system application class. basic implementation of a application");
-
-	DECLARE_REFERENCE_PTR(application_runtime);
-	typedef std::vector<domain_runtime::smart_ptr> domains_type;
-	typedef std::vector<port_runtime::smart_ptr> ports_type;
-
-	friend class meta::meta_data;
 
   public:
-      application_runtime (application_creation_data&& data);
 
-      ~application_runtime();
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      bool connect_application (rx_application_ptr&& app);
+      rx_node_id app_id;
+
+      int processor;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+struct object_initialization_data
+{
+	rx_node_id domain_id;
+	rx_node_id application_id;
+};
+
+
+
+
+
+class object_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+object class. basic implementation of an object");
+	
+	DECLARE_REFERENCE_PTR(object_runtime);
+
+	typedef std::map<string_type, size_t> items_cache_type;
+
+	friend class meta::meta_data;
+	friend class meta::object_types::object_type;
+	template <class typeT>
+	friend class meta::meta_algorithm::object_types_algorithm;
+
+  public:
+      object_runtime();
+
+      object_runtime (const meta::meta_data& meta, const object_instance_data& instance);
+
+      ~object_runtime();
+
+
+      values::rx_value get_value () const;
+
+      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       bool connect_domain (rx_domain_ptr&& domain);
 
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
       platform_item_ptr get_item_ptr () const;
 
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+      meta::meta_data& meta_info ();
+
+      rx_thread_handle_t get_executer () const;
+
+      bool connect_application (rx_application_ptr&& app);
+
+      rx_result check_validity ();
+
       rx_item_type get_type () const;
+
+      rx_result initialize_object ();
+
+      rx_result read_value (const string_type& path, rx_value& val) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+
+      const object_instance_data& get_instance_data () const
+      {
+        return instance_data_;
+      }
+
 
 
       static rx_item_type get_type_id ()
       {
         return type_id;
+      }
+
+
+      blocks::runtime_holder<object_runtime>& get_runtime ()
+      {
+        return runtime_;
+      }
+
+
+      const meta::meta_data& meta_info () const
+      {
+        return meta_info_;
+      }
+
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+      rx_domain_ptr my_domain_;
+
+
+  private:
+
+
+      rx_application_ptr my_application_;
+
+      object_instance_data instance_data_;
+
+
+      blocks::runtime_holder<object_runtime> runtime_;
+
+      meta::meta_data meta_info_;
+
+
+};
+
+
+
+
+
+
+class domain_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
+system domain class. basic implementation of a domain");
+
+	DECLARE_REFERENCE_PTR(domain_runtime);
+	typedef std::vector<object_runtime::smart_ptr> objects_type;
+
+	template <class typeT>
+	friend class meta::meta_algorithm::object_types_algorithm;
+public:
+
+  public:
+      domain_runtime();
+
+      domain_runtime (const meta::meta_data& meta, const domain_instance_data& instance);
+
+      ~domain_runtime();
+
+
+      rx_thread_handle_t get_executer () const;
+
+      platform_item_ptr get_item_ptr () const;
+
+      rx_item_type get_type () const;
+
+      meta::meta_data& meta_info ();
+
+      values::rx_value get_value () const;
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+      bool connect_application (rx_application_ptr&& app);
+
+      rx_result check_validity ();
+
+      rx_result initialize_object ();
+
+      rx_result read_value (const string_type& path, rx_value& val) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+
+      const domain_instance_data& get_instance_data () const
+      {
+        return instance_data_;
+      }
+
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+      blocks::runtime_holder<domain_runtime>& get_runtime ()
+      {
+        return runtime_;
+      }
+
+
+      const meta::meta_data& meta_info () const
+      {
+        return meta_info_;
       }
 
 
@@ -548,13 +511,131 @@ system application class. basic implementation of a application");
   protected:
 
   private:
+
+
+      objects_type objects_;
+
+      rx_application_ptr my_application_;
+
+      domain_instance_data instance_data_;
+
+
+      rx_thread_handle_t executer_;
+
+      blocks::runtime_holder<domain_runtime> runtime_;
+
+      meta::meta_data meta_info_;
+
+
+};
+
+
+struct application_initialization_data
+{
+	int processor;
+};
+
+
+
+
+class application_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
+system application class. basic implementation of a application");
+
+	DECLARE_REFERENCE_PTR(application_runtime);
+	typedef std::vector<domain_runtime::smart_ptr> domains_type;
+	typedef std::vector<port_runtime::smart_ptr> ports_type;
+
+	friend class meta::meta_data;
+	template <class typeT>
+	friend class meta::meta_algorithm::object_types_algorithm;
+
+  public:
       application_runtime();
 
+      application_runtime (const meta::meta_data& meta, const application_instance_data& instance);
+
+      ~application_runtime();
+
+
+      platform_item_ptr get_item_ptr () const;
+
+      rx_item_type get_type () const;
+
+      meta::meta_data& meta_info ();
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      string_type get_name () const;
+
+      size_t get_size () const;
+
+      rx_thread_handle_t get_executer () const;
+
+      rx_result check_validity ();
+
+      rx_result initialize_object ();
+
+      rx_result read_value (const string_type& path, rx_value& val) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      values::rx_value get_value () const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data) const;
+
+
+      const application_instance_data& get_instance_data () const
+      {
+        return instance_data_;
+      }
+
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+      blocks::runtime_holder<application_runtime>& get_runtime ()
+      {
+        return runtime_;
+      }
+
+
+      const meta::meta_data& meta_info () const
+      {
+        return meta_info_;
+      }
+
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
 
 
       domains_type domains_;
 
       ports_type ports_;
+
+      application_instance_data instance_data_;
+
+
+      rx_thread_handle_t executer_;
+
+      blocks::runtime_holder<application_runtime> runtime_;
+
+      meta::meta_data meta_info_;
 
 
 };

@@ -52,15 +52,15 @@ class types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_object_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
 
-      static void create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref);
+      static void create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
 
-      static void delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref);
+      static void delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
 
-      static void update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref);
+      static void update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
 
   protected:
@@ -88,13 +88,13 @@ class simple_types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_object_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
 
-      static void create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_object_ptr ref);
+      static void create_type (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (const string_type& name, const string_type& base_name, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
 
-      static void delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref);
+      static void delete_type (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
 
 
   protected:
@@ -120,24 +120,24 @@ class runtime_model_algorithm
 
   public:
 
-      static void delete_runtime (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_object_ptr ref);
+      static void delete_runtime (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
 
-      static void create_runtime (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref);
+      static void create_runtime (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
-      static void create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref);
+      static void create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
-      static void create_runtime (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_object_ptr ref);
+      static void create_runtime (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
 
   protected:
 
   private:
 
-      static rx_result delete_runtime_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_reference_ptr ref);
 
       static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes);
 

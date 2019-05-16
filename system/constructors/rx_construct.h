@@ -32,8 +32,6 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 #include "system/server/rx_server.h"
 
@@ -72,14 +70,6 @@ class object_constructor_base
 
 
 };
-
-
-
-
-
-
-
-typedef object_constructor_base< runtime::object_runtime_ptr , runtime::objects::user_object::smart_ptr  > user_object_constructor;
 
 
 

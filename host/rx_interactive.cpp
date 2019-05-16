@@ -389,12 +389,6 @@ interactive_console_client::interactive_console_client (hosting::rx_platform_hos
       : host_(host),
         exit_(false)
 	, security_context_(pointers::_create_new)
-	, console_client(runtime::objects::port_creation_data {
-		RX_INTERACTIVE_NAME
-		, RX_INTERACTIVE_ID
-		, RX_CONSOLE_TYPE_ID
-		, RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME
-		, rx_system_application() })
 {
 	security_context_->login();
 

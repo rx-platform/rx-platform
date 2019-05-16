@@ -97,7 +97,7 @@ void program_runtime::get_value (values::rx_value& val) const
 
 platform_item_ptr program_runtime::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 values::rx_value program_runtime::get_value () const
