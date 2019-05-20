@@ -36,6 +36,7 @@
 #include "rx_configuration.h"
 #include "system/runtime/rx_objbase.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "model/rx_meta_internals.h"
 using namespace rx_platform::meta::meta_algorithm;
 
 
@@ -116,6 +117,11 @@ rx_result application_type::resolve (rx_directory_ptr dir)
 
 void application_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
+	where->runtime_.runtime.set_runtime_data(prototype);
+}
+
+void application_type::set_instance_data (instance_data_t&& data, RTypePtr where)
+{
 }
 
 
@@ -162,7 +168,12 @@ domain_type::~domain_type()
 
 rx_result domain_type::construct (rx_domain_ptr what, construct_context& ctx) const
 {
-	return object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
+	auto result = object_types_algorithm<domain_type>::construct_object(*this, what, ctx);
+	if (result)
+	{
+		//what->objects_
+	}
+	return result;
 }
 
 platform_item_ptr domain_type::get_item_ptr () const
@@ -210,6 +221,11 @@ rx_result domain_type::resolve (rx_directory_ptr dir)
 }
 
 void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
+	where->runtime_.runtime.set_runtime_data(prototype);
+}
+
+void domain_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
 }
 
@@ -261,7 +277,32 @@ void object_type::get_class_info (string_type& class_name, string_type& console,
 
 rx_result object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
-	return object_types_algorithm<object_type>::construct_object(*this, what, ctx);
+	auto result = object_types_algorithm<object_type>::construct_object(*this, what, ctx);
+	if (result)
+	{
+		if (what->instance_data_.domain_id)
+		{
+			auto domain_ptr = model::platform_types_manager::instance().internal_get_type_cache<domain_type>().get_runtime(what->instance_data_.domain_id);
+			domain_ptr->objects_.emplace_back(what);
+			what->connect_domain(std::move(domain_ptr));
+		}
+		else
+		{
+			META_LOG_WARNING("object_type::construct", 900, "Domain Id is null, connecting object to unassigned domain.");
+			auto domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
+			if(domain_ptr)
+				domain_ptr->objects_.emplace_back(what);
+			what->connect_domain(std::move(domain_ptr));
+		}
+		if (!what->my_domain_)
+		{
+			std::ostringstream message;
+			message << "Unable to connect to domain " 
+				<< what->instance_data_.domain_id ? what->instance_data_.domain_id.to_string() : RX_NULL_ITEM_NAME;
+			result = rx_result(message.str());
+		}
+	}
+	return result;
 }
 
 platform_item_ptr object_type::get_item_ptr () const
@@ -311,6 +352,10 @@ bool object_type::check_type (type_check_context& ctx)
 rx_result object_type::resolve (rx_directory_ptr dir)
 {
 	return object_types_algorithm<object_type>::resolve_object_type(*this, dir);
+}
+
+void object_type::set_instance_data (instance_data_t&& data, RTypePtr where)
+{
 }
 
 
@@ -448,6 +493,11 @@ rx_result port_type::resolve (rx_directory_ptr dir)
 }
 
 void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
+	where->runtime_.runtime.set_runtime_data(prototype);
+}
+
+void port_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
 }
 

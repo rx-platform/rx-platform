@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -41,6 +41,7 @@
 #include "api/rx_meta_api.h"
 #include "rx_configuration.h"
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 using namespace rx_platform::meta::object_types;
 
 
@@ -58,7 +59,17 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 }
 
 
-// Class sys_internal::builders::rx_platform_builder
+template<class T>
+void add_object_to_configuration(rx_directory_ptr dir, meta_data meta, typename T::instance_data_t data, tl::type2type<T>)
+{
+	meta.resolve();
+	auto ret = model::platform_types_manager::instance().internal_get_type_cache<T>().create_runtime(meta, std::move(data), nullptr);
+	if(ret)
+		dir->add_item(ret.value()->get_item_ptr());
+}
+
+
+// Class sys_internal::builders::rx_platform_builder 
 
 rx_platform_builder::rx_platform_builder()
 {
@@ -84,6 +95,8 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx_platform_host* host, namespace_data_t& data)
 {
+	register_system_constructors();
+
 	auto sys_builders = get_system_builders(data);
 	auto user_builders = get_user_builders(data);
 	auto test_builders = get_test_builders(data);
@@ -92,6 +105,8 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 	rx_result errors = true;
 
 	auto root = rx_create_reference<sys_internal::internal_ns::platform_root>();
+	root->add_sub_directory(rx_create_reference<unassigned_directory>());
+
 	for (auto& one : sys_builders)
 	{
 		auto result = one->do_build(root);
@@ -101,9 +116,14 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 			errors.register_errors(result.errors());
 		}
 	}
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system!");
+	errors = buid_unassigned(root, host, data);
+	if(errors)
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built!");
 	// system is critical so an error in building system is fatal
-	if (!errors)
+	else
 		return errors.errors();
+
 
 	for (auto& one : user_builders)
 	{
@@ -299,14 +319,49 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_othe
 	return builders;
 }
 
+void rx_platform_builder::register_system_constructors ()
+{
+	model::platform_types_manager::instance().internal_get_type_cache<application_type>().register_constructor(
+		RX_NS_SYSTEM_APP_TYPE_ID, [] { return rx_create_reference<sys_objects::system_application>(); } );
+}
 
-// Class sys_internal::builders::root_folder_builder
+rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data)
+{
+	string_type path(RX_NS_UNASSIGNED_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		auto reg_result = model::platform_types_manager::instance().internal_get_type_cache< domain_type>().register_constructor(
+			RX_NS_SYSTEM_UNASS_TYPE_ID, []
+			{
+				return rx_gate::instance().get_manager().get_unassigned_domain();
+			});
+		runtime::objects::domain_instance_data instance_data;
+		instance_data.processor = 1;
+		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
+		
+		reg_result = model::platform_types_manager::instance().internal_get_type_cache<application_type>().register_constructor(
+			RX_NS_SYSTEM_UNASS_APP_TYPE_ID, []
+			{
+				return rx_gate::instance().get_manager().get_unassigned_app();
+			});
+		runtime::objects::application_instance_data app_instance_data;
+		app_instance_data.processor = 1;
+		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
+	}
+	return true;
+}
+
+
+// Class sys_internal::builders::root_folder_builder 
 
 
 rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 {
 	root->add_sub_directory(rx_create_reference<world_directory>());
-	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
 	auto sys_dir = rx_create_reference<internal_directory>(RX_NS_SYS_NAME);
 	sys_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BIN_NAME));
@@ -333,7 +388,7 @@ rx_result root_folder_builder::do_build (platform_root::smart_ptr root)
 }
 
 
-// Class sys_internal::builders::basic_types_builder
+// Class sys_internal::builders::basic_types_builder 
 
 
 rx_result basic_types_builder::do_build (platform_root::smart_ptr root)
@@ -466,7 +521,7 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T>
 	model::platform_types_manager::instance().internal_get_simple_type_cache<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
-// Class sys_internal::builders::system_classes_builder
+// Class sys_internal::builders::system_classes_builder 
 
 
 rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
@@ -496,7 +551,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 		// unassigned application and domain types
 		app = rx_create_reference<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_UNASS_APP_TYPE_NAME
-			, RX_NS_SYSTEM_APP_TYPE_ID
+			, RX_NS_SYSTEM_UNASS_APP_TYPE_ID
 			, RX_CLASS_APPLICATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -563,7 +618,7 @@ rx_result system_classes_builder::do_build (platform_root::smart_ptr root)
 }
 
 
-// Class sys_internal::builders::port_classes_builder
+// Class sys_internal::builders::port_classes_builder 
 
 
 rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
@@ -678,18 +733,21 @@ rx_result port_classes_builder::do_build (platform_root::smart_ptr root)
 }
 
 
-// Class sys_internal::builders::system_objects_builder
+// Class sys_internal::builders::system_objects_builder 
 
 
 rx_result system_objects_builder::do_build (platform_root::smart_ptr root)
 {
-	//auto dir = root->get_sub_directory(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
-	//if (dir)
-	//{
-	//	// system application and domain
-	//	auto app = model::platform_types_manager::instance().create_runtime<rx_platform::meta::object_types::application_type>(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, true);
-	//	//add_object_to_configuration(dir, app);
-	//}
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		runtime::objects::application_instance_data instance_data;
+		instance_data.processor = 1;
+		meta_data meta(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<application_type>());
+	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
 	return true;
 }

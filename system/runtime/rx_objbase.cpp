@@ -88,6 +88,148 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 	}
 }
 
+// Class rx_platform::runtime::objects::object_runtime 
+
+rx_item_type object_runtime::type_id = rx_item_type::rx_object;
+
+object_runtime::object_runtime()
+	: meta_info_(namespace_item_pull_access)
+{
+}
+
+object_runtime::object_runtime (const meta::meta_data& meta, const object_instance_data& instance)
+	: meta_info_(meta)
+	, instance_data_(instance)
+{
+}
+
+
+object_runtime::~object_runtime()
+{
+}
+
+
+
+values::rx_value object_runtime::get_value () const
+{
+	rx_value temp;
+	temp.assign_static(meta_info_.get_version(), meta_info_.get_modified_time());
+	return temp;
+}
+
+void object_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+}
+
+bool object_runtime::connect_domain (rx_domain_ptr&& domain)
+{
+	my_domain_ = std::move(domain);
+	instance_data_.domain_id = my_domain_->meta_info().get_id();
+	return true;
+}
+
+bool object_runtime::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	if (!meta_info_.serialize_meta_data(stream, type, get_type()))
+		return false;
+
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!instance_data_.serialize(stream, type))
+		return false;
+
+	if (!runtime_.serialize(stream, type))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+	
+	return true;
+}
+
+bool object_runtime::deserialize (base_meta_reader& stream, uint8_t type)
+{
+
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!instance_data_.deserialize(stream, type))
+		return false;
+
+	if (!runtime_.deserialize(stream, type))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+
+	return true;
+}
+
+platform_item_ptr object_runtime::get_item_ptr () const
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+}
+
+string_type object_runtime::get_name () const
+{
+	return meta_info_.get_name();
+}
+
+size_t object_runtime::get_size () const
+{
+	return sizeof(*this);
+}
+
+meta::meta_data& object_runtime::meta_info ()
+{
+  return meta_info_;
+
+}
+
+rx_thread_handle_t object_runtime::get_executer () const
+{
+	if (my_domain_)
+		return my_domain_->get_executer();
+	else
+		return RX_DOMAIN_GENERAL;
+}
+
+rx_result object_runtime::check_validity ()
+{
+	return true;
+}
+
+rx_item_type object_runtime::get_type () const
+{
+  return type_id;
+
+}
+
+rx_result object_runtime::initialize_object ()
+{
+	return true;
+}
+
+rx_result object_runtime::read_value (const string_type& path, rx_value& val) const
+{
+	if (path.empty())
+	{// our value
+		val = get_value();
+		return true;
+	}
+	else
+	{
+		return runtime_.read_value(path, val, *this);
+	}
+}
+
+rx_result object_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+{
+	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
+}
+
+
 // Class rx_platform::runtime::objects::application_runtime 
 
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
@@ -289,6 +431,7 @@ bool domain_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 
 	if (!runtime_.serialize(stream, type))
 		return false;
+
 
 	if (!stream.end_object())
 		return false;
@@ -531,8 +674,6 @@ bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) co
 		return false;
 	if (!stream.write_id("domain", domain_id))
 		return false;
-	if (!stream.write_id("app", app_id))
-		return false;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -544,7 +685,81 @@ bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 		return false;
 	if (!stream.read_id("domain", domain_id))
 		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+
+// Class rx_platform::runtime::objects::domain_instance_data 
+
+
+bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_int("processor", processor))
+		return false;
+	if (!stream.write_id("app", app_id))
+		return false;
+
+	if (!stream.start_array("objects", objects.size()))
+		return false;
+	for (const auto& one : objects)
+	{
+		if (!stream.write_id("id", one))
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_int("processor", processor))
+		return false;
 	if (!stream.read_id("app", app_id))
+		return false;
+
+	if (!stream.start_array("objects"))
+		return false;
+	while(!stream.array_end())
+	{
+		rx_node_id one;
+		if (!stream.read_id("id", one))
+			return false;
+	}
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+
+// Class rx_platform::runtime::objects::application_instance_data 
+
+
+bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_int("processor", processor))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_int("processor", processor))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -578,212 +793,8 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class rx_platform::runtime::objects::application_instance_data 
-
-
-bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_int("processor", processor))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_int("processor", processor))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::runtime::objects::domain_instance_data 
-
-
-bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_int("processor", processor))
-		return false;
-	if (!stream.write_id("app", app_id))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_int("processor", processor))
-		return false;
-	if (!stream.read_id("app", app_id))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::runtime::objects::object_runtime 
-
-rx_item_type object_runtime::type_id = rx_item_type::rx_object;
-
-object_runtime::object_runtime()
-	: meta_info_(namespace_item_pull_access)
-{
-}
-
-object_runtime::object_runtime (const meta::meta_data& meta, const object_instance_data& instance)
-	: meta_info_(meta)
-	, instance_data_(instance)
-{
-}
-
-
-object_runtime::~object_runtime()
-{
-}
-
-
-
-values::rx_value object_runtime::get_value () const
-{
-	rx_value temp;
-	temp.assign_static(meta_info_.get_version(), meta_info_.get_modified_time());
-	return temp;
-}
-
-void object_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-bool object_runtime::connect_domain (rx_domain_ptr&& domain)
-{
-	my_domain_ = std::move(domain);
-	instance_data_.domain_id = my_domain_->meta_info().get_id();
-	return true;
-}
-
-bool object_runtime::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!meta_info_.serialize_meta_data(stream, type, get_type()))
-		return false;
-
-	if (!stream.start_object("def"))
-		return false;
-
-	if (!instance_data_.serialize(stream, type))
-		return false;
-
-	if (!runtime_.serialize(stream, type))
-		return false;
-
-	if (!stream.end_object())
-		return false;
-	
-	return true;
-}
-
-bool object_runtime::deserialize (base_meta_reader& stream, uint8_t type)
-{
-
-	if (!stream.start_object("def"))
-		return false;
-
-	if (!instance_data_.deserialize(stream, type))
-		return false;
-
-	if (!runtime_.deserialize(stream, type))
-		return false;
-
-	if (!stream.end_object())
-		return false;
-
-	return true;
-}
-
-platform_item_ptr object_runtime::get_item_ptr () const
-{
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
-}
-
-string_type object_runtime::get_name () const
-{
-	return meta_info_.get_name();
-}
-
-size_t object_runtime::get_size () const
-{
-	return sizeof(*this);
-}
-
-meta::meta_data& object_runtime::meta_info ()
-{
-  return meta_info_;
-
-}
-
-rx_thread_handle_t object_runtime::get_executer () const
-{
-	if (my_domain_)
-		return my_domain_->get_executer();
-	else
-		return RX_DOMAIN_GENERAL;
-}
-
-bool object_runtime::connect_application (rx_application_ptr&& app)
-{
-	my_application_ = std::move(app);
-	instance_data_.app_id = my_application_->meta_info().get_id();
-	return true;
-}
-
-rx_result object_runtime::check_validity ()
-{
-	return true;
-}
-
-rx_item_type object_runtime::get_type () const
-{
-  return type_id;
-
-}
-
-rx_result object_runtime::initialize_object ()
-{
-	return true;
-}
-
-rx_result object_runtime::read_value (const string_type& path, rx_value& val) const
-{
-	if (path.empty())
-	{// our value
-		val = get_value();
-		return true;
-	}
-	else
-	{
-		return runtime_.read_value(path, val, *this);
-	}
-}
-
-rx_result object_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
-{
-	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
-}
-
-
 } // namespace objects
 } // namespace runtime
 } // namespace rx_platform
+
 

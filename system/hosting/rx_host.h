@@ -33,6 +33,7 @@
 
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
+#include "system/libraries/rx_plugin.h"
 
 
 
@@ -211,6 +212,8 @@ class rx_platform_host
       rx_result initialize_storages (rx_platform::configuration_data_t& config);
 
       rx_result deinitialize_storages ();
+
+      rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
 
 
   private:

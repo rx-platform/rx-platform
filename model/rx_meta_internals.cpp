@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -38,7 +38,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager
+// Class model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 	: worker_("config",0)
@@ -107,7 +107,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data
+// Class model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -281,7 +281,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash
+// Parameterized Class model::type_hash 
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -336,7 +336,7 @@ rx_result type_hash<typeT>::register_constructor (const rx_node_id& id, std::fun
 }
 
 template <class typeT>
-rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (meta_data& meta, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data, bool prototype)
 {
 	if (meta.get_id().is_null() || prototype)
 	{
@@ -404,6 +404,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		}
 	}
 	typeT::set_runtime_data(ctx.runtime_data, ret);
+	typeT::set_instance_data(std::move(type_data), ret);
 	for (const auto& one : overrides)
 	{
 		if (one)
@@ -553,8 +554,27 @@ rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
 	}
 }
 
+template <class typeT>
+api::query_result type_hash<typeT>::get_instanced_objects (const rx_node_id& id) const
+{
+	api::query_result ret;
+	std::vector<rx_node_id> temp;
+	instance_hash_.get_instanced_from(id, temp);
+	for (auto one : temp)
+	{
+		auto type = registered_objects_.find(one);
 
-// Class model::inheritance_hash
+		if (type != registered_objects_.end())
+		{
+			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
+		}
+	}
+	ret.success = true;
+	return ret;
+}
+
+
+// Class model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -689,7 +709,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash
+// Class model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -738,8 +758,25 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 	return true;
 }
 
+rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& result) const
+{
+	auto it = instance_hash_.find(id);
+	if (it != instance_hash_.end())
+	{
+		for (auto one : *it->second)
+		{
+			result.emplace_back(one);
+		}
+		return true;
+	}
+	else
+	{
+		return "Node id does not exists";
+	}
+}
 
-// Parameterized Class model::simple_type_hash
+
+// Parameterized Class model::simple_type_hash 
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -753,7 +790,7 @@ simple_type_hash<typeT>::simple_type_hash()
 
 
 template <class typeT>
-typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
+typename simple_type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -767,7 +804,7 @@ typename type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (co
 }
 
 template <class typeT>
-rx_result simple_type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
+rx_result simple_type_hash<typeT>::register_type (typename simple_type_hash<typeT>::Tptr what)
 {
 	const auto& id = what->meta_info().get_id();
 	auto it = registered_types_.find(id);
@@ -945,7 +982,7 @@ rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, 
 }
 
 
-// Class model::types_resolver
+// Class model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)

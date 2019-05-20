@@ -113,9 +113,11 @@ namespace meta_test {
 	 }
 	 if (object_type_id)
 	 {
+		 runtime::objects::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
-			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory(), ctx->get_client());
+			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
+			 ,std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object=test_result;
@@ -379,9 +381,11 @@ namespace meta_test {
 
 	 if (object_type_id)
 	 {
+		 runtime::objects::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
-			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr, ctx->get_current_directory(), ctx->get_client());
+			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
+			 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object = test_result;
@@ -559,9 +563,10 @@ namespace meta_test {
 			 {
 				 out << one << "\r\n";
 			 }
+			 runtime::objects::object_instance_data instance_data;
 			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
 				 "perica", "check_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
-				 , ctx->get_current_directory(), ctx->get_client());
+				 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 			 if (!obj)
 			 {
 				 out << ANSI_COLOR_YELLOW "create returned following errors:\r\n" ANSI_COLOR_RESET;

@@ -77,7 +77,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int pipe_main (int argc, char* argv[]);
+      int pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
 
       static string_type get_pipe_info ();
 
@@ -92,7 +92,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes);
 
-      void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes);
+      void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins);
 
 
   private:

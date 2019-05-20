@@ -68,7 +68,7 @@ interactive_console_host::~interactive_console_host()
 
 
 
-void interactive_console_host::console_loop (configuration_data_t& config)
+void interactive_console_host::console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	sec_ctx->login();
@@ -295,7 +295,7 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 	}
 }
 
-int interactive_console_host::console_main (int argc, char* argv[])
+int interactive_console_host::console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_result ret = setup_console(argc, argv);
 
@@ -326,22 +326,33 @@ int interactive_console_host::console_main (int argc, char* argv[])
 			{
 				std::cout << ANSI_STATUS_OK "\r\n";
 
-				std::cout << "Initializing storages...";
-				ret = initialize_storages(config);
+				std::cout << "Registering plug-ins...";
+				ret = register_plugins(plugins);
 				if (ret)
 				{
 					std::cout << ANSI_STATUS_OK "\r\n";
 
-					HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-					// execute main loop of the console host
-					console_loop(config);
-					HOST_LOG_INFO("Main", 999, "Console Host exited.");
-					
-					deinitialize_storages();
+					std::cout << "Initializing storages...";
+					ret = initialize_storages(config);
+					if (ret)
+					{
+						std::cout << ANSI_STATUS_OK "\r\n";
+						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+						// execute main loop of the console host
+						console_loop(config, plugins);
+						HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+						deinitialize_storages();
+					}
+					else
+					{
+						std::cout << ANSI_STATUS_ERROR "\r\nError initializing storages\r\n";
+						rx_dump_error_result(std::cout, ret);
+					}
 				}
 				else
 				{
-					std::cout << ANSI_STATUS_ERROR "\r\nError initializing storages\r\n";
+					std::cout << ANSI_STATUS_ERROR "\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();

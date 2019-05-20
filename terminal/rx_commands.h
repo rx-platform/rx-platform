@@ -60,43 +60,6 @@ namespace commands {
 
 
 
-class server_command : public rx_platform::prog::server_command_base  
-{
-	DECLARE_REFERENCE_PTR(server_command);
-
-  public:
-      server_command (const string_type& console_name);
-
-      ~server_command();
-
-
-      namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      void dump_error_result (std::ostream& err, const rx_result& result) const;
-
-
-  protected:
-	  template<typename T>
-	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
-	  {
-		  for (const auto& one : result.errors())
-			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-	  }
-  private:
-
-
-      cxxopts::Options options_;
-
-
-};
-
-
-
-
-
-
 class server_command_manager : public rx_platform::runtime::objects::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
@@ -136,6 +99,43 @@ bin folder in file hierarcyh\
 
 
       locks::lockable lock_;
+
+
+};
+
+
+
+
+
+
+class server_command : public rx_platform::prog::server_command_base  
+{
+	DECLARE_REFERENCE_PTR(server_command);
+
+  public:
+      server_command (const string_type& console_name);
+
+      ~server_command();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      void dump_error_result (std::ostream& err, const rx_result& result) const;
+
+
+  protected:
+	  template<typename T>
+	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
+	  {
+		  for (const auto& one : result.errors())
+			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+	  }
+  private:
+
+
+      cxxopts::Options options_;
 
 
 };

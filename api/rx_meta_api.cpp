@@ -55,27 +55,27 @@ rx_result rx_delete_object(const string_type& name
 
 template<class typeT>
 rx_result rx_create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
+	, typename typeT::instance_data_t instance_data, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
 	model::algorithms::runtime_model_algorithm<typeT>::create_runtime(
-		name, type_name, attributes, ptr_copy, ctx.directory, callback, ctx.object);
+		name, type_name, attributes, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
 	return true;
 }
 
 template rx_result rx_create_runtime<object_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes
+	, runtime::objects::object_instance_data instance_data, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<domain_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes
+	, runtime::objects::domain_instance_data instance_data, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<application_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes
+	, runtime::objects::application_instance_data instance_data, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<port_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, namespace_item_attributes attributes
+	, runtime::objects::port_instance_data instance_data, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
 
 

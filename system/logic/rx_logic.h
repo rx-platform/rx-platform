@@ -83,8 +83,6 @@ public:
 
       size_t get_size () const;
 
-      virtual void fill_code_info (std::ostream& info, const string_type& name);
-
 
       sl_runtime::sl_program_holder& my_program ();
 

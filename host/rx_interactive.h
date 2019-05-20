@@ -166,7 +166,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      int console_main (int argc, char* argv[]);
+      int console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
 
       virtual rx_result setup_console (int argc, char* argv[]);
 
@@ -177,7 +177,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
   protected:
 
-      void console_loop (configuration_data_t& config);
+      void console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
 
       bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 

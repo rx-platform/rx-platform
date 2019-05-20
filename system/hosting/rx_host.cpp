@@ -37,6 +37,7 @@
 
 #include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "sys_internal/rx_plugin_manager.h"
 
 
 namespace rx_platform {
@@ -225,6 +226,15 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.namespace_data.build_system_from_code))
 		("h,help", "Print help")
 		;
+}
+
+rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
+{
+	for (auto one : plugins)
+	{
+		sys_internal::plugins::plugins_manager::instance().register_plugin(one);
+	}
+	return true;
 }
 
 

@@ -141,6 +141,7 @@ implementation of application type");
 public:
 	typedef runtime::objects::application_runtime RType;
 	typedef runtime::objects::application_runtime::smart_ptr RTypePtr;
+	typedef runtime::objects::application_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -171,6 +172,8 @@ public:
       rx_result resolve (rx_directory_ptr dir);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+
+      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -222,6 +225,7 @@ implementation of domain type");
 public:
 	typedef runtime::objects::domain_runtime RType;
 	typedef typename runtime::objects::domain_runtime::smart_ptr RTypePtr;
+	typedef runtime::objects::domain_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -252,6 +256,8 @@ public:
       rx_result resolve (rx_directory_ptr dir);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+
+      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -303,6 +309,7 @@ implementation of object type");
 public:
 	typedef runtime::objects::object_runtime RType;
 	typedef runtime::object_runtime_ptr RTypePtr;
+	typedef runtime::objects::object_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -335,6 +342,8 @@ public:
       bool check_type (type_check_context& ctx);
 
       rx_result resolve (rx_directory_ptr dir);
+
+      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -386,6 +395,7 @@ implementation of port type");
 public:
 	typedef runtime::objects::port_runtime RType;
 	typedef runtime::objects::port_runtime::smart_ptr RTypePtr;
+	typedef runtime::objects::port_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -416,6 +426,8 @@ public:
       rx_result resolve (rx_directory_ptr dir);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+
+      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;

@@ -72,7 +72,7 @@ command for creating various objects and types in platform\r\n\
 
   private:
 	  template<class T>
-	  bool create_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 

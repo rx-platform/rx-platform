@@ -74,15 +74,23 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 				bool ret = false;
 				if (what == "object")
 				{
-					ret = create_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					runtime::objects::object_instance_data instance_data;
+					ret = create_object<object_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<object_type>());
 				}
 				else if (what == "domain")
 				{
-					ret = create_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+					runtime::objects::domain_instance_data instance_data;
+					ret = create_object<domain_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				else if (what == "port")
+				{
+					runtime::objects::port_instance_data instance_data;
+					ret = create_object<port_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<port_type>());
 				}
 				else if (what == "app" || what == "application")
 				{
-					ret = create_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+					runtime::objects::application_instance_data instance_data;
+					ret = create_object<application_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<application_type>());
 				}
 				else if (what == "object-type")
 				{
@@ -130,7 +138,7 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 
 
 template<class T>
-bool create_command::create_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool create_command::create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	string_type from_command;
@@ -183,7 +191,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_runtime<T>(name, class_name, &init_data, namespace_item_attributes::namespace_item_full_access,
+				rx_platform::api::meta::rx_create_runtime<T>(name, class_name, &init_data, std::move(instance_data), namespace_item_attributes::namespace_item_full_access,
 					[=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
@@ -225,7 +233,7 @@ bool create_command::create_object(std::istream& in, std::ostream& out, std::ost
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_runtime<T>(name, class_name, nullptr, namespace_item_attributes::namespace_item_full_access,
+		rx_platform::api::meta::rx_create_runtime<T>(name, class_name, nullptr, std::move(instance_data), namespace_item_attributes::namespace_item_full_access,
 			[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				if (!result)

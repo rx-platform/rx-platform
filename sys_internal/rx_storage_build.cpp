@@ -371,19 +371,23 @@ template<class T>
 rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
 {
 	auto init_data = std::make_unique< data::runtime_values_data>();
+	typename T::instance_data_t instance_data;
 	bool ret = false;
 	if (stream.start_object("def"))
 	{
 		if (stream.read_init_values("values", *init_data))
 		{
-			ret = true;
-		}
+			if (instance_data.deserialize(stream, 1))
+			{
+				ret = true;
+			}
+		}		
 	}
 	storage->close();
 	if (ret)
 	{
 		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
-			meta, init_data.release(), dir, rx_object_ptr::null_ptr);
+			meta, init_data.release(), std::move(instance_data), dir, rx_object_ptr::null_ptr);
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();

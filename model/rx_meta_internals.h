@@ -62,6 +62,8 @@ namespace algorithms
 {
 template <class typeT>
 class types_model_algorithm;
+template <class typeT>
+class runtime_model_algorithm;
 }
 
 #define DECLARE_META_TYPE \
@@ -240,6 +242,8 @@ class instance_hash
 
       bool remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids);
 
+      rx_result get_instanced_from (const rx_node_id& id, rx_node_ids& result) const;
+
 
   protected:
 
@@ -285,7 +289,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (meta_data& meta, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -300,6 +304,8 @@ public:
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
       rx_result update_type (typename type_hash<typeT>::Tptr what);
+
+      api::query_result get_instanced_objects (const rx_node_id& id) const;
 
 
   protected:
@@ -347,9 +353,9 @@ public:
       simple_type_hash();
 
 
-      typename type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id) const;
+      typename simple_type_hash<typeT>::Tptr get_type_definition (const rx_node_id& id) const;
 
-      rx_result register_type (typename type_hash<typeT>::Tptr what);
+      rx_result register_type (typename simple_type_hash<typeT>::Tptr what);
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 

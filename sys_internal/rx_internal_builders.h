@@ -35,6 +35,17 @@
 // rx_server
 #include "system/server/rx_server.h"
 
+
+/////////////////////////////////////////////////////////////
+// logging macros for building
+#define BUILD_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Build",src,lvl,msg)
+#define BUILD_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Build",src,lvl,msg)
+#define BUILD_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Build",src,lvl,msg)
+#define BUILD_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Build",src,lvl,msg)
+#define BUILD_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Build",src,lvl,msg)
+#define BUILD_LOG_TRACE(src,lvl,msg) RX_TRACE("Build",src,lvl,msg)
+
+
 #include "sys_internal/rx_internal_ns.h"
 using namespace sys_internal::internal_ns;
 
@@ -77,6 +88,10 @@ class rx_platform_builder
       static std::vector<std::unique_ptr<rx_platform_builder> > get_test_builders (namespace_data_t& data);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_other_builders (namespace_data_t& data);
+
+      static void register_system_constructors ();
+
+      static rx_result buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data);
 
 
 

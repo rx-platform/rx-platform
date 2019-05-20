@@ -150,11 +150,13 @@ class runtime_objects_query : public rx_query
 
       string_type type_name;
 
-      string_type base_type;
+      string_type domain_name;
 
       string_type subfolder;
 
       static string_type query_name;
+
+      rx_node_id domain;
 
 
   protected:

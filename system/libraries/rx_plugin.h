@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  system\libraries\rx_plugin.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,62 +27,48 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#ifndef rx_plugin_h
+#define rx_plugin_h 1
 
 
 
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
-#include "system/meta/rx_types.h"
-namespace rx_platform
+
+
+namespace rx_platform {
+
+namespace library {
+
+
+
+
+
+class rx_plugin_base 
 {
-namespace api
-{
+
+  public:
+      rx_plugin_base();
+
+      virtual ~rx_plugin_base();
 
 
+      virtual string_type get_plugin_info () = 0;
 
-struct query_result_detail
-{
-	query_result_detail(rx_item_type type, const meta_data& data)
-	{
-		this->type = type;
-		this->data = data;
-	}
-	query_result_detail(rx_item_type type, meta_data&& data) noexcept 
-	{
-		this->type = type;
-		this->data = std::move(data);
-	}
-	rx_item_type type;
-	meta_data data;
-};
+      virtual rx_result init_plugin () = 0;
 
-struct query_result
-{
-	std::vector<query_result_detail> items;
+      virtual rx_result deinit_plugin () = 0;
 
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
+
+  protected:
+
+  private:
+
+
 };
 
 
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_reference<reference_object> object;
-};
-
-}
-}
-
+} // namespace library
+} // namespace rx_platform
 
 
 

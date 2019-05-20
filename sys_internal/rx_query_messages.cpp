@@ -583,62 +583,6 @@ rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_object_response 
-
-template <class itemT>
-string_type get_object_response<itemT>::type_name = "getObjResp";
-
-template <class itemT>
-uint16_t get_object_response<itemT>::type_id = rx_get_object_response_id;
-
-
-template <class itemT>
-rx_result get_object_response<itemT>::serialize (base_meta_writer& stream) const
-{
-	if (!stream.start_object("item"))
-		return "Error starting item object";
-	
-	auto result = item->serialize(stream, STREAMING_TYPE_OBJECT);
-	if (!result)
-		return result;
-
-	if (!stream.end_object())
-		return "Error ending item object";
-
-	return true;
-}
-
-template <class itemT>
-rx_result get_object_response<itemT>::deserialize (base_meta_reader& stream)
-{
-	if (!stream.start_object("item"))
-		return "Error starting item object";
-
-	auto result = item->deserialize(stream, STREAMING_TYPE_OBJECT);
-	if (!result)
-		return result;
-
-	if (!stream.end_object())
-		return "Error ending item object";
-
-	return result;
-}
-
-template <class itemT>
-const string_type& get_object_response<itemT>::get_type_name ()
-{
-  return type_name;
-
-}
-
-template <class itemT>
-rx_message_type_t get_object_response<itemT>::get_type_id ()
-{
-  return type_id;
-
-}
-
-
 // Class sys_internal::rx_protocol::messages::query_messages::get_object_request 
 
 string_type get_object_request::type_name = "getObjReq";
@@ -745,6 +689,62 @@ message_ptr get_object_request::do_job(api::rx_context ctx, rx_protocol_port_ptr
 		return message_ptr();
 	}
 }
+// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_object_response 
+
+template <class itemT>
+string_type get_object_response<itemT>::type_name = "getObjResp";
+
+template <class itemT>
+uint16_t get_object_response<itemT>::type_id = rx_get_object_response_id;
+
+
+template <class itemT>
+rx_result get_object_response<itemT>::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_object("item"))
+		return "Error starting item object";
+	
+	auto result = item->serialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
+
+	return true;
+}
+
+template <class itemT>
+rx_result get_object_response<itemT>::deserialize (base_meta_reader& stream)
+{
+	if (!stream.start_object("item"))
+		return "Error starting item object";
+
+	auto result = item->deserialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
+
+	return result;
+}
+
+template <class itemT>
+const string_type& get_object_response<itemT>::get_type_name ()
+{
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t get_object_response<itemT>::get_type_id ()
+{
+  return type_id;
+
+}
+
+
 } // namespace query_messages
 } // namespace messages
 } // namespace rx_protocol

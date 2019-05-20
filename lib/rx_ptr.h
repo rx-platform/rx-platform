@@ -395,6 +395,8 @@ class reference_object
 
       }
 
+      virtual void fill_code_info (std::ostream& info, const string_type& name);
+
 	  reference_object(const reference_object&) = delete;
 	  reference_object(reference_object&&) = delete;
 	  reference_object& operator=(const reference_object&) = delete;

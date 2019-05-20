@@ -39,6 +39,7 @@
 #include "system/rx_platform_version.h"
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
+#include "system/libraries/rx_plugin.h"
 
 // rx_host
 #include "system/hosting/rx_host.h"

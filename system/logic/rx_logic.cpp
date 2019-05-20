@@ -134,10 +134,6 @@ namespace_item_attributes program_runtime::create_attributes_from_flags (bool sy
 	}
 }
 
-void program_runtime::fill_code_info (std::ostream& info, const string_type& name)
-{
-}
-
 
 sl_runtime::sl_program_holder& program_runtime::my_program ()
 {

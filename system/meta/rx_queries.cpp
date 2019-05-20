@@ -219,8 +219,10 @@ rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("typeName", type_name))
 		return "Error serializing type_name";
-	if (!stream.write_string("baseType", base_type))
+	if (!stream.write_string("domainName", domain_name))
 		return "Error serializing base_type";
+	if (!stream.write_id("domain", domain))
+		return "Error reading domain";
 	if (!stream.write_string("subfolder", subfolder))
 		return "Error serializing subfolder";
 
@@ -231,8 +233,10 @@ rx_result runtime_objects_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
 		return "Error reading type_name";
-	if (!stream.read_string("baseType", base_type))
+	if (!stream.read_string("domainName", domain_name))
 		return "Error reading base_type";
+	if (!stream.read_id("domain", domain))
+		return "Error reading domain";
 	if (!stream.read_string("subfolder", subfolder))
 		return "Error reading subfolder";
 
@@ -273,16 +277,37 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 template<typename T>
 rx_result runtime_objects_query::do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>)
 {
-	rx_node_id id = rx_node_id::null_id;
-	if (!base_type.empty())
+	
+	if (!domain_name.empty() || !domain.is_null())
 	{
-		auto item = dir->get_sub_item(base_type);
-		if (!item)
-			return base_type + " not found!";
-		id = item->meta_info().get_id();
+		rx_node_id id = domain;
+		if (id.is_null())
+		{
+			auto item = dir->get_sub_item(domain_name);
+			if (!item)
+				return type_name + " not found!";
+			id = item->meta_info().get_id();
+		}
+		auto domain_ptr = model::platform_types_manager::instance().get_type_cache<domain_type>().get_runtime(id);
+		if (domain_ptr)
+		{
+			const auto& objects = domain_ptr->get_objects();
+			result.items.reserve(objects.size());
+			for (const auto& one : objects)
+				result.items.emplace_back(rx_item_type::rx_object, one->meta_info());
+		}
+		else
+			return "Domain not found";
 	}
-	result = model::platform_types_manager::instance().get_type_cache<T>().get_derived_types(id);
-
+	if (!type_name.empty())
+	{
+		rx_node_id id = rx_node_id::null_id;
+		auto item = dir->get_sub_item(type_name);
+		if (!item)
+			return type_name + " not found!";
+		id = item->meta_info().get_id();
+		result = model::platform_types_manager::instance().get_type_cache<T>().get_instanced_objects(id);
+	}
 	return result.success;
 }
 // Class rx_platform::meta::queries::translate_query 
@@ -362,6 +387,7 @@ rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr
 			result.items.emplace_back(api::query_result_detail{ type, temp });
 		}
 	}
+	result.success = true;
 	return true;
 }
 

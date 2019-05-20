@@ -205,7 +205,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 		rx_directory_ptr dir = ctx->get_current_directory()->get_sub_directory(whose);
 		if (dir)
 		{
-			dir->fill_code_info(out);
+			dir->fill_dir_code_info(out);
 		}
 		else
 		{
@@ -223,7 +223,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 	}
 	else
 	{
-		ctx->get_current_directory()->fill_code_info(out);
+		ctx->get_current_directory()->fill_dir_code_info(out);
 	}
 	return true;
 }

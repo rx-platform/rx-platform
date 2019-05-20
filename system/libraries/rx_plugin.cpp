@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\libraries\cpp_lib.cpp
+*  system\libraries\rx_plugin.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,8 +30,8 @@
 #include "pch.h"
 
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
+// rx_plugin
+#include "system/libraries/rx_plugin.h"
 
 
 
@@ -39,42 +39,17 @@ namespace rx_platform {
 
 namespace library {
 
-// Class rx_platform::library::cpp_classes_manager 
+// Class rx_platform::library::rx_plugin_base 
 
-cpp_classes_manager::cpp_classes_manager()
+rx_plugin_base::rx_plugin_base()
 {
 }
 
-cpp_classes_manager::cpp_classes_manager(const cpp_classes_manager &right)
+
+rx_plugin_base::~rx_plugin_base()
 {
-	RX_ASSERT(false);
 }
 
-
-cpp_classes_manager::~cpp_classes_manager()
-{
-
-}
-
-
-cpp_classes_manager & cpp_classes_manager::operator=(const cpp_classes_manager &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-cpp_classes_manager& cpp_classes_manager::instance ()
-{
-	static cpp_classes_manager g_obj;
-	return g_obj;
-}
-
-bool cpp_classes_manager::check_class (rx::pointers::code_behind_definition_t* cd)
-{
-	return this->definitions_.find(cd) != definitions_.end();
-}
 
 
 } // namespace library

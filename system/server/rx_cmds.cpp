@@ -191,10 +191,6 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 	return false;
 }
 
-void server_command_base::fill_code_info (std::ostream& info, const string_type& name)
-{
-}
-
 
 // Class rx_platform::prog::console_program_context 
 

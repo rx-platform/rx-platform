@@ -77,6 +77,10 @@ size_t reference_object::get_objects_count ()
 	return (size_t)g_objects_count.load();
 }
 
+void reference_object::fill_code_info (std::ostream& info, const string_type& name)
+{
+}
+
 
 // Class rx::pointers::struct_reference 
 

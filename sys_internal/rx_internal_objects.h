@@ -48,7 +48,7 @@ namespace sys_objects {
 
 class system_application : public rx_platform::runtime::objects::application_runtime  
 {
-	DECLARE_CODE_INFO("rx", 0,5,1, "\
+	DECLARE_CODE_INFO("rx", 0,5,2, "\
 system application. contains system objects and internal system communication");
 
 	DECLARE_REFERENCE_PTR(system_application);

@@ -77,7 +77,7 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managment
 	unassigned_app_ = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
 	system_app_ = rx_create_reference<sys_internal::sys_objects::system_application>();
 	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
-	// handle rx protocol stuff!
+	// handle rx_protocol stuff!
 	auto result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
 	return result;
 }

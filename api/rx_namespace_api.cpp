@@ -106,12 +106,8 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 				return one_ret.errors();
 			std::copy(temp.items.begin(), temp.items.end(), std::back_inserter(ret_val.items));
 		}
-		if (!ret_val.items.empty())
-			ret_val.success = true;
-		else
-			return "Empty Result";
+		ret_val.success = true;
 		return ret_val;
-
 	};
 	rx_do_with_callback<rx_result_with<query_result>, rx_reference_ptr, std::vector<meta::query_ptr>, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, queries, ctx.directory);
 	

@@ -44,9 +44,9 @@
 
 namespace rx_platform {
 namespace prog {
-class console_program_context;
 class console_client;
 class server_console_program;
+class console_program_context;
 
 } // namespace prog
 } // namespace rx_platform
@@ -235,8 +235,6 @@ class server_command_base : public logic::program_runtime
       bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      virtual void fill_code_info (std::ostream& info, const string_type& name);
 
 
       const string_type& get_console_name () const

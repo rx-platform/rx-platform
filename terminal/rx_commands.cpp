@@ -39,43 +39,12 @@
 #include "model/rx_meta_commands.h"
 #include "sys_internal/rx_ns_commands.h"
 #include "runtime_internal/rx_runtime_commands.h"
+#include "sys_internal/rx_plugin_manager.h"
 
 
 namespace terminal {
 
 namespace commands {
-
-// Class terminal::commands::server_command 
-
-server_command::server_command (const string_type& console_name)
-	: rx_platform::prog::server_command_base(console_name,45)
-	, options_(console_name, "jbg help stuff")
-{
-}
-
-
-server_command::~server_command()
-{
-}
-
-
-
-namespace_item_attributes server_command::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
-}
-
-bool server_command::generate_json (std::ostream& def, std::ostream& err) const
-{
-	return true;
-}
-
-void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
-{
-	for (const auto& one : result.errors())
-		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-}
-
 
 // Class terminal::commands::server_command_manager 
 
@@ -135,6 +104,8 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<sys_runtime::runtime_commands::read_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::write_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
+	// plug-ins commands
+	register_command(rx_create_reference<sys_internal::plugins::plugin_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
@@ -199,6 +170,38 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 	else
 		out << "echo";
 	return true;
+}
+
+
+// Class terminal::commands::server_command 
+
+server_command::server_command (const string_type& console_name)
+	: rx_platform::prog::server_command_base(console_name,45)
+	, options_(console_name, "jbg help stuff")
+{
+}
+
+
+server_command::~server_command()
+{
+}
+
+
+
+namespace_item_attributes server_command::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
+}
+
+bool server_command::generate_json (std::ostream& def, std::ostream& err) const
+{
+	return true;
+}
+
+void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
+{
+	for (const auto& one : result.errors())
+		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 }
 
 

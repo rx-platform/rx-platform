@@ -106,10 +106,6 @@ void rx_platform_item::code_info_to_string (string_type& info)
 {
 }
 
-void rx_platform_item::fill_code_info (std::ostream& info, const string_type& name)
-{
-}
-
 void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 	has_own_code_info = false;
@@ -382,7 +378,7 @@ void rx_platform_directory::get_value (rx_value& value)
 	value.assign_static(get_name(), meta_.get_created_time());
 }
 
-void rx_platform_directory::fill_code_info (std::ostream& info)
+void rx_platform_directory::fill_dir_code_info (std::ostream& info)
 {
 	string_type name = meta_.get_path();
 	fill_code_info(info, name);

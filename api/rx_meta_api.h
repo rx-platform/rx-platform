@@ -52,6 +52,7 @@ rx_result rx_create_runtime(
 	const string_type& name // item's path
 	, const string_type& type_name // type's path
 	, data::runtime_values_data* init_data  // initialization data
+	, typename typeT::instance_data_t instance_data
 	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);

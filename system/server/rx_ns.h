@@ -33,8 +33,6 @@
 
 #include "lib/rx_lock.h"
 
-// cpp_lib
-#include "system/libraries/cpp_lib.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
@@ -116,7 +114,6 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
 
 
-
 class rx_platform_directory : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(rx_platform_directory);
@@ -160,13 +157,11 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       virtual void get_value (rx_value& value);
 
-      void fill_code_info (std::ostream& info);
+      void fill_dir_code_info (std::ostream& info);
 
       virtual void get_value (const string_type& name, rx_value& value);
 
       rx_result add_sub_directory (rx_directory_ptr who);
-
-      virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
       rx_result add_item (platform_item_ptr who);
 
@@ -226,8 +221,6 @@ class rx_platform_item : public rx::pointers::reference_object
 
 
       virtual void code_info_to_string (string_type& info);
-
-      virtual void fill_code_info (std::ostream& info, const string_type& name);
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 

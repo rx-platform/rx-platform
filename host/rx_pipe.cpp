@@ -100,7 +100,7 @@ bool rx_pipe_host::break_host (const string_type& msg)
 	return true;
 }
 
-int rx_pipe_host::pipe_main (int argc, char* argv[])
+int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
 	std::cout << "\r\n"
 		<< "rx-platform " 
@@ -137,23 +137,34 @@ int rx_pipe_host::pipe_main (int argc, char* argv[])
 			{
 				std::cout << "OK\r\n";
 
-				std::cout << "Initializing storages...";
-				ret = initialize_storages(config);
-
+				std::cout << "Registering plug-ins...";
+				ret = register_plugins(plugins);
 				if (ret)
 				{
 					std::cout << "OK\r\n";
+					std::cout << "Initializing storages...";
+					ret = initialize_storages(config);
 
-					HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-					// execute main loop of the console host
-					pipe_loop(config, pipes);
-					HOST_LOG_INFO("Main", 999, "Console Host exited.");
+					if (ret)
+					{
+						std::cout << "OK\r\n";
 
-					deinitialize_storages();
+						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+						// execute main loop of the console host
+						pipe_loop(config, pipes, plugins);
+						HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+						deinitialize_storages();
+					}
+					else
+					{
+						std::cout << "ERROR\r\nError initializing storages\r\n";
+						rx_dump_error_result(std::cout, ret);
+					}
 				}
 				else
 				{
-					std::cout << "ERROR\r\nError initializing storages\r\n";
+					std::cout << "ERROR\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -254,7 +265,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 	}
 }
 
-void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t& pipes)
+void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	sec_ctx->login();
