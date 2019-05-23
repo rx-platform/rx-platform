@@ -265,6 +265,9 @@ union rx_value_union
 
 #define DEFAULT_TIME_VAL (rx_time::now())
 
+class rx_value_storage;
+template<typename typeT>
+typeT extract_value(const rx_value_storage& from, const typeT& default_value);
 
 //	This is a class that only cares about storage of value.
 
@@ -277,6 +280,9 @@ public:
 	rx_value_storage(rx_value_storage&& right) noexcept;
 	rx_value_storage& operator=(const rx_value_storage& right);
 	rx_value_storage& operator=(rx_value_storage&& right) noexcept;
+
+	template<typename typeT>
+	friend typeT extract_value(const rx_value_storage& from, const typeT& default_value);
 
   public:
       rx_value_storage();

@@ -169,15 +169,6 @@ bool interactive_console_host::exit () const
 	return exit_;
 }
 
-void interactive_console_host::get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items)
-{
-}
-
-void interactive_console_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
-{
-	//items.push_back(rx_create_reference<meta::object_types::port_class>(meta::object_types::object_type_creation_data{ RX_INTERACTIVE_TYPE_NAME, RX_INTERACTIVE_TYPE_ID, RX_PHYSICAL_PORT_TYPE_ID, true }));
-}
-
 bool interactive_console_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
 	std::ostream out(out_buffer.unsafe_ptr());
@@ -389,6 +380,16 @@ string_type interactive_console_host::get_interactive_info ()
 		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
 	}
 	return ret;
+}
+
+rx_result interactive_console_host::build_host (rx_directory_ptr root)
+{
+	return true;
+}
+
+storage_base::rx_platform_storage::smart_ptr interactive_console_host::get_storage ()
+{
+	return rx_storage_ptr();
 }
 
 

@@ -99,7 +99,7 @@ unassigned_directory::~unassigned_directory()
 // Class sys_internal::internal_ns::world_directory 
 
 world_directory::world_directory()
-	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access)
+	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage())
 {
 }
 
@@ -181,7 +181,7 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::save () const
 {
 	const auto& meta = impl_->meta_info();
-	auto storage_result = meta.storage_info.resolve_storage();
+	auto storage_result = resolve_storage();
 	if (storage_result)
 	{
 		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
@@ -331,7 +331,7 @@ template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::save () const
 {
 	const auto& meta = impl_->meta_info();
-	auto storage_result = meta.storage_info.resolve_storage();
+	auto storage_result = resolve_storage();
 	if (storage_result)
 	{
 		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
@@ -487,6 +487,48 @@ rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, 
 {
 	return "Not Implemented!";
 }
+
+
+// Class sys_internal::internal_ns::system_directory 
+
+system_directory::system_directory()
+	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage())
+{
+}
+
+
+system_directory::~system_directory()
+{
+}
+
+
+
+// Class sys_internal::internal_ns::host_directory 
+
+host_directory::host_directory()
+	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_storage())
+{
+}
+
+
+host_directory::~host_directory()
+{
+}
+
+
+
+// Class sys_internal::internal_ns::plugin_directory 
+
+plugin_directory::plugin_directory (rx_plugin_ptr plugin)
+	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access, plugin->get_storage())
+{
+}
+
+
+plugin_directory::~plugin_directory()
+{
+}
+
 
 
 } // namespace internal_ns

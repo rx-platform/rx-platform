@@ -349,6 +349,84 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 };
 
 
+
+
+
+
+class system_directory : public rx_platform::ns::rx_platform_directory  
+{
+	DECLARE_REFERENCE_PTR(system_directory);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+system directory:\r\n\
+used to hold system folders...\
+");
+
+  public:
+      system_directory();
+
+      ~system_directory();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class host_directory : public rx_platform::ns::rx_platform_directory  
+{
+	DECLARE_REFERENCE_PTR(host_directory);
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+host directory:\r\n\
+used to hold host folders...\
+");
+
+  public:
+      host_directory();
+
+      ~host_directory();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class plugin_directory : public rx_platform::ns::rx_platform_directory  
+{
+	DECLARE_REFERENCE_PTR(plugin_directory);
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+plugin directory:\r\n\
+used to hold specific plugin folders...\
+");
+
+  public:
+      plugin_directory (rx_plugin_ptr plugin);
+
+      ~plugin_directory();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace internal_ns
 } // namespace sys_internal
 

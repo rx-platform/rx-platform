@@ -33,6 +33,8 @@
 
 #include "lib/rx_lock.h"
 
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
@@ -122,7 +124,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 	typedef std::unordered_set<string_type> reserved_type;
 
   public:
-      rx_platform_directory (const string_type& name, namespace_item_attributes attrs);
+      rx_platform_directory (const string_type& name, namespace_item_attributes attrs, rx_storage_ptr storage = rx_storage_ptr::null_ptr);
 
       ~rx_platform_directory();
 
@@ -181,6 +183,8 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       virtual meta_data_t meta_info () const;
 
+      rx_result_with<rx_storage_ptr> resolve_storage () const;
+
 	  template<class TImpl>
 	  rx_result add_item(TImpl who);
   protected:
@@ -195,6 +199,8 @@ class rx_platform_directory : public rx::pointers::reference_object
       sub_items_type sub_items_;
 
       meta::meta_data meta_;
+
+      rx_reference<storage_base::rx_platform_storage> storage_;
 
 
       rx::locks::slim_lock structure_lock_;
@@ -259,6 +265,8 @@ class rx_platform_item : public rx::pointers::reference_object
       virtual rx_result read_value (const string_type& path, rx_value& val) const = 0;
 
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
+
+      rx_result_with<rx_storage_ptr> resolve_storage () const;
 
 
   protected:

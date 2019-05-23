@@ -38,12 +38,15 @@
 #include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 
 
 
 namespace rx_platform {
 
 namespace logic {
+
 
 
 
@@ -82,6 +85,14 @@ public:
       string_type get_name () const;
 
       size_t get_size () const;
+
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       sl_runtime::sl_program_holder& my_program ();

@@ -62,7 +62,7 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	string_type console;
 	item->get_class_info(cls_name, console, has_code);
 	cls_name=item->get_class_name();
-	string_type storage_name = item->meta_info().storage_info.storage_name();
+	string_type storage_name = item->resolve_storage().value()->get_storage_info();
 	if (storage_name.empty())
 		storage_name = ANSI_STATUS_ERROR;
 

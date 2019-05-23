@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,10 +43,10 @@ namespace builders {
 
 namespace storage {
 
-// Class sys_internal::builders::storage::configuration_storage_builder
+// Class sys_internal::builders::storage::configuration_storage_builder 
 
-configuration_storage_builder::configuration_storage_builder (meta::rx_storage_type storage_type)
-      : storage_type_(storage_type)
+configuration_storage_builder::configuration_storage_builder (rx_storage_ptr storage)
+      : storage_(storage)
 {
 }
 
@@ -59,64 +59,16 @@ configuration_storage_builder::~configuration_storage_builder()
 
 rx_result configuration_storage_builder::do_build (platform_root::smart_ptr root)
 {
-	rx_storage_ptr storage;
-	switch (storage_type_)
-	{
-	case rx_storage_type::system_storage:
-		storage = rx_gate::instance().get_host()->get_system_storage();
-		break;
-	case rx_storage_type::user_storage:
-		storage = rx_gate::instance().get_host()->get_user_storage();
-		break;
-	case rx_storage_type::test_storage:
-		storage = rx_gate::instance().get_host()->get_test_storage();
-		break;
-	default:
-		return "Unexpected storage type as parameter for storage building!";
-	}
-	auto result = build_from_storage(root, *storage, storage_type_);
-	if (result)
-	{
-		// log the right thing to be aware of system building status
-		switch (storage_type_)
-		{
-		case rx_storage_type::system_storage:
-			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from system storage done.");
-			break;
-		case rx_storage_type::user_storage:
-			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from user storage done.");
-			break;
-		case rx_storage_type::test_storage:
-			BUILD_LOG_INFO("configuration_storage_builder", 900, "Building from test storage done.");
-			break;
-		default://this should really not happened (look at the first switch case in the function!!!
-			RX_ASSERT(false);
-		}
-	}
-	else
+	auto result = build_from_storage(root, *storage_);
+	if (!result)
 	{
 		for (auto& err : result.errors())
 			BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
-		// log the right thing to be aware of system building status
-		switch (storage_type_)
-		{
-		case rx_storage_type::system_storage:
-			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from system storage");
-			break;
-		case rx_storage_type::user_storage:
-			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from user storage");
-			break;
-		case rx_storage_type::test_storage:
-			BUILD_LOG_ERROR("configuration_storage_builder", 900, "Error building from test storage");
-			break;
-		default://this should really not happened (look at the first switch case in the function!!!
-			RX_ASSERT(false);
-		}
 	}
 	return result;
 }
 
-rx_result configuration_storage_builder::build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage, meta::rx_storage_type storage_type)
+rx_result configuration_storage_builder::build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage)
 {
 	if (!storage.is_valid_storage())
 		return "Storage not initialized!";
@@ -139,7 +91,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 					switch (type)
 					{
 					case STREAMING_TYPE_TYPE:
-						result = create_type_from_storage(stream, std::move(item), storage_type, root);
+						result = create_type_from_storage(stream, std::move(item), root);
 						break;
 					case STREAMING_TYPE_OBJECT:
 						item->close();
@@ -176,7 +128,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 						continue;
 						break;
 					case STREAMING_TYPE_OBJECT:
-						result = create_object_from_storage(stream, std::move(item), storage_type, root);
+						result = create_object_from_storage(stream, std::move(item), root);
 						break;
 					default:
 						item->close();
@@ -201,7 +153,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 	return result;
 }
 
-rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
+rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -213,8 +165,6 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
 	if (dir)
 	{
-		meta.storage_info.assign_storage(storage_type);
-
 		switch (target_type)
 		{
 			// objects
@@ -243,7 +193,7 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	return result;
 }
 
-rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, meta::rx_storage_type storage_type, platform_root::smart_ptr root)
+rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, platform_root::smart_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -255,8 +205,6 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
 	if (dir)
 	{
-		meta.storage_info.assign_storage(storage_type);
-
 		switch (target_type)
 		{
 		// object types
@@ -404,7 +352,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		return "Error reading initialize values";
 }
 
-// Class sys_internal::builders::storage::directory_creator
+// Class sys_internal::builders::storage::directory_creator 
 
 
 rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_directory_ptr from, const string_type& path)

@@ -133,6 +133,14 @@ class rx_storage_item
 };
 
 
+enum rx_storage_type
+{
+	invalid_storage = 0,
+	system_storage,
+	user_storage,
+	extern_storage,
+	test_storage
+};
 
 
 

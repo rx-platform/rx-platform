@@ -107,7 +107,7 @@ public:
 	rx_result_with(T&& value)
 		: value_(std::move(value))
 	{
-		if (!value)
+		if (!value_)
 			errors_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
 	}
 	rx_result_with(const string_vector& errors)

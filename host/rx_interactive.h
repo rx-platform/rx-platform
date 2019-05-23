@@ -156,10 +156,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       bool exit () const;
 
-      void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items);
-
-      void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items);
-
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
       std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
@@ -173,6 +169,10 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       virtual rx_result restore_console ();
 
       static string_type get_interactive_info ();
+
+      rx_result build_host (rx_directory_ptr root);
+
+      storage_base::rx_platform_storage::smart_ptr get_storage ();
 
 
   protected:

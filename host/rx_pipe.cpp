@@ -82,14 +82,6 @@ bool rx_pipe_host::exit () const
 	return exit_;
 }
 
-void rx_pipe_host::get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items)
-{
-}
-
-void rx_pipe_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
-{
-}
-
 bool rx_pipe_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
 	return true;
@@ -374,6 +366,16 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
+}
+
+rx_result rx_pipe_host::build_host (rx_directory_ptr root)
+{
+	return true;
+}
+
+storage_base::rx_platform_storage::smart_ptr rx_pipe_host::get_storage ()
+{
+	return rx_storage_ptr();
 }
 
 

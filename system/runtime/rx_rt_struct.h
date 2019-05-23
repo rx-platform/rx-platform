@@ -34,6 +34,8 @@
 
 // rx_values
 #include "lib/rx_values.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -266,7 +268,9 @@ class const_value_data
 
       rx_value get_value (const hosting_object_data& state) const;
 
-      void set_value (rx_simple_value&& val, const init_context& ctx);
+      rx_simple_value simple_get_value () const;
+
+      rx_result set_value (rx_simple_value&& val);
 
 
       rx::values::rx_simple_value value;
@@ -338,7 +342,27 @@ class runtime_item
 
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx) = 0;
 
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx) = 0;
 
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx) = 0;
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx) = 0;
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx) = 0;
+
+      virtual rx_result get_const (const string_type& path, rx_simple_value& val) const = 0;
+
+	  template<typename T>
+	  T get_const_as(const string_type& path, const T& default_value)
+	  {
+		  values::rx_simple_value temp_val;
+		  auto result = get_const(path, temp_val);
+		  if (result)
+		  {
+			  return values::extract_value<T>(temp_val, default_value);
+		  }
+		  return default_value;
+	  }
   protected:
 
   private:
@@ -381,6 +405,14 @@ class variable_data
       void set_value (rx_simple_value&& val, const init_context& ctx);
 
       rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       rx::values::rx_value value;
@@ -428,6 +460,14 @@ class struct_data
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       runtime_item::smart_ptr item;
 
@@ -468,6 +508,14 @@ public:
       void collect_data (data::runtime_values_data& data) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -510,6 +558,14 @@ class source_data
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       runtime_item::smart_ptr item;
 
@@ -551,6 +607,14 @@ public:
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       runtime_item::smart_ptr item;
 
@@ -591,6 +655,14 @@ public:
       void collect_data (data::runtime_values_data& data) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       runtime_item::smart_ptr item;
@@ -662,9 +734,17 @@ class runtime_data : public runtime_item
 
       void object_state_changed (const hosting_object_data& state);
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
       rx_result write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_result get_const (const string_type& path, rx_simple_value& val) const;
 
 
       variables_type variables;
@@ -696,6 +776,10 @@ class runtime_data : public runtime_item
       bool is_value_index (members_index_type idx) const;
 
       bool is_complex_index (members_index_type idx) const;
+
+      const runtime_item::smart_ptr& get_sub_item (const string_type& path) const;
+
+      runtime_item::smart_ptr& get_sub_item (const string_type& path);
 
 
 

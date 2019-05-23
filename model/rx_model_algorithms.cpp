@@ -173,7 +173,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = prototype->meta_info().storage_info.resolve_storage();
+		auto storage_result = dir->resolve_storage();
 		if (storage_result)
 		{
 			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
@@ -248,7 +248,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = prototype->meta_info().storage_info.resolve_storage();
+		auto storage_result = dir->resolve_storage();
 		if (storage_result)
 		{
 			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
@@ -381,7 +381,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = prototype->meta_info().storage_info.resolve_storage();
+		auto storage_result = dir->resolve_storage();
 		if (storage_result)
 		{
 			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
@@ -497,14 +497,16 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		dir->cancel_reserve(name);
 		return ret.errors();
 	}
-	sys_runtime::runtime_init_context ctx;
-	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(ret, ctx);
-	if (!init_result)
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		dir->cancel_reserve(name);
-		platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(ret.value()->meta_info().get_id());
-		init_result.register_error("Unable to initialize "s + rx_item_type_name(typeT::RType::type_id) + " " + name);
-		return init_result.errors();
+		auto init_result = init_runtime(ret);
+		if (!init_result)
+		{
+			dir->cancel_reserve(name);
+			platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(ret.value()->meta_info().get_id());
+			init_result.register_error("Unable to initialize "s + rx_item_type_name(typeT::RType::type_id) + " " + name);
+			return init_result.errors();
+		}
 	}
 	
 	if (!dir->add_item(ret.value()->get_item_ptr()))
@@ -515,7 +517,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = ret.value()->meta_info().storage_info.resolve_storage();
+		auto storage_result = dir->resolve_storage();
 		if (storage_result)
 		{
 			auto result = storage_result.value()->save_item(ret.value()->get_item_ptr());
@@ -602,6 +604,14 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	meta_data info;
 	info.construct(name, rx_node_id::null_id, type_id, attributes, path);
 	return create_runtime_sync(info, init_data, std::move(instance_data), dir, ref);
+}
+
+template <class typeT>
+rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr what)
+{
+	runtime::runtime_init_context ctx;
+	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what, ctx);
+	return init_result;
 }
 
 

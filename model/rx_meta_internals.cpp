@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -33,12 +33,14 @@
 // rx_meta_internals
 #include "model/rx_meta_internals.h"
 
+#include "runtime_internal/rx_runtime_internal.h"
+#include "rx_model_algorithms.h"
 using namespace rx;
 
 
 namespace model {
 
-// Class model::platform_types_manager 
+// Class model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 	: worker_("config",0)
@@ -55,20 +57,7 @@ platform_types_manager& platform_types_manager::instance ()
 
 rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
 {
-	auto result = internal_get_type_cache<object_types::object_type>().initialize(host, data);
-	if (!result)
-		return result;
-	result = internal_get_type_cache<object_types::application_type>().initialize(host, data);
-	if (!result)
-		return result;
-	result = internal_get_type_cache<object_types::domain_type>().initialize(host, data);
-	if (!result)
-		return result;
-	result = internal_get_type_cache<object_types::port_type>().initialize(host, data);
-	if (!result)
-		return result;
-
-	result = internal_get_simple_type_cache<basic_types::struct_type>().initialize(host, data);
+	auto result = internal_get_simple_type_cache<basic_types::struct_type>().initialize(host, data);
 	if (!result)
 		return result;
 	result = internal_get_simple_type_cache<basic_types::variable_type>().initialize(host, data);
@@ -86,6 +75,20 @@ rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, c
 	result = internal_get_simple_type_cache<basic_types::mapper_type>().initialize(host, data);
 	if (!result)
 		return result;
+
+	result = internal_get_type_cache<object_types::application_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::domain_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::port_type>().initialize(host, data);
+	if (!result)
+		return result;
+	result = internal_get_type_cache<object_types::object_type>().initialize(host, data);
+	if (!result)
+		return result;
+
 	return result;
 }
 
@@ -107,7 +110,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data 
+// Class model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -281,7 +284,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -532,6 +535,12 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	for (auto one : registered_objects_)
+	{
+		runtime::runtime_init_context ctx;
+		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second, ctx);
+		//algorithms::runtime_model_algorithm<typeT>::init_runtime(one.second);
+	}
 	return result;
 }
 
@@ -544,7 +553,7 @@ rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
 	{
 		it->second = what;
 		// TODO Should check and change if parent iz different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_running) 
+		/*if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
 		return true;
 	}
@@ -574,7 +583,7 @@ api::query_result type_hash<typeT>::get_instanced_objects (const rx_node_id& id)
 }
 
 
-// Class model::inheritance_hash 
+// Class model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -709,7 +718,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash 
+// Class model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -776,7 +785,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -982,7 +991,7 @@ rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, 
 }
 
 
-// Class model::types_resolver 
+// Class model::types_resolver
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)

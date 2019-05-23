@@ -95,10 +95,6 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool exit () const;
 
-      void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items);
-
-      void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items);
-
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
 
       bool break_host (const string_type& msg);
@@ -118,6 +114,10 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
       rx_result gui_loop ();
 
       string_type just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
+
+      rx_result build_host (rx_directory_ptr root);
+
+      storage_base::rx_platform_storage::smart_ptr get_storage ();
 
 
   protected:

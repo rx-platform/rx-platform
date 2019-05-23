@@ -79,14 +79,6 @@ bool gui_platform_host::exit () const
 	return exit_;
 }
 
-void gui_platform_host::get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items)
-{
-}
-
-void gui_platform_host::get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items)
-{
-}
-
 bool gui_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
 	return true;
@@ -355,6 +347,16 @@ int gui_platform_host::parse_command_line (int argc, char* argv[], rx_platform::
 
 		return false;
 	}
+}
+
+rx_result gui_platform_host::build_host (rx_directory_ptr root)
+{
+	return true;
+}
+
+storage_base::rx_platform_storage::smart_ptr gui_platform_host::get_storage ()
+{
+	return rx_storage_ptr();
 }
 
 

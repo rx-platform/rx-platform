@@ -33,7 +33,7 @@
 
 
 // rx_runtime_helpers
-#include "runtime_internal/rx_runtime_helpers.h"
+#include "system/runtime/rx_runtime_helpers.h"
 
 #include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
@@ -43,7 +43,7 @@ namespace sys_runtime {
 
 namespace algorithms {
 template<class typeT>
-rx_result init_runtime(typename typeT::RTypePtr what, const runtime_init_context& ctx);
+rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
 
 
 
@@ -55,39 +55,13 @@ class object_algorithms
 
   public:
 
-      static rx_result init_runtime (rx_object_ptr what, const runtime_init_context& ctx);
+      static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_object_ptr what, const runtime_start_context& ctx);
+      static rx_result start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx);
 
-      static rx_result deinit_runtime (rx_object_ptr what, const runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_object_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_object_ptr what, const runtime_stop_context& ctx);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class application_algorithms 
-{
-
-  public:
-
-      static rx_result init_runtime (rx_application_ptr what, const runtime_init_context& ctx);
-
-      static rx_result start_runtime (rx_application_ptr what, const runtime_start_context& ctx);
-
-      static rx_result deinit_runtime (rx_application_ptr what, const runtime_deinit_context& ctx);
-
-      static rx_result stop_runtime (rx_application_ptr what, const runtime_stop_context& ctx);
+      static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
 
 
   protected:
@@ -107,13 +81,13 @@ class domain_algorithms
 
   public:
 
-      static rx_result init_runtime (rx_domain_ptr what, const runtime_init_context& ctx);
+      static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_domain_ptr what, const runtime_start_context& ctx);
+      static rx_result start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx);
 
-      static rx_result deinit_runtime (rx_domain_ptr what, const runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_domain_ptr what, const runtime_stop_context& ctx);
+      static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
 
 
   protected:
@@ -133,13 +107,39 @@ class port_algorithms
 
   public:
 
-      static rx_result init_runtime (rx_port_ptr what, const runtime_init_context& ctx);
+      static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_port_ptr what, const runtime_start_context& ctx);
+      static rx_result start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx);
 
-      static rx_result deinit_runtime (rx_port_ptr what, const runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_port_ptr what, const runtime_stop_context& ctx);
+      static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class application_algorithms 
+{
+
+  public:
+
+      static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx);
+
+      static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
 
   protected:

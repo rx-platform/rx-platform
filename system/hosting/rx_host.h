@@ -149,10 +149,6 @@ class rx_platform_host
 
       virtual bool shutdown (const string_type& msg) = 0;
 
-      virtual void get_host_objects (std::vector<rx_platform::runtime::object_runtime_ptr>& items) = 0;
-
-      virtual void get_host_types (std::vector<rx_platform::meta::object_type_ptr>& items) = 0;
-
       virtual bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       virtual bool break_host (const string_type& msg) = 0;
@@ -178,6 +174,10 @@ class rx_platform_host
       virtual bool exit () const = 0;
 
       virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
+
+      virtual rx_result build_host (rx_directory_ptr root) = 0;
+
+      virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
 
 
       rx_platform_host * get_parent ()

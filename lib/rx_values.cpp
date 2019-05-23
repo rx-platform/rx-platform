@@ -2607,6 +2607,23 @@ rx_value_storage& rx_value_storage::operator=(rx_value_storage&& right) noexcept
 	right.value_type_ = RX_NULL_TYPE;
 	return *this;
 }
+
+
+template<>
+bool extract_value(const rx_value_storage& from, const bool& default_value)
+{
+	if (from.get_value_type() == RX_BOOL_TYPE)
+	{
+		return from.value_.bool_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if(temp_val.convert_to(RX_BOOL_TYPE))
+			return temp_val.value_.bool_value;
+	}
+	return default_value;
+}
 // Class rx::values::rx_timed_value 
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const

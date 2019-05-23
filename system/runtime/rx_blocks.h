@@ -96,6 +96,14 @@ filter runtime. basic implementation of an filter runtime");
 
       string_type get_type_name () const;
 
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       static string_type type_name;
 
@@ -129,39 +137,13 @@ mapper runtime. basic implementation of an mapper runtime");
 
       string_type get_type_name () const;
 
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      static string_type type_name;
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
 
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
 
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class source_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
-source runtime. basic implementation of an source runtime");
-
-	DECLARE_REFERENCE_PTR(source_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::source_type;
-
-  public:
-      source_runtime();
-
-      ~source_runtime();
-
-
-      string_type get_type_name () const;
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       static string_type type_name;
@@ -202,6 +184,14 @@ struct runtime. basic implementation of an struct runtime");
 
       string_type get_type_name () const;
 
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       static string_type type_name;
 
@@ -238,6 +228,14 @@ variable runtime. basic implementation of an variable runtime");
 
       string_type get_type_name () const;
 
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       static string_type type_name;
 
@@ -245,6 +243,69 @@ variable runtime. basic implementation of an variable runtime");
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class source_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+source runtime. basic implementation of an source runtime");
+
+	DECLARE_REFERENCE_PTR(source_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_types::source_type;
+
+  public:
+      source_runtime();
+
+      ~source_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+      bool is_input () const
+      {
+        return input_;
+      }
+
+
+      bool is_output () const
+      {
+        return output_;
+      }
+
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<variable_runtime> my_variable_;
+
+
+      bool input_;
+
+      bool output_;
 
 
 };
@@ -269,6 +330,14 @@ event runtime. basic implementation of an event runtime");
 
 
       string_type get_type_name () const;
+
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       static string_type type_name;
@@ -309,13 +378,19 @@ class runtime_object
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, api::rx_context ctx);
 
-      rx_result initialize_object ();
-
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
       void set_runtime_data (meta::runtime_data_prototype& prototype);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       const rx_mode_type& get_mode () const
@@ -370,10 +445,22 @@ class runtime_holder
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
 
       runtime_object runtime;
 
-
+	  template<typename typeT>
+	  typeT get_const(const string_type& path, const typeT& default_value)
+	  {
+		  return runtime.item_->get_const_as(path, default_value);
+	  }
   protected:
 
   private:

@@ -61,6 +61,26 @@ string_type filter_runtime::get_type_name () const
 
 }
 
+rx_result filter_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
 
 // Class rx_platform::runtime::blocks::mapper_runtime 
 
@@ -83,12 +103,34 @@ string_type mapper_runtime::get_type_name () const
 
 }
 
+rx_result mapper_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return "Not implemented for mapper_runtime at "s + ctx.path.get_current_path();
+}
+
+rx_result mapper_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return "Not implemented for mapper_runtime";
+}
+
+rx_result mapper_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return "Not implemented for mapper_runtime at "s + ctx.path.get_current_path();
+}
+
+rx_result mapper_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return "Not implemented for mapper_runtime";
+}
+
 
 // Class rx_platform::runtime::blocks::source_runtime 
 
 string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
 source_runtime::source_runtime()
+      : input_(false),
+        output_(false)
 {
 }
 
@@ -103,6 +145,28 @@ string_type source_runtime::get_type_name () const
 {
   return type_name;
 
+}
+
+rx_result source_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	my_variable_ = ctx.variables.get_current_variable();
+	return true;
+}
+
+rx_result source_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	my_variable_ = rx_variable_ptr::null_ptr;
+	return true;
+}
+
+rx_result source_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result source_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
 }
 
 
@@ -143,6 +207,26 @@ string_type struct_runtime::get_type_name () const
 
 }
 
+rx_result struct_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result struct_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result struct_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result struct_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
 
 // Class rx_platform::runtime::blocks::variable_runtime 
 
@@ -169,6 +253,26 @@ string_type variable_runtime::get_type_name () const
 
 }
 
+rx_result variable_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result variable_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return "Not implemented for variable_runtime";
+}
+
+rx_result variable_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result variable_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return "Not implemented for variable_runtime";
+}
+
 
 // Class rx_platform::runtime::blocks::event_runtime 
 
@@ -184,6 +288,26 @@ string_type event_runtime::get_type_name () const
 {
   return type_name;
 
+}
+
+rx_result event_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
 }
 
 
@@ -254,11 +378,6 @@ rx_result runtime_object::write_value (const string_type& path, rx_simple_value&
 	return item_->write_value(path, std::move(val), my_ctx);
 }
 
-rx_result runtime_object::initialize_object ()
-{
-	return "Not implemented";
-}
-
 bool runtime_object::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	data::runtime_values_data temp_data;
@@ -301,6 +420,76 @@ bool runtime_object::deserialize (base_meta_reader& stream, uint8_t type)
 void runtime_object::set_runtime_data (meta::runtime_data_prototype& prototype)
 {
 	item_ = std::move(create_runtime_data(prototype));
+}
+
+rx_result runtime_object::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.set_root(this);
+	ctx.structure.push_item(*item_);
+	auto result = item_->initialize_runtime(ctx);
+	if (result)
+	{
+		for (auto& one : programs_)
+		{
+			result = one->initialize_runtime(ctx);
+			if (!result)
+				break;
+		}
+	}
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result runtime_object::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	rx_result result;
+	for (auto& one : programs_)
+	{
+		result = one->deinitialize_runtime(ctx);
+		if (!result)
+			break;
+	}
+	if (result)
+	{
+		result = item_->deinitialize_runtime(ctx);
+	}
+	
+	return result;
+}
+
+rx_result runtime_object::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.set_root(this);
+	ctx.structure.push_item(*item_);
+	auto result = item_->start_runtime(ctx);
+	if (result)
+	{
+		for (auto& one : programs_)
+		{
+			result = one->start_runtime(ctx);
+			if (!result)
+				break;
+		}
+	}
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result runtime_object::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	rx_result result;
+	for (auto& one : programs_)
+	{
+		result = one->stop_runtime(ctx);
+		if (!result)
+			break;
+	}
+	if (result)
+	{
+		result = item_->stop_runtime(ctx);
+	}
+
+	return result;
 }
 
 
@@ -356,6 +545,34 @@ bool runtime_holder<T>::deserialize (base_meta_reader& stream, uint8_t type)
 		return false;
 
 	return true;
+}
+
+template <class T>
+rx_result runtime_holder<T>::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = runtime.initialize_runtime(ctx);
+	return result;
+}
+
+template <class T>
+rx_result runtime_holder<T>::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = runtime.deinitialize_runtime(ctx);
+	return result;
+}
+
+template <class T>
+rx_result runtime_holder<T>::start_runtime (runtime::runtime_start_context& ctx)
+{
+	auto result = runtime.start_runtime(ctx);
+	return result;
+}
+
+template <class T>
+rx_result runtime_holder<T>::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = runtime.stop_runtime(ctx);
+	return result;
 }
 
 template class runtime_holder<objects::object_runtime>;

@@ -53,7 +53,6 @@ class object_runtime;
 
 
 using namespace rx_platform;
-using namespace rx_platform::ns;
 
 
 namespace rx_platform {
@@ -105,7 +104,6 @@ enum namespace_item_attributes
 	namespace_item_system_access = 0x29,
 	namespace_item_internal_access = 0x61,
 	// masks
-	namespace_item_system_storage_mask = 0x60,
 	namespace_item_system_mask = 0x60
 };
 
@@ -116,51 +114,6 @@ struct query_result_detail;
 }
 
 namespace meta {
-
-enum rx_storage_type
-{
-	invalid_storage = 0,
-	system_storage,
-	user_storage,
-	extern_storage,
-	test_storage
-};
-
-
-
-
-
-class storage_data 
-{
-
-  public:
-      storage_data();
-
-
-      rx_result_with<rx_storage_ptr> resolve_storage () const;
-
-      string_type storage_name () const;
-
-      void assign_storage (rx_storage_type storage_type);
-
-
-      rx_storage_type get_storage_type () const
-      {
-        return storage_type_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      rx_storage_type storage_type_;
-
-
-};
-
 
 
 
@@ -248,9 +201,6 @@ class meta_data
         return path_;
       }
 
-
-
-      storage_data storage_info;
 
 
   protected:

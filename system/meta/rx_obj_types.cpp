@@ -227,6 +227,7 @@ void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr 
 
 void domain_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
+	where->instance_data_ = std::move(data);
 }
 
 
@@ -278,30 +279,7 @@ void object_type::get_class_info (string_type& class_name, string_type& console,
 rx_result object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
 {
 	auto result = object_types_algorithm<object_type>::construct_object(*this, what, ctx);
-	if (result)
-	{
-		if (what->instance_data_.domain_id)
-		{
-			auto domain_ptr = model::platform_types_manager::instance().internal_get_type_cache<domain_type>().get_runtime(what->instance_data_.domain_id);
-			domain_ptr->objects_.emplace_back(what);
-			what->connect_domain(std::move(domain_ptr));
-		}
-		else
-		{
-			META_LOG_WARNING("object_type::construct", 900, "Domain Id is null, connecting object to unassigned domain.");
-			auto domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
-			if(domain_ptr)
-				domain_ptr->objects_.emplace_back(what);
-			what->connect_domain(std::move(domain_ptr));
-		}
-		if (!what->my_domain_)
-		{
-			std::ostringstream message;
-			message << "Unable to connect to domain " 
-				<< what->instance_data_.domain_id ? what->instance_data_.domain_id.to_string() : RX_NULL_ITEM_NAME;
-			result = rx_result(message.str());
-		}
-	}
+	
 	return result;
 }
 

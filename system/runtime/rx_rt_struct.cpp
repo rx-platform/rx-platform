@@ -135,7 +135,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 			auto it = data.values.find(one.name);
 			if (it != data.values.end())
 			{
-				const_values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx);
+				const_values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value));
 			}
 		}
 		break;
@@ -224,25 +224,9 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
-		if (idx && !is_value_index(idx))
-		{
-			switch (idx&rt_type_mask)
-			{
-			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			case rt_struct_index_type:
-				return structs.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			case rt_source_index_type:
-				return sources.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			case rt_mapper_index_type:
-				return mappers.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			case rt_filter_index_type:
-				return filters.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			case rt_event_index_type:
-				return events.collection[idx >> rt_type_shift].item->get_value(state, bellow, val);
-			}
-		}
+		auto& sub_item = get_sub_item(mine);
+		if (sub_item)
+			return sub_item->get_value(state, bellow, val);		
 	}
 	else// its' ours
 	{
@@ -309,12 +293,6 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return true;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::write_value (const string_type& path, rx_simple_value&& val, const write_context& ctx)
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
@@ -323,25 +301,9 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
-		if (idx && !is_value_index(idx))
-		{
-			switch (idx&rt_type_mask)
-			{
-			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			case rt_struct_index_type:
-				return structs.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			case rt_source_index_type:
-				return sources.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			case rt_mapper_index_type:
-				return mappers.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			case rt_filter_index_type:
-				return filters.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			case rt_event_index_type:
-				return events.collection[idx >> rt_type_shift].item->write_value(bellow, std::move(val), ctx);
-			}
-		}
+		auto& sub_item = get_sub_item(mine);
+		if (sub_item)
+			return sub_item->write_value(bellow, std::move(val), ctx);
 	}
 	else// its' ours
 	{
@@ -361,6 +323,289 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		}
 	}
 	return path + " not found!";
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	rx_result ret(true);
+	for (auto one : items)
+	{
+		switch (one.index&rt_type_mask)
+		{
+		case rt_const_index_type:
+		case rt_value_index_type:
+			break;
+		case rt_variable_index_type:
+			// variable
+			ctx.path.push_to_path(one.name);
+			ret = variables.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_struct_index_type:
+			// struct
+			ctx.path.push_to_path(one.name);
+			ret = structs.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_source_index_type:
+			// source
+			ctx.path.push_to_path(one.name);
+			ret = sources.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_mapper_index_type:
+			// mapper
+			ctx.path.push_to_path(one.name);
+			ret = mappers.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_filter_index_type:
+			// filter
+			ctx.path.push_to_path(one.name);
+			ret = filters.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_event_index_type:
+			// event
+			ctx.path.push_to_path(one.name);
+			ret = events.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		default:
+			RX_ASSERT(false);// shouldn't happened
+		}
+		if (!ret)
+			break;
+	}
+	return ret;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	rx_result ret(true);
+	for (auto one : items)
+	{
+		switch (one.index&rt_type_mask)
+		{
+		case rt_const_index_type:
+		case rt_value_index_type:
+			break;
+		case rt_variable_index_type:
+			// variable
+			ret = variables.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		case rt_struct_index_type:
+			// struct
+			ret = structs.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		case rt_source_index_type:
+			// source
+			ret = sources.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		case rt_mapper_index_type:
+			// mapper
+			ret = mappers.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		case rt_filter_index_type:
+			// filter
+			ret = filters.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		case rt_event_index_type:
+			// event
+			ret = events.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			break;
+		default:
+			RX_ASSERT(false);// shouldn't happened
+		}
+		if (!ret)
+			break;
+	}
+	return ret;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::start_runtime (runtime::runtime_start_context& ctx)
+{
+	rx_result ret(true);
+	for (auto one : items)
+	{
+		switch (one.index&rt_type_mask)
+		{
+		case rt_const_index_type:
+		case rt_value_index_type:
+			break;
+		case rt_variable_index_type:
+			// variable
+			ctx.path.push_to_path(one.name);
+			ret = variables.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_struct_index_type:
+			// struct
+			ctx.path.push_to_path(one.name);
+			ret = structs.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_source_index_type:
+			// source
+			ctx.path.push_to_path(one.name);
+			ret = sources.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_mapper_index_type:
+			// mapper
+			ctx.path.push_to_path(one.name);
+			ret = mappers.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_filter_index_type:
+			// filter
+			ctx.path.push_to_path(one.name);
+			ret = filters.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		case rt_event_index_type:
+			// event
+			ctx.path.push_to_path(one.name);
+			ret = events.collection[one.index >> rt_type_shift].start_runtime(ctx);
+			ctx.path.pop_from_path();
+			break;
+		default:
+			RX_ASSERT(false);// shouldn't happened
+		}
+		if (!ret)
+			break;
+	}
+	return ret;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	rx_result ret(true);
+	for (auto one : items)
+	{
+		switch (one.index&rt_type_mask)
+		{
+		case rt_const_index_type:
+		case rt_value_index_type:
+			break;
+		case rt_variable_index_type:
+			// variable
+			ret = variables.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		case rt_struct_index_type:
+			// struct
+			ret = structs.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		case rt_source_index_type:
+			// source
+			ret = sources.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		case rt_mapper_index_type:
+			// mapper
+			ret = mappers.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		case rt_filter_index_type:
+			// filter
+			ret = filters.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		case rt_event_index_type:
+			// event
+			ret = events.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			break;
+		default:
+			RX_ASSERT(false);// shouldn't happened
+		}
+		if (!ret)
+			break;
+	}
+	return ret;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_const (const string_type& path, rx_simple_value& val) const
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	string_type mine;
+	if (idx != string_type::npos)
+	{// bellow us, split it
+		mine = path.substr(0, idx);
+		string_type bellow = path.substr(idx + 1);
+		auto& sub_item = get_sub_item(mine);
+		if (sub_item)
+			return sub_item->get_const(bellow, val);
+	}
+	else// its' ours
+	{
+		auto idx = internal_get_index(path);
+		if (idx && is_value_index(idx))
+		{
+			switch (idx&rt_type_mask)
+			{
+			case rt_const_index_type:
+				val = const_values[idx >> rt_type_shift].simple_get_value();
+				return true;
+			}
+		}
+	}
+	return path + " not found!";
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+const runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_sub_item (const string_type& path) const
+{
+	static runtime_item::smart_ptr g_empty;
+
+	auto idx = internal_get_index(path);
+	if (idx && !is_value_index(idx))
+	{
+		switch (idx&rt_type_mask)
+		{
+		case rt_variable_index_type:
+			return variables.collection[idx >> rt_type_shift].item;
+		case rt_struct_index_type:
+			return structs.collection[idx >> rt_type_shift].item;
+		case rt_source_index_type:
+			return sources.collection[idx >> rt_type_shift].item;
+		case rt_mapper_index_type:
+			return mappers.collection[idx >> rt_type_shift].item;
+		case rt_filter_index_type:
+			return filters.collection[idx >> rt_type_shift].item;
+		case rt_event_index_type:
+			return events.collection[idx >> rt_type_shift].item;
+		}
+	}
+	return g_empty;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_sub_item (const string_type& path)
+{
+	static runtime_item::smart_ptr g_empty;
+
+	auto idx = internal_get_index(path);
+	if (idx && !is_value_index(idx))
+	{
+		switch (idx&rt_type_mask)
+		{
+		case rt_variable_index_type:
+			return variables.collection[idx >> rt_type_shift].item;
+		case rt_struct_index_type:
+			return structs.collection[idx >> rt_type_shift].item;
+		case rt_source_index_type:
+			return sources.collection[idx >> rt_type_shift].item;
+		case rt_mapper_index_type:
+			return mappers.collection[idx >> rt_type_shift].item;
+		case rt_filter_index_type:
+			return filters.collection[idx >> rt_type_shift].item;
+		case rt_event_index_type:
+			return events.collection[idx >> rt_type_shift].item;
+		}
+	}
+	return g_empty;
 }
 
 
@@ -561,6 +806,50 @@ rx_result variable_data::write_value (rx_simple_value&& val, const write_context
 	return "Not implemented!";
 }
 
+rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	ctx.variables.push_variable(variable_ptr);
+	auto result = item->initialize_runtime(ctx);
+	if(result)
+		result = variable_ptr->initialize_runtime(ctx);
+	ctx.variables.pop_variable();
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result variable_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	ctx.variables.push_variable(variable_ptr);
+	auto result = variable_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	ctx.variables.pop_variable();
+	return result;
+}
+
+rx_result variable_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	ctx.variables.push_variable(variable_ptr);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = variable_ptr->start_runtime(ctx);
+	ctx.variables.pop_variable();
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	ctx.variables.push_variable(variable_ptr);
+	auto result = variable_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	ctx.variables.pop_variable();
+	return result;
+}
+
 
 // Class rx_platform::runtime::structure::struct_data 
 
@@ -584,6 +873,42 @@ void struct_data::fill_data (const data::runtime_values_data& data, init_context
 	item->fill_data(data, ctx);
 }
 
+rx_result struct_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->initialize_runtime(ctx);
+	if (result)
+		result = struct_ptr->initialize_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result struct_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = struct_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	return result;
+}
+
+rx_result struct_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = struct_ptr->start_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result struct_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = struct_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	return result;
+}
+
 
 // Class rx_platform::runtime::structure::mapper_data 
 
@@ -598,6 +923,42 @@ void mapper_data::collect_data (data::runtime_values_data& data) const
 void mapper_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
 {
 	item->fill_data(data, ctx);
+}
+
+rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->initialize_runtime(ctx);
+	if (result)
+		result = mapper_ptr->initialize_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result mapper_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = mapper_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	return result;
+}
+
+rx_result mapper_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = mapper_ptr->start_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result mapper_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = mapper_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	return result;
 }
 
 
@@ -616,6 +977,42 @@ void source_data::fill_data (const data::runtime_values_data& data, init_context
 	item->fill_data(data, ctx);
 }
 
+rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->initialize_runtime(ctx);
+	if (result)
+		result = source_ptr->initialize_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result source_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = source_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	return result;
+}
+
+rx_result source_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = source_ptr->start_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result source_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = source_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	return result;
+}
+
 
 // Class rx_platform::runtime::structure::event_data 
 
@@ -630,6 +1027,42 @@ void event_data::collect_data (data::runtime_values_data& data) const
 void event_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
 {
 	item->fill_data(data, ctx);
+}
+
+rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->initialize_runtime(ctx);
+	if (result)
+		result = event_ptr->initialize_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result event_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = event_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	return result;
+}
+
+rx_result event_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = event_ptr->start_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result event_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = event_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	return result;
 }
 
 
@@ -648,6 +1081,42 @@ void filter_data::fill_data (const data::runtime_values_data& data, init_context
 	item->fill_data(data, ctx);
 }
 
+rx_result filter_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->initialize_runtime(ctx);
+	if (result)
+		result = filter_ptr->initialize_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result filter_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = filter_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	return result;
+}
+
+rx_result filter_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = filter_ptr->start_runtime(ctx);
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result filter_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = filter_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	return result;
+}
+
 
 // Class rx_platform::runtime::structure::const_value_data 
 
@@ -661,12 +1130,30 @@ rx_value const_value_data::get_value (const hosting_object_data& state) const
 	return ret;
 }
 
-void const_value_data::set_value (rx_simple_value&& val, const init_context& ctx)
+rx_simple_value const_value_data::simple_get_value () const
 {
-	rx_simple_value temp(val);
-	if (temp.convert_to(value.get_type()))
+	return value;
+}
+
+rx_result const_value_data::set_value (rx_simple_value&& val)
+{
+	if (val.get_type() == value.get_type())
 	{
-		value = temp;
+		value = std::move(val);
+		return true;
+	}
+	else
+	{
+		rx_simple_value temp(std::move(val));
+		if (temp.convert_to(value.get_type()))
+		{
+			value = std::move(temp);
+			return true;
+		}
+		else
+		{
+			return "Invalid conversion";
+		}
 	}
 }
 
@@ -723,6 +1210,9 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 }
 
 
+// Class rx_platform::runtime::structure::runtime_item 
+
+
 // Class rx_platform::runtime::structure::init_context 
 
 
@@ -749,9 +1239,6 @@ write_context write_context::create_write_context (runtime_object* whose)
 	ret.object_data.mode = whose->get_mode();
 	return ret;
 }
-
-
-// Class rx_platform::runtime::structure::runtime_item 
 
 
 } // namespace structure

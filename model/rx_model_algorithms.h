@@ -132,6 +132,8 @@ class runtime_model_algorithm
 
       static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
+      static rx_result init_runtime (typename typeT::RTypePtr what);
+
 
   protected:
 

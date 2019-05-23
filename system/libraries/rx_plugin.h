@@ -33,6 +33,7 @@
 
 
 
+#include "system/storage_base/rx_storage.h"
 
 
 namespace rx_platform {
@@ -58,6 +59,12 @@ class rx_plugin_base
 
       virtual rx_result deinit_plugin () = 0;
 
+      virtual rx_result build_plugin (rx_directory_ptr root) = 0;
+
+      virtual string_type get_plugin_name () = 0;
+
+      virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
+
 
   protected:
 
@@ -70,6 +77,10 @@ class rx_plugin_base
 } // namespace library
 } // namespace rx_platform
 
+namespace rx_platform
+{
+typedef library::rx_plugin_base* rx_plugin_ptr;
+}
 
 
 #endif

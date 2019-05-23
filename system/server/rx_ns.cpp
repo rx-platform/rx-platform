@@ -157,11 +157,20 @@ bool rx_platform_item::is_type () const
 		|| (type >= rx_port_type && type <= rx_mapper_type);
 }
 
+rx_result_with<rx_storage_ptr> rx_platform_item::resolve_storage () const
+{
+	if (parent_)
+		return parent_->resolve_storage();
+	else
+		return "Storage not defined";
+}
+
 
 // Class rx_platform::ns::rx_platform_directory 
 
-rx_platform_directory::rx_platform_directory (const string_type& name, namespace_item_attributes attrs)
-	: meta_(name, rx_node_id::null_id, rx_node_id::null_id, attrs, "")
+rx_platform_directory::rx_platform_directory (const string_type& name, namespace_item_attributes attrs, rx_storage_ptr storage)
+      : storage_(storage)
+	, meta_(name, rx_node_id::null_id, rx_node_id::null_id, attrs, "")
 {
 }
 
@@ -613,6 +622,16 @@ rx_result rx_platform_directory::cancel_reserve (const string_type& name)
 meta_data_t rx_platform_directory::meta_info () const
 {
 	return meta_;
+}
+
+rx_result_with<rx_storage_ptr> rx_platform_directory::resolve_storage () const
+{
+	if (storage_)
+		return storage_;
+	else if (parent_)
+		return parent_->resolve_storage();
+	else
+		return "Storage not defined";
 }
 
 template<class TImpl>

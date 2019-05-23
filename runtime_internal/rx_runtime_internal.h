@@ -32,10 +32,10 @@
 
 
 
-// rx_runtime_helpers
-#include "runtime_internal/rx_runtime_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 
 #include "rx_runtime_algorithms.h"
 
@@ -68,7 +68,7 @@ class platform_runtime_manager
       static platform_runtime_manager& instance ();
 
 	  template<class typeT>
-	  rx_result init_runtime(typename typeT::RTypePtr what, const runtime_init_context& ctx)
+	  rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx)
 	  {
 		  auto result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
