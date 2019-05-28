@@ -32,10 +32,10 @@
 
 
 
-// rx_values
-#include "lib/rx_values.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -261,70 +261,6 @@ class write_context
 
 
 
-class const_value_data 
-{
-
-  public:
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      rx_simple_value simple_get_value () const;
-
-      rx_result set_value (rx_simple_value&& val);
-
-
-      rx::values::rx_simple_value value;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class value_data 
-{
-
-  public:
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      void set_value (rx_simple_value&& val, const init_context& ctx);
-
-      void object_state_changed (const hosting_object_data& state);
-
-      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
-
-
-      rx::values::rx_timed_value value;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
 class runtime_item 
 {
   public:
@@ -350,81 +286,21 @@ class runtime_item
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx) = 0;
 
-      virtual rx_result get_const (const string_type& path, rx_simple_value& val) const = 0;
+      virtual rx_result get_local_value (const string_type& path, rx_simple_value& val) const = 0;
+
+      virtual rx_result get_value_ref (const string_type& path, rt_value_ref& ref) = 0;
 
 	  template<typename T>
-	  T get_const_as(const string_type& path, const T& default_value)
+	  T get_local_as(const string_type& path, const T& default_value)
 	  {
 		  values::rx_simple_value temp_val;
-		  auto result = get_const(path, temp_val);
+		  auto result = get_local_value(path, temp_val);
 		  if (result)
 		  {
-			  return values::extract_value<T>(temp_val, default_value);
+			  return values::extract_value<T>(temp_val.get_storage(), default_value);
 		  }
 		  return default_value;
 	  }
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class variable_data 
-{
-  public:
-	  variable_data() = default;
-	  ~variable_data() = default;
-	  variable_data(const variable_data&) = delete;
-	  variable_data(variable_data&&) noexcept = default;
-	  variable_data& operator=(const variable_data&) = delete;
-	  variable_data& operator=(variable_data&&) noexcept = default;
-	  operator bool() const
-	  {
-		  return variable_ptr;
-	  }
-
-  public:
-      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
-
-
-      void collect_data (data::runtime_values_data& data) const;
-
-      void fill_data (const data::runtime_values_data& data, init_context& ctx);
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      void set_value (rx_value&& value);
-
-      void set_value (rx_simple_value&& val, const init_context& ctx);
-
-      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-
-      rx::values::rx_value value;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      variable_runtime_ptr variable_ptr;
-
-
   protected:
 
   private:
@@ -685,6 +561,136 @@ public:
 
 
 
+class const_value_data 
+{
+
+  public:
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      rx_simple_value simple_get_value () const;
+
+      rx_result set_value (rx_simple_value&& val);
+
+
+      rx::values::rx_simple_value value;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class value_data 
+{
+
+  public:
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
+
+      void object_state_changed (const hosting_object_data& state);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
+      rx_simple_value simple_get_value () const;
+
+      void simple_set_value (rx_simple_value&& val);
+
+
+      rx::values::rx_timed_value value;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class variable_data 
+{
+  public:
+	  variable_data() = default;
+	  ~variable_data() = default;
+	  variable_data(const variable_data&) = delete;
+	  variable_data(variable_data&&) noexcept = default;
+	  variable_data& operator=(const variable_data&) = delete;
+	  variable_data& operator=(variable_data&&) noexcept = default;
+	  operator bool() const
+	  {
+		  return variable_ptr;
+	  }
+
+  public:
+      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
+
+
+      void collect_data (data::runtime_values_data& data) const;
+
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_value&& value);
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+      rx::values::rx_value value;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      variable_runtime_ptr variable_ptr;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 class runtime_data : public runtime_item  
 {
@@ -744,7 +750,9 @@ class runtime_data : public runtime_item
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result get_const (const string_type& path, rx_simple_value& val) const;
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
 
       variables_type variables;

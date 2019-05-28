@@ -128,6 +128,60 @@ command for writing values to various items");
 };
 
 
+
+
+
+
+class turn_off_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(turn_off_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for turning off any object, domain, port or application");
+
+  public:
+      turn_off_command();
+
+      ~turn_off_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class turn_on_command : public terminal::commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(turn_on_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for turning on any object, domain, port or application");
+
+  public:
+      turn_on_command();
+
+      ~turn_on_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+
+
+  private:
+
+
+};
+
+
 } // namespace runtime_commands
 } // namespace sys_runtime
 

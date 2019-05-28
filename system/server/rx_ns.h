@@ -68,6 +68,15 @@ using namespace rx_platform;
 
 namespace rx_platform {
 
+enum rx_object_command_t
+{
+	rx_turn_off = 0,
+	rx_turn_on,
+	rx_set_blocked,
+	rx_reset_blocked,
+	rx_set_test,
+	rx_reset_test
+};
 namespace meta
 {
 class meta_data;
@@ -252,7 +261,7 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual size_t get_size () const = 0;
 
-      virtual rx_result save () const = 0;
+      rx_result save () const;
 
       virtual const meta_data_t& meta_info () const = 0;
 
@@ -266,7 +275,7 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
 
-      rx_result_with<rx_storage_ptr> resolve_storage () const;
+      virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
 
   protected:

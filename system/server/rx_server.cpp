@@ -124,7 +124,6 @@ void rx_gate::cleanup ()
 
 rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
@@ -132,7 +131,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	host_ = host;
 	rx_name_ = data.meta_configuration_data.instance_name.empty() ? host_->get_default_name() : data.meta_configuration_data.instance_name;
 
-	auto result = runtime_.initialize(host, data.runtime_data);
+	auto result = infrastructure_.initialize(host, data.runtime_data);
 	if (result)
 	{
 		result = manager_.initialize(host, data.managment_data);
@@ -163,20 +162,20 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 				{
 					io_manager_->deinitialize();
 					manager_.deinitialize();
-					runtime_.deinitialize();
+					infrastructure_.deinitialize();
 					io_manager_->deinitialize();
 				}
 			}
 			else
 			{
 				manager_.deinitialize();
-				runtime_.deinitialize();
+				infrastructure_.deinitialize();
 				result.register_error("Error initializing I/O manager!");
 			}
 		}
 		else
 		{
-			runtime_.deinitialize();
+			infrastructure_.deinitialize();
 			result.register_error("Error initializing platform manager!");
 		}
 	}
@@ -199,13 +198,13 @@ rx_result rx_gate::deinitialize ()
 
 	io_manager_->deinitialize();
 	manager_.deinitialize();
-	runtime_.deinitialize();
+	infrastructure_.deinitialize();
 	return RX_OK;
 }
 
 rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	auto result = runtime_.start(host, data.runtime_data);
+	auto result = infrastructure_.start(host, data.runtime_data);
 	if (result)
 	{
 		result = manager_.start(host, data.managment_data);
@@ -220,14 +219,14 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			}
 			else
 			{
-				runtime_.stop();
+				infrastructure_.stop();
 				manager_.stop();
 				result.register_error("Error starting platform types manager!");
 			}
 		}
 		else
 		{
-			runtime_.stop();
+			infrastructure_.stop();
 			result.register_error("Error starting platform manager!");
 		}
 	}
@@ -243,7 +242,7 @@ rx_result rx_gate::stop ()
 	platform_status_ = rx_platform_stopping;
 	model::platform_types_manager::instance().stop();
 	manager_.stop();
-	runtime_.stop();
+	infrastructure_.stop();
 	platform_status_ = rx_platform_deinitializing;
 	return true;
 }

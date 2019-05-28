@@ -214,15 +214,13 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return false;
 	if (!stream.write_id("superId", parent_))
 		return false;
-	if (!stream.write_string("path", path_.c_str()))
-		return false;
 	if (!stream.write_time("created", created_time_))
 		return false;
 	if (!stream.write_time("modified", modified_time_))
 		return false;
-	if (!stream.write_string("path", path_.c_str()))
-		return false;
 	if (!stream.write_version("ver", version_))
+		return false;
+	if (!stream.write_string("path", path_))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -377,7 +375,7 @@ string_type meta_data::get_full_path () const
 	else
 	{
 		string_type ret(path_);
-		ret.reserve(path_.size() + name_.size() + 1);
+		ret.reserve(ret.size() + name_.size() + 1);
 		ret += RX_DIR_DELIMETER;
 		ret += name_;
 		return ret;
@@ -389,8 +387,18 @@ bool meta_data::is_system () const
 	return attributes_ & namespace_item_attributes::namespace_item_system_mask;
 }
 
+rx_result_with<rx_storage_ptr> meta_data::resolve_storage () const
+{
+	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(path_);
+	if (dir)
+	{
+		return dir->resolve_storage();
+	}
+	else
+		return "Unable to locate item's directory!";
+}
+
 
 } // namespace meta
 } // namespace rx_platform
-
 

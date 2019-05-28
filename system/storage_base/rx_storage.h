@@ -168,12 +168,27 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual bool is_valid_storage () const = 0;
 
-      virtual rx_result save_item (const platform_item_ptr item) = 0;
+      virtual rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data) = 0;
+
+
+      const string_type& get_base_path () const
+      {
+        return base_path_;
+      }
+
+      void set_base_path (const string_type& value)
+      {
+        base_path_ = value;
+      }
+
 
 
   protected:
 
   private:
+
+
+      string_type base_path_;
 
 
 };

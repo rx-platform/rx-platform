@@ -1066,7 +1066,11 @@ string_type get_code_module(const string_type& full)
 			return full.substr(len + idx);
 		}
 	}
-	return full;
+	size_t idx = full.find_last_of("/\\");
+	if (idx == string_type::npos)
+		return full;
+	else
+		return full.substr(idx + 1);
 }
 
 rx_mode_type::rx_mode_type()

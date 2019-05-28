@@ -153,6 +153,8 @@ class meta_data
 
       bool is_system () const;
 
+      rx_result_with<rx_storage_ptr> resolve_storage () const;
+
 
       const rx_node_id& get_parent () const
       {

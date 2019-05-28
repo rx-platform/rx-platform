@@ -124,7 +124,7 @@ log_object& log_object::instance ()
 	return *g_object;
 }
 
-void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message)
+void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const string_type& message)
 {
 	// just fire the job and let worker take care of it!
 	auto my_job = rx_create_reference<log_event_job>(event_type, library, source, level, code, message,sync_event);

@@ -75,6 +75,27 @@ int dispatcher_connect_callback(void* data, uint32_t status)
 	return ret;
 }
 
+
+rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct)
+{
+	addr_struct->sin_family = AF_INET;
+	memzero(addr_struct, sizeof(*addr_struct));
+	addr_struct->sin_port = htons(port);
+	if (addr.empty())
+	{
+		addr_struct->sin_addr.s_addr = INADDR_ANY;
+		return true;
+	}
+	else
+	{
+		auto ret = inet_pton(AF_INET, addr.c_str(), &addr_struct->sin_addr);
+		if (ret == 1)
+			return true;
+		else
+			return addr + " is not valid IP4 address";
+	}
+}
+
 // Class rx::io::dispatcher_subscriber 
 
 time_aware_subscribers_type dispatcher_subscriber::time_aware_subscribers_;

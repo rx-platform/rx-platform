@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -155,7 +155,7 @@ bool complex_value_struct::parse_string(const string_type& str)
 	return true;
 }
 
-// Class rx::values::rx_value 
+// Class rx::values::rx_value
 
 bool rx_value::operator==(const rx_value &right) const
 {
@@ -362,7 +362,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value 
+// Class rx::values::rx_simple_value
 
 rx_simple_value::rx_simple_value (const rx_value_storage& storage)
 	: storage_(storage)
@@ -503,7 +503,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage 
+// Class rx::values::rx_value_storage
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -549,6 +549,8 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 
 string_type rx_value_storage::to_string () const
 {
+    //GCC <charconv> missing
+	//char buff[0x20];
 	switch (value_type_)
 	{
 	case RX_NULL_TYPE:
@@ -556,24 +558,114 @@ string_type rx_value_storage::to_string () const
 	case RX_BOOL_TYPE:
 		return (value_.bool_value ? "true" : "false");
 	case RX_INT8_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int8_value);
+			if(ret.ec== std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "b";
+			return ret_str;
+		}*/
 		return std::to_string(value_.int8_value) + "b";
 	case RX_UINT8_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint8_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "ub";
+			return ret_str;
+		}*/
 		return std::to_string(value_.uint8_value) + "ub";
 	case RX_INT16_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int16_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "s";
+			return ret_str;
+		}*/
 		return std::to_string(value_.int16_value) + "s";
 	case RX_UINT16_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint16_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "us";
+			return ret_str;
+		}*/
 		return std::to_string(value_.uint16_value) + "us";
 	case RX_INT32_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int32_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "i";
+			return ret_str;
+		}*/
 		return std::to_string(value_.int32_value) + "i";
 	case RX_UINT32_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint32_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "ui";
+			return ret_str;
+		}*/
 		return std::to_string(value_.uint32_value) + "ui";
 	case RX_INT64_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int64_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "l";
+			return ret_str;
+		}*/
 		return std::to_string(value_.int64_value) + "l";
 	case RX_UINT64_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint64_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "ul";
+			return ret_str;
+		}*/
 		return std::to_string(value_.uint64_value) + "ul";
 	case RX_FLOAT_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.float_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "f";
+			return ret_str;
+		}*/
 		return std::to_string(value_.float_value) + "f";
 	case RX_DOUBLE_TYPE:
+        //GCC <charconv> missing
+		/*{
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.double_value);
+			if (ret.ec == std::errc())
+				*ret.ptr = '\0';
+			string_type ret_str(buff);
+			ret_str += "d";
+			return ret_str;
+		}*/
 		return std::to_string(value_.double_value) + "d";
 	case RX_STRING_TYPE:
 		return "\""s + *value_.string_value + "\"";
@@ -755,7 +847,7 @@ bool rx_value_storage::convert_to (rx_value_t type)
 		value_.array_value = temp_array;
 		value_type_ = type;
 		return true;
-	}	
+	}
 }
 
 void rx_value_storage::assign(bool val)
@@ -2624,7 +2716,202 @@ bool extract_value(const rx_value_storage& from, const bool& default_value)
 	}
 	return default_value;
 }
-// Class rx::values::rx_timed_value 
+
+template<>
+int8_t extract_value(const rx_value_storage& from, const int8_t& default_value)
+{
+	if (from.get_value_type() == RX_INT8_TYPE)
+	{
+		return from.value_.int8_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_INT8_TYPE))
+			return temp_val.value_.int8_value;
+	}
+	return default_value;
+}
+
+template<>
+uint8_t extract_value(const rx_value_storage& from, const uint8_t& default_value)
+{
+	if (from.get_value_type() == RX_UINT8_TYPE)
+	{
+		return from.value_.uint8_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_UINT8_TYPE))
+			return temp_val.value_.uint8_value;
+	}
+	return default_value;
+}
+
+template<>
+int16_t extract_value(const rx_value_storage& from, const int16_t& default_value)
+{
+	if (from.get_value_type() == RX_INT16_TYPE)
+	{
+		return from.value_.int16_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_INT16_TYPE))
+			return temp_val.value_.int16_value;
+	}
+	return default_value;
+}
+
+template<>
+uint16_t extract_value(const rx_value_storage& from, const uint16_t& default_value)
+{
+	if (from.get_value_type() == RX_UINT16_TYPE)
+	{
+		return from.value_.uint16_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_UINT16_TYPE))
+			return temp_val.value_.uint16_value;
+	}
+	return default_value;
+}
+
+template<>
+int32_t extract_value(const rx_value_storage& from, const int32_t& default_value)
+{
+	if (from.get_value_type() == RX_INT32_TYPE)
+	{
+		return from.value_.int32_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_INT32_TYPE))
+			return temp_val.value_.int32_value;
+	}
+	return default_value;
+}
+
+template<>
+uint32_t extract_value(const rx_value_storage& from, const uint32_t& default_value)
+{
+	if (from.get_value_type() == RX_UINT32_TYPE)
+	{
+		return from.value_.uint32_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_UINT32_TYPE))
+			return temp_val.value_.uint32_value;
+	}
+	return default_value;
+}
+
+template<>
+int64_t extract_value(const rx_value_storage& from, const int64_t& default_value)
+{
+	if (from.get_value_type() == RX_INT64_TYPE)
+	{
+		return from.value_.int64_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_INT64_TYPE))
+			return temp_val.value_.int64_value;
+	}
+	return default_value;
+}
+
+template<>
+uint64_t extract_value(const rx_value_storage& from, const uint64_t& default_value)
+{
+	if (from.get_value_type() == RX_UINT64_TYPE)
+	{
+		return from.value_.uint64_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_UINT64_TYPE))
+			return temp_val.value_.uint64_value;
+	}
+	return default_value;
+}
+
+
+template<>
+float extract_value(const rx_value_storage& from, const float& default_value)
+{
+	if (from.get_value_type() == RX_FLOAT_TYPE)
+	{
+		return from.value_.float_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_FLOAT_TYPE))
+			return temp_val.value_.float_value;
+	}
+	return default_value;
+}
+
+
+template<>
+double extract_value(const rx_value_storage& from, const double& default_value)
+{
+	if (from.get_value_type() == RX_DOUBLE_TYPE)
+	{
+		return from.value_.double_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_DOUBLE_TYPE))
+			return temp_val.value_.double_value;
+	}
+	return default_value;
+}
+
+
+template<>
+string_type extract_value(const rx_value_storage& from, const string_type& default_value)
+{
+	if (from.get_value_type() == RX_STRING_TYPE)
+	{
+		return *from.value_.string_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_STRING_TYPE))
+			return std::move(*temp_val.value_.string_value);
+	}
+	return default_value;
+}
+
+template<>
+byte_string extract_value(const rx_value_storage& from, const byte_string& default_value)
+{
+	if (from.get_value_type() == RX_BYTES_TYPE)
+	{
+		return *from.value_.bytes_value;
+	}
+	else
+	{
+		rx_value_storage temp_val(from);
+		if (temp_val.convert_to(RX_BYTES_TYPE))
+			return std::move(*temp_val.value_.bytes_value);
+	}
+	return default_value;
+}
+// Class rx::values::rx_timed_value
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {

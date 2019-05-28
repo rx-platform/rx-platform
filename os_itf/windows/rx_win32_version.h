@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 14
+#define RX_HAL_BUILD_NUMBER 15
 
 /*********************************************************************************
 
@@ -19,5 +19,6 @@
 0.10.12. added some file system changes
 0.10.13. corrected some pipe errors
 0.10.14. removed include "targetver.h"
+0.10.15. added UDP4 socket function
 
 *********************************************************************************/

@@ -33,6 +33,7 @@
 
 
 
+#include "system/storage_base/rx_storage.h"
 #define RX_JSON_FILE_EXTESION "json"
 #define RX_BINARY_FILE_EXTESION "rxbin"
 
@@ -47,13 +48,13 @@ namespace storage_policy {
 
 class file_path_addresing_policy 
 {
-	typedef std::map<rx_node_id, string_type> items_cache_type;
+	typedef std::map<string_type, string_type> items_cache_type;
 
   public:
 
-      string_type get_file_path (const meta::meta_data& meta, const string_type& root);
+      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base);
 
-      void add_file_path (const meta::meta_data& meta, const string_type& path);
+      void add_file_path (const meta::meta_data& data, const string_type& path);
 
 
   protected:

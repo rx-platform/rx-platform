@@ -170,7 +170,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
 			if (!application_ptr)
 			{
-				RUNTIME_LOG_WARNING("object_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
+				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
 				application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			}
 			if (application_ptr)
@@ -187,7 +187,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		}
 		else
 		{
-			RUNTIME_LOG_WARNING("object_algorithms", 900, "Application Id is null, connecting domain to unassigned application.");
+			RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is null, connecting domain to unassigned application.");
 			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			if (application_ptr)
 			{
@@ -256,12 +256,74 @@ rx_result domain_algorithms::stop_runtime (rx_domain_ptr what, runtime::runtime_
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
 {
-	return "Not implemented!";
+	auto result = what->initialize_runtime(ctx);
+	if (result)
+	{
+		if (what->get_instance_data().app_id)
+		{
+			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
+			if (!application_ptr)
+			{
+				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
+				application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+			}
+			if (application_ptr)
+			{
+				what->connect_application(std::move(application_ptr));
+			}
+			else
+			{
+				std::ostringstream message;
+				message << "Unable to connect to application "
+					<< what->get_instance_data().app_id ? what->get_instance_data().app_id.to_string() : RX_NULL_ITEM_NAME;
+				result = rx_result(message.str());
+			}
+		}
+		else
+		{
+			RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is null, connecting domain to unassigned application.");
+			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+			if (application_ptr)
+			{
+				what->connect_application(std::move(application_ptr));
+			}
+			else
+			{
+				std::ostringstream message;
+				message << "Unable to connect to application "
+					<< what->get_instance_data().app_id ? what->get_instance_data().app_id.to_string() : RX_NULL_ITEM_NAME;
+				result = rx_result(message.str());
+			}
+		}
+		if (result)
+		{
+			rx_post_function<rx_port_ptr>([](rx_port_ptr whose)
+				{
+					runtime::runtime_start_context start_ctx;
+					auto result = start_runtime(whose, start_ctx);
+					if (result)
+					{
+						RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+					}
+					else
+					{
+						for (const auto& error : result.errors())
+							RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
+						RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+					}
+				}, what, what->get_executer());
+		}
+	}
+	return result;
 }
 
 rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx)
 {
-	return "Not implemented!";
+	auto ret = what->start_runtime(ctx);
+	if (ret)
+	{
+	}
+	return ret;
 }
 
 rx_result port_algorithms::deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)

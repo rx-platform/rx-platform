@@ -173,16 +173,10 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = dir->resolve_storage();
-		if (storage_result)
+		auto save_result = prototype->get_item_ptr()->save();
+		if (!save_result)
 		{
-			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
-			if (!result)
-				result.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
-		}
-		else // !storage_result
-		{
-			rx_result_with<typename typeT::smart_ptr> ret(storage_result.errors());
+			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
 			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
 			return ret;
 		}
@@ -248,16 +242,10 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = dir->resolve_storage();
-		if (storage_result)
+		auto save_result = prototype->get_item_ptr()->save();
+		if (!save_result)
 		{
-			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
-			if (!result)
-				result.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
-		}
-		else // !storage_result
-		{
-			rx_result_with<typename typeT::smart_ptr> ret(storage_result.errors());
+			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
 			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
 			return ret;
 		}
@@ -381,16 +369,10 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = dir->resolve_storage();
-		if (storage_result)
+		auto save_result = prototype->get_item_ptr()->save();
+		if (!save_result)
 		{
-			auto result = storage_result.value()->save_item(prototype->get_item_ptr());
-			if (!result)
-				result.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
-		}
-		else // !storage_result
-		{
-			rx_result_with<typename typeT::smart_ptr> ret(storage_result.errors());
+			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
 			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
 			return ret;
 		}
@@ -517,19 +499,10 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	}
 	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		auto storage_result = dir->resolve_storage();
-		if (storage_result)
+		auto save_result = ret.value()->get_item_ptr()->save();
+		if (!save_result)
 		{
-			auto result = storage_result.value()->save_item(ret.value()->get_item_ptr());
-			if (!result)
-			{
-				result.register_error("Error saving item "s + ret.value()->meta_info().get_full_path());
-				return result.errors();
-			}
-		}
-		else // !storage_result
-		{
-			rx_result_with<typename typeT::RTypePtr> ret(storage_result.errors());
+			rx_result_with<typename typeT::RTypePtr> ret(save_result.errors());
 			ret.register_error("Error saving type item "s + ret.value()->meta_info().get_full_path());
 			return ret;
 		}

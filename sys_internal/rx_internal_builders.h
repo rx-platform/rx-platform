@@ -70,7 +70,7 @@ class rx_platform_builder
 
       static rx_result_with<rx_directory_ptr> buid_platform (hosting::rx_platform_host* host, namespace_data_t& data);
 
-      virtual rx_result do_build (platform_root::smart_ptr root) = 0;
+      virtual rx_result do_build (rx_directory_ptr root) = 0;
 
 
   protected:
@@ -93,6 +93,8 @@ class rx_platform_builder
 
       static rx_result buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data);
 
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_plugin_builders (namespace_data_t& data, hosting::rx_platform_host* host);
+
 
 
 };
@@ -107,7 +109,7 @@ class root_folder_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (platform_root::smart_ptr root);
+      rx_result do_build (rx_directory_ptr root);
 
 
   protected:
@@ -127,7 +129,7 @@ class basic_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (platform_root::smart_ptr root);
+      rx_result do_build (rx_directory_ptr root);
 
 
   protected:
@@ -157,7 +159,7 @@ class system_classes_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (platform_root::smart_ptr root);
+      rx_result do_build (rx_directory_ptr root);
 
 
   protected:
@@ -177,7 +179,7 @@ class port_classes_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (platform_root::smart_ptr root);
+      rx_result do_build (rx_directory_ptr root);
 
 
   protected:
@@ -197,7 +199,7 @@ class system_objects_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (platform_root::smart_ptr root);
+      rx_result do_build (rx_directory_ptr root);
 
 
   protected:

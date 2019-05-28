@@ -151,7 +151,7 @@ rx_result file_system_storage<policyT>::recursive_list_storage (const string_typ
 		for (auto& one : file_names)
 		{
 			result_path = rx_combine_paths(file_path, one);
-			auto storage_item = get_storage_item(result_path);
+			auto storage_item = get_storage_item_from_file_path(result_path);
 			if(storage_item)
 				items.emplace_back(std::move(storage_item));
 		}
@@ -172,49 +172,7 @@ bool file_system_storage<policyT>::is_valid_storage () const
 }
 
 template <class policyT>
-rx_result file_system_storage<policyT>::save_item (const platform_item_ptr item)
-{
-	string_type path = cache_.get_file_path(item->meta_info(), root_);
-	if (path.empty())
-		return "Unable to get file path for the file storage item!";
-	auto result = ensure_path_exsistence(path);
-	if (result)
-	{
-		auto storage_item = get_storage_item(path);
-		if (storage_item)
-		{
-			result = storage_item->open_for_write();
-			if (result)
-			{
-				result = item->serialize(storage_item->write_stream());
-				if (!result)
-				{// first error is on serialize so pack all errors (we have to close file)
-					auto result_close = storage_item->close();
-					if (!result_close)
-					{
-						for (const auto& one : result_close.errors())
-						{
-							result.register_error(string_type(one));
-						}
-					}
-				}
-				else
-					result = storage_item->close();
-			}
-			return result;
-		}
-		else
-			return "Unable to get storage item for file " + path;
-	}
-	else
-	{
-		result.register_error("Unable to create needed directories!");
-		return result;
-	}
-}
-
-template <class policyT>
-std::unique_ptr<rx_file_item> file_system_storage<policyT>::get_storage_item (const string_type& path)
+std::unique_ptr<rx_file_item> file_system_storage<policyT>::get_storage_item_from_file_path (const string_type& path)
 {
 	string_type ext = rx_get_extension(path);
 
@@ -279,6 +237,28 @@ rx_result file_system_storage<policyT>::recursive_create_directory (const string
 	}
 	else
 		return true;
+}
+
+template <class policyT>
+rx_result_with<rx_storage_item_ptr> file_system_storage<policyT>::get_item_storage (const meta::meta_data& data)
+{
+	string_type path = cache_.get_file_path(data, root_, get_base_path());
+	if (path.empty())
+		return "Unable to get file path for the file storage item!";
+	auto result = ensure_path_exsistence(path);
+	if (result)
+	{
+		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path);
+		if (storage_item)
+			return storage_item;
+		else
+			return "Unable to get storage item for file " + path;
+	}
+	else
+	{
+		result.register_error("Unable to create needed directories!");
+		return result.errors();
+	}
 }
 
 template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();

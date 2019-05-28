@@ -1738,6 +1738,33 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
         close(ret);
     return RX_ERROR;
 }
+
+sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
+{
+    sys_handle_t ret=socket(AF_INET,SOCK_DGRAM|SOCK_NONBLOCK,0);
+    if(ret)
+    {
+
+        int on = 1;
+        setsockopt(ret, SOL_TCP, TCP_NODELAY, &on, sizeof(on));
+
+        if(addr->sin_port!=0)
+        {//this is listen or udp server socket mark resuse
+            on=1;
+            setsockopt(ret,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
+        }
+
+        addr->sin_family=AF_INET;
+
+        if(0==bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in)))
+        {
+            return ret;
+        }
+    }
+    if(ret)
+        close(ret);
+    return RX_ERROR;
+}
 uint32_t rx_socket_listen(sys_handle_t handle)
 {
     return (0==listen(handle,SOMAXCONN));

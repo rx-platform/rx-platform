@@ -492,6 +492,55 @@ rx_result runtime_object::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
+void runtime_object::reset_blocked ()
+{
+	if (mode_.reset_blocked())
+	{
+		change_time_ = rx_time::now();
+		item_->object_state_changed({ mode_, change_time_, this });
+	}
+}
+
+void runtime_object::reset_test ()
+{
+	if (mode_.reset_test())
+	{
+		change_time_ = rx_time::now();
+		item_->object_state_changed({ mode_, change_time_, this });
+	}
+}
+
+rx_result runtime_object::do_command (rx_object_command_t command_type)
+{
+	switch (command_type)
+	{
+	case rx_turn_off:
+		turn_off();
+		break;
+	case rx_turn_on:
+		turn_on();
+		break;
+	case rx_set_blocked:
+		set_blocked();
+		break;
+	case rx_reset_blocked:
+		reset_blocked();
+		break;
+	case rx_set_test:
+		set_test();
+		break;
+	case rx_reset_test:
+		reset_test();
+		break;
+	}
+	return true;
+}
+
+rx_result runtime_object::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item_->get_value_ref(path, ref);
+}
+
 
 // Parameterized Class rx_platform::runtime::blocks::runtime_holder 
 
@@ -573,6 +622,48 @@ rx_result runtime_holder<T>::stop_runtime (runtime::runtime_stop_context& ctx)
 {
 	auto result = runtime.stop_runtime(ctx);
 	return result;
+}
+
+template <class T>
+rx_result runtime_holder<T>::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
+{
+	if (paths.empty())
+		return true;
+	results.clear();// just in case
+	results.reserve(paths.size());
+	has_errors = false;
+	for (const auto& path : paths)
+	{
+		auto one_result = connected_tags_.connect_tag(path, &runtime);
+		if (!has_errors && !one_result)
+			has_errors = true;
+		results.emplace_back(std::move(one_result));
+	}
+	return true;
+}
+
+template <class T>
+rx_result runtime_holder<T>::disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors)
+{
+	if (items.empty())
+		return true;
+	results.clear();// just in case
+	results.reserve(items.size());
+	has_errors = false;
+	for (const auto& handle : items)
+	{
+		auto one_result = connected_tags_.disconnect_tag(handle);
+		if (!has_errors && !one_result)
+			has_errors = true;
+		results.emplace_back(std::move(one_result));
+	}
+	return true;
+}
+
+template <class T>
+rx_result_with<runtime_handle_t> runtime_holder<T>::bind_item (const string_type& path)
+{
+	return connected_tags_.bind_tag(path, &runtime);
 }
 
 template class runtime_holder<objects::object_runtime>;

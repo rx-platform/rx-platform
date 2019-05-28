@@ -77,8 +77,20 @@ bool plugins_manager::check_class (rx::pointers::code_behind_definition_t* cd)
 
 rx_result plugins_manager::register_plugin (rx_platform::library::rx_plugin_base* what)
 {
-	plugins_.emplace_back(what);
-	return true;
+	PLUGIN_LOG_INFO("plugins_manager", 900, "Registering plugin "s + what->get_plugin_name());
+	auto result = what->init_plugin();
+	if (result)
+	{
+		plugins_.emplace_back(what);
+		PLUGIN_LOG_INFO("plugins_manager", 900, "Registered plugin "s + what->get_plugin_info());
+	}
+	else
+	{
+		for(const auto& one : result.errors())
+			PLUGIN_LOG_ERROR("plugins_manager", 900, one);
+		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + what->get_plugin_name());
+	}
+	return result;
 }
 
 

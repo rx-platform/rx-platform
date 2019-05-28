@@ -51,6 +51,7 @@
 
 
 #include <WinSock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 
 
@@ -139,6 +140,7 @@ typedef DWORD rx_pid_t;
 #define ACCEPT_BUFFER_SIZE (ACCEPT_ADDR_SIZE*2)
 
 #define TCP_BUFFER_SIZE 0x8000
+#define UDP_BUFFER_SIZE 0x800
 
 typedef struct windows_overlapped_t
 {

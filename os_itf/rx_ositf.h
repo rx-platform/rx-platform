@@ -285,6 +285,7 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// socket apstractions
 	sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr);
+	sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
 	///////////////////////////////////////////////////////////////////////////////////////////////////

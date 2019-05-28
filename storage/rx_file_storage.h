@@ -120,7 +120,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       bool is_valid_storage () const;
 
-      rx_result save_item (const platform_item_ptr item);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data);
 
 
   protected:
@@ -129,7 +129,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
 
-      std::unique_ptr<rx_file_item> get_storage_item (const string_type& path);
+      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path);
 
       rx_result ensure_path_exsistence (const string_type& path);
 

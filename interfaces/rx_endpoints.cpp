@@ -37,6 +37,8 @@
 
 #include "system/server/rx_server.h"
 #include "system/runtime/rx_blocks.h"
+#include "model/rx_meta_internals.h"
+#include "rx_ip_endpoints.h"
 
 
 namespace interfaces {
@@ -58,8 +60,17 @@ rx_io_manager::~rx_io_manager()
 
 rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager_data_t& data)
 {
-	auto result = rx_init_protocols(nullptr);
-	return result == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result));
+	auto result_c = rx_init_protocols(nullptr);
+	rx_result result = result_c == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result_c));
+	if (result)
+	{
+		// register I/O constructors
+		model::platform_types_manager::instance().internal_get_type_cache<port_type>().register_constructor(
+			RX_UDP_PORT_TYPE_ID, [] {
+				return rx_create_reference<ip_endpoints::udp_port>();
+			});
+	}
+	return result;
 }
 
 rx_result rx_io_manager::deinitialize ()

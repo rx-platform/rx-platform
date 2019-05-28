@@ -42,32 +42,38 @@ namespace storage_policy {
 // Class storage::storage_policy::file_path_addresing_policy 
 
 
-string_type file_path_addresing_policy::get_file_path (const meta::meta_data& meta, const string_type& root)
+string_type file_path_addresing_policy::get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base)
 {
-	if (meta.get_path().empty())
+	if (data.get_path().empty())
 		return "";
+
 	locks::const_auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
-	auto it = items_cache_.find(meta.get_id());
+	auto it = items_cache_.find(data.get_full_path());
 	if (it == items_cache_.end())
 	{// we don't have this one yet
-		size_t idx = meta.get_path().find(RX_DIR_DELIMETER, 1);
+		size_t idx;
+		idx = data.get_path().find(base);
+		if (idx != 0)
+			return "";
+		idx = base.size();
+		idx = data.get_path().find(RX_DIR_DELIMETER, idx);
 		string_type file_path;
 		if (idx != string_type::npos)
-			file_path = rx_combine_paths(root, meta.get_path().substr(idx + 1));
+			file_path = rx_combine_paths(root, data.get_path().substr(idx + 1));
 		else
 			file_path = root;
-		file_path = rx_combine_paths(file_path, meta.get_name() + "." + RX_JSON_FILE_EXTESION);
-		items_cache_.emplace(meta.get_id(), file_path);
+		file_path = rx_combine_paths(file_path, data.get_name() + "." + RX_JSON_FILE_EXTESION);
+		items_cache_.emplace(data.get_full_path(), file_path);
 		return file_path;
 	}
 	else
 		return it->second;
 }
 
-void file_path_addresing_policy::add_file_path (const meta::meta_data& meta, const string_type& path)
+void file_path_addresing_policy::add_file_path (const meta::meta_data& data, const string_type& path)
 {
 	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
-	items_cache_[meta.get_id()] = path;
+	items_cache_[data.get_full_path()] = path;
 }
 
 

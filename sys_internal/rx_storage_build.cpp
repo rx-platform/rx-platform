@@ -57,7 +57,7 @@ configuration_storage_builder::~configuration_storage_builder()
 
 
 
-rx_result configuration_storage_builder::do_build (platform_root::smart_ptr root)
+rx_result configuration_storage_builder::do_build (rx_directory_ptr root)
 {
 	auto result = build_from_storage(root, *storage_);
 	if (!result)
@@ -68,7 +68,7 @@ rx_result configuration_storage_builder::do_build (platform_root::smart_ptr root
 	return result;
 }
 
-rx_result configuration_storage_builder::build_from_storage (platform_root::smart_ptr root, rx_platform::storage_base::rx_platform_storage& storage)
+rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr root, rx_platform::storage_base::rx_platform_storage& storage)
 {
 	if (!storage.is_valid_storage())
 		return "Storage not initialized!";
@@ -153,7 +153,7 @@ rx_result configuration_storage_builder::build_from_storage (platform_root::smar
 	return result;
 }
 
-rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, platform_root::smart_ptr root)
+rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -193,7 +193,7 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	return result;
 }
 
-rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, platform_root::smart_ptr root)
+rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;

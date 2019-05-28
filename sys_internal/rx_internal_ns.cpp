@@ -101,6 +101,13 @@ unassigned_directory::~unassigned_directory()
 world_directory::world_directory()
 	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage())
 {
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_WORLD_NAME;
+		storage.value()->set_base_path(base);
+	}
 }
 
 
@@ -178,26 +185,6 @@ rx_node_id rx_item_implementation<TImpl>::get_node_id () const
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::save () const
-{
-	const auto& meta = impl_->meta_info();
-	auto storage_result = resolve_storage();
-	if (storage_result)
-	{
-		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
-		if (!result)
-			result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
-
-template <class TImpl>
 rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
 {
 	auto ret = stream.write_header(STREAMING_TYPE_OBJECT, 0);
@@ -246,6 +233,12 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
 	return impl_->write_value(path, std::move(val), std::move(callback), ctx);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::do_command (rx_object_command_t command_type)
+{
+	return impl_->do_command(command_type);
 }
 
 
@@ -328,26 +321,6 @@ rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::save () const
-{
-	const auto& meta = impl_->meta_info();
-	auto storage_result = resolve_storage();
-	if (storage_result)
-	{
-		auto result = storage_result.value()->save_item(impl_->get_item_ptr());
-		if (!result)
-			result.register_error("Error saving type item "s + meta.get_path());
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		result.register_error("Error saving type item "s + meta.get_path());
-		return result;
-	}
-}
-
-template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
 {
 	stream.write_header(STREAMING_TYPE_TYPE, 0);
@@ -376,6 +349,12 @@ rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& pat
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+{
+	return "Not Implemented!";
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t command_type)
 {
 	return "Not Implemented!";
 }
@@ -453,12 +432,6 @@ rx_node_id rx_other_implementation<TImpl>::get_node_id () const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::save () const
-{
-	return "Not valid for this item";
-}
-
-template <class TImpl>
 rx_result rx_other_implementation<TImpl>::serialize (base_meta_writer& stream) const
 {
 	return "Not valid for this item";
@@ -488,12 +461,25 @@ rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, 
 	return "Not Implemented!";
 }
 
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t command_type)
+{
+	return "Not Implemented!";
+}
+
 
 // Class sys_internal::internal_ns::system_directory 
 
 system_directory::system_directory()
 	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage())
 {
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		storage.value()->set_base_path(base);
+	}
 }
 
 
@@ -508,6 +494,17 @@ system_directory::~system_directory()
 host_directory::host_directory()
 	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_storage())
 {
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += RX_NS_PLUGINS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += RX_NS_HOST_NAME;
+		storage.value()->set_base_path(base);
+	}
 }
 
 
@@ -522,6 +519,17 @@ host_directory::~host_directory()
 plugin_directory::plugin_directory (rx_plugin_ptr plugin)
 	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access, plugin->get_storage())
 {
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += RX_NS_PLUGINS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += plugin->get_plugin_name();
+		storage.value()->set_base_path(base);
+	}
 }
 
 

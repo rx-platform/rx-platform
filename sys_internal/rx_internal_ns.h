@@ -192,8 +192,6 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result save () const;
-
       rx_result serialize (base_meta_writer& stream) const;
 
       rx_result deserialize (base_meta_reader& stream);
@@ -205,6 +203,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result read_value (const string_type& path, rx_value& val) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -246,8 +246,6 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result save () const;
-
       rx_result serialize (base_meta_writer& stream) const;
 
       rx_result deserialize (base_meta_reader& stream);
@@ -257,6 +255,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result read_value (const string_type& path, rx_value& val) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
 
 
   protected:
@@ -325,8 +325,6 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result save () const;
-
       rx_result serialize (base_meta_writer& stream) const;
 
       rx_result deserialize (base_meta_reader& stream);
@@ -336,6 +334,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result read_value (const string_type& path, rx_value& val) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
 
 
   protected:

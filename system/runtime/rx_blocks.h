@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -32,6 +32,8 @@
 
 
 
+// rx_operational
+#include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
@@ -71,10 +73,6 @@ namespace runtime {
 typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
 
 namespace blocks {
-
-extern const char* g_const_simple_class_name;
-typedef uint32_t runtime_item_id_t;
-
 
 
 
@@ -356,7 +354,7 @@ event runtime. basic implementation of an event runtime");
 
 
 
-class runtime_object 
+class runtime_object
 {
 	typedef std::vector<program_runtime_ptr> programs_type;
 
@@ -392,6 +390,14 @@ class runtime_object
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
+      void reset_blocked ();
+
+      void reset_test ();
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
 
       const rx_mode_type& get_mode () const
       {
@@ -405,7 +411,11 @@ class runtime_object
       }
 
 
-
+	  template<typename typeT>
+	  typeT get_local_value(const string_type& path, const typeT& default_value)
+	  {
+		  return item_->get_local_as(path, default_value);
+	  }
   protected:
 
   private:
@@ -432,7 +442,7 @@ class runtime_object
 
 
 template <class T>
-class runtime_holder 
+class runtime_holder
 {
 
   public:
@@ -453,17 +463,40 @@ class runtime_holder
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
+      rx_result connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
+
+      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors);
+
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
+
 
       runtime_object runtime;
 
-	  template<typename typeT>
-	  typeT get_const(const string_type& path, const typeT& default_value)
+	  template<typename valT>
+	  valT get_local_as(runtime_handle_t handle, const valT& default_value)
 	  {
-		  return runtime.item_->get_const_as(path, default_value);
+		  values::rx_simple_value temp_val;
+		  auto result = connected_tags_.local_get_value(handle, temp_val);
+		  if (result)
+		  {
+			  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+		  }
+		  return default_value;
 	  }
+	  template<typename valT>
+	  void set_local_as(runtime_handle_t handle, valT&& value)
+	  {
+		  values::rx_simple_value temp_val;
+		  temp_val.assign_static<valT>(std::move(value));
+		  auto result = connected_tags_.local_set_value(handle, std::move(temp_val));
+	  }
+
   protected:
 
   private:
+
+
+      operational::connected_tags connected_tags_;
 
 
 };

@@ -133,6 +133,46 @@ void rx_platform_item::set_parent (rx_directory_ptr parent)
 	parent_ = parent;
 }
 
+rx_result rx_platform_item::save () const
+{
+	const auto& meta = meta_info();
+	auto storage_result = meta.resolve_storage();
+	if (storage_result)
+	{
+		auto item_result = storage_result.value()->get_item_storage(meta);
+		if (!item_result)
+		{
+			item_result.register_error("Error saving item "s + meta.get_path());
+			return item_result.errors();
+		}
+		auto result = item_result.value()->open_for_write();
+		if (result)
+		{
+			result = serialize(item_result.value()->write_stream());
+			if (!result)
+			{// first error is on serialize so pack all errors (we have to close file)
+				auto result_close = item_result.value()->close();
+				if (!result_close)
+				{
+					for (const auto& one : result_close.errors())
+					{
+						result.register_error(string_type(one));
+					}
+				}
+			}
+			else
+				result = item_result.value()->close();
+		}
+		return result;
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		storage_result.register_error("Error saving item "s + meta.get_path());
+		return result;
+	}
+}
+
 string_type rx_platform_item::callculate_path () const
 {
 	string_type ret;
@@ -155,14 +195,6 @@ bool rx_platform_item::is_type () const
 	auto type = get_type_id();
 	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
 		|| (type >= rx_port_type && type <= rx_mapper_type);
-}
-
-rx_result_with<rx_storage_ptr> rx_platform_item::resolve_storage () const
-{
-	if (parent_)
-		return parent_->resolve_storage();
-	else
-		return "Storage not defined";
 }
 
 
@@ -691,3 +723,11 @@ bool rx_names_cache::should_cache (const platform_item_ptr& item)
 } // namespace ns
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	auto ret = meta_info().resolve_storage();
+
+#endif

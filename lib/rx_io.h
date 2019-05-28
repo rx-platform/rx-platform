@@ -55,6 +55,8 @@ namespace io {
 typedef std::set<io::dispatcher_subscriber> dispatcher_subscriber_ptr;
 typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_subscribers_type;
 
+rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct);
+
 
 
 
@@ -408,6 +410,49 @@ class stream_chuks_decoder
 
 
 };
+
+
+
+
+
+
+template <class buffT>
+class udp_socket : public full_duplex_comm<buffT>  
+{
+
+  public:
+      udp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher);
+
+      ~udp_socket();
+
+
+      bool bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+
+      bool bind_socket_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher);
+
+      void close ();
+
+
+  protected:
+      udp_socket();
+
+
+  private:
+
+
+      uint8_t* buffer_;
+
+      string_type peer_name_;
+
+
+};
+
+
+
+
+
+
+typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
 
 
 // Parameterized Class rx::io::full_duplex_comm 
@@ -1014,6 +1059,64 @@ stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<void(
 {
 }
 
+
+
+// Parameterized Class rx::io::udp_socket 
+
+template <class buffT>
+udp_socket<buffT>::udp_socket()
+{
+	buffer_ = (uint8_t*)rx_allocate_os_memory(UDP_BUFFER_SIZE);
+	this->dispatcher_data_.read_buffer = buffer_;
+	this->dispatcher_data_.read_buffer_size = UDP_BUFFER_SIZE;
+	this->dispatcher_data_.data = this;
+}
+
+template <class buffT>
+udp_socket<buffT>::udp_socket (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher)
+{
+}
+
+
+template <class buffT>
+udp_socket<buffT>::~udp_socket()
+{
+}
+
+
+
+template <class buffT>
+bool udp_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+{
+	this->dispatcher_data_.handle = rx_create_and_bind_ip4_udp_socket(addr);
+	if (this->dispatcher_data_.handle)
+	{
+		this->connect_dispatcher(dispatcher);
+		this->start_loops();
+		return true;
+	}
+	if (this->dispatcher_data_.handle)
+		rx_close_socket(this->dispatcher_data_.handle);
+	return false;
+}
+
+template <class buffT>
+bool udp_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher)
+{
+	sockaddr_in temp_addr;
+	auto result = fill_ip4_addr(addr, port, &temp_addr);
+	if (result)
+		return bind_socket(&temp_addr, dispatcher);
+	else
+		return false;
+}
+
+template <class buffT>
+void udp_socket<buffT>::close ()
+{
+	this->disconnect_dispatcher();
+	::rx_close_socket(this->dispatcher_data_.handle);
+}
 
 
 } // namespace io

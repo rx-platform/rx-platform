@@ -33,6 +33,7 @@
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace rx_platform {

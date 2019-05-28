@@ -40,17 +40,6 @@
 #include "rx_runtime_algorithms.h"
 
 
-
-/////////////////////////////////////////////////////////////
-// logging macros for console library
-#define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,msg)
-#define RUNTIME_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Run",src,lvl,msg)
-#define RUNTIME_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Run",src,lvl,msg)
-#define RUNTIME_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Run",src,lvl,msg)
-#define RUNTIME_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Run",src,lvl,msg)
-#define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,msg)
-
-
 namespace sys_runtime {
 
 

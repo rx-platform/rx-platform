@@ -1771,6 +1771,38 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	return (sys_handle_t)sock;
 }
 
+sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
+{
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock == INVALID_SOCKET)
+	{
+		int err = WSAGetLastError();     // convenience for the debugger
+		return NULL;
+	}
+
+	int on = 1;
+	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&on, sizeof(on));
+
+	ULONG buff_len = 0;
+	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&buff_len, sizeof(buff_len));
+	buff_len = 0;//just in case...
+	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char*)&buff_len, sizeof(buff_len));
+	
+	
+	if (addr)
+	{
+		addr->sin_family = AF_INET;// just in case
+
+		if (bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
+		{
+			int err = WSAGetLastError();
+			closesocket(sock);
+			return NULL;
+		}
+	}
+	return (sys_handle_t)sock;
+}
+
 uint32_t rx_socket_listen(sys_handle_t handle)
 {
 	if (listen((SOCKET)handle, SOMAXCONN) == SOCKET_ERROR)

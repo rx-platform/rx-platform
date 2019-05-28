@@ -62,21 +62,26 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	string_type console;
 	item->get_class_info(cls_name, console, has_code);
 	cls_name=item->get_class_name();
-	string_type storage_name = item->resolve_storage().value()->get_storage_info();
-	if (storage_name.empty())
-		storage_name = ANSI_STATUS_ERROR;
-
+	string_type storage_name(RX_NULL_ITEM_NAME);
+	string_type storage_reference(RX_NULL_ITEM_NAME);
+	auto storage_result = item->meta_info().resolve_storage();
+	if (storage_result)
+	{
+		storage_name = storage_result.value()->get_storage_info();
+		storage_reference = storage_result.value()->get_storage_reference();
+	}
 
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Name       : " << item->get_name() << "\r\n";
-	out << "Full Path  : " << item->meta_info().get_path() << "\r\n";
+	out << "Path       : " << item->meta_info().get_path() << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
 	out << "Type       : " << rx_item_type_name(item->get_type_id()) << "\r\n";
 	out << "Attributes : " << attrs << "\r\n";
-	out << "Storage    : " << storage_name << "\r\n\r\n";
+	out << "Storage    : " << storage_name << "\r\n";
+	out << "Storage Ref: " << storage_reference << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : ";
 	out << val.get_storage().to_string();

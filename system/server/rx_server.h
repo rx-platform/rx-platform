@@ -129,9 +129,9 @@ class rx_gate
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
 
-      infrastructure::server_rt& get_runtime ()
+      infrastructure::server_rt& get_infrastructure ()
       {
-        return runtime_;
+        return infrastructure_;
       }
 
 
@@ -223,7 +223,7 @@ class rx_gate
 
 
 
-      infrastructure::server_rt runtime_;
+      infrastructure::server_rt infrastructure_;
 
       rx_directory_ptr root_;
 
@@ -267,18 +267,18 @@ template<typename argT>
 void rx_post_function(std::function<void(argT)> f, argT arg, rx_thread_handle_t whome)
 {
     typedef jobs::lambda_job<argT, argT> lambda_t;
-	rx_gate::instance().get_runtime().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
+	rx_gate::instance().get_infrastructure().get_executer(whome)->append(typename lambda_t::smart_ptr(f,arg));
 }
 template<typename argT>
 void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, argT arg, rx_thread_handle_t whome)
 {
 	typedef jobs::lambda_period_job<argT> lambda_t;
-	rx_gate::instance().get_runtime().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
+	rx_gate::instance().get_infrastructure().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
 template<class resultT, class refT, class... Args>
 void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_t where, std::function<void(resultT)> callback, refT ref, Args... args)
 {
-	auto et = rx_gate::instance().get_runtime().get_executer(where);
+	auto et = rx_gate::instance().get_infrastructure().get_executer(where);
 	auto ret_thread = rx_thread_context();
 	if (where == ret_thread)
 	{
@@ -297,7 +297,7 @@ void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_
 				[=](decltype(ret_thread) ret_thread) mutable
 				{
 					resultT ret = what(args...);
-					auto jt = rx_gate::instance().get_runtime().get_executer(ret_thread);
+					auto jt = rx_gate::instance().get_infrastructure().get_executer(ret_thread);
 					jt->append(
 						rx_create_reference<jobs::lambda_job<resultT, refT> >(
 							[=](resultT&& ret_val) mutable

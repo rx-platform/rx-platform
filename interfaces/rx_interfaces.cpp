@@ -100,3 +100,13 @@ rx_ip_address & rx_ip_address::operator=(rx_ip_address &&right)
 } // namespace ip_endpoints
 } // namespace interfaces
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+
+
+
+
+#endif

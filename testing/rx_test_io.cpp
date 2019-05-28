@@ -92,7 +92,7 @@ bool tcp_test_client::connect_complete ()
 void test_tcp_client()
 {
 	tcp_test_client::smart_ptr client_socket(pointers::_create_new);
-	if (client_socket->bind_socket_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool()))
+	if (client_socket->bind_socket_tcpip_4(rx_gate::instance().get_infrastructure().get_io_pool()->get_pool()))
 	{
 		if (client_socket->connect_to_tcpip_4("192.168.56.101", 12345))
 		{
@@ -141,7 +141,7 @@ bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ost
 			out << "Creating TCP client...\r\n";
 			tcp_test_client::smart_ptr client(pointers::_create_new);
 			out << "Binding TCP client...\r\n";
-			if (client->bind_socket_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool()))
+			if (client->bind_socket_tcpip_4(rx_gate::instance().get_infrastructure().get_io_pool()->get_pool()))
 			{
 				out << "Sending Connect...\r\n";
 				if (client->connect_to_tcpip_4(addr, port))

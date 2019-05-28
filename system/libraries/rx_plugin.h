@@ -35,8 +35,19 @@
 
 #include "system/storage_base/rx_storage.h"
 
+/////////////////////////////////////////////////////////////
+// logging macros for console library
+#define PLUGIN_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Plugins",src,lvl,msg)
+#define PLUGIN_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Plugins",src,lvl,msg)
+#define PLUGIN_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Plugins",src,lvl,msg)
+#define PLUGIN_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Plugins",src,lvl,msg)
+#define PLUGIN_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Plugins",src,lvl,msg)
+#define PLUGIN_LOG_TRACE(src,lvl,msg) RX_TRACE("Plugins",src,lvl,msg)
+
 
 namespace rx_platform {
+template<typename typeT>
+rx_result register_plugin_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
 namespace library {
 

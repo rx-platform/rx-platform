@@ -32,6 +32,15 @@
 
 
 
+/////////////////////////////////////////////////////////////
+// logging macros for console library
+#define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,msg)
+#define RUNTIME_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Run",src,lvl,msg)
+#define RUNTIME_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Run",src,lvl,msg)
+#define RUNTIME_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Run",src,lvl,msg)
+#define RUNTIME_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Run",src,lvl,msg)
+#define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,msg)
+
 
 namespace rx_platform {
 namespace runtime {
@@ -42,6 +51,9 @@ class variable_runtime;
 
 namespace structure {
 class runtime_item;
+class variable_data;
+class const_value_data;
+class value_data;
 
 } // namespace structure
 } // namespace runtime
@@ -53,6 +65,26 @@ class runtime_item;
 namespace rx_platform {
 
 namespace runtime {
+
+union rt_value_ref_union
+{
+	structure::const_value_data* const_value;
+	structure::value_data* value;
+	structure::variable_data* variable;
+};
+enum rt_value_ref_type
+{
+	rt_null = 0,
+	rt_const_value = 1,
+	rt_value = 2,
+	rt_variable = 3
+};
+struct rt_value_ref
+{
+	rt_value_ref_type ref_type;
+	rt_value_ref_union ref_value_ptr;
+};
+
 typedef rx_reference<blocks::variable_runtime> rx_variable_ptr;
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
 
