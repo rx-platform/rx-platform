@@ -2,8 +2,12 @@
 
 #define RX_DIR_DELIMETER '/'
 #define RX_OBJECT_DELIMETER '.'
+#define RX_PATH_CURRENT '.'
+#define RX_PATH_PARENT '$'
 #define RX_DIR_DELIMETER_STR "/"
 #define RX_OBJECT_DELIMETER_STR "."
+#define RX_PATH_CURRENT_STR "."
+#define RX_PATH_PARENT_STR '$'
 #define RX_DEFAULT_VARIABLE_NAME "_"
 
 // directories stuff
@@ -20,6 +24,7 @@
 #define RX_NS_BASE_CLASSES_NAME "base"
 #define RX_NS_SYSTEM_CLASSES_NAME "system"
 #define RX_NS_PORT_CLASSES_NAME "ports"
+#define RX_NS_SUPPORT_CLASSES_NAME "support"
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
@@ -164,6 +169,14 @@
 #define RX_VT00_TYPE_ID 0xc000017
 #define RX_INTERACTIVE_TYPE_NAME "InteractivePort"
 #define RX_INTERACTIVE_TYPE_ID 0xc000018
+
+
+#define RX_PORT_STATUS_TYPE_NAME "PortStatusData"
+#define RX_PORT_STATUS_TYPE_ID 0xc000019
+#define RX_PHY_PORT_STATUS_TYPE_NAME "PhysicalPortStatusData"
+#define RX_PHY_PORT_STATUS_TYPE_ID 0xc000020
+#define RX_IP_BIND_TYPE_NAME "IPBindData"
+#define RX_IP_BIND_TYPE_ID 0xc000021
 
 
 // cpp classes stuff

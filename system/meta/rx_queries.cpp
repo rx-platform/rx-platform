@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,6 +34,7 @@
 #include "system/meta/rx_queries.h"
 
 #include "model/rx_meta_internals.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -42,7 +43,7 @@ namespace meta {
 
 namespace queries {
 
-// Class rx_platform::meta::queries::derived_types_query 
+// Class rx_platform::meta::queries::derived_types_query
 
 string_type derived_types_query::query_name = "derived";
 
@@ -160,7 +161,7 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, rx_dir
 
 	return result.success;
 }
-// Class rx_platform::meta::queries::rx_query 
+// Class rx_platform::meta::queries::rx_query
 
 rx_query::registered_queries_type rx_query::registered_queries_;
 
@@ -210,7 +211,7 @@ rx_result_with<query_ptr> rx_query::create_query (base_meta_reader& stream)
 }
 
 
-// Class rx_platform::meta::queries::runtime_objects_query 
+// Class rx_platform::meta::queries::runtime_objects_query
 
 string_type runtime_objects_query::query_name = "runtime";
 
@@ -219,10 +220,10 @@ rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("typeName", type_name))
 		return "Error serializing type_name";
-	if (!stream.write_string("domainName", domain_name))
-		return "Error serializing base_type";
-	if (!stream.write_id("domain", domain))
-		return "Error reading domain";
+	if (!stream.write_string("instanceName", instance_name))
+		return "Error serializing instance name";
+	if (!stream.write_id("instance", instance))
+		return "Error reading instance";
 	if (!stream.write_string("subfolder", subfolder))
 		return "Error serializing subfolder";
 
@@ -233,10 +234,10 @@ rx_result runtime_objects_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
 		return "Error reading type_name";
-	if (!stream.read_string("domainName", domain_name))
-		return "Error reading base_type";
-	if (!stream.read_id("domain", domain))
-		return "Error reading domain";
+	if (!stream.read_string("instanceName", instance_name))
+		return "Error reading instance name";
+	if (!stream.read_id("instance", instance))
+		return "Error reading instance";
 	if (!stream.read_string("subfolder", subfolder))
 		return "Error reading subfolder";
 
@@ -251,66 +252,81 @@ const string_type& runtime_objects_query::get_query_type ()
 
 rx_result runtime_objects_query::do_query (api::query_result& result, rx_directory_ptr dir)
 {
-	if (type_name == "object")
+	auto type = rx_parse_type_name(type_name);
+	switch (type)
 	{
-		return do_query(result, dir, tl::type2type<object_types::object_type>());
-	}
-	else if (type_name == "domain")
-	{
-		return do_query(result, dir, tl::type2type<object_types::domain_type>());
-	}
-	else if (type_name == "port")
-	{
-		return do_query(result, dir, tl::type2type<object_types::port_type>());
-	}
-	else if (type_name == "application")
-	{
-		return do_query(result, dir, tl::type2type<object_types::application_type>());
-	}
-	else
-	{
-		return type_name + " is unknown type name!";
+	case rx_item_type::rx_application:
+		{
+			sys_runtime::platform_runtime_manager::instance().get_applications(result);
+		}
+		break;
+	case rx_item_type::rx_port:
+		{
+			if (!instance_name.empty() || !instance.is_null())
+			{
+				rx_node_id id = instance;
+				if (id.is_null())
+				{
+					auto item = dir->get_sub_item(instance_name);
+					if (!item)
+						return type_name + " not found!";
+					id = item->meta_info().get_id();
+				}
+				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
+				if (app_ptr)
+				{
+					app_ptr->get_ports(result);
+				}
+			}
+		}
+		break;
+	case rx_item_type::rx_domain:
+		{
+			if (!instance_name.empty() || !instance.is_null())
+			{
+				rx_node_id id = instance;
+				if (id.is_null())
+				{
+					auto item = dir->get_sub_item(instance_name);
+					if (!item)
+						return type_name + " not found!";
+					id = item->meta_info().get_id();
+				}
+				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
+				if (app_ptr)
+				{
+					app_ptr->get_domains(result);
+				}
+			}
+		}
+		break;
+	case rx_item_type::rx_object:
+		{
+			if (!instance_name.empty() || !instance.is_null())
+			{
+				rx_node_id id = instance;
+				if (id.is_null())
+				{
+					auto item = dir->get_sub_item(instance_name);
+					if (!item)
+						return type_name + " not found!";
+					id = item->meta_info().get_id();
+				}
+				auto app_ptr = model::platform_types_manager::instance().get_type_cache<domain_type>().get_runtime(id);
+				if (app_ptr)
+				{
+					app_ptr->get_objects(result);
+				}
+			}
+		}
+		break;
+	default:
+		return type_name + " is invalid type name!";
 	}
 	return true;
 }
 
-template<typename T>
-rx_result runtime_objects_query::do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>)
-{
-	
-	if (!domain_name.empty() || !domain.is_null())
-	{
-		rx_node_id id = domain;
-		if (id.is_null())
-		{
-			auto item = dir->get_sub_item(domain_name);
-			if (!item)
-				return type_name + " not found!";
-			id = item->meta_info().get_id();
-		}
-		auto domain_ptr = model::platform_types_manager::instance().get_type_cache<domain_type>().get_runtime(id);
-		if (domain_ptr)
-		{
-			const auto& objects = domain_ptr->get_objects();
-			result.items.reserve(objects.size());
-			for (const auto& one : objects)
-				result.items.emplace_back(rx_item_type::rx_object, one->meta_info());
-		}
-		else
-			return "Domain not found";
-	}
-	if (!type_name.empty())
-	{
-		rx_node_id id = rx_node_id::null_id;
-		auto item = dir->get_sub_item(type_name);
-		if (!item)
-			return type_name + " not found!";
-		id = item->meta_info().get_id();
-		result = model::platform_types_manager::instance().get_type_cache<T>().get_instanced_objects(id);
-	}
-	return result.success;
-}
-// Class rx_platform::meta::queries::translate_query 
+// Class rx_platform::meta::queries::translate_query
 
 string_type translate_query::query_name = "translate";
 

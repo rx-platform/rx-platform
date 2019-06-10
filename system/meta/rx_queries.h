@@ -150,20 +150,18 @@ class runtime_objects_query : public rx_query
 
       string_type type_name;
 
-      string_type domain_name;
+      string_type instance_name;
 
       string_type subfolder;
 
       static string_type query_name;
 
-      rx_node_id domain;
+      rx_node_id instance;
 
 
   protected:
 
   private:
-	  template<typename T>
-	  rx_result do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
 
 };
 

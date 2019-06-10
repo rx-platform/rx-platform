@@ -128,7 +128,7 @@ extern "C" {
 	//system information related functions
 
 	void rx_collect_system_info(char* buffer, size_t buffer_size);
-	void rx_collect_processor_info(char* buffer, size_t buffer_size);
+	void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count);
 	void rx_collect_memory_info(size_t* total, size_t* free, size_t* process);
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

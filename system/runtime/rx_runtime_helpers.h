@@ -45,17 +45,18 @@
 namespace rx_platform {
 namespace runtime {
 namespace blocks {
-class runtime_object;
+class runtime_holder;
 class variable_runtime;
 } // namespace blocks
 
 namespace structure {
 class runtime_item;
-class variable_data;
-class const_value_data;
-class value_data;
-
 } // namespace structure
+
+namespace operational {
+class binded_tags;
+
+} // namespace operational
 } // namespace runtime
 } // namespace rx_platform
 
@@ -63,9 +64,15 @@ class value_data;
 
 
 namespace rx_platform {
+typedef uint_fast32_t runtime_handle_t;
+typedef uint_fast32_t runtime_transaction_id_t;
 
 namespace runtime {
-
+namespace structure {
+class const_value_data;
+class value_data;
+class variable_data;
+} // namespace structure
 union rt_value_ref_union
 {
 	structure::const_value_data* const_value;
@@ -103,6 +110,8 @@ class runtime_path_resolver
       void pop_from_path ();
 
       const string_type& get_current_path () const;
+
+      string_type get_parent_path (size_t level) const;
 
 
   protected:
@@ -149,13 +158,13 @@ class variables_stack
 
 
 
-class runtime_deinit_context 
+struct runtime_deinit_context 
 {
 
-  public:
 
       variables_stack variables;
 
+  public:
 
   protected:
 
@@ -169,13 +178,13 @@ class runtime_deinit_context
 
 
 
-class runtime_stop_context 
+struct runtime_stop_context 
 {
 
-  public:
 
       variables_stack variables;
 
+  public:
 
   protected:
 
@@ -204,9 +213,9 @@ class runtime_structure_resolver
 
       structure::runtime_item& get_current_item ();
 
-      blocks::runtime_object* get_root ();
+      blocks::runtime_holder* get_root ();
 
-      void set_root (blocks::runtime_object* item);
+      void set_root (blocks::runtime_holder* item);
 
 
   protected:
@@ -216,7 +225,46 @@ class runtime_structure_resolver
 
       runtime_items_type items_;
 
-      blocks::runtime_object* root_;
+      blocks::runtime_holder* root_;
+
+
+};
+
+
+typedef std::map<string_type, runtime_handle_t> binded_tags_type;
+
+
+
+
+struct runtime_init_context 
+{
+
+
+      runtime_handle_t get_new_handle ();
+
+
+      runtime_path_resolver path;
+
+      variables_stack variables;
+
+      runtime_structure_resolver structure;
+
+      operational::binded_tags *tags;
+
+
+      binded_tags_type binded_tags;
+
+  public:
+
+  protected:
+
+  private:
+
+      jobs::job_ptr next_job;
+
+
+
+      runtime_handle_t next_handle_;
 
 
 };
@@ -227,30 +275,6 @@ class runtime_structure_resolver
 
 
 struct runtime_start_context 
-{
-
-
-      runtime_path_resolver path;
-
-      variables_stack variables;
-
-      runtime_structure_resolver structure;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct runtime_init_context 
 {
 
 

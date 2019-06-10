@@ -263,7 +263,8 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	/////////////////////////////////////////////////////////////////////////
 	// Processor
 	char buff[0x100];
-	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]));
+	size_t cpu_count = 1;
+	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
 	out << "CPU: " << buff
 		<< ( rx_big_endian ? "; Big-endian" : "; Little-endian" )
 		<< "\r\n";

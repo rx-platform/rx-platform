@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -32,16 +32,16 @@
 
 
 
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
@@ -354,102 +354,15 @@ event runtime. basic implementation of an event runtime");
 
 
 
-class runtime_object
+class runtime_holder 
 {
 	typedef std::vector<program_runtime_ptr> programs_type;
 
   public:
 
-      void turn_on ();
-
-      void turn_off ();
-
-      void set_blocked ();
-
-      void set_test ();
-
-      void collect_data (data::runtime_values_data& data) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
       rx_result read_value (const string_type& path, rx_value& val) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, api::rx_context ctx);
-
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
-
-      void set_runtime_data (meta::runtime_data_prototype& prototype);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void reset_blocked ();
-
-      void reset_test ();
-
-      rx_result do_command (rx_object_command_t command_type);
-
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
-
-
-      const rx_mode_type& get_mode () const
-      {
-        return mode_;
-      }
-
-
-      rx_time get_change_time () const
-      {
-        return change_time_;
-      }
-
-
-	  template<typename typeT>
-	  typeT get_local_value(const string_type& path, const typeT& default_value)
-	  {
-		  return item_->get_local_as(path, default_value);
-	  }
-  protected:
-
-  private:
-
-      structure::hosting_object_data get_object_state () const;
-
-
-
-      structure::runtime_item::smart_ptr item_;
-
-      programs_type programs_;
-
-
-      rx_mode_type mode_;
-
-      rx_time change_time_;
-
-
-};
-
-
-
-
-
-
-template <class T>
-class runtime_holder
-{
-
-  public:
-
-      rx_result read_value (const string_type& path, rx_value& val, const T& whose) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, T& whose);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
@@ -467,16 +380,25 @@ class runtime_holder
 
       rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors);
 
-      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
+      rx_result do_command (rx_object_command_t command_type);
 
+      void set_runtime_data (meta::runtime_data_prototype& prototype);
 
-      runtime_object runtime;
+      structure::hosting_object_data get_object_state () const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      void process_runtime (jobs::job_ptr next_job);
 
 	  template<typename valT>
-	  valT get_local_as(runtime_handle_t handle, const valT& default_value)
+	  valT get_binded_as(runtime_handle_t handle, const valT& default_value)
 	  {
 		  values::rx_simple_value temp_val;
-		  auto result = connected_tags_.local_get_value(handle, temp_val);
+		  auto result = binded_tags_.get_value(handle, temp_val);
 		  if (result)
 		  {
 			  return values::extract_value<valT>(temp_val.get_storage(), default_value);
@@ -484,19 +406,49 @@ class runtime_holder
 		  return default_value;
 	  }
 	  template<typename valT>
-	  void set_local_as(runtime_handle_t handle, valT&& value)
+	  void set_binded_as(runtime_handle_t handle, valT&& value)
 	  {
 		  values::rx_simple_value temp_val;
 		  temp_val.assign_static<valT>(std::move(value));
-		  auto result = connected_tags_.local_set_value(handle, std::move(temp_val));
+		  auto result = binded_tags_.set_value(handle, std::move(temp_val));
 	  }
-
+	  template<typename valT>
+	  valT get_local_as(const string_type& path, const valT& default_value)
+	  {
+		  return item_->get_local_as<valT>(path, default_value);
+	  }
   protected:
 
   private:
 
+      rx_mode_type get_mode () const
+      {
+        return mode_;
+      }
+
+
+      rx_time get_change_time () const
+      {
+        return change_time_;
+      }
+
+
+
 
       operational::connected_tags connected_tags_;
+
+      operational::binded_tags binded_tags_;
+
+      programs_type programs_;
+
+      structure::runtime_item::smart_ptr item_;
+
+
+      rx_mode_type mode_;
+
+      rx_time change_time_;
+
+      jobs::job_ptr process_job_;
 
 
 };

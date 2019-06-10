@@ -93,13 +93,12 @@ UDP port class. implementation of an TCP/IP4 UDP port");
 		}
 		bool readed(const void* data, size_t count, rx_thread_handle_t destination)
 		{
-			udp_port* temp_ptr = whose;
-			if (temp_ptr)
+			if (whose)
 			{
 				whose->update_received_counters(count);
 				rx_const_packet_buffer buff{};
 				rx_init_const_packet_buffer(&buff, data, count);
-				auto result = rx_move_packet_up(&temp_ptr->udp_endpoint_, nullptr, &buff);
+				auto result = rx_move_packet_up(&whose->udp_endpoint_, nullptr, &buff);
 			}
 			return true;
 		}

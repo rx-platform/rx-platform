@@ -32,12 +32,19 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
+// rx_job
+#include "lib/rx_job.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "rx_runtime_algorithms.h"
+#include "system/server/rx_inf.h"
+#include "api/rx_platform_api.h"
+using rx_platform::runtime::objects::application_instance_data;
+using rx_platform::runtime::objects::domain_instance_data;
+using rx_platform::infrastructure::runtime_data_t;
 
 
 namespace sys_runtime {
@@ -50,11 +57,22 @@ namespace sys_runtime {
 class platform_runtime_manager 
 {
 	typedef std::map<rx_node_id, rx_application_ptr> applications_type;
+	typedef std::vector<int> coverage_type;
 	friend class algorithms::application_algorithms;
 
   public:
 
       static platform_runtime_manager& instance ();
+
+      rx_thread_handle_t resolve_app_processor (const application_instance_data& data);
+
+      rx_thread_handle_t resolve_domain_processor (const domain_instance_data& data);
+
+      void remove_one (rx_thread_handle_t from_where);
+
+      rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data);
+
+      void get_applications (api::query_result& result);
 
 	  template<class typeT>
 	  rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx)
@@ -66,8 +84,46 @@ class platform_runtime_manager
 
   private:
 
+      rx_thread_handle_t resolve_processor_auto ();
+
+
 
       applications_type applications_;
+
+
+      coverage_type cpu_coverage_;
+
+      rx_thread_handle_t first_cpu_;
+
+      rx_thread_handle_t last_cpu_;
+
+
+};
+
+
+
+
+
+
+template <class typeT>
+class execute_runtime_job : public rx::jobs::job  
+{
+	DECLARE_REFERENCE_PTR(execute_runtime_job);
+	typedef typename typeT::RTypePtr targetPtr;
+
+  public:
+      execute_runtime_job (targetPtr target);
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+      targetPtr target_;
 
 
 };

@@ -38,6 +38,7 @@
 #include "lib/rx_ser_lib.h"
 #include "system/serialization/rx_ser.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -226,13 +227,13 @@ rx_result object_runtime::read_value (const string_type& path, rx_value& val) co
 	}
 	else
 	{
-		return runtime_.read_value(path, val, *this);
+		return runtime_.read_value(path, val);
 	}
 }
 
 rx_result object_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
+	return runtime_.write_value(path, std::move(val), callback, ctx);
 }
 
 rx_result object_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -261,7 +262,11 @@ rx_result object_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 rx_result object_runtime::do_command (rx_object_command_t command_type)
 {
-	return runtime_.runtime.do_command(command_type);
+	return runtime_.do_command(command_type);
+}
+
+void object_runtime::process_runtime ()
+{
 }
 
 
@@ -369,13 +374,13 @@ rx_result application_runtime::read_value (const string_type& path, rx_value& va
 	}
 	else
 	{
-		return runtime_.read_value(path, val, *this);
+		return runtime_.read_value(path, val);
 	}
 }
 
 rx_result application_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
+	return runtime_.write_value(path, std::move(val), callback, ctx);
 }
 
 values::rx_value application_runtime::get_value () const
@@ -387,24 +392,32 @@ values::rx_value application_runtime::get_value () const
 
 void application_runtime::fill_data (const data::runtime_values_data& data)
 {
-  return runtime_.runtime.fill_data(data);
-
+	runtime_.fill_data(data);
 }
 
 void application_runtime::collect_data (data::runtime_values_data& data) const
 {
-  return runtime_.runtime.collect_data(data);
-
+	runtime_.collect_data(data);
 }
 
 rx_result application_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	auto result = runtime_.initialize_runtime(ctx);
+	if (result)
+	{
+		executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(instance_data_);
+		auto hndl = ctx.tags->bind_item("CPU", ctx);
+		if (hndl)
+		{
+			ctx.structure.get_root()->set_binded_as<int>(hndl.value(), (int)executer_);
+		}
+	}
 	return result;
 }
 
 rx_result application_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
+	sys_runtime::platform_runtime_manager::instance().remove_one(executer_);
 	auto result = runtime_.deinitialize_runtime(ctx);
 	return result;
 }
@@ -423,7 +436,82 @@ rx_result application_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 rx_result application_runtime::do_command (rx_object_command_t command_type)
 {
-	return runtime_.runtime.do_command(command_type);
+	return runtime_.do_command(command_type);
+}
+
+void application_runtime::process_runtime ()
+{
+	runtime_.process_runtime(job_ptr::null_ptr);
+}
+
+void application_runtime::get_ports (api::query_result& result)
+{
+	result.items.reserve(ports_.size());
+	for (const auto& one : ports_)
+	{
+		if(one)
+			result.items.emplace_back(api::query_result_detail{ rx_port, one->meta_info() });
+	}
+}
+
+void application_runtime::add_port (rx_port_ptr what)
+{
+	for (auto& one : ports_)
+	{
+		if (!one)
+		{
+			one = what;
+			return;
+		}
+	}
+	ports_.emplace_back(what);
+}
+
+void application_runtime::add_domain (rx_domain_ptr what)
+{
+	for (auto& one : domains_)
+	{
+		if (!one)
+		{
+			one = what;
+			return;
+		}
+	}
+	domains_.emplace_back(what);
+}
+
+void application_runtime::remove_port (rx_port_ptr what)
+{
+	for (auto& one : ports_)
+	{
+		if (one == what)
+		{
+			one = rx_port_ptr::null_ptr;
+			return;
+		}
+	}
+}
+
+void application_runtime::remove_domain (rx_domain_ptr what)
+{
+	for (auto& one : domains_)
+	{
+		if (one == what)
+		{
+			one = rx_domain_ptr::null_ptr;
+			return;
+		}
+	}
+}
+
+void application_runtime::get_domains (api::query_result& result)
+{
+	result.items.reserve(domains_.size());
+	for (const auto& one : domains_)
+	{
+		if (one)
+			result.items.emplace_back(api::query_result_detail{ rx_domain, one->meta_info() });
+	}
 }
 
 
@@ -529,7 +617,7 @@ size_t domain_runtime::get_size () const
 bool domain_runtime::connect_application (rx_application_ptr&& app)
 {
 	my_application_ = std::move(app);
-	instance_data_.app_id = my_application_->meta_info().get_id();
+	my_application_->add_domain(smart_this());
 	return true;
 }
 
@@ -547,24 +635,35 @@ rx_result domain_runtime::read_value (const string_type& path, rx_value& val) co
 	}
 	else
 	{
-		return runtime_.read_value(path, val, *this);
+		return runtime_.read_value(path, val);
 	}
 }
 
 rx_result domain_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
+	return runtime_.write_value(path, std::move(val), callback, ctx);
 }
 
 rx_result domain_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	auto result = runtime_.initialize_runtime(ctx);
+	if (result)
+	{
+		executer_ = sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(instance_data_);
+		auto hndl = ctx.tags->bind_item("CPU", ctx);
+		if (hndl)
+		{
+			ctx.structure.get_root()->set_binded_as<int>(hndl.value(), (int)executer_);
+		}
+	}
 	return result;
 }
 
 rx_result domain_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
 	auto result = runtime_.deinitialize_runtime(ctx);
+	if (my_application_)
+		my_application_->remove_domain(smart_this());
 	return result;
 }
 
@@ -580,22 +679,36 @@ rx_result domain_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-std::vector<rx_object_ptr> domain_runtime::get_objects () const
-{
-	locks::const_auto_lock_t<decltype(objects_lock_)> _(&objects_lock_);
-	std::vector<rx_object_ptr> ret;
-	if (!objects_.empty())
-	{
-		ret.reserve(objects_.size());
-		for (const auto& one : objects_)
-			ret.emplace_back(one.second);
-	}
-	return ret;
-}
-
 rx_result domain_runtime::do_command (rx_object_command_t command_type)
 {
-	return runtime_.runtime.do_command(command_type);
+	return runtime_.do_command(command_type);
+}
+
+void domain_runtime::process_runtime ()
+{
+	runtime_.process_runtime(job_ptr::null_ptr);
+}
+
+void domain_runtime::get_objects (api::query_result& result)
+{
+	result.items.reserve(objects_.size());
+	for (const auto& one : objects_)
+	{
+		if (one.second)
+			result.items.emplace_back(api::query_result_detail{ rx_object, one.second->meta_info() });
+	}
+}
+
+void domain_runtime::add_object (rx_object_ptr what)
+{
+	objects_.emplace(what->meta_info().get_id(), what);
+}
+
+void domain_runtime::remove_object (rx_object_ptr what)
+{
+	auto it = objects_.find(what->meta_info().get_id());
+	if (it != objects_.end())
+		objects_.erase(it);
 }
 
 
@@ -604,17 +717,13 @@ rx_result domain_runtime::do_command (rx_object_command_t command_type)
 rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
-      : rx_bytes_item_(0),
-        tx_bytes_item_(0),
-        rx_packets_item_(0),
+      : rx_packets_item_(0),
         tx_packets_item_(0)
 {
 }
 
 port_runtime::port_runtime (const meta::meta_data& meta, const port_instance_data& instance)
-      : rx_bytes_item_(0),
-        tx_bytes_item_(0),
-        rx_packets_item_(0),
+      : rx_packets_item_(0),
         tx_packets_item_(0)
 	, meta_info_(meta)
 	, instance_data_(instance)
@@ -747,19 +856,19 @@ rx_result port_runtime::read_value (const string_type& path, rx_value& val) cons
 	}
 	else
 	{
-		return runtime_.read_value(path, val, *this);
+		return runtime_.read_value(path, val);
 	}
 }
 
 rx_result port_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx, *this);
+	return runtime_.write_value(path, std::move(val), callback, ctx);
 }
 
 bool port_runtime::connect_application (rx_application_ptr&& app)
 {
 	my_application_ = std::move(app);
-	instance_data_.app_id = my_application_->meta_info().get_id();
+	my_application_->add_port(smart_this());
 	return true;
 }
 
@@ -768,15 +877,15 @@ rx_result port_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 	auto result = runtime_.initialize_runtime(ctx);
 	if (result)
 	{
-		auto bind_result = runtime_.bind_item("Status.RxBytes");
+		auto bind_result = ctx.tags->bind_item("Status.RxPackets", ctx);
 		if (bind_result)
-			rx_bytes_item_ = bind_result.value();
+			rx_packets_item_ = bind_result.value();
 		else
 			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
 
-		bind_result = runtime_.bind_item("Status.TxBytes");
+		bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
 		if (bind_result)
-			tx_bytes_item_ = bind_result.value();
+			tx_packets_item_ = bind_result.value();
 		else
 			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
 	}
@@ -786,6 +895,8 @@ rx_result port_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 rx_result port_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
 	auto result = runtime_.deinitialize_runtime(ctx);
+	if (my_application_)
+		my_application_->remove_port(smart_this());
 	return result;
 }
 
@@ -803,23 +914,21 @@ rx_result port_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 rx_result port_runtime::do_command (rx_object_command_t command_type)
 {
-	return runtime_.runtime.do_command(command_type);
+	return runtime_.do_command(command_type);
 }
 
-void port_runtime::update_received_counters (size_t count)
+void port_runtime::update_received_packets (size_t count)
 {
-	if (rx_bytes_item_)
-	{
-		auto current = runtime_.get_local_as<int64_t>(rx_bytes_item_, 0);
-		current += count;
-		runtime_.set_local_as<int64_t>(rx_bytes_item_, std::move(current));
-	}
 	if(rx_packets_item_)
 	{
-		auto current = runtime_.get_local_as<int64_t>(rx_packets_item_, 0);
-		current++;
-		runtime_.set_local_as<int64_t>(rx_packets_item_, std::move(current));
+		auto current = runtime_.get_binded_as<int64_t>(rx_packets_item_, 0);
+		current += count;
+		runtime_.set_binded_as<int64_t>(rx_packets_item_, std::move(current));
 	}
+}
+
+void port_runtime::process_runtime ()
+{
 }
 
 

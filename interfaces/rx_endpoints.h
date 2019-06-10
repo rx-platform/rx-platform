@@ -43,10 +43,10 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -99,12 +99,23 @@ physical port class. basic implementation of a port");
       physical_port();
 
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+
   protected:
+
+      void update_received_counters (size_t count);
+
 
   private:
 
 
       rx_protocol_stack_entry *my_endpoints_;
+
+
+      runtime_handle_t rx_bytes_item_;
+
+      runtime_handle_t tx_bytes_item_;
 
 
 };

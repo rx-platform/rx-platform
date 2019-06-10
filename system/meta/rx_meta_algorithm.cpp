@@ -430,7 +430,7 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
 		if (ret)
 		{
-			ret = whose.object_data_.construct(what->runtime_.runtime, ctx);
+			ret = whose.object_data_.construct(what->runtime_, ctx);
 			if (ret)
 			{
 			}

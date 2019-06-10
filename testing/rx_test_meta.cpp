@@ -127,9 +127,9 @@ namespace meta_test {
 			 {
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
-				 test_object->get_runtime().runtime.collect_data(init_data);
+				 test_object->get_runtime().collect_data(init_data);
 				 init_data.children["structName"].values["structVal"].value.assign_static(113);
-				 test_object->get_runtime().runtime.fill_data(init_data);
+				 test_object->get_runtime().fill_data(init_data);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
 				 if (test_object->get_item_ptr()->generate_json(out, err))

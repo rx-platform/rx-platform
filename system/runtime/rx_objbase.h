@@ -33,20 +33,20 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 
 namespace rx_platform {
 namespace runtime {
 namespace objects {
-class domain_runtime;
 class application_runtime;
+class domain_runtime;
 
 } // namespace objects
 } // namespace runtime
@@ -126,12 +126,6 @@ class object_instance_data
 };
 
 
-struct object_initialization_data
-{
-	rx_node_id domain_id;
-	rx_node_id application_id;
-};
-
 
 
 
@@ -194,6 +188,8 @@ object class. basic implementation of an object");
 
       rx_result do_command (rx_object_command_t command_type);
 
+      void process_runtime ();
+
 
       const object_instance_data& get_instance_data () const
       {
@@ -208,7 +204,7 @@ object class. basic implementation of an object");
       }
 
 
-      blocks::runtime_holder<object_runtime>& get_runtime ()
+      blocks::runtime_holder& get_runtime ()
       {
         return runtime_;
       }
@@ -235,7 +231,7 @@ object class. basic implementation of an object");
       object_instance_data instance_data_;
 
 
-      blocks::runtime_holder<object_runtime> runtime_;
+      blocks::runtime_holder runtime_;
 
       meta::meta_data meta_info_;
 
@@ -332,9 +328,15 @@ public:
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      std::vector<rx_object_ptr> get_objects () const;
-
       rx_result do_command (rx_object_command_t command_type);
+
+      void process_runtime ();
+
+      void get_objects (api::query_result& result);
+
+      void add_object (rx_object_ptr what);
+
+      void remove_object (rx_object_ptr what);
 
 
       const domain_instance_data& get_instance_data () const
@@ -350,7 +352,7 @@ public:
       }
 
 
-      blocks::runtime_holder<domain_runtime>& get_runtime ()
+      blocks::runtime_holder& get_runtime ()
       {
         return runtime_;
       }
@@ -380,7 +382,7 @@ public:
 
       rx_thread_handle_t executer_;
 
-      blocks::runtime_holder<domain_runtime> runtime_;
+      blocks::runtime_holder runtime_;
 
       meta::meta_data meta_info_;
 
@@ -506,6 +508,8 @@ system port class. basic implementation of a port");
 
       rx_result do_command (rx_object_command_t command_type);
 
+      void process_runtime ();
+
 
       const port_instance_data& get_instance_data () const
       {
@@ -520,7 +524,7 @@ system port class. basic implementation of a port");
       }
 
 
-      blocks::runtime_holder<port_runtime>& get_runtime ()
+      blocks::runtime_holder& get_runtime ()
       {
         return runtime_;
       }
@@ -540,7 +544,7 @@ system port class. basic implementation of a port");
 
       virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
 
-      void update_received_counters (size_t count);
+      void update_received_packets (size_t count);
 
 
   private:
@@ -551,13 +555,9 @@ system port class. basic implementation of a port");
       port_instance_data instance_data_;
 
 
-      blocks::runtime_holder<port_runtime> runtime_;
+      blocks::runtime_holder runtime_;
 
       meta::meta_data meta_info_;
-
-      runtime_handle_t rx_bytes_item_;
-
-      runtime_handle_t tx_bytes_item_;
 
       runtime_handle_t rx_packets_item_;
 
@@ -630,6 +630,20 @@ system application class. basic implementation of a application");
 
       rx_result do_command (rx_object_command_t command_type);
 
+      void process_runtime ();
+
+      void get_ports (api::query_result& result);
+
+      void add_port (rx_port_ptr what);
+
+      void add_domain (rx_domain_ptr what);
+
+      void remove_port (rx_port_ptr what);
+
+      void remove_domain (rx_domain_ptr what);
+
+      void get_domains (api::query_result& result);
+
 
       const application_instance_data& get_instance_data () const
       {
@@ -644,7 +658,7 @@ system application class. basic implementation of a application");
       }
 
 
-      blocks::runtime_holder<application_runtime>& get_runtime ()
+      blocks::runtime_holder& get_runtime ()
       {
         return runtime_;
       }
@@ -674,7 +688,7 @@ system application class. basic implementation of a application");
 
       rx_thread_handle_t executer_;
 
-      blocks::runtime_holder<application_runtime> runtime_;
+      blocks::runtime_holder runtime_;
 
       meta::meta_data meta_info_;
 

@@ -39,6 +39,7 @@
 #include "lib/rx_io.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -80,7 +81,9 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 
 	extern_executer_ = data.extern_executer;
 
-	return true;
+	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data);
+
+	return result;
 }
 
 rx_result server_rt::deinitialize ()

@@ -30,8 +30,6 @@
 #include "pch.h"
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
@@ -797,6 +795,103 @@ runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id)
 // Parameterized Class rx_platform::runtime::structure::has 
 
 
+// Class rx_platform::runtime::structure::variable_data 
+
+string_type variable_data::type_name = RX_CPP_VARIABLE_TYPE_NAME;
+
+variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var)
+	: item(std::move(rt))
+	, variable_ptr(std::move(var))
+{
+}
+
+
+
+void variable_data::collect_data (data::runtime_values_data& data) const
+{
+	data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
+	item->collect_data(data);
+}
+
+void variable_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
+{
+	auto it = data.values.find(RX_DEFAULT_VARIABLE_NAME);
+	if (it != data.values.end())
+	{
+		value = rx_value::from_simple(it->second.value, ctx.now);
+	}
+	item->fill_data(data, ctx);
+}
+
+rx_value variable_data::get_value (const hosting_object_data& state) const
+{
+	return state.adapt_value(value);
+}
+
+void variable_data::set_value (rx_value&& value)
+{
+	this->value = std::move(value);
+}
+
+void variable_data::set_value (rx_simple_value&& val, const init_context& ctx)
+{
+	rx_simple_value temp(val);
+	if (temp.convert_to(value.get_type()))
+	{
+		value = rx_value::from_simple(std::move(temp), ctx.now);
+	}
+}
+
+rx_result variable_data::write_value (rx_simple_value&& val, const write_context& ctx)
+{
+	return "Not implemented!";
+}
+
+rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	ctx.variables.push_variable(variable_ptr);
+	auto result = item->initialize_runtime(ctx);
+	if(result)
+		result = variable_ptr->initialize_runtime(ctx);
+	ctx.variables.pop_variable();
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result variable_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	ctx.variables.push_variable(variable_ptr);
+	auto result = variable_ptr->deinitialize_runtime(ctx);
+	if (result)
+		result = item->deinitialize_runtime(ctx);
+	ctx.variables.pop_variable();
+	return result;
+}
+
+rx_result variable_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	ctx.structure.push_item(*item);
+	ctx.variables.push_variable(variable_ptr);
+	auto result = item->start_runtime(ctx);
+	if (result)
+		result = variable_ptr->start_runtime(ctx);
+	ctx.variables.pop_variable();
+	ctx.structure.pop_item();
+	return result;
+}
+
+rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	ctx.variables.push_variable(variable_ptr);
+	auto result = variable_ptr->stop_runtime(ctx);
+	if (result)
+		result = item->stop_runtime(ctx);
+	ctx.variables.pop_variable();
+	return result;
+}
+
+
 // Class rx_platform::runtime::structure::struct_data 
 
 string_type struct_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
@@ -1082,13 +1177,11 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 // Class rx_platform::runtime::structure::init_context 
 
 
-init_context init_context::create_initialization_context (runtime_object* whose)
+init_context init_context::create_initialization_context (runtime_holder* whose)
 {
 	init_context ret;
 	ret.now = rx_time::now();
-	ret.object_data.object = whose;
-	ret.object_data.time = ret.now;
-	ret.object_data.mode = whose->get_mode();
+	ret.object_data = whose->get_object_state();
 	return ret;
 }
 
@@ -1096,13 +1189,11 @@ init_context init_context::create_initialization_context (runtime_object* whose)
 // Class rx_platform::runtime::structure::write_context 
 
 
-write_context write_context::create_write_context (runtime_object* whose)
+write_context write_context::create_write_context (runtime_holder* whose)
 {
 	write_context ret;
 	ret.now = rx_time::now();
-	ret.object_data.object = whose;
-	ret.object_data.time = whose->get_change_time();
-	ret.object_data.mode = whose->get_mode();
+	ret.object_data = whose->get_object_state();
 	return ret;
 }
 
@@ -1197,103 +1288,6 @@ void value_data::simple_set_value (rx_simple_value&& val)
 	{
 		value = rx_timed_value::from_simple(std::move(val), rx_time::now());
 	}
-}
-
-
-// Class rx_platform::runtime::structure::variable_data 
-
-string_type variable_data::type_name = RX_CPP_VARIABLE_TYPE_NAME;
-
-variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var)
-	: item(std::move(rt))
-	, variable_ptr(std::move(var))
-{
-}
-
-
-
-void variable_data::collect_data (data::runtime_values_data& data) const
-{
-	data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
-	item->collect_data(data);
-}
-
-void variable_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
-{
-	auto it = data.values.find(RX_DEFAULT_VARIABLE_NAME);
-	if (it != data.values.end())
-	{
-		value = rx_value::from_simple(it->second.value, ctx.now);
-	}
-	item->fill_data(data, ctx);
-}
-
-rx_value variable_data::get_value (const hosting_object_data& state) const
-{
-	return state.adapt_value(value);
-}
-
-void variable_data::set_value (rx_value&& value)
-{
-	this->value = std::move(value);
-}
-
-void variable_data::set_value (rx_simple_value&& val, const init_context& ctx)
-{
-	rx_simple_value temp(val);
-	if (temp.convert_to(value.get_type()))
-	{
-		value = rx_value::from_simple(std::move(temp), ctx.now);
-	}
-}
-
-rx_result variable_data::write_value (rx_simple_value&& val, const write_context& ctx)
-{
-	return "Not implemented!";
-}
-
-rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
-{
-	ctx.structure.push_item(*item);
-	ctx.variables.push_variable(variable_ptr);
-	auto result = item->initialize_runtime(ctx);
-	if(result)
-		result = variable_ptr->initialize_runtime(ctx);
-	ctx.variables.pop_variable();
-	ctx.structure.pop_item();
-	return result;
-}
-
-rx_result variable_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-	ctx.variables.push_variable(variable_ptr);
-	auto result = variable_ptr->deinitialize_runtime(ctx);
-	if (result)
-		result = item->deinitialize_runtime(ctx);
-	ctx.variables.pop_variable();
-	return result;
-}
-
-rx_result variable_data::start_runtime (runtime::runtime_start_context& ctx)
-{
-	ctx.structure.push_item(*item);
-	ctx.variables.push_variable(variable_ptr);
-	auto result = item->start_runtime(ctx);
-	if (result)
-		result = variable_ptr->start_runtime(ctx);
-	ctx.variables.pop_variable();
-	ctx.structure.pop_item();
-	return result;
-}
-
-rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-	ctx.variables.push_variable(variable_ptr);
-	auto result = variable_ptr->stop_runtime(ctx);
-	if (result)
-		result = item->stop_runtime(ctx);
-	ctx.variables.pop_variable();
-	return result;
 }
 
 

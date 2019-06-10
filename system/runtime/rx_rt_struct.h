@@ -32,20 +32,10 @@
 
 
 
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 // rx_values
 #include "lib/rx_values.h"
-
-namespace rx_platform {
-namespace runtime {
-namespace blocks {
-class runtime_object;
-
-} // namespace blocks
-} // namespace runtime
-} // namespace rx_platform
-
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
@@ -56,7 +46,7 @@ using namespace rx::values;
 
 
 namespace rx_platform {
-using runtime::blocks::runtime_object;
+using runtime::blocks::runtime_holder;
 
 namespace runtime {
 namespace blocks
@@ -170,7 +160,6 @@ class has
 
 
 
-
 class hosting_object_data 
 {
 
@@ -183,7 +172,7 @@ class hosting_object_data
 
       rx_time time;
 
-      const runtime_object* object;
+      const runtime_holder* object;
 
 
   protected:
@@ -203,7 +192,7 @@ class init_context
 
   public:
 
-      static init_context create_initialization_context (runtime_object* whose);
+      static init_context create_initialization_context (runtime_holder* whose);
 
 
       const string_type& get_current_path () const
@@ -239,7 +228,7 @@ class write_context
 
   public:
 
-      static write_context create_write_context (runtime_object* whose);
+      static write_context create_write_context (runtime_holder* whose);
 
 
       hosting_object_data object_data;
@@ -301,6 +290,68 @@ class runtime_item
 		  }
 		  return default_value;
 	  }
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class variable_data 
+{
+  public:
+	  variable_data() = default;
+	  ~variable_data() = default;
+	  variable_data(const variable_data&) = delete;
+	  variable_data(variable_data&&) noexcept = default;
+	  variable_data& operator=(const variable_data&) = delete;
+	  variable_data& operator=(variable_data&&) noexcept = default;
+	  operator bool() const
+	  {
+		  return variable_ptr;
+	  }
+
+  public:
+      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
+
+
+      void collect_data (data::runtime_values_data& data) const;
+
+      void fill_data (const data::runtime_values_data& data, init_context& ctx);
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_value&& value);
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+      rx::values::rx_value value;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      variable_runtime_ptr variable_ptr;
+
+
   protected:
 
   private:
@@ -614,68 +665,6 @@ class value_data
 
 
       static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class variable_data 
-{
-  public:
-	  variable_data() = default;
-	  ~variable_data() = default;
-	  variable_data(const variable_data&) = delete;
-	  variable_data(variable_data&&) noexcept = default;
-	  variable_data& operator=(const variable_data&) = delete;
-	  variable_data& operator=(variable_data&&) noexcept = default;
-	  operator bool() const
-	  {
-		  return variable_ptr;
-	  }
-
-  public:
-      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
-
-
-      void collect_data (data::runtime_values_data& data) const;
-
-      void fill_data (const data::runtime_values_data& data, init_context& ctx);
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      void set_value (rx_value&& value);
-
-      void set_value (rx_simple_value&& val, const init_context& ctx);
-
-      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-
-      rx::values::rx_value value;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      variable_runtime_ptr variable_ptr;
 
 
   protected:

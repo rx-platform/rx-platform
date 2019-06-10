@@ -117,7 +117,7 @@ rx_result application_type::resolve (rx_directory_ptr dir)
 
 void application_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
-	where->runtime_.runtime.set_runtime_data(prototype);
+	where->runtime_.set_runtime_data(prototype);
 }
 
 void application_type::set_instance_data (instance_data_t&& data, RTypePtr where)
@@ -222,7 +222,7 @@ rx_result domain_type::resolve (rx_directory_ptr dir)
 
 void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
-	where->runtime_.runtime.set_runtime_data(prototype);
+	where->runtime_.set_runtime_data(prototype);
 }
 
 void domain_type::set_instance_data (instance_data_t&& data, RTypePtr where)
@@ -313,7 +313,7 @@ def_blocks::complex_data_type& object_type::complex_data ()
 
 void object_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
-	where->runtime_.runtime.set_runtime_data(prototype);
+	where->runtime_.set_runtime_data(prototype);
 }
 
 def_blocks::mapped_data_type& object_type::mapping_data ()
@@ -384,7 +384,7 @@ rx_result object_data_type::deserialize_object_definition (base_meta_reader& str
 	return true;
 }
 
-rx_result object_data_type::construct (runtime::blocks::runtime_object& what, construct_context& ctx) const
+rx_result object_data_type::construct (runtime::blocks::runtime_holder& what, construct_context& ctx) const
 {
 	return true;
 }
@@ -472,7 +472,7 @@ rx_result port_type::resolve (rx_directory_ptr dir)
 
 void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
-	where->runtime_.runtime.set_runtime_data(prototype);
+	where->runtime_.set_runtime_data(prototype);
 }
 
 void port_type::set_instance_data (instance_data_t&& data, RTypePtr where)

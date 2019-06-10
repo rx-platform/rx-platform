@@ -213,9 +213,10 @@ protected:
 void test_thread()
 {
     char buff[0x100];
+	size_t proc_count = 1;
     rx_collect_system_info(buff,0x100);
     printf("OS:%s\r\n",buff);
-    rx_collect_processor_info(buff,0x100);
+    rx_collect_processor_info(buff,0x100, &proc_count);
     printf("CPU:%s\r\n",buff);
 	size_t total,free,process;
     rx_collect_memory_info(&total,&free,&process);

@@ -523,7 +523,7 @@ int lookup(char *line, char *pattern, char **value)
 
 #define _PATH_PROC_CPUINFO	"/proc/cpuinfo"
 
-void rx_collect_processor_info(char* buffer, size_t buffer_size)
+void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count)
 {
     FILE *fp = fopen(_PATH_PROC_CPUINFO,"r");
     char buf[BUFSIZ];
@@ -542,13 +542,19 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size)
         free(model_name);
     }
     else
-        buffer[0]='\0';
-    if(cores!=NULL)
     {
-        strcat(buffer," ; Total Cores:");
-        strcat(buffer,cores);
-        free(cores);
+        buffer[0]='\0';
     }
+	if (cores != NULL)
+	{
+		char* end_ptr = NULL;
+		*count = strtol(cores, &end_ptr, 10);
+		strcat(buffer, " ; Total Cores:");
+		strcat(buffer, cores);
+		free(cores);
+	}
+	else
+		*count = 1;
 }
 void read_off_memory_status(size_t* process)
 {

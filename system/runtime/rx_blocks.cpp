@@ -311,74 +311,36 @@ rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::runtime_object 
+// Class rx_platform::runtime::blocks::runtime_holder 
 
 
-void runtime_object::turn_on ()
-{
-	if (mode_.turn_on())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-void runtime_object::turn_off ()
-{
-	if (mode_.turn_off())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-void runtime_object::set_blocked ()
-{
-	if (mode_.set_blocked())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-void runtime_object::set_test ()
-{
-	if (mode_.set_test())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-void runtime_object::collect_data (data::runtime_values_data& data) const
-{
-	item_->collect_data(data);
-}
-
-void runtime_object::fill_data (const data::runtime_values_data& data)
-{
-	auto ctx = structure::init_context::create_initialization_context(this);
-	item_->fill_data(data, ctx);
-}
-
-rx_result runtime_object::read_value (const string_type& path, rx_value& val) const
+rx_result runtime_holder::read_value (const string_type& path, rx_value& val) const
 {
 	auto state = get_object_state();
 	return item_->get_value(state, path, val);
 }
 
-structure::hosting_object_data runtime_object::get_object_state () const
+rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return structure::hosting_object_data{ mode_, change_time_, this };
+	if (path.empty())
+	{// our value
+		return RX_ACCESS_DENIED;
+	}
+	std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
+	{
+		structure::write_context my_ctx = structure::write_context::create_write_context(this);
+		return item_->write_value(path, std::move(val), my_ctx);
+	};
+	if (ctx.object && ctx.object.unsafe_ptr())
+		return func(path, std::move(val));
+	else
+	{
+		rx_do_with_callback<rx_result, decltype(ctx.object), const string_type&, rx_simple_value>(func, 0, callback, ctx.object, path, std::move(val));
+		return true;
+	}
 }
 
-rx_result runtime_object::write_value (const string_type& path, rx_simple_value&& val, api::rx_context ctx)
-{
-	structure::write_context my_ctx = structure::write_context::create_write_context(this);
-	return item_->write_value(path, std::move(val), my_ctx);
-}
-
-bool runtime_object::serialize (base_meta_writer& stream, uint8_t type) const
+bool runtime_holder::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	data::runtime_values_data temp_data;
 	item_->collect_data(temp_data);
@@ -397,7 +359,7 @@ bool runtime_object::serialize (base_meta_writer& stream, uint8_t type) const
 	return true;
 }
 
-bool runtime_object::deserialize (base_meta_reader& stream, uint8_t type)
+bool runtime_holder::deserialize (base_meta_reader& stream, uint8_t type)
 {
 	data::runtime_values_data temp_data;
 	if (!stream.read_init_values("values", temp_data))
@@ -417,15 +379,11 @@ bool runtime_object::deserialize (base_meta_reader& stream, uint8_t type)
 	return true;
 }
 
-void runtime_object::set_runtime_data (meta::runtime_data_prototype& prototype)
-{
-	item_ = std::move(create_runtime_data(prototype));
-}
-
-rx_result runtime_object::initialize_runtime (runtime::runtime_init_context& ctx)
+rx_result runtime_holder::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	ctx.structure.set_root(this);
 	ctx.structure.push_item(*item_);
+	ctx.tags = &binded_tags_;
 	auto result = item_->initialize_runtime(ctx);
 	if (result)
 	{
@@ -440,7 +398,7 @@ rx_result runtime_object::initialize_runtime (runtime::runtime_init_context& ctx
 	return result;
 }
 
-rx_result runtime_object::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+rx_result runtime_holder::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
 	rx_result result;
 	for (auto& one : programs_)
@@ -453,11 +411,11 @@ rx_result runtime_object::deinitialize_runtime (runtime::runtime_deinit_context&
 	{
 		result = item_->deinitialize_runtime(ctx);
 	}
-	
+
 	return result;
 }
 
-rx_result runtime_object::start_runtime (runtime::runtime_start_context& ctx)
+rx_result runtime_holder::start_runtime (runtime::runtime_start_context& ctx)
 {
 	ctx.structure.set_root(this);
 	ctx.structure.push_item(*item_);
@@ -475,7 +433,7 @@ rx_result runtime_object::start_runtime (runtime::runtime_start_context& ctx)
 	return result;
 }
 
-rx_result runtime_object::stop_runtime (runtime::runtime_stop_context& ctx)
+rx_result runtime_holder::stop_runtime (runtime::runtime_stop_context& ctx)
 {
 	rx_result result;
 	for (auto& one : programs_)
@@ -488,144 +446,10 @@ rx_result runtime_object::stop_runtime (runtime::runtime_stop_context& ctx)
 	{
 		result = item_->stop_runtime(ctx);
 	}
-
 	return result;
 }
 
-void runtime_object::reset_blocked ()
-{
-	if (mode_.reset_blocked())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-void runtime_object::reset_test ()
-{
-	if (mode_.reset_test())
-	{
-		change_time_ = rx_time::now();
-		item_->object_state_changed({ mode_, change_time_, this });
-	}
-}
-
-rx_result runtime_object::do_command (rx_object_command_t command_type)
-{
-	switch (command_type)
-	{
-	case rx_turn_off:
-		turn_off();
-		break;
-	case rx_turn_on:
-		turn_on();
-		break;
-	case rx_set_blocked:
-		set_blocked();
-		break;
-	case rx_reset_blocked:
-		reset_blocked();
-		break;
-	case rx_set_test:
-		set_test();
-		break;
-	case rx_reset_test:
-		reset_test();
-		break;
-	}
-	return true;
-}
-
-rx_result runtime_object::get_value_ref (const string_type& path, rt_value_ref& ref)
-{
-	return item_->get_value_ref(path, ref);
-}
-
-
-// Parameterized Class rx_platform::runtime::blocks::runtime_holder 
-
-
-template <class T>
-rx_result runtime_holder<T>::read_value (const string_type& path, rx_value& val, const T& whose) const
-{
-	if (path.empty())
-	{// our value
-		val = whose.get_value();
-		return true;
-	}
-	return runtime.read_value(path, val);
-}
-
-template <class T>
-rx_result runtime_holder<T>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, T& whose)
-{
-	if (path.empty())
-	{// our value
-		return RX_ACCESS_DENIED;
-	}
-	std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
-	{
-		return runtime.write_value(path, std::move(val), ctx);
-	};
-	if (ctx.object && ctx.object.unsafe_ptr() == &whose)
-		return func(path, std::move(val));
-	else
-	{
-		rx_do_with_callback<rx_result, decltype(ctx.object), const string_type&, rx_simple_value>(func, whose.get_executer(), callback, ctx.object, path, std::move(val));
-		return true;
-	}
-}
-
-template <class T>
-bool runtime_holder<T>::serialize (base_meta_writer& stream, uint8_t type) const
-{
-
-	if (!runtime.serialize(stream, type))
-		return false;
-
-	return true;
-}
-
-template <class T>
-bool runtime_holder<T>::deserialize (base_meta_reader& stream, uint8_t type)
-{
-
-	if (!runtime.deserialize(stream, type))
-		return false;
-
-	return true;
-}
-
-template <class T>
-rx_result runtime_holder<T>::initialize_runtime (runtime::runtime_init_context& ctx)
-{
-	auto result = runtime.initialize_runtime(ctx);
-	return result;
-}
-
-template <class T>
-rx_result runtime_holder<T>::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-	auto result = runtime.deinitialize_runtime(ctx);
-	return result;
-}
-
-template <class T>
-rx_result runtime_holder<T>::start_runtime (runtime::runtime_start_context& ctx)
-{
-	auto result = runtime.start_runtime(ctx);
-	return result;
-}
-
-template <class T>
-rx_result runtime_holder<T>::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-	auto result = runtime.stop_runtime(ctx);
-	return result;
-}
-
-template <class T>
-rx_result runtime_holder<T>::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
+rx_result runtime_holder::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
 {
 	if (paths.empty())
 		return true;
@@ -634,7 +458,7 @@ rx_result runtime_holder<T>::connect_items (const string_array& paths, std::vect
 	has_errors = false;
 	for (const auto& path : paths)
 	{
-		auto one_result = connected_tags_.connect_tag(path, &runtime);
+		auto one_result = connected_tags_.connect_tag(path, this);
 		if (!has_errors && !one_result)
 			has_errors = true;
 		results.emplace_back(std::move(one_result));
@@ -642,8 +466,7 @@ rx_result runtime_holder<T>::connect_items (const string_array& paths, std::vect
 	return true;
 }
 
-template <class T>
-rx_result runtime_holder<T>::disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors)
+rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors)
 {
 	if (items.empty())
 		return true;
@@ -660,16 +483,100 @@ rx_result runtime_holder<T>::disconnect_items (const std::vector<runtime_handle_
 	return true;
 }
 
-template <class T>
-rx_result_with<runtime_handle_t> runtime_holder<T>::bind_item (const string_type& path)
+rx_result runtime_holder::do_command (rx_object_command_t command_type)
 {
-	return connected_tags_.bind_tag(path, &runtime);
+	switch (command_type)
+	{
+	case rx_turn_off:
+		{
+			if (mode_.turn_off())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+		}
+		break;
+	case rx_turn_on:
+		{
+			if (mode_.turn_on())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+		}
+		break;
+	case rx_set_blocked:
+		{
+			if (mode_.set_blocked())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+		}
+		break;
+	case rx_reset_blocked:
+		{
+			if (mode_.reset_blocked())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+
+		}
+		break;
+	case rx_set_test:
+		{
+			if (mode_.set_test())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+		}
+		break;
+	case rx_reset_test:
+		{
+			if (mode_.reset_test())
+			{
+				change_time_ = rx_time::now();
+				item_->object_state_changed({ mode_, change_time_, this });
+			}
+		}
+		break;
+	}
+	return true;
 }
 
-template class runtime_holder<objects::object_runtime>;
-template class runtime_holder<objects::application_runtime>;
-template class runtime_holder<objects::domain_runtime>;
-template class runtime_holder<objects::port_runtime>;
+void runtime_holder::set_runtime_data (meta::runtime_data_prototype& prototype)
+{
+	item_ = std::move(create_runtime_data(prototype));
+}
+
+structure::hosting_object_data runtime_holder::get_object_state () const
+{
+	return structure::hosting_object_data{ mode_, change_time_, this };
+}
+
+void runtime_holder::fill_data (const data::runtime_values_data& data)
+{
+	auto ctx = structure::init_context::create_initialization_context(this);
+	item_->fill_data(data, ctx);
+}
+
+void runtime_holder::collect_data (data::runtime_values_data& data) const
+{
+	item_->collect_data(data);
+}
+
+rx_result runtime_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item_->get_value_ref(path, ref);
+}
+
+void runtime_holder::process_runtime (jobs::job_ptr next_job)
+{
+}
+
+
 } // namespace blocks
 } // namespace runtime
 } // namespace rx_platform

@@ -30,13 +30,12 @@
 #include "pch.h"
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 
+#include "system/runtime/rx_blocks.h"
 
 
 namespace rx_platform {
@@ -77,7 +76,7 @@ runtime_handle_t connected_tags::get_new_handle ()
 		return ret;
 }
 
-rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_object* item)
+rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item)
 {
 	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_tags = referenced_tags_.find(path);
@@ -136,69 +135,53 @@ rx_result connected_tags::disconnect_tag (runtime_handle_t handle)
 	return true;
 }
 
-rx_result_with<runtime_handle_t> connected_tags::bind_tag (const string_type& path, blocks::runtime_object* item)
+
+// Class rx_platform::runtime::operational::binded_tags 
+
+binded_tags::binded_tags()
 {
-	locks::auto_lock_t<decltype(lock_)> _(&lock_);
-	auto it_tags = referenced_tags_.find(path);
-	if (it_tags != referenced_tags_.end())
-	{// not new one, just add reference
-		auto it_handles = handles_map_.find(it_tags->second);
-		if (it_handles != handles_map_.end())
-		{
-			return it_tags->second;
-		}
-		else
-		{
-			RX_ASSERT(false);
-			return "Internal error";
-		}
-	}
-	else
-	{// new one, connect item
-		rt_value_ref ref;
-		auto ref_result = item->get_value_ref(path, ref);
-		if (!ref_result)
-			return ref_result.errors();
-		// fill out the data
-		auto handle = get_new_handle();
-		switch (ref.ref_type)
-		{
-		case rt_value_ref_type::rt_const_value:
-			const_values_.emplace(ref.ref_value_ptr.const_value, handle);
-			break;
-		case rt_value_ref_type::rt_value:
-			values_.emplace(ref.ref_value_ptr.value, handle);
-			break;
-		case rt_value_ref_type::rt_variable:
-			variables_.emplace(ref.ref_value_ptr.variable, handle);
-			break;
-		default:
-			RX_ASSERT(false);
-			return "Internal error";
-		}
-		handles_map_.emplace(handle, one_tag_data{ ref, 0 });
-		referenced_tags_.emplace(path, handle);
-		return handle;
-	}
 }
 
-rx_result connected_tags::local_get_value (runtime_handle_t handle, rx_simple_value& val) const
+
+binded_tags::~binded_tags()
 {
-	locks::const_auto_lock_t<decltype(lock_)> _(&lock_);
+}
+
+
+
+rx_result_with<runtime_handle_t> binded_tags::bind_tag (const rt_value_ref& ref, runtime_handle_t handle)
+{
+	// fill out the data
+	switch (ref.ref_type)
+	{
+	case rt_value_ref_type::rt_const_value:
+		const_values_.emplace(ref.ref_value_ptr.const_value, handle);
+		break;
+	case rt_value_ref_type::rt_value:
+		values_.emplace(ref.ref_value_ptr.value, handle);
+		break;
+	default:
+		RX_ASSERT(false);
+		return "Internal error";
+	}
+	handles_map_.emplace(handle, ref);
+	return handle;
+}
+
+rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val) const
+{
 	auto it_handles = handles_map_.find(handle);
 	if (it_handles != handles_map_.end())
 	{
-		switch (it_handles->second.reference.ref_type)
+		switch (it_handles->second.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:
-			val = it_handles->second.reference.ref_value_ptr.const_value->simple_get_value();
+			val = it_handles->second.ref_value_ptr.const_value->simple_get_value();
 			return true;
 		case rt_value_ref_type::rt_value:
-			val = it_handles->second.reference.ref_value_ptr.value->simple_get_value();
+			val = it_handles->second.ref_value_ptr.value->simple_get_value();
 			return true;
 		case rt_value_ref_type::rt_variable:
-			return "Not supported for variable!";
-			break;
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
@@ -210,23 +193,20 @@ rx_result connected_tags::local_get_value (runtime_handle_t handle, rx_simple_va
 	}
 }
 
-rx_result connected_tags::local_set_value (runtime_handle_t handle, rx_simple_value&& val)
+rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val)
 {
-	locks::const_auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_handles = handles_map_.find(handle);
 	if (it_handles != handles_map_.end())
 	{
-		switch (it_handles->second.reference.ref_type)
+		switch (it_handles->second.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:
 			return "Not supported for constant value!";
 			return true;
 		case rt_value_ref_type::rt_value:
-			it_handles->second.reference.ref_value_ptr.value->simple_set_value(std::move(val));
+			it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val));
 			return true;
 		case rt_value_ref_type::rt_variable:
-			return "Not supported for variable!";
-			break;
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
@@ -236,6 +216,68 @@ rx_result connected_tags::local_set_value (runtime_handle_t handle, rx_simple_va
 	{
 		return "Invalid Handle value!";
 	}
+}
+
+rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path, runtime_init_context& ctx)
+{
+	auto it = ctx.binded_tags.find(path);
+	if (it != ctx.binded_tags.end())
+		return it->second;
+
+	string_type revisied_path;
+	rt_value_ref ref;
+	ref.ref_type = rt_value_ref_type::rt_null;
+
+	if (!path.empty())
+	{
+		switch (path[0])
+		{
+		case RX_PATH_CURRENT:
+			{
+				string_type full_path(ctx.path.get_current_path() + path);
+				auto it = ctx.binded_tags.find(full_path);
+				if (it != ctx.binded_tags.end())
+					return it->second;
+
+				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		case RX_PATH_PARENT:
+			{
+				size_t idx = 1;
+				while (idx < path.size() && path[idx] == RX_PATH_PARENT)
+					idx++;
+				string_type full_path(ctx.path.get_parent_path(idx) + path);
+				auto it = ctx.binded_tags.find(full_path);
+				if (it != ctx.binded_tags.end())
+					return it->second;
+
+				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		}
+	}
+	if (ref.ref_type == rt_value_ref_type::rt_null)
+	{
+		auto ref_result = ctx.structure.get_root()->get_value_ref(path, ref);
+		if (!ref_result)
+			return ref_result.errors();
+	}
+
+	if (ref.ref_type == rt_value_ref_type::rt_variable)
+		return "Can't bind to variable";
+	// fill out the data
+	auto handle = ctx.get_new_handle();
+	auto bind_result = bind_tag(ref, handle);
+	if (bind_result)
+	{
+		ctx.binded_tags.emplace(path, bind_result.value());
+	}
+	return bind_result;
 }
 
 

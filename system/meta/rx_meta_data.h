@@ -111,6 +111,7 @@ namespace api
 {
 struct rx_context;
 struct query_result_detail;
+struct query_result;
 }
 
 namespace meta {

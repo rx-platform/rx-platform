@@ -154,7 +154,7 @@ class basic_types_builder : public rx_platform_builder
 
 
 
-class system_classes_builder : public rx_platform_builder  
+class system_types_builder : public rx_platform_builder  
 {
 
   public:
@@ -174,7 +174,7 @@ class system_classes_builder : public rx_platform_builder
 
 
 
-class port_classes_builder : public rx_platform_builder  
+class port_types_builder : public rx_platform_builder  
 {
 
   public:
@@ -195,6 +195,26 @@ class port_classes_builder : public rx_platform_builder
 
 
 class system_objects_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (rx_directory_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class support_types_builder : public rx_platform_builder  
 {
 
   public:

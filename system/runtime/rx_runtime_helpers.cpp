@@ -30,6 +30,8 @@
 #include "pch.h"
 
 
+// rx_operational
+#include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_blocks
@@ -47,13 +49,19 @@ namespace runtime {
 // Class rx_platform::runtime::runtime_deinit_context 
 
 
+// Class rx_platform::runtime::runtime_init_context 
+
+
+runtime_handle_t runtime_init_context::get_new_handle ()
+{
+	return next_handle_++;
+}
+
+
 // Class rx_platform::runtime::runtime_start_context 
 
 
 // Class rx_platform::runtime::runtime_stop_context 
-
-
-// Class rx_platform::runtime::runtime_init_context 
 
 
 // Class rx_platform::runtime::runtime_path_resolver 
@@ -86,6 +94,34 @@ void runtime_path_resolver::pop_from_path ()
 const string_type& runtime_path_resolver::get_current_path () const
 {
 	return path_;
+}
+
+string_type runtime_path_resolver::get_parent_path (size_t level) const
+{
+	if (!path_.empty() && level > 0)
+	{
+		size_t idx = path_.rfind(RX_OBJECT_DELIMETER);
+		if (idx == string_type::npos)
+		{
+			return "";
+		}
+		else
+		{
+			string_type ret(path_.substr(idx));
+			level--;
+			size_t off_idx = string_type::npos;
+			while (!ret.empty() && level > 0 && off_idx > 0)
+			{
+				off_idx = path_.rfind(RX_OBJECT_DELIMETER, off_idx - 1);
+				if (off_idx == string_type::npos)
+					return "";
+				else
+					ret.resize(off_idx);
+			}
+			return ret;
+		}
+	}
+	return "";
 }
 
 
@@ -143,12 +179,12 @@ structure::runtime_item& runtime_structure_resolver::get_current_item ()
 		return g_empty;
 }
 
-blocks::runtime_object* runtime_structure_resolver::get_root ()
+blocks::runtime_holder* runtime_structure_resolver::get_root ()
 {
 	return root_;
 }
 
-void runtime_structure_resolver::set_root (blocks::runtime_object* item)
+void runtime_structure_resolver::set_root (blocks::runtime_holder* item)
 {
 	root_ = item;
 }

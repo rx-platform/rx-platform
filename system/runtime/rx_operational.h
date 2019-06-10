@@ -35,21 +35,11 @@
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
-namespace rx_platform {
-namespace runtime {
-namespace blocks {
-class runtime_object;
-
-} // namespace blocks
-} // namespace runtime
-} // namespace rx_platform
 
 
 
 
 namespace rx_platform {
-typedef uint_fast32_t runtime_handle_t;
-typedef uint_fast32_t runtime_transaction_id_t;
 
 namespace runtime {
 
@@ -139,15 +129,9 @@ class connected_tags
       ~connected_tags();
 
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_object* item);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item);
 
       rx_result disconnect_tag (runtime_handle_t handle);
-
-      rx_result_with<runtime_handle_t> bind_tag (const string_type& path, blocks::runtime_object* item);
-
-      rx_result local_get_value (runtime_handle_t handle, rx_simple_value& val) const;
-
-      rx_result local_set_value (runtime_handle_t handle, rx_simple_value&& val);
 
 
   protected:
@@ -170,6 +154,47 @@ class connected_tags
       referenced_tags_type referenced_tags_;
 
       locks::slim_lock lock_;
+
+
+};
+
+
+
+
+
+
+class binded_tags 
+{
+	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
+	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
+	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
+
+  public:
+      binded_tags();
+
+      ~binded_tags();
+
+
+      rx_result_with<runtime_handle_t> bind_tag (const rt_value_ref& ref, runtime_handle_t handle);
+
+      rx_result get_value (runtime_handle_t handle, rx_simple_value& val) const;
+
+      rx_result set_value (runtime_handle_t handle, rx_simple_value&& val);
+
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      const_values_type const_values_;
+
+      values_type values_;
+
+
+      handles_map_type handles_map_;
 
 
 };

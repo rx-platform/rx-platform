@@ -411,11 +411,11 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	for (const auto& one : overrides)
 	{
 		if (one)
-			ret->get_runtime().runtime.fill_data(*one);
+			ret->get_runtime().fill_data(*one);
 	}
 	if (init_data)
 	{
-		ret->get_runtime().runtime.fill_data(*init_data);
+		ret->get_runtime().fill_data(*init_data);
 	}
 	if (!prototype)
 	{
@@ -539,7 +539,6 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 	{
 		runtime::runtime_init_context ctx;
 		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second, ctx);
-		//algorithms::runtime_model_algorithm<typeT>::init_runtime(one.second);
 	}
 	return result;
 }
