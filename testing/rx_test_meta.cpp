@@ -52,7 +52,6 @@ namespace meta_test {
 	 : test_category("meta")
  {
 	 register_test_case(rx_create_reference<object_creation_test>());
-	 register_test_case(rx_create_reference<runtime_structure_test>());
 	 register_test_case(rx_create_reference<inheritance_creation_test>());
 	 register_test_case(rx_create_reference<type_check_test>());
  }
@@ -115,7 +114,7 @@ namespace meta_test {
 	 {
 		 runtime::objects::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
+		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
 			 ,std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
@@ -262,7 +261,7 @@ namespace meta_test {
 	 }
 	 return id;
  }
-
+ 
  rx_node_id object_creation_test::create_event_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
 	 rx_node_id id;
@@ -383,7 +382,7 @@ namespace meta_test {
 	 {
 		 runtime::objects::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
-		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
+		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
 			 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
@@ -564,7 +563,7 @@ namespace meta_test {
 				 out << one << "\r\n";
 			 }
 			 runtime::objects::object_instance_data instance_data;
-			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(
+			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 				 "perica", "check_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
 				 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 			 if (!obj)

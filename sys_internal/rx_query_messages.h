@@ -205,41 +205,6 @@ class query_request_message : public rx_request_message
 
 
 
-class query_response_message : public rx_message_base  
-{
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      query_result_items_type items;
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 template <class itemT>
 class type_response_message : public rx_message_base  
 {
@@ -294,7 +259,61 @@ class get_type_response : public type_response_message<itemT>
 
 
 
-class get_object_request : public rx_request_message  
+template <class itemT>
+class runtime_response_message : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+
+      typename itemT::RTypePtr item;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <class itemT>
+class get_runtime_response : public runtime_response_message<itemT>  
+{
+
+  public:
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static uint16_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class get_runtime_request : public rx_request_message  
 {
 	template<typename T>
 	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
@@ -333,8 +352,84 @@ class get_object_request : public rx_request_message
 
 
 
-template <class itemT>
-class get_object_response : public rx_message_base  
+class query_response_message : public rx_message_base  
+{
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      query_result_items_type items;
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class browse_runtime_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type path;
+
+      string_type filter;
+
+      rx_item_type item_type;
+
+      rx_node_id id;
+
+
+  protected:
+
+  private:
+	  template<typename typeT>
+	  message_ptr do_concrete_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<typeT>);
+
+};
+
+
+
+
+
+
+class browse_runtime_response_message : public rx_message_base  
 {
 
   public:
@@ -348,11 +443,11 @@ class get_object_response : public rx_message_base
       rx_message_type_t get_type_id ();
 
 
-      typename itemT::RTypePtr item;
-
       static string_type type_name;
 
-      static uint16_t type_id;
+      static rx_message_type_t type_id;
+
+      std::vector<runtime_item_attribute> items;
 
 
   protected:

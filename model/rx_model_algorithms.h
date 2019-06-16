@@ -128,20 +128,26 @@ class runtime_model_algorithm
 
       static void create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
-      static void create_runtime (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+      static void create_runtime_implicit (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
+      static rx_result_with<typename typeT::RTypePtr> create_runtime_implicit_sync (const string_type& name, const string_type& type_name, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
       static rx_result init_runtime (typename typeT::RTypePtr what);
+
+      static void update_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+
+      static rx_result_with<typename typeT::RTypePtr> update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
 
   protected:
 
   private:
 
-      static rx_result delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_reference_ptr ref);
+      static rx_result delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_reference_ptr ref, std::function<void(rx_result)> callback);
 
       static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes);
+
+      static rx_result delete_runtime_sync (meta_data_t info, rx_reference_ptr ref, std::function<void(rx_result)> callback);
 
 
 

@@ -269,6 +269,11 @@ void object_runtime::process_runtime ()
 {
 }
 
+rx_result object_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return runtime_.browse(path, filter, items);
+}
+
 
 // Class rx_platform::runtime::objects::application_runtime 
 
@@ -514,6 +519,11 @@ void application_runtime::get_domains (api::query_result& result)
 	}
 }
 
+rx_result application_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return runtime_.browse(path, filter, items);
+}
+
 
 // Class rx_platform::runtime::objects::domain_runtime 
 
@@ -709,6 +719,11 @@ void domain_runtime::remove_object (rx_object_ptr what)
 	auto it = objects_.find(what->meta_info().get_id());
 	if (it != objects_.end())
 		objects_.erase(it);
+}
+
+rx_result domain_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return runtime_.browse(path, filter, items);
 }
 
 
@@ -929,6 +944,11 @@ void port_runtime::update_received_packets (size_t count)
 
 void port_runtime::process_runtime ()
 {
+}
+
+rx_result port_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return runtime_.browse(path, filter, items);
 }
 
 

@@ -183,7 +183,7 @@ rx_result rx_protocol_port::set_current_directory (const string_type& path)
 	}
 	else
 	{
-		//current_directory_ = temp;
+		current_directory_ = temp;
 		return true;
 	}
 }
@@ -252,6 +252,14 @@ rx_result rx_json_protocol::send_string (const string_type& what)
 {
 	return true;
 }
+
+
+// Class sys_internal::rx_protocol::rx_protocol_subscription 
+
+rx_protocol_subscription::rx_protocol_subscription()
+{
+}
+
 
 
 } // namespace rx_protocol

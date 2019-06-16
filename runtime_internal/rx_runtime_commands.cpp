@@ -216,6 +216,46 @@ bool write_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
+// Class sys_runtime::runtime_commands::turn_on_command 
+
+turn_on_command::turn_on_command()
+	: terminal::commands::server_command("turn-on")
+{
+}
+
+
+turn_on_command::~turn_on_command()
+{
+}
+
+
+
+bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+{
+	string_type object_path;
+	in >> object_path;
+	if (object_path.empty())
+	{
+		err << "Empty path!";
+		return false;
+	}
+	auto item = ctx->get_current_directory()->get_sub_item(object_path);
+	if (!item)
+	{
+		err << object_path << " not found!";
+		return false;
+	}
+	rx_value val;
+	auto result = item->do_command(rx_object_command_t::rx_turn_on);
+	if (!result)
+	{
+		dump_error_result(err, result);
+		return false;
+	}
+	return true;
+}
+
+
 // Class sys_runtime::runtime_commands::turn_off_command 
 
 turn_off_command::turn_off_command()
@@ -256,42 +296,23 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class sys_runtime::runtime_commands::turn_on_command 
+// Class sys_runtime::runtime_commands::browse_command 
 
-turn_on_command::turn_on_command()
-	: terminal::commands::server_command("turn-on")
+browse_command::browse_command()
+	: terminal::commands::server_command("brw")
 {
 }
 
 
-turn_on_command::~turn_on_command()
+browse_command::~browse_command()
 {
 }
 
 
 
-bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool browse_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	string_type object_path;
-	in >> object_path;
-	if (object_path.empty())
-	{
-		err << "Empty path!";
-		return false;
-	}
-	auto item = ctx->get_current_directory()->get_sub_item(object_path);
-	if (!item)
-	{
-		err << object_path << " not found!";
-		return false;
-	}
-	rx_value val;
-	auto result = item->do_command(rx_object_command_t::rx_turn_on);
-	if (!result)
-	{
-		dump_error_result(err, result);
-		return false;
-	}
+	out << "Hello from browse command\r\n";
 	return true;
 }
 

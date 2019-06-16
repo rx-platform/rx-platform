@@ -32,12 +32,12 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 namespace sys_internal {
 namespace rx_protocol {
@@ -86,6 +86,25 @@ class rx_json_protocol : public rx_protocol_stack_entry
 
 
 
+class rx_protocol_subscription 
+{
+
+  public:
+      rx_protocol_subscription();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 
 class rx_protocol_port : public rx_platform::runtime::objects::port_runtime  
 {
@@ -93,6 +112,8 @@ class rx_protocol_port : public rx_platform::runtime::objects::port_runtime
 system protocol port class. basic implementation of a rx-platform protocol");
 
 	DECLARE_REFERENCE_PTR(rx_protocol_port);
+
+	typedef std::vector<std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
       rx_protocol_port();
@@ -120,6 +141,8 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
 
       rx_json_protocol stack_entry_;
+
+      subscriptions_type subscriptions_;
 
 
       rx_directory_ptr current_directory_;

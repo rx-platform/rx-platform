@@ -42,36 +42,112 @@ namespace testing {
 
 namespace basic_tests {
 
-namespace meta_test {
+namespace runtime_test {
 
 
 
 
 
- class runtime_structure_test : public test_case  
- {
+class runtime_structure_test : public test_case  
+{
 	 DECLARE_REFERENCE_PTR(runtime_structure_test)
 	 DECLARE_TEST_CODE_INFO(0, 1, 0, "\
 basic testing runtime capabilities.");
 
-   public:
-       runtime_structure_test();
+  public:
+      runtime_structure_test();
 
-       ~runtime_structure_test();
-
-
-       bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+      ~runtime_structure_test();
 
 
-   protected:
-
-   private:
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
 
 
- };
+  protected:
+
+  private:
 
 
-} // namespace meta_test
+};
+
+
+
+
+
+
+
+class runtime_test_category : public test_category  
+{
+
+  public:
+      runtime_test_category();
+
+      ~runtime_test_category();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class runtime_transaction_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(runtime_transaction_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+basic testing transaction model.");
+
+  public:
+      runtime_transaction_test();
+
+      ~runtime_transaction_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class runtime_connect_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(runtime_connect_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+basic testing subscription connect/disconnect.");
+
+  public:
+      runtime_connect_test();
+
+      ~runtime_connect_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace runtime_test
 } // namespace basic_tests
 } // namespace testing
 

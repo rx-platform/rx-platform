@@ -206,6 +206,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result do_command (rx_object_command_t command_type);
 
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
 	  ~rx_item_implementation() = default;
   protected:
 
@@ -257,6 +259,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
+
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
 
   protected:
@@ -336,6 +340,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
+
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
 
   protected:

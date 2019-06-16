@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_platform_api.h
+*  runtime_internal\rx_subscription.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,72 +27,42 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_api_h
-#define rx_platform_api_h 1
+#ifndef rx_subscription_h
+#define rx_subscription_h 1
+
+
+
+// rx_ptr
+#include "lib/rx_ptr.h"
+
+
+
+namespace sys_runtime {
+
+namespace subscriptions {
 
 
 
 
-#include "rx_library.h"
-#include "system/server/rx_ns.h"
-#include "system/runtime/rx_objbase.h"
-#include "system/meta/rx_obj_types.h"
-#include "system/meta/rx_types.h"
-namespace rx_platform
+
+class rx_subscription : public rx::pointers::reference_object  
 {
-namespace api
-{
+	DECLARE_REFERENCE_PTR(rx_subscription);
+
+  public:
+      rx_subscription();
 
 
-struct runtime_browse_result
-{
-	std::vector<runtime_item_attribute> items;
+  protected:
 
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
-};
+  private:
 
-struct query_result_detail
-{
-	query_result_detail(rx_item_type type, const meta_data& data)
-	{
-		this->type = type;
-		this->data = data;
-	}
-	query_result_detail(rx_item_type type, meta_data&& data) noexcept 
-	{
-		this->type = type;
-		this->data = std::move(data);
-	}
-	rx_item_type type;
-	meta_data data;
-};
 
-struct query_result
-{
-	std::vector<query_result_detail> items;
-
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
 };
 
 
-
-struct rx_context
-{
-	rx_directory_ptr directory;
-	rx_reference<reference_object> object;
-};
-
-}
-}
-
+} // namespace subscriptions
+} // namespace sys_runtime
 
 
 

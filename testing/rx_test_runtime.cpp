@@ -48,24 +48,24 @@ namespace testing {
 
 namespace basic_tests {
 
-namespace meta_test {
+namespace runtime_test {
 
- // Class testing::basic_tests::meta_test::runtime_structure_test 
+// Class testing::basic_tests::runtime_test::runtime_structure_test 
 
- runtime_structure_test::runtime_structure_test()
-	 : test_case("runtime")
- {
- }
-
-
- runtime_structure_test::~runtime_structure_test()
- {
- }
+runtime_structure_test::runtime_structure_test()
+	 : test_case("structure")
+{
+}
 
 
+runtime_structure_test::~runtime_structure_test()
+{
+}
 
- bool runtime_structure_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
- {
+
+
+bool runtime_structure_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
 	 out << "Calculating runtime sizes:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 
 	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::objects::object_runtime) << ANSI_COLOR_RESET "\r\n";
@@ -95,10 +95,71 @@ namespace meta_test {
 
 	 ctx->set_failed();
 	 return true;
- }
+}
 
 
-} // namespace meta_test
+// Class testing::basic_tests::runtime_test::runtime_test_category 
+
+runtime_test_category::runtime_test_category()
+	: test_category("runtime")
+{
+	register_test_case(rx_create_reference<runtime_structure_test>());
+	register_test_case(rx_create_reference<runtime_transaction_test>());
+	register_test_case(rx_create_reference<runtime_connect_test>());
+}
+
+
+runtime_test_category::~runtime_test_category()
+{
+}
+
+
+
+// Class testing::basic_tests::runtime_test::runtime_transaction_test 
+
+runtime_transaction_test::runtime_transaction_test()
+	: test_case("transaction")
+{
+}
+
+
+runtime_transaction_test::~runtime_transaction_test()
+{
+}
+
+
+
+bool runtime_transaction_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	out << "Hello from transaction test!!!\r\n";
+	ctx->set_failed();
+	return true;
+}
+
+
+// Class testing::basic_tests::runtime_test::runtime_connect_test 
+
+runtime_connect_test::runtime_connect_test()
+	: test_case("connect")
+{
+}
+
+
+runtime_connect_test::~runtime_connect_test()
+{
+}
+
+
+
+bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
+{
+	out << "Hello from connection test!!!\r\n";
+	ctx->set_failed();
+	return true;
+}
+
+
+} // namespace runtime_test
 } // namespace basic_tests
 } // namespace testing
 

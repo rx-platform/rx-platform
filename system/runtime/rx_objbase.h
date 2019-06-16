@@ -33,14 +33,14 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -190,6 +190,8 @@ object class. basic implementation of an object");
 
       void process_runtime ();
 
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
 
       const object_instance_data& get_instance_data () const
       {
@@ -337,6 +339,8 @@ public:
       void add_object (rx_object_ptr what);
 
       void remove_object (rx_object_ptr what);
+
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
 
       const domain_instance_data& get_instance_data () const
@@ -510,6 +514,8 @@ system port class. basic implementation of a port");
 
       void process_runtime ();
 
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
 
       const port_instance_data& get_instance_data () const
       {
@@ -643,6 +649,8 @@ system application class. basic implementation of a application");
       void remove_domain (rx_domain_ptr what);
 
       void get_domains (api::query_result& result);
+
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
 
       const application_instance_data& get_instance_data () const

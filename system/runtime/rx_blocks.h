@@ -32,16 +32,16 @@
 
 
 
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
@@ -393,6 +393,8 @@ class runtime_holder
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
       void process_runtime (jobs::job_ptr next_job);
+
+      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
 	  template<typename valT>
 	  valT get_binded_as(runtime_handle_t handle, const valT& default_value)

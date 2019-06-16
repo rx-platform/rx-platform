@@ -64,8 +64,8 @@ class binded_tags;
 
 
 namespace rx_platform {
-typedef uint_fast32_t runtime_handle_t;
-typedef uint_fast32_t runtime_transaction_id_t;
+typedef uint32_t runtime_handle_t;
+typedef uint32_t runtime_transaction_id_t;
 
 namespace runtime {
 namespace structure {

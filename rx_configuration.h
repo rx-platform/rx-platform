@@ -2,10 +2,12 @@
 
 #define RX_DIR_DELIMETER '/'
 #define RX_OBJECT_DELIMETER '.'
+#define RX_DIR_OBJECT_DELIMETER '/'
 #define RX_PATH_CURRENT '.'
 #define RX_PATH_PARENT '$'
 #define RX_DIR_DELIMETER_STR "/"
 #define RX_OBJECT_DELIMETER_STR "."
+#define RX_DIR_OBJECT_DELIMETER_STR "/"
 #define RX_PATH_CURRENT_STR "."
 #define RX_PATH_PARENT_STR '$'
 #define RX_DEFAULT_VARIABLE_NAME "_"

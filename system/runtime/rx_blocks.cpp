@@ -105,22 +105,22 @@ string_type mapper_runtime::get_type_name () const
 
 rx_result mapper_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	return "Not implemented for mapper_runtime at "s + ctx.path.get_current_path();
+	return true;
 }
 
 rx_result mapper_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	return "Not implemented for mapper_runtime";
+	return true;
 }
 
 rx_result mapper_runtime::start_runtime (runtime::runtime_start_context& ctx)
 {
-	return "Not implemented for mapper_runtime at "s + ctx.path.get_current_path();
+	return true;
 }
 
 rx_result mapper_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	return "Not implemented for mapper_runtime";
+	return true;
 }
 
 
@@ -574,6 +574,22 @@ rx_result runtime_holder::get_value_ref (const string_type& path, rt_value_ref& 
 
 void runtime_holder::process_runtime (jobs::job_ptr next_job)
 {
+}
+
+rx_result runtime_holder::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	if (path.empty())
+	{
+		return item_->browse_items(filter, path, items);
+	}
+	else
+	{
+		string_type current_path(path + RX_OBJECT_DELIMETER);
+		const auto& sub_item = item_->get_child_item(path);
+		if (!sub_item)
+			return path + " not found";
+		return sub_item->browse_items(filter, current_path, items);
+	}
 }
 
 

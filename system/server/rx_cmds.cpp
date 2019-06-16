@@ -203,7 +203,8 @@ console_program_context::console_program_context (program_context* parent, sl_ru
         err_(err),
         postponed_(0),
         canceled_(false),
-        result_(false)
+        result_(false),
+        one_more_time_(false)
 	, sl_runtime::sl_script::script_program_context(parent,holder, out.unsafe_ptr(), err.unsafe_ptr())
 {
 }
@@ -308,6 +309,22 @@ api::rx_context console_program_context::create_api_context ()
 	ret.directory = current_directory_;
 	ret.object = client_;
 	return ret;
+}
+
+bool console_program_context::one_more_time ()
+{
+	one_more_time_ = true;
+	return true;
+}
+
+bool console_program_context::should_next_line ()
+{
+	if (one_more_time_)
+	{
+		one_more_time_ = false;
+		return false;
+	}
+	return true;
 }
 
 
@@ -646,8 +663,10 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 		err <<line;
 		return false;
 	}
-	if (!ctx->is_postponed())
+	if (ctx->should_next_line())
+	{
 		ctx->next_line();
+	}
 
 	return true;
 

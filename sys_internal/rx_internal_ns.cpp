@@ -35,6 +35,7 @@
 
 #include "testing/rx_test.h"
 #include "sys_internal/rx_internal_builders.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace sys_internal {
@@ -241,6 +242,12 @@ rx_result rx_item_implementation<TImpl>::do_command (rx_object_command_t command
 	return impl_->do_command(command_type);
 }
 
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return impl_->browse(path, filter, items);
+}
+
 
 // Parameterized Class sys_internal::internal_ns::rx_meta_item_implementation 
 
@@ -359,6 +366,12 @@ rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t co
 	return "Not Implemented!";
 }
 
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return "Not valid for this type!";
+}
+
 
 // Class sys_internal::internal_ns::internal_directory 
 
@@ -465,6 +478,12 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t command_type)
 {
 	return "Not Implemented!";
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return "Not valid for this type!";
 }
 
 

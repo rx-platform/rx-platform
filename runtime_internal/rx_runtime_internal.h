@@ -80,6 +80,12 @@ class platform_runtime_manager
 		  auto result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }
+	  template<class typeT>
+	  rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result)> callback, runtime::runtime_deinit_context& ctx)
+	  {
+		  auto result = algorithms::deinit_runtime<typeT>(what, callback, ctx);
+		  return result;
+	  }
   protected:
 
   private:

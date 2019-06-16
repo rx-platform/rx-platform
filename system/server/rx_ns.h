@@ -33,14 +33,14 @@
 
 #include "lib/rx_lock.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace ns {
@@ -276,6 +276,8 @@ class rx_platform_item : public rx::pointers::reference_object
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
+
+      virtual rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
 
 
   protected:

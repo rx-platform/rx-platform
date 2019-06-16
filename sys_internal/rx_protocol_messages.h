@@ -71,8 +71,8 @@ const rx_message_type_t rx_query_response_id = 0x8002;
 const rx_message_type_t rx_browse_request_id = 0x0003;
 const rx_message_type_t rx_browse_response_id = 0x8003;
 
-const rx_message_type_t rx_get_object_request_id = 0x0004;
-const rx_message_type_t rx_get_object_response_id = 0x8004;
+const rx_message_type_t rx_get_runtime_request_id = 0x0004;
+const rx_message_type_t rx_get_runtime_response_id = 0x8004;
 
 const rx_message_type_t rx_connection_context_request_id = 0x0005;
 const rx_message_type_t rx_connection_context_response_id = 0x8005;
@@ -83,6 +83,44 @@ const rx_message_type_t rx_set_type_response_id = 0x8006;
 const rx_message_type_t rx_update_type_request_id = 0x0007;
 const rx_message_type_t rx_update_type_response_id = 0x8007;
 
+const rx_message_type_t rx_set_runtime_request_id = 0x0008;
+const rx_message_type_t rx_set_runtime_response_id = 0x8008;
+
+const rx_message_type_t rx_update_runtime_request_id = 0x0009;
+const rx_message_type_t rx_update_runtime_response_id = 0x8009;
+
+const rx_message_type_t rx_browse_runtime_request_id = 0x0010;
+const rx_message_type_t rx_browse_runtime_response_id = 0x8010;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// subscription messages constants
+const rx_message_type_t rx_create_subscription_request_id = 0x0081;
+const rx_message_type_t rx_create_subscription_response_id = 0x8081;
+
+const rx_message_type_t rx_modify_subscription_request_id = 0x0082;
+const rx_message_type_t rx_modify_subscription_response_id = 0x8082;
+
+const rx_message_type_t rx_delete_subscription_request_id = 0x0083;
+const rx_message_type_t rx_delete_subscription_response_id = 0x8083;
+
+const rx_message_type_t rx_add_items_request_id = 0x0084;
+const rx_message_type_t rx_add_items_response_id = 0x8084;
+
+const rx_message_type_t rx_modify_items_request_id = 0x0085;
+const rx_message_type_t rx_modify_items_response_id = 0x8085;
+
+const rx_message_type_t rx_remove_items_request_id = 0x0086;
+const rx_message_type_t rx_remove_items_response_id = 0x8086;
+
+const rx_message_type_t rx_read_items_request_id = 0x0087;
+const rx_message_type_t rx_read_items_response_id = 0x8087;
+
+const rx_message_type_t rx_write_items_request_id = 0x0088;
+const rx_message_type_t rx_write_items_response_id = 0x8088;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// error message constant
 const rx_message_type_t rx_error_message_id = 0xffff;
 
 
@@ -145,6 +183,47 @@ class error_message : public rx_message_base
       static string_type type_name;
 
       static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_connection_context_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+      rx_node_id application_id;
+
+      rx_node_id domain_id;
 
 
   protected:
@@ -223,47 +302,6 @@ class rx_connection_context_request : public rx_request_message
       string_type application;
 
       string_type domain;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_connection_context_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type directory;
-
-      string_type application;
-
-      string_type domain;
-
-      rx_node_id application_id;
-
-      rx_node_id domain_id;
 
 
   protected:

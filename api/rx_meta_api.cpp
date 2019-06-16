@@ -45,39 +45,132 @@ namespace api
 namespace meta
 {
 
-rx_result rx_delete_object(const string_type& name
+template<class typeT>
+rx_result rx_delete_runtime(const string_type& name
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<object_type>::delete_runtime(
+	model::algorithms::runtime_model_algorithm<typeT>::delete_runtime(
 		name, ctx.directory, callback, ctx.object);
 	return true;
 }
+template rx_result rx_delete_runtime<object_type>(const string_type& name
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_runtime<port_type>(const string_type& name
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_runtime<domain_type>(const string_type& name
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_runtime<application_type>(const string_type& name
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
 
 template<class typeT>
-rx_result rx_create_runtime(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, typename typeT::instance_data_t instance_data, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
+rx_result rx_create_runtime(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, typename typeT::instance_data_t instance_data
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
 	model::algorithms::runtime_model_algorithm<typeT>::create_runtime(
-		name, type_name, attributes, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
+		meta_info, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
 	return true;
 }
 
-template rx_result rx_create_runtime<object_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, runtime::objects::object_instance_data instance_data, namespace_item_attributes attributes
+template rx_result rx_create_runtime<object_type>(
+	rx_platform::meta::meta_data& meta_info , data::runtime_values_data* init_data
+	, runtime::objects::object_instance_data instance_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_create_runtime<domain_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, runtime::objects::domain_instance_data instance_data, namespace_item_attributes attributes
+template rx_result rx_create_runtime<domain_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::domain_instance_data instance_data
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_create_runtime<application_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, runtime::objects::application_instance_data instance_data, namespace_item_attributes attributes
+template rx_result rx_create_runtime<application_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::application_instance_data instance_data
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_create_runtime<port_type>(const string_type& name, const string_type& type_name, data::runtime_values_data* init_data
-	, runtime::objects::port_instance_data instance_data, namespace_item_attributes attributes
+template rx_result rx_create_runtime<port_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::port_instance_data instance_data
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
 
+
+template<class typeT>
+rx_result rx_update_runtime(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, typename typeT::instance_data_t instance_data
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
+{
+	data::runtime_values_data* ptr_copy = nullptr;
+	if (init_data)// copy values to resolve lifetime
+		ptr_copy = new data::runtime_values_data(std::move(*init_data));
+	model::algorithms::runtime_model_algorithm<typeT>::update_runtime(
+		meta_info, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
+	return true;
+}
+
+template rx_result rx_update_runtime<object_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::object_instance_data instance_data
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
+template rx_result rx_update_runtime<domain_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::domain_instance_data instance_data
+	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_update_runtime<application_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::application_instance_data instance_data
+	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
+template rx_result rx_update_runtime<port_type>(
+	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
+	, runtime::objects::port_instance_data instance_data
+	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
+
+
+template<class typeT>
+rx_result rx_create_runtime_implicit(
+	const string_type& name, const string_type& type_name
+	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, typename typeT::instance_data_t instance_data
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
+	, rx_context ctx)
+{
+	data::runtime_values_data* ptr_copy = nullptr;
+	if (init_data)// copy values to resolve lifetime
+		ptr_copy = new data::runtime_values_data(std::move(*init_data));
+	model::algorithms::runtime_model_algorithm<typeT>::create_runtime_implicit(name, type_name, attributes
+		,ptr_copy, instance_data, ctx.directory, callback, ctx.object);
+	return true;
+}
+
+template rx_result rx_create_runtime_implicit<object_type>(
+	const string_type& name, const string_type& type_name
+	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, runtime::objects::object_instance_data instance_data
+	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_runtime_implicit<domain_type>(
+	const string_type& name, const string_type& type_name
+	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, runtime::objects::domain_instance_data instance_data
+	, std::function<void(rx_result_with<rx_domain_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_runtime_implicit<port_type>(
+	const string_type& name, const string_type& type_name
+	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, runtime::objects::port_instance_data instance_data
+	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_runtime_implicit<application_type>(
+	const string_type& name, const string_type& type_name
+	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, runtime::objects::application_instance_data instance_data
+	, std::function<void(rx_result_with<rx_application_ptr>&&)> callback
+	, rx_context ctx);
 
 template<class typeT>
 rx_result rx_create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name

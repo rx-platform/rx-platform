@@ -39,6 +39,8 @@
 
 namespace rx_platform
 {
+
+
 namespace api
 {
 namespace ns
@@ -73,6 +75,19 @@ rx_result rx_list_directory(
 	, rx_context ctx);
 
 
+template<typename typeT>
+rx_result rx_list_runtime(
+	rx_node_id id
+	,const string_type& path // item's path
+	, const string_type& pattern // search pattern
+	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
+	, rx_context ctx, tl::type2type<typeT>);
+
+rx_result rx_list_runtime_from_path(
+	const string_type& path // item's path
+	, const string_type& pattern // search pattern
+	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
+	, rx_context ctx);
 
 rx_result rx_query_model(
 	std::vector<rx_platform::meta::query_ptr> queries

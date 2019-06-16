@@ -72,7 +72,8 @@ rx_thread_handle_t platform_runtime_manager::resolve_domain_processor (const dom
 
 void platform_runtime_manager::remove_one (rx_thread_handle_t from_where)
 {
-	cpu_coverage_[from_where- first_cpu_]--;
+	// TOTO CPU!!!!
+	//cpu_coverage_[from_where- first_cpu_]--;
 }
 
 rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host, runtime_data_t& data)

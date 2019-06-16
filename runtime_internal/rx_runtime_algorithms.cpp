@@ -62,6 +62,26 @@ rx_result init_runtime<meta::object_types::domain_type>(rx_domain_ptr what, runt
 {
 	return domain_algorithms::init_runtime(what, ctx);
 }
+template<>
+rx_result deinit_runtime<meta::object_types::object_type>(rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return object_algorithms::deinit_runtime(what, callback, ctx);
+}
+template<>
+rx_result deinit_runtime<meta::object_types::application_type>(rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return application_algorithms::deinit_runtime(what, callback, ctx);
+}
+template<>
+rx_result deinit_runtime<meta::object_types::port_type>(rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return port_algorithms::deinit_runtime(what, callback, ctx);
+}
+template<>
+rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return domain_algorithms::deinit_runtime(what, callback, ctx);
+}
 
 // Class sys_runtime::algorithms::object_algorithms 
 
@@ -126,6 +146,13 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 				}, what, what->get_executer());
 		}
 	}
+	else
+	{
+		for (const auto& error : result.errors())
+			RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
+		RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_name()).c_str());
+
+	}
 	return result;
 }
 
@@ -138,7 +165,7 @@ rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime
 	return ret;
 }
 
-rx_result object_algorithms::deinit_runtime (rx_object_ptr what, runtime::runtime_deinit_context& ctx)
+rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
 	auto ret = what->deinitialize_runtime(ctx);
 	if (ret)
@@ -232,7 +259,7 @@ rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime
 	return ret;
 }
 
-rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx)
+rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
 	auto ret = what->deinitialize_runtime(ctx);
 	if (ret)
@@ -326,14 +353,40 @@ rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_sta
 	return ret;
 }
 
-rx_result port_algorithms::deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
+rx_result port_algorithms::deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
-	return "Not implemented!";
+	rx_post_function<rx_port_ptr>([callback](rx_port_ptr whose)
+		{
+			runtime::runtime_stop_context stop_ctx;
+			auto result = stop_runtime(whose, stop_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				rx_post_function<rx_port_ptr>([callback](rx_port_ptr whose)
+					{
+						runtime::runtime_deinit_context deinit_ctx;
+						auto result = whose->deinitialize_runtime(deinit_ctx);
+						callback(std::move(result));
+					}, whose, RX_DOMAIN_META);
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+			}
+		}, what, what->get_executer());
+
+	return true;
 }
 
 rx_result port_algorithms::stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
-	return "Not implemented!";
+	auto ret = what->stop_runtime(ctx);
+	if (ret)
+	{
+	}
+	return ret;
 }
 
 
@@ -375,10 +428,31 @@ rx_result application_algorithms::start_runtime (rx_application_ptr what, runtim
 	return ret;
 }
 
-rx_result application_algorithms::deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx)
+rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
-	auto ret = what->deinitialize_runtime(ctx);
-	return ret;
+	rx_post_function<rx_application_ptr>([callback](rx_application_ptr whose)
+		{
+			runtime::runtime_stop_context stop_ctx;
+			auto result = stop_runtime(whose, stop_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+				rx_post_function<rx_application_ptr>([callback](rx_application_ptr whose)
+					{
+						runtime::runtime_deinit_context deinit_ctx;
+						auto result = whose->deinitialize_runtime(deinit_ctx);
+						callback(std::move(result));
+					}, whose, RX_DOMAIN_META);
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("application_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+			}
+		}, what, what->get_executer());
+
+	return true;
 }
 
 rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)

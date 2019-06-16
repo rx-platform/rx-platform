@@ -58,6 +58,25 @@ using namespace rx_platform;
 namespace rx_platform {
 
 
+enum rx_attribute_type
+{
+	invalid_attribute_type_type = 0,
+	struct_attribute_type = 1,
+	variable_attribute_type = 2,
+	source_attribute_type = 3,
+	filter_attribute_type = 4,
+	event_attribute_type = 5,
+	mapper_attribute_type = 6,
+	const_attribute_type = 7,
+	value_attribute_type = 8
+};
+struct runtime_item_attribute
+{
+	rx_attribute_type type;
+	string_type name;
+	string_type full_path;
+};
+
 enum rx_item_type : uint8_t
 {
 	rx_directory = 0,
@@ -155,6 +174,8 @@ class meta_data
       bool is_system () const;
 
       rx_result_with<rx_storage_ptr> resolve_storage () const;
+
+      void increment_version (bool full_ver);
 
 
       const rx_node_id& get_parent () const

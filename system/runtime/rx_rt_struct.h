@@ -40,9 +40,10 @@
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
+#include "system/meta/rx_meta_data.h"
 using namespace rx;
 using namespace rx::values;
-
+using rx_platform::runtime_item_attribute;
 
 
 namespace rx_platform {
@@ -250,6 +251,74 @@ class write_context
 
 
 
+class const_value_data 
+{
+
+  public:
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      rx_simple_value simple_get_value () const;
+
+      rx_result set_value (rx_simple_value&& val);
+
+
+      rx::values::rx_simple_value value;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class value_data 
+{
+
+  public:
+
+      rx_value get_value (const hosting_object_data& state) const;
+
+      void set_value (rx_simple_value&& val, const init_context& ctx);
+
+      void object_state_changed (const hosting_object_data& state);
+
+      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
+
+      rx_simple_value simple_get_value () const;
+
+      void simple_set_value (rx_simple_value&& val);
+
+
+      rx::values::rx_timed_value value;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
 class runtime_item 
 {
   public:
@@ -279,6 +348,10 @@ class runtime_item
 
       virtual rx_result get_value_ref (const string_type& path, rt_value_ref& ref) = 0;
 
+      const runtime_item* get_child_item (const string_type& path) const;
+
+      virtual rx_result browse_items (const string_type& filter, const string_type& current_path, std::vector<runtime_item_attribute>& items) const = 0;
+
 	  template<typename T>
 	  T get_local_as(const string_type& path, const T& default_value)
 	  {
@@ -291,6 +364,9 @@ class runtime_item
 		  return default_value;
 	  }
   protected:
+
+      virtual const runtime_item* faster_get_child_item (const char* path, size_t& idx) const = 0;
+
 
   private:
 
@@ -612,74 +688,6 @@ public:
 
 
 
-class const_value_data 
-{
-
-  public:
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      rx_simple_value simple_get_value () const;
-
-      rx_result set_value (rx_simple_value&& val);
-
-
-      rx::values::rx_simple_value value;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class value_data 
-{
-
-  public:
-
-      rx_value get_value (const hosting_object_data& state) const;
-
-      void set_value (rx_simple_value&& val, const init_context& ctx);
-
-      void object_state_changed (const hosting_object_data& state);
-
-      rx_result write_value (rx_simple_value&& val, const write_context& ctx);
-
-      rx_simple_value simple_get_value () const;
-
-      void simple_set_value (rx_simple_value&& val);
-
-
-      rx::values::rx_timed_value value;
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 class runtime_data : public runtime_item  
 {
@@ -743,6 +751,8 @@ class runtime_data : public runtime_item
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
+      rx_result browse_items (const string_type& filter, const string_type& current_path, std::vector<runtime_item_attribute>& items) const;
+
 
       variables_type variables;
 
@@ -765,6 +775,9 @@ class runtime_data : public runtime_item
 
 
   protected:
+
+      const runtime_item* faster_get_child_item (const char* path, size_t& idx) const;
+
 
   private:
 

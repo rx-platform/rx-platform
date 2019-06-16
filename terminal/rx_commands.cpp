@@ -106,6 +106,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_on_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_off_command>());
+	register_command(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
 	// plug-ins commands
 	register_command(rx_create_reference<sys_internal::plugins::plugin_command>());
 }

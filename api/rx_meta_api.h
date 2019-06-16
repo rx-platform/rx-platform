@@ -41,7 +41,8 @@ namespace api
 namespace meta
 {
 
-rx_result rx_delete_object(
+template<class typeT>
+rx_result rx_delete_runtime(
 	const string_type& name // item's path
 	, std::function<void(rx_result&&)> callback
 	, rx_context ctx);
@@ -49,11 +50,27 @@ rx_result rx_delete_object(
 
 template<class typeT>
 rx_result rx_create_runtime(
-	const string_type& name // item's path
-	, const string_type& type_name // type's path
+	rx_platform::meta::meta_data& meta_info
 	, data::runtime_values_data* init_data  // initialization data
 	, typename typeT::instance_data_t instance_data
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
+	, rx_context ctx);
+
+template<class typeT>
+rx_result rx_update_runtime(
+	rx_platform::meta::meta_data& meta_info
+	, data::runtime_values_data* init_data  // initialization data
+	, typename typeT::instance_data_t instance_data
+	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
+	, rx_context ctx);
+
+
+template<class typeT>
+rx_result rx_create_runtime_implicit(
+	const string_type& name, const string_type& type_name
 	, namespace_item_attributes attributes // required attributes
+	, data::runtime_values_data* init_data  // initialization data
+	, typename typeT::instance_data_t instance_data
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);
 

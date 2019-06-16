@@ -191,7 +191,8 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_runtime<T>(name, class_name, &init_data, std::move(instance_data), namespace_item_attributes::namespace_item_full_access,
+				rx_platform::api::meta::rx_create_runtime_implicit<T>(name, class_name
+					, namespace_item_attributes::namespace_item_full_access, &init_data, std::move(instance_data),
 					[=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
@@ -233,7 +234,8 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_runtime<T>(name, class_name, nullptr, std::move(instance_data), namespace_item_attributes::namespace_item_full_access,
+		rx_platform::api::meta::rx_create_runtime_implicit<T>(name, class_name
+			, namespace_item_attributes::namespace_item_full_access, nullptr, std::move(instance_data),
 			[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				if (!result)
@@ -555,7 +557,8 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 
 	rx_context rxc;
 	rxc.object = ctx->get_client();
-	rx_platform::api::meta::rx_delete_object(name,
+	rxc.directory = ctx->get_current_directory();
+	rx_platform::api::meta::rx_delete_runtime<T>(name,
 		[ctx, name, this](rx_result&& result)
 		{
 			if (!result)

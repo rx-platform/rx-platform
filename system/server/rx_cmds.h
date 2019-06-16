@@ -33,12 +33,12 @@
 
 #include "lib/security/rx_security.h"
 
+// rx_mem
+#include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_mem
-#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -105,6 +105,10 @@ public:
       void cancel_execution ();
 
       api::rx_context create_api_context ();
+
+      bool one_more_time ();
+
+      bool should_next_line ();
 
 
       rx_reference<console_client> get_client ()
@@ -184,6 +188,8 @@ public:
       std::atomic_bool canceled_;
 
       bool result_;
+
+      bool one_more_time_;
 
 
 };

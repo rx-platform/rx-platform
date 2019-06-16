@@ -398,6 +398,11 @@ rx_result_with<rx_storage_ptr> meta_data::resolve_storage () const
 		return "Unable to locate item's directory!";
 }
 
+void meta_data::increment_version (bool full_ver)
+{
+	version_++;
+}
+
 
 } // namespace meta
 } // namespace rx_platform

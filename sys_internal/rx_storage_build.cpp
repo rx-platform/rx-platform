@@ -275,7 +275,6 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
-			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::type_id) + " "s + rx_type_item->get_name()).c_str());
 			return true;
 		}
 		else
@@ -302,7 +301,6 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
-			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::type_id) + " "s + rx_type_item->get_name()).c_str());
 			return true;
 		}
 		else
@@ -339,7 +337,6 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
-			BUILD_LOG_TRACE("configuration_storage_builder", 100, ("Created "s + rx_item_type_name(T::RType::type_id) + " "s + rx_type_item->get_name()).c_str());
 			return true;
 		}
 		else
