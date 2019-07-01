@@ -120,7 +120,6 @@ class source_runtime;
 
 class const_value_item;
 class value_item;
-class complex_runtime_item;
 }
 
 }

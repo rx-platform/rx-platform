@@ -32,14 +32,20 @@
 
 
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+
+namespace testing {
+class test_case;
+
+} // namespace testing
+
 
 using namespace rx;
 
@@ -118,6 +124,15 @@ class test_program_context : public rx_platform::prog::console_program_context
 
       void set_passed ();
 
+      void async_test_end ();
+
+
+      void set_current_test_case (rx_reference<test_case> value)
+      {
+        current_test_case_ = value;
+      }
+
+
 
       const test_status_t get_status () const
       {
@@ -141,6 +156,9 @@ class test_program_context : public rx_platform::prog::console_program_context
 
       void fill_data ();
 
+
+
+      rx_reference<test_case> current_test_case_;
 
 
       test_status_t status_;
@@ -175,7 +193,7 @@ public:
 
       bool test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx);
 
-      void test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx);
+      void test_end (std::ostream& out, std::ostream& err, test_program_context* ctx);
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
@@ -200,6 +218,8 @@ public:
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
       size_t get_size () const;
+
+      void async_test_end (test_program_context* ctx);
 
 
       const rx_platform::meta::meta_data& meta_info () const;
@@ -246,34 +266,6 @@ public:
       rx_time modified_time_;
 
       string_type name_;
-
-
-};
-
-
-
-
-
-
-class basic_test_case_test : public test_case  
-{
-	DECLARE_REFERENCE_PTR(basic_test_case_test)
-	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
-This test creates dummy test case and is used for testing this mechanism\
-");
-
-  public:
-      basic_test_case_test();
-
-      ~basic_test_case_test();
-
-
-      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
-
-
-  protected:
-
-  private:
 
 
 };
@@ -367,6 +359,34 @@ public:
 
 
       categories_type categories_;
+
+
+};
+
+
+
+
+
+
+class basic_test_case_test : public test_case  
+{
+	DECLARE_REFERENCE_PTR(basic_test_case_test)
+	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
+This test creates dummy test case and is used for testing this mechanism\
+");
+
+  public:
+      basic_test_case_test();
+
+      ~basic_test_case_test();
+
+
+      bool run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx);
+
+
+  protected:
+
+  private:
 
 
 };

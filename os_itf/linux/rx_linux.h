@@ -70,6 +70,7 @@ typedef std::string string_type;
 #include <dirent.h>
 #include <signal.h>
 #include <termios.h>
+#include <sys/prctl.h>
 
 #ifdef _DEBUG
 #define RX_ASSERT(v) assert(v)

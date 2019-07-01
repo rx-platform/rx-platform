@@ -39,12 +39,18 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
+namespace sys_runtime {
+namespace data_source {
+class data_controler;
+
+} // namespace data_source
+} // namespace sys_runtime
 
 
 #include "system/hosting/rx_host.h"
 using rx_platform::namespace_item_attributes;
 
-#define RX_DOMAIN_EXTERN 0xfffb
+#define RX_DOMAIN_EXTERN 0xffb
 #define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
@@ -136,6 +142,7 @@ thread pool resources\r\n\
 ");
 
 	typedef std::vector<threads::physical_job_thread*> workers_type;
+	typedef std::vector<sys_runtime::data_source::data_controler*> data_controlers_type;
 
   public:
       domains_pool (uint32_t pool_size);
@@ -157,6 +164,8 @@ thread pool resources\r\n\
 
       rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
+      sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
+
 
   protected:
 
@@ -164,6 +173,8 @@ thread pool resources\r\n\
 
 
       workers_type workers_;
+
+      data_controlers_type data_controlers_;
 
 
       uint32_t pool_size_;
@@ -240,6 +251,8 @@ callculation ( normal priority)");
       void append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
       rx_time get_created_time (values::rx_value& val) const;
+
+      sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
 
 
       rx_reference<server_dispatcher_object> get_io_pool ()

@@ -43,7 +43,7 @@ namespace model {
 // Class model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
-	: worker_("config",0)
+	: worker_("config", RX_DOMAIN_META)
 {
 }
 

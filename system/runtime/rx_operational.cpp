@@ -36,6 +36,7 @@
 #include "system/runtime/rx_operational.h"
 
 #include "system/runtime/rx_blocks.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -66,16 +67,6 @@ connected_tags::~connected_tags()
 
 
 
-runtime_handle_t connected_tags::get_new_handle ()
-{
-	static std::atomic<runtime_handle_t> g_handle(1);
-	runtime_handle_t ret = g_handle++;
-	if (!ret)// avoid zero
-		return get_new_handle();
-	else
-		return ret;
-}
-
 rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item)
 {
 	locks::auto_lock_t<decltype(lock_)> _(&lock_);
@@ -101,7 +92,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 		if (!ref_result)
 			return ref_result.errors();
 		// fill out the data
-		auto handle = get_new_handle();
+		auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
 		switch (ref.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:

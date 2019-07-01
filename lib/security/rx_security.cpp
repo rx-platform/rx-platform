@@ -127,12 +127,10 @@ void security_context::revert ()
 // Class rx::security::security_manager 
 
 security_manager::security_manager()
-      : last_id_(0)
 {
 }
 
 security_manager::security_manager(const security_manager &right)
-      : last_id_(0)
 {
 	RX_ASSERT(false);
 }
@@ -163,11 +161,18 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 	snprintf(buff, sizeof(buff), "User %s, security context created.", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
 	locks::auto_lock dummy(&active_lock_);
-	last_id_++;
-	if (last_id_ == 0)
-		last_id_++;
-	active_contexts_.emplace(last_id_, who);
-	return last_id_;
+	
+	uint64_t new_id;
+	do
+	{
+		if (RX_OK == rx_crypt_gen_random(&new_id, sizeof(new_id)))
+		{
+			if(new_id!=0 && active_handles_.find(new_id)==active_handles_.end())
+				break;
+		}
+	} while(true);
+	active_contexts_.emplace(new_id, who);
+	return new_id;
 }
 
 rx_security_handle_t security_manager::context_deactivated (security_context::smart_ptr who)

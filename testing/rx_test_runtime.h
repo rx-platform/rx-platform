@@ -36,6 +36,7 @@
 // rx_test
 #include "testing/rx_test.h"
 
+#include "runtime_internal/rx_subscription.h"
 
 
 namespace testing {
@@ -130,6 +131,20 @@ class runtime_connect_test : public test_case
 	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
 basic testing subscription connect/disconnect.");
 
+	class internal_callback : public sys_runtime::subscriptions::rx_subscription_callback
+	{
+	public:
+		runtime_connect_test* parent;
+		void items_changed(const std::vector<sys_runtime::subscriptions::update_item>& items)
+		{
+			printf("\r\n**********Items changed fired!!!\r\n");
+		}
+		void write_complete(runtime_transaction_id_t transaction_id, rx_result result, const std::vector<sys_runtime::subscriptions::update_item>& items)
+		{
+			printf("\r\n**********Write complete fired!!!\r\n");
+		}
+	};
+
   public:
       runtime_connect_test();
 
@@ -142,6 +157,9 @@ basic testing subscription connect/disconnect.");
   protected:
 
   private:
+
+
+      internal_callback callback_;
 
 
 };

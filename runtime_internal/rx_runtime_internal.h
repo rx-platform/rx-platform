@@ -74,6 +74,8 @@ class platform_runtime_manager
 
       void get_applications (api::query_result& result);
 
+      static runtime_handle_t get_new_handle ();
+
 	  template<class typeT>
 	  rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx)
 	  {

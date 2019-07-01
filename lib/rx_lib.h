@@ -89,6 +89,8 @@ public:
 	rx_result& operator=(rx_result&&) noexcept = default;
 };
 
+typedef std::vector<rx_result> results_array;
+
 void rx_dump_error_result(std::ostream& err, const rx_result& result);
 
 template<class T>
@@ -314,6 +316,7 @@ public:
 };
 
 typedef rx_uuid rx_id;
+typedef std::complex<double> complex_type;
 
 
 union rx_node_id_union

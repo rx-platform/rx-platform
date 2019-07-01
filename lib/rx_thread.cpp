@@ -99,7 +99,7 @@ void thread::start (int priority)
 	if (handle_)
 		rx_thread_close(handle_);
 
-	handle_ = rx_thread_create(_inner_handler, this, priority, &thread_id_);
+	handle_ = rx_thread_create(_inner_handler, this, priority, &thread_id_, name_.c_str());
 
 	if (handle_ == 0)
 	{// error occurred
@@ -121,115 +121,6 @@ job_thread::~job_thread()
 {
 }
 
-
-
-// Class rx::threads::physical_job_thread 
-
-physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
-      : has_job_(false)
-	, thread(name,rx_thread_id)
-{
-}
-
-
-physical_job_thread::~physical_job_thread()
-{
-}
-
-
-
-uint32_t physical_job_thread::handler ()
-{
-	std::vector<job_ptr> queued;
-	bool exit = false;
-
-	while (!exit)
-	{
-		queued.clear();
-
-		if (wait(queued))
-		{
-			for (auto& obj : queued)
-			{
-				if (!obj)
-				{
-					exit = true;
-					break;
-				}
-
-				if (!obj->is_canceled())
-				{
-					rx_security_handle_t sec = obj->get_security_context();
-					if (sec)
-						rx_push_security_context(sec);
-					current_ = obj;
-					obj->process();
-					current_ = job_ptr::null_ptr;
-					if (sec)
-						rx_pop_security_context();
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void physical_job_thread::run (int priority)
-{
-	start(priority);
-}
-
-void physical_job_thread::end (uint32_t timeout)
-{
-	stop(timeout);
-}
-
-void physical_job_thread::append (job_ptr pjob)
-{
-	locks::auto_lock dummy(&lock_);
-
-	bool was_empty = queue_.empty();
-
-	queue_.push(pjob);
-
-	if (was_empty)
-		has_job_.set();
-}
-
-bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
-{
-	if (RX_WAIT_0 != has_job_.wait_handle(timeout))
-		return false;
-
-	locks::auto_lock dummy(&lock_);
-
-	RX_ASSERT(!queue_.empty());
-	while (!queue_.empty())
-	{
-		queued.emplace_back(std::move(queue_.front()));
-		queue_.pop();
-	}
-
-	return true;
-
-}
-
-void physical_job_thread::stop (uint32_t timeout)
-{
-	append(job_ptr::null_ptr);
-	if (current_)
-		current_->cancel();
-	wait_handle(timeout);
-	locks::auto_lock dummy(&lock_);
-	while (!queue_.empty())
-	{
-		if (queue_.front())
-		{
-			queue_.front()->cancel();
-		}
-		queue_.pop();
-	}
-}
 
 
 // Class rx::threads::dispatcher_pool 
@@ -393,6 +284,115 @@ void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period
 	wake_up();
 
 	lock_.unlock();
+}
+
+
+// Class rx::threads::physical_job_thread 
+
+physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
+      : has_job_(false)
+	, thread(name,rx_thread_id)
+{
+}
+
+
+physical_job_thread::~physical_job_thread()
+{
+}
+
+
+
+uint32_t physical_job_thread::handler ()
+{
+	std::vector<job_ptr> queued;
+	bool exit = false;
+
+	while (!exit)
+	{
+		queued.clear();
+
+		if (wait(queued))
+		{
+			for (auto& obj : queued)
+			{
+				if (!obj)
+				{
+					exit = true;
+					break;
+				}
+
+				if (!obj->is_canceled())
+				{
+					rx_security_handle_t sec = obj->get_security_context();
+					if (sec)
+						rx_push_security_context(sec);
+					current_ = obj;
+					obj->process();
+					current_ = job_ptr::null_ptr;
+					if (sec)
+						rx_pop_security_context();
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+void physical_job_thread::run (int priority)
+{
+	start(priority);
+}
+
+void physical_job_thread::end (uint32_t timeout)
+{
+	stop(timeout);
+}
+
+void physical_job_thread::append (job_ptr pjob)
+{
+	locks::auto_lock dummy(&lock_);
+
+	bool was_empty = queue_.empty();
+
+	queue_.push(pjob);
+
+	if (was_empty)
+		has_job_.set();
+}
+
+bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
+{
+	if (RX_WAIT_0 != has_job_.wait_handle(timeout))
+		return false;
+
+	locks::auto_lock dummy(&lock_);
+
+	RX_ASSERT(!queue_.empty());
+	while (!queue_.empty())
+	{
+		queued.emplace_back(std::move(queue_.front()));
+		queue_.pop();
+	}
+
+	return true;
+
+}
+
+void physical_job_thread::stop (uint32_t timeout)
+{
+	append(job_ptr::null_ptr);
+	if (current_)
+		current_->cancel();
+	wait_handle(timeout);
+	locks::auto_lock dummy(&lock_);
+	while (!queue_.empty())
+	{
+		if (queue_.front())
+		{
+			queue_.front()->cancel();
+		}
+		queue_.pop();
+	}
 }
 
 

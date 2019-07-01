@@ -38,6 +38,8 @@
 #include "sys_internal/rx_protocol_messages.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_subscription
+#include "runtime_internal/rx_subscription.h"
 
 namespace sys_internal {
 namespace rx_protocol {
@@ -96,6 +98,9 @@ class rx_protocol_subscription
   protected:
 
   private:
+
+
+      rx_reference<sys_runtime::subscriptions::rx_subscription> my_subscription_;
 
 
 };

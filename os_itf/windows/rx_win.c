@@ -1130,7 +1130,7 @@ unsigned _stdcall _inner_handler(void* arg)
 	return RX_ERROR;
 }
 
-sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id)
+sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id, const char* name)
 {
 	struct _thread_start_arg_t* inner_arg;
 	int wpriority;
@@ -1169,6 +1169,11 @@ sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priori
 	if (handle == NULL)
 		return NULL;
 
+	wchar_t buff[0x100];
+	buff[0] = L'\0';
+	MultiByteToWideChar(CP_ACP, 0, name, -1, buff, sizeof(buff) / sizeof(0));
+
+	SetThreadDescription(handle, buff);
 	
 	SetThreadPriority(handle, priority);
 	ResumeThread(handle);
@@ -1183,6 +1188,10 @@ int rx_thread_join(sys_handle_t what)
 int rx_thread_close(sys_handle_t what)
 {
 	return CloseHandle(what);
+}
+sys_handle_t rx_current_thread()
+{
+	return (sys_handle_t)GetCurrentThreadId();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

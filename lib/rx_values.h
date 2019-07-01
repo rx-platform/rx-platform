@@ -68,6 +68,7 @@
 #define RX_STRIP_ARRAY_MASK		0x7f
 #define RX_ARRAY_VALUE_MASK		0x80
 
+#define RX_SIMPLE_TYPE(t) ((RX_STRIP_ARRAY_MASK&t))
 #define IS_ARRAY_VALUE(t) ((t&RX_ARRAY_VALUE_MASK)==RX_ARRAY_VALUE_MASK)
 
 #define RX_INVALID_INDEX_VALUE ((size_t)(-1l))
@@ -123,7 +124,6 @@
 #define RX_BAD_QUALITY_CONFIG_ERROR		(RX_BAD_QUALITY|RX_Q_CONFIG_ERROR)
 #define RX_BAD_QUALITY_NOT_CONNECTED	(RX_BAD_QUALITY|RX_Q_NOT_CONNECTED)
 #define RX_BAD_QUALITY_TYPE_MISMATCH	(RX_BAD_QUALITY|RX_Q_TYPE_MISMATCH)
-#define RX_BAD_QUALITY_SYNTAX_ERROR		(RX_BAD_QUALITY|RX_Q_SYNTAX_ERROR)
 #define RX_BAD_QUALITY_SYNTAX_ERROR		(RX_BAD_QUALITY|RX_Q_SYNTAX_ERROR)
 #define RX_BAD_QUALITY_DIVISION_BY_ZERO	(RX_BAD_QUALITY|RX_Q_DIVISION_BY_ZERO)
 #define RX_BAD_QUALITY_OFFLINE			(RX_BAD_QUALITY|RX_Q_OFFLINE)
@@ -265,6 +265,8 @@ union rx_value_union
 
 #define DEFAULT_TIME_VAL (rx_time::now())
 
+#define INVALID_INDEX_VALUE ((size_t)(-1))
+
 class rx_value_storage;
 template<typename typeT>
 typeT extract_value(const rx_value_storage& from, const typeT& default_value);
@@ -289,6 +291,18 @@ public:
 
       ~rx_value_storage();
 
+      bool operator==(const rx_value_storage &right) const;
+
+      bool operator!=(const rx_value_storage &right) const;
+
+      bool operator<(const rx_value_storage &right) const;
+
+      bool operator>(const rx_value_storage &right) const;
+
+      bool operator<=(const rx_value_storage &right) const;
+
+      bool operator>=(const rx_value_storage &right) const;
+
 
       bool serialize (base_meta_writer& writer) const;
 
@@ -312,6 +326,42 @@ public:
 
       bool convert_to (rx_value_t type);
 
+      bool is_complex () const;
+
+      bool is_numeric () const;
+
+      bool is_integer () const;
+
+      bool is_float () const;
+
+      bool is_null () const;
+
+      complex_value_struct get_complex_value () const;
+
+      double get_float_value () const;
+
+      int64_t get_integer_value (rx_value_t* min_type = nullptr) const;
+
+      bool get_bool_value () const;
+
+      bool is_array () const;
+
+      bool set_from_complex (const complex_value_struct& val, rx_value_t type);
+
+      bool set_from_float (double val, rx_value_t type);
+
+      bool set_from_integer (int64_t val, rx_value_t type);
+
+      rx_value_storage operator + (const rx_value_storage& right) const;
+
+      rx_value_storage operator - (const rx_value_storage& right) const;
+
+      rx_value_storage operator * (const rx_value_storage& right) const;
+
+      rx_value_storage operator / (const rx_value_storage& right) const;
+
+      rx_value_storage operator % (const rx_value_storage& right) const;
+
 	  template<typename T>
 	  void assign_static(T&& right)
 	  {
@@ -323,6 +373,23 @@ public:
   protected:
 
   private:
+
+      int64_t get_int_value (rx_value_t type, const rx_value_union& value, rx_value_t* min_type = nullptr, size_t idx = INVALID_INDEX_VALUE) const;
+
+      double get_float_value (rx_value_t type, const rx_value_union& value, size_t idx = INVALID_INDEX_VALUE) const;
+
+      bool get_bool_value (rx_value_t type, const rx_value_union& value, size_t idx = INVALID_INDEX_VALUE) const;
+
+      bool set_from_complex (const complex_value_struct& val, rx_value_t type, rx_value_union& where);
+
+      bool set_from_float (double val, rx_value_t type, rx_value_union& where);
+
+      bool set_from_integer (int64_t val, rx_value_t type, rx_value_union& where);
+
+      bool is_simple_type (rx_value_t type) const;
+
+      rx_value_t get_arithmetic_result_type (rx_value_t left, rx_value_t right, bool add) const;
+
 	  void assign(bool val);
 	  void assign(int8_t val);
 	  void assign(uint8_t val);
@@ -434,6 +501,14 @@ class rx_simple_value
 
       bool is_null () const;
 
+      bool is_complex () const;
+
+      bool is_numeric () const;
+
+      bool is_integer () const;
+
+      bool is_float () const;
+
 
       const rx_value_storage& get_storage () const
       {
@@ -475,11 +550,32 @@ public:
 	rx_value& operator=(rx_value&& right) noexcept;
 	rx_value & operator=(const rx_value &right);
 
+	bool operator==(const rx_value& right) const
+	{
+		return storage_ == right.storage_;
+	}
+	bool operator!=(const rx_value& right) const
+	{
+		return storage_ != right.storage_;
+	}
+	bool operator>(const rx_value& right) const
+	{
+		return storage_ > right.storage_;
+	}
+	bool operator<(const rx_value& right) const
+	{
+		return storage_ < right.storage_;
+	}
+	bool operator>=(const rx_value& right) const
+	{
+		return storage_ >= right.storage_;
+	}
+	bool operator<=(const rx_value& right) const
+	{
+		return storage_ <= right.storage_;
+	}
+
   public:
-      bool operator==(const rx_value &right) const;
-
-      bool operator!=(const rx_value &right) const;
-
 
       bool is_good () const;
 
@@ -513,13 +609,47 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
       rx_value_t get_type () const;
 
       void dump_to_stream (std::ostream& out) const;
+
+      bool is_null () const;
+
+      bool is_complex () const;
+
+      bool is_numeric () const;
+
+      bool is_integer () const;
+
+      bool is_float () const;
+
+      complex_value_struct get_complex_value () const;
+
+      double get_float_value () const;
+
+      int64_t get_integer_value (rx_value_t* min_type = nullptr) const;
+
+      bool get_bool_value () const;
+
+      bool set_from_complex (const complex_value_struct& val, rx_value_t type);
+
+      bool set_from_float (double val, rx_value_t type);
+
+      bool set_from_integer (int64_t val, rx_value_t type);
+
+      rx_value operator + (const rx_value& right) const;
+
+      rx_value operator - (const rx_value& right) const;
+
+      rx_value operator * (const rx_value& right) const;
+
+      rx_value operator / (const rx_value& right) const;
+
+      rx_value operator % (const rx_value& right) const;
 
 
       const rx_value_storage& get_storage () const
@@ -556,6 +686,9 @@ public:
   protected:
 
   private:
+
+      void handle_quality_after_arithmetic ();
+
 
 
       rx_value_storage storage_;
@@ -632,11 +765,21 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
       rx_value_t get_type () const;
+
+      bool is_null () const;
+
+      bool is_complex () const;
+
+      bool is_numeric () const;
+
+      bool is_integer () const;
+
+      bool is_float () const;
 
 
       const rx_value_storage& get_storage () const

@@ -159,6 +159,7 @@ void pop_security();
 class security_manager 
 {
 	typedef std::map<uint64_t, security_context::smart_ptr> active_contexts_type;
+	typedef std::set<uint64_t> active_handles_type;
 
 	friend security_context_ptr active_security();
 	friend void push_security(security_context_ptr ctx);
@@ -196,7 +197,7 @@ class security_manager
 
       locks::lockable active_lock_;
 
-      uint64_t last_id_;
+      active_handles_type active_handles_;
 
 
 };

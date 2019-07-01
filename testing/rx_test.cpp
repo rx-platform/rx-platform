@@ -122,7 +122,6 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 			out << RX_CONSOLE_HEADER_LINE "\r\n";
 			if (!ret)
 				break;
-
 		}
 		return ret;
 	}
@@ -130,7 +129,8 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 
 	if(test)
 	{
-		return test->do_console_test(in, out, err, ctx);
+		bool ret = test->do_console_test(in, out, err, ctx);
+		return ret;
 	}
 	err << temp_str << " is unknown Test case.\r\n";
 
@@ -238,6 +238,256 @@ bool test_command::do_list_command (std::istream& in, std::ostream& out, std::os
 	}
 	rx_dump_table(table, out, true, true);
 	return true;
+}
+
+
+// Class testing::test_category 
+
+test_category::test_category(const test_category &right)
+{
+}
+
+test_category::test_category (const string_type& category)
+	: category_(category)
+{
+}
+
+
+test_category::~test_category()
+{
+}
+
+
+test_category & test_category::operator=(const test_category &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+void test_category::register_test_case (test_case::smart_ptr test)
+{
+	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
+}
+
+void test_category::collect_test_cases (std::vector<std::pair<string_type, test_case::smart_ptr> >& cases)
+{
+	for (auto& one : cases_)
+		cases.emplace_back(category_, one.second);
+}
+
+void test_category::get_cases (string_array& cases)
+{
+	cases.reserve(cases_.size());
+	for (auto one : cases_)
+		cases.emplace_back(one.first);
+}
+
+test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
+{
+	const auto& it = cases_.find(test_name);
+	if (it != cases_.end())
+	{
+		return it->second;
+	}
+	return test_case::smart_ptr::null_ptr;
+}
+
+
+// Class testing::test_case 
+
+test_case::test_case(const test_case &right)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN),
+        modified_time_(rx_time::now())
+{
+	RX_ASSERT(false);
+}
+
+test_case::test_case (const string_type& name)
+      : start_tick_(0),
+        status_(RX_TEST_STATUS_UNKNOWN),
+        modified_time_(rx_time::now())
+	, name_(name)
+{
+}
+
+
+test_case::~test_case()
+{
+}
+
+
+test_case & test_case::operator=(const test_case &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
+{
+	bool ret = false;
+	out << "Test case " ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET " started.\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+
+	security::security_context_ptr active = security::active_security();
+	if (active->is_interactive())
+	{
+		ret = true;
+		std::stringstream stream;
+		stream << "Test case " << get_name() << " started by " << active->get_full_name();
+		start_tick_ = rx_get_us_ticks();
+		TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
+	}
+	else
+	{
+		err << "Access Denied!!!\r\n";
+	}
+	return ret;
+}
+
+void test_case::test_end (std::ostream& out, std::ostream& err, test_program_context* ctx)
+{
+	out << RX_CONSOLE_HEADER_LINE "\r\n";
+	out << "Result:";
+
+
+	std::stringstream stream;
+	stream << "Test case " << get_name() << " ended with result ";
+
+	status_lock_.lock();
+	data_ = ctx->get_data();
+	data_.time_stamp = rx_time::now();
+	data_.user = security::active_security()->get_full_name();
+	test_status_t result = status_ = ctx->get_status();
+	status_lock_.unlock();
+	switch (result)
+	{
+	case RX_TEST_STATUS_OK:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
+		stream << RX_TEST_STATUS_OK_NAME;
+		break;
+	case RX_TEST_STATUS_FAILED:
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
+		stream << RX_TEST_STATUS_FAILED_NAME;
+		break;
+	case RX_TEST_STATUS_UNKNOWN:
+		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
+		stream << RX_TEST_STATUS_UNKNOWN_NAME;
+		break;
+	default:
+		RX_ASSERT(false);
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
+	}
+	out << ANSI_COLOR_RESET "\r\n";
+	uint64_t ellapsed_ticks = rx_get_us_ticks() - start_tick_;
+	double ellapsed = (double)ellapsed_ticks / 1000.0;
+	out << "Test lasted " << ellapsed << "ms.\r\n";
+
+	stream << ", lasted " << ellapsed << "ms.";
+	TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
+
+	modified_time_ = rx_time::now();
+}
+
+void test_case::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+{
+	class_name = "RXTestCase";
+	has_own_code_info = true;
+}
+
+rx_item_type test_case::get_type_id () const
+{
+  // generated from ROSE!!!
+  static string_type type_name = "TEST CASE";
+  return rx_item_type::rx_test_case_type;
+
+
+}
+
+values::rx_value test_case::get_value () const
+{
+	rx_value temp;
+	temp.assign_static(status_, modified_time_);
+	return temp;
+}
+
+namespace_item_attributes test_case::get_attributes () const
+{
+	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
+}
+
+test_status_t test_case::get_status (test_context_data* data)
+{
+	if (data)
+		*data = data_;
+	return status_;
+}
+
+test_context_data test_case::get_data (test_context_data* data) const
+{
+	return data_;
+}
+
+bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+{
+	auto test_ctx = testing_enviroment::instance().create_test_context(ctx);
+	if (test_start(in, out, err, test_ctx))
+	{
+		bool ret = run_test(in, out, err, test_ctx);
+		if (!ret)
+		{
+			test_end(out, err, test_ctx);
+			return ret;
+		}
+		if (test_ctx->is_postponed())
+			ctx->set_waiting();
+		return true;
+	}
+	else
+	{
+		err << "Error starting test case:" << ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET "\r\n";
+		return false;
+	}
+}
+
+rx_time test_case::get_created_time () const
+{
+	return rx_gate::instance().get_started();
+}
+
+platform_item_ptr test_case::get_item_ptr () const
+{
+	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
+}
+
+bool test_case::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	return true;
+}
+
+bool test_case::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	return true;
+}
+
+size_t test_case::get_size () const
+{
+	return 0;
+}
+
+void test_case::async_test_end (test_program_context* ctx)
+{
+	test_end(ctx->get_stdout(), ctx->get_stderr(), ctx);
+	ctx->send_results(true);
+}
+
+
+const rx_platform::meta::meta_data& test_case::meta_info () const
+{
+  return meta_info_;
 }
 
 
@@ -371,6 +621,11 @@ size_t test_program_context::get_possition () const
 	return 0;
 }
 
+void test_program_context::async_test_end ()
+{
+	this->current_test_case_->async_test_end(this);
+}
+
 
 // Class testing::basic_test_case_test 
 
@@ -419,244 +674,6 @@ test_test::~test_test()
 {
 }
 
-
-
-// Class testing::test_category 
-
-test_category::test_category(const test_category &right)
-{
-}
-
-test_category::test_category (const string_type& category)
-	: category_(category)
-{
-}
-
-
-test_category::~test_category()
-{
-}
-
-
-test_category & test_category::operator=(const test_category &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-void test_category::register_test_case (test_case::smart_ptr test)
-{
-	cases_.emplace(test->get_name(), std::forward<test_case::smart_ptr>(test));
-}
-
-void test_category::collect_test_cases (std::vector<std::pair<string_type, test_case::smart_ptr> >& cases)
-{
-	for (auto& one : cases_)
-		cases.emplace_back(category_, one.second);
-}
-
-void test_category::get_cases (string_array& cases)
-{
-	cases.reserve(cases_.size());
-	for (auto one : cases_)
-		cases.emplace_back(one.first);
-}
-
-test_case::smart_ptr test_category::get_test_case (const string_type& test_name)
-{
-	const auto& it = cases_.find(test_name);
-	if (it != cases_.end())
-	{
-		return it->second;
-	}
-	return test_case::smart_ptr::null_ptr;
-}
-
-
-// Class testing::test_case 
-
-test_case::test_case(const test_case &right)
-      : start_tick_(0),
-        status_(RX_TEST_STATUS_UNKNOWN),
-        modified_time_(rx_time::now())
-{
-	RX_ASSERT(false);
-}
-
-test_case::test_case (const string_type& name)
-      : start_tick_(0),
-        status_(RX_TEST_STATUS_UNKNOWN),
-        modified_time_(rx_time::now())
-	, name_(name)
-{
-}
-
-
-test_case::~test_case()
-{
-}
-
-
-test_case & test_case::operator=(const test_case &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
-
-bool test_case::test_start (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
-{
-	bool ret = false;
-	out << "Test case " ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET " started.\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-
-	security::security_context_ptr active = security::active_security();
-	if (active->is_interactive())
-	{
-		ret = true;
-		std::stringstream stream;
-		stream << "Test case " << get_name() << " started by " << active->get_full_name();
-		start_tick_ = rx_get_us_ticks();
-		TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
-	}
-	else
-	{
-		err << "Access Denied!!!\r\n";
-	}
-	return ret;
-}
-
-void test_case::test_end (std::istream& in, std::ostream& out, std::ostream& err, test_program_context* ctx)
-{
-	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "Result:";
-
-
-	std::stringstream stream;
-	stream << "Test case " << get_name() << " ended with result ";
-
-	status_lock_.lock();
-	data_ = ctx->get_data();
-	data_.time_stamp = rx_time::now();
-	data_.user = security::active_security()->get_full_name();
-	test_status_t result = status_ = ctx->get_status();
-	status_lock_.unlock();
-	switch (result)
-	{
-	case RX_TEST_STATUS_OK:
-		out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN  RX_TEST_STATUS_OK_NAME;
-		stream << RX_TEST_STATUS_OK_NAME;
-		break;
-	case RX_TEST_STATUS_FAILED:
-		out << ANSI_COLOR_BOLD ANSI_COLOR_RED  RX_TEST_STATUS_FAILED_NAME;
-		stream << RX_TEST_STATUS_FAILED_NAME;
-		break;
-	case RX_TEST_STATUS_UNKNOWN:
-		out << ANSI_COLOR_CYAN  RX_TEST_STATUS_UNKNOWN_NAME;
-		stream << RX_TEST_STATUS_UNKNOWN_NAME;
-		break;
-	default:
-		RX_ASSERT(false);
-		out << ANSI_COLOR_BOLD ANSI_COLOR_RED << "Internal Error!!!";
-	}
-	out << ANSI_COLOR_RESET "\r\n";
-	uint64_t ellapsed_ticks = rx_get_us_ticks() - start_tick_;
-	double ellapsed = (double)ellapsed_ticks / 1000.0;
-	out << "Test lasted " << ellapsed << "ms.\r\n";
-
-	stream << ", lasted " << ellapsed << "ms.";
-	TEST_LOG_INFO(get_name(), 500, stream.str().c_str());
-
-	modified_time_ = rx_time::now();
-}
-
-void test_case::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-	class_name = "RXTestCase";
-	has_own_code_info = true;
-}
-
-rx_item_type test_case::get_type_id () const
-{
-  // generated from ROSE!!!
-  static string_type type_name = "TEST CASE";
-  return rx_item_type::rx_test_case_type;
-
-
-}
-
-values::rx_value test_case::get_value () const
-{
-	rx_value temp;
-	temp.assign_static(status_, modified_time_);
-	return temp;
-}
-
-namespace_item_attributes test_case::get_attributes () const
-{
-	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
-}
-
-test_status_t test_case::get_status (test_context_data* data)
-{
-	if (data)
-		*data = data_;
-	return status_;
-}
-
-test_context_data test_case::get_data (test_context_data* data) const
-{
-	return data_;
-}
-
-bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
-{
-	auto test_ctx = testing_enviroment::instance().create_test_context(ctx);
-	if (test_start(in, out, err, test_ctx))
-	{
-		bool ret = run_test(in, out, err, test_ctx);
-		test_end(in, out, err, test_ctx);
-		return ret;
-	}
-	else
-	{
-		err << "Error starting test case:" << ANSI_RX_TEST_NAME << get_name() << ANSI_COLOR_RESET "\r\n";
-		return false;
-	}
-}
-
-rx_time test_case::get_created_time () const
-{
-	return rx_gate::instance().get_started();
-}
-
-platform_item_ptr test_case::get_item_ptr () const
-{
-	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
-}
-
-bool test_case::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	return true;
-}
-
-bool test_case::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	return true;
-}
-
-size_t test_case::get_size () const
-{
-	return 0;
-}
-
-
-const rx_platform::meta::meta_data& test_case::meta_info () const
-{
-  return meta_info_;
-}
 
 
 } // namespace testing

@@ -119,6 +119,16 @@ void platform_runtime_manager::get_applications (api::query_result& result)
 	}
 }
 
+runtime_handle_t platform_runtime_manager::get_new_handle ()
+{
+	static std::atomic<runtime_handle_t> g_handle(1);
+	runtime_handle_t ret = g_handle++;
+	if (!ret)// avoid zero
+		return get_new_handle();
+	else
+		return ret;
+}
+
 
 // Parameterized Class sys_runtime::execute_runtime_job 
 

@@ -329,9 +329,10 @@ extern "C" {
 #define RX_PRIORITY_ABOVE_NORMAL 1
 #define RX_PRIORITY_HIGH 2
 #define RX_PRIORITY_REALTIME 3
-	sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id);
+	sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priority, uint32_t* thread_id, const char* name);
 	int rx_thread_join(sys_handle_t what);
 	int rx_thread_close(sys_handle_t what);
+	sys_handle_t rx_current_thread();
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

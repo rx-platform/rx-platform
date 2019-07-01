@@ -138,9 +138,6 @@ class connected_tags
 
   private:
 
-      static runtime_handle_t get_new_handle ();
-
-
 
       const_values_type const_values_;
 

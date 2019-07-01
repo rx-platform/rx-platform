@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -155,18 +155,7 @@ bool complex_value_struct::parse_string(const string_type& str)
 	return true;
 }
 
-// Class rx::values::rx_value
-
-bool rx_value::operator==(const rx_value &right) const
-{
-	return false;
-}
-
-bool rx_value::operator!=(const rx_value &right) const
-{
-	return !operator==(right);
-}
-
+// Class rx::values::rx_value 
 
 
 bool rx_value::is_good () const
@@ -196,7 +185,8 @@ bool rx_value::is_substituted () const
 
 bool rx_value::is_array () const
 {
-	return IS_ARRAY_VALUE(storage_.get_value_type());
+  return storage_.is_array();
+
 }
 
 void rx_value::set_substituted ()
@@ -279,7 +269,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -287,7 +277,7 @@ rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 	return ret;
 }
 
-rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -295,7 +285,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -317,6 +307,122 @@ void rx_value::dump_to_stream (std::ostream& out) const
 	string_type q;
 	fill_quality_string(*this, q);
 	out << q;
+}
+
+bool rx_value::is_null () const
+{
+  return storage_.is_null();
+
+}
+
+bool rx_value::is_complex () const
+{
+  return storage_.is_complex();
+
+}
+
+bool rx_value::is_numeric () const
+{
+  return storage_.is_numeric();
+
+}
+
+bool rx_value::is_integer () const
+{
+  return storage_.is_integer();
+
+}
+
+bool rx_value::is_float () const
+{
+  return storage_.is_float();
+
+}
+
+complex_value_struct rx_value::get_complex_value () const
+{
+  return storage_.get_complex_value();
+
+}
+
+double rx_value::get_float_value () const
+{
+  return storage_.get_float_value();
+
+}
+
+int64_t rx_value::get_integer_value (rx_value_t* min_type) const
+{
+  return storage_.get_integer_value();
+
+}
+
+bool rx_value::get_bool_value () const
+{
+  return storage_.get_bool_value();
+
+}
+
+bool rx_value::set_from_complex (const complex_value_struct& val, rx_value_t type)
+{
+  return storage_.set_from_complex(val,type);
+
+}
+
+bool rx_value::set_from_float (double val, rx_value_t type)
+{
+  return storage_.set_from_float(val,type);
+
+}
+
+bool rx_value::set_from_integer (int64_t val, rx_value_t type)
+{
+  return storage_.set_from_integer(val,type);
+
+}
+
+rx::values::rx_value rx_value::operator + (const rx_value& right) const
+{
+	rx_value ret;
+	ret.storage_ = storage_ + right.storage_;
+	ret.handle_quality_after_arithmetic();
+	return ret;
+}
+
+rx::values::rx_value rx_value::operator - (const rx_value& right) const
+{
+	rx_value ret;
+	ret.storage_ = storage_ - right.storage_;
+	ret.handle_quality_after_arithmetic();
+	return ret;
+}
+
+rx::values::rx_value rx_value::operator * (const rx_value& right) const
+{
+	rx_value ret;
+	ret.storage_ = storage_ * right.storage_;
+	ret.handle_quality_after_arithmetic();
+	return ret;
+}
+
+rx::values::rx_value rx_value::operator / (const rx_value& right) const
+{
+	rx_value ret;
+	ret.storage_ = storage_ / right.storage_;
+	ret.handle_quality_after_arithmetic();
+	return ret;
+}
+
+rx::values::rx_value rx_value::operator % (const rx_value& right) const
+{
+	rx_value ret;
+	ret.storage_ = storage_ % right.storage_;
+	ret.handle_quality_after_arithmetic();
+	return ret;
+}
+
+void rx_value::handle_quality_after_arithmetic ()
+{
 }
 
 
@@ -362,7 +468,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value
+// Class rx::values::rx_simple_value 
 
 rx_simple_value::rx_simple_value (const rx_value_storage& storage)
 	: storage_(storage)
@@ -404,6 +510,8 @@ bool rx_simple_value::is_substituted () const
 
 bool rx_simple_value::is_array () const
 {
+  return storage_.is_array();
+
 	return false;
 }
 
@@ -481,7 +589,32 @@ void rx_simple_value::parse (const string_type& str)
 
 bool rx_simple_value::is_null () const
 {
-	return storage_.get_value_type() == RX_NULL_TYPE;
+  return storage_.is_null();
+
+}
+
+bool rx_simple_value::is_complex () const
+{
+  return storage_.is_complex();
+
+}
+
+bool rx_simple_value::is_numeric () const
+{
+  return storage_.is_numeric();
+
+}
+
+bool rx_simple_value::is_integer () const
+{
+  return storage_.is_integer();
+
+}
+
+bool rx_simple_value::is_float () const
+{
+  return storage_.is_float();
+
 }
 
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
@@ -503,7 +636,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage
+// Class rx::values::rx_value_storage 
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -514,6 +647,234 @@ rx_value_storage::rx_value_storage()
 rx_value_storage::~rx_value_storage()
 {
 	destroy_value(value_, value_type_);
+}
+
+
+bool rx_value_storage::operator==(const rx_value_storage &right) const
+{
+	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	{
+		if (is_numeric() && right.is_numeric())
+		{
+			if (is_integer() && right.is_integer())
+				return get_integer_value() == right.get_integer_value();
+			else// is_float() || is_complex()
+				return get_float_value() == right.get_float_value();
+		}
+		else
+			return value_type_ == right.value_type_;
+	}
+	else if (value_type_ == right.value_type_)
+	{
+		if (value_type_ == RX_STRING_TYPE)
+		{
+			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+				return true;
+			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
+				return *value_.string_value == *right.value_.string_value;
+			else
+				return false;
+		}
+		else if (value_type_ == RX_BYTES_TYPE)
+		{
+			if (value_.bytes_value->size() == right.value_.bytes_value->size())
+				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) == 0;
+			else
+				return false;
+		}
+		else if (value_type_ == RX_UUID_TYPE)
+		{
+#ifndef RX_VALUE_SIZE_16
+			*value_.uuid_value == *right.value_.uuid_value;
+#else
+			value_.uuid_value == right.value_.uuid_value;
+#endif
+		}
+	}
+	return value_type_ == right.value_type_;
+}
+
+bool rx_value_storage::operator!=(const rx_value_storage &right) const
+{
+	return !operator==(right);
+}
+
+
+bool rx_value_storage::operator<(const rx_value_storage &right) const
+{
+	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	{
+		if (is_numeric() && right.is_numeric())
+		{
+			if (is_integer() && right.is_integer())
+				return get_integer_value() < right.get_integer_value();
+			else// is_float() || is_complex()
+				return get_float_value() < right.get_float_value();
+		}
+		else
+			return value_type_ < right.value_type_;
+	}
+	else if (value_type_ == right.value_type_)
+	{
+		if (value_type_ == RX_STRING_TYPE)
+		{
+			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+				return false;
+			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
+				return *value_.string_value < *right.value_.string_value;
+			else
+				return true;
+		}
+		else if (value_type_ == RX_BYTES_TYPE)
+		{
+			if (value_.bytes_value->size() == right.value_.bytes_value->size())
+				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) < 0;
+			else
+				return value_.bytes_value->size() < right.value_.bytes_value->size();
+		}
+		else if (value_type_ == RX_UUID_TYPE)
+		{
+#ifndef RX_VALUE_SIZE_16
+			*value_.uuid_value < *right.value_.uuid_value;
+#else
+			value_.uuid_value < right.value_.uuid_value;
+#endif
+		}
+	}
+	return value_type_ < right.value_type_;
+}
+
+bool rx_value_storage::operator>(const rx_value_storage &right) const
+{
+	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	{
+		if (is_numeric() && right.is_numeric())
+		{
+			if (is_integer() && right.is_integer())
+				return get_integer_value() > right.get_integer_value();
+			else// is_float() || is_complex()
+				return get_float_value() > right.get_float_value();
+		}
+		else
+			return value_type_ > right.value_type_;
+	}
+	else if (value_type_ == right.value_type_)
+	{
+		if (value_type_ == RX_STRING_TYPE)
+		{
+			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+				return false;
+			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
+				return *value_.string_value > *right.value_.string_value;
+			else
+				return true;
+		}
+		else if (value_type_ == RX_BYTES_TYPE)
+		{
+			if (value_.bytes_value->size() == right.value_.bytes_value->size())
+				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) > 0;
+			else
+				return value_.bytes_value->size() > right.value_.bytes_value->size();
+		}
+		else if (value_type_ == RX_UUID_TYPE)
+		{
+#ifndef RX_VALUE_SIZE_16
+			*value_.uuid_value > *right.value_.uuid_value;
+#else
+			value_.uuid_value > right.value_.uuid_value;
+#endif
+		}
+	}
+	return value_type_ > right.value_type_;
+}
+
+bool rx_value_storage::operator<=(const rx_value_storage &right) const
+{
+	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	{
+		if (is_numeric() && right.is_numeric())
+		{
+			if (is_integer() && right.is_integer())
+				return get_integer_value() <= right.get_integer_value();
+			else// is_float() || is_complex()
+				return get_float_value() <= right.get_float_value();
+		}
+		else
+			return value_type_ <= right.value_type_;
+	}
+	else if (value_type_ == right.value_type_)
+	{
+		if (value_type_ == RX_STRING_TYPE)
+		{
+			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+				return true;
+			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
+				return *value_.string_value <= *right.value_.string_value;
+			else
+				return value_.string_value == nullptr && right.value_.string_value != nullptr;
+		}
+		else if (value_type_ == RX_BYTES_TYPE)
+		{
+			if (value_.bytes_value->size() == right.value_.bytes_value->size())
+				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) <= 0;
+			else
+				return value_.bytes_value->size() < right.value_.bytes_value->size();
+		}
+		else if (value_type_ == RX_UUID_TYPE)
+		{
+#ifndef RX_VALUE_SIZE_16
+			*value_.uuid_value <= *right.value_.uuid_value;
+#else
+			value_.uuid_value <= right.value_.uuid_value;
+#endif
+		}
+	}
+	return value_type_ <= right.value_type_;
+}
+
+bool rx_value_storage::operator>=(const rx_value_storage &right) const
+{
+
+	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	{
+		if (is_numeric() && right.is_numeric())
+		{
+			if (is_integer() && right.is_integer())
+				return get_integer_value() >= right.get_integer_value();
+			else// is_float() || is_complex()
+				return get_float_value() >= right.get_float_value();
+		}
+		else
+			return value_type_ >= right.value_type_;
+	}
+	else if (value_type_ == right.value_type_)
+	{
+		if (value_type_ == RX_STRING_TYPE)
+		{
+			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+				return true;
+			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
+				return *value_.string_value >= *right.value_.string_value;
+			else
+				return value_.string_value != nullptr && right.value_.string_value == nullptr;
+		}
+		else if (value_type_ == RX_BYTES_TYPE)
+		{
+			if (value_.bytes_value->size() == right.value_.bytes_value->size())
+				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) >= 0;
+			else
+				return value_.bytes_value->size() > right.value_.bytes_value->size();
+		}
+		else if (value_type_ == RX_UUID_TYPE)
+		{
+#ifndef RX_VALUE_SIZE_16
+			*value_.uuid_value >= *right.value_.uuid_value;
+#else
+			value_.uuid_value >= right.value_.uuid_value;
+#endif
+		}
+	}
+	return value_type_ >= right.value_type_;
 }
 
 
@@ -848,6 +1209,714 @@ bool rx_value_storage::convert_to (rx_value_t type)
 		value_type_ = type;
 		return true;
 	}
+}
+
+bool rx_value_storage::is_complex () const
+{
+	return value_type_ == RX_COMPLEX_TYPE;
+}
+
+bool rx_value_storage::is_numeric () const
+{
+	return (value_type_ > RX_NULL_TYPE && value_type_ <= RX_COMPLEX_TYPE);
+}
+
+bool rx_value_storage::is_integer () const
+{
+	return value_type_ > RX_NULL_TYPE && value_type_ <= RX_UINT64_TYPE;
+}
+
+bool rx_value_storage::is_float () const
+{
+	return value_type_ == RX_FLOAT_TYPE || value_type_ == RX_DOUBLE_TYPE || value_type_ == RX_COMPLEX_TYPE;
+}
+
+bool rx_value_storage::is_null () const
+{
+	return value_type_ == RX_NULL_TYPE;
+}
+
+complex_value_struct rx_value_storage::get_complex_value () const
+{
+	if (is_complex())
+	{
+
+#ifdef RX_VALUE_SIZE_16
+		return value_.complex_value;
+#else
+		return *value_.complex_value;
+#endif
+	}
+	complex_value_struct ret;
+	ret.imag = 0;
+	ret.real = 0;
+	if (is_integer())
+		ret.real = (double)get_int_value(value_type_, value_);
+	else if (is_float())
+		ret.real = get_float_value();
+	return ret;
+}
+
+double rx_value_storage::get_float_value () const
+{
+	return get_float_value(value_type_, value_);
+}
+
+int64_t rx_value_storage::get_integer_value (rx_value_t* min_type) const
+{
+	return get_int_value(value_type_, value_);
+}
+
+bool rx_value_storage::get_bool_value () const
+{
+	return get_bool_value(value_type_, value_);
+}
+
+int64_t rx_value_storage::get_int_value (rx_value_t type, const rx_value_union& value, rx_value_t* min_type, size_t idx) const
+{
+	if (IS_ARRAY_VALUE(type))
+	{
+		if (idx < value.array_value->size())
+		{
+			return get_int_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+		}
+		else
+		{
+			assert(false);
+			return 0;
+		}
+	}
+	else
+	{
+		switch (type)
+		{
+		case RX_NULL_TYPE:
+			if (min_type)
+				*min_type = RX_NULL_TYPE;
+			return 0;
+		case RX_BOOL_TYPE:
+			if (min_type)
+				*min_type = RX_BOOL_TYPE;
+			return value.bool_value ? 1 : 0;
+		case RX_INT8_TYPE:
+			if (min_type)
+				*min_type = RX_INT8_TYPE;
+			return value.int8_value;
+		case RX_UINT8_TYPE:
+			if (min_type)
+				*min_type = RX_UINT8_TYPE;
+			return value.uint8_value;
+		case RX_INT16_TYPE:
+			if (min_type)
+				*min_type = RX_INT16_TYPE;
+			return value.int16_value;
+		case RX_UINT16_TYPE:
+			if (min_type)
+				*min_type = RX_UINT16_TYPE;
+			return value.uint16_value;
+		case RX_INT32_TYPE:
+			if (min_type)
+				*min_type = RX_INT32_TYPE;
+			return value.int32_value;
+		case RX_UINT32_TYPE:
+			if (min_type)
+				*min_type = RX_UINT32_TYPE;
+			return value.uint32_value;
+		case RX_INT64_TYPE:
+			if (min_type)
+				*min_type = RX_INT64_TYPE;
+			return value.int64_value;
+		case RX_UINT64_TYPE:
+			if (min_type)
+				*min_type = RX_UINT64_TYPE;
+			return value.uint64_value;
+		case RX_DOUBLE_TYPE:
+			if (min_type)
+				*min_type = RX_INT64_TYPE;
+			return (int64_t)value.double_value;
+		case RX_COMPLEX_TYPE:
+			if (min_type)
+				*min_type = RX_INT64_TYPE;
+			return (int64_t)value.complex_value->amplitude();
+		case RX_FLOAT_TYPE:
+			if (min_type)
+				*min_type = RX_INT32_TYPE;
+			return (int64_t)value.float_value;
+		case RX_STRING_TYPE:
+			if (min_type)
+				*min_type = RX_UINT32_TYPE;
+			if (value.string_value)
+				return value.string_value->size();
+			else
+				return 0;
+		case RX_BYTES_TYPE:
+			if (min_type)
+				*min_type = RX_UINT32_TYPE;
+			return value.bytes_value->size();
+		case RX_UUID_TYPE:
+			if (min_type)
+				*min_type = RX_UINT32_TYPE;
+			return 0;
+		case RX_TIME_TYPE:
+			if (min_type)
+				*min_type = RX_UINT64_TYPE;
+			return (rx_time(value.time_value).get_longlong_miliseconds());
+		default:
+			return 0;
+		}
+	}
+}
+
+double rx_value_storage::get_float_value (rx_value_t type, const rx_value_union& value, size_t idx) const
+{
+	if (IS_ARRAY_VALUE(type))
+	{
+		if (idx < value.array_value->size())
+		{
+			return get_float_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+		}
+		else
+		{
+			assert(false);
+			return 0;
+		}
+	}
+	else
+	{
+		switch (type)
+		{
+		case RX_NULL_TYPE:
+			return 0;
+		case RX_BOOL_TYPE:
+			return value.bool_value ? 1 : 0;
+		case RX_INT8_TYPE:
+			return value.int8_value;
+		case RX_UINT8_TYPE:
+			return value.uint8_value;
+		case RX_INT16_TYPE:
+			return value.int16_value;
+		case RX_UINT16_TYPE:
+			return value.uint16_value;
+		case RX_INT32_TYPE:
+			return value.int32_value;
+		case RX_UINT32_TYPE:
+			return value.uint32_value;
+		case RX_INT64_TYPE:
+			return (double)value.int64_value;
+		case RX_UINT64_TYPE:
+			return (double)value.uint64_value;
+		case RX_DOUBLE_TYPE:
+			return value.double_value;
+		case RX_COMPLEX_TYPE:
+			return value.complex_value->amplitude();
+		case RX_FLOAT_TYPE:
+			return value.float_value;
+		case RX_STRING_TYPE:
+			if (value.string_value)
+				return (double)value.string_value->size();
+			else
+				return 0;
+		case RX_BYTES_TYPE:
+			return (double)value.bytes_value->size();
+		case RX_UUID_TYPE:
+			return 0;
+		case RX_TIME_TYPE:
+			return (double)(rx_time(value.time_value).get_longlong_miliseconds());
+		default:
+			return 0;
+		}
+	}
+}
+
+bool rx_value_storage::is_array () const
+{
+	return IS_ARRAY_VALUE(value_type_);
+}
+
+bool rx_value_storage::get_bool_value (rx_value_t type, const rx_value_union& value, size_t idx) const
+{
+	if (IS_ARRAY_VALUE(type))
+	{
+		if (idx < value.array_value->size())
+		{
+			return get_bool_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+		}
+		else
+		{
+			assert(false);
+			return 0;
+		}
+	}
+	else
+	{
+		switch (type)
+		{
+		case RX_NULL_TYPE:
+			return 0;
+		case RX_BOOL_TYPE:
+			return value.bool_value;
+		case RX_INT8_TYPE:
+		case RX_UINT8_TYPE:
+			return value.uint8_value != 0;
+		case RX_INT16_TYPE:
+		case RX_UINT16_TYPE:
+			return value.uint16_value != 0;
+		case RX_INT32_TYPE:
+		case RX_UINT32_TYPE:
+			return value.uint32_value != 0;
+		case RX_INT64_TYPE:
+		case RX_UINT64_TYPE:
+			return value.uint64_value != 0;
+		case RX_DOUBLE_TYPE:
+			return (int64_t)value.double_value != 0;
+		case RX_COMPLEX_TYPE:
+			return (int64_t)value.complex_value->amplitude() != 0;;
+		case RX_FLOAT_TYPE:
+			return (int64_t)value.float_value != 0;;
+		case RX_STRING_TYPE:
+			if (value.string_value)
+				return !value.string_value->empty();
+			else
+				return false;
+		case RX_BYTES_TYPE:
+			return !value.bytes_value->empty();
+		case RX_UUID_TYPE:
+			return false;
+		case RX_TIME_TYPE:
+			return value.time_value.t_value != 0;
+		default:
+			return false;
+		}
+	}
+}
+
+bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_value_t type)
+{
+	destroy_value(value_, value_type_);
+	value_type_ = type;
+	return set_from_complex(val, type, value_);
+}
+
+bool rx_value_storage::set_from_float (double val, rx_value_t type)
+{
+	destroy_value(value_, value_type_);
+	value_type_ = type;
+	return set_from_float(val, type, value_);
+}
+
+bool rx_value_storage::set_from_integer (int64_t val, rx_value_t type)
+{
+	destroy_value(value_, value_type_);
+	value_type_ = type;
+	return set_from_integer(val, type, value_);
+}
+
+bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_value_t type, rx_value_union& where)
+{
+	switch (type)
+	{
+	case RX_BOOL_TYPE:
+		where.bool_value = val.imag != 0 || val.real != 0;
+		break;
+	case RX_INT8_TYPE:
+		where.int8_value = (int8_t)val.real;
+		break;
+	case RX_UINT8_TYPE:
+		where.uint8_value = (uint8_t)val.real;
+		break;
+	case RX_INT16_TYPE:
+		where.int16_value = (int16_t)val.real;
+		break;
+	case RX_UINT16_TYPE:
+		where.uint16_value = (uint16_t)val.real;
+		break;
+	case RX_INT32_TYPE:
+		where.int32_value = (int32_t)val.real;
+		break;
+	case RX_UINT32_TYPE:
+		where.uint32_value = (uint32_t)val.real;
+		break;
+	case RX_INT64_TYPE:
+		where.int64_value = (int64_t)val.real;
+		break;
+	case RX_UINT64_TYPE:
+		where.uint64_value = (uint64_t)val.real;
+		break;
+	case RX_DOUBLE_TYPE:
+		where.double_value = (double)val.real;
+		break;
+	case RX_COMPLEX_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.complex_value = val;
+#else
+		where.complex_value = new complex_value_struct(val);
+#endif
+		break;
+	case RX_FLOAT_TYPE:
+		where.float_value = (float)val.real;
+		break;
+	case RX_STRING_TYPE:
+		{
+			char buff[0x20];
+			snprintf(buff, 0x20, "%.15g+%.15gi", val.real, val.imag);
+			where.string_value = new string_type(buff);
+		}
+		break;
+	case RX_BYTES_TYPE:
+		where.bytes_value = new byte_string();
+		return false;
+		break;
+	case RX_UUID_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.uuid_value = rx_uuid::null_uuid();
+#else
+		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+#endif
+		return false;
+		break;
+	case RX_TIME_TYPE:
+		where.time_value = rx_time((uint64_t)val.real);
+		break;
+	}
+	return true;
+}
+
+bool rx_value_storage::set_from_float (double val, rx_value_t type, rx_value_union& where)
+{
+	switch (type)
+	{
+	case RX_BOOL_TYPE:
+		where.bool_value = val != 0;
+		break;
+	case RX_INT8_TYPE:
+		where.int8_value = (int8_t)val;
+		break;
+	case RX_UINT8_TYPE:
+		where.uint8_value = (uint8_t)val;
+		break;
+	case RX_INT16_TYPE:
+		where.int16_value = (int16_t)val;
+		break;
+	case RX_UINT16_TYPE:
+		where.uint16_value = (uint16_t)val;
+		break;
+	case RX_INT32_TYPE:
+		where.int32_value = (int32_t)val;
+		break;
+	case RX_UINT32_TYPE:
+		where.uint32_value = (uint32_t)val;
+		break;
+	case RX_INT64_TYPE:
+		where.int64_value = (int64_t)val;
+		break;
+	case RX_UINT64_TYPE:
+		where.uint64_value = (uint64_t)val;
+		break;
+	case RX_DOUBLE_TYPE:
+		where.double_value = (double)val;
+		break;
+	case RX_COMPLEX_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.complex_value = complex_value_struct{ val, 0 };
+#else
+		where.complex_value = new complex_value_struct{ val, 0 };
+#endif
+		break;
+	case RX_FLOAT_TYPE:
+		where.float_value = (float)val;
+		break;
+	case RX_STRING_TYPE:
+		{
+			char buff[0x20];
+			snprintf(buff, 0x20, "%.15g", val);
+			where.string_value = new string_type(buff);
+		}
+		break;
+	case RX_BYTES_TYPE:
+		where.bytes_value = new byte_string();
+		return false;
+		break;
+	case RX_UUID_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.uuid_value = rx_uuid::null_uuid();
+#else
+		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+#endif
+		return false;
+		break;
+	case RX_TIME_TYPE:
+		where.time_value = rx_time((uint64_t)val);
+		break;
+	}
+	return true;
+}
+
+bool rx_value_storage::set_from_integer (int64_t val, rx_value_t type, rx_value_union& where)
+{
+	switch (type)
+	{
+	case RX_BOOL_TYPE:
+		where.bool_value = val != 0;
+		break;
+	case RX_INT8_TYPE:
+		where.int8_value = (int8_t)val;
+		break;
+	case RX_UINT8_TYPE:
+		where.uint8_value = (uint8_t)val;
+		break;
+	case RX_INT16_TYPE:
+		where.int16_value = (int16_t)val;
+		break;
+	case RX_UINT16_TYPE:
+		where.uint16_value = (uint16_t)val;
+		break;
+	case RX_INT32_TYPE:
+		where.int32_value = (int32_t)val;
+		break;
+	case RX_UINT32_TYPE:
+		where.uint32_value = (uint32_t)val;
+		break;
+	case RX_INT64_TYPE:
+		where.int64_value = val;
+		break;
+	case RX_UINT64_TYPE:
+		where.uint64_value = (uint64_t)val;
+		break;
+	case RX_DOUBLE_TYPE:
+		where.double_value = (double)val;
+		break;
+	case RX_COMPLEX_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.complex_value = complex_value_struct{ (double)val, 0 };
+#else
+		where.complex_value = new complex_value_struct{ (double)val, 0 };
+#endif
+		break;
+	case RX_FLOAT_TYPE:
+		where.float_value = (float)val;
+		break;
+	case RX_STRING_TYPE:
+		{
+			char buff[0x20];
+			snprintf(buff, 0x20, "%d", (int)val);
+			where.string_value = new string_type(buff);
+		}
+		break;
+	case RX_BYTES_TYPE:
+		where.bytes_value = new byte_string();
+		return false;
+		break;
+	case RX_UUID_TYPE:
+#ifdef RX_VALUE_SIZE_16
+		where.uuid_value = rx_uuid::null_uuid();
+#else
+		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+#endif
+		return false;
+		break;
+	case RX_TIME_TYPE:
+		where.time_value = rx_time((uint64_t)val);
+		break;
+	}
+	return true;
+}
+
+bool rx_value_storage::is_simple_type (rx_value_t type) const
+{
+	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
+}
+
+rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+{
+	rx_value_storage result;
+	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_from_integer(get_integer_value() + right.get_integer_value(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_from_float(get_float_value() + right.get_float_value(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = get_complex_value();
+			complex_value_struct two = right.get_complex_value();
+			one.imag = one.imag + two.imag;
+			one.real = one.real + two.real;
+			result.set_from_complex(one, RX_COMPLEX_TYPE);
+		}
+		else if (ret_type == RX_TIME_TYPE)
+		{// time
+			result.value_type_ = RX_TIME_TYPE;
+			result.value_.time_value = rx_time(value_.time_value) + right.get_integer_value();
+		}
+		else if (ret_type == RX_BYTES_TYPE && value_type_ == RX_BYTES_TYPE && right.value_type_ == RX_BYTES_TYPE)
+		{
+			result.value_type_ = RX_BYTES_TYPE;
+			result.value_.bytes_value = new byte_string(*value_.bytes_value);
+			result.value_.bytes_value->insert(result.value_.bytes_value->end(), right.value_.bytes_value->begin(), right.value_.bytes_value->end());
+		}
+		else if (ret_type == RX_STRING_TYPE && value_type_ == RX_STRING_TYPE)
+		{
+			result.value_type_ = RX_STRING_TYPE;
+			result.value_.string_value = new string_type(*value_.string_value);
+			if (right.value_type_ == RX_STRING_TYPE)
+			{// do dynamic stuff
+				*result.value_.string_value += *right.value_.string_value;
+			}
+			else
+			{
+				*result.value_.string_value += right.to_string();
+			}
+		}
+
+	}
+	return result;
+}
+
+rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_value_t right, bool add) const
+{
+	if (left > RX_NULL_TYPE && left <= RX_UINT64_TYPE
+		&& right > RX_NULL_TYPE && right <= RX_UINT64_TYPE)
+	{// integer values
+		return std::max(left, right);// just return max
+	}
+	else if (left > RX_NULL_TYPE && left <= RX_DOUBLE_TYPE
+		&& right > RX_NULL_TYPE && right <= RX_DOUBLE_TYPE)
+	{// has floating point values
+		if (left == RX_DOUBLE_TYPE || right == RX_DOUBLE_TYPE)
+			return RX_DOUBLE_TYPE;
+		else
+			return RX_FLOAT_TYPE;
+	}
+	else if (left == RX_COMPLEX_TYPE || right == RX_COMPLEX_TYPE)
+	{
+		return RX_COMPLEX_TYPE;
+	}
+	else if (left == RX_TIME_TYPE && right > RX_NULL_TYPE && right <= RX_DOUBLE_TYPE)
+	{// do time and numeric
+		return RX_TIME_TYPE;
+	}
+	else if (add)
+	{
+		if (left == RX_STRING_TYPE)
+		{// add string and any other
+			return RX_STRING_TYPE;
+		}
+		else if (left == RX_BYTES_TYPE && right == RX_BYTES_TYPE)
+		{// add two byte arrays
+			return RX_BYTES_TYPE;
+		}
+	}
+	return RX_NULL_TYPE;
+}
+
+rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+{
+	rx_value_storage result;
+	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_from_integer(get_integer_value() - right.get_integer_value(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_from_float(get_float_value() - right.get_float_value(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = get_complex_value();
+			complex_value_struct two = right.get_complex_value();
+			one.imag = one.imag - two.imag;
+			one.real = one.real - two.real;
+			result.set_from_complex(one, RX_COMPLEX_TYPE);
+		}
+		else if (ret_type == RX_TIME_TYPE)
+		{// time
+			result.value_type_ = RX_TIME_TYPE;
+			result.value_.time_value = rx_time(value_.time_value) - right.get_integer_value();
+		}		
+	}
+	return result;
+}
+
+rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+{
+	rx_value_storage result;
+	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_from_integer(get_integer_value() * right.get_integer_value(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_from_float(get_float_value() * right.get_float_value(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = get_complex_value();
+			complex_value_struct two = right.get_complex_value();
+			complex_type z1{ one.real, one.imag };
+			complex_type z2{ two.real, two.imag };
+			z1 = z1 * z2;
+			result.set_from_complex(complex_value_struct{ z1.real(), z1.imag() }, RX_COMPLEX_TYPE);
+		}
+	}
+	return result;
+}
+
+rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+{
+	rx_value_storage result;
+	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_integer_value();
+			if (temp != 0)
+				result.set_from_integer(get_integer_value() / temp, ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_FLOAT_TYPE)
+		{// floating point stuff
+			auto temp = right.get_float_value();
+			if (temp != 0)
+				result.set_from_float(get_float_value() /temp , ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = get_complex_value();
+			complex_value_struct two = right.get_complex_value();
+			complex_type z1{ one.real, one.imag };
+			complex_type z2{ two.real, two.imag };
+			z1 = z1 / z2;
+			result.set_from_complex(complex_value_struct{ z1.real(), z1.imag() }, RX_COMPLEX_TYPE);
+		}
+	}
+	return result;
+}
+
+rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+{
+	rx_value_storage result;
+	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_integer_value();
+			if (temp != 0)
+				result.set_from_integer(get_integer_value() / temp, ret_type);
+		}
+	}
+	return result;
 }
 
 void rx_value_storage::assign(bool val)
@@ -2911,7 +3980,7 @@ byte_string extract_value(const rx_value_storage& from, const byte_string& defau
 	}
 	return default_value;
 }
-// Class rx::values::rx_timed_value
+// Class rx::values::rx_timed_value 
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {
@@ -2947,6 +4016,8 @@ bool rx_timed_value::is_substituted () const
 
 bool rx_timed_value::is_array () const
 {
+  return storage_.is_array();
+
 	return false;
 }
 
@@ -3049,7 +4120,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -3062,6 +4133,36 @@ bool rx_timed_value::convert_to (rx_value_t type)
 rx_value_t rx_timed_value::get_type () const
 {
 	return storage_.get_value_type();
+}
+
+bool rx_timed_value::is_null () const
+{
+  return storage_.is_null();
+
+}
+
+bool rx_timed_value::is_complex () const
+{
+  return storage_.is_complex();
+
+}
+
+bool rx_timed_value::is_numeric () const
+{
+  return storage_.is_numeric();
+
+}
+
+bool rx_timed_value::is_integer () const
+{
+  return storage_.is_integer();
+
+}
+
+bool rx_timed_value::is_float () const
+{
+  return storage_.is_float();
+
 }
 
 

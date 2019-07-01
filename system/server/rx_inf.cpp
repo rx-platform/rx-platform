@@ -32,6 +32,8 @@
 
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_data_source
+#include "runtime_internal/rx_data_source.h"
 // rx_inf
 #include "system/server/rx_inf.h"
 
@@ -64,11 +66,11 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 {
 	if (data.io_pool_size > 0)
 	{
-		io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, IO_POOL_ID, RX_DOMAIN_IO);
+		io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO, IO_POOL_ID);
 	}
 	if (data.genereal_pool_size > 0)
 	{
-		general_pool_ = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, GENERAL_POOL_ID, RX_DOMAIN_GENERAL);
+		general_pool_ = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, RX_DOMAIN_GENERAL, GENERAL_POOL_ID);
 	}
 	if (data.workers_pool_size > 0)
 	{
@@ -255,6 +257,11 @@ rx_time server_rt::get_created_time (values::rx_value& val) const
 	return rx_gate::instance().get_started();
 }
 
+sys_runtime::data_source::data_controler* server_rt::get_data_controler (rx_thread_handle_t domain)
+{
+	return workers_->get_data_controler(domain);
+}
+
 
 // Class rx_platform::infrastructure::server_dispatcher_object 
 
@@ -296,6 +303,11 @@ void dispatcher_subscribers_job::process ()
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
 {
+	size_t count = workers_.size();
+	for (size_t i = 0; i < count; i++)
+	{
+
+	}
 }
 
 
@@ -324,14 +336,23 @@ void domains_pool::append (job_ptr pjob)
 void domains_pool::reserve ()
 {
 	workers_.reserve(pool_size_);
+	data_controlers_.reserve(pool_size_);
 	for (uint32_t i = 0; i < pool_size_; i++)
-		workers_.push_back(new threads::physical_job_thread("Worker",i));
+	{
+		auto temp = new threads::physical_job_thread("Worker", i);
+		workers_.push_back(temp);
+		data_controlers_.push_back(new sys_runtime::data_source::data_controler(temp));
+	}
 }
 
 void domains_pool::clear ()
 {
-	for (auto one : workers_)
-		delete one;
+	for (uint32_t i = 0; i < pool_size_; i++)
+	{
+		delete data_controlers_[i];
+		delete workers_[i];
+	}
+	data_controlers_.clear();
 	workers_.clear();
 }
 
@@ -353,6 +374,19 @@ rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 	{
 		uint32_t real_index = domain%size;
 		return workers_[real_index];
+	}
+}
+
+sys_runtime::data_source::data_controler* domains_pool::get_data_controler (rx_thread_handle_t domain)
+{
+	uint32_t size = pool_size_;
+	RX_ASSERT(size);
+	if (size == 0)
+		return nullptr;
+	else
+	{
+		uint32_t real_index = domain % size;
+		return data_controlers_[real_index];
 	}
 }
 

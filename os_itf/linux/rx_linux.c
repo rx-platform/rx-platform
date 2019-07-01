@@ -813,7 +813,7 @@ void* do_stuff(void* arg)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32_t* thread_id)
+sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32_t* thread_id, const char* name)
 {
 	struct sched_param sp;
 	struct linux_thread_chunk* chunk = (struct linux_thread_chunk*)malloc(sizeof(struct linux_thread_chunk));
@@ -856,6 +856,11 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
     {
         perror("pthread_setschedparam");
     }
+	ret = prctl(PR_SET_NAME, name);
+	if (ret == -1)
+	{
+		perror("prctl(PR_SET_NAME)");
+	}
 
 	return chunk->thread_fd;
 }
@@ -871,6 +876,10 @@ int rx_thread_close(sys_handle_t what)
 	// not so many threads created or stopped to have problem yet, but see what to do with it
 	close(what);
 	return RX_ERROR;
+}
+sys_handle_t rx_current_thread()
+{
+	return pthread_self();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

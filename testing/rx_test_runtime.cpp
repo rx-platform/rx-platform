@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -50,7 +50,7 @@ namespace basic_tests {
 
 namespace runtime_test {
 
-// Class testing::basic_tests::runtime_test::runtime_structure_test 
+// Class testing::basic_tests::runtime_test::runtime_structure_test
 
 runtime_structure_test::runtime_structure_test()
 	 : test_case("structure")
@@ -98,7 +98,7 @@ bool runtime_structure_test::run_test (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class testing::basic_tests::runtime_test::runtime_test_category 
+// Class testing::basic_tests::runtime_test::runtime_test_category
 
 runtime_test_category::runtime_test_category()
 	: test_category("runtime")
@@ -115,7 +115,7 @@ runtime_test_category::~runtime_test_category()
 
 
 
-// Class testing::basic_tests::runtime_test::runtime_transaction_test 
+// Class testing::basic_tests::runtime_test::runtime_transaction_test
 
 runtime_transaction_test::runtime_transaction_test()
 	: test_case("transaction")
@@ -131,17 +131,70 @@ runtime_transaction_test::~runtime_transaction_test()
 
 bool runtime_transaction_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	out << "Hello from transaction test!!!\r\n";
-	ctx->set_failed();
+
+	auto transaction_state = new rx_transaction_state<rx_result, int>();
+
+	ctx->set_current_test_case(smart_this());
+	ctx->set_waiting();
+
+	out << "Starting in thread " << rx_current_thread() << "\r\n";
+
+	rx_do_transaction_with_callback<rx_result, smart_ptr, int>(
+		std::vector<rx_transaction_slot<rx_result, int> >
+		{
+			{ [ctx](int val)->rx_result {
+					auto& out = ctx->get_stdout();
+					out << "Entered to first function\r\n";
+					out << "Running in thread " << rx_current_thread() << "\r\n";
+					out << "Argument=" << val << "\r\n";
+					out << "Returning true!\r\n";
+					return true;
+				},
+				RX_DOMAIN_IO
+			}
+			, { [ctx](int val)->rx_result {
+					auto& out = ctx->get_stdout();
+					out << "Entered to second function\r\n";
+					out << "Running in thread " << rx_current_thread() << "\r\n";
+					out << "Argument=" << val << "\r\n";
+					out << "Returning error!\r\n";
+					return "Jebi ga!!!";
+				},
+				2
+			}
+		}
+		, [ctx] (rx_result result)
+		{
+			auto& out = ctx->get_stdout();
+			out << "Result in thread " << rx_current_thread() << "\r\n";
+			if (result)
+			{
+				out << "Returned with result of success!\r\n";
+			}
+			else
+			{
+				out << "Returned with result of failure!\r\n";
+				for (const auto& one : result.errors())
+				{
+					out << one << "\r\n";
+				}
+			}
+			ctx->set_passed();
+
+			ctx->async_test_end();
+		}, smart_this(), transaction_state, 5);
+
+
 	return true;
 }
 
 
-// Class testing::basic_tests::runtime_test::runtime_connect_test 
+// Class testing::basic_tests::runtime_test::runtime_connect_test
 
 runtime_connect_test::runtime_connect_test()
 	: test_case("connect")
 {
+	callback_.parent = this;
 }
 
 
@@ -153,7 +206,49 @@ runtime_connect_test::~runtime_connect_test()
 
 bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	out << "Hello from connection test!!!\r\n";
+	string_type path("/_sys/bin/objects/system/SystemApp.CPU");
+	auto subs = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(&callback_);
+	std::vector < std::pair<string_type, runtime_handle_t> > paths{ {path, 1} };
+	std::vector<rx_result_with<runtime_handle_t> > results;
+	auto result = subs->connect_items(paths, results);
+	if (result)
+	{
+		if (results[0])
+		{
+			out << "Connected to tag " << path << ", handle value = " << results[0].value() << "\r\n";
+
+			std::vector<runtime_handle_t> items{ results[0].value() };
+			results_array disconnect_results;
+			result = subs->disconnect_items(items, disconnect_results);
+			if (result)
+			{
+				rx_post_delayed_function<test_program_context::smart_ptr>([](test_program_context::smart_ptr ctx)
+					{
+					}, 1000, ctx, rx_thread_context());
+				if (disconnect_results[0])
+				{
+					out << "Disconnected from tag " << path << ", handle value = " << results[0].value() << "\r\n";
+					ctx->set_passed();
+					return true;
+				}
+				else
+				{
+					out << "Error disconnecting from tag " << path << "\r\n";
+					dump_error_result(out, results[0]);
+				}
+			}
+			else
+				rx_dump_error_result(out, result);
+		}
+		else
+		{
+			out << "Error connecting tag " << path << "\r\n";
+			dump_error_result(out, results[0]);
+		}
+
+	}
+	else
+		rx_dump_error_result(out, result);
 	ctx->set_failed();
 	return true;
 }
