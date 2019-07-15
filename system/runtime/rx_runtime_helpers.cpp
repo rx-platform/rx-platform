@@ -190,6 +190,15 @@ void runtime_structure_resolver::set_root (blocks::runtime_holder* item)
 }
 
 
+// Class rx_platform::runtime::runtime_process_context 
+
+
+bool runtime_process_context::should_repeat () const
+{
+	return false;
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
 

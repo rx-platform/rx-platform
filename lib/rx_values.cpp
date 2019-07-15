@@ -384,6 +384,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 rx::values::rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
+	ret.quality_ = RX_GOOD_QUALITY;
 	ret.storage_ = storage_ + right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;
@@ -392,6 +393,7 @@ rx::values::rx_value rx_value::operator + (const rx_value& right) const
 rx::values::rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
+	ret.quality_ = RX_GOOD_QUALITY;
 	ret.storage_ = storage_ - right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;
@@ -400,6 +402,7 @@ rx::values::rx_value rx_value::operator - (const rx_value& right) const
 rx::values::rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
+	ret.quality_ = RX_GOOD_QUALITY;
 	ret.storage_ = storage_ * right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;
@@ -408,6 +411,7 @@ rx::values::rx_value rx_value::operator * (const rx_value& right) const
 rx::values::rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
+	ret.quality_ = RX_GOOD_QUALITY;
 	ret.storage_ = storage_ / right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;
@@ -416,6 +420,7 @@ rx::values::rx_value rx_value::operator / (const rx_value& right) const
 rx::values::rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
+	ret.quality_ = RX_GOOD_QUALITY;
 	ret.storage_ = storage_ % right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;

@@ -318,7 +318,7 @@ bool list_command::do_console_command (std::istream& in, std::ostream& out, std:
 			options.list_created = true;
 		if (opt == "-s")
 			options.list_size = true;
-		if (opt == "-f")
+		if (opt == "-f" || opt=="-h" || opt=="-l")
 		{
 			options.list_attributes = true;
 			options.list_qualities = true;

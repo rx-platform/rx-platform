@@ -33,6 +33,8 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 // rx_test
 #include "testing/rx_test.h"
 
@@ -135,11 +137,11 @@ basic testing subscription connect/disconnect.");
 	{
 	public:
 		runtime_connect_test* parent;
-		void items_changed(const std::vector<sys_runtime::subscriptions::update_item>& items)
+		void items_changed(const std::vector<runtime::operational::update_item>& items)
 		{
 			printf("\r\n**********Items changed fired!!!\r\n");
 		}
-		void write_complete(runtime_transaction_id_t transaction_id, rx_result result, const std::vector<sys_runtime::subscriptions::update_item>& items)
+		void write_complete(runtime_transaction_id_t transaction_id, rx_result result, const std::vector<runtime::operational::update_item>& items)
 		{
 			printf("\r\n**********Write complete fired!!!\r\n");
 		}
@@ -157,6 +159,9 @@ basic testing subscription connect/disconnect.");
   protected:
 
   private:
+
+
+      sys_runtime::data_source::value_point my_value_;
 
 
       internal_callback callback_;

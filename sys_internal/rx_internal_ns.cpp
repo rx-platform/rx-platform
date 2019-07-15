@@ -225,9 +225,9 @@ void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const st
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx_value& val) const
+rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
-	return impl_->read_value(path, val);
+	return impl_->read_value(path, callback, ctx);
 }
 
 template <class TImpl>
@@ -246,6 +246,12 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return impl_->browse(path, filter, items);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
+{
+	return impl_->connect_items(paths, callback, monitor, ctx);
 }
 
 
@@ -349,7 +355,7 @@ const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& path, rx_value& val) const
+rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	return "Not Implemented!";
 }
@@ -368,6 +374,12 @@ rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t co
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
 }
@@ -463,7 +475,7 @@ const meta_data_t& rx_other_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, rx_value& val) const
+rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	return "Not Implemented!";
 }
@@ -482,6 +494,12 @@ rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t comman
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
 }

@@ -33,7 +33,7 @@
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
 
-#include "system/server/rx_server.h"
+#include "system/server/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
 
 

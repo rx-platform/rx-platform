@@ -35,7 +35,7 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "rx_runtime_internal.h"
-#include "system/server/rx_server.h"
+#include "system/server/rx_async_functions.h"
 #include "model/rx_meta_internals.h"
 
 
@@ -167,11 +167,29 @@ rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime
 
 rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
-	auto ret = what->deinitialize_runtime(ctx);
-	if (ret)
-	{
-	}
-	return ret;
+	rx_post_function<rx_object_ptr>([callback](rx_object_ptr whose)
+		{
+			runtime::runtime_stop_context stop_ctx;
+			auto result = stop_runtime(whose, stop_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				rx_post_function<rx_object_ptr>([callback](rx_object_ptr whose)
+					{
+						runtime::runtime_deinit_context deinit_ctx;
+						auto result = whose->deinitialize_runtime(deinit_ctx);
+						callback(std::move(result));
+					}, whose, RX_DOMAIN_META);
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+			}
+		}, what, what->get_executer());
+
+	return true;
 }
 
 rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
@@ -261,11 +279,29 @@ rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime
 
 rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
-	auto ret = what->deinitialize_runtime(ctx);
-	if (ret)
-	{
-	}
-	return ret;
+	rx_post_function<rx_domain_ptr>([callback](rx_domain_ptr whose)
+		{
+			runtime::runtime_stop_context stop_ctx;
+			auto result = stop_runtime(whose, stop_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				rx_post_function<rx_domain_ptr>([callback](rx_domain_ptr whose)
+					{
+						runtime::runtime_deinit_context deinit_ctx;
+						auto result = whose->deinitialize_runtime(deinit_ctx);
+						callback(std::move(result));
+					}, whose, RX_DOMAIN_META);
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+			}
+		}, what, what->get_executer());
+
+	return true;
 }
 
 rx_result domain_algorithms::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)

@@ -71,23 +71,37 @@ bool read_command::do_console_command (std::istream& in, std::ostream& out, std:
 		err << object_path << " not found!";
 		return false;
 	}
-	rx_value val;
-	auto result = item->read_value(item_path, val);
+	api::rx_context rx_ctx;
+	rx_ctx.object = ctx->get_client();
+	rx_ctx.directory = ctx->get_current_directory();
+	auto result = item->read_value(item_path,[ctx, full_path](rx_value val)
+		{
+			auto& out = ctx->get_stdout();
+			out << full_path << " = ";
+			if (val.is_good())
+				out << ANSI_RX_GOOD_COLOR;
+			else if (val.is_uncertain())
+				out << ANSI_RX_UNCERTAIN_COLOR;
+			else
+				out << ANSI_RX_BAD_COLOR;
+			val.dump_to_stream(out);
+			out << ANSI_COLOR_RESET "\r\n";
+
+
+			ctx->send_results(true);
+
+		}, rx_ctx);
+
 	if (!result)
 	{
 		dump_error_result(err, result);
 		return false;
 	}
-	out << full_path << " = ";
-	if (val.is_good())
-		out << ANSI_RX_GOOD_COLOR;
-	else if (val.is_uncertain())
-		out << ANSI_RX_UNCERTAIN_COLOR;
 	else
-		out << ANSI_RX_BAD_COLOR;
-	val.dump_to_stream(out);
-	out	<< ANSI_COLOR_RESET "\r\n";
-	return true;
+	{
+		ctx->set_waiting();
+		return true;
+	}
 }
 
 

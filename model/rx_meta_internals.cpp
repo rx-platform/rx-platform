@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager
+// Class model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 	: worker_("config", RX_DOMAIN_META)
@@ -110,7 +110,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data
+// Class model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -284,7 +284,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash
+// Parameterized Class model::type_hash 
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -419,7 +419,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	}
 	if (!prototype)
 	{
-		registered_objects_.emplace(meta.get_id(), ret);
+		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state_created });
 		if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id, meta);
@@ -471,9 +471,9 @@ template <class typeT>
 typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node_id& id) const
 {
 	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end())
+	if (it != registered_objects_.end() && it->second.state== runtime_state_running)
 	{
-		return it->second;
+		return it->second.target;
 	}
 	else
 	{
@@ -487,15 +487,31 @@ rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
 	{
-		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
-		registered_objects_.erase(it);
-		instance_hash_.remove_from_hash_data(id, type_id, base);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
-		RX_ASSERT(type_ret);
-		return true;
+		if (it->second.state == runtime_state_deleting)
+		{
+			auto type_id = it->second.target->meta_info().get_parent();
+			rx_node_ids base;
+			base.emplace_back(type_id);
+			inheritance_hash_.get_base_types(type_id, base);
+			registered_objects_.erase(it);
+			instance_hash_.remove_from_hash_data(id, type_id, base);
+			auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
+			RX_ASSERT(type_ret);
+			return true;
+		}
+		switch (it->second.state)
+		{
+		case runtime_state_created:
+			return "Wrong state, object just created!";
+		case runtime_state_initializing:
+			return "Wrong state, object starting!";
+		case runtime_state_running:
+			return "Wrong state, object not marked for delete!";
+		case runtime_state_destroyed:
+			return "Wrong state, object destroyed!";
+		default:
+			return "Unknown state!";
+		}
 	}
 	else
 	{
@@ -535,10 +551,12 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
-	for (auto one : registered_objects_)
+	for (auto& one : registered_objects_)
 	{
 		runtime::runtime_init_context ctx;
-		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second, ctx);
+		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target, ctx);
+		if (init_result)
+			one.second.state = runtime_state_running;
 	}
 	return result;
 }
@@ -551,7 +569,7 @@ rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
 	if (it != registered_types_.end())
 	{
 		it->second = what;
-		// TODO Should check and change if parent iz different
+		// TODO Should check and change if parent is different
 		/*if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
 		return true;
@@ -574,15 +592,74 @@ api::query_result type_hash<typeT>::get_instanced_objects (const rx_node_id& id)
 
 		if (type != registered_objects_.end())
 		{
-			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
+			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second.target->meta_info() });
 		}
 	}
 	ret.success = true;
 	return ret;
 }
 
+template <class typeT>
+rx_result_with<typename typeT::RTypePtr> type_hash<typeT>::mark_runtime_for_delete (rx_node_id id)
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		if (it->second.state == runtime_state_running)
+		{
+			it->second.state = runtime_state_deleting;
+			return it->second.target;
+		}
+		switch (it->second.state)
+		{
+		case runtime_state_created:
+			return "Wrong state, object just created!";
+		case runtime_state_initializing:
+			return "Wrong state, object starting!";
+		case runtime_state_deleting:
+			return "Wrong state, object already marked for delete!";
+		case runtime_state_destroyed:
+			return "Wrong state, object destroyed!";
+		default:
+			return "Unknown state!";
+		}
+	}
+	else
+	{
+		return "Object does not exists!";
+	}
+}
 
-// Class model::inheritance_hash
+template <class typeT>
+rx_result_with<typename typeT::RTypePtr> type_hash<typeT>::mark_runtime_running (rx_node_id id)
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		switch (it->second.state)
+		{
+		case runtime_state_created:
+		case runtime_state_initializing:
+			it->second.state = runtime_state_running;
+			return it->second.target;
+		case runtime_state_running:
+			return "Wrong state, object already running!";
+		case runtime_state_deleting:
+			return "Wrong state, object marked for delete!";
+		case runtime_state_destroyed:
+			return "Wrong state, object destroyed!";
+		default:
+			return "Unknown state!";
+		}
+	}
+	else
+	{
+		return "Object does not exists!";
+	}
+}
+
+
+// Class model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -717,7 +794,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash
+// Class model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -784,7 +861,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_type_hash
+// Parameterized Class model::simple_type_hash 
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -990,7 +1067,7 @@ rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, 
 }
 
 
-// Class model::types_resolver
+// Class model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)

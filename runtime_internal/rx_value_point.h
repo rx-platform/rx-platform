@@ -77,7 +77,7 @@ class value_point
 
   public:
 
-      void connect (const string_type& path, uint32_t rate, data_controler* controler = nullptr, char* buffer = nullptr);
+      void connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler = nullptr, char* buffer = nullptr);
 
       void disconnect (data_controler* controler = nullptr);
 
@@ -133,6 +133,8 @@ class value_point
       tag_handles_type tag_handles_;
 
       string_type expression_;
+
+      std::function<void(const rx_value&)> callback_;
 
 
 };

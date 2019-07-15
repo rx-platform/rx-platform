@@ -35,6 +35,7 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_runtime_helpers.h"
+#include "runtime_internal/rx_data_source.h"
 
 
 namespace sys_runtime {
@@ -92,6 +93,7 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 	}
 	last_cpu_ = first_cpu_ + data.workers_pool_size;
 	cpu_coverage_.assign(last_cpu_ - first_cpu_, 0);
+	data_source::data_source_factory::instance().register_internal_sources();
 	return true;
 }
 

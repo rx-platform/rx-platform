@@ -33,6 +33,7 @@
 // rx_data_source
 #include "runtime_internal/rx_data_source.h"
 
+#include "runtime_internal/rx_internal_data_source.h"
 
 
 namespace sys_runtime {
@@ -80,32 +81,38 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 {
 	string_type source;
 	string_type concrete;
-	auto idx = path.find("::");
+
+	auto idx = path.rfind(RX_SOURCE_DELIMETER);
 	if (idx != string_type::npos)
 	{
 		source = path.substr(0, idx);
-		concrete = path.substr(idx + 2);
+		concrete = path.substr(idx + 1);
+	}
+	else
+	{
+		source = "";
+		concrete = path;
+	}
 
-		auto it = named_sources_.find(source);
-		if (it != named_sources_.end())
+	auto it = named_sources_.find(source);
+	if (it != named_sources_.end())
+	{
+		value_handle_extended handle{ it->second.handle, 0, 0 };
+		it->second.source.get()->add_item(concrete, rate, handle);
+		return handle.make_handle();
+	}
+	else
+	{
+		auto&& temp = data_source_factory::instance().create_data_source(source);
+		if (temp)
 		{
-			value_handle_extended handle{ it->second.handle, 0, 0 };
-			it->second.source.get()->add_item(concrete, rate, handle);
+			auto&& id = ++next_source_id_;
+			auto result = sources_.emplace(id, source_data{ std::move(temp.value()), source });
+			named_sources_.emplace(source, named_source_data{ result.first->second.source, id });
+
+			value_handle_extended handle{ id, 0, 0 };
+			result.first->second.source->add_item(concrete, rate, handle);
 			return handle.make_handle();
-		}
-		else
-		{
-			auto&& temp = data_source_factory::instance().create_data_source(path);
-			if (temp)
-			{
-				auto&& id = ++next_source_id_;
-				auto result = sources_.emplace(id, source_data{ std::move(temp.value()), source });
-				named_sources_.emplace(source, named_source_data{ result.first->second.source, id });
-
-				value_handle_extended handle{ id, 0, 0 };
-				result.first->second.source->add_item(concrete, rate, handle);
-				return handle.make_handle();
-			}
 		}
 	}
 	return 0;
@@ -120,14 +127,6 @@ data_controler* data_controler::get_controler ()
 {
 	return rx_platform::rx_gate::instance().get_infrastructure().get_data_controler(rx_thread_context());
 }
-
-
-// Class sys_runtime::data_source::data_source 
-
-data_source::~data_source()
-{
-}
-
 
 
 // Class sys_runtime::data_source::data_subscription 
@@ -195,28 +194,15 @@ rx_result_with<std::unique_ptr<data_source> > data_source_factory::create_data_s
 }
 
 
-// Class sys_runtime::data_source::internal_data_source 
+// Class sys_runtime::data_source::data_source 
 
-internal_data_source::internal_data_source (const string_type& path)
+data_source::~data_source()
 {
 }
 
-
-
-void internal_data_source::add_item (const string_type& path, uint32_t rate, value_handle_extended& handle)
-{
-}
-
-void internal_data_source::remove_item (const value_handle_extended& handle)
-{
-}
-
-bool internal_data_source::is_empty () const
-{
-	return false;
-}
 
 
 } // namespace data_source
 } // namespace sys_runtime
+
 

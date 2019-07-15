@@ -5,12 +5,14 @@
 #define RX_DIR_OBJECT_DELIMETER '/'
 #define RX_PATH_CURRENT '.'
 #define RX_PATH_PARENT '$'
+#define RX_SOURCE_DELIMETER '#'
 #define RX_DIR_DELIMETER_STR "/"
 #define RX_OBJECT_DELIMETER_STR "."
 #define RX_DIR_OBJECT_DELIMETER_STR "/"
 #define RX_PATH_CURRENT_STR "."
 #define RX_PATH_PARENT_STR '$'
 #define RX_DEFAULT_VARIABLE_NAME "_"
+#define RX_SOURCE_DELIMETER_STR "#"
 
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
@@ -61,6 +63,8 @@
 #define RX_NS_SYSTEM_APP_ID 0x0000000b
 #define RX_NS_SYSTEM_DOM_NAME "SystemDomain"
 #define RX_NS_SYSTEM_DOM_ID 0x0000000c
+#define RX_NS_OBJECT_DATA_NAME "ObjectData"
+#define RX_NS_OBJECT_DATA_ID 0x0000000d
 
 #define NS_RX_COMMANDS_MANAGER_NAME "CmdManager"
 #define RX_COMMANDS_MANAGER_ID 0x8000001

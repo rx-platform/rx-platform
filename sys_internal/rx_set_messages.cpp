@@ -471,7 +471,7 @@ rx_message_type_t set_runtime_response<itemT>::get_type_id ()
 // Parameterized Class sys_internal::rx_protocol::messages::set_messages::update_runtime_response 
 
 template <class itemT>
-string_type update_runtime_response<itemT>::type_name = "setRuntimeResp";
+string_type update_runtime_response<itemT>::type_name = "updateRuntimeResp";
 
 template <class itemT>
 uint16_t update_runtime_response<itemT>::type_id = rx_set_runtime_response_id;

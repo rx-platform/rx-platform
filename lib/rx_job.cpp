@@ -56,11 +56,6 @@ job::job()
 }
 
 
-job::~job()
-{
-}
-
-
 
 void job::cancel ()
 {
@@ -99,11 +94,6 @@ timer_job::timer_job()
 }
 
 
-timer_job::~timer_job()
-{
-}
-
-
 
 void timer_job::set_executer (threads::job_thread* executer)
 {
@@ -123,11 +113,6 @@ void timer_job::unlock ()
 // Class rx::jobs::post_period_job 
 
 post_period_job::post_period_job()
-{
-}
-
-
-post_period_job::~post_period_job()
 {
 }
 
@@ -157,11 +142,6 @@ periodic_job::periodic_job()
 }
 
 
-periodic_job::~periodic_job()
-{
-}
-
-
 
 rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
@@ -182,9 +162,6 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove
 	else
 		return next_ - current_tick;// not jet so send how mutch more to timer
 }
-
-
-// Parameterized Class rx::jobs::lambda_period_job 
 
 
 } // namespace jobs

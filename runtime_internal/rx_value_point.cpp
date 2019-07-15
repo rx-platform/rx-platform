@@ -147,12 +147,14 @@ int isdelim(char c)
 // Class sys_runtime::data_source::value_point
 
 
-void value_point::connect (const string_type& path, uint32_t rate, data_controler* controler, char* buffer)
+void value_point::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler, char* buffer)
 {
 	if (!controler)
 		controler = data_controler::get_controler();
 	if (state_!=value_point_not_connected)
 		disconnect(controler);
+
+	callback_ = callback;
 
 	rate_ = rate;
 	parse_and_connect(path.c_str(), buffer, rx_time::now(), controler);
@@ -359,7 +361,6 @@ void value_point::primitive (rx_value& result, char*& prog, char*& token, char& 
 					return;
 				}
 			}
-			uint8_t typ = RX_INT32_TYPE;
 			if (val == 0 || val == 1)
 				result.assign_static<bool>(val != 0);
 			else if (val >= -128 && val <= 127)
@@ -771,7 +772,7 @@ void value_point::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& t
 
 void value_point::get_expression (rx_value& result, char* tok)
 {
-	if (state_=value_point_connected_simple)
+	if (state_ == value_point_connected_simple)
 	{// simple just tag here
 		RX_ASSERT(tag_variables_.size() == 1);
 		result = tag_variables_[0];
@@ -1037,6 +1038,8 @@ void value_point::calculate (char* token_buff)
 
 void value_point::value_changed (const rx_value& val)
 {
+	if (callback_)
+		callback_(val);
 }
 
 

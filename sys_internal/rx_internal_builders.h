@@ -135,6 +135,7 @@ class basic_types_builder : public rx_platform_builder
   protected:
 
   private:
+		void build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what);
 	    template<class T>
 		void build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what);
 		template<class T>

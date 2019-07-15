@@ -65,8 +65,6 @@ class job : private pointers::reference_object
   public:
       job();
 
-      ~job();
-
 
       void cancel ();
 
@@ -147,8 +145,6 @@ class timer_job : public job
   public:
       timer_job();
 
-      ~timer_job();
-
 
       virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove) = 0;
 
@@ -193,8 +189,6 @@ class post_period_job : public timer_job
   public:
       post_period_job();
 
-      ~post_period_job();
-
 
       rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
 
@@ -221,10 +215,6 @@ class lambda_job : public job
             : f_(f)
 		  , arg_(std::forward<argT>(arg))
 		  , ref_(ref)
-      {
-      }
-
-      ~lambda_job()
       {
       }
 
@@ -261,10 +251,6 @@ public:
 		arg_(arg)
 	{
 	}
-
-	~lambda_job()
-	{
-	}
 	void process()
 	{
 		(f_)(arg_);
@@ -287,8 +273,6 @@ class periodic_job : public timer_job
 
   public:
       periodic_job();
-
-      ~periodic_job();
 
 
       rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
@@ -316,10 +300,6 @@ class lambda_period_job : public post_period_job
             : f_(f)
 		  , arg_(std::forward<argT>(arg))
 		  , ref_(ref)
-      {
-      }
-
-      ~lambda_period_job()
       {
       }
 
@@ -357,12 +337,9 @@ public:
 		arg_(arg)
 	{
 	}
-
-	~lambda_period_job()
-	{
-	}
 	void process()
 	{
+		cancel();
 		(f_)(arg_);
 	}
 
@@ -373,7 +350,119 @@ private:
 
 };
 
+
+
+
+
+template <typename argT, typename refT = argT>
+class lambda_timer_job : public periodic_job  
+{
+	DECLARE_REFERENCE_PTR(lambda_timer_job);
+
+  public:
+      lambda_timer_job (std::function<bool(argT)> f, argT&& arg, refT ref)
+            : f_(f)
+		  , arg_(std::forward<argT>(arg))
+		  , ref_(ref)
+      {
+      }
+
+
+      void process ()
+      {
+		  if(!(f_)(std::forward<argT>(arg_)))
+			  cancel();
+      }
+
+
+  protected:
+
+  private:
+
+
+      std::function<bool(argT)> f_;
+
+      argT arg_;
+
+      refT ref_;
+
+
+};
+
+
+template <typename argT>
+class lambda_timer_job<argT, argT> : public periodic_job
+{
+	DECLARE_REFERENCE_PTR(lambda_timer_job);
+
+public:
+	lambda_timer_job(std::function<bool(argT)> f, argT arg)
+		: f_(f),
+		arg_(arg)
+	{
+	}
+	void process()
+	{
+		if (!(f_)(arg_))
+			cancel();
+	}
+
+private:
+	std::function<bool(argT)> f_;
+
+	argT arg_;
+
+};
+
+
+
+
+
+template <typename argT, typename refT>
+class result_lambda_job : public job  
+{
+	DECLARE_REFERENCE_PTR(result_lambda_job);
+
+  public:
+      result_lambda_job (std::function<void(rx_result_with<argT>&&)> f, rx_result_with<argT>&& arg, refT ref)
+            : f_(f)
+		  , argument_(std::forward<argT>(arg))
+		  , ref_(ref)
+      {
+      }
+
+
+      void process ()
+      {
+		  f_(std::move(argument_));
+      }
+
+
+  protected:
+
+  private:
+
+
+      std::function<void(argT)> f_;
+
+      rx_result_with<argT> argument_;
+
+      refT ref_;
+
+
+};
+
+
 // Parameterized Class rx::jobs::lambda_job 
+
+
+// Parameterized Class rx::jobs::lambda_period_job 
+
+
+// Parameterized Class rx::jobs::lambda_timer_job 
+
+
+// Parameterized Class rx::jobs::result_lambda_job 
 
 
 } // namespace jobs

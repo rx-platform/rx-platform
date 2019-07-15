@@ -275,7 +275,22 @@ public:
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 
-	typedef typename std::unordered_map<rx_node_id, RTypePtr> registered_objects_type;
+	enum runtime_state
+	{
+		runtime_state_created = 0,
+		runtime_state_initializing = 1,
+		runtime_state_running = 2,
+		runtime_state_deleting = 3,
+		runtime_state_destroyed = 4
+	};
+
+	struct runtime_data_t
+	{
+		RTypePtr target;
+		runtime_state state;
+	};
+
+	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
@@ -306,6 +321,10 @@ public:
       rx_result update_type (typename type_hash<typeT>::Tptr what);
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
+
+      rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id);
+
+      rx_result_with<typename typeT::RTypePtr> mark_runtime_running (rx_node_id id);
 
 
   protected:

@@ -32,16 +32,16 @@
 
 
 
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
@@ -70,7 +70,6 @@ namespace basic_types
 }
 
 namespace runtime {
-typedef callback::callback_functor_container<locks::lockable, rx::values::rx_value> value_callback_t;
 
 namespace blocks {
 
@@ -360,9 +359,9 @@ class runtime_holder
 
   public:
 
-      rx_result read_value (const string_type& path, rx_value& val) const;
+      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx, rx_thread_handle_t whose) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, rx_thread_handle_t whose);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
@@ -376,9 +375,9 @@ class runtime_holder
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
+      rx_result connect_items (const string_array& paths, operational::rx_tags_callback* monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
 
-      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors);
+      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, operational::rx_tags_callback* monitor, std::vector<rx_result>& results, bool& has_errors);
 
       rx_result do_command (rx_object_command_t command_type);
 
@@ -392,7 +391,7 @@ class runtime_holder
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
-      void process_runtime (jobs::job_ptr next_job);
+      bool process_runtime (runtime_process_context& ctx);
 
       rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 

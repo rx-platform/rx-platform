@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,6 +34,7 @@
 #include "model/rx_model_algorithms.h"
 
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/server/rx_async_functions.h"
 
 
 namespace model {
@@ -59,7 +60,7 @@ template class runtime_model_algorithm<domain_type>;
 template class runtime_model_algorithm<application_type>;
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm 
+// Parameterized Class model::algorithms::types_model_algorithm
 
 
 template <class typeT>
@@ -116,7 +117,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 		if (!prototype->meta_info().get_path().empty())
 			dir = rx_gate::instance().get_root_directory()->get_sub_directory(prototype->meta_info().get_path());
 		if(!dir)
-			dir = rx_gate::instance().get_root_directory();	
+			dir = rx_gate::instance().get_root_directory();
 	}
 
 	if (type_name.empty())
@@ -255,7 +256,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm 
+// Parameterized Class model::algorithms::simple_types_model_algorithm
 
 
 template <class typeT>
@@ -415,38 +416,41 @@ rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const string_ty
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm 
+// Parameterized Class model::algorithms::runtime_model_algorithm
 
 
 template <class typeT>
 void runtime_model_algorithm<typeT>::delete_runtime (const string_type& name, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
-	rx_post_function<rx_thread_handle_t>([=](rx_thread_handle_t result_target)
+	auto result_target = rx_thread_context();
+	std::function<void(rx_thread_handle_t, rx_reference_ptr)> func= [=](rx_thread_handle_t result_target, rx_reference_ptr ref)
 		{
-			auto et = rx_gate::instance().get_infrastructure().get_executer(result_target);
-			auto result = delete_runtime_sync(name, dir, ref, [=](rx_result job_result)
-				{
-					et->append(rx_create_reference<jobs::lambda_job<rx_result, rx_reference_ptr> >(
-						callback, std::move(job_result), ref));
-				});
-			if (!result)
+			auto res = delete_runtime_sync(name, dir, result_target, callback, ref);
+			if (!res)
 			{
-				et->append(rx_create_reference<jobs::lambda_job<rx_result, rx_reference_ptr> >(
-					callback, std::move(result), ref));
+				auto jt = rx_gate::instance().get_infrastructure().get_executer(result_target);
+				jt->append(
+					rx_create_reference<jobs::lambda_job<rx_result, rx_reference_ptr> >(
+						[=](rx_result&& ret_val) mutable
+						{
+							callback(std::move(ret_val));
+						},
+						std::move(res), ref));
 			}
-		}
-	, rx_thread_context(), RX_DOMAIN_META);
+		};
+	rx_post_function_to<rx_reference_ptr, rx_thread_handle_t, rx_reference_ptr>(RX_DOMAIN_META, func
+		, ref, result_target, ref);
 }
 
 template <class typeT>
-rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_reference_ptr ref, std::function<void(rx_result)> callback)
+rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const string_type& name, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
 	if (!item)
 	{// error, item does not exists
 		return name + " does not exists!";
 	}
-	return delete_runtime_sync(item->meta_info(), ref, callback);
+	return delete_runtime_sync(item->meta_info(), result_target, callback, ref);
 }
 
 template <class typeT>
@@ -471,7 +475,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	auto dir_result = dir->reserve_name(name, path);
 	if (!dir_result)
 		return dir_result.errors();
-	
+
 	rx_node_id type_id = info.get_parent();
 
 	meta_data meta(info);
@@ -493,7 +497,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 			return init_result.errors();
 		}
 	}
-	
+
 	if (!dir->add_item(ret.value()->get_item_ptr()))
 	{
 		dir->cancel_reserve(name);
@@ -591,66 +595,130 @@ rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr
 {
 	runtime::runtime_init_context ctx;
 	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what, ctx);
+	if (init_result)
+	{// make object running in state
+
+		auto init_result = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_running(what->meta_info().get_id());
+	}
 	return init_result;
 }
 
 template <class typeT>
 void runtime_model_algorithm<typeT>::update_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
-	rx_post_function<rx_thread_handle_t>([=](rx_thread_handle_t result_target)
-		{
-			using full_result_t = rx_result_with<typename typeT::RTypePtr>;
-			auto et = rx_gate::instance().get_infrastructure().get_executer(result_target);
-			auto result = delete_runtime_sync(info, ref, [=](rx_result job_result)
+	using result_t = rx_result_with<typename typeT::RTypePtr>;
+	auto result_target = rx_thread_context();
+	std::function<void(rx_thread_handle_t)> func = [=](rx_thread_handle_t target) {
+		auto ret = update_runtime_sync(info, init_data, instance_data, dir, callback, ref, target);
+		if (!ret)
+			rx_post_result_to<decltype(ref), typename typeT::RTypePtr>(result_target, [callback](result_t&& res)
 				{
-					if (job_result)
-					{
-						auto create_result = create_runtime_sync(info, init_data, instance_data, dir, ref);
-						et->append(rx_create_reference<jobs::lambda_job<full_result_t, rx_reference_ptr> >(
-							callback, std::move(create_result), ref));
-					}
-					else
-					{
-						et->append(rx_create_reference<jobs::lambda_job<full_result_t, rx_reference_ptr> >(
-							callback, full_result_t(job_result.errors()), ref));
-					}
-				});
-			if (!result)
-			{
-				et->append(rx_create_reference<jobs::lambda_job<full_result_t, rx_reference_ptr> >(
-					callback, full_result_t(result.errors()), ref));
-			}
-		}
-	, rx_thread_context(), RX_DOMAIN_META);
+					callback(std::move(res));
+				}, ref, result_t(ret.errors()));
+	};
+	rx_post_function_to<decltype(ref), rx_thread_handle_t>(RX_DOMAIN_META, func, ref, result_target);
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref)
-{
-	return "Not implemented";
-}
-
-template <class typeT>
-rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info, rx_reference_ptr ref, std::function<void(rx_result)> callback)
+rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref, rx_thread_handle_t result_target)
 {
 	auto id = info.get_id();
 	if (id.is_null())
 	{// error, item does not have id
 		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
 	}
-	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().get_runtime(id);
+	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
-		return info.get_name() + " is not registered!";
+		return obj_ptr.errors();
 	}
+
 	runtime::runtime_deinit_context ctx;
-	auto init_result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr
-		, [id, info, callback, ref](rx_result&& result) mutable {
-			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(id);
+	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [info, callback, init_data, instance_data, dir, ref](rx_result&& deinit_result)
+		{
+			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(info.get_id());
 			if (ret)
 			{
 				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
-				if(dir)
+				if (dir)
+					dir->delete_item(info.get_name());
+				if (rx_gate::instance().get_platform_status() == rx_platform_running)
+				{
+					auto storage_result = info.resolve_storage();
+					if (storage_result)
+					{
+						auto item_result = storage_result.value()->get_item_storage(info);
+						if (item_result)
+						{
+							item_result.value()->delete_item();
+							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + info.get_name());
+						}
+					}
+				}
+
+				auto create_result = create_runtime_sync(info, init_data, instance_data, dir, ref);
+					callback(std::move(create_result));
+			}
+			if (!ret)
+				callback(std::move(ret.errors()));
+		}, ctx);
+
+	return result;
+}
+
+template <class typeT>
+rx_result runtime_model_algorithm<typeT>::helper_delete_runtime_sync (meta_data_t info)
+{
+	auto id = info.get_id();
+	if (id.is_null())
+	{// error, item does not have id
+		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
+	}
+	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(id);
+	if (ret)
+	{
+		auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
+		if (dir)
+			dir->delete_item(info.get_name());
+		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		{
+			auto storage_result = info.resolve_storage();
+			if (storage_result)
+			{
+				auto item_result = storage_result.value()->get_item_storage(info);
+				if (item_result)
+				{
+					item_result.value()->delete_item();
+					META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + info.get_name());
+				}
+			}
+		}
+	}
+	return ret;
+}
+
+template <class typeT>
+rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+{
+	auto id = info.get_id();
+	if (id.is_null())
+	{// error, item does not have id
+		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
+	}
+	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_for_delete(id);
+	if (!obj_ptr)
+	{
+		return obj_ptr.errors();
+	}
+
+	runtime::runtime_deinit_context ctx;
+	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [info, callback](rx_result&& deinit_result)
+		{
+			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(info.get_id());
+			if (ret)
+			{
+				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
+				if (dir)
 					dir->delete_item(info.get_name());
 				if (rx_gate::instance().get_platform_status() == rx_platform_running)
 				{
@@ -669,10 +737,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 			callback(std::move(ret));
 		}, ctx);
 
-	if (!init_result)
-		return init_result;
-
-	return true;
+	return result;
 }
 
 

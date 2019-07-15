@@ -51,6 +51,7 @@ class rx_platform_item;
 
 
 
+#include "system/runtime/rx_runtime_helpers.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for host library
@@ -271,13 +272,15 @@ class rx_platform_item : public rx::pointers::reference_object
 
       bool is_type () const;
 
-      virtual rx_result read_value (const string_type& path, rx_value& val) const = 0;
+      virtual rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const = 0;
 
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
       virtual rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+
+      virtual rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx) = 0;
 
 
   protected:

@@ -51,9 +51,9 @@ rx_result rx_get_directory(
 	, std::function<void(rx_result_with<rx_directory_ptr>&&)> callback
 	, rx_context ctx);
 
-rx_result rx_get_item(
-	const string_type& name // directories's path
-	, std::function<void(rx_result_with<platform_item_ptr>&&)> callback
+rx_result rx_get_items(
+	const string_array& name // directories's path
+	, std::function<void(std::vector<rx_result_with<platform_item_ptr> >)> callback
 	, rx_context ctx);
 
 struct directory_browse_result

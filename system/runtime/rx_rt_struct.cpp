@@ -1355,10 +1355,11 @@ void value_data::simple_set_value (rx_simple_value&& val)
 
 rx_value hosting_object_data::adapt_value (const rx_value& from) const
 {
+	auto ret = rx_value(from);
 	// TODO
 	// Adapt value with hosting object data
 	// currently doing nothing!!!
-	return rx_value(from);
+	return ret;
 }
 
 

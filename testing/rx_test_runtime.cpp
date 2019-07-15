@@ -39,7 +39,7 @@
 #include "lib/rx_rt_data.h"
 #include <valarray>
 #include "lib/rx_const_size_vector.h"
-#include "system/server/rx_server.h"
+#include "system/server/rx_async_functions.h"
 #define ANSI_RX_OBJECT_SIZE ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 #define ANSI_RX_OBJECT_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 
@@ -140,7 +140,6 @@ bool runtime_transaction_test::run_test (std::istream& in, std::ostream& out, st
 	out << "Starting in thread " << rx_current_thread() << "\r\n";
 
 	rx_do_transaction_with_callback<rx_result, smart_ptr, int>(
-		std::vector<rx_transaction_slot<rx_result, int> >
 		{
 			{ [ctx](int val)->rx_result {
 					auto& out = ctx->get_stdout();
@@ -206,8 +205,23 @@ runtime_connect_test::~runtime_connect_test()
 
 bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	string_type path("/_sys/bin/objects/system/SystemApp.CPU");
+	string_type path("/_sys/objects/system/SystemApp.CPU");
+	string_type expression("{rx://local#"s + path + "} + 1000");
+	out << "Connecting to expression: " + expression + "\r\n";
+	my_value_.connect(expression, 200,
+		[ctx](const rx_value& val)
+		{
+			auto& out = ctx->get_stdout();
+			out << ANSI_COLOR_CYAN "Callback: " ANSI_COLOR_RESET " ";
+			val.dump_to_stream(out);
+			out << "\r\n";
+		});
+
+	out << "Disconnecting from expression: " + expression + "\r\n";
+	my_value_.disconnect();
+	out << "Disconnected!!!\r\n";
 	auto subs = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(&callback_);
+	subs->activate();
 	std::vector < std::pair<string_type, runtime_handle_t> > paths{ {path, 1} };
 	std::vector<rx_result_with<runtime_handle_t> > results;
 	auto result = subs->connect_items(paths, results);
@@ -217,28 +231,40 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 		{
 			out << "Connected to tag " << path << ", handle value = " << results[0].value() << "\r\n";
 
-			std::vector<runtime_handle_t> items{ results[0].value() };
-			results_array disconnect_results;
-			result = subs->disconnect_items(items, disconnect_results);
-			if (result)
-			{
-				rx_post_delayed_function<test_program_context::smart_ptr>([](test_program_context::smart_ptr ctx)
+			std::function<void(string_type, runtime_handle_t)> func=[this, ctx, subs](string_type path, runtime_handle_t hndl) mutable
+				{
+					auto& out = ctx->get_stdout();
+					std::vector<runtime_handle_t> items{ hndl };
+					results_array disconnect_results;
+					auto result = subs->disconnect_items(items, disconnect_results);
+					if (result)
 					{
-					}, 1000, ctx, rx_thread_context());
-				if (disconnect_results[0])
-				{
-					out << "Disconnected from tag " << path << ", handle value = " << results[0].value() << "\r\n";
-					ctx->set_passed();
-					return true;
-				}
-				else
-				{
-					out << "Error disconnecting from tag " << path << "\r\n";
-					dump_error_result(out, results[0]);
-				}
-			}
-			else
-				rx_dump_error_result(out, result);
+						if (disconnect_results[0])
+						{
+							out << "Disconnected from tag " << path << ", handle value = " << hndl << "\r\n";
+							ctx->set_passed();
+
+						}
+						else
+						{
+							out << "Error disconnecting from tag " << path << "\r\n";
+							rx_dump_error_result(out, disconnect_results[0]);
+						}
+					}
+					else
+						rx_dump_error_result(out, result);
+					subs->deactivate();
+
+					ctx->async_test_end();
+
+				};
+
+			rx_post_delayed_function<smart_ptr, string_type, runtime_handle_t>(5000, func
+				, smart_this(), path, results[0].value());
+
+			ctx->set_current_test_case(smart_this());
+			ctx->set_waiting();
+			return true;
 		}
 		else
 		{
@@ -249,6 +275,8 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 	}
 	else
 		rx_dump_error_result(out, result);
+
+	subs->deactivate();
 	ctx->set_failed();
 	return true;
 }

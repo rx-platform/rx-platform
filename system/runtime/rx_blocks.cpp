@@ -33,6 +33,7 @@
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
 
+#include "system/server/rx_async_functions.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "lib/rx_ser_lib.h"
 #include "system/serialization/rx_ser.h"
@@ -260,7 +261,7 @@ rx_result variable_runtime::initialize_runtime (runtime::runtime_init_context& c
 
 rx_result variable_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	return "Not implemented for variable_runtime";
+	return true;
 }
 
 rx_result variable_runtime::start_runtime (runtime::runtime_start_context& ctx)
@@ -270,7 +271,7 @@ rx_result variable_runtime::start_runtime (runtime::runtime_start_context& ctx)
 
 rx_result variable_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	return "Not implemented for variable_runtime";
+	return true;
 }
 
 
@@ -314,13 +315,30 @@ rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 // Class rx_platform::runtime::blocks::runtime_holder 
 
 
-rx_result runtime_holder::read_value (const string_type& path, rx_value& val) const
+rx_result runtime_holder::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx, rx_thread_handle_t whose) const
 {
-	auto state = get_object_state();
-	return item_->get_value(state, path, val);
+	std::function<rx_value(const string_type&)> func = [this, ctx](const string_type& path)
+	{
+		rx_value val;		
+		auto state = get_object_state();
+		auto result = item_->get_value(state, path, val);
+		return val;
+	};
+	auto current_thread = rx_thread_context();
+	if (current_thread == whose)
+	{
+		auto result = func(path);
+		callback(std::move(result));
+		return true;
+	}
+	else
+	{
+		rx_do_with_callback<rx_value, decltype(ctx.object), const string_type&>(func, whose, callback, ctx.object, path);
+		return true;
+	}
 }
 
-rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, rx_thread_handle_t whose)
 {
 	if (path.empty())
 	{// our value
@@ -331,11 +349,16 @@ rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&
 		structure::write_context my_ctx = structure::write_context::create_write_context(this);
 		return item_->write_value(path, std::move(val), my_ctx);
 	};
-	if (ctx.object && ctx.object.unsafe_ptr())
-		return func(path, std::move(val));
+	auto current_thread = rx_thread_context();
+	if (current_thread == whose)
+	{
+		auto result = func(path, std::move(val));
+		callback(std::move(result));
+		return true;
+	}
 	else
 	{
-		rx_do_with_callback<rx_result, decltype(ctx.object), const string_type&, rx_simple_value>(func, 0, callback, ctx.object, path, std::move(val));
+		rx_do_with_callback<rx_result, decltype(ctx.object), const string_type&, rx_simple_value>(func, whose, callback, ctx.object, path, std::move(val));
 		return true;
 	}
 }
@@ -449,16 +472,17 @@ rx_result runtime_holder::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-rx_result runtime_holder::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
+rx_result runtime_holder::connect_items (const string_array& paths, operational::rx_tags_callback* monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
 {
 	if (paths.empty())
 		return true;
 	results.clear();// just in case
 	results.reserve(paths.size());
 	has_errors = false;
+	auto state = get_object_state();
 	for (const auto& path : paths)
 	{
-		auto one_result = connected_tags_.connect_tag(path, this);
+		auto one_result = connected_tags_.connect_tag(path, this, monitor, state);
 		if (!has_errors && !one_result)
 			has_errors = true;
 		results.emplace_back(std::move(one_result));
@@ -466,7 +490,7 @@ rx_result runtime_holder::connect_items (const string_array& paths, std::vector<
 	return true;
 }
 
-rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results, bool& has_errors)
+rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>& items, operational::rx_tags_callback* monitor, std::vector<rx_result>& results, bool& has_errors)
 {
 	if (items.empty())
 		return true;
@@ -475,7 +499,7 @@ rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>&
 	has_errors = false;
 	for (const auto& handle : items)
 	{
-		auto one_result = connected_tags_.disconnect_tag(handle);
+		auto one_result = connected_tags_.disconnect_tag(handle, monitor);
 		if (!has_errors && !one_result)
 			has_errors = true;
 		results.emplace_back(std::move(one_result));
@@ -572,8 +596,16 @@ rx_result runtime_holder::get_value_ref (const string_type& path, rt_value_ref& 
 	return item_->get_value_ref(path, ref);
 }
 
-void runtime_holder::process_runtime (jobs::job_ptr next_job)
+bool runtime_holder::process_runtime (runtime_process_context& ctx)
 {
+	bool ret = false;
+	do
+	{
+		ret = false;
+		ret |= connected_tags_.process_runtime(ctx);
+
+	} while (ctx.should_repeat());
+	return ret;
 }
 
 rx_result runtime_holder::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)

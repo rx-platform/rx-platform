@@ -36,7 +36,7 @@
 // rx_cmds
 #include "system/server/rx_cmds.h"
 
-#include "system/server/rx_server.h"
+#include "system/server/rx_async_functions.h"
 #include "terminal/rx_telnet.h"
 #include "terminal/rx_commands.h"
 #include "sys_internal/rx_internal_ns.h"

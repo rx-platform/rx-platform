@@ -45,15 +45,6 @@ namespace runtime {
 
 namespace operational {
 
-// Class rx_platform::runtime::operational::rx_write_task_callback 
-
-
-// Class rx_platform::runtime::operational::rx_execute_task 
-
-
-// Class rx_platform::runtime::operational::rx_read_task 
-
-
 // Class rx_platform::runtime::operational::connected_tags 
 
 connected_tags::connected_tags()
@@ -67,7 +58,7 @@ connected_tags::~connected_tags()
 
 
 
-rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item)
+rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item, rx_tags_callback* monitor, const structure::hosting_object_data& state)
 {
 	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_tags = referenced_tags_.find(path);
@@ -77,6 +68,22 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 		if (it_handles != handles_map_.end())
 		{
 			it_handles->second.reference_count++;
+			it_handles->second.monitors.emplace(monitor);
+			switch (it_handles->second.reference.ref_type)
+			{
+			case rt_value_ref_type::rt_const_value:
+				next_send_[monitor].emplace(it_tags->second, it_handles->second.reference.ref_value_ptr.const_value->get_value(state));
+				break;
+			case rt_value_ref_type::rt_value:
+				next_send_[monitor].emplace(it_tags->second, it_handles->second.reference.ref_value_ptr.value->get_value(state));
+				break;
+			case rt_value_ref_type::rt_variable:
+				next_send_[monitor].emplace(it_tags->second, it_handles->second.reference.ref_value_ptr.variable->get_value(state));
+				break;
+			default:
+				RX_ASSERT(false);
+				return "Internal error";
+			}
 			return it_tags->second;
 		}
 		else
@@ -97,24 +104,27 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 		{
 		case rt_value_ref_type::rt_const_value:
 			const_values_.emplace(ref.ref_value_ptr.const_value, handle);
+			next_send_[monitor].emplace(handle, ref.ref_value_ptr.const_value->get_value(state));
 			break;
 		case rt_value_ref_type::rt_value:
 			values_.emplace(ref.ref_value_ptr.value, handle);
+			next_send_[monitor].emplace(handle, ref.ref_value_ptr.value->get_value(state));
 			break;
 		case rt_value_ref_type::rt_variable:
 			variables_.emplace(ref.ref_value_ptr.variable, handle);
+			next_send_[monitor].emplace(handle, ref.ref_value_ptr.variable->get_value(state));
 			break;
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
 		}
-		handles_map_.emplace(handle, one_tag_data{ ref, 1 });
+		handles_map_.emplace(handle, one_tag_data{ ref, 1,  {monitor} });
 		referenced_tags_.emplace(path, handle);
 		return handle;
 	}
 }
 
-rx_result connected_tags::disconnect_tag (runtime_handle_t handle)
+rx_result connected_tags::disconnect_tag (runtime_handle_t handle, rx_tags_callback* monitor)
 {
 	if (!handle)
 		return true;
@@ -123,7 +133,24 @@ rx_result connected_tags::disconnect_tag (runtime_handle_t handle)
 	if (it_handles == handles_map_.end() || it_handles->second.reference_count == 0)
 		return "Invalid item handle";
 	it_handles->second.reference_count--;
+	it_handles->second.monitors.erase(monitor);
 	return true;
+}
+
+bool connected_tags::process_runtime (runtime_process_context& ctx)
+{
+	if (!next_send_.empty())
+	{
+		std::vector<update_item> update_data;
+		for (const auto& one : next_send_)
+		{
+			update_data.clear();
+			for(const auto& item : one.second)
+				update_data.emplace_back(update_item{ item.first, item.second });
+			one.first->items_changed(update_data);
+		}
+	}
+	return false;
 }
 
 
@@ -270,6 +297,9 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	}
 	return bind_result;
 }
+
+
+// Class rx_platform::runtime::operational::rx_tags_callback 
 
 
 } // namespace operational

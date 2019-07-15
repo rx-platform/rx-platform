@@ -39,6 +39,7 @@
 #include "system/serialization/rx_ser.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/server/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -94,14 +95,18 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
 object_runtime::object_runtime()
-	: meta_info_(namespace_item_pull_access)
+      : job_pending_(false)
+	, meta_info_(namespace_item_pull_access)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_object_ptr> >(smart_this());
 }
 
 object_runtime::object_runtime (const meta::meta_data& meta, const object_instance_data& instance)
-	: meta_info_(meta)
+      : job_pending_(false)
+	, meta_info_(meta)
 	, instance_data_(instance)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_object_ptr> >(smart_this());
 }
 
 
@@ -218,22 +223,23 @@ rx_item_type object_runtime::get_type () const
 
 }
 
-rx_result object_runtime::read_value (const string_type& path, rx_value& val) const
+rx_result object_runtime::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	if (path.empty())
 	{// our value
-		val = get_value();
+		auto val = get_value();
+		callback(val);
 		return true;
 	}
 	else
 	{
-		return runtime_.read_value(path, val);
+		return runtime_.read_value(path, callback, ctx, get_executer());
 	}
 }
 
 rx_result object_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx);
+	return runtime_.write_value(path, std::move(val), callback, ctx, get_executer());
 }
 
 rx_result object_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -267,11 +273,22 @@ rx_result object_runtime::do_command (rx_object_command_t command_type)
 
 void object_runtime::process_runtime ()
 {
+	object_runtime_algorithms<meta::object_types::object_type>::process_runtime(this);
 }
 
 rx_result object_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return runtime_.browse(path, filter, items);
+}
+
+rx_result object_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::object_type>::connect_items(paths, callback, monitor, ctx, this);
+}
+
+void object_runtime::fire_job ()
+{
+	object_runtime_algorithms<meta::object_types::object_type>::fire_job(this);
 }
 
 
@@ -280,13 +297,17 @@ rx_result object_runtime::browse (const string_type& path, const string_type& fi
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
 application_runtime::application_runtime()
+      : job_pending_(false)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_application_ptr> >(smart_this());
 }
 
 application_runtime::application_runtime (const meta::meta_data& meta, const application_instance_data& instance)
-	: meta_info_(meta)
+      : job_pending_(false)
+	, meta_info_(meta)
 	, instance_data_(instance)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_application_ptr> >(smart_this());
 }
 
 
@@ -370,22 +391,23 @@ rx_result application_runtime::check_validity ()
 	return true;
 }
 
-rx_result application_runtime::read_value (const string_type& path, rx_value& val) const
+rx_result application_runtime::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	if (path.empty())
 	{// our value
-		val = get_value();
+		auto val = get_value();
+		callback(val);
 		return true;
 	}
 	else
 	{
-		return runtime_.read_value(path, val);
+		return runtime_.read_value(path, callback, ctx, get_executer());
 	}
 }
 
 rx_result application_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx);
+	return runtime_.write_value(path, std::move(val), callback, ctx, get_executer());
 }
 
 values::rx_value application_runtime::get_value () const
@@ -446,7 +468,7 @@ rx_result application_runtime::do_command (rx_object_command_t command_type)
 
 void application_runtime::process_runtime ()
 {
-	runtime_.process_runtime(job_ptr::null_ptr);
+	object_runtime_algorithms<meta::object_types::application_type>::process_runtime(this);
 }
 
 void application_runtime::get_ports (api::query_result& result)
@@ -524,19 +546,33 @@ rx_result application_runtime::browse (const string_type& path, const string_typ
 	return runtime_.browse(path, filter, items);
 }
 
+rx_result application_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::application_type>::connect_items(paths, callback, monitor, ctx, this);
+}
+
+void application_runtime::fire_job ()
+{
+	object_runtime_algorithms<meta::object_types::application_type>::fire_job(this);
+}
+
 
 // Class rx_platform::runtime::objects::domain_runtime 
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
 domain_runtime::domain_runtime()
+      : job_pending_(false)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_domain_ptr> >(smart_this());
 }
 
 domain_runtime::domain_runtime (const meta::meta_data& meta, const domain_instance_data& instance)
-	: meta_info_(meta)
+      : job_pending_(false)
+	, meta_info_(meta)
 	, instance_data_(instance)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_domain_ptr> >(smart_this());
 }
 
 
@@ -636,22 +672,23 @@ rx_result domain_runtime::check_validity ()
 	return true;
 }
 
-rx_result domain_runtime::read_value (const string_type& path, rx_value& val) const
+rx_result domain_runtime::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	if (path.empty())
 	{// our value
-		val = get_value();
+		auto val = get_value();
+		callback(val);
 		return true;
 	}
 	else
 	{
-		return runtime_.read_value(path, val);
+		return runtime_.read_value(path, callback, ctx, get_executer());
 	}
 }
 
 rx_result domain_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx);
+	return runtime_.write_value(path, std::move(val), callback, ctx, get_executer());
 }
 
 rx_result domain_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -696,7 +733,7 @@ rx_result domain_runtime::do_command (rx_object_command_t command_type)
 
 void domain_runtime::process_runtime ()
 {
-	runtime_.process_runtime(job_ptr::null_ptr);
+	object_runtime_algorithms<meta::object_types::domain_type>::process_runtime(this);
 }
 
 void domain_runtime::get_objects (api::query_result& result)
@@ -726,6 +763,16 @@ rx_result domain_runtime::browse (const string_type& path, const string_type& fi
 	return runtime_.browse(path, filter, items);
 }
 
+rx_result domain_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::domain_type>::connect_items(paths, callback, monitor, ctx, this);
+}
+
+void domain_runtime::fire_job ()
+{
+	object_runtime_algorithms<meta::object_types::domain_type>::fire_job(this);
+}
+
 
 // Class rx_platform::runtime::objects::port_runtime 
 
@@ -733,16 +780,20 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
       : rx_packets_item_(0),
-        tx_packets_item_(0)
+        tx_packets_item_(0),
+        job_pending_(false)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_port_ptr> >(smart_this());
 }
 
 port_runtime::port_runtime (const meta::meta_data& meta, const port_instance_data& instance)
       : rx_packets_item_(0),
-        tx_packets_item_(0)
+        tx_packets_item_(0),
+        job_pending_(false)
 	, meta_info_(meta)
 	, instance_data_(instance)
 {
+	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_port_ptr> >(smart_this());
 }
 
 
@@ -862,22 +913,23 @@ rx_result port_runtime::check_validity ()
 	return true;
 }
 
-rx_result port_runtime::read_value (const string_type& path, rx_value& val) const
+rx_result port_runtime::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	if (path.empty())
 	{// our value
-		val = get_value();
+		auto val = get_value();
+		callback(val);
 		return true;
 	}
 	else
 	{
-		return runtime_.read_value(path, val);
+		return runtime_.read_value(path, callback, ctx, get_executer());
 	}
 }
 
 rx_result port_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return runtime_.write_value(path, std::move(val), callback, ctx);
+	return runtime_.write_value(path, std::move(val), callback, ctx, get_executer());
 }
 
 bool port_runtime::connect_application (rx_application_ptr&& app)
@@ -944,11 +996,22 @@ void port_runtime::update_received_packets (size_t count)
 
 void port_runtime::process_runtime ()
 {
+	object_runtime_algorithms<meta::object_types::port_type>::process_runtime(this);
 }
 
 rx_result port_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return runtime_.browse(path, filter, items);
+}
+
+rx_result port_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::port_type>::connect_items(paths, callback, monitor, ctx, this);
+}
+
+void port_runtime::fire_job ()
+{
+	object_runtime_algorithms<meta::object_types::port_type>::fire_job(this);
 }
 
 
@@ -1077,6 +1140,76 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 	if (!stream.end_object())
 		return false;
 	return true;
+}
+
+
+// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms 
+
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx, typename typeT::RType* whose)
+{
+	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+	using smart_ptr = typename typeT::RTypePtr;
+	std::function<connect_result_t(string_array, operational::rx_tags_callback*, smart_ptr)> func = [](string_array paths, operational::rx_tags_callback* monitor, smart_ptr whose)
+	{
+		connect_result_t results;
+		bool has_errors = false;
+		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
+		if (ret)
+		{
+			whose->runtime_context_.process_tag_connections = true;
+		}
+		else
+		{
+			auto size = paths.size();
+			results.reserve(size);
+			for (size_t i = 0; i < size; i++)
+				results.emplace_back(ret.errors());
+		}
+		return results;
+	};
+	auto ret_thread = whose->get_executer();
+	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::rx_tags_callback*, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
+	return true;
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::fire_job (typename typeT::RType* whose)
+{
+	locks::auto_lock_t<decltype(whose->job_lock_)> _(&whose->job_lock_);
+	if (!whose->job_pending_)
+	{
+		whose->job_pending_ = true;
+		RX_ASSERT(whose->my_job_ptr_);
+		auto executer = rx_gate::instance().get_infrastructure().get_executer(whose->get_executer());
+		executer->append(whose->my_job_ptr_);
+	}
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType* whose)
+{
+	whose->job_lock_.lock();
+	whose->job_pending_ = false;
+	whose->job_lock_.unlock();
+	whose->runtime_.process_runtime(whose->runtime_context_);
+}
+
+
+// Parameterized Class rx_platform::runtime::objects::process_runtime_job 
+
+template <class typePtr>
+process_runtime_job<typePtr>::process_runtime_job (typePtr whose)
+{
+}
+
+
+
+template <class typePtr>
+void process_runtime_job<typePtr>::process ()
+{
+	whose_->process_runtime();
 }
 
 

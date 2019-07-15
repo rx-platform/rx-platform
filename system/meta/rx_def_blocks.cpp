@@ -260,6 +260,8 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 				{
 					const_values_.emplace_back(std::move(temp));
 				}
+				else
+					return ret;
 			}
 			break;
 		case rx_subitem_type::rx_value_subitem:
@@ -272,6 +274,8 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 				{
 					simple_values_.emplace_back(std::move(temp));
 				}
+				else
+					return ret;
 			}
 			break;
 		case rx_subitem_type::rx_struct_subitem:
@@ -284,6 +288,8 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 				{
 					structs_.emplace_back(std::move(temp));
 				}
+				else
+					return ret;
 			}
 			break;
 		case rx_subitem_type::rx_variable_subitem:
@@ -296,6 +302,8 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 				{
 					variables_.emplace_back(std::move(temp));
 				}
+				else
+					return ret;
 
 			}
 			break;

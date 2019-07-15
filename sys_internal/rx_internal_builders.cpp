@@ -323,42 +323,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 	string_type full_path = RX_DIR_DELIMETER + path;
 	auto dir = root->get_sub_directory(path);
 	if (dir)
-	{
-		//build base object type
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{
-			RX_CLASS_OBJECT_BASE_NAME
-			, RX_CLASS_OBJECT_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_object_type<object_type>(dir, obj);
-
-		//build derived object types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
-			RX_CLASS_APPLICATION_BASE_NAME
-			, RX_CLASS_APPLICATION_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_application_type<application_type>(dir, app);
-		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{
-			RX_CLASS_DOMAIN_BASE_NAME
-			, RX_CLASS_DOMAIN_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_domain_type<domain_type>(dir, domain);
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_CLASS_PORT_BASE_NAME
-			, RX_CLASS_PORT_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_port_type<port_type>(dir, port);
+	{		
 
 		//build base types, user extensible
 		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
@@ -411,16 +376,69 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_type<basic_types::source_type>(dir, src);
+
+		//build general data for runtime objects
+		str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
+			RX_NS_OBJECT_DATA_NAME
+			, RX_NS_OBJECT_DATA_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_object_data_struct_type(dir, str);
+
+		//build base object type
+		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+			RX_CLASS_OBJECT_BASE_NAME
+			, RX_CLASS_OBJECT_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_object_type<object_type>(dir, obj);
+
+		//build derived object types
+		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
+			RX_CLASS_APPLICATION_BASE_NAME
+			, RX_CLASS_APPLICATION_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_application_type<application_type>(dir, app);
+		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{
+			RX_CLASS_DOMAIN_BASE_NAME
+			, RX_CLASS_DOMAIN_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_domain_type<domain_type>(dir, domain);
+		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
+			RX_CLASS_PORT_BASE_NAME
+			, RX_CLASS_PORT_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_port_type<port_type>(dir, port);
+
 	}
 	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
 	return true;
 }
 
-template<class T>
-void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
+void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what)
 {
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
+	what->complex_data().register_simple_value_static("LastScanTime", true, 0.0);
+	add_simple_type_to_configuration<struct_type>(dir, what, false);
+}
+template<class T>
+void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
+{
+	what->complex_data().register_struct("Object", RX_NS_OBJECT_DATA_ID);
 	add_type_to_configuration(dir, what, true);
 }
 template<class T>

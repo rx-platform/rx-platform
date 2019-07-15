@@ -37,6 +37,7 @@
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
+#include "system/server/rx_async_functions.h"
 
 namespace rx_platform
 {

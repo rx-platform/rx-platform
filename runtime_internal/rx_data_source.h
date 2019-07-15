@@ -32,10 +32,10 @@
 
 
 
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 
 
 
@@ -181,32 +181,6 @@ class data_controler
       named_sources_type named_sources_;
 
       uint16_t next_source_id_;
-
-
-};
-
-
-
-
-
-
-class internal_data_source : public data_source  
-{
-
-  public:
-      internal_data_source (const string_type& path);
-
-
-      void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle);
-
-      void remove_item (const value_handle_extended& handle);
-
-      bool is_empty () const;
-
-
-  protected:
-
-  private:
 
 
 };

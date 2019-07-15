@@ -35,7 +35,7 @@
 
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
-#include "system/server/rx_server.h"
+#include "system/server/rx_async_functions.h"
 
 namespace rx_platform
 {
@@ -53,10 +53,28 @@ rx_result rx_get_directory(const string_type& name // directory's path
 }
 
 
-rx_result rx_get_item(const string_type& name // item's path
-	, std::function<void(rx_result_with<platform_item_ptr>&&)> callback
+rx_result rx_get_items(const string_array& names // item's path
+	, std::function<void(std::vector<rx_result_with<platform_item_ptr> >)> callback
 	, rx_context ctx)
 {
+	std::function<std::vector<rx_result_with<platform_item_ptr> >(const string_array, rx_directory_ptr)> func = [=](const string_array names, rx_directory_ptr dir) mutable -> std::vector<rx_result_with<platform_item_ptr> > {
+		std::vector<rx_result_with<platform_item_ptr> > ret;
+		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
+		for (const auto& path : names)
+		{
+			platform_item_ptr who = from->get_sub_item(path);
+			if (who)
+			{
+				ret.emplace_back(who);
+			}
+			else
+			{
+				ret.emplace_back(path + " not found!");
+			}
+		}
+		return ret;
+	};
+	rx_do_with_callback<std::vector<rx_result_with<platform_item_ptr> >, rx_reference_ptr, string_array, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, names, ctx.directory);
 	return true;
 }
 

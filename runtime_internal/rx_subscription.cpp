@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,22 +34,29 @@
 #include "runtime_internal/rx_subscription.h"
 
 #include "rx_runtime_internal.h"
+#include "system/server/rx_async_functions.h"
+#include "api/rx_namespace_api.h"
 
 
 namespace sys_runtime {
 
 namespace subscriptions {
 
-// Class sys_runtime::subscriptions::rx_subscription 
+// Class sys_runtime::subscriptions::rx_subscription_tag
+
+
+// Class sys_runtime::subscriptions::rx_subscription
 
 rx_subscription::rx_subscription (rx_subscription_callback* callback)
-      : callback_(callback)
+      : callback_(callback),
+        active_(false)
 {
+	tags_callback_.whose = this;
 }
 
 
 
-rx_result rx_subscription::connect_items (const std::vector<std::pair<string_type, runtime_handle_t> >& paths, std::vector<rx_result_with<runtime_handle_t> >& results)
+rx_result rx_subscription::connect_items (const std::vector<std::pair<string_type, runtime_handle_t> >& paths, std::vector<rx_result_with<runtime_handle_t> >& result)
 {
 	for (const auto& one : paths)
 	{
@@ -65,7 +72,22 @@ rx_result rx_subscription::connect_items (const std::vector<std::pair<string_typ
 			tags_.emplace(new_id, std::move(tag));
 			inverse_tags_.emplace(one.first, new_id);
 
-			results.emplace_back(new_id);
+			string_type object_path;
+			string_type item_path;
+			split_item_path(one.first, object_path, item_path);
+			auto it = to_connect_.find(object_path);
+			if (it != to_connect_.end())
+			{
+				it->second.items.emplace(new_id, item_path);
+			}
+			else
+			{
+				to_connect_type::mapped_type temp{ platform_item_ptr::null_ptr, false };
+				temp.items.emplace(new_id, connect_data(item_path));
+				to_connect_.emplace(object_path, std::move(temp));
+			}
+
+			result.emplace_back(new_id);
 		}
 		else
 		{
@@ -73,6 +95,12 @@ rx_result rx_subscription::connect_items (const std::vector<std::pair<string_typ
 			if (it_tags != tags_.end())
 			{
 				it_tags->second.ref_count++;
+				result.emplace_back(it_tags->first);
+			}
+			else
+			{
+				RX_ASSERT(false);
+				result.emplace_back("Internal error!!!");
 			}
 		}
 	}
@@ -101,11 +129,147 @@ rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>
 	return true;
 }
 
+rx_result rx_subscription::process_connections ()
+{
+	if (!active_)
+		return false;
+	rx_time now = rx_time::now();
+	if (!to_connect_.empty())
+	{
+		// query for object items from paths
+		if (query_names_.empty())
+		{
+			for (auto& one : to_connect_)
+			{
+				if (!one.second.item && !one.second.querying && !one.second.items.empty())
+				{
+					query_names_.emplace_back(one.first);
+					one.second.querying = true;
+				}
+			}
+			if (!query_names_.empty())
+			{
+				api::rx_context ctx;
+				ctx.object = smart_this();
+				api::ns::rx_get_items(query_names_
+					, [this](std::vector<rx_result_with<platform_item_ptr> > result)
+					{
+						size_t idx = 0;
+						RX_ASSERT(result.size() == query_names_.size());
+						for (const auto& one : result)
+						{
+							auto it = to_connect_.find(query_names_[idx]);
+							if (it != to_connect_.end())
+							{
+								it->second.querying = false;
+								if (one)
+								{
+									it->second.item = one.value();
+								}
+							}
+							idx++;
+						}
+						query_names_.clear();
+					}
+					, ctx);
+			}
+			if (attempts_.empty())
+			{
+				for (auto& one : to_connect_)
+				{
+					if (one.second.item && !one.second.querying && !one.second.items.empty())
+					{
+						one.second.querying = true;
+						std::vector<runtime_handle_t> items;
+						string_array paths;
 
-// Class sys_runtime::subscriptions::rx_subscription_tag 
+						for (auto& item : one.second.items)
+						{
+							items.emplace_back(item.first);
+							paths.emplace_back(item.second.local_path);
+						}
+						if (!items.empty())
+						{
+							one.second.querying = true;
+							attempts_.emplace(one.first, std::move(items));
+
+							string_type object_path(one.first);
+							api::rx_context ctx;
+							ctx.object = smart_this();
+							one.second.item->connect_items(paths, [this, object_path] (std::vector<rx_result_with<runtime_handle_t> > result)
+								{
+									auto attempts_it = attempts_.find(object_path);
+									if (attempts_it != attempts_.end())
+									{
+										auto to_connect_it = to_connect_.find(object_path);
+										if (to_connect_it != to_connect_.end())
+										{
+											size_t result_size = result.size();
+											if (attempts_it->second.size() == result_size)
+											{
+												for (size_t idx = 0; idx < result_size; idx++)
+												{
+													auto& one_result = result[idx];
+													if (one_result)
+													{
+														runtime_handle_t local_handle = attempts_it->second[idx];
+														auto temp_it = to_connect_it->second.items.find(local_handle);
+														if (temp_it != to_connect_it->second.items.end())
+														{
+															runtime_handle_t remote_handle = one_result.value();
+															to_connect_it->second.items.erase(temp_it);
+															auto tags_it = tags_.find(local_handle);
+															if (tags_it != tags_.end())
+															{
+																tags_it->second.target_handle = remote_handle;
+																handles_[remote_handle] = local_handle;
+															}
+														}
+														else
+															RX_ASSERT(false);
+													}
+												}
+											}
+											else
+												RX_ASSERT(false);
+											if (to_connect_it->second.items.empty())
+											{
+												to_connect_.erase(to_connect_it);
+											}
+										}
+										attempts_.erase(attempts_it);
+									}
+								}
+								, &tags_callback_, ctx);
+						}
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
+void rx_subscription::activate ()
+{
+	if (!active_)
+	{
+		active_ = true;
+		std::function<bool(int)> func = [this] (int) -> bool { return process_connections();  };
+		rx_create_periodic_function<smart_ptr, int>(100u, func, smart_this(), 5);
+	}
+}
+
+void rx_subscription::deactivate ()
+{
+	if (active_)
+	{
+		active_ = false;
+	}
+}
 
 
-// Class sys_runtime::subscriptions::rx_subscription_callback 
+// Class sys_runtime::subscriptions::rx_subscription_callback
 
 
 } // namespace subscriptions

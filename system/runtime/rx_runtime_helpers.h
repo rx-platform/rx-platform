@@ -68,6 +68,11 @@ typedef uint32_t runtime_handle_t;
 typedef uint32_t runtime_transaction_id_t;
 
 namespace runtime {
+
+namespace operational
+{
+class rx_tags_callback;
+}
 namespace structure {
 class const_value_data;
 class value_data;
@@ -260,9 +265,6 @@ struct runtime_init_context
 
   private:
 
-      jobs::job_ptr next_job;
-
-
 
       runtime_handle_t next_handle_;
 
@@ -283,6 +285,39 @@ struct runtime_start_context
       variables_stack variables;
 
       runtime_structure_resolver structure;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+enum runtime_process_step
+{
+	runtime_process_idle = 0,
+	runtime_process_scheduled = 1,
+	runtime_process_tag_connections = 2
+};
+
+
+
+
+struct runtime_process_context 
+{
+
+
+      bool should_repeat () const;
+
+
+      runtime_process_step current_step;
+
+      bool process_all;
+
+      bool process_tag_connections;
 
   public:
 

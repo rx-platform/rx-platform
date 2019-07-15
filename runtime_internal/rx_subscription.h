@@ -36,10 +36,13 @@
 #include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
+#include "system/runtime/rx_operational.h"
 #include "lib/rx_values.h"
+#include "system/storage_base/rx_storage.h"
 
 using namespace rx_platform;
 using namespace rx::values;
+using namespace rx_platform::runtime::operational;
 
 
 namespace sys_runtime {
@@ -72,17 +75,6 @@ class rx_subscription_tag
 };
 
 
-struct update_item
-{
-	runtime_handle_t handle;
-	rx_value value;
-};
-
-struct write_result_item
-{
-	runtime_handle_t handle;
-	rx_result result;
-};
 
 
 
@@ -116,20 +108,64 @@ class rx_subscription : public rx::pointers::reference_object
 	typedef std::map<runtime_handle_t, rx_subscription_tag> tags_type; // mine handle -> item
 	typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;// target_handle -> mine handle
 	typedef std::map<string_type, runtime_handle_t> inverse_tags_type;// path -> mine handle
-  public:
+	struct connect_data
+	{
+		connect_data(string_type local)
+			: connecting(false), local_path(local)
+		{
+		}
+		bool connecting;
+		string_type local_path;
+		rx_time last_checked;
+	};
+	struct runtime_data
+	{
+		platform_item_ptr item = platform_item_ptr::null_ptr;
+		bool querying = false;
+		std::map<runtime_handle_t, connect_data> items;
+	};
+	typedef std::map<string_type, runtime_data> to_connect_type;
+	typedef std::map<string_type, std::vector<runtime_handle_t> > attempts_type;
+	static constexpr uint32_t timer_period_ = 1000;
+
+	string_array query_names_;
+	std::vector<runtime_handle_t> item_handles_;
+
+
+	class tags_callabck : public runtime::operational::rx_tags_callback
+	{
+	public:
+		rx_subscription* whose;
+		void items_changed(const std::vector<update_item>& items)
+		{
+
+		}
+		virtual void write_complete(runtime_transaction_id_t transaction_id, rx_result result)
+		{
+
+		}
+	};
+	tags_callabck tags_callback_;
 
   public:
       rx_subscription (rx_subscription_callback* callback);
 
 
-      rx_result connect_items (const std::vector<std::pair<string_type, runtime_handle_t> >& paths, std::vector<rx_result_with<runtime_handle_t> >& results);
+      rx_result connect_items (const std::vector<std::pair<string_type, runtime_handle_t> >& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
 
       rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results);
+
+      void activate ();
+
+      void deactivate ();
 
 
   protected:
 
   private:
+
+      rx_result process_connections ();
+
 
 
       tags_type tags_;
@@ -142,6 +178,12 @@ class rx_subscription : public rx::pointers::reference_object
       inverse_tags_type inverse_tags_;
 
       locks::slim_lock items_lock_;
+
+      to_connect_type to_connect_;
+
+      attempts_type attempts_;
+
+      bool active_;
 
 
 };
