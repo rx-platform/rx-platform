@@ -122,6 +122,7 @@ void application_type::set_runtime_data (runtime_data_prototype& prototype, RTyp
 
 void application_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
+	where->instance_data_ = std::move(data);
 }
 
 
@@ -334,6 +335,7 @@ rx_result object_type::resolve (rx_directory_ptr dir)
 
 void object_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
+	where->instance_data_ = std::move(data);
 }
 
 
@@ -477,6 +479,7 @@ void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr wh
 
 void port_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
+	where->instance_data_ = std::move(data);
 }
 
 
