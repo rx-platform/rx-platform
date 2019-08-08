@@ -139,9 +139,13 @@ basic testing subscription connect/disconnect.");
 		runtime_connect_test* parent;
 		void items_changed(const std::vector<runtime::operational::update_item>& items)
 		{
-			printf("\r\n**********Items changed fired!!!\r\n");
+			printf("\r\n**********Items changed fired!!!");
+			for (const auto& one : items)
+			{
+				printf("Handle = %d  Value = %s\r\n", (int)one.handle, one.value.get_storage().to_string().c_str());
+			}
 		}
-		void write_complete(runtime_transaction_id_t transaction_id, rx_result result, const std::vector<runtime::operational::update_item>& items)
+		void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<runtime::operational::update_item>&& items)
 		{
 			printf("\r\n**********Write complete fired!!!\r\n");
 		}

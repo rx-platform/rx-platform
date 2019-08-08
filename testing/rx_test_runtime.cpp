@@ -205,6 +205,7 @@ runtime_connect_test::~runtime_connect_test()
 
 bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
+	bool no_subscription = true;
 	string_type path("/_sys/objects/system/SystemApp.CPU");
 	string_type expression("{rx://local#"s + path + "} + 1000");
 	out << "Connecting to expression: " + expression + "\r\n";
@@ -217,50 +218,61 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 			out << "\r\n";
 		});
 
-	out << "Disconnecting from expression: " + expression + "\r\n";
-	my_value_.disconnect();
-	out << "Disconnected!!!\r\n";
 	auto subs = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(&callback_);
 	subs->activate();
-	std::vector < std::pair<string_type, runtime_handle_t> > paths{ {path, 1} };
+	string_array paths{ path };
 	std::vector<rx_result_with<runtime_handle_t> > results;
-	auto result = subs->connect_items(paths, results);
+	auto result = no_subscription ? rx_result(true) : subs->connect_items(paths, results);
 	if (result)
 	{
-		if (results[0])
+		if (no_subscription || results[0])
 		{
-			out << "Connected to tag " << path << ", handle value = " << results[0].value() << "\r\n";
+			if(!no_subscription)
+				out << "Connected to tag " << path << ", handle value = " << results[0].value() << "\r\n";
 
-			std::function<void(string_type, runtime_handle_t)> func=[this, ctx, subs](string_type path, runtime_handle_t hndl) mutable
+			std::function<void(string_type, runtime_handle_t)> func=[this, ctx, subs, expression, no_subscription](string_type path, runtime_handle_t hndl) mutable
 				{
 					auto& out = ctx->get_stdout();
-					std::vector<runtime_handle_t> items{ hndl };
-					results_array disconnect_results;
-					auto result = subs->disconnect_items(items, disconnect_results);
-					if (result)
-					{
-						if (disconnect_results[0])
-						{
-							out << "Disconnected from tag " << path << ", handle value = " << hndl << "\r\n";
-							ctx->set_passed();
 
+					out << "Disconnecting from expression: " + expression + "\r\n";
+					my_value_.disconnect();
+					out << "Disconnected!!!\r\n";
+
+					if (!no_subscription)
+					{
+						std::vector<runtime_handle_t> items{ hndl };
+						results_array disconnect_results;
+						auto result = no_subscription ? rx_result(true) : subs->disconnect_items(items, disconnect_results);
+						if (result)
+						{
+							if (no_subscription || disconnect_results[0])
+							{
+								out << "Disconnected from tag " << path << ", handle value = " << hndl << "\r\n";
+								ctx->set_passed();
+
+							}
+							else
+							{
+								out << "Error disconnecting from tag " << path << "\r\n";
+								rx_dump_error_result(out, disconnect_results[0]);
+							}
 						}
 						else
-						{
-							out << "Error disconnecting from tag " << path << "\r\n";
-							rx_dump_error_result(out, disconnect_results[0]);
-						}
+							rx_dump_error_result(out, result);
+						subs->deactivate();
 					}
 					else
-						rx_dump_error_result(out, result);
-					subs->deactivate();
+					{
+						ctx->set_passed();
+					}
+
 
 					ctx->async_test_end();
 
 				};
 
 			rx_post_delayed_function<smart_ptr, string_type, runtime_handle_t>(5000, func
-				, smart_this(), path, results[0].value());
+				, smart_this(), path, no_subscription ? 0 : results[0].value());
 
 			ctx->set_current_test_case(smart_this());
 			ctx->set_waiting();

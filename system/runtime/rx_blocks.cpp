@@ -472,25 +472,28 @@ rx_result runtime_holder::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-rx_result runtime_holder::connect_items (const string_array& paths, operational::rx_tags_callback* monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
+rx_result runtime_holder::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors)
 {
 	if (paths.empty())
 		return true;
 	results.clear();// just in case
 	results.reserve(paths.size());
 	has_errors = false;
+	bool has_one = false;
 	auto state = get_object_state();
 	for (const auto& path : paths)
 	{
 		auto one_result = connected_tags_.connect_tag(path, this, monitor, state);
 		if (!has_errors && !one_result)
 			has_errors = true;
+		else if(one_result)
+
 		results.emplace_back(std::move(one_result));
 	}
 	return true;
 }
 
-rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>& items, operational::rx_tags_callback* monitor, std::vector<rx_result>& results, bool& has_errors)
+rx_result runtime_holder::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors)
 {
 	if (items.empty())
 		return true;

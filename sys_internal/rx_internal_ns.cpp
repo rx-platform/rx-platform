@@ -249,7 +249,7 @@ rx_result rx_item_implementation<TImpl>::browse (const string_type& path, const 
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result rx_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return impl_->connect_items(paths, callback, monitor, ctx);
 }
@@ -379,7 +379,7 @@ rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& path, c
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
 }
@@ -499,7 +499,7 @@ rx_result rx_other_implementation<TImpl>::browse (const string_type& path, const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result rx_other_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
 }

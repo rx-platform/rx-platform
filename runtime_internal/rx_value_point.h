@@ -83,12 +83,15 @@ class value_point
 
       void calculate (char* token_buff);
 
-      void value_changed (const rx_value& val);
+      void value_changed (value_handle_type handle, const rx_value& val);
 
 
   protected:
 
   private:
+
+      void value_changed (const rx_value& val);
+
 
 
       void level0 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres);

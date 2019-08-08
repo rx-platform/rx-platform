@@ -274,11 +274,9 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 				write(buff);
 			}
-
 		}
 		else
 		{
-
 			security::security_auto_context dummy(security_context_);
 
 			buffer_ptr out_buffer = get_free_buffer();
@@ -308,14 +306,7 @@ bool telnet_client::new_recive (const char* buff, size_t& idx)
 
 				return true;
 			}
-
-
-
-			//		do_command(temp, out_buffer, err_buffer,security_context_);
-
-
 		}
-
 		return true;
 	}
 

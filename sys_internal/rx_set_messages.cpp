@@ -54,10 +54,7 @@ namespace set_messages {
 template <class itemT>
 message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
 {
-	auto ret_value = std::make_unique<error_message>();
-	ret_value->errorMessage = "Not implemented";
-	ret_value->errorCode = 21;
-	ret_value->request_id = request;
+	auto ret_value = std::make_unique<error_message>("Not implemented"s, 21, request);
 	return ret_value;
 }
 
@@ -110,11 +107,7 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request;
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -127,11 +120,7 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request;
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
 		return ret_value;
 	}
 	else
@@ -262,10 +251,7 @@ message_ptr set_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr 
 	}
 	else
 	{
-		auto ret_value = std::make_unique<error_message>();
-		ret_value->errorMessage = "Message not defined!";
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>("Message not defined!"s, 13, request_id);
 		return ret_value;
 	}
 }
@@ -423,10 +409,7 @@ message_ptr update_type_request::do_job (api::rx_context ctx, rx_protocol_port_p
 	}
 	else
 	{
-		auto ret_value = std::make_unique<error_message>();
-		ret_value->errorMessage = "Message not defined!";
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>("Message not defined!"s, 13, request_id);
 		return ret_value;
 	}
 }
@@ -563,10 +546,7 @@ message_ptr set_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_p
 	}
 	else
 	{
-		auto ret_value = std::make_unique<error_message>();
-		ret_value->errorMessage = "Message not defined!";
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>("Message not defined!"s, 13, request_id);
 		return ret_value;
 	}
 }
@@ -655,10 +635,7 @@ message_ptr update_runtime_request::do_job (api::rx_context ctx, rx_protocol_por
 	}
 	else
 	{
-		auto ret_value = std::make_unique<error_message>();
-		ret_value->errorMessage = "Message not defined!";
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>("Message not defined!"s, 13, request_id);
 		return ret_value;
 	}
 }
@@ -708,11 +685,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request;
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -727,11 +700,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request;
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
 		return ret_value;
 	}
 	else

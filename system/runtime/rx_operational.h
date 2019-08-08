@@ -34,6 +34,8 @@
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -44,6 +46,104 @@ namespace rx_platform {
 namespace runtime {
 
 namespace operational {
+
+
+struct update_item
+{
+	runtime_handle_t handle;
+	rx_value value;
+};
+
+struct write_result_item
+{
+	runtime_handle_t handle;
+	rx_result result;
+};
+
+
+
+
+class rx_tags_callback : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(rx_tags_callback);
+
+  public:
+
+      virtual void items_changed (const std::vector<update_item>& items) = 0;
+
+      virtual void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items) = 0;
+
+      virtual rx_thread_handle_t get_target () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class connected_tags 
+{
+	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
+	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
+	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
+
+	typedef std::function<void(std::vector<update_item> items)> callback_function_t;
+	struct one_tag_data
+	{
+		rt_value_ref reference;
+		uint32_t reference_count;
+		std::set<tags_callback_ptr> monitors;
+	};
+	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;
+	
+	typedef std::map<string_type, runtime_handle_t> referenced_tags_type;
+
+	typedef std::map<tags_callback_ptr, std::map<runtime_handle_t, rx_value> > next_send_type;
+
+  public:
+      connected_tags();
+
+      ~connected_tags();
+
+
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
+
+      bool process_runtime (runtime_process_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      const_values_type const_values_;
+
+      values_type values_;
+
+      variables_type variables_;
+
+
+      handles_map_type handles_map_;
+
+      referenced_tags_type referenced_tags_;
+
+      locks::slim_lock lock_;
+
+      next_send_type next_send_;
+
+
+};
+
 
 
 
@@ -81,101 +181,6 @@ class binded_tags
 
 
       handles_map_type handles_map_;
-
-
-};
-
-
-
-struct update_item
-{
-	runtime_handle_t handle;
-	rx_value value;
-};
-
-struct write_result_item
-{
-	runtime_handle_t handle;
-	rx_result result;
-};
-
-
-
-
-class rx_tags_callback 
-{
-
-  public:
-
-      virtual void items_changed (const std::vector<update_item>& items) = 0;
-
-      virtual void write_complete (runtime_transaction_id_t transaction_id, rx_result result) = 0;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class connected_tags 
-{
-	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
-	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
-	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
-
-	typedef std::function<void(std::vector<update_item> items)> callback_function_t;
-	struct one_tag_data
-	{
-		rt_value_ref reference;
-		uint32_t reference_count;
-		std::set<rx_tags_callback*> monitors;
-	};
-	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;
-	
-	typedef std::map<string_type, runtime_handle_t> referenced_tags_type;
-
-	typedef std::map< rx_tags_callback*, std::map<runtime_handle_t, rx_value> > next_send_type;
-
-  public:
-      connected_tags();
-
-      ~connected_tags();
-
-
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, rx_tags_callback* monitor, const structure::hosting_object_data& state);
-
-      rx_result disconnect_tag (runtime_handle_t handle, rx_tags_callback* monitor);
-
-      bool process_runtime (runtime_process_context& ctx);
-
-
-  protected:
-
-  private:
-
-
-      const_values_type const_values_;
-
-      values_type values_;
-
-      variables_type variables_;
-
-
-      handles_map_type handles_map_;
-
-      referenced_tags_type referenced_tags_;
-
-      locks::slim_lock lock_;
-
-      next_send_type next_send_;
 
 
 };

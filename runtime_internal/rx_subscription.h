@@ -32,8 +32,8 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_operational.h"
@@ -86,7 +86,7 @@ class rx_subscription_callback
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 
-      virtual void write_complete (runtime_transaction_id_t transaction_id, rx_result result, const std::vector<update_item>& items) = 0;
+      virtual void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items) = 0;
 
 
   protected:
@@ -101,7 +101,7 @@ class rx_subscription_callback
 
 
 
-class rx_subscription : public rx::pointers::reference_object  
+class rx_subscription : public rx_platform::runtime::operational::rx_tags_callback  
 {
 	DECLARE_REFERENCE_PTR(rx_subscription);
 
@@ -132,32 +132,23 @@ class rx_subscription : public rx::pointers::reference_object
 	std::vector<runtime_handle_t> item_handles_;
 
 
-	class tags_callabck : public runtime::operational::rx_tags_callback
-	{
-	public:
-		rx_subscription* whose;
-		void items_changed(const std::vector<update_item>& items)
-		{
-
-		}
-		virtual void write_complete(runtime_transaction_id_t transaction_id, rx_result result)
-		{
-
-		}
-	};
-	tags_callabck tags_callback_;
-
   public:
       rx_subscription (rx_subscription_callback* callback);
 
 
-      rx_result connect_items (const std::vector<std::pair<string_type, runtime_handle_t> >& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
+      rx_result connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
 
       rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results);
 
       void activate ();
 
       void deactivate ();
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+
+      rx_thread_handle_t get_target ();
 
 
   protected:
@@ -184,6 +175,8 @@ class rx_subscription : public rx::pointers::reference_object
       attempts_type attempts_;
 
       bool active_;
+
+      rx_thread_handle_t target_;
 
 
 };

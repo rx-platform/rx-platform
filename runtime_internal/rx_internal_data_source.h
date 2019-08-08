@@ -53,6 +53,19 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 	typedef std::unique_ptr<internal_data_subscription> smart_ptr;
 
   public:
+      internal_data_subscription (value_handle_extended handles, data_controler* controler);
+
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+
+      void add_item (const string_type& path, value_handle_extended& handle);
+
+      void remove_item (const value_handle_extended& handle);
+
+      bool is_empty () const;
+
 
   protected:
 
@@ -60,6 +73,11 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 
 
       rx_reference<subscriptions::rx_subscription> my_subscription_;
+
+
+      data_controler* controler_;
+
+      value_handle_extended handles_;
 
 
 };
@@ -71,7 +89,18 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 
 class internal_data_source : public data_source  
 {
-	typedef std::map<uint32_t, internal_data_subscription::smart_ptr > subscriptions_type;
+	struct subscription_data
+	{
+		std::unique_ptr<internal_data_subscription> subscription;
+		uint32_t rate;
+	};
+	typedef std::unordered_map<uint16_t, subscription_data > subscriptions_type;
+	struct rate_subscription_data
+	{
+		std::reference_wrapper<internal_data_subscription> subscription;
+		uint16_t handle;
+	};
+	typedef std::unordered_map<uint32_t, rate_subscription_data> rate_subscriptions_type;
 
   public:
       internal_data_source (const string_type& path);
@@ -90,6 +119,11 @@ class internal_data_source : public data_source
 
 
       subscriptions_type subscriptions_;
+
+
+      rate_subscriptions_type rate_subscriptions_;
+
+      uint16_t next_subscription_id_;
 
 
 };

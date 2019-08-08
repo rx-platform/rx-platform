@@ -32,16 +32,16 @@
 
 
 
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
@@ -375,9 +375,9 @@ class runtime_holder
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result connect_items (const string_array& paths, operational::rx_tags_callback* monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
+      rx_result connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
 
-      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, operational::rx_tags_callback* monitor, std::vector<rx_result>& results, bool& has_errors);
+      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors);
 
       rx_result do_command (rx_object_command_t command_type);
 

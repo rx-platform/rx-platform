@@ -43,6 +43,7 @@
 #include "rx_query_messages.h"
 #include "rx_set_messages.h"
 #include "rx_internal_subscription.h"
+#include "rx_subscription_items.h"
 
 using namespace rx_platform;
 
@@ -181,6 +182,15 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(set_messages::update_runtime_request::type_id, [] { return std::make_unique<set_messages::update_runtime_request>(); });
 	// subscription messages
 	registered_messages_.emplace(subscription_messages::create_subscription_request::type_id, [] { return std::make_unique<subscription_messages::create_subscription_request>(); });
+	registered_messages_.emplace(subscription_messages::update_subscription_request::type_id, [] { return std::make_unique<subscription_messages::update_subscription_request>(); });
+	registered_messages_.emplace(subscription_messages::delete_subscription_request::type_id, [] { return std::make_unique<subscription_messages::delete_subscription_request>(); });
+	// subscription items messages
+	registered_messages_.emplace(items_messages::add_items_request::type_id, [] { return std::make_unique<items_messages::add_items_request>(); });
+	registered_messages_.emplace(items_messages::modify_items_request::type_id, [] { return std::make_unique<items_messages::modify_items_request>(); });
+	registered_messages_.emplace(items_messages::remove_items_request::type_id, [] { return std::make_unique<items_messages::remove_items_request>(); });
+	registered_messages_.emplace(items_messages::read_items_request::type_id, [] { return std::make_unique<items_messages::read_items_request>(); });
+	registered_messages_.emplace(items_messages::write_items_request::type_id, [] { return std::make_unique<items_messages::write_items_request>(); });
+	registered_messages_.emplace(items_messages::execute_item_request::type_id, [] { return std::make_unique<items_messages::execute_item_request>(); });
 
 	registered_string_messages_.emplace(query_messages::browse_request_message::type_name, [] { return std::make_unique<query_messages::browse_request_message>(); });
 	registered_string_messages_.emplace(query_messages::browse_runtime_request::type_name, [] { return std::make_unique<query_messages::browse_runtime_request>(); });
@@ -194,6 +204,15 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(set_messages::update_runtime_request::type_name, [] { return std::make_unique<set_messages::update_runtime_request>(); });
 	// subscription messages
 	registered_string_messages_.emplace(subscription_messages::create_subscription_request::type_name, [] { return std::make_unique<subscription_messages::create_subscription_request>(); });
+	registered_string_messages_.emplace(subscription_messages::update_subscription_request::type_name, [] { return std::make_unique<subscription_messages::update_subscription_request>(); });
+	registered_string_messages_.emplace(subscription_messages::delete_subscription_request::type_name, [] { return std::make_unique<subscription_messages::delete_subscription_request>(); });
+	// subscription items messages
+	registered_string_messages_.emplace(items_messages::add_items_request::type_name, [] { return std::make_unique<items_messages::add_items_request>(); });
+	registered_string_messages_.emplace(items_messages::modify_items_request::type_name, [] { return std::make_unique<items_messages::modify_items_request>(); });
+	registered_string_messages_.emplace(items_messages::remove_items_request::type_name, [] { return std::make_unique<items_messages::remove_items_request>(); });
+	registered_string_messages_.emplace(items_messages::read_items_request::type_name, [] { return std::make_unique<items_messages::read_items_request>(); });
+	registered_string_messages_.emplace(items_messages::write_items_request::type_name, [] { return std::make_unique<items_messages::write_items_request>(); });
+	registered_string_messages_.emplace(items_messages::execute_item_request::type_name, [] { return std::make_unique<items_messages::execute_item_request>(); });
 
 	auto ret = meta::queries::rx_query::init_query_types();
 
@@ -247,11 +266,7 @@ message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_proto
 		auto result = port->set_current_directory(directory);
 		if (!result)
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 13;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 			return ret_value;
 		}
 	}

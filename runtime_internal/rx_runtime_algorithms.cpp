@@ -91,6 +91,8 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
+		RUNTIME_LOG_TRACE("object_algorithms", 100, "Initialized "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_name());
+
 		if (what->get_instance_data().domain_id)
 		{
 			auto domain_ptr = model::platform_types_manager::instance().internal_get_type_cache<domain_type>().get_runtime(what->get_instance_data().domain_id);
@@ -128,7 +130,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 			}
 		}
 		if (result)
-		{
+		{			
 			rx_post_function<rx_object_ptr>([](rx_object_ptr whose)
 				{
 					runtime::runtime_start_context start_ctx;
@@ -173,7 +175,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
-				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
 				rx_post_function<rx_object_ptr>([callback](rx_object_ptr whose)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
@@ -185,7 +187,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
-				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
 			}
 		}, what, what->get_executer());
 
@@ -210,6 +212,8 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
+		RUNTIME_LOG_TRACE("domain_algorithms", 100, "Initialized "s + rx_item_type_name(rx_domain) + " "s + what->meta_info().get_name());
+
 		if (what->get_instance_data().app_id)
 		{
 			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
@@ -322,6 +326,8 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
+		RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_name());
+
 		if (what->get_instance_data().app_id)
 		{
 			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
@@ -434,6 +440,8 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	auto ret = what->initialize_runtime(ctx);
 	if (ret)
 	{
+		RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_name());
+
 		auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().get_id());
 		if (it == platform_runtime_manager::instance().applications_.end())
 		{

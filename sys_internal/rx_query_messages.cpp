@@ -96,11 +96,7 @@ message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_por
 			}
 			else
 			{
-				auto ret_value = std::make_unique<error_message>();
-				for (const auto& one : result.errors())
-					ret_value->errorMessage += one;
-				ret_value->errorCode = 14;
-				ret_value->request_id = request_id;
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 				port->data_processed(std::move(ret_value));
 			}
 
@@ -108,11 +104,7 @@ message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_por
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 		return ret_value;
 	}
 	else
@@ -247,10 +239,7 @@ message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr 
 		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
 	default:
 		{
-			auto ret_value = std::make_unique<error_message>();
-			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
-			ret_value->errorCode = 15;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
 			return ret_value;
 		}
 	}
@@ -286,11 +275,7 @@ message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr p
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -300,12 +285,7 @@ message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr p
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
-		return ret_value;
+		return std::make_unique<error_message>(result, 13, request_id);
 	}
 	else
 	{
@@ -331,11 +311,7 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -345,11 +321,7 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 		return ret_value;
 	}
 	else
@@ -446,11 +418,7 @@ message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_port
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -460,11 +428,7 @@ message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_port
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 		return ret_value;
 	}
 	else
@@ -622,10 +586,7 @@ message_ptr get_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_p
 		return do_job(ctx, port, tl::type2type<object_types::application_type>());
 	default:
 		{
-			auto ret_value = std::make_unique<error_message>();
-			ret_value->errorMessage = rx_item_type_name(item_type) + " is unknown type";
-			ret_value->errorCode = 15;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
 			return ret_value;
 		}
 	}
@@ -662,11 +623,7 @@ message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_pt
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>();
-			for (const auto& one : result.errors())
-				ret_value->errorMessage += one;
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 			port->data_processed(std::move(ret_value));
 		}
 
@@ -676,11 +633,7 @@ message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_pt
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 		return ret_value;
 	}
 	else
@@ -820,10 +773,7 @@ message_ptr browse_runtime_request::do_job (api::rx_context ctx, rx_protocol_por
 		return do_concrete_job(ctx, port, tl::type2type<meta::object_types::object_type>());
 	default:
 		{
-			auto ret_value = std::make_unique<error_message>();
-			ret_value->errorMessage = "Browse not valid for this type of item!";
-			ret_value->errorCode = 14;
-			ret_value->request_id = request_id;
+			auto ret_value = std::make_unique<error_message>("Browse not valid for this type of item!"s, 14, request_id);
 			return ret_value;
 		}
 	}
@@ -858,11 +808,7 @@ message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_prot
 			}
 			else
 			{
-				auto ret_value = std::make_unique<error_message>();
-				for (const auto& one : result.errors())
-					ret_value->errorMessage += one;
-				ret_value->errorCode = 14;
-				ret_value->request_id = request_id;
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 				port->data_processed(std::move(ret_value));
 			}
 
@@ -870,11 +816,7 @@ message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_prot
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>();
-		for (const auto& one : result.errors())
-			ret_value->errorMessage += one;
-		ret_value->errorCode = 13;
-		ret_value->request_id = request_id;
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 		return ret_value;
 	}
 	else

@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -37,6 +37,7 @@
 
 #include "system/runtime/rx_blocks.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/server/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -45,7 +46,10 @@ namespace runtime {
 
 namespace operational {
 
-// Class rx_platform::runtime::operational::connected_tags 
+// Class rx_platform::runtime::operational::rx_tags_callback
+
+
+// Class rx_platform::runtime::operational::connected_tags
 
 connected_tags::connected_tags()
 {
@@ -58,7 +62,7 @@ connected_tags::~connected_tags()
 
 
 
-rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item, rx_tags_callback* monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
 	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_tags = referenced_tags_.find(path);
@@ -124,7 +128,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 	}
 }
 
-rx_result connected_tags::disconnect_tag (runtime_handle_t handle, rx_tags_callback* monitor)
+rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
 {
 	if (!handle)
 		return true;
@@ -142,19 +146,25 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 	if (!next_send_.empty())
 	{
 		std::vector<update_item> update_data;
-		for (const auto& one : next_send_)
+		for (auto& one : next_send_)
 		{
 			update_data.clear();
 			for(const auto& item : one.second)
 				update_data.emplace_back(update_item{ item.first, item.second });
-			one.first->items_changed(update_data);
+			auto monitor = one.first;
+			std::function<void(tags_callback_ptr)> func=[update_data](tags_callback_ptr monitor)
+				{
+					monitor->items_changed(update_data);
+				};
+			rx_post_function_to<tags_callback_ptr, tags_callback_ptr>(monitor->get_target(), func, monitor, monitor);
 		}
+		next_send_.clear();
 	}
 	return false;
 }
 
 
-// Class rx_platform::runtime::operational::binded_tags 
+// Class rx_platform::runtime::operational::binded_tags
 
 binded_tags::binded_tags()
 {
@@ -297,9 +307,6 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	}
 	return bind_result;
 }
-
-
-// Class rx_platform::runtime::operational::rx_tags_callback 
 
 
 } // namespace operational

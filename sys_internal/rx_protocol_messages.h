@@ -97,12 +97,14 @@ const rx_message_type_t rx_browse_runtime_response_id = 0x8010;
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;
 const rx_message_type_t rx_create_subscription_response_id = 0x8081;
 
-const rx_message_type_t rx_modify_subscription_request_id = 0x0082;
-const rx_message_type_t rx_modify_subscription_response_id = 0x8082;
+const rx_message_type_t rx_update_subscription_request_id = 0x0082;
+const rx_message_type_t rx_update_subscription_response_id = 0x8082;
 
 const rx_message_type_t rx_delete_subscription_request_id = 0x0083;
 const rx_message_type_t rx_delete_subscription_response_id = 0x8083;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// subscription items messages constants
 const rx_message_type_t rx_add_items_request_id = 0x0084;
 const rx_message_type_t rx_add_items_response_id = 0x8084;
 
@@ -117,6 +119,9 @@ const rx_message_type_t rx_read_items_response_id = 0x8087;
 
 const rx_message_type_t rx_write_items_request_id = 0x0088;
 const rx_message_type_t rx_write_items_response_id = 0x8088;
+
+const rx_message_type_t rx_execute_item_request_id = 0x0089;
+const rx_message_type_t rx_execute_item_response_id = 0x8089;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +189,27 @@ class error_message : public rx_message_base
 
       static rx_message_type_t type_id;
 
+	  error_message(const string_type& message, uint32_t code, rx_request_id_t request_id)
+	  {
+		  errorMessage = message;
+		  errorCode = code;
+		  this->request_id = request_id;
+	  }
+	  error_message(const rx_result& result, uint32_t code, rx_request_id_t request_id)
+	  {
+		  for (const auto& one : result.errors())
+			  errorMessage += one;
+		  errorCode = 13;
+		  this->request_id = request_id;
+	  }
+	  template<typename resT>
+	  error_message(const rx_result_with<resT>& result, uint32_t code, rx_request_id_t request_id)
+	  {
+		  for (const auto& one : result.errors())
+			  errorMessage += one;
+		  errorCode = 13;
+		  this->request_id = request_id;
+	  }
 
   protected:
 

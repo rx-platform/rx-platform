@@ -37,33 +37,19 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+namespace sys_runtime {
+namespace data_source {
+class data_controler;
+
+} // namespace data_source
+} // namespace sys_runtime
+
+
 
 
 namespace sys_runtime {
 
 namespace data_source {
-
-
-
-
-
-class data_subscription 
-{
-
-  public:
-      data_subscription();
-
-      virtual ~data_subscription();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
 
 
 
@@ -81,6 +67,9 @@ class data_source
       virtual void remove_item (const value_handle_extended& handle) = 0;
 
       virtual bool is_empty () const = 0;
+
+
+      data_controler *my_controler;
 
 
   protected:
@@ -144,7 +133,7 @@ class data_controler
 	typedef std::unordered_map<uint16_t, source_data > sources_type;
 	struct named_source_data
 	{
-		std::reference_wrapper<std::unique_ptr<data_source> > source;
+		std::reference_wrapper<data_source> source;
 		uint16_t handle;
 	};
 	typedef std::unordered_map<string_type, named_source_data> named_sources_type;
@@ -162,6 +151,8 @@ class data_controler
       void remove_item (value_handle_type handle);
 
       static data_controler* get_controler ();
+
+      void items_changed (const std::vector<std::pair<value_handle_type, rx_value> >& values);
 
 
   protected:
@@ -181,6 +172,10 @@ class data_controler
       named_sources_type named_sources_;
 
       uint16_t next_source_id_;
+
+      std::vector<value_point*> changed_points_;
+
+      char token_buffer_[0x40];
 
 
 };

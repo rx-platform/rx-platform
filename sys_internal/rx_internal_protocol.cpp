@@ -116,11 +116,7 @@ void rx_protocol_port::data_received (const string_type& data)
 	}
 	else
 	{
-		auto result_msg = std::make_unique<messages::error_message>();
-		for (const auto& one : received.errors())
-			result_msg->errorMessage += one;
-		result_msg->errorCode = 21;
-		result_msg->request_id = request_id;
+		auto result_msg = std::make_unique<messages::error_message>(std::move(received), 21, request_id);
 
 		serialization::json_writer writter;
 		auto result = serialize_message(writter, request_id, *result_msg);

@@ -281,7 +281,7 @@ rx_result object_runtime::browse (const string_type& path, const string_type& fi
 	return runtime_.browse(path, filter, items);
 }
 
-rx_result object_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result object_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return object_runtime_algorithms<meta::object_types::object_type>::connect_items(paths, callback, monitor, ctx, this);
 }
@@ -546,7 +546,7 @@ rx_result application_runtime::browse (const string_type& path, const string_typ
 	return runtime_.browse(path, filter, items);
 }
 
-rx_result application_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result application_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return object_runtime_algorithms<meta::object_types::application_type>::connect_items(paths, callback, monitor, ctx, this);
 }
@@ -763,7 +763,7 @@ rx_result domain_runtime::browse (const string_type& path, const string_type& fi
 	return runtime_.browse(path, filter, items);
 }
 
-rx_result domain_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result domain_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return object_runtime_algorithms<meta::object_types::domain_type>::connect_items(paths, callback, monitor, ctx, this);
 }
@@ -1004,7 +1004,7 @@ rx_result port_runtime::browse (const string_type& path, const string_type& filt
 	return runtime_.browse(path, filter, items);
 }
 
-rx_result port_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx)
+rx_result port_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return object_runtime_algorithms<meta::object_types::port_type>::connect_items(paths, callback, monitor, ctx, this);
 }
@@ -1147,11 +1147,11 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 
 
 template <class typeT>
-rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, operational::rx_tags_callback* monitor, api::rx_context ctx, typename typeT::RType* whose)
+rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose)
 {
 	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
 	using smart_ptr = typename typeT::RTypePtr;
-	std::function<connect_result_t(string_array, operational::rx_tags_callback*, smart_ptr)> func = [](string_array paths, operational::rx_tags_callback* monitor, smart_ptr whose)
+	std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
 	{
 		connect_result_t results;
 		bool has_errors = false;
@@ -1167,10 +1167,12 @@ rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& p
 			for (size_t i = 0; i < size; i++)
 				results.emplace_back(ret.errors());
 		}
+		if (whose->runtime_context_.process_tag_connections)
+			whose->fire_job();
 		return results;
 	};
 	auto ret_thread = whose->get_executer();
-	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::rx_tags_callback*, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
+	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
 	return true;
 }
 
@@ -1201,6 +1203,7 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType* w
 
 template <class typePtr>
 process_runtime_job<typePtr>::process_runtime_job (typePtr whose)
+      : whose_(whose)
 {
 }
 

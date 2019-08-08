@@ -72,6 +72,7 @@ namespace runtime {
 namespace operational
 {
 class rx_tags_callback;
+typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 }
 namespace structure {
 class const_value_data;

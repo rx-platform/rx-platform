@@ -42,15 +42,15 @@ namespace data_source {
 value_handle_type value_handle_extended::make_handle() const
 {
 	return (((value_handle_type)source) << 48)
-		|| (((value_handle_type)subscription) << 32)
-		|| item;
+		| (((value_handle_type)subscription) << 32)
+		| item;
 }
 value_handle_extended value_handle_extended::fill_from_handle(value_handle_type handle)
 {
 	value_handle_extended ret;
 	ret.source = (handle >> 48);
 	ret.subscription = ((handle >> 32) & 0xffff);
-	ret.item = handle && 0xffffffff;
+	ret.item = handle & 0xffffffff;
 	return ret;
 }
 
@@ -71,10 +71,23 @@ void data_controler::register_value (value_handle_type handle, value_point* whos
 	{
 		it->second.insert(whose);
 	}
+	else
+	{
+		registered_values_.emplace(handle, registered_objects_type{ whose });
+	}
 }
 
 void data_controler::unregister_value (value_handle_type handle, value_point* whose)
 {
+	auto it = registered_values_.find(handle);
+	if (it != registered_values_.end())
+	{
+		it->second.erase(whose);
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
 }
 
 value_handle_type data_controler::add_item (const string_type& path, uint32_t rate)
@@ -98,7 +111,7 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 	if (it != named_sources_.end())
 	{
 		value_handle_extended handle{ it->second.handle, 0, 0 };
-		it->second.source.get()->add_item(concrete, rate, handle);
+		it->second.source.get().add_item(concrete, rate, handle);
 		return handle.make_handle();
 	}
 	else
@@ -106,9 +119,10 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 		auto&& temp = data_source_factory::instance().create_data_source(source);
 		if (temp)
 		{
+			temp.value()->my_controler = this;
 			auto&& id = ++next_source_id_;
 			auto result = sources_.emplace(id, source_data{ std::move(temp.value()), source });
-			named_sources_.emplace(source, named_source_data{ result.first->second.source, id });
+			named_sources_.emplace(source, named_source_data{ *result.first->second.source, id });
 
 			value_handle_extended handle{ id, 0, 0 };
 			result.first->second.source->add_item(concrete, rate, handle);
@@ -121,6 +135,15 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 void data_controler::remove_item (value_handle_type handle)
 {
 	auto ex_handle = value_handle_extended::fill_from_handle(handle);
+	auto it = sources_.find(ex_handle.source);
+	if (it != sources_.end())
+	{
+		it->second.source->remove_item(ex_handle);
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
 }
 
 data_controler* data_controler::get_controler ()
@@ -128,15 +151,32 @@ data_controler* data_controler::get_controler ()
 	return rx_platform::rx_gate::instance().get_infrastructure().get_data_controler(rx_thread_context());
 }
 
-
-// Class sys_runtime::data_source::data_subscription 
-
-data_subscription::data_subscription()
+void data_controler::items_changed (const std::vector<std::pair<value_handle_type, rx_value> >& values)
 {
+	changed_points_.clear();
+	for (const auto& one : values)
+	{
+		auto it = registered_values_.find(one.first);
+		if (it != registered_values_.end())
+		{
+			for (auto one_item : it->second)
+			{
+				one_item->value_changed(one.first, one.second);
+				changed_points_.emplace_back(one_item);
+			}
+		}
+	}
+	if (!changed_points_.empty())
+	{
+		for (auto one : changed_points_)
+			one->calculate(token_buffer_);
+	}
 }
 
 
-data_subscription::~data_subscription()
+// Class sys_runtime::data_source::data_source 
+
+data_source::~data_source()
 {
 }
 
@@ -194,15 +234,6 @@ rx_result_with<std::unique_ptr<data_source> > data_source_factory::create_data_s
 }
 
 
-// Class sys_runtime::data_source::data_source 
-
-data_source::~data_source()
-{
-}
-
-
-
 } // namespace data_source
 } // namespace sys_runtime
-
 

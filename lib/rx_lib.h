@@ -296,7 +296,7 @@ public:
 
 	static const rx_uuid& null_uuid();
 
-	const rx_uuid_t& uuid()
+	const rx_uuid_t& uuid() const
 	{
 		return m_uuid;
 	}
