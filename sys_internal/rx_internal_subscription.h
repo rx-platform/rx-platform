@@ -36,6 +36,7 @@
 #include "sys_internal/rx_protocol_messages.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
+using rx_platform::runtime::operational::update_item;
 
 
 namespace sys_internal {
@@ -50,7 +51,7 @@ namespace subscription_messages {
 
 
 
-class update_subscription_response : public rx_message_base  
+class create_subscription_request : public rx_request_message  
 {
 
   public:
@@ -58,6 +59,8 @@ class update_subscription_response : public rx_message_base
       rx_result serialize (base_meta_writer& stream) const;
 
       rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
 
       const string_type& get_type_name ();
 
@@ -70,42 +73,13 @@ class update_subscription_response : public rx_message_base
 
       rx_uuid subscription_id;
 
-      uint32_t revised_publish_rate;
+      uint32_t publish_rate;
 
-      uint32_t revised_keep_alive_period;
+      uint32_t keep_alive_period;
 
+      bool active;
 
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class delete_subscription_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      rx_uuid subscription_id;
+      uint8_t priority;
 
 
   protected:
@@ -157,7 +131,7 @@ class create_subscriptions_response : public rx_message_base
 
 
 
-class create_subscription_request : public rx_request_message  
+class delete_subscription_request : public rx_request_message  
 {
 
   public:
@@ -178,14 +152,6 @@ class create_subscription_request : public rx_request_message
       static rx_message_type_t type_id;
 
       rx_uuid subscription_id;
-
-      uint32_t publish_rate;
-
-      uint32_t keep_alive_period;
-
-      bool active;
-
-      uint8_t priority;
 
 
   protected:
@@ -243,7 +209,7 @@ class update_subscription_request : public rx_request_message
 
 
 
-class delete_subscription_request : public rx_request_message  
+class delete_subscription_response : public rx_message_base  
 {
 
   public:
@@ -251,8 +217,6 @@ class delete_subscription_request : public rx_request_message
       rx_result serialize (base_meta_writer& stream) const;
 
       rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
 
       const string_type& get_type_name ();
 
@@ -264,6 +228,78 @@ class delete_subscription_request : public rx_request_message
       static rx_message_type_t type_id;
 
       rx_uuid subscription_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class update_subscription_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      uint32_t revised_publish_rate;
+
+      uint32_t revised_keep_alive_period;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class subscription_items_change : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      std::vector<update_item> items;
 
 
   protected:

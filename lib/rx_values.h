@@ -489,10 +489,6 @@ class rx_simple_value
 
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
-      bool serialize_value (base_meta_writer& writer, const string_type& name) const;
-
-      bool deserialize_value (base_meta_reader& reader, const string_type& name);
-
       bool convert_to (rx_value_t type);
 
       rx_value_t get_type () const;
@@ -609,7 +605,7 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -765,7 +761,7 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 

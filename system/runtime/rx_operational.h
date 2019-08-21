@@ -120,6 +120,10 @@ class connected_tags
 
       bool process_runtime (runtime_process_context& ctx);
 
+      rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      void value_set (structure::value_data* whose, const rx_simple_value& val);
+
 
   protected:
 
@@ -149,6 +153,7 @@ class connected_tags
 
 
 
+
 class binded_tags 
 {
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
@@ -165,7 +170,7 @@ class binded_tags
 
       rx_result get_value (runtime_handle_t handle, rx_simple_value& val) const;
 
-      rx_result set_value (runtime_handle_t handle, rx_simple_value&& val);
+      rx_result set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags);
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
 

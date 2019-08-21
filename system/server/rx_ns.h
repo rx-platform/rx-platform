@@ -282,6 +282,8 @@ class rx_platform_item : public rx::pointers::reference_object
 
       virtual rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
 
+      virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
+
 
   protected:
 

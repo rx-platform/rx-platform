@@ -223,6 +223,8 @@ class object_runtime_algorithms
 
       static void process_runtime (typename typeT::RType* whose);
 
+      static rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose);
+
 
   protected:
 
@@ -330,6 +332,8 @@ object class. basic implementation of an object");
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       void fire_job ();
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const object_instance_data& get_instance_data () const
@@ -465,6 +469,8 @@ public:
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       void fire_job ();
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const domain_instance_data& get_instance_data () const
@@ -603,6 +609,8 @@ system port class. basic implementation of a port");
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       void fire_job ();
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const port_instance_data& get_instance_data () const
@@ -753,6 +761,8 @@ system application class. basic implementation of a application");
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       void fire_job ();
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const application_instance_data& get_instance_data () const

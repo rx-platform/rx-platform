@@ -44,80 +44,76 @@ namespace messages {
 
 namespace subscription_messages {
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
+// Class sys_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
 
-string_type update_subscription_response::type_name = "updSubsResp";
+string_type create_subscription_request::type_name = "createSubsReq";
 
-rx_message_type_t update_subscription_response::type_id = rx_update_subscription_response_id;
+rx_message_type_t create_subscription_request::type_id = rx_create_subscription_request_id;
 
 
-rx_result update_subscription_response::serialize (base_meta_writer& stream) const
+rx_result create_subscription_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
 		return "error writing subscription id";
-	if (!stream.write_uint("rate", revised_publish_rate))
+	if (!stream.write_uint("rate", publish_rate))
 		return "error writing publish rate";
-	if (!stream.write_uint("keepalive", revised_keep_alive_period))
+	if (!stream.write_uint("keepalive", keep_alive_period))
 		return "error writing keep alive period";
+	if (!stream.write_bool("active", active))
+		return "error writing active";
+	if (!stream.write_byte("priority", priority))
+		return "error writing active";
 	return true;
 }
 
-rx_result update_subscription_response::deserialize (base_meta_reader& stream)
+rx_result create_subscription_request::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
 		return "error reading subscription id";
 	subscription_id = temp;
-	if (!stream.read_uint("rate", revised_publish_rate))
+	if (!stream.read_uint("rate", publish_rate))
 		return "error reading publish rate";
-	if (!stream.read_uint("keepalive", revised_keep_alive_period))
+	if (!stream.read_uint("keepalive", keep_alive_period))
 		return "error reading keep alive period";
+	if (!stream.read_bool("active", active))
+		return "error reading active";
+	if (!stream.read_byte("priority", priority))
+		return "error reading active";
 	return true;
 }
 
-const string_type& update_subscription_response::get_type_name ()
+message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	subscription_data data;
+	data.active = active;
+	data.subscription_id = subscription_id;
+	data.keep_alive_period = keep_alive_period;
+	data.publish_rate = publish_rate;
+	data.priority = priority;
+	auto result = port->connect_subscription(data);
+	if (result)
+	{
+		auto response = std::make_unique<create_subscriptions_response>();
+		response->subscription_id = data.subscription_id;
+		response->revised_keep_alive_period = data.keep_alive_period;
+		response->revised_publish_rate = data.publish_rate;
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+}
+
+const string_type& create_subscription_request::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t update_subscription_response::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
-
-string_type delete_subscription_response::type_name = "delSubsResp";
-
-rx_message_type_t delete_subscription_response::type_id = rx_delete_subscription_response_id;
-
-
-rx_result delete_subscription_response::serialize (base_meta_writer& stream) const
-{
-	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
-	return true;
-}
-
-rx_result delete_subscription_response::deserialize (base_meta_reader& stream)
-{
-	rx_uuid_t temp;
-	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
-	subscription_id = temp;
-	return true;
-}
-
-const string_type& delete_subscription_response::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t delete_subscription_response::get_type_id ()
+rx_message_type_t create_subscription_request::get_type_id ()
 {
   return type_id;
 
@@ -168,57 +164,52 @@ rx_message_type_t create_subscriptions_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
+// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
 
-string_type create_subscription_request::type_name = "createSubsReq";
+string_type delete_subscription_request::type_name = "delSubsReq";
 
-rx_message_type_t create_subscription_request::type_id = rx_create_subscription_request_id;
+rx_message_type_t delete_subscription_request::type_id = rx_delete_subscription_request_id;
 
 
-rx_result create_subscription_request::serialize (base_meta_writer& stream) const
+rx_result delete_subscription_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
 		return "error writing subscription id";
-	if (!stream.write_uint("rate", publish_rate))
-		return "error writing publish rate";
-	if (!stream.write_uint("keepalive", keep_alive_period))
-		return "error writing keep alive period";
-	if (!stream.write_bool("active", active))
-		return "error writing active";
-	if (!stream.write_byte("priority", priority))
-		return "error writing active";
 	return true;
 }
 
-rx_result create_subscription_request::deserialize (base_meta_reader& stream)
+rx_result delete_subscription_request::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
 		return "error reading subscription id";
 	subscription_id = temp;
-	if (!stream.read_uint("rate", publish_rate))
-		return "error reading publish rate";
-	if (!stream.read_uint("keepalive", keep_alive_period))
-		return "error reading keep alive period";
-	if (!stream.read_bool("active", active))
-		return "error reading active";
-	if (!stream.read_byte("priority", priority))
-		return "error reading active";
 	return true;
 }
 
-message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr delete_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	auto result = port->delete_subscription(subscription_id);
+	if (result)
+	{
+		auto response = std::make_unique<delete_subscription_response>();
+		response->subscription_id = subscription_id;
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
 }
 
-const string_type& create_subscription_request::get_type_name ()
+const string_type& delete_subscription_request::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t create_subscription_request::get_type_id ()
+rx_message_type_t delete_subscription_request::get_type_id ()
 {
   return type_id;
 
@@ -282,21 +273,21 @@ rx_message_type_t update_subscription_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
+// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
 
-string_type delete_subscription_request::type_name = "delSubsReq";
+string_type delete_subscription_response::type_name = "delSubsResp";
 
-rx_message_type_t delete_subscription_request::type_id = rx_delete_subscription_request_id;
+rx_message_type_t delete_subscription_response::type_id = rx_delete_subscription_response_id;
 
 
-rx_result delete_subscription_request::serialize (base_meta_writer& stream) const
+rx_result delete_subscription_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
 		return "error writing subscription id";
 	return true;
 }
 
-rx_result delete_subscription_request::deserialize (base_meta_reader& stream)
+rx_result delete_subscription_response::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
@@ -305,18 +296,127 @@ rx_result delete_subscription_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr delete_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
-{
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
-}
-
-const string_type& delete_subscription_request::get_type_name ()
+const string_type& delete_subscription_response::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t delete_subscription_request::get_type_id ()
+rx_message_type_t delete_subscription_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
+
+string_type update_subscription_response::type_name = "updSubsResp";
+
+rx_message_type_t update_subscription_response::type_id = rx_update_subscription_response_id;
+
+
+rx_result update_subscription_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id.uuid()))
+		return "error writing subscription id";
+	if (!stream.write_uint("rate", revised_publish_rate))
+		return "error writing publish rate";
+	if (!stream.write_uint("keepalive", revised_keep_alive_period))
+		return "error writing keep alive period";
+	return true;
+}
+
+rx_result update_subscription_response::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return "error reading subscription id";
+	subscription_id = temp;
+	if (!stream.read_uint("rate", revised_publish_rate))
+		return "error reading publish rate";
+	if (!stream.read_uint("keepalive", revised_keep_alive_period))
+		return "error reading keep alive period";
+	return true;
+}
+
+const string_type& update_subscription_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t update_subscription_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::subscription_messages::subscription_items_change 
+
+string_type subscription_items_change::type_name = "subsItemsNotif";
+
+rx_message_type_t subscription_items_change::type_id = rx_subscription_items_notification_id;
+
+
+rx_result subscription_items_change::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id.uuid()))
+		return "error writing subscription id";
+	if (!stream.start_array("items", items.size()))
+		return "unable to start items array";
+	for (const auto one : items)
+	{
+		if (!stream.start_object("item"))
+			return "Unable to start item object";
+
+		if (!stream.write_uint("handle", one.handle))
+			return "Unable to write item handle";
+		if(!stream.write_value("value", one.value))
+			return "Unable to write item value";
+
+		if (!stream.end_object())
+			return "Unable to end item object";
+	}
+	if (!stream.end_array())
+		return "unable to end items array";
+	return true;
+}
+
+rx_result subscription_items_change::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return "error reading subscription id";
+	subscription_id = temp;
+	if (!stream.start_array("items"))
+		return "unable to start items array";
+	while(!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return "Unable to start item object";
+		update_item temp;
+		if (!stream.read_uint("handle", temp.handle))
+			return "Unable to write item handle";
+		if (!stream.read_value("value", temp.value))
+			return "Unable to write item value";
+
+		items.emplace_back(std::move(temp));
+
+		if (!stream.end_object())
+			return "Unable to end item object";
+	}
+	return true;
+}
+
+const string_type& subscription_items_change::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t subscription_items_change::get_type_id ()
 {
   return type_id;
 

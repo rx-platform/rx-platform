@@ -93,6 +93,12 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 			{
 				it_tags->second.ref_count++;
 				result.emplace_back(it_tags->first);
+				if (it_tags->second.item_ptr)
+				{
+					api::rx_context ctx;
+					ctx.object = smart_this();
+					it_tags->second.item_ptr->read_items({ it_tags->second.target_handle }, smart_this(), ctx);
+				}
 			}
 			else
 			{
@@ -130,7 +136,6 @@ rx_result rx_subscription::process_connections ()
 {
 	if (!active_)
 		return false;
-	rx_time now = rx_time::now();
 	if (!to_connect_.empty())
 	{
 		// query for object items from paths
@@ -176,7 +181,6 @@ rx_result rx_subscription::process_connections ()
 				{
 					if (one.second.item && !one.second.querying && !one.second.items.empty())
 					{
-						one.second.querying = true;
 						std::vector<runtime_handle_t> items;
 						string_array paths;
 
@@ -193,7 +197,8 @@ rx_result rx_subscription::process_connections ()
 							string_type object_path(one.first);
 							api::rx_context ctx;
 							ctx.object = smart_this();
-							one.second.item->connect_items(paths, [this, object_path] (std::vector<rx_result_with<runtime_handle_t> > result)
+							auto item_ptr = one.second.item;
+							item_ptr->connect_items(paths, [this, object_path, item_ptr] (std::vector<rx_result_with<runtime_handle_t> > result)
 								{
 									auto attempts_it = attempts_.find(object_path);
 									if (attempts_it != attempts_.end())
@@ -201,6 +206,7 @@ rx_result rx_subscription::process_connections ()
 										auto to_connect_it = to_connect_.find(object_path);
 										if (to_connect_it != to_connect_.end())
 										{
+											to_connect_it->second.querying = false;
 											size_t result_size = result.size();
 											if (attempts_it->second.size() == result_size)
 											{
@@ -219,6 +225,7 @@ rx_result rx_subscription::process_connections ()
 															if (tags_it != tags_.end())
 															{
 																tags_it->second.target_handle = remote_handle;
+																tags_it->second.item_ptr = item_ptr;
 																handles_[remote_handle] = local_handle;
 															}
 														}
@@ -277,7 +284,7 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 		{
 			auto it = handles_.find(one.handle);
 			if (it != handles_.end())
-				next.emplace_back(update_item{ it->second, std::move(one.value) });
+				next.emplace_back(update_item{ it->second, one.value });
 		}
 		callback_->items_changed(next);
 	}
@@ -297,6 +304,11 @@ rx_thread_handle_t rx_subscription::get_target ()
 
 
 // Class sys_runtime::subscriptions::rx_subscription_callback 
+
+rx_subscription_callback::~rx_subscription_callback()
+{
+}
+
 
 
 } // namespace subscriptions

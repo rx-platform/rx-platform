@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ bool rx_pop_security_context();
 
 namespace jobs {
 
-// Class rx::jobs::job 
+// Class rx::jobs::job
 
 job::job()
       : canceled_(false)
@@ -84,7 +84,7 @@ void job::release_unsafe_ptr ()
 }
 
 
-// Class rx::jobs::timer_job 
+// Class rx::jobs::timer_job
 
 timer_job::timer_job()
       : next_(0x0),
@@ -110,7 +110,7 @@ void timer_job::unlock ()
 }
 
 
-// Class rx::jobs::post_period_job 
+// Class rx::jobs::post_period_job
 
 post_period_job::post_period_job()
 {
@@ -135,7 +135,7 @@ rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& rem
 }
 
 
-// Class rx::jobs::periodic_job 
+// Class rx::jobs::periodic_job
 
 periodic_job::periodic_job()
 {
@@ -145,8 +145,7 @@ periodic_job::periodic_job()
 
 rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove)
 {
-	rx_timer_ticks_t diff = next_ - current_tick;
-	if (std::bitset<sizeof(rx_timer_ticks_t) * 8>(diff).test(sizeof(rx_timer_ticks_t) * 8 - 1) || diff == 0)
+	if (current_tick >= next_)
 	{
 		// should be done
 		executer_->append(smart_this());// add job to right thread
@@ -155,12 +154,12 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove
 		{
 			next_ = next_ + period_;// new time
 
-		} while (next_ <= current_tick);
+		} while (next_ < current_tick);
 
-		return current_tick- next_;// return for how long
+		return next_ - current_tick;// return for how long
 	}
 	else
-		return next_ - current_tick;// not jet so send how mutch more to timer
+		return next_ - current_tick;// not jet so send how match more to timer
 }
 
 

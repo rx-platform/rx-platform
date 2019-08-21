@@ -89,7 +89,7 @@ typedef HCRYPTHASH  crypt_hash_t;
 
 
 #ifdef _DEBUG
-#define RX_ASSERT(v) assert(v)
+#define RX_ASSERT(v) _ASSERT(v)
 #else
 #define RX_ASSERT 
 #endif

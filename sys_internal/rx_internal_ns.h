@@ -32,12 +32,12 @@
 
 
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -210,6 +210,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
 	  ~rx_item_implementation() = default;
   protected:
 
@@ -265,6 +267,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
   protected:
@@ -348,6 +352,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
   protected:

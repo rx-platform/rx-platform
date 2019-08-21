@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -41,7 +41,7 @@ namespace sys_runtime {
 
 namespace data_source {
 
-// Class sys_runtime::data_source::internal_data_source 
+// Class sys_runtime::data_source::internal_data_source
 
 internal_data_source::internal_data_source (const string_type& path)
       : next_subscription_id_(0)
@@ -52,7 +52,6 @@ internal_data_source::internal_data_source (const string_type& path)
 
 void internal_data_source::add_item (const string_type& path, uint32_t rate, value_handle_extended& handle)
 {
-	internal_data_subscription* raw = nullptr;
 	auto it = rate_subscriptions_.find(rate);
 	if (it == rate_subscriptions_.end())
 	{
@@ -86,7 +85,7 @@ bool internal_data_source::is_empty () const
 }
 
 
-// Class sys_runtime::data_source::internal_data_subscription 
+// Class sys_runtime::data_source::internal_data_subscription
 
 internal_data_subscription::internal_data_subscription (value_handle_extended handles, data_controler* controler)
       : controler_(controler),
@@ -117,7 +116,6 @@ void internal_data_subscription::transaction_complete (runtime_transaction_id_t 
 
 void internal_data_subscription::add_item (const string_type& path, value_handle_extended& handle)
 {
-	auto new_handle = platform_runtime_manager::instance().get_new_handle();
 	std::vector<rx_result_with<runtime_handle_t> > results;
 	string_array items{path};
 	my_subscription_->connect_items(items, results);

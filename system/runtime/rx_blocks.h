@@ -395,6 +395,8 @@ class runtime_holder
 
       rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
+
 	  template<typename valT>
 	  valT get_binded_as(runtime_handle_t handle, const valT& default_value)
 	  {
@@ -411,7 +413,7 @@ class runtime_holder
 	  {
 		  values::rx_simple_value temp_val;
 		  temp_val.assign_static<valT>(std::move(value));
-		  auto result = binded_tags_.set_value(handle, std::move(temp_val));
+		  auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_);
 	  }
 	  template<typename valT>
 	  valT get_local_as(const string_type& path, const valT& default_value)

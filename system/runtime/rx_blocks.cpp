@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace runtime {
 
 namespace blocks {
 
-// Class rx_platform::runtime::blocks::filter_runtime 
+// Class rx_platform::runtime::blocks::filter_runtime
 
 string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
 
@@ -83,7 +83,7 @@ rx_result filter_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::mapper_runtime 
+// Class rx_platform::runtime::blocks::mapper_runtime
 
 string_type mapper_runtime::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
@@ -125,7 +125,7 @@ rx_result mapper_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::source_runtime 
+// Class rx_platform::runtime::blocks::source_runtime
 
 string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
@@ -171,7 +171,7 @@ rx_result source_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::struct_runtime 
+// Class rx_platform::runtime::blocks::struct_runtime
 
 string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -229,7 +229,7 @@ rx_result struct_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::variable_runtime 
+// Class rx_platform::runtime::blocks::variable_runtime
 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -275,7 +275,7 @@ rx_result variable_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::event_runtime 
+// Class rx_platform::runtime::blocks::event_runtime
 
 string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
 
@@ -312,14 +312,14 @@ rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::runtime_holder 
+// Class rx_platform::runtime::blocks::runtime_holder
 
 
 rx_result runtime_holder::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx, rx_thread_handle_t whose) const
 {
 	std::function<rx_value(const string_type&)> func = [this, ctx](const string_type& path)
 	{
-		rx_value val;		
+		rx_value val;
 		auto state = get_object_state();
 		auto result = item_->get_value(state, path, val);
 		return val;
@@ -440,6 +440,7 @@ rx_result runtime_holder::deinitialize_runtime (runtime::runtime_deinit_context&
 
 rx_result runtime_holder::start_runtime (runtime::runtime_start_context& ctx)
 {
+	change_time_ = rx_time::now();
 	ctx.structure.set_root(this);
 	ctx.structure.push_item(*item_);
 	auto result = item_->start_runtime(ctx);
@@ -479,15 +480,12 @@ rx_result runtime_holder::connect_items (const string_array& paths, runtime::ope
 	results.clear();// just in case
 	results.reserve(paths.size());
 	has_errors = false;
-	bool has_one = false;
 	auto state = get_object_state();
 	for (const auto& path : paths)
 	{
 		auto one_result = connected_tags_.connect_tag(path, this, monitor, state);
 		if (!has_errors && !one_result)
 			has_errors = true;
-		else if(one_result)
-
 		results.emplace_back(std::move(one_result));
 	}
 	return true;
@@ -625,6 +623,14 @@ rx_result runtime_holder::browse (const string_type& path, const string_type& fi
 			return path + " not found";
 		return sub_item->browse_items(filter, current_path, items);
 	}
+}
+
+rx_result runtime_holder::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
+{
+	auto state = get_object_state();
+	for (const auto& item : items)
+		connected_tags_.read_tag(item, monitor, state);
+	return true;
 }
 
 

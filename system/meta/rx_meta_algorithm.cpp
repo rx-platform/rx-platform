@@ -138,7 +138,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		return false;
 	if (!stream.write_bool("ro", whose.read_only_))
 		return false;
+	if (!stream.start_object("value"))
+		return false;
 	if (!whose.storage_.serialize(stream))
+		return false;
+	if (!stream.end_object())
 		return false;
 	return true;
 }
@@ -151,7 +155,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 		return false;
 	if (!stream.read_bool("ro", whose.read_only_))
 		return false;
+	if (!stream.start_object("value"))
+		return false;
 	if (!whose.storage_.deserialize(stream))
+		return false;
+	if (!stream.end_object())
 		return false;
 	return true;
 }

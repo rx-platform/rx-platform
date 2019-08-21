@@ -86,18 +86,18 @@ rx_message_type_t error_message::type_id = rx_error_message_id;
 
 rx_result error_message::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uint("errCode", errorCode))
+	if (!stream.write_uint("errCode", error_code))
 		return "Error serializing error code";
-	if (!stream.write_string("errMsg", errorMessage.c_str()))
+	if (!stream.write_string("errMsg", error_text.c_str()))
 		return "Error serializing error message";
 	return true;
 }
 
 rx_result error_message::deserialize (base_meta_reader& stream)
 {
-	if (!stream.read_uint("errCode", errorCode))
+	if (!stream.read_uint("errCode", error_code))
 		return "Error reading error code";
-	if (!stream.read_string("errCode", errorMessage))
+	if (!stream.read_string("errMsg", error_text))
 		return "Error reading error message";
 	return true;
 }

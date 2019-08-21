@@ -35,6 +35,7 @@
 
 #include "system/server/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
+#include "rx_internal_subscription.h"
 
 
 namespace sys_internal {
@@ -184,6 +185,62 @@ rx_result rx_protocol_port::set_current_directory (const string_type& path)
 	}
 }
 
+rx_result rx_protocol_port::connect_subscription (subscription_data& data)
+{
+	if (data.subscription_id.is_null())
+	{
+		data.subscription_id = rx_uuid::create_new();
+		auto temp = std::make_unique<rx_protocol_subscription>(data, smart_this());
+		subscriptions_.emplace(data.subscription_id, std::move(temp));
+		return true;
+	}
+	else
+	{
+		return "Subscription reuse not implemented yet!";
+	}
+}
+
+rx_result rx_protocol_port::delete_subscription (const rx_uuid& id)
+{
+	auto it = subscriptions_.find(id);
+	if (it != subscriptions_.end())
+	{
+		it->second->destroy();
+		subscriptions_.erase(it);
+		return true;
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
+rx_result rx_protocol_port::update_subscription (subscription_data& data)
+{
+	auto it = subscriptions_.find(data.subscription_id);
+	if (it != subscriptions_.end())
+	{
+		return it->second->update_subscription(data);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
+rx_result rx_protocol_port::add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
+{
+	auto it = subscriptions_.find(id);
+	if (it != subscriptions_.end())
+	{
+		return it->second->add_items(items, results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
 
 // Class sys_internal::rx_protocol::rx_json_protocol 
 
@@ -252,10 +309,100 @@ rx_result rx_json_protocol::send_string (const string_type& what)
 
 // Class sys_internal::rx_protocol::rx_protocol_subscription 
 
-rx_protocol_subscription::rx_protocol_subscription()
+rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_reference<rx_protocol_port> port)
+      : data_(data),
+        my_port_(port)
+{
+	my_subscription_ = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(this);
+	if (data.active)
+		my_subscription_->activate();
+}
+
+
+rx_protocol_subscription::~rx_protocol_subscription()
+{
+	destroy();
+}
+
+
+
+rx_result rx_protocol_subscription::update_subscription (subscription_data& data)
+{
+	RX_ASSERT(data.subscription_id == data_.subscription_id);
+	if(data.active && !data_.active)
+		my_subscription_->activate();
+	else if(!data.active && data_.active)
+		my_subscription_->deactivate();
+	data_ = data;
+	return true;
+}
+
+void rx_protocol_subscription::items_changed (const std::vector<update_item>& items)
+{
+	if (!items.empty() && my_port_)
+	{
+		auto notify_msg = std::make_unique<messages::subscription_messages::subscription_items_change>();
+		notify_msg->request_id = 0;
+		notify_msg->subscription_id = data_.subscription_id;
+		notify_msg->items.reserve(items.size());
+		for (const auto& one : items)
+		{
+			auto it = items_.find(one.handle);
+			if(it!=items_.end())
+			{
+				notify_msg->items.emplace_back(update_item{ it->second.client_handle, one.value });
+			}
+		}
+		my_port_->data_processed(std::move(notify_msg));
+	}
+}
+
+void rx_protocol_subscription::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
 {
 }
 
+void rx_protocol_subscription::destroy ()
+{
+	if (my_subscription_)
+	{
+		if (data_.active)
+			my_subscription_->deactivate();
+		my_subscription_ = sys_runtime::subscriptions::rx_subscription::smart_ptr::null_ptr;
+	}
+	if (my_port_)
+		my_port_ = rx_protocol_port::smart_ptr::null_ptr;
+}
+
+rx_result rx_protocol_subscription::add_items (const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
+{
+	string_array paths;
+	for (const auto& one : items)
+	{
+		paths.emplace_back(one.path);
+	}
+	auto result = my_subscription_->connect_items(paths, results);
+	if (!result)
+		return result;
+	size_t idx = 0;
+	for (const auto& one : results)
+	{
+		subscription_item_data temp;
+		temp.local_handle = one.value();
+		temp.client_handle = items[idx].client_handle;
+		temp.path = items[idx].path;
+		temp.active = items[idx].active;
+		temp.trigger_type = items[idx].trigger_type;
+		items_.emplace(one.value(), std::move(temp));
+		idx++;
+	}
+	return true;
+}
+
+
+// Class sys_internal::rx_protocol::subscription_data 
+
+
+// Class sys_internal::rx_protocol::subscription_item_data 
 
 
 } // namespace rx_protocol

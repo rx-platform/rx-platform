@@ -32,12 +32,12 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
@@ -88,11 +88,81 @@ class rx_json_protocol : public rx_protocol_stack_entry
 
 
 
-class rx_protocol_subscription 
+struct subscription_data 
 {
 
+
+      rx_uuid subscription_id;
+
+      uint32_t publish_rate;
+
+      uint32_t keep_alive_period;
+
+      bool active;
+
+      uint8_t priority;
+
   public:
-      rx_protocol_subscription();
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct subscription_item_data 
+{
+
+
+      bool active;
+
+      string_type path;
+
+      runtime_handle_t client_handle;
+
+      runtime_handle_t local_handle;
+
+      subscription_trigger_type trigger_type;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscription_callback  
+{
+	typedef std::map<runtime_handle_t, subscription_item_data> items_type;
+
+  public:
+      rx_protocol_subscription (subscription_data& data, rx_reference<rx_protocol_port> port);
+
+      ~rx_protocol_subscription();
+
+
+      rx_result update_subscription (subscription_data& data);
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+
+      void destroy ();
+
+      rx_result add_items (const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
 
   protected:
@@ -101,6 +171,12 @@ class rx_protocol_subscription
 
 
       rx_reference<sys_runtime::subscriptions::rx_subscription> my_subscription_;
+
+      subscription_data data_;
+
+      rx_reference<rx_protocol_port> my_port_;
+
+      items_type items_;
 
 
 };
@@ -118,7 +194,7 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
 	DECLARE_REFERENCE_PTR(rx_protocol_port);
 
-	typedef std::vector<std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
+	typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
       rx_protocol_port();
@@ -131,6 +207,14 @@ system protocol port class. basic implementation of a rx-platform protocol");
       void data_processed (message_ptr result);
 
       rx_result set_current_directory (const string_type& path);
+
+      rx_result connect_subscription (subscription_data& data);
+
+      rx_result delete_subscription (const rx_uuid& id);
+
+      rx_result update_subscription (subscription_data& data);
+	  
+      rx_result add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
 
       const string_type& get_current_directory_path () const

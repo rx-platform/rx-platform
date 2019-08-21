@@ -1209,7 +1209,7 @@ bool json_writer::write_init_values (const char* name, const data::runtime_value
 	}
 	for (const auto& one : values.values)
 	{
-		if (!one.second.value.serialize_value(*this, one.first))
+		if (!one.second.value.get_storage().serialize_value(*this, one.first))
 			return false;
 	}
 	if (!end_object())

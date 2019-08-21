@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 18
+#define RX_HAL_BUILD_NUMBER 19
 
 /*********************************************************************************
 
@@ -23,5 +23,6 @@
 0.10.16. added processor count
 0.10.17. added rx_current_thread
 0.10.18. added thread name
+0.10.19. corrected windows implementation for RX_ASSERT
 
 *********************************************************************************/

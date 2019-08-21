@@ -561,7 +561,7 @@ const runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_
 	static runtime_item::smart_ptr g_empty;
 
 	auto idx = internal_get_index(path);
-	if (idx && !is_value_index(idx))
+	if (idx && is_complex_index(idx))
 	{
 		switch (idx&rt_type_mask)
 		{
@@ -588,7 +588,7 @@ runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_type,m
 	static runtime_item::smart_ptr g_empty;
 
 	auto idx = internal_get_index(path);
-	if (idx && !is_value_index(idx))
+	if (idx && is_complex_index(idx))
 	{
 		switch (idx&rt_type_mask)
 		{

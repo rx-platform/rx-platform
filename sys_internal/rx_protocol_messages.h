@@ -124,6 +124,11 @@ const rx_message_type_t rx_execute_item_request_id = 0x0089;
 const rx_message_type_t rx_execute_item_response_id = 0x8089;
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Async messages constants
+const rx_message_type_t rx_subscription_items_notification_id = 0x7001;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // error message constant
 const rx_message_type_t rx_error_message_id = 0xffff;
@@ -181,9 +186,9 @@ class error_message : public rx_message_base
       rx_message_type_t get_type_id ();
 
 
-      uint32_t errorCode;
+      uint32_t error_code;
 
-      string_type errorMessage;
+      string_type error_text;
 
       static string_type type_name;
 
@@ -191,67 +196,39 @@ class error_message : public rx_message_base
 
 	  error_message(const string_type& message, uint32_t code, rx_request_id_t request_id)
 	  {
-		  errorMessage = message;
-		  errorCode = code;
+		  error_text = message;
+		  error_code = code;
 		  this->request_id = request_id;
 	  }
 	  error_message(const rx_result& result, uint32_t code, rx_request_id_t request_id)
 	  {
+		  bool first = true;
 		  for (const auto& one : result.errors())
-			  errorMessage += one;
-		  errorCode = 13;
+		  {
+			  if (first)
+				  first = false;
+			  else
+				  error_text += ", ";
+			  error_text += one;
+		  }
+		  error_code = 13;
 		  this->request_id = request_id;
 	  }
 	  template<typename resT>
 	  error_message(const rx_result_with<resT>& result, uint32_t code, rx_request_id_t request_id)
 	  {
+		  bool first = true;
 		  for (const auto& one : result.errors())
-			  errorMessage += one;
-		  errorCode = 13;
+		  {
+			  if (first)
+				  first = false;
+			  else
+				  error_text += ", ";
+			  error_text += one;
+		  }
+		  error_code = 13;
 		  this->request_id = request_id;
 	  }
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_connection_context_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type directory;
-
-      string_type application;
-
-      string_type domain;
-
-      rx_node_id application_id;
-
-      rx_node_id domain_id;
-
-
   protected:
 
   private:
@@ -328,6 +305,47 @@ class rx_connection_context_request : public rx_request_message
       string_type application;
 
       string_type domain;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_connection_context_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+      rx_node_id application_id;
+
+      rx_node_id domain_id;
 
 
   protected:

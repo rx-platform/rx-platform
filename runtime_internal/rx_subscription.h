@@ -66,6 +66,8 @@ class rx_subscription_tag
 
       runtime_handle_t target_handle;
 
+      platform_item_ptr item_ptr;
+
 
   protected:
 
@@ -83,6 +85,8 @@ class rx_subscription_callback
 {
 
   public:
+      virtual ~rx_subscription_callback();
+
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 

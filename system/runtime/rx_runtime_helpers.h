@@ -67,6 +67,14 @@ namespace rx_platform {
 typedef uint32_t runtime_handle_t;
 typedef uint32_t runtime_transaction_id_t;
 
+enum subscription_trigger_type
+{
+	subscription_trigger_periodic = 0,
+	subscription_trigger_critical = 1,
+	
+	max_trigger_type = 1
+};
+
 namespace runtime {
 
 namespace operational

@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -90,7 +90,7 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 	}
 }
 
-// Class rx_platform::runtime::objects::object_runtime 
+// Class rx_platform::runtime::objects::object_runtime
 
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
@@ -161,7 +161,7 @@ bool object_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 
 	if (!stream.end_object())
 		return false;
-	
+
 	return true;
 }
 
@@ -291,8 +291,13 @@ void object_runtime::fire_job ()
 	object_runtime_algorithms<meta::object_types::object_type>::fire_job(this);
 }
 
+rx_result object_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::object_type>::read_items(items, monitor, ctx, this);
+}
 
-// Class rx_platform::runtime::objects::application_runtime 
+
+// Class rx_platform::runtime::objects::application_runtime
 
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
@@ -344,7 +349,7 @@ bool application_runtime::serialize (base_meta_writer& stream, uint8_t type) con
 
 	if (!instance_data_.serialize(stream, type))
 		return false;
-	
+
 	if (!runtime_.serialize(stream, type))
 		return false;
 
@@ -556,8 +561,13 @@ void application_runtime::fire_job ()
 	object_runtime_algorithms<meta::object_types::application_type>::fire_job(this);
 }
 
+rx_result application_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::application_type>::read_items(items, monitor, ctx, this);
+}
 
-// Class rx_platform::runtime::objects::domain_runtime 
+
+// Class rx_platform::runtime::objects::domain_runtime
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
@@ -773,8 +783,13 @@ void domain_runtime::fire_job ()
 	object_runtime_algorithms<meta::object_types::domain_type>::fire_job(this);
 }
 
+rx_result domain_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::domain_type>::read_items(items, monitor, ctx, this);
+}
 
-// Class rx_platform::runtime::objects::port_runtime 
+
+// Class rx_platform::runtime::objects::port_runtime
 
 rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
@@ -863,7 +878,7 @@ bool port_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 
 	if (!instance_data_.serialize(stream, type))
 		return false;
-	
+
 	if (!runtime_.serialize(stream, type))
 		return false;
 
@@ -1014,8 +1029,13 @@ void port_runtime::fire_job ()
 	object_runtime_algorithms<meta::object_types::port_type>::fire_job(this);
 }
 
+rx_result port_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+{
+	return object_runtime_algorithms<meta::object_types::port_type>::read_items(items, monitor, ctx, this);
+}
 
-// Class rx_platform::runtime::objects::object_instance_data 
+
+// Class rx_platform::runtime::objects::object_instance_data
 
 
 bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1041,7 +1061,7 @@ bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class rx_platform::runtime::objects::domain_instance_data 
+// Class rx_platform::runtime::objects::domain_instance_data
 
 
 bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1091,7 +1111,7 @@ bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class rx_platform::runtime::objects::application_instance_data 
+// Class rx_platform::runtime::objects::application_instance_data
 
 
 bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1117,7 +1137,7 @@ bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t t
 }
 
 
-// Class rx_platform::runtime::objects::port_instance_data 
+// Class rx_platform::runtime::objects::port_instance_data
 
 
 bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1143,7 +1163,7 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms 
+// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms
 
 
 template <class typeT>
@@ -1151,6 +1171,7 @@ rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& p
 {
 	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
 	using smart_ptr = typename typeT::RTypePtr;
+
 	std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
 	{
 		connect_result_t results;
@@ -1168,7 +1189,9 @@ rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& p
 				results.emplace_back(ret.errors());
 		}
 		if (whose->runtime_context_.process_tag_connections)
+		{
 			whose->fire_job();
+		}
 		return results;
 	};
 	auto ret_thread = whose->get_executer();
@@ -1198,8 +1221,31 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType* w
 	whose->runtime_.process_runtime(whose->runtime_context_);
 }
 
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose)
+{
+	using smart_ptr = typename typeT::RTypePtr;
 
-// Parameterized Class rx_platform::runtime::objects::process_runtime_job 
+	std::function<void(const std::vector<runtime_handle_t>&, runtime::operational::tags_callback_ptr, smart_ptr)> func = [](const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, smart_ptr whose)
+	{
+		auto ret = whose->runtime_.read_items(items, monitor);
+		if (ret)
+		{
+			whose->runtime_context_.process_tag_connections = true;
+		}
+		if (whose->runtime_context_.process_tag_connections)
+		{
+			whose->fire_job();
+		}
+		return ret;
+	};
+	auto ret_thread = whose->get_executer();
+	rx_post_function_to<decltype(ctx.object), const std::vector<runtime_handle_t>&, runtime::operational::tags_callback_ptr, smart_ptr>(ret_thread, func, ctx.object, items, monitor, whose->smart_this());
+	return true;
+}
+
+
+// Parameterized Class rx_platform::runtime::objects::process_runtime_job
 
 template <class typePtr>
 process_runtime_job<typePtr>::process_runtime_job (typePtr whose)

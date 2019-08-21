@@ -203,8 +203,6 @@ void rx_value::set_test ()
 
 bool rx_value::serialize (base_meta_writer& stream) const
 {
-	if (!stream.start_object("value"))
-		return false;
 	if (!storage_.serialize(stream))
 		return false;
 	if (!stream.write_time("ts", time_))
@@ -213,15 +211,11 @@ bool rx_value::serialize (base_meta_writer& stream) const
 		return false;
 	if (!stream.write_uint("origin", origin_))
 		return false;
-	if (!stream.end_object())
-		return false;
 	return true;
 }
 
 bool rx_value::deserialize (base_meta_reader& stream)
 {
-	if (!stream.start_object("value"))
-		return false;
 	if (!storage_.deserialize(stream))
 		return false;
 	if (!stream.read_time("ts", time_))
@@ -229,8 +223,6 @@ bool rx_value::deserialize (base_meta_reader& stream)
 	if (!stream.read_uint("quality", quality_))
 		return false;
 	if (!stream.read_uint("origin", origin_))
-		return false;
-	if (!stream.end_object())
 		return false;
 	return true;
 }
@@ -269,7 +261,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -277,7 +269,7 @@ rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_tim
 	return ret;
 }
 
-rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -285,7 +277,7 @@ rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -381,7 +373,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx::values::rx_value rx_value::operator + (const rx_value& right) const
+rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -390,7 +382,7 @@ rx::values::rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator - (const rx_value& right) const
+rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -399,16 +391,16 @@ rx::values::rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator * (const rx_value& right) const
+rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
-	ret.quality_ = RX_GOOD_QUALITY;
+	ret.quality_ = quality_;
 	ret.storage_ = storage_ * right.storage_;
 	ret.handle_quality_after_arithmetic();
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator / (const rx_value& right) const
+rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -417,7 +409,7 @@ rx::values::rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator % (const rx_value& right) const
+rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -561,20 +553,6 @@ void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mod
 		val.set_good_locally();
 	if (mode.is_test())
 		val.set_test();
-}
-
-bool rx_simple_value::serialize_value (base_meta_writer& writer, const string_type& name) const
-{
-	if (!storage_.serialize_value(writer, name))
-		return false;
-	return true;
-}
-
-bool rx_simple_value::deserialize_value (base_meta_reader& reader, const string_type& name)
-{
-	if (!storage_.deserialize_value(reader, name))
-		return false;
-	return true;
 }
 
 bool rx_simple_value::convert_to (rx_value_t type)
@@ -4049,26 +4027,18 @@ void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode
 
 bool rx_timed_value::serialize (base_meta_writer& writter) const
 {
-	if (!writter.start_object("timed"))
-		return false;
 	if (!storage_.serialize(writter))
 		return false;
 	if (!writter.write_time("ts", time_))
-		return false;
-	if (!writter.end_object())
 		return false;
 	return true;
 }
 
 bool rx_timed_value::deserialize (base_meta_reader& reader)
 {
-	if (!reader.start_object("timed_"))
-		return false;
 	if (!storage_.deserialize(reader))
 		return false;
 	if (!reader.read_time("ts", time_))
-		return false;
-	if (!reader.end_object())
 		return false;
 	return true;
 }
@@ -4125,7 +4095,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -4203,4 +4173,6 @@ rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 
 } // namespace values
 } // namespace rx
+
+
 

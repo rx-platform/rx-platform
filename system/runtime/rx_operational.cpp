@@ -145,6 +145,7 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 {
 	if (!next_send_.empty())
 	{
+		//OutputDebugStringA("****************Something to send\r\n");
 		std::vector<update_item> update_data;
 		for (auto& one : next_send_)
 		{
@@ -154,6 +155,7 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 			auto monitor = one.first;
 			std::function<void(tags_callback_ptr)> func=[update_data](tags_callback_ptr monitor)
 				{
+					//OutputDebugStringA("****************Item changed fired\r\n");
 					monitor->items_changed(update_data);
 				};
 			rx_post_function_to<tags_callback_ptr, tags_callback_ptr>(monitor->get_target(), func, monitor, monitor);
@@ -161,6 +163,34 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 		next_send_.clear();
 	}
 	return false;
+}
+
+rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	auto it = handles_map_.find(item);
+	if (it != handles_map_.end())
+	{
+		switch (it->second.reference.ref_type)
+		{
+		case rt_value_ref_type::rt_const_value:
+			next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.const_value->get_value(state));
+			break;
+		case rt_value_ref_type::rt_value:
+			next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.value->get_value(state));
+			break;
+		case rt_value_ref_type::rt_variable:
+			next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.variable->get_value(state));
+			break;
+		default:
+			RX_ASSERT(false);
+			return "Internal error";
+		}
+	}
+	return true;
+}
+
+void connected_tags::value_set (structure::value_data* whose, const rx_simple_value& val)
+{
 }
 
 
@@ -221,7 +251,7 @@ rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val)
 	}
 }
 
-rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val)
+rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags)
 {
 	auto it_handles = handles_map_.find(handle);
 	if (it_handles != handles_map_.end())
