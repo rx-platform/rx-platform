@@ -70,6 +70,7 @@ rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stre
 template <class itemT>
 rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
 {
+	item = rx_create_reference<itemT>();
 	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;

@@ -176,7 +176,7 @@ typedef DWORD rx_thread_data_t;
 #include "C:\Python\include/Python.h"
 #endif
 
-#include "C:\Python\include/Python.h"
+#include <inttypes.h>
 
 
 

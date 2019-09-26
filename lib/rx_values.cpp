@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -155,7 +155,7 @@ bool complex_value_struct::parse_string(const string_type& str)
 	return true;
 }
 
-// Class rx::values::rx_value 
+// Class rx::values::rx_value
 
 
 bool rx_value::is_good () const
@@ -465,7 +465,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value 
+// Class rx::values::rx_simple_value
 
 rx_simple_value::rx_simple_value (const rx_value_storage& storage)
 	: storage_(storage)
@@ -619,7 +619,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage 
+// Class rx::values::rx_value_storage
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -1540,8 +1540,8 @@ bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_val
 		break;
 	case RX_STRING_TYPE:
 		{
-			char buff[0x20];
-			snprintf(buff, 0x20, "%.15g+%.15gi", val.real, val.imag);
+			char buff[0x100];
+			snprintf(buff, 0x100, "%.15g+%.15gi", val.real, val.imag);
 			where.string_value = new string_type(buff);
 		}
 		break;
@@ -1823,7 +1823,7 @@ rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) co
 		{// time
 			result.value_type_ = RX_TIME_TYPE;
 			result.value_.time_value = rx_time(value_.time_value) - right.get_integer_value();
-		}		
+		}
 	}
 	return result;
 }
@@ -3963,7 +3963,7 @@ byte_string extract_value(const rx_value_storage& from, const byte_string& defau
 	}
 	return default_value;
 }
-// Class rx::values::rx_timed_value 
+// Class rx::values::rx_timed_value
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {

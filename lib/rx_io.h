@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -148,10 +148,12 @@ template <class buffT>
 class full_duplex_comm : public dispatcher_subscriber  
 {
 	DECLARE_REFERENCE_PTR(full_duplex_comm<buffT>);
+public:
+
+	typedef typename buffT::smart_ptr buffer_ptr;
 
 protected:
 	typedef std::function<bool(const void*, size_t, rx_thread_handle_t)> readed_function_t;
-	typedef typename buffT::smart_ptr buffer_ptr;
 	typedef std::queue<buffer_ptr> queue_type;
 
   public:
@@ -394,11 +396,14 @@ typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > 
 
 
 template <class headerT, class bufferT>
-class stream_chuks_decoder 
+class stream_chuks_decoder
 {
 
   public:
-      stream_chuks_decoder (std::function<void(const bufferT&)> callback);
+      stream_chuks_decoder (std::function<bool(const bufferT&)> callback);
+
+
+      bool push_bytes (const void* data, size_t count);
 
 
   protected:
@@ -406,7 +411,21 @@ class stream_chuks_decoder
   private:
 
 
-      std::function<void(const bufferT&)> chunk_callback_;
+      std::function<bool(const bufferT&)> chunk_callback_;
+
+      bufferT receive_buffer_;
+
+      headerT* header_;
+
+      uint8_t* temp_byte_header_;
+
+      int collected_header_;
+
+      uint32_t collected_;
+
+      uint32_t expected_;
+
+      headerT temp_header_;
 
 
 };
@@ -455,7 +474,7 @@ class udp_socket : public full_duplex_comm<buffT>
 typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm 
+// Parameterized Class rx::io::full_duplex_comm
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -758,7 +777,7 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket 
+// Parameterized Class rx::io::tcp_socket
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -800,7 +819,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket 
+// Parameterized Class rx::io::tcp_listen_socket
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
@@ -901,7 +920,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket 
+// Parameterized Class rx::io::tcp_client_socket
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -1047,21 +1066,140 @@ bool tcp_client_socket<buffT>::connect_complete ()
 template <class buffT>
 bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher)
 {
-	return bind_socket(0, dispatcher);
+	return bind_socket_tcpip_4(0, dispatcher);
 }
 
 
-// Parameterized Class rx::io::stream_chuks_decoder 
+// Parameterized Class rx::io::stream_chuks_decoder
 
 template <class headerT, class bufferT>
-stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<void(const bufferT&)> callback)
-      : chunk_callback_(callback)
+stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<bool(const bufferT&)> callback)
+      : chunk_callback_(callback),
+        header_(nullptr),
+        collected_header_(0),
+        collected_(0),
+        expected_(0)
 {
+	temp_byte_header_ = (uint32_t*)&temp_header_;
 }
 
 
 
-// Parameterized Class rx::io::udp_socket 
+template <class headerT, class bufferT>
+bool stream_chuks_decoder<headerT,bufferT>::push_bytes (const void* data, size_t count)
+{
+	uint32_t* buffer = (uint32_t*)data;
+	if (header_ == NULL)
+	{
+		int head_size = (collected_header_ + (int)count < (int)sizeof(headerT)) ? (int)count : (int)sizeof(headerT) - collected_header_;
+		memcpy(&temp_byte_header_[collected_header_], buffer, head_size);
+
+		collected_header_ += head_size;
+		if (collected_header_ < (int)sizeof(headerT))
+		{
+			return true;
+		}
+
+		collected_header_ = 0;
+
+		header_ = &temp_header_;
+
+		if (!header_->check_header())
+			return false;
+
+		expected_ = (uint32_t)(header_->get_data_size() - sizeof(headerT));
+
+		receive_buffer_.reinit();
+
+		receive_buffer_.push_data(temp_byte_header_, sizeof(headerT));
+
+		count = count - head_size;
+
+		buffer += head_size;
+	}
+	collected_ += (uint32_t)count;
+
+	bool should_break = false;
+	bool should_continue = false;
+	while (collected_ > expected_)
+	{
+
+		uint32_t usefull = (uint32_t)count - (collected_ - expected_);
+		receive_buffer_.push_data(buffer, usefull);
+
+		if (!chunk_callback_(receive_buffer_))
+		{
+			should_break = true;
+			break;
+		}
+
+		count = count - usefull;
+		collected_ = 0;
+
+		buffer += usefull;
+
+		header_ = NULL;
+
+		int head_size = (collected_header_ + count < (int)sizeof(headerT)) ? (int)count : (int)sizeof(headerT) - collected_header_;
+		assert(head_size <= (int)sizeof(headerT));
+		memcpy(&temp_byte_header_[collected_header_], buffer, head_size);
+
+		collected_header_ += head_size;
+		if (collected_header_ < (int)sizeof(headerT))
+		{
+			should_continue = true;
+			break;
+		}
+
+		collected_header_ = 0;
+
+		header_ = &temp_header_;
+
+		if (!header_->check_header())
+		{
+			should_break = true;
+			break;
+		}
+
+		expected_ = (uint32_t)(header_->get_data_size() - sizeof(headerT));
+
+		receive_buffer_.reinit();
+		receive_buffer_.push_data(temp_byte_header_, sizeof(headerT));
+
+		count = count - head_size;
+
+		assert(((uint32_t)count) < 0x80000000);
+
+		collected_ = (uint32_t)count;
+
+		buffer += head_size;
+
+	}
+	if (should_break)
+		return false;
+
+	if (should_continue)
+	{
+		return true;
+	}
+
+	receive_buffer_.push_data(buffer, count);
+
+	if (collected_ == expected_)
+	{
+
+		if (!chunk_callback_(receive_buffer_))
+			return false;
+
+		collected_ = 0;
+		expected_ = 0;
+		header_ = NULL;
+	}
+	return true;
+}
+
+
+// Parameterized Class rx::io::udp_socket
 
 template <class buffT>
 udp_socket<buffT>::udp_socket()
