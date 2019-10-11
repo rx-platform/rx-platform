@@ -60,7 +60,7 @@ template<class typeT>
 rx_result rx_update_runtime(
 	rx_platform::meta::meta_data& meta_info
 	, data::runtime_values_data* init_data  // initialization data
-	, typename typeT::instance_data_t instance_data
+	, typename typeT::instance_data_t instance_data, bool increment_version
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);
 
@@ -96,7 +96,22 @@ rx_result rx_create_type(
 	, rx_context ctx);
 
 template<class typeT>
-rx_result rx_update_type(typename typeT::smart_ptr prototype
+rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+
+template<class typeT>
+rx_result rx_create_simple_type(
+	const string_type& name // type's path
+	, const string_type& base_name // base type's path
+	, typename typeT::smart_ptr prototype // prototype
+	, namespace_item_attributes attributes // required attributes
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template<class typeT>
+rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx);
 

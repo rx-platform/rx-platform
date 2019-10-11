@@ -390,6 +390,8 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
+      rx_result update_type (typename simple_type_hash<typeT>::Tptr what);
+
 
   protected:
 

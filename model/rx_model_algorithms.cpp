@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -60,7 +60,7 @@ template class runtime_model_algorithm<domain_type>;
 template class runtime_model_algorithm<application_type>;
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm
+// Parameterized Class model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -218,19 +218,20 @@ rx_result types_model_algorithm<typeT>::delete_type_sync (const string_type& nam
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
-		return update_type_sync(prototype, dir);
+		return update_type_sync(prototype, dir, increment_version);
 	};
 	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir)
+rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
 {
 	prototype->meta_info().resolve();
+	prototype->meta_info().increment_version(increment_version);
 	auto result = prototype->resolve(dir);
 	if (!result)
 	{
@@ -256,7 +257,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm
+// Parameterized Class model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -415,8 +416,47 @@ rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const string_ty
 	return true;
 }
 
+template <class typeT>
+void simple_types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+{
+	using result_t = rx_result_with<typename typeT::smart_ptr>;
+	std::function<result_t(void)> func = [=]() {
+		return update_type_sync(prototype, dir, increment_version);
+	};
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
+}
 
-// Parameterized Class model::algorithms::runtime_model_algorithm
+template <class typeT>
+rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
+{
+	prototype->meta_info().resolve();
+	prototype->meta_info().increment_version(increment_version);
+	auto result = prototype->resolve(dir);
+	if (!result)
+	{
+		return result.errors();
+	}
+
+	auto ret = platform_types_manager::instance().internal_get_simple_type_cache<typeT>().update_type(prototype);
+	if (!ret)
+	{// error, didn't updated type
+		return ret.errors();
+	}
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		auto save_result = prototype->get_item_ptr()->save();
+		if (!save_result)
+		{
+			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
+			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
+			return ret;
+		}
+	}
+	return prototype;
+}
+
+
+// Parameterized Class model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
@@ -604,12 +644,12 @@ rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::update_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
+void runtime_model_algorithm<typeT>::update_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, bool increment_version, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::RTypePtr>;
 	auto result_target = rx_thread_context();
 	std::function<void(rx_thread_handle_t)> func = [=](rx_thread_handle_t target) {
-		auto ret = update_runtime_sync(info, init_data, instance_data, dir, callback, ref, target);
+		auto ret = update_runtime_sync(info, init_data, instance_data, increment_version, dir, callback, ref, target);
 		if (!ret)
 			rx_post_result_to<decltype(ref), typename typeT::RTypePtr>(result_target, [callback](result_t&& res)
 				{
@@ -620,7 +660,7 @@ void runtime_model_algorithm<typeT>::update_runtime (const meta_data& info, data
 }
 
 template <class typeT>
-rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref, rx_thread_handle_t result_target)
+rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, bool increment_version, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref, rx_thread_handle_t result_target)
 {
 	auto id = info.get_id();
 	if (id.is_null())
@@ -634,29 +674,30 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 	}
 
 	runtime::runtime_deinit_context ctx;
-	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [info, callback, init_data, instance_data, dir, ref](rx_result&& deinit_result)
+	meta_data meta_info(info);
+	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [meta_info, increment_version, callback, init_data, instance_data, dir, ref] (rx_result&& deinit_result) mutable
 		{
-			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(info.get_id());
+			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(meta_info.get_id());
 			if (ret)
 			{
-				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
+				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(meta_info.get_path());
 				if (dir)
-					dir->delete_item(info.get_name());
+					dir->delete_item(meta_info.get_name());
 				if (rx_gate::instance().get_platform_status() == rx_platform_running)
 				{
-					auto storage_result = info.resolve_storage();
+					auto storage_result = meta_info.resolve_storage();
 					if (storage_result)
 					{
-						auto item_result = storage_result.value()->get_item_storage(info);
+						auto item_result = storage_result.value()->get_item_storage(meta_info);
 						if (item_result)
 						{
 							item_result.value()->delete_item();
-							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + info.get_name());
+							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + meta_info.get_name());
 						}
 					}
 				}
-
-				auto create_result = create_runtime_sync(info, init_data, instance_data, dir, ref);
+				meta_info.increment_version(increment_version);
+				auto create_result = create_runtime_sync(meta_info, init_data, instance_data, dir, ref);
 					callback(std::move(create_result));
 			}
 			if (!ret)

@@ -1066,6 +1066,25 @@ rx_result simple_type_hash<typeT>::initialize (hosting::rx_platform_host* host, 
 	return result;
 }
 
+template <class typeT>
+rx_result simple_type_hash<typeT>::update_type (typename simple_type_hash<typeT>::Tptr what)
+{
+	const auto& id = what->meta_info().get_id();
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		it->second = what;
+		// TODO Should check and change if parent is different
+		/*if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
+		return true;
+	}
+	else
+	{
+		return "Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name() + " does not exists";
+	}
+}
+
 
 // Class model::types_resolver 
 

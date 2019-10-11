@@ -92,6 +92,12 @@ const rx_message_type_t rx_update_runtime_response_id = 0x8009;
 const rx_message_type_t rx_browse_runtime_request_id = 0x0010;
 const rx_message_type_t rx_browse_runtime_response_id = 0x8010;
 
+const rx_message_type_t rx_make_directory_request_id = 0x0011;
+const rx_message_type_t rx_make_directory_response_id = 0x8011;
+
+const rx_message_type_t rx_remove_directory_request_id = 0x0012;
+const rx_message_type_t rx_remove_directory_response_id = 0x8012;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;

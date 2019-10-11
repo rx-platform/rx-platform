@@ -381,7 +381,6 @@ class add_item_result_data
 	  add_item_result_data() = default;
 	  add_item_result_data(const add_item_result_data&) = default;
 	  add_item_result_data(add_item_result_data&&) = default;
-
   protected:
 
   private:
@@ -450,7 +449,6 @@ class item_result_data
 	  item_result_data() = default;
 	  item_result_data(const item_result_data&) = default;
 	  item_result_data(item_result_data&&) = default;
-
   protected:
 
   private:

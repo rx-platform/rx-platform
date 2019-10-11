@@ -87,6 +87,7 @@ struct query_result
 struct rx_context
 {
 	rx_directory_ptr directory;
+	rx_directory_ptr safe_directory();
 	rx_reference<reference_object> object;
 };
 

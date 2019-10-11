@@ -54,8 +54,50 @@ namespace set_messages {
 template <class itemT>
 message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
 {
-	auto ret_value = std::make_unique<error_message>("Not implemented"s, 21, request);
-	return ret_value;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [create, request, port](rx_result_with<typename itemT::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			if (create)
+			{
+				auto response = std::make_unique<set_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+			else
+			{
+				auto response = std::make_unique<update_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+	rx_result result;
+	if (create)
+		result = api::meta::rx_create_simple_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+	else
+		result = api::meta::rx_update_simple_type<itemT>(item, false, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
 }
 
 template <class itemT>
@@ -117,7 +159,7 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 	if(create)
 		result = api::meta::rx_create_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
 	else
-		result = api::meta::rx_update_type<itemT>(item, callback, ctx);
+		result = api::meta::rx_update_type<itemT>(item, false, callback, ctx);
 
 	if (!result)
 	{
@@ -693,11 +735,10 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 	};
 	rx_result result;
 
-	meta_.increment_version(false);
 	if (create)
 		result = api::meta::rx_create_runtime<itemT>(meta_, &values_, instance_data_, callback, ctx);
 	else
-		result = api::meta::rx_update_runtime<itemT>(meta_, &values_, instance_data_, callback, ctx);
+		result = api::meta::rx_update_runtime<itemT>(meta_, &values_, instance_data_, false, callback, ctx);
 
 	if (!result)
 	{

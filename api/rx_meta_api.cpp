@@ -98,32 +98,32 @@ template rx_result rx_create_runtime<port_type>(
 template<class typeT>
 rx_result rx_update_runtime(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, typename typeT::instance_data_t instance_data
+	, typename typeT::instance_data_t instance_data, bool increment_version
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
 	model::algorithms::runtime_model_algorithm<typeT>::update_runtime(
-		meta_info, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
+		meta_info, ptr_copy, instance_data, increment_version, ctx.directory, callback, ctx.object);
 	return true;
 }
 
 template rx_result rx_update_runtime<object_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::object_instance_data instance_data
+	, runtime::objects::object_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<domain_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::domain_instance_data instance_data
+	, runtime::objects::domain_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<application_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::application_instance_data instance_data
+	, runtime::objects::application_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<port_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::port_instance_data instance_data
+	, runtime::objects::port_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
 
 
@@ -250,26 +250,104 @@ template rx_result rx_create_type<application_type>(const string_type& name
 	, rx_context ctx);
 
 template<class typeT>
-rx_result rx_update_type(typename typeT::smart_ptr prototype
+rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
 	model::algorithms::types_model_algorithm<typeT>::update_type(
-		prototype, ctx.directory, callback, ctx.object);
+		prototype, ctx.directory, increment_version, callback, ctx.object);
 	return true;
 }
-template rx_result rx_update_type<object_type>(object_type::smart_ptr prototype
+template rx_result rx_update_type<object_type>(object_type::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<object_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_update_type<domain_type>(domain_type::smart_ptr prototype
+template rx_result rx_update_type<domain_type>(domain_type::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<domain_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_update_type<port_type>(port_type::smart_ptr prototype
+template rx_result rx_update_type<port_type>(port_type::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<port_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_update_type<application_type>(application_type::smart_ptr prototype
+template rx_result rx_update_type<application_type>(application_type::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<application_type::smart_ptr>&&)> callback
 	, rx_context ctx);
+
+
+template<class typeT>
+rx_result rx_create_simple_type(const string_type& name
+	, const string_type& base_name
+	, typename typeT::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx)
+{
+	model::algorithms::simple_types_model_algorithm<typeT>::create_type(
+		name, base_name, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+	return true;
+}
+template rx_result rx_create_simple_type<struct_type>(const string_type& name, const string_type& base_name
+	, struct_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<struct_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_simple_type<variable_type>(const string_type& name, const string_type& base_name
+	, variable_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<variable_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template rx_result rx_create_simple_type<source_type>(const string_type& name, const string_type& base_name
+	, source_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<source_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_simple_type<filter_type>(const string_type& name, const string_type& base_name
+	, filter_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<filter_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_create_simple_type<event_type>(const string_type& name, const string_type& base_name
+	, event_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<event_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template rx_result rx_create_simple_type<mapper_type>(const string_type& name, const string_type& base_name
+	, mapper_type::smart_ptr prototype
+	, namespace_item_attributes attributes
+	, std::function<void(rx_result_with<mapper_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+
+template<class typeT>
+rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
+	, rx_context ctx)
+{
+	model::algorithms::simple_types_model_algorithm<typeT>::update_type(
+		prototype, ctx.directory, increment_version, callback, ctx.object);
+	return true;
+}
+template rx_result rx_update_simple_type<struct_type>(struct_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<struct_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_simple_type<variable_type>(variable_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<variable_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template rx_result rx_update_simple_type<source_type>(source_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<source_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_simple_type<filter_type>(filter_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<filter_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+template rx_result rx_update_simple_type<event_type>(event_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<event_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<mapper_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
 
 
 rx_result recursive_save_directory(rx_directory_ptr dir)

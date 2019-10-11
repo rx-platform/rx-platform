@@ -264,7 +264,7 @@ rx_result basic_types_algorithm<struct_type>::serialize_basic_type(const struct_
 {
 	if (!whose.meta_info_.serialize_meta_data(stream, type, struct_type::type_id))
 		return false;
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.serialize_complex_definition(stream, type);
 	if (!ret)
@@ -299,7 +299,7 @@ rx_result basic_types_algorithm<variable_type>::deserialize_basic_type(variable_
 template <>
 rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type& whose, base_meta_reader& stream, uint8_t type)
 {
-	if (!stream.start_object("Def"))
+	if (!stream.start_object("def"))
 		return false;
 	auto ret = whose.complex_data_.deserialize_complex_definition(stream, type);
 	if (!ret)
