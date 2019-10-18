@@ -52,9 +52,9 @@ namespace meta_algorithm {
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
-	if (!stream.write_id("id", whose.target_id_))
+	if (!stream.write_string("name", whose.name_))
 		return false;
-	if (!stream.write_string("name", whose.name_.c_str()))
+	if (!whose.target_.serialize_reference("target", stream))
 		return false;
 	return true;
 }
@@ -62,9 +62,9 @@ rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
 {
-	if (!stream.read_id("id", whose.target_id_))
-		return false;
 	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!whose.target_.deserialize_reference("target", stream))
 		return false;
 	return true;
 }
@@ -82,6 +82,10 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 			<< whose.name_;
 		
 		ctx.add_error(ss.str());
+		for (const auto& one : target.errors())
+		{
+			ctx.add_error(one);
+		}
 	}
 	return ctx.is_check_ok();
 }
@@ -104,19 +108,22 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose, rx_directory_ptr dir)
 {
-	if (!whose.target_id_.is_null())
+	if (whose.target_.is_node_id() && !whose.target_.is_null())
+	{
+		whose.target_id_ = whose.target_.get_node_id();
 		return true;// already resolved
-	if (whose.target_name_.empty())
+	}
+	if (!whose.target_.is_node_id() && whose.target_.is_null())
 		return "Unable to resolve empty target name";
-	auto item = dir->get_sub_item(whose.target_name_);
+	auto item = dir->get_sub_item(whose.target_.get_path());
 	if (!item)
 	{
-		return whose.target_name_ + " does not exists!";
+		return whose.target_.get_path() + " does not exists!";
 	}
 	auto id = item->meta_info().get_id();
 	if (id.is_null())
 	{// TODO error, item does not have id
-		return whose.target_name_ + " does not have valid id!";
+		return whose.target_.get_path() + " does not have valid id!";
 	}
 	auto ret = model::platform_types_manager::instance().internal_get_simple_type_cache<typename typeT::TargetType>().type_exists(id);
 	if (!ret)
@@ -132,9 +139,9 @@ rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose,
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
 {
-	if (!stream.write_id("id", whose.target_id_))
-		return false;
 	if (!stream.write_string("name", whose.name_.c_str()))
+		return false;
+	if (!whose.target_.serialize_reference("target", stream))
 		return false;
 	if (!stream.write_bool("ro", whose.read_only_))
 		return false;
@@ -149,9 +156,9 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_attribute(def_blocks::variable_attribute& whose, base_meta_reader& stream)
 {
-	if (!stream.read_id("id", whose.target_id_))
-		return false;
 	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!whose.target_.deserialize_reference("target", stream))
 		return false;
 	if (!stream.read_bool("ro", whose.read_only_))
 		return false;
@@ -311,6 +318,7 @@ rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type
 		return false;
 	return true;
 }
+
 
 
 template <>

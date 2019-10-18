@@ -62,78 +62,110 @@ create_command::~create_command()
 
 bool create_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<create_data_t> data = ctx->get_instruction_data<create_data_t>();
-	if (!data)
+	if (!in.eof())
 	{
-		if (!in.eof())
+		string_type what;
+		in >> what;
+		if (!what.empty())
 		{
-			string_type what;
-			in >> what;
-			if (!what.empty())
+			auto type_id = rx_parse_type_name(what);
+			bool ret = false;
+			switch (type_id)
 			{
-				bool ret = false;
-				if (what == "object")
+			case rx_item_type::rx_object:
 				{
 					runtime::objects::object_instance_data instance_data;
-					ret = create_object<object_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<object_type>());
+					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else if (what == "domain")
+				break;
+			case rx_item_type::rx_domain:
 				{
 					runtime::objects::domain_instance_data instance_data;
-					ret = create_object<domain_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<domain_type>());
+					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<domain_type>());
 				}
-				else if (what == "port")
+				break;
+			case rx_item_type::rx_port:
 				{
 					runtime::objects::port_instance_data instance_data;
-					ret = create_object<port_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<port_type>());
+					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<port_type>());
 				}
-				else if (what == "app" || what == "application")
+				break;
+			case rx_item_type::rx_application:
 				{
 					runtime::objects::application_instance_data instance_data;
-					ret = create_object<application_type>(std::move(instance_data), in, out, err, ctx, tl::type2type<application_type>());
+					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<application_type>());
 				}
-				else if (what == "object-type")
+				break;
+			case rx_item_type::rx_object_type:
 				{
-					ret = create_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					ret = create_type(in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else
+				break;
+			case rx_item_type::rx_application_type:
 				{
-					err << "Unknown type:" << what << "\r\n";
-					return false;
+					ret = create_type(in, out, err, ctx, tl::type2type<application_type>());
 				}
-				if (ret)
+				break;
+			case rx_item_type::rx_port_type:
 				{
-					data = rx_create_reference<create_data_t>();
-					data->started = rx_get_us_ticks();
-					ctx->set_instruction_data(data);
-					ctx->set_waiting();
+					ret = create_type(in, out, err, ctx, tl::type2type<port_type>());
 				}
-				return ret;
+				break;
+			case rx_item_type::rx_domain_type:
+				{
+					ret = create_type(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				break;
+			case rx_item_type::rx_struct_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<struct_type>());
+				}
+				break;
+			case rx_item_type::rx_variable_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<variable_type>());
+				}
+				break;
+			case rx_item_type::rx_source_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<source_type>());
+				}
+				break;
+			case rx_item_type::rx_filter_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<filter_type>());
+				}
+				break;
+			case rx_item_type::rx_event_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<event_type>());
+				}
+				break;
+			case rx_item_type::rx_mapper_type:
+				{
+					ret = create_simple_type(in, out, err, ctx, tl::type2type<mapper_type>());
+				}
+				break;
+			default:
+				err << "Unknown type:" << what << "\r\n";
+				return false;
 			}
-			else
-				err << "Create type is unknown!\r\n";
+			if (ret)
+			{
+				ctx->set_waiting();
+			}
+			return ret;
 		}
 		else
+		{
 			err << "Create type is unknown!\r\n";
-		return false;
+		}
 	}
 	else
-	{// we are returned here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Create was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Create lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		return true;
+	{
+		err << "Create type is unknown!\r\n";
 	}
+	return false;
 }
 
 
@@ -142,12 +174,13 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 {
 	string_type name;
 	string_type from_command;
-	string_type class_name;
+	string_type base_type_name;
+	item_reference base_reference;
 	string_type as_command;
 	string_type def_command;
 	in >> name
 		>> from_command
-		>> class_name
+		>> base_type_name
 		>> as_command
 		>> def_command;
 	// read the rest of it
@@ -157,27 +190,19 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 
 	typename T::RTypePtr object_ptr;
 
-	// try to acquire the type
-	//if (from_command == "from")
-	//{
-	//}
-	//else
-	//{
-	//	err << "Unknown base "
-	//		<< rx_item_type_name(T::RType::type_id)
-	//		<< " specifier:"
-	//		<< from_command << "!";
-	//	return false;
-	//}
-	//// do we have type
-	//if (!type_definition)
-	//{
-	//	err << "Undefined "
-	//		<< rx_item_type_name(T::type_id)
-	//		<< ":"
-	//		<< class_name << "!";
-	//	return false;
-	//}
+	//// try to acquire the type
+	if (from_command == "from")
+	{
+		base_reference = base_type_name;
+	}
+	else
+	{
+		err << "Unknown base "
+			<< rx_item_type_name(T::RType::type_id)
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -191,7 +216,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_runtime_implicit<T>(name, class_name
+				auto result = rx_platform::api::meta::rx_create_runtime_implicit<T>(name, base_type_name
 					, namespace_item_attributes::namespace_item_full_access, &init_data, std::move(instance_data),
 					[=](rx_result_with<typename T::RTypePtr>&& result)
 					{
@@ -208,9 +233,14 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 								<< ".\r\n";
 						}
 						ctx->send_results(result);
-					}
-					, rxc);
-				return true;
+					}, rxc);
+				if (!result)
+				{
+					ctx->get_stderr() << "Error creating "
+						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+					dump_error_result(ctx->get_stderr(), result);
+				}
+				return result;
 			}
 			else
 			{
@@ -234,7 +264,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_runtime_implicit<T>(name, class_name
+		auto result = rx_platform::api::meta::rx_create_runtime_implicit<T>(name, base_type_name
 			, namespace_item_attributes::namespace_item_full_access, nullptr, std::move(instance_data),
 			[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
@@ -253,9 +283,14 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 						<< ".\r\n";
 				}
 				ctx->send_results(result);
-			}
-			, rxc);
-			return true;
+			}, rxc);
+		if (!result)
+		{
+			ctx->get_stderr() << "Error creating "
+				<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+			dump_error_result(ctx->get_stderr(), result);
+		}
+		return result;
 	}
 	else
 	{
@@ -271,12 +306,13 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 {
 	string_type name;
 	string_type from_command;
-	string_type base_name;
+	string_type base_type_name;
+	item_reference base_reference;
 	string_type as_command;
 	string_type def_command;
 	in >> name
 		>> from_command
-		>> base_name
+		>> base_type_name
 		>> as_command
 		>> def_command;
 	// read the rest of it
@@ -284,33 +320,19 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	if (!in.eof())
 		std::getline(in, definition, '\0');
 
-	// these are type definition and stream for creation
-	typename T::smart_ptr type_definition;
-	typename T::smart_ptr prototype_definition;
-	typename T::RTypePtr object_ptr;
-
 	//// try to acquire the type
-	//if (from_command == "from")
-	//{
-	//	type_definition = platform_types_manager::instance().get_type<T>(base_name, ctx->get_current_directory());
-	//}
-	//else
-	//{
-	//	err << "Unknown base "
-	//		<< rx_item_type_name(T::RType::type_id)
-	//		<< " specifier:"
-	//		<< from_command << "!";
-	//	return false;
-	//}
-	//// do we have type
-	//if (!type_definition)
-	//{
-	//	err << "Undefined "
-	//		<< rx_item_type_name(T::type_id)
-	//		<< ":"
-	//		<< base_name << "!";
-	//	return false;
-	//}
+	if (from_command == "from")
+	{
+		base_reference = base_type_name;
+	}
+	else
+	{
+		err << "Unknown base "
+			<< rx_item_type_name(T::type_id)
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -324,7 +346,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				rx_context rxc;
 				rxc.object = ctx->get_client();
 				rxc.directory = ctx->get_current_directory();
-				rx_platform::api::meta::rx_create_type<T>(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+				auto result = rx_platform::api::meta::rx_create_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
 					[=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
@@ -340,9 +362,14 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 								<< ".\r\n";
 						}
 						ctx->send_results(result);
-					}
-				, rxc);
-				return true;
+					}, rxc);
+				if (!result)
+				{
+					ctx->get_stderr() << "Error creating "
+						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+					dump_error_result(ctx->get_stderr(), result);
+				}
+				return result;
 			}
 			else
 			{
@@ -366,7 +393,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		rx_context rxc;
 		rxc.object = ctx->get_client();
 		rxc.directory = ctx->get_current_directory();
-		rx_platform::api::meta::rx_create_type<T>(name, base_name, prototype_definition, namespace_item_attributes::namespace_item_full_access,
+		auto result = rx_platform::api::meta::rx_create_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
 			[=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
@@ -386,7 +413,143 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				ctx->send_results(result);
 			}
 		, rxc);
-		return true;
+		if (!result)
+		{
+			ctx->get_stderr() << "Error creating "
+				<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+			dump_error_result(ctx->get_stderr(), result);
+		}
+		return result;
+	}
+	else
+	{
+		err << "Unknown "
+			<< rx_item_type_name(T::type_id)
+			<< " creation type:"
+			<< as_command << "!";
+		return false;
+	}
+}
+
+template<class T>
+bool create_command::create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	string_type from_command;
+	string_type base_type_name;
+	item_reference base_reference;
+	string_type as_command;
+	string_type def_command;
+	in >> name
+		>> from_command
+		>> base_type_name
+		>> as_command
+		>> def_command;
+	// read the rest of it
+	string_type definition;
+	if (!in.eof())
+		std::getline(in, definition, '\0');
+	
+	//// try to acquire the type
+	if (from_command == "from")
+	{
+		base_reference = base_type_name;
+	}
+	else
+	{
+		err << "Unknown base "
+			<< rx_item_type_name(T::type_id)
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
+	// try to acquire definition
+	if (as_command == "with")
+	{
+		if (def_command == "json")
+		{
+			serialization::json_reader reader;
+			reader.parse_data(definition);
+			data::runtime_values_data init_data;
+			if (reader.read_init_values("values", init_data))
+			{
+				rx_context rxc;
+				rxc.object = ctx->get_client();
+				rxc.directory = ctx->get_current_directory();
+				auto result = rx_platform::api::meta::rx_create_simple_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
+					[=](rx_result_with<typename T::smart_ptr>&& result)
+					{
+						if (!result)
+						{
+							ctx->get_stderr() << "Error creating "
+								<< rx_item_type_name(T::type_id) << ":\r\n";
+							dump_error_result(ctx->get_stderr(), result);
+						}
+						else
+						{
+							ctx->get_stdout() << "Created " << rx_item_type_name(T::type_id) << " "
+								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+								<< ".\r\n";
+						}
+						ctx->send_results(result);
+					}, rxc);
+				if (!result)
+				{
+					ctx->get_stderr() << "Error creating "
+						<< rx_item_type_name(T::type_id) << ":\r\n";
+					dump_error_result(ctx->get_stderr(), result);
+				}
+				return result;
+			}
+			else
+			{
+				err << "Error deserialization of initialization data for "
+					<< rx_item_type_name(T::type_id)
+					<< " as " << def_command << "!";
+				return false;
+			}
+		}
+		else
+		{
+			err << "Unknown "
+				<< rx_item_type_name(T::type_id)
+				<< " definition specifier:"
+				<< def_command << "!";
+			return false;
+		}
+	}
+	else if (as_command.empty())
+	{
+		rx_context rxc;
+		rxc.object = ctx->get_client();
+		rxc.directory = ctx->get_current_directory();
+		auto result = rx_platform::api::meta::rx_create_simple_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
+			[=](rx_result_with<typename T::smart_ptr>&& result)
+			{
+				if (!result)
+				{
+					auto& err = ctx->get_stderr();
+					err << "Error creating "
+						<< rx_item_type_name(T::type_id) << ":\r\n";
+					dump_error_result(err, result);
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					out << "Created " << rx_item_type_name(T::type_id) << " "
+						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+						<< ".\r\n";
+				}
+				ctx->send_results(result);
+			}
+		, rxc);
+		if (!result)
+		{
+			ctx->get_stderr() << "Error creating "
+				<< rx_item_type_name(T::type_id) << ":\r\n";
+			dump_error_result(ctx->get_stderr(), result);
+		}
+		return result;
 	}
 	else
 	{
@@ -449,7 +612,7 @@ bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& i
 template<typename T>
 bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	string_type indent_str(indent * 4, ' ');
+	string_type indent_str(indent * 4ll, ' ');
 	auto result = platform_types_manager::instance().get_type_cache<T>().get_derived_types(start);
 	for (auto one : result.items)
 	{
@@ -469,73 +632,102 @@ delete_command::delete_command (const string_type& console_name)
 
 bool delete_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<delete_data_t> data = ctx->get_instruction_data<delete_data_t>();
-	if (!data)
-	{// we just entered to command
-		bool ret = false;
-		if (!in.eof())
+	bool ret = false;
+	if (!in.eof())
+	{
+		string_type what;
+		in >> what;
+		if (!what.empty())
 		{
-			string_type what;
-			in >> what;
-			if (!what.empty())
+			auto type_id = rx_parse_type_name(what);
+			switch (type_id)
 			{
-				if (what == "object")
+			case rx_item_type::rx_object:
 				{
-					ret = delete_object<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					ret = delete_object(in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else if (what == "port")
+				break;
+			case rx_item_type::rx_application:
 				{
-					ret = delete_object<port_type>(in, out, err, ctx, tl::type2type<port_type>());
+					ret = delete_object(in, out, err, ctx, tl::type2type<application_type>());
 				}
-				else if (what == "domain")
+				break;
+			case rx_item_type::rx_port:
 				{
-					ret = delete_object<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+					ret = delete_object(in, out, err, ctx, tl::type2type<port_type>());
 				}
-				else if (what == "app" || what == "application")
+				break;
+			case rx_item_type::rx_domain:
 				{
-					ret = delete_object<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+					ret = delete_object(in, out, err, ctx, tl::type2type<domain_type>());
 				}
-				else if (what == "object_type")
+				break;
+			case rx_item_type::rx_object_type:
 				{
-					ret = delete_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					ret = delete_type(in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else
+				break;
+			case rx_item_type::rx_application_type:
 				{
-					err << "Unknown type:" << what << "\r\n";
+					ret = delete_type(in, out, err, ctx, tl::type2type<application_type>());
 				}
+				break;
+			case rx_item_type::rx_port_type:
+				{
+					ret = delete_type(in, out, err, ctx, tl::type2type<port_type>());
+				}
+				break;
+			case rx_item_type::rx_domain_type:
+				{
+					ret = delete_type(in, out, err, ctx, tl::type2type<domain_type>());
+				}
+				break;
+			case rx_item_type::rx_struct_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<struct_type>());
+				}
+				break;
+			case rx_item_type::rx_variable_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<variable_type>());
+				}
+				break;
+			case rx_item_type::rx_source_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<source_type>());
+				}
+				break;
+			case rx_item_type::rx_filter_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<filter_type>());
+				}
+				break;
+			case rx_item_type::rx_event_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<event_type>());
+				}
+				break;
+			case rx_item_type::rx_mapper_type:
+				{
+					ret = delete_simple_type(in, out, err, ctx, tl::type2type<mapper_type>());
+				}
+				break;
+			default:
+				err << "Unknown type:" << what << "\r\n";
+				return false;
 			}
-			else
-				err << "Delete type is unknown!\r\n";
 		}
 		else
 			err << "Delete type is unknown!\r\n";
-
-		if (ret)
-		{
-			data = rx_create_reference<delete_data_t>();
-			data->started = rx_get_us_ticks();
-			ctx->set_instruction_data(data);
-			ctx->set_waiting();
-		}
-		return ret;
 	}
 	else
-	{// we are returned here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Delete was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Delete lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		return true;
+		err << "Delete type is unknown!\r\n";
+
+	if (ret)
+	{
+		ctx->set_waiting();
 	}
+	return ret;
 }
 
 template<class T>
@@ -558,7 +750,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	rx_context rxc;
 	rxc.object = ctx->get_client();
 	rxc.directory = ctx->get_current_directory();
-	rx_platform::api::meta::rx_delete_runtime<T>(name,
+	auto result = rx_platform::api::meta::rx_delete_runtime<T>(item_reference(name),
 		[ctx, name, this](rx_result&& result)
 		{
 			if (!result)
@@ -578,7 +770,16 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 		}
 		, rxc);
 
-	return true;
+	if (!result)
+	{
+		err << "Error deleting "
+			<< rx_item_type_name(T::type_id) << "\r\n";
+		for (const auto& one : result.errors())
+		{
+			err << one << "\r\n";
+		}
+	}
+	return result;
 }
 
 template<class T>
@@ -621,6 +822,47 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	ctx->set_waiting();
 	return true;
 }
+
+template<class T>
+bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+{
+	string_type name;
+	in >> name;
+
+	if (name.empty())
+	{
+		err << "Error deleting "
+			<< rx_item_type_name(T::type_id) << " type, name of type is empty";
+		return false;
+	}
+
+	// these are type definition and stream for creation
+	typename T::smart_ptr type_definition;
+	typename T::RTypePtr object_ptr;
+
+	algorithms::simple_types_model_algorithm<T>::delete_type(name, ctx->get_current_directory(),
+		[ctx, name, this](rx_result result)
+		{
+			if (!result)
+			{
+				auto& err = ctx->get_stderr();
+				err << "Error deleting "
+					<< rx_item_type_name(T::type_id) << " type:\r\n";
+				rx_dump_error_result(err, std::move(result));
+			}
+			else
+			{
+				ctx->get_stdout() << "Deleted type "
+					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+					<< ".\r\n";
+			}
+			ctx->send_results(result);
+		}
+		, ctx->get_client()
+			);
+	ctx->set_waiting();
+	return true;
+}
 // Class model::meta_commands::rm_command
 
 rm_command::rm_command()
@@ -655,73 +897,83 @@ check_command::~check_command()
 
 bool check_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<check_data_t> data = ctx->get_instruction_data<check_data_t>();
-	if (!data)
-	{// we just entered to command
-		bool ret = false;
-		if (!in.eof())
+	
+	bool ret = false;
+	if (!in.eof())
+	{
+		string_type what;
+		in >> what;
+		if (!what.empty())
 		{
-			string_type what;
-			in >> what;
-			if (!what.empty())
+			auto type_id = rx_parse_type_name(what);
+			switch (type_id)
 			{
-				if (what == "object")
+			case rx_item_type::rx_object_type:
 				{
-					ret = check_type<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					ret = check_type(in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else if (what == "struct")
+				break;
+			case rx_item_type::rx_application_type:
 				{
-					ret = check_simple_type<struct_type>(in, out, err, ctx, tl::type2type<struct_type>());
+					ret = check_type(in, out, err, ctx, tl::type2type<application_type>());
 				}
-				else if (what == "port")
+				break;
+			case rx_item_type::rx_port_type:
 				{
-					ret = check_type<port_type>(in, out, err, ctx, tl::type2type<port_type>());
+					ret = check_type(in, out, err, ctx, tl::type2type<port_type>());
 				}
-				else if (what == "domain")
+				break;
+			case rx_item_type::rx_domain_type:
 				{
-					ret = check_type<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+					ret = check_type(in, out, err, ctx, tl::type2type<domain_type>());
 				}
-				else if (what == "app" || what == "application")
+				break;
+			case rx_item_type::rx_struct_type:
 				{
-					ret = check_type<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<struct_type>());
 				}
-				else
+				break;
+			case rx_item_type::rx_variable_type:
 				{
-					err << "Unknown type:" << what << "\r\n";
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<variable_type>());
 				}
+				break;
+			case rx_item_type::rx_source_type:
+				{
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<source_type>());
+				}
+				break;
+			case rx_item_type::rx_filter_type:
+				{
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<filter_type>());
+				}
+				break;
+			case rx_item_type::rx_event_type:
+				{
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<event_type>());
+				}
+				break;
+			case rx_item_type::rx_mapper_type:
+				{
+					ret = check_simple_type(in, out, err, ctx, tl::type2type<mapper_type>());
+				}
+				break;
+			default:
+				err << "Unknown type:" << what << "\r\n";
+				return false;
 			}
-			else
-				err << "Check type is unknown!\r\n";
 		}
 		else
 			err << "Check type is unknown!\r\n";
-
-		if (ret)
-		{
-			data = rx_create_reference<check_data_t>();
-			data->started = rx_get_us_ticks();
-			ctx->set_instruction_data(data);
-			ctx->set_waiting();
-		}
-		return ret;
 	}
 	else
-	{// we are returned here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Check was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Check lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		return true;
+		err << "Check type is unknown!\r\n";
+
+	if (ret)
+	{
+		ctx->set_waiting();
 	}
+	return ret;
 }
 
 
@@ -807,66 +1059,53 @@ prototype_command::~prototype_command()
 
 bool prototype_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<prototype_data_t> data = ctx->get_instruction_data<prototype_data_t>();
-	if (!data)
+	if (!in.eof())
 	{
-		if (!in.eof())
+		string_type what;
+		in >> what;
+		if (!what.empty())
 		{
-			string_type what;
-			in >> what;
-			if (!what.empty())
+			bool ret = false;
+			auto type_id = rx_parse_type_name(what);
+			switch (type_id)
 			{
-				bool ret = false;
-				if (what == "object")
+			case rx_item_type::rx_object:
 				{
-					ret = create_prototype<object_type>(in, out, err, ctx, tl::type2type<object_type>());
+					ret = create_prototype(in, out, err, ctx, tl::type2type<object_type>());
 				}
-				else if (what == "domain")
+				break;
+			case rx_item_type::rx_application:
 				{
-					ret = create_prototype<domain_type>(in, out, err, ctx, tl::type2type<domain_type>());
+					ret = create_prototype(in, out, err, ctx, tl::type2type<application_type>());
 				}
-				else if (what == "app" || what == "application")
+				break;
+			case rx_item_type::rx_port:
 				{
-					ret = create_prototype<application_type>(in, out, err, ctx, tl::type2type<application_type>());
+					ret = create_prototype(in, out, err, ctx, tl::type2type<port_type>());
 				}
-				else
+				break;
+			case rx_item_type::rx_domain:
 				{
-					err << "Unknown type:" << what << "\r\n";
-					return false;
+					ret = create_prototype(in, out, err, ctx, tl::type2type<domain_type>());
 				}
-				if (ret)
-				{
-					data = rx_create_reference<prototype_data_t>();
-					data->started = rx_get_us_ticks();
-					ctx->set_instruction_data(data);
-					ctx->set_waiting();
-				}
-				return ret;
+				break;
+			default:
+				err << "Unknown type:" << what << "\r\n";
+				return false;
 			}
-			else
-				err << "Create type is unknown!\r\n";
+			if (ret)
+			{
+				ctx->set_waiting();
+			}
+			return ret;
 		}
 		else
 			err << "Create type is unknown!\r\n";
-		return false;
 	}
 	else
-	{// we are returned here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Prototype was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Prototype lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		return true;
-	}
+		err << "Create type is unknown!\r\n";
+
+	return false;
 }
 
 template<class T>
@@ -918,7 +1157,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 			rx_context rxc;
 			rxc.object = ctx->get_client();
 			rxc.directory = ctx->get_current_directory();
-			rx_platform::api::meta::rx_create_prototype<T>(name, rx_node_id::null_id, class_name,
+			auto result = rx_platform::api::meta::rx_create_prototype<T>(name, rx_node_id::null_id, class_name,
 				[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				bool ret = result;
@@ -940,9 +1179,14 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 					ret = result.value()->get_item_ptr()->generate_json(out, err);
 				}
 				ctx->send_results(ret);
+			}, rxc);
+			if (!result)
+			{
+				ctx->get_stderr() << "Error creating "
+					<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+				dump_error_result(ctx->get_stderr(), result);
 			}
-			, rxc);
-			return true;
+			return result;
 		}
 		else
 		{
@@ -976,71 +1220,49 @@ save_command::~save_command()
 
 bool save_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<save_data_t> data = ctx->get_instruction_data<save_data_t>();
-	if (!data)
-	{// we just entered to command
-		bool ret = false;
-		if (!in.eof())
+	bool ret = false;
+	if (!in.eof())
+	{
+		string_type path;
+		in >> path;
+		if (!path.empty())
 		{
-			string_type path;
-			in >> path;
-			if (!path.empty())
-			{
-				api::rx_context rx_ctx = ctx->create_api_context();
-				rx_platform::api::meta::rx_save_item(path,
-					[ctx, path, this](rx_result result)
+			api::rx_context rx_ctx = ctx->create_api_context();
+			auto result = rx_platform::api::meta::rx_save_item(path,
+				[ctx, path, this](rx_result result)
+				{
+					if (!result)
 					{
-						if (!result)
-						{
-							auto& err = ctx->get_stderr();
-							err << "Error saving item\r\n";
-							rx_dump_error_result(err, std::move(result));
-						}
-						else
-						{
-							ctx->get_stdout() << "Saved item "
-								<< ANSI_RX_OBJECT_COLOR << path << ANSI_COLOR_RESET
-								<< ".\r\n";
-						}
-						ctx->send_results(result);
+						auto& err = ctx->get_stderr();
+						err << "Error saving item\r\n";
+						rx_dump_error_result(err, std::move(result));
 					}
-					, rx_ctx
-					);
-				ctx->set_waiting();
-				ret = true;
+					else
+					{
+						ctx->get_stdout() << "Saved item "
+							<< ANSI_RX_OBJECT_COLOR << path << ANSI_COLOR_RESET
+							<< ".\r\n";
+					}
+					ctx->send_results(result);
+				}, rx_ctx);
+			if (!result)
+			{
+				auto& err = ctx->get_stderr();
+				err << "Error saving item\r\n";
+				rx_dump_error_result(err, std::move(result));
 			}
 			else
-				err << "Specify item to save!\r\n";
+				ctx->set_waiting();
+
+			ret = result;
 		}
 		else
 			err << "Specify item to save!\r\n";
-
-		if (ret)
-		{
-			data = rx_create_reference<save_data_t>();
-			data->started = rx_get_us_ticks();
-			ctx->set_instruction_data(data);
-			ctx->set_waiting();
-		}
-		return ret;
 	}
 	else
-	{// we are returned here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Save was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Save lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		return true;
-	}
+		err << "Specify item to save!\r\n";
+
+	return ret;
 }
 
 

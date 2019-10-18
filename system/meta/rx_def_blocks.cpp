@@ -96,10 +96,14 @@ string_type get_subitem_type_name(rx_subitem_type type)
 // Class rx_platform::meta::def_blocks::complex_data_type 
 
 complex_data_type::complex_data_type()
+	: sealed_(false)
+	, abstract_(false)
 {
 }
 
 complex_data_type::complex_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
+	: sealed_(sealed)
+	, abstract_(abstract)
 {
 }
 
@@ -229,7 +233,7 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 	{
 		if (!stream.start_object("item"))
 			return false;
-		rx_subitem_type item_type;
+		rx_subitem_type item_type = rx_subitem_type::rx_invalid_subitem;
 		if (stream.is_string_based())
 		{
 			string_type temp;
@@ -531,7 +535,7 @@ event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
 
 event_attribute::event_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
 {
 }
 
@@ -576,7 +580,7 @@ filter_attribute::filter_attribute (const string_type& name, const rx_node_id& i
 
 filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
 {
 }
 
@@ -728,7 +732,7 @@ mapper_attribute::mapper_attribute (const string_type& name, const rx_node_id& i
 
 mapper_attribute::mapper_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
 {
 }
 
@@ -824,7 +828,7 @@ source_attribute::source_attribute (const string_type& name, const rx_node_id& i
 
 source_attribute::source_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
 {
 }
 
@@ -866,7 +870,7 @@ struct_attribute::struct_attribute (const string_type& name, const rx_node_id& i
 
 struct_attribute::struct_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
 {
 }
 
@@ -904,12 +908,14 @@ variable_attribute::variable_attribute (const string_type& name, const rx_node_i
       : name_(name)
 	, target_id_(id)
 	, storage_(std::move(value))
+	, read_only_(read_only)
 {
 }
 
 variable_attribute::variable_attribute (const string_type& name, const string_type& target_name)
       : name_(name)
-	, target_name_(target_name)
+	, target_(target_name)
+	, read_only_(false)
 {
 }
 

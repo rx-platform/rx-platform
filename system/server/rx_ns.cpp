@@ -57,6 +57,20 @@ bool rx_is_valid_namespace_name(const string_type& name)
 	}
 	return true;
 }
+void rx_split_path(const string_type& full_path, string_type& directory_path, string_type& item_path)
+{
+	auto idx = full_path.rfind(RX_DIR_DELIMETER);
+	if (idx == string_type::npos)
+	{// no directory stuff
+		item_path = full_path;
+	}
+	else
+	{// we have directory stuff
+
+		directory_path = full_path.substr(0, idx);
+		item_path = full_path.substr(idx + 1);
+	}
+}
 
 
 namespace ns {
@@ -195,6 +209,30 @@ bool rx_platform_item::is_type () const
 	auto type = get_type_id();
 	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
 		|| (type >= rx_port_type && type <= rx_mapper_type);
+}
+
+rx_result rx_platform_item::delete_item () const
+{
+	const auto& meta = meta_info();
+	auto storage_result = meta.resolve_storage();
+	if (storage_result)
+	{
+		auto item_result = storage_result.value()->get_item_storage(meta);
+		if (!item_result)
+		{
+			item_result.register_error("Error saving item "s + meta.get_path());
+			return item_result.errors();
+		}
+		auto result = item_result.value()->delete_item();
+		
+		return result;
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		storage_result.register_error("Error saving item "s + meta.get_path());
+		return result;
+	}
 }
 
 
@@ -723,11 +761,3 @@ bool rx_names_cache::should_cache (const platform_item_ptr& item)
 } // namespace ns
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	auto ret = meta_info().resolve_storage();
-
-#endif

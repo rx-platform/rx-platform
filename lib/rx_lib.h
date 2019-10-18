@@ -63,6 +63,43 @@ typedef std::vector<rx_row_type> rx_table_type;
 void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width);
 void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names,bool dot_lines);
 
+//template <typename resultT>
+class rx_transaction_type
+{
+	typedef std::function<void()> rollback_func_type;
+	typedef std::stack<rollback_func_type, std::vector<rollback_func_type> > rollbacks_type;
+	rollbacks_type rollback_actions_;
+	bool is_commited = false;
+public:
+	rx_transaction_type(rollback_func_type rollback)
+	{
+		rollback_actions_.push(rollback);
+	}
+	void push(rollback_func_type rollback)
+	{
+		rollback_actions_.push(rollback);
+	}
+	rx_transaction_type() = default;
+	rx_transaction_type(const rx_transaction_type& right) = default;
+	rx_transaction_type(rx_transaction_type&& right) = default;
+	rx_transaction_type& operator= (const rx_transaction_type & right) = default;
+	rx_transaction_type& operator= (rx_transaction_type && right) = default;
+	void commit()
+	{
+		is_commited = true;
+	}
+	~rx_transaction_type()
+	{
+		if (!is_commited)
+		{
+			while(!rollback_actions_.empty())
+			{
+				rollback_actions_.top()();
+				rollback_actions_.pop();
+			}
+		}
+	}
+};
 
 class rx_result
 {
@@ -220,7 +257,7 @@ string_type get_code_module(const string_type& full);
 ///////////////////////////////////////////////////////////////
 // PHYSICAL INTERFACES
 ///////////////////////////////////////////////////////////////
-enum interface_status_type
+enum class interface_status_type
 {
 	status_disconnected = 0,
 	status_active
@@ -235,7 +272,7 @@ struct ETH_interface
 	void init()
 	{
 		index = 0;
-		status = status_disconnected;
+		status = interface_status_type::status_disconnected;
 		name = "<unnanmed>";
 	}
 };
@@ -251,7 +288,7 @@ struct IP_interface
 	void init()
 	{
 		index = 0;
-		status = status_disconnected;
+		status = interface_status_type::status_disconnected;
 		name = "<unnanmed>";
 	}
 };
@@ -512,13 +549,13 @@ void rx_dump_ticks_to_stream(std::ostream& out, rx_timer_ticks_t ticks);
 // security related basics for stuff
 typedef intptr_t rx_security_handle_t;
 typedef intptr_t rx_thread_handle_t;
-enum rx_criticalness
+enum class rx_criticalness
 {
 	soft,
 	medium,
 	hard
 };
-enum rx_access
+enum class  rx_access
 {
 	read	= 0x01,
 	write	= 0x02,
@@ -531,7 +568,7 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 #define RX_THREAD_NULL 0ull
 
-
+void rx_split_string(const string_type& what, string_vector& result, char delimeter);
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
 void rx_trim_string(string_type& what);
 

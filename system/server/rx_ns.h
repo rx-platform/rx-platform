@@ -33,14 +33,14 @@
 
 #include "lib/rx_lock.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace ns {
@@ -78,6 +78,9 @@ enum rx_object_command_t
 	rx_set_test,
 	rx_reset_test
 };
+
+void rx_split_path(const string_type& full_path, string_type& directory_path, string_type& item_path);
+
 namespace meta
 {
 class meta_data;
@@ -283,6 +286,8 @@ class rx_platform_item : public rx::pointers::reference_object
       virtual rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
 
       virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
+
+      rx_result delete_item () const;
 
 
   protected:

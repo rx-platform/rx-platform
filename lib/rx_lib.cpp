@@ -1012,7 +1012,7 @@ string_type& to_upper(string_type& str)
 	return str;
 }
 
-void split_string(const string_type& what, string_vector& result, char delimeter)
+void rx_split_string(const string_type& what, string_vector& result, char delimeter)
 {
 	size_t idx1 = 0;
 	size_t idx2 = what.find(delimeter);

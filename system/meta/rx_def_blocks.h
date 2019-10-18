@@ -42,9 +42,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
-class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
+class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -238,9 +238,9 @@ class event_attribute
       }
 
 
-      const string_type& get_target_name () const
+      item_reference get_target () const
       {
-        return target_name_;
+        return target_;
       }
 
 
@@ -254,7 +254,7 @@ class event_attribute
 
       rx_node_id target_id_;
 
-      string_type target_name_;
+      item_reference target_;
 
 
 };
@@ -305,9 +305,9 @@ class filter_attribute
       }
 
 
-      const string_type& get_target_name () const
+      item_reference get_target () const
       {
-        return target_name_;
+        return target_;
       }
 
 
@@ -321,7 +321,7 @@ class filter_attribute
 
       rx_node_id target_id_;
 
-      string_type target_name_;
+      item_reference target_;
 
 
 };
@@ -372,9 +372,9 @@ class mapper_attribute
       }
 
 
-      const string_type& get_target_name () const
+      item_reference get_target () const
       {
-        return target_name_;
+        return target_;
       }
 
 
@@ -388,7 +388,7 @@ class mapper_attribute
 
       rx_node_id target_id_;
 
-      string_type target_name_;
+      item_reference target_;
 
 
 };
@@ -666,9 +666,9 @@ class source_attribute
       }
 
 
-      const string_type& get_target_name () const
+      item_reference get_target () const
       {
-        return target_name_;
+        return target_;
       }
 
 
@@ -682,7 +682,7 @@ class source_attribute
 
       rx_node_id target_id_;
 
-      string_type target_name_;
+      item_reference target_;
 
 
 };
@@ -727,15 +727,15 @@ class struct_attribute
       }
 
 
-      rx_node_id get_target_id () const
+      item_reference get_target () const
       {
-        return target_id_;
+        return target_;
       }
 
 
-      const string_type& get_target_name () const
+      rx_node_id get_target_id () const
       {
-        return target_name_;
+        return target_id_;
       }
 
 
@@ -747,9 +747,9 @@ class struct_attribute
 
       string_type name_;
 
-      rx_node_id target_id_;
+      item_reference target_;
 
-      string_type target_name_;
+      rx_node_id target_id_;
 
 
 };
@@ -808,9 +808,9 @@ class variable_attribute
       }
 
 
-      const string_type& get_target_name () const
+      item_reference get_target () const
       {
-        return target_name_;
+        return target_;
       }
 
 
@@ -828,7 +828,7 @@ class variable_attribute
 
       values::rx_simple_value storage_;
 
-      string_type target_name_;
+      item_reference target_;
 
 
 };

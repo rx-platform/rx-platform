@@ -1024,6 +1024,24 @@ void rx_value_storage::parse (const string_type& str)
 		assign_static(true);
 	else if (str == "false")
 		assign_static(false);
+	else
+	{
+		char* end_ptr = nullptr;
+		int64_t num = strtoll(str.c_str(), &end_ptr, 10);
+		if (end_ptr != nullptr && *end_ptr == '\0')
+		{
+			assign_static(num);
+			return;
+		}
+		end_ptr = nullptr;
+		double dbl_num = strtod(str.c_str(), &end_ptr);
+		if (end_ptr != nullptr && *end_ptr == '\0')
+		{
+			assign_static(dbl_num);
+			return;
+		}
+		assign_static(str);
+	}
 }
 
 rx_value_t rx_value_storage::get_value_type () const

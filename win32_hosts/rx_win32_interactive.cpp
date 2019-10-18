@@ -208,7 +208,7 @@ namespace
 					padapters[i].name = names[i];
 					padapters[i].ip_address = addresses[i];
 					padapters[i].index = ctxs[i];
-					padapters[i].status = status_disconnected;
+					padapters[i].status = interface_status_type::status_disconnected;
 					ret_count++;
 				}
 				free(names);

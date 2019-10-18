@@ -47,20 +47,20 @@ namespace meta
 {
 
 template<class typeT>
-rx_result rx_delete_runtime(const string_type& name
+rx_result rx_delete_runtime(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
 	model::algorithms::runtime_model_algorithm<typeT>::delete_runtime(
-		name, ctx.directory, callback, ctx.object);
+		ref, ctx.directory, callback, ctx.object);
 	return true;
 }
-template rx_result rx_delete_runtime<object_type>(const string_type& name
+template rx_result rx_delete_runtime<object_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
-template rx_result rx_delete_runtime<port_type>(const string_type& name
+template rx_result rx_delete_runtime<port_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
-template rx_result rx_delete_runtime<domain_type>(const string_type& name
+template rx_result rx_delete_runtime<domain_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
-template rx_result rx_delete_runtime<application_type>(const string_type& name
+template rx_result rx_delete_runtime<application_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
 
 template<class typeT>
@@ -192,58 +192,56 @@ template rx_result rx_create_prototype<port_type>(const string_type& name, const
 
 
 template<class typeT>
-rx_result rx_get_runtime(const rx_node_id& id, const string_type name
+rx_result rx_get_runtime(const item_reference& ref
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
-	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [=]() {
-		return model::platform_types_manager::instance().get_type_cache<typeT>().get_runtime(id);
-	};
-	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
-
+	model::algorithms::runtime_model_algorithm<typeT>::get_runtime(ref,
+		ctx.directory, callback, ctx.object);
 	return true;
 }
 
-template rx_result rx_get_runtime<object_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_runtime<object_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename object_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_get_runtime<application_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_runtime<application_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename application_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_get_runtime<domain_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_runtime<domain_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename domain_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_get_runtime<port_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_runtime<port_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename port_type::RTypePtr>&&)> callback, rx_context ctx);
 
 
 template<class typeT>
 rx_result rx_create_type(const string_type& name
-	, const string_type& base_name
+	, const item_reference& base_reference
 	, typename typeT::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
 	model::algorithms::types_model_algorithm<typeT>::create_type(
-		name, base_name, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
-template rx_result rx_create_type<object_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_type<object_type>(const string_type& name
+	, const item_reference& base_reference
 	, object_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<object_type::smart_ptr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_type<domain_type>(const string_type& name
-	, const string_type& base_name
+	, const item_reference& base_reference
 	, domain_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<domain_type::smart_ptr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_type<port_type>(const string_type& name
-	, const string_type& base_name
+	, const item_reference& base_reference
 	, port_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<port_type::smart_ptr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_type<application_type>(const string_type& name
-	, const string_type& base_name
+	, const item_reference& base_reference
 	, application_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<application_type::smart_ptr>&&)> callback
@@ -274,44 +272,50 @@ template rx_result rx_update_type<application_type>(application_type::smart_ptr 
 
 template<class typeT>
 rx_result rx_create_simple_type(const string_type& name
-	, const string_type& base_name
+	, const item_reference& base_reference // base reference
 	, typename typeT::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
 	model::algorithms::simple_types_model_algorithm<typeT>::create_type(
-		name, base_name, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
-template rx_result rx_create_simple_type<struct_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<struct_type>(const string_type& name
+	, const item_reference& base_reference
 	, struct_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<struct_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_create_simple_type<variable_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<variable_type>(const string_type& name
+	, const item_reference& base_reference
 	, variable_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<variable_type::smart_ptr>&&)> callback
 	, rx_context ctx);
 
-template rx_result rx_create_simple_type<source_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<source_type>(const string_type& name
+	, const item_reference& base_reference
 	, source_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<source_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_create_simple_type<filter_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<filter_type>(const string_type& name
+	, const item_reference& base_reference
 	, filter_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<filter_type::smart_ptr>&&)> callback
 	, rx_context ctx);
-template rx_result rx_create_simple_type<event_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<event_type>(const string_type& name
+	, const item_reference& base_reference
 	, event_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<event_type::smart_ptr>&&)> callback
 	, rx_context ctx);
 
-template rx_result rx_create_simple_type<mapper_type>(const string_type& name, const string_type& base_name
+template rx_result rx_create_simple_type<mapper_type>(const string_type& name
+	, const item_reference& base_reference
 	, mapper_type::smart_ptr prototype
 	, namespace_item_attributes attributes
 	, std::function<void(rx_result_with<mapper_type::smart_ptr>&&)> callback
@@ -401,53 +405,93 @@ rx_result rx_save_item(const string_type& name
 }
 
 template<class T>
-rx_result rx_get_type(const rx_node_id& id, const string_type name
+rx_result rx_get_type(const item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx)
 {
-	std::function<rx_result_with<typename T::smart_ptr>()> func = [=]() {
-		return model::platform_types_manager::instance().get_type_cache<T>().get_type_definition(id);
-	};
-	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
-
+	model::algorithms::types_model_algorithm<T>::get_type(ref,
+		ctx.directory, callback, ctx.object);
 	return true;
 }
 
-template rx_result rx_get_type<object_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_type<object_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename object_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_type<domain_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_type<domain_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename domain_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_type<application_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_type<application_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename application_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_type<port_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_type<port_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename port_type::smart_ptr>&&)> callback, rx_context ctx);
 
 
 
 template<class T>
-rx_result rx_get_simple_type(const rx_node_id& id, const string_type name
+rx_result rx_get_simple_type(const item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx)
 {
-	std::function<rx_result_with<typename T::smart_ptr>()> func = [=]() {
-		return model::platform_types_manager::instance().get_simple_type_cache<T>().get_type_definition(id);
-	};
-	rx_do_with_callback<rx_result_with<typename T::smart_ptr>, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
-
+	model::algorithms::simple_types_model_algorithm<T>::get_type(ref,
+		ctx.directory, callback, ctx.object);
 	return true;
 }
 
 
-template rx_result rx_get_simple_type<struct_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<struct_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename struct_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_simple_type<variable_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<variable_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename variable_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_simple_type<source_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<source_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename source_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_simple_type<filter_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<filter_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename filter_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_simple_type<event_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<event_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename event_type::smart_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_get_simple_type<mapper_type>(const rx_node_id& id, const string_type name
+template rx_result rx_get_simple_type<mapper_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename mapper_type::smart_ptr>&&)> callback, rx_context ctx);
+
+
+
+template<class T>
+rx_result rx_delete_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx)
+{
+	model::algorithms::types_model_algorithm<T>::delete_type(ref,
+		ctx.directory, callback, ctx.object);
+	return true;
+}
+
+template rx_result rx_delete_type<object_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_type<domain_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_type<application_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_type<port_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+
+
+
+template<class T>
+rx_result rx_delete_simple_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx)
+{
+	model::algorithms::simple_types_model_algorithm<T>::delete_type(ref,
+		ctx.directory, callback, ctx.object);
+	return true;
+}
+
+
+template rx_result rx_delete_simple_type<struct_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_simple_type<variable_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_simple_type<source_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_simple_type<filter_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_simple_type<event_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+template rx_result rx_delete_simple_type<mapper_type>(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+
 
 }
 }

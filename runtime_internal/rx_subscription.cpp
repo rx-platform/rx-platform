@@ -71,7 +71,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 			string_type object_path;
 			string_type item_path;
-			split_item_path(one, object_path, item_path);
+			rx_split_item_path(one, object_path, item_path);
 			auto it = to_connect_.find(object_path);
 			if (it != to_connect_.end())
 			{

@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 17
-#define RX_LIB_BUILD_NUMBER 11
+#define RX_LIB_BUILD_NUMBER 12
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -14,3 +14,4 @@
 // version 0.17.6 safe security handle
 // version 0.17.10 handling all values serialization
 // version 0.17.11 clearing tcp/ip client socket
+// version 0.17.12 introduced rx_transaction_type

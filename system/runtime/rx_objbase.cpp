@@ -43,7 +43,7 @@
 
 
 namespace rx_platform {
-void split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path)
+void rx_split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path)
 {
 	auto idx = full_path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)

@@ -32,12 +32,12 @@
 
 
 
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 // rx_queries
 #include "system/meta/rx_queries.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 
 
 
@@ -145,7 +145,7 @@ class get_type_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      meta_data meta;
+      item_reference reference;
 
       rx_item_type item_type;
 
@@ -189,6 +189,41 @@ class query_request_message : public rx_request_message
       static string_type type_name;
 
       bool intersection;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class query_response_message : public rx_message_base  
+{
+	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      query_result_items_type items;
+
+
+      static string_type type_name;
 
       static rx_message_type_t type_id;
 
@@ -259,6 +294,45 @@ class get_type_response : public type_response_message<itemT>
 
 
 
+class get_runtime_request : public rx_request_message  
+{
+	template<typename T>
+	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      item_reference reference;
+
+      rx_item_type item_type;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 template <class itemT>
 class runtime_response_message : public rx_message_base  
 {
@@ -299,80 +373,6 @@ class get_runtime_response : public runtime_response_message<itemT>
       static string_type type_name;
 
       static uint16_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class get_runtime_request : public rx_request_message  
-{
-	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      meta_data meta;
-
-      rx_item_type item_type;
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class query_response_message : public rx_message_base  
-{
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      query_result_items_type items;
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
 
 
   protected:

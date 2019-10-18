@@ -129,13 +129,13 @@ template application_type_ptr server_manager::get_type<application_type>(const r
 
 
 template<class clsT>
-typename clsT::smart_ptr server_manager::get_simple_type(const rx_node_id& id)
+rx_result_with<typename clsT::smart_ptr> server_manager::get_simple_type(const rx_node_id& id)
 {
 	auto& cache = model::platform_types_manager::instance().get_simple_type_cache<clsT>();
 	auto def = cache.get_type_definition(id);
 	return def;
 }
-template struct_type_ptr server_manager::get_simple_type<struct_type>(const rx_node_id& id);
+template rx_result_with<struct_type::smart_ptr> server_manager::get_simple_type<struct_type>(const rx_node_id& id);
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()

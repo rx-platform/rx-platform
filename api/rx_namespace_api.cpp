@@ -116,8 +116,11 @@ rx_result rx_list_runtime(
 		runtime_browse_result ret_val;
 		auto rt_item = model::platform_types_manager::instance().internal_get_type_cache<typeT>().get_runtime(id);
 		if (!rt_item)
-			return "Runtime not found";
-		auto result = rt_item->browse(path, pattern, ret_val.items);
+		{
+			rt_item.register_error("Runtime not found");
+			return rt_item.errors();
+		}
+		auto result = rt_item.value()->browse(path, pattern, ret_val.items);
 		if (!result)
 			return result.errors();
 		ret_val.success = true;

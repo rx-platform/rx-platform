@@ -37,10 +37,10 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -103,6 +103,14 @@ enum rx_item_type : uint8_t
 	rx_invalid_type = 0xff
 };
 
+enum rx_item_state : uint8_t
+{
+	rx_item_state_unknown = 0,
+	rx_item_state_ok = 1,
+	rx_item_state_need_reinit = 2,
+	rx_item_state_deleted = 3
+};
+
 string_type rx_item_type_name(rx_item_type type);
 rx_item_type rx_parse_type_name(const string_type name);
 
@@ -134,6 +142,72 @@ struct query_result;
 }
 
 namespace meta {
+
+
+
+
+
+class item_reference 
+{
+	union
+	{
+		string_type path_;
+		rx_node_id id_;
+	};
+
+  public:
+      item_reference();
+
+      item_reference(const item_reference &right);
+
+      item_reference (const rx_node_id& right);
+
+      item_reference (const string_type& right);
+
+      item_reference (const char* right);
+
+      ~item_reference();
+
+      item_reference & operator=(const item_reference &right);
+
+
+      rx_result serialize_reference (const char* name, base_meta_writer& stream) const;
+
+      rx_result deserialize_reference (const char* name, base_meta_reader& stream);
+
+      bool is_null () const;
+
+      item_reference& operator = (const rx_node_id& right);
+
+      item_reference& operator = (const string_type& right);
+
+      bool is_node_id () const;
+
+      const string_type& get_path () const;
+
+      const rx_node_id& get_node_id () const;
+
+	  item_reference(item_reference&& right) noexcept;
+	  item_reference& operator=(item_reference&& right) noexcept;
+
+	  item_reference(rx_node_id&& right) noexcept;
+	  item_reference(string_type&& right) noexcept;
+
+	  item_reference& operator= (rx_node_id&& right) noexcept;
+	  item_reference& operator= (string_type&& right) noexcept;
+  protected:
+
+  private:
+
+      void clear_content ();
+
+
+
+      bool is_id_;
+
+
+};
+
 
 
 
@@ -176,6 +250,10 @@ class meta_data
       rx_result_with<rx_storage_ptr> resolve_storage () const;
 
       void increment_version (bool full_ver);
+
+      item_reference create_item_reference ();
+
+      item_reference create_weak_item_reference (const string_array& dirs);
 
 
       const rx_node_id& get_parent () const
@@ -226,6 +304,12 @@ class meta_data
       }
 
 
+      rx_item_state get_state () const
+      {
+        return state_;
+      }
+
+
 
   protected:
 
@@ -247,6 +331,8 @@ class meta_data
       namespace_item_attributes attributes_;
 
       string_type path_;
+
+      rx_item_state state_;
 
 
 };

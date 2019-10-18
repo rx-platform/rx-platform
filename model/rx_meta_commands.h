@@ -50,10 +50,6 @@ typedef rx_platform::prog::console_program_context::smart_ptr console_program_co
 class create_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(create_command);
-	struct create_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for creating various objects and types in platform\r\n\
 \
@@ -75,6 +71,8 @@ command for creating various objects and types in platform\r\n\
 	  bool create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
+	  bool create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -119,10 +117,6 @@ command for dumping types data\r\n\
 class delete_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(delete_command);
-	struct delete_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 
   public:
       delete_command (const string_type& console_name);
@@ -138,6 +132,8 @@ class delete_command : public terminal::commands::server_command
 	  bool delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 	  template<class T>
 	  bool delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  template<class T>
+	  bool delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -201,10 +197,6 @@ class check_command : public terminal::commands::server_command
 command for checking various types in platform\r\n\
 \
 ");
-	struct check_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 
   public:
       check_command();
@@ -233,10 +225,6 @@ command for checking various types in platform\r\n\
 class prototype_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(prototype_command);
-	struct prototype_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for prototyping objects in platform\r\n\
 \
@@ -271,10 +259,6 @@ class save_command : public terminal::commands::server_command
 command for saving items to storage\r\n\
 \
 ");
-	struct save_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 
   public:
       save_command();

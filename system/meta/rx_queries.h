@@ -163,6 +163,7 @@ class runtime_objects_query : public rx_query
 
   private:
 
+
 };
 
 
@@ -172,6 +173,7 @@ class runtime_objects_query : public rx_query
 
 class translate_query : public rx_query  
 {
+	typedef std::vector<item_reference> items_type;
 
   public:
 
@@ -186,9 +188,7 @@ class translate_query : public rx_query
 
       static string_type query_name;
 
-      string_array paths;
-
-      rx_node_ids ids;
+      items_type items;
 
 
   protected:

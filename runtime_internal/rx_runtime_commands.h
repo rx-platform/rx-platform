@@ -106,10 +106,7 @@ class write_command : public terminal::commands::server_command
 	DECLARE_REFERENCE_PTR(write_command);
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for writing values to various items");
-	struct write_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
+	
 
   public:
       write_command();

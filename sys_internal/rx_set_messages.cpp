@@ -48,158 +48,28 @@ namespace messages {
 
 namespace set_messages {
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_simple_type_creator 
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_type_response 
+
+template <class itemT>
+string_type set_type_response<itemT>::type_name = "setTypeResp";
+
+template <class itemT>
+uint16_t set_type_response<itemT>::type_id = rx_set_type_response_id;
 
 
 template <class itemT>
-message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
+const string_type& set_type_response<itemT>::get_type_name ()
 {
-	rx_node_id id = rx_node_id::null_id;
+  return type_name;
 
-	auto callback = [create, request, port](rx_result_with<typename itemT::smart_ptr>&& result) mutable
-	{
-		if (result)
-		{
-			if (create)
-			{
-				auto response = std::make_unique<set_type_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-			else
-			{
-				auto response = std::make_unique<update_type_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request);
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-	rx_result result;
-	if (create)
-		result = api::meta::rx_create_simple_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
-	else
-		result = api::meta::rx_update_simple_type<itemT>(item, false, callback, ctx);
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request);
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
 }
 
 template <class itemT>
-rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stream) const
+rx_message_type_t set_type_response<itemT>::get_type_id ()
 {
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	return true;
+  return type_id;
+
 }
-
-template <class itemT>
-rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
-{
-	item = rx_create_reference<itemT>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	item->meta_info() = meta;
-	return result;
-}
-
-
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator 
-
-
-template <class itemT>
-message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
-{
-	rx_node_id id = rx_node_id::null_id;
-
-	auto callback = [create, request, port](rx_result_with<typename itemT::smart_ptr>&& result) mutable
-	{
-		if (result)
-		{
-			if (create)
-			{
-				auto response = std::make_unique<set_type_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-			else
-			{
-				auto response = std::make_unique<update_type_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request);
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-	rx_result result;
-	if(create)
-		result = api::meta::rx_create_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
-	else
-		result = api::meta::rx_update_type<itemT>(item, false, callback, ctx);
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request);
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
-}
-
-template <class itemT>
-rx_result protocol_type_creator<itemT>::serialize (base_meta_writer& stream) const
-{
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	return true;
-}
-
-template <class itemT>
-rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
-{
-	item = rx_create_reference<itemT>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	item->meta_info() = meta;
-	return result;
-}
-
-
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator_base 
-
-protocol_type_creator_base::~protocol_type_creator_base()
-{
-}
-
 
 
 // Class sys_internal::rx_protocol::messages::set_messages::set_type_request 
@@ -312,27 +182,84 @@ rx_message_type_t set_type_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_type_response 
+// Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator_base 
 
-template <class itemT>
-string_type set_type_response<itemT>::type_name = "setTypeResp";
-
-template <class itemT>
-uint16_t set_type_response<itemT>::type_id = rx_set_type_response_id;
-
-
-template <class itemT>
-const string_type& set_type_response<itemT>::get_type_name ()
+protocol_type_creator_base::~protocol_type_creator_base()
 {
-  return type_name;
+}
 
+
+
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator 
+
+
+template <class itemT>
+message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
+{
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [create, request, port](rx_result_with<typename itemT::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			if (create)
+			{
+				auto response = std::make_unique<set_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+			else
+			{
+				auto response = std::make_unique<update_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+	rx_result result;
+	if(create)
+		result = api::meta::rx_create_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+	else
+		result = api::meta::rx_update_type<itemT>(item, false, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
 }
 
 template <class itemT>
-rx_message_type_t set_type_response<itemT>::get_type_id ()
+rx_result protocol_type_creator<itemT>::serialize (base_meta_writer& stream) const
 {
-  return type_id;
+	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	return true;
+}
 
+template <class itemT>
+rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+{
+	item = rx_create_reference<itemT>();
+	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	item->meta_info() = meta;
+	return result;
 }
 
 
@@ -470,51 +397,356 @@ rx_message_type_t update_type_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_runtime_response 
+// Class sys_internal::rx_protocol::messages::set_messages::delete_type_request 
 
-template <class itemT>
-string_type set_runtime_response<itemT>::type_name = "updateRuntimeResp";
+string_type delete_type_request::type_name = "delTypeReq";
 
-template <class itemT>
-uint16_t set_runtime_response<itemT>::type_id = rx_update_runtime_response_id;
+uint16_t delete_type_request::type_id = rx_delete_type_request_id;
 
 
-template <class itemT>
-const string_type& set_runtime_response<itemT>::get_type_name ()
+rx_result delete_type_request::serialize (base_meta_writer& stream) const
+{
+	if (stream.is_string_based())
+	{
+		if (!stream.write_string("type", rx_item_type_name(item_type)))
+			return false;
+	}
+	else
+	{
+		if (!stream.write_byte("type", item_type))
+			return false;
+	}
+	auto result = reference.serialize_reference("target", stream);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+rx_result delete_type_request::deserialize (base_meta_reader& stream)
+{
+	if (stream.is_string_based())
+	{
+		string_type temp;
+		if (!stream.read_string("type", temp))
+			return false;
+		item_type = rx_parse_type_name(temp);
+		if (item_type >= rx_item_type::rx_first_invalid)
+			return temp + " is invalid type name";
+	}
+	else
+	{
+		uint8_t temp;
+		if (!stream.read_byte("type", temp))
+			return false;
+		if (temp >= rx_item_type::rx_first_invalid)
+			return "Invalid type";
+		item_type = (rx_item_type)temp;
+	}
+	auto result = reference.deserialize_reference("target", stream);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+message_ptr delete_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	switch (item_type)
+	{
+	case rx_item_type::rx_object_type:
+		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+	case rx_item_type::rx_domain_type:
+		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+	case rx_item_type::rx_port_type:
+		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+	case rx_item_type::rx_application_type:
+		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+
+	case rx_item_type::rx_struct_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
+	case rx_item_type::rx_variable_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
+	case rx_item_type::rx_source_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
+	case rx_item_type::rx_filter_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
+	case rx_item_type::rx_event_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
+	case rx_item_type::rx_mapper_type:
+		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
+	default:
+		{
+			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
+			return ret_value;
+		}
+	}
+}
+
+const string_type& delete_type_request::get_type_name ()
 {
   return type_name;
 
 }
 
-template <class itemT>
-rx_message_type_t set_runtime_response<itemT>::get_type_id ()
+rx_message_type_t delete_type_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+template<typename T>
+message_ptr delete_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<delete_type_response>();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_delete_type<T>(reference, callback, ctx);
+
+	if (!result)
+	{
+		return std::make_unique<error_message>(result, 13, request_id);
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+template<typename T>
+message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<delete_type_response>();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_delete_simple_type<T>(reference, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+// Class sys_internal::rx_protocol::messages::set_messages::delete_type_response 
+
+string_type delete_type_response::type_name = "delTypeResp";
+
+rx_message_type_t delete_type_response::type_id = rx_delete_type_response_id;
+
+
+rx_result delete_type_response::serialize (base_meta_writer& stream) const
+{
+	return true;
+}
+
+rx_result delete_type_response::deserialize (base_meta_reader& stream)
+{
+	return true;
+}
+
+const string_type& delete_type_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t delete_type_response::get_type_id ()
 {
   return type_id;
 
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::update_runtime_response 
-
-template <class itemT>
-string_type update_runtime_response<itemT>::type_name = "updateRuntimeResp";
-
-template <class itemT>
-uint16_t update_runtime_response<itemT>::type_id = rx_set_runtime_response_id;
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator 
 
 
 template <class itemT>
-const string_type& update_runtime_response<itemT>::get_type_name ()
+message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
 {
-  return type_name;
+	rx_node_id id = rx_node_id::null_id;
 
+	auto callback = [create, request, port](rx_result_with<typename itemT::RTypePtr>&& result) mutable
+	{
+		if (result)
+		{
+			if (create)
+			{
+				auto response = std::make_unique<set_runtime_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+			else
+			{
+				auto response = std::make_unique<update_runtime_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+	rx_result result;
+
+	if (create)
+		result = api::meta::rx_create_runtime<itemT>(meta_, &values_, instance_data_, callback, ctx);
+	else
+		result = api::meta::rx_update_runtime<itemT>(meta_, &values_, instance_data_, false, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
 }
 
 template <class itemT>
-rx_message_type_t update_runtime_response<itemT>::get_type_id ()
+rx_result protocol_runtime_creator<itemT>::serialize (base_meta_writer& stream) const
 {
-  return type_id;
+	return "Jbg nema jos!!!";
+}
 
+template <class itemT>
+rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+{
+	bool ret = false;
+	if (stream.start_object("def"))
+	{
+		if (stream.read_init_values("values", values_))
+		{
+			if (instance_data_.deserialize(stream, STREAMING_TYPE_OBJECT))
+			{
+				meta_ = meta;
+				ret = true;
+			}
+		}
+	}
+	return ret;
+}
+
+
+// Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator_base 
+
+
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_simple_type_creator 
+
+
+template <class itemT>
+message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
+{
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [create, request, port](rx_result_with<typename itemT::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			if (create)
+			{
+				auto response = std::make_unique<set_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+			else
+			{
+				auto response = std::make_unique<update_type_response<itemT> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+	rx_result result;
+	if (create)
+		result = api::meta::rx_create_simple_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+	else
+		result = api::meta::rx_update_simple_type<itemT>(item, false, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+template <class itemT>
+rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stream) const
+{
+	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	return true;
+}
+
+template <class itemT>
+rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+{
+	item = rx_create_reference<itemT>();
+	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	item->meta_info() = meta;
+	return result;
 }
 
 
@@ -601,6 +833,30 @@ const string_type& set_runtime_request::get_type_name ()
 }
 
 rx_message_type_t set_runtime_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_runtime_response 
+
+template <class itemT>
+string_type set_runtime_response<itemT>::type_name = "updateRuntimeResp";
+
+template <class itemT>
+uint16_t set_runtime_response<itemT>::type_id = rx_update_runtime_response_id;
+
+
+template <class itemT>
+const string_type& set_runtime_response<itemT>::get_type_name ()
+{
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t set_runtime_response<itemT>::get_type_id ()
 {
   return type_id;
 
@@ -696,54 +952,174 @@ rx_message_type_t update_runtime_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator_base 
+// Parameterized Class sys_internal::rx_protocol::messages::set_messages::update_runtime_response 
 
+template <class itemT>
+string_type update_runtime_response<itemT>::type_name = "setRuntimeResp";
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator 
+template <class itemT>
+uint16_t update_runtime_response<itemT>::type_id = rx_set_runtime_response_id;
 
 
 template <class itemT>
-message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
+const string_type& update_runtime_response<itemT>::get_type_name ()
 {
+  return type_name;
+
+}
+
+template <class itemT>
+rx_message_type_t update_runtime_response<itemT>::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::set_messages::delete_runtime_response 
+
+string_type delete_runtime_response::type_name = "delRuntimeResp";
+
+rx_message_type_t delete_runtime_response::type_id = rx_delete_runtime_response_id;
+
+
+rx_result delete_runtime_response::serialize (base_meta_writer& stream) const
+{
+	return true;
+}
+
+rx_result delete_runtime_response::deserialize (base_meta_reader& stream)
+{
+	return true;
+}
+
+const string_type& delete_runtime_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t delete_runtime_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::set_messages::delete_runtime_request 
+
+string_type delete_runtime_request::type_name = "delRuntimeReq";
+
+uint16_t delete_runtime_request::type_id = rx_delete_runtime_request_id;
+
+
+rx_result delete_runtime_request::serialize (base_meta_writer& stream) const
+{
+	if (stream.is_string_based())
+	{
+		if (!stream.write_string("type", rx_item_type_name(item_type)))
+			return false;
+	}
+	else
+	{
+		if (!stream.write_byte("type", item_type))
+			return false;
+	}
+	auto result = reference.serialize_reference("target", stream);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+rx_result delete_runtime_request::deserialize (base_meta_reader& stream)
+{
+	if (stream.is_string_based())
+	{
+		string_type temp;
+		if (!stream.read_string("type", temp))
+			return false;
+		item_type = rx_parse_type_name(temp);
+		if (item_type >= rx_item_type::rx_first_invalid)
+			return temp + " is invalid type name";
+	}
+	else
+	{
+		uint8_t temp;
+		if (!stream.read_byte("type", temp))
+			return false;
+		if (temp >= rx_item_type::rx_first_invalid)
+			return "Invalid type";
+		item_type = (rx_item_type)temp;
+	}
+	auto result = reference.deserialize_reference("target", stream);
+	if (!result)
+		return result;
+
+	return result;
+}
+
+message_ptr delete_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	switch (item_type)
+	{
+	case rx_item_type::rx_object:
+		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+	case rx_item_type::rx_domain:
+		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+	case rx_item_type::rx_port:
+		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+	case rx_item_type::rx_application:
+		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+
+	default:
+		{
+			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
+			return ret_value;
+		}
+	}
+}
+
+const string_type& delete_runtime_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t delete_runtime_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+template<typename T>
+message_ptr delete_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+{
+	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [create, request, port](rx_result_with<typename itemT::RTypePtr>&& result) mutable
+	auto callback = [request_id, port](rx_result&& result) mutable
 	{
 		if (result)
 		{
-			if (create)
-			{
-				auto response = std::make_unique<set_runtime_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-			else
-			{
-				auto response = std::make_unique<update_runtime_response<itemT> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
+			auto response = std::make_unique<delete_type_response>();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
 		}
 		else
 		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
 			port->data_processed(std::move(ret_value));
 		}
 
 	};
-	rx_result result;
 
-	if (create)
-		result = api::meta::rx_create_runtime<itemT>(meta_, &values_, instance_data_, callback, ctx);
-	else
-		result = api::meta::rx_update_runtime<itemT>(meta_, &values_, instance_data_, false, callback, ctx);
+	rx_result result = api::meta::rx_delete_runtime<T>(reference, callback, ctx);
 
 	if (!result)
 	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request);
-		return ret_value;
+		return std::make_unique<error_message>(result, 13, request_id);
 	}
 	else
 	{
@@ -751,31 +1127,6 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 		return message_ptr();
 	}
 }
-
-template <class itemT>
-rx_result protocol_runtime_creator<itemT>::serialize (base_meta_writer& stream) const
-{
-	return "Jbg nema jos!!!";
-}
-
-template <class itemT>
-rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
-{
-	bool ret = false;
-	if (stream.start_object("def"))
-	{
-		if (stream.read_init_values("values", values_))
-		{
-			if (instance_data_.deserialize(stream, STREAMING_TYPE_OBJECT))
-			{
-				meta_ = meta;
-				ret = true;
-			}
-		}
-	}
-	return ret;
-}
-
 
 } // namespace set_messages
 } // namespace messages

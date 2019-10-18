@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace meta {
 
 namespace queries {
 
-// Class rx_platform::meta::queries::derived_types_query
+// Class rx_platform::meta::queries::derived_types_query 
 
 string_type derived_types_query::query_name = "derived";
 
@@ -161,7 +161,7 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, rx_dir
 
 	return result.success;
 }
-// Class rx_platform::meta::queries::rx_query
+// Class rx_platform::meta::queries::rx_query 
 
 rx_query::registered_queries_type rx_query::registered_queries_;
 
@@ -211,7 +211,7 @@ rx_result_with<query_ptr> rx_query::create_query (base_meta_reader& stream)
 }
 
 
-// Class rx_platform::meta::queries::runtime_objects_query
+// Class rx_platform::meta::queries::runtime_objects_query 
 
 string_type runtime_objects_query::query_name = "runtime";
 
@@ -275,7 +275,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr->get_ports(result);
+					app_ptr.value()->get_ports(result);
 				}
 			}
 		}
@@ -295,7 +295,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr->get_domains(result);
+					app_ptr.value()->get_domains(result);
 				}
 			}
 		}
@@ -315,7 +315,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_cache<domain_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr->get_objects(result);
+					app_ptr.value()->get_objects(result);
 				}
 			}
 		}
@@ -326,54 +326,36 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 	return true;
 }
 
-// Class rx_platform::meta::queries::translate_query
+
+// Class rx_platform::meta::queries::translate_query 
 
 string_type translate_query::query_name = "translate";
 
 
 rx_result translate_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.start_array("paths", paths.size()))
-		return "Error writing array of paths";
-	for(const auto& one : paths)
+	if (!stream.start_array("items", items.size()))
+		return "Error writing array";
+	for(const auto& one : items)
 	{
-		if (!stream.write_string("path", one))
-			return "Error writing path";
+		if(!one.serialize_reference("ref", stream))
+			return "Error writing item reference";
 	}if (!stream.end_array())
 		return "Error writing end of paths array";
-	if (!stream.start_array("ids", ids.size()))
-		return "Error writing array of ids";
-	for (const auto& one : ids)
-	{
-		if (!stream.write_id("path", one))
-			return "Error writing id";
-	}
-	if (!stream.end_array())
-		return "Error writing end of ids array";
 	return true;
 }
 
 rx_result translate_query::deserialize (base_meta_reader& stream)
 {
-	if (!stream.start_array("paths"))
+	if (!stream.start_array("items"))
 		return "Error reading array of paths";
-	paths.clear();
+	items.clear();
 	while (!stream.array_end())
 	{
-		string_type temp;
-		if (!stream.read_string("path", temp))
-			return "Error reading path";
-		paths.emplace_back(std::move(temp));
-	}
-	if (!stream.start_array("ids"))
-		return "Error reading array of ids";
-	ids.clear();
-	while (!stream.array_end())
-	{
-		rx_node_id temp;
-		if (!stream.read_id("id", temp))
-			return "Error reading path";
-		ids.emplace_back(std::move(temp));
+		item_reference temp;
+		if (!temp.deserialize_reference("ref", stream))
+			return "Error reading item reference";
+		items.emplace_back(std::move(temp));
 	}
 	return true;
 }
@@ -386,21 +368,24 @@ const string_type& translate_query::get_query_type ()
 
 rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr dir)
 {
-	for (const auto& one : paths)
+	for (const auto& one : items)
 	{
-		auto item = dir->get_sub_item(one);
-		if (item)
+		if (one.is_node_id())
 		{
-			result.items.emplace_back(api::query_result_detail{ item->get_type_id(), item->meta_info() });
+			meta_data temp;
+			auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(one.get_node_id(), temp);
+			if (type != rx_item_type::rx_invalid_type)
+			{
+				result.items.emplace_back(api::query_result_detail{ type, temp });
+			}
 		}
-	}
-	for (const auto& one : ids)
-	{
-		meta_data temp;
-		auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(one, temp);
-		if(type!=rx_item_type::rx_invalid_type)
+		else
 		{
-			result.items.emplace_back(api::query_result_detail{ type, temp });
+			auto item = dir->get_sub_item(one.get_path());
+			if (item)
+			{
+				result.items.emplace_back(api::query_result_detail{ item->get_type_id(), item->meta_info() });
+			}
 		}
 	}
 	result.success = true;

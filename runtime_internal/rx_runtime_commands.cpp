@@ -64,7 +64,7 @@ bool read_command::do_console_command (std::istream& in, std::ostream& out, std:
 	}
 	string_type object_path;
 	string_type item_path;
-	split_item_path(full_path, object_path, item_path);
+	rx_split_item_path(full_path, object_path, item_path);
 	auto item = ctx->get_current_directory()->get_sub_item(object_path);
 	if (!item)
 	{
@@ -143,89 +143,66 @@ write_command::~write_command()
 
 bool write_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	rx_reference<write_data_t> data = ctx->get_instruction_data<write_data_t>();
-	if (!data)
-	{// we just entered to command
-		string_type full_path;
-		string_type val_str;
-		in >> full_path;
-		in >> val_str;
-		if (full_path.empty())
-		{
-			err << "Empty path!";
-			return false;
-		}
-		string_type object_path;
-		string_type item_path;
-		split_item_path(full_path, object_path, item_path);
-		auto item = ctx->get_current_directory()->get_sub_item(object_path);
-		if (!item)
-		{
-			err << object_path << " not found!";
-			return false;
-		}
-		rx_value val;
-		rx_simple_value to_write;
-		to_write.parse(val_str);
-		if (to_write.is_null())
-		{
-			err << "Nothing to write!";
-			return false;
-		}
-		else
-		{
-			api::rx_context rx_ctx;
-			rx_ctx.object = ctx->get_client();
-			rx_ctx.directory = ctx->get_current_directory();
-			auto result = item->write_value(item_path, std::move(to_write), [ctx, full_path, val_str](rx_result callback_ret)
-				{
-					if (!callback_ret)
-					{
-						auto& err = ctx->get_stderr();
-						rx_dump_error_result(err, std::move(callback_ret));
-					}
-					else
-					{
-						auto& out = ctx->get_stdout();
-						out << full_path << " <= "
-							<< ANSI_RX_GOOD_COLOR
-							<< val_str
-							<< ANSI_COLOR_RESET "\r\n";
-					}
-					ctx->send_results(callback_ret);
-				}, rx_ctx);
-
-			if (!result)
-			{
-				dump_error_result(err, result);
-				return false;
-			}
-			else
-			{
-				data = rx_create_reference<write_data_t>();
-				data->started = rx_get_us_ticks();
-				ctx->set_instruction_data(data);
-				ctx->set_waiting();
-				return true;
-			}
-		}
+	
+	string_type full_path;
+	string_type val_str;
+	in >> full_path;
+	in >> val_str;
+	if (full_path.empty())
+	{
+		err << "Empty path!";
+		return false;
+	}
+	string_type object_path;
+	string_type item_path;
+	rx_split_item_path(full_path, object_path, item_path);
+	auto item = ctx->get_current_directory()->get_sub_item(object_path);
+	if (!item)
+	{
+		err << object_path << " not found!";
+		return false;
+	}
+	rx_value val;
+	rx_simple_value to_write;
+	to_write.parse(val_str);
+	if (to_write.is_null())
+	{
+		err << "Nothing to write!";
+		return false;
 	}
 	else
-	{// callback here
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
+	{
+		api::rx_context rx_ctx;
+		rx_ctx.object = ctx->get_client();
+		rx_ctx.directory = ctx->get_current_directory();
+		auto result = item->write_value(item_path, std::move(to_write), [ctx, full_path, val_str](rx_result callback_ret)
+			{
+				if (!callback_ret)
+				{
+					auto& err = ctx->get_stderr();
+					rx_dump_error_result(err, std::move(callback_ret));
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					out << full_path << " <= "
+						<< ANSI_RX_GOOD_COLOR
+						<< val_str
+						<< ANSI_COLOR_RESET "\r\n";
+				}
+				ctx->send_results(callback_ret);
+			}, rx_ctx);
+
+		if (!result)
 		{
-			out << "Write was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
+			dump_error_result(err, result);
+			return false;
 		}
 		else
 		{
-			out << "Write lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
+			ctx->set_waiting();
+			return true;
 		}
-		return true;
 	}
 }
 

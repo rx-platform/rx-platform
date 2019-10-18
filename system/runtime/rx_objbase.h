@@ -64,7 +64,7 @@ using rx::values::rx_simple_value;
 
 namespace rx_platform {
 
-void split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path);
+void rx_split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path);
 
 typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;

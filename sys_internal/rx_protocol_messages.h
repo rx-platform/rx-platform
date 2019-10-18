@@ -98,6 +98,12 @@ const rx_message_type_t rx_make_directory_response_id = 0x8011;
 const rx_message_type_t rx_remove_directory_request_id = 0x0012;
 const rx_message_type_t rx_remove_directory_response_id = 0x8012;
 
+const rx_message_type_t rx_delete_type_request_id = 0x0013;
+const rx_message_type_t rx_delete_type_response_id = 0x8013;
+
+const rx_message_type_t rx_delete_runtime_request_id = 0x0014;
+const rx_message_type_t rx_delete_runtime_response_id = 0x8014;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;
@@ -217,7 +223,7 @@ class error_message : public rx_message_base
 				  error_text += ", ";
 			  error_text += one;
 		  }
-		  error_code = 13;
+		  error_code = code;
 		  this->request_id = request_id;
 	  }
 	  template<typename resT>
@@ -232,7 +238,7 @@ class error_message : public rx_message_base
 				  error_text += ", ";
 			  error_text += one;
 		  }
-		  error_code = 13;
+		  error_code = code;
 		  this->request_id = request_id;
 	  }
   protected:

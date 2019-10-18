@@ -298,7 +298,7 @@ type_hash<typeT>::type_hash()
 
 
 template <class typeT>
-typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_node_id& id) const
+typename type_hash<typeT>::TdefRes type_hash<typeT>::get_type_definition (const rx_node_id& id) const
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -307,7 +307,11 @@ typename type_hash<typeT>::Tptr type_hash<typeT>::get_type_definition (const rx_
 	}
 	else
 	{
-		return Tptr::null_ptr;
+		std::ostringstream ss;
+		ss << id
+			<< " is not registered as valid "
+			<< rx_item_type_name(typeT::type_id);
+		return ss.str();
 	}
 }
 
@@ -320,7 +324,7 @@ rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
 		if(rx_gate::instance().get_platform_status()==rx_platform_running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
@@ -343,7 +347,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 {
 	if (meta.get_id().is_null() || prototype)
 	{
-		meta.resolve();
+		auto resolve_result = meta.resolve();
 	}
 	else
 	{
@@ -372,11 +376,12 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
-				temp_base = temp_type->meta_info().get_parent();
-				base.emplace_back(temp_base);
+				temp_base = temp_type.value()->meta_info().get_parent();
+				if(temp_base)
+					base.emplace_back(temp_base);
 			}
 			else
-				return "PEERRRRR";
+				return temp_type.errors();
 		}
 	}
 	for (const auto& one : base)
@@ -398,12 +403,17 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
-			overrides.push_back(&my_class->complex_data().get_overrides());
-			auto result = my_class->construct(ret, ctx);
+			overrides.push_back(&my_class.value()->complex_data().get_overrides());
+			auto result = my_class.value()->construct(ret, ctx);
 			if (!result)
 			{// error constructing object
 				return result.errors();
 			}
+		}
+		else
+		{
+			my_class.register_error("Error finding type definition");
+			return my_class.errors();
 		}
 	}
 	typeT::set_runtime_data(ctx.runtime_data, ret);
@@ -419,7 +429,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	}
 	if (!prototype)
 	{
-		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state_created });
+		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state::runtime_state_created });
 		if (rx_gate::instance().get_platform_status() == rx_platform_running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id, meta);
@@ -433,14 +443,17 @@ api::query_result type_hash<typeT>::get_derived_types (const rx_node_id& id) con
 {
 	api::query_result ret;
 	std::vector<rx_node_id> temp;
-	inheritance_hash_.get_derived_from(id, temp);
-	for (auto one : temp)
+	rx_result result = inheritance_hash_.get_derived_from(id, temp);
+	if (result)
 	{
-		auto type = registered_types_.find(one);
-
-		if (type != registered_types_.end())
+		for (auto one : temp)
 		{
-			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
+			auto type = registered_types_.find(one);
+
+			if (type != registered_types_.end())
+			{
+				ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info() });
+			}
 		}
 	}
 	ret.success = true;
@@ -453,7 +466,7 @@ rx_result type_hash<typeT>::check_type (const rx_node_id& id, type_check_context
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
-		return temp->check_type(ctx);
+		return temp.value()->check_type(ctx);
 	}
 	else
 	{
@@ -463,15 +476,17 @@ rx_result type_hash<typeT>::check_type (const rx_node_id& id, type_check_context
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str());
+		for (const auto& one : temp.errors())
+			ctx.add_error(one);
 		return false;
 	}
 }
 
 template <class typeT>
-typename type_hash<typeT>::RTypePtr type_hash<typeT>::get_runtime (const rx_node_id& id) const
+rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::get_runtime (const rx_node_id& id) const
 {
 	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end() && it->second.state== runtime_state_running)
+	if (it != registered_objects_.end() && it->second.state == runtime_state::runtime_state_running)
 	{
 		return it->second.target;
 	}
@@ -487,12 +502,12 @@ rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
 	{
-		if (it->second.state == runtime_state_deleting)
+		if (it->second.state == runtime_state::runtime_state_deleting || it->second.state == runtime_state::runtime_state_created)
 		{
 			auto type_id = it->second.target->meta_info().get_parent();
 			rx_node_ids base;
 			base.emplace_back(type_id);
-			inheritance_hash_.get_base_types(type_id, base);
+			auto base_result = inheritance_hash_.get_base_types(type_id, base);
 			registered_objects_.erase(it);
 			instance_hash_.remove_from_hash_data(id, type_id, base);
 			auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
@@ -501,13 +516,11 @@ rx_result type_hash<typeT>::delete_runtime (rx_node_id id)
 		}
 		switch (it->second.state)
 		{
-		case runtime_state_created:
-			return "Wrong state, object just created!";
-		case runtime_state_initializing:
+		case runtime_state::runtime_state_initializing:
 			return "Wrong state, object starting!";
-		case runtime_state_running:
+		case runtime_state::runtime_state_running:
 			return "Wrong state, object not marked for delete!";
-		case runtime_state_destroyed:
+		case runtime_state::runtime_state_destroyed:
 			return "Wrong state, object destroyed!";
 		default:
 			return "Unknown state!";
@@ -525,13 +538,10 @@ rx_result type_hash<typeT>::delete_type (rx_node_id id)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
+		auto type_ret = inheritance_hash_.remove_from_hash_data(id);
+		RX_ASSERT(type_ret);
 		registered_types_.erase(it);
-		inheritance_hash_.remove_from_hash_data(id, type_id);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
+		type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
 		RX_ASSERT(type_ret);
 		return true;
 	}
@@ -556,7 +566,7 @@ rx_result type_hash<typeT>::initialize (hosting::rx_platform_host* host, const m
 		runtime::runtime_init_context ctx;
 		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target, ctx);
 		if (init_result)
-			one.second.state = runtime_state_running;
+			one.second.state = runtime_state::runtime_state_running;
 	}
 	return result;
 }
@@ -585,7 +595,7 @@ api::query_result type_hash<typeT>::get_instanced_objects (const rx_node_id& id)
 {
 	api::query_result ret;
 	std::vector<rx_node_id> temp;
-	instance_hash_.get_instanced_from(id, temp);
+	auto instanced_result = instance_hash_.get_instanced_from(id, temp);
 	for (auto one : temp)
 	{
 		auto type = registered_objects_.find(one);
@@ -605,20 +615,20 @@ rx_result_with<typename typeT::RTypePtr> type_hash<typeT>::mark_runtime_for_dele
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
 	{
-		if (it->second.state == runtime_state_running)
+		if (it->second.state == runtime_state::runtime_state_running)
 		{
-			it->second.state = runtime_state_deleting;
+			it->second.state = runtime_state::runtime_state_deleting;
 			return it->second.target;
 		}
 		switch (it->second.state)
 		{
-		case runtime_state_created:
+		case runtime_state::runtime_state_created:
 			return "Wrong state, object just created!";
-		case runtime_state_initializing:
+		case runtime_state::runtime_state_initializing:
 			return "Wrong state, object starting!";
-		case runtime_state_deleting:
+		case runtime_state::runtime_state_deleting:
 			return "Wrong state, object already marked for delete!";
-		case runtime_state_destroyed:
+		case runtime_state::runtime_state_destroyed:
 			return "Wrong state, object destroyed!";
 		default:
 			return "Unknown state!";
@@ -638,15 +648,15 @@ rx_result_with<typename typeT::RTypePtr> type_hash<typeT>::mark_runtime_running 
 	{
 		switch (it->second.state)
 		{
-		case runtime_state_created:
-		case runtime_state_initializing:
-			it->second.state = runtime_state_running;
+		case runtime_state::runtime_state_created:
+		case runtime_state::runtime_state_initializing:
+			it->second.state = runtime_state::runtime_state_running;
 			return it->second.target;
-		case runtime_state_running:
+		case runtime_state::runtime_state_running:
 			return "Wrong state, object already running!";
-		case runtime_state_deleting:
+		case runtime_state::runtime_state_deleting:
 			return "Wrong state, object marked for delete!";
-		case runtime_state_destroyed:
+		case runtime_state::runtime_state_destroyed:
 			return "Wrong state, object destroyed!";
 		default:
 			return "Unknown state!";
@@ -733,12 +743,8 @@ rx_result inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids&
 	if (it != derived_first_hash_.end())
 	{
 		std::copy(it->second.begin(), it->second.end(), std::back_inserter(result));
-		return true;
 	}
-	else
-	{
-		return "Node does not exists!";
-	}
+	return true;
 }
 
 rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const
@@ -747,18 +753,54 @@ rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_
 	if (it != derived_hash_.end())
 	{
 		std::copy(it->second.begin(), it->second.end(), std::back_inserter(result));
-		return true;
 	}
-	else
-	{
-		return "Node does not exists!";
-	}
+	return true;
 }
 
-rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
+rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 {
-	RX_ASSERT(false);
-	return false;
+	rx_node_ids ids;
+	auto hash_it = hash_data_.find(id);
+
+	auto hash_first_it = derived_first_hash_.find(id);
+	auto hash_all_it = derived_hash_.find(id);
+	auto result = get_base_types(id, ids);
+	if (result)
+	{
+		bool first = true;
+		for (auto& one : ids)
+		{
+			if (first)
+			{
+				first = false;
+				auto first_it = derived_first_hash_.find(one);
+				if (first_it != derived_first_hash_.end())
+				{
+					first_it->second.erase(id);
+				}
+			}
+			auto it = derived_hash_.find(one);
+			if (it != derived_hash_.end())
+			{
+				it->second.erase(id);
+			}
+		}
+	}
+	ids.clear();
+	result = get_all_derived_from(id, ids);
+	if (result)
+	{
+		for (auto& one : ids)
+		{
+			auto rel_it = hash_data_.find(one);
+			if (rel_it != hash_data_.end())
+			{
+				rel_it->second.unordered.erase(id);
+				auto remove_resut = std::remove(rel_it->second.ordered.begin(), rel_it->second.ordered.end(), id);
+			}
+		}
+	}
+	return result;
 }
 
 rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items)
@@ -875,7 +917,7 @@ simple_type_hash<typeT>::simple_type_hash()
 
 
 template <class typeT>
-typename simple_type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
+typename simple_type_hash<typeT>::TdefRes simple_type_hash<typeT>::get_type_definition (const rx_node_id& id) const
 {
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
@@ -884,7 +926,11 @@ typename simple_type_hash<typeT>::Tptr simple_type_hash<typeT>::get_type_definit
 	}
 	else
 	{
-		return Tptr::null_ptr;
+		std::ostringstream ss;
+		ss << id
+			<< " is not registered as valid "
+			<< rx_item_type_name(typeT::type_id);
+		return ss.str();
 	}
 }
 
@@ -897,7 +943,7 @@ rx_result simple_type_hash<typeT>::register_type (typename simple_type_hash<type
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
+			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
@@ -936,11 +982,12 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
-				temp_base = temp_type->meta_info().get_parent();
-				base.emplace_back(temp_base);
+				temp_base = temp_type.value()->meta_info().get_parent();
+				if (temp_base)
+					base.emplace_back(temp_base);
 			}
 			else
-				return "PEERRRRR";
+				return temp_type.errors();
 		}
 	}
 
@@ -962,12 +1009,14 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
-			auto result = my_class->construct(ret, ctx);
+			auto result = my_class.value()->construct(ret, ctx);
 			if (!result)
 			{// error constructing object
 				return result.errors();
 			}
 		}
+		else
+			return my_class.errors();
 	}
 
 	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), std::move(ret) };
@@ -978,7 +1027,7 @@ api::query_result simple_type_hash<typeT>::get_derived_types (const rx_node_id& 
 {
 	api::query_result ret;
 	std::vector<rx_node_id> temp;
-	inheritance_hash_.get_derived_from(id, temp);
+	auto derived_result = inheritance_hash_.get_derived_from(id, temp);
 	for (auto one : temp)
 	{
 		auto type = registered_types_.find(one);
@@ -998,7 +1047,7 @@ rx_result simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
-		return temp->check_type(ctx);
+		return temp.value()->check_type(ctx);
 	}
 	else
 	{
@@ -1008,6 +1057,8 @@ rx_result simple_type_hash<typeT>::check_type (const rx_node_id& id, type_check_
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str());
+		for (const auto& one : temp.errors())
+			ctx.add_error(one);
 		return false;
 	}
 }
@@ -1019,11 +1070,8 @@ rx_result simple_type_hash<typeT>::delete_type (rx_node_id id)
 	if (it != registered_types_.end())
 	{
 		auto type_id = it->second->meta_info().get_parent();
-		rx_node_ids base;
-		base.emplace_back(type_id);
-		inheritance_hash_.get_base_types(type_id, base);
 		registered_types_.erase(it);
-		inheritance_hash_.remove_from_hash_data(id, type_id);
+		auto remove_result = inheritance_hash_.remove_from_hash_data(id);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
 		RX_ASSERT(type_ret);
 		return true;

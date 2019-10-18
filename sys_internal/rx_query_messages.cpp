@@ -196,7 +196,17 @@ rx_message_type_t get_type_request::type_id = rx_get_type_request_id;
 
 rx_result get_type_request::serialize (base_meta_writer& stream) const
 {
-	auto result = meta.serialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	if (stream.is_string_based())
+	{
+		if (!stream.write_string("type", rx_item_type_name(item_type)))
+			return false;
+	}
+	else
+	{
+		if (!stream.write_byte("type", item_type))
+			return false;
+	}
+	auto result = reference.serialize_reference("target", stream);
 	if (!result)
 		return result;
 
@@ -205,7 +215,25 @@ rx_result get_type_request::serialize (base_meta_writer& stream) const
 
 rx_result get_type_request::deserialize (base_meta_reader& stream)
 {
-	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	if (stream.is_string_based())
+	{
+		string_type temp;
+		if (!stream.read_string("type", temp))
+			return false;
+		item_type = rx_parse_type_name(temp);
+		if (item_type >= rx_item_type::rx_first_invalid)
+			return temp + " is invalid type name";
+	}
+	else
+	{
+		uint8_t temp;
+		if (!stream.read_byte("type", temp))
+			return false;
+		if (temp >= rx_item_type::rx_first_invalid)
+			return "Invalid type";
+		item_type = (rx_item_type)temp;
+	}
+	auto result = reference.deserialize_reference("target", stream);
 	if (!result)
 		return result;
 
@@ -281,7 +309,7 @@ message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr p
 
 	};
 
-	rx_result result = api::meta::rx_get_type<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+	rx_result result = api::meta::rx_get_type<T>(reference, callback, ctx);
 
 	if (!result)
 	{
@@ -317,7 +345,7 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 
 	};
 
-	rx_result result = api::meta::rx_get_simple_type<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+	rx_result result = api::meta::rx_get_simple_type<T>(reference, callback, ctx);
 
 	if (!result)
 	{
@@ -451,6 +479,66 @@ rx_message_type_t query_request_message::get_type_id ()
 }
 
 
+// Class sys_internal::rx_protocol::messages::query_messages::query_response_message 
+
+string_type query_response_message::type_name = "queryResp";
+
+rx_message_type_t query_response_message::type_id = rx_query_response_id;
+
+
+rx_result query_response_message::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_array("items", items.size()))
+		return "Error serializing array of items";
+	for (const auto& one : items)
+	{
+		auto result = one.second.serialize_meta_data(stream, 0, one.first);
+		if (!result)
+		{
+			result.register_error("Error serializing meta item "s + one.second.get_name());
+			return result;
+		}
+	}
+	if (!stream.end_array())
+		return "Error serializing array of items at the end";
+
+	return true;
+}
+
+rx_result query_response_message::deserialize (base_meta_reader& stream)
+{
+	if (!stream.start_array("items"))
+		return "Error reading array of items";
+	items.clear();
+	while (!stream.array_end())
+	{
+		rx_item_type type;
+		meta::meta_data one;
+		auto result = one.deserialize_meta_data(stream, 0, type);
+		if (!result)
+		{
+			result.register_error("Error serializing meta item "s + one.get_name());
+			return result;
+		}
+		items.emplace_back(type, std::move(one));
+	}
+
+	return true;
+}
+
+const string_type& query_response_message::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t query_response_message::get_type_id ()
+{
+  return type_id;
+
+}
+
+
 // Parameterized Class sys_internal::rx_protocol::messages::query_messages::type_response_message 
 
 
@@ -487,66 +575,6 @@ rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::query_messages::runtime_response_message 
-
-
-template <class itemT>
-rx_result runtime_response_message<itemT>::serialize (base_meta_writer& stream) const
-{
-	if (!stream.start_object("item"))
-		return "Error starting item object";
-	
-	auto result = item->serialize(stream, STREAMING_TYPE_OBJECT);
-	if (!result)
-		return result;
-
-	if (!stream.end_object())
-		return "Error ending item object";
-
-	return true;
-}
-
-template <class itemT>
-rx_result runtime_response_message<itemT>::deserialize (base_meta_reader& stream)
-{
-	if (!stream.start_object("item"))
-		return "Error starting item object";
-
-	auto result = item->deserialize(stream, STREAMING_TYPE_OBJECT);
-	if (!result)
-		return result;
-
-	if (!stream.end_object())
-		return "Error ending item object";
-
-	return result;
-}
-
-
-// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_runtime_response 
-
-template <class itemT>
-string_type get_runtime_response<itemT>::type_name = "getRuntimeResp";
-
-template <class itemT>
-uint16_t get_runtime_response<itemT>::type_id = rx_get_runtime_response_id;
-
-
-template <class itemT>
-const string_type& get_runtime_response<itemT>::get_type_name ()
-{
-  return type_name;
-
-}
-
-template <class itemT>
-rx_message_type_t get_runtime_response<itemT>::get_type_id ()
-{
-  return type_id;
-
-}
-
-
 // Class sys_internal::rx_protocol::messages::query_messages::get_runtime_request 
 
 string_type get_runtime_request::type_name = "getRuntimeReq";
@@ -556,7 +584,17 @@ rx_message_type_t get_runtime_request::type_id = rx_get_runtime_request_id;
 
 rx_result get_runtime_request::serialize (base_meta_writer& stream) const
 {
-	auto result = meta.serialize_meta_data(stream, STREAMING_TYPE_OBJECT, item_type);
+	if (stream.is_string_based())
+	{
+		if (!stream.write_string("type", rx_item_type_name(item_type)))
+			return false;
+	}
+	else
+	{
+		if (!stream.write_byte("type", item_type))
+			return false;
+	}
+	auto result = reference.serialize_reference("target", stream);
 	if (!result)
 		return result;
 
@@ -565,7 +603,25 @@ rx_result get_runtime_request::serialize (base_meta_writer& stream) const
 
 rx_result get_runtime_request::deserialize (base_meta_reader& stream)
 {
-	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, item_type);
+	if (stream.is_string_based())
+	{
+		string_type temp;
+		if (!stream.read_string("type", temp))
+			return false;
+		item_type = rx_parse_type_name(temp);
+		if (item_type >= rx_item_type::rx_first_invalid)
+			return temp + " is invalid type name";
+	}
+	else
+	{
+		uint8_t temp;
+		if (!stream.read_byte("type", temp))
+			return false;
+		if (temp >= rx_item_type::rx_first_invalid)
+			return "Invalid type";
+		item_type = (rx_item_type)temp;
+	}
+	auto result = reference.deserialize_reference("target", stream);
 	if (!result)
 		return result;
 
@@ -629,7 +685,7 @@ message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_pt
 
 	};
 
-	rx_result result = api::meta::rx_get_runtime<T>(meta.get_id(), meta.get_full_path(), callback, ctx);
+	rx_result result = api::meta::rx_get_runtime<T>(reference, callback, ctx);
 
 	if (!result)
 	{
@@ -642,60 +698,60 @@ message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_pt
 		return message_ptr();
 	}
 }
-// Class sys_internal::rx_protocol::messages::query_messages::query_response_message 
-
-string_type query_response_message::type_name = "queryResp";
-
-rx_message_type_t query_response_message::type_id = rx_query_response_id;
+// Parameterized Class sys_internal::rx_protocol::messages::query_messages::runtime_response_message 
 
 
-rx_result query_response_message::serialize (base_meta_writer& stream) const
+template <class itemT>
+rx_result runtime_response_message<itemT>::serialize (base_meta_writer& stream) const
 {
-	if (!stream.start_array("items", items.size()))
-		return "Error serializing array of items";
-	for (const auto& one : items)
-	{
-		auto result = one.second.serialize_meta_data(stream, 0, one.first);
-		if (!result)
-		{
-			result.register_error("Error serializing meta item "s + one.second.get_name());
-			return result;
-		}
-	}
-	if (!stream.end_array())
-		return "Error serializing array of items at the end";
+	if (!stream.start_object("item"))
+		return "Error starting item object";
+	
+	auto result = item->serialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
 
 	return true;
 }
 
-rx_result query_response_message::deserialize (base_meta_reader& stream)
+template <class itemT>
+rx_result runtime_response_message<itemT>::deserialize (base_meta_reader& stream)
 {
-	if (!stream.start_array("items"))
-		return "Error reading array of items";
-	items.clear();
-	while (!stream.array_end())
-	{
-		rx_item_type type;
-		meta::meta_data one;
-		auto result = one.deserialize_meta_data(stream, 0, type);
-		if (!result)
-		{
-			result.register_error("Error serializing meta item "s + one.get_name());
-			return result;
-		}
-		items.emplace_back(type, std::move(one));
-	}
+	if (!stream.start_object("item"))
+		return "Error starting item object";
 
-	return true;
+	auto result = item->deserialize(stream, STREAMING_TYPE_OBJECT);
+	if (!result)
+		return result;
+
+	if (!stream.end_object())
+		return "Error ending item object";
+
+	return result;
 }
 
-const string_type& query_response_message::get_type_name ()
+
+// Parameterized Class sys_internal::rx_protocol::messages::query_messages::get_runtime_response 
+
+template <class itemT>
+string_type get_runtime_response<itemT>::type_name = "getRuntimeResp";
+
+template <class itemT>
+uint16_t get_runtime_response<itemT>::type_id = rx_get_runtime_response_id;
+
+
+template <class itemT>
+const string_type& get_runtime_response<itemT>::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t query_response_message::get_type_id ()
+template <class itemT>
+rx_message_type_t get_runtime_response<itemT>::get_type_id ()
 {
   return type_id;
 

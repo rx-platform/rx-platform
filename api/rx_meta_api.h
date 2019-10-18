@@ -43,7 +43,7 @@ namespace meta
 
 template<class typeT>
 rx_result rx_delete_runtime(
-	const string_type& name // item's path
+	const item_reference& ref
 	, std::function<void(rx_result&&)> callback
 	, rx_context ctx);
 
@@ -83,13 +83,13 @@ rx_result rx_create_prototype(
 	, rx_context ctx);
 
 template<class typeT>
-rx_result rx_get_runtime(const rx_node_id& id, const string_type name
+rx_result rx_get_runtime(const item_reference& ref
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx);
 
 template<class typeT>
 rx_result rx_create_type(
 	const string_type& name // type's path
-	, const string_type& base_name // base type's path
+	, const item_reference& base_reference // base reference
 	, typename typeT::smart_ptr prototype // prototype
 	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
@@ -104,7 +104,7 @@ rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_ver
 template<class typeT>
 rx_result rx_create_simple_type(
 	const string_type& name // type's path
-	, const string_type& base_name // base type's path
+	, const item_reference& base_reference // base reference
 	, typename typeT::smart_ptr prototype // prototype
 	, namespace_item_attributes attributes // required attributes
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
@@ -122,13 +122,23 @@ rx_result rx_save_item(
 	, rx_context ctx);
 
 template<class T>
-rx_result rx_get_type(const rx_node_id& id, const string_type name
+rx_result rx_get_type(const item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
 
 
 template<class T>
-rx_result rx_get_simple_type(const rx_node_id& id, const string_type name
+rx_result rx_get_simple_type(const item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
+
+
+template<class T>
+rx_result rx_delete_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+
+
+template<class T>
+rx_result rx_delete_simple_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
 
 }
 }
