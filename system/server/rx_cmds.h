@@ -33,12 +33,12 @@
 
 #include "lib/security/rx_security.h"
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_mem
+#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -242,6 +242,8 @@ class server_command_base : public logic::program_runtime
 
       bool deserialize_definition (base_meta_reader& stream, uint8_t type);
 
+      virtual string_type get_help () const;
+
 
       const string_type& get_console_name () const
       {
@@ -255,7 +257,7 @@ class server_command_base : public logic::program_runtime
       }
 
 
-	  virtual const char* get_help() const = 0;
+
   protected:
 
       virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_context::smart_ptr ctx) = 0;

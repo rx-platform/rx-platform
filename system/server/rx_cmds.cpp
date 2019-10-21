@@ -191,6 +191,15 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 	return false;
 }
 
+string_type server_command_base::get_help () const
+{
+	string_type str = hosting::rx_platform_host::get_manual("commands/"s + get_name());
+	if (str.empty())
+		return "jebi ga bato!!!";
+	else
+		return str;
+}
+
 
 // Class rx_platform::prog::console_program_context 
 
@@ -453,7 +462,11 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(err_buffer.unsafe_ptr());
 
-		out << "Hosts Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		string_type man = rx_gate::instance().get_host()->get_host_manual();
+
+		out << man << "\r\n";
+
+		out << "Hosts stack details:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		string_array hosts;
 		rx_gate::instance().get_host()->get_host_info(hosts);
 		for (const auto& one : hosts)

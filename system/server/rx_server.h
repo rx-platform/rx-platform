@@ -76,6 +76,7 @@ struct general_data_t
 {
 	bool test_log = false;
 	string_type startup_script;
+	string_type manuals_path;
 };
 
 struct configuration_data_t

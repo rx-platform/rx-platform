@@ -179,6 +179,12 @@ class rx_platform_host
 
       virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
 
+      static string_type get_manual (string_type what);
+
+      virtual string_type get_host_manual () const = 0;
+
+      static string_type get_manual_explicit (string_type what, string_type man_folder);
+
 
       rx_platform_host * get_parent ()
       {
@@ -215,6 +221,8 @@ class rx_platform_host
 
       rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
 
+      virtual string_type get_default_manual_path () const = 0;
+
 
   private:
       rx_platform_host(const rx_platform_host &right);
@@ -230,6 +238,9 @@ class rx_platform_host
       rx_reference<storage_base::rx_platform_storage> user_storage_;
 
       rx_reference<storage_base::rx_platform_storage> test_storage_;
+
+
+      static string_type manuals_path_;
 
 
 };

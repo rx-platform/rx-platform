@@ -34,7 +34,6 @@
 #include "terminal/rx_con_commands.h"
 
 #include "terminal/rx_terminal_style.h"
-#include "help/rx_help_security.h"
 #include "testing/testing.h"
 
 #include "system/server/rx_server.h"
@@ -531,22 +530,12 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 	}
 	else if (sub_command == "help")
 	{
-		sub_command.clear();
-		in >> sub_command;
-		if(sub_command.empty())
-		{
-			out << get_help();
-		}
-		else if (sub_command == "active")
-		{
-			out << "\r\n";
-			out << HELP_RX_SEC_ACTIVE_COMMAND;
-		}
-		else
-		{
-			err << "Unknown sub-command";
-			return false;
-		}
+		out << get_help();
+	}
+	else
+	{
+		err << "Unknown sub-command";
+		return false;
 	}
 	return true;
 }
@@ -605,11 +594,6 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 	rx_dump_table(table, out,true,true);
 
 	return true;
-}
-
-const char* sec_command::get_help () const
-{
-	return HELP_RX_SEC_COMMAND;
 }
 
 
@@ -860,7 +844,7 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 {
 	string_type command_name;
 	in >> command_name;
-	out << "Printing help, second variant now,\r\n";
+	out << "Printing help...\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	if (command_name.empty())
 	{
@@ -874,9 +858,9 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 		{
 			out << ANSI_COLOR_GREEN << ":>";
 			out << ANSI_COLOR_YELLOW ANSI_COLOR_BOLD << command->get_name() << ANSI_COLOR_RESET << "\r\n";
-			out << RX_CONSOLE_HEADER_LINE "\r\n";
+			out << RX_CONSOLE_HEADER_LINE "\r\n\r\n";
 			out << command->get_help();
-			out << "\r\nhope this helps...\r\n";
+			out << "\r\n\r\n";
 			return true;
 		}
 		else
@@ -887,7 +871,7 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 	}
 }
 
-const char* help_command::get_help () const
+string_type help_command::get_help () const
 {
 	static string_type help;
 	static locks::slim_lock lock;
@@ -911,10 +895,9 @@ const char* help_command::get_help () const
 			rx_dump_large_row(names, out, RX_CONSOLE_WIDTH);
 			
 			out << "\r\nchoose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
-			out << "\r\n\r\nThese are actually code comment dump, at least most of them." ANSI_COLOR_GREEN ANSI_COLOR_BOLD ":)" ANSI_COLOR_RESET "\r\n";
-			out << ANSI_COLOR_MAGENTA "Don't know what to tell you, sorry, try reading some other reference...\r\n" ANSI_COLOR_RESET;
+			out << "\r\n\r\n" ANSI_COLOR_MAGENTA "Maybe this is final help implementation...\r\n" ANSI_COLOR_RESET;
 			out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
-				<< "  sinclair ZX Spectrum!!!\r\n\r\n";
+				<< "  sinclair ZX Spectrum!!!\r\n";
 			out.flush();
 			help = out.str();
 		}
@@ -926,4 +909,5 @@ const char* help_command::get_help () const
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
+
 

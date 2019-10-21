@@ -359,6 +359,11 @@ storage_base::rx_platform_storage::smart_ptr gui_platform_host::get_storage ()
 	return rx_storage_ptr();
 }
 
+string_type gui_platform_host::get_host_manual () const
+{
+	return rx_platform_host::get_manual("hosts/rx-gui");
+}
+
 
 // Class host::gui::gui_thread_synchronizer 
 

@@ -63,6 +63,8 @@ class win32_gui_host : public host::gui::gui_platform_host
 
       static string_type get_win32_gui_info ();
 
+      string_type get_default_manual_path () const;
+
 
   private:
 

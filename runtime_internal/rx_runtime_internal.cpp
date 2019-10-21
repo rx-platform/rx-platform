@@ -81,8 +81,14 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 {
 	size_t cpu_count = 1;
 	char buff[0x40];
+	std::ostringstream ss;
+	ss << " [PID:"
+		<< rx_pid
+		<< "]";
+	RUNTIME_LOG_INFO("platform_runtime_manager", 900, "Detected CPU "s + ss.str() + buff);
 	rx_collect_processor_info(buff, sizeof(buff), &cpu_count);
 	RUNTIME_LOG_INFO("platform_runtime_manager", 900, "Detected CPU "s + buff);
+
 	if (cpu_count > (size_t)data.io_pool_size)
 	{
 		first_cpu_ = data.io_pool_size;

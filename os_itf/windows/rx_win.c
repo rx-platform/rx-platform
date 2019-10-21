@@ -1173,7 +1173,7 @@ sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priori
 	buff[0] = L'\0';
 	MultiByteToWideChar(CP_ACP, 0, name, -1, buff, sizeof(buff) / sizeof(0));
 
-	SetThreadDescription(handle, buff);
+	//SetThreadDescription(handle, buff);
 	
 	SetThreadPriority(handle, priority);
 	ResumeThread(handle);

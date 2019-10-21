@@ -119,6 +119,8 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       storage_base::rx_platform_storage::smart_ptr get_storage ();
 
+      string_type get_host_manual () const;
+
 
   protected:
 

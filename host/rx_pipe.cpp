@@ -49,8 +49,12 @@ namespace pipe {
 // Class host::pipe::rx_pipe_host 
 
 rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
-      : exit_(false)
+      : exit_(false),
+        dump_start_log_(false),
+        dump_storage_references_(false),
+        debug_stop_(false)
 	, hosting::rx_platform_host(storage)
+	, stdout_log_(rx_create_reference< rx_pipe_stdout_log_subscriber>())
 {
 }
 
@@ -94,20 +98,19 @@ bool rx_pipe_host::break_host (const string_type& msg)
 
 int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
-	std::cout << "\r\n"
-		<< "rx-platform " 
-		<< rx_gate::instance().get_rx_version()
-		<< "\r\n\r\n"
-		<< get_pipe_info()
-		<< "\r\n======================================\r\n";
-
-
+	
 	rx_platform::configuration_data_t config;
 	pipe_client_t pipes;
 	memzero(&pipes, sizeof(pipes));
 	rx_result ret = parse_command_line(argc, argv, config, pipes);
 	if (ret)
 	{
+		if (debug_stop_)
+		{
+			std::cout << "Press <ENTER> to continue...\r\n";
+			string_type dummy;
+			std::getline(std::cin, dummy);
+		}
 		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
 		ret = read_config_file(reader, config);
@@ -123,11 +126,38 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
 			std::cout << "OK\r\n";
 
+			std::cout << "\r\n"
+				<< "rx-platform "
+				<< rx_gate::instance().get_rx_version()
+				<< "\r\n\r\n";
+			string_array hosts;
+			get_host_info(hosts);
+			bool first = true;
+			for (const auto& one : hosts)
+			{
+				std::cout << one;
+				if (first)
+				{
+					std::cout << " [PID:"
+						<< rx_pid
+						<< "]\r\n";
+					first = false;
+				}
+				else
+				{
+					std::cout << "\r\n";
+				}
+			}
+			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
+			rx::log::log_object::instance().register_subscriber(stdout_log_);
 			ret = rx::log::log_object::instance().start(config.general.test_log);
 			if (ret)
 			{
 				std::cout << "OK\r\n";
+				char buff[0x20];
+				sprintf(buff, "%d", rx_gate::instance().get_pid());
+				HOST_LOG_INFO("Main", 900, "rx-platform running on PID "s + buff);
 
 				std::cout << "Registering plug-ins...";
 				ret = register_plugins(plugins);
@@ -161,6 +191,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 				}
 				rx::log::log_object::instance().deinitialize();
 			}
+
+			rx::log::log_object::instance().unregister_subscriber(stdout_log_);
 
 			rx_deinitialize_os();
 		}
@@ -204,12 +236,15 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 
 	cxxopts::Options options("rx-pipe", "");
 
-	intptr_t read_handle;
-	intptr_t write_handle;
+	intptr_t read_handle(0);
+	intptr_t write_handle(0);
 
 	options.add_options()
 		("input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
 		("output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
+		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
+		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
+		("debug", "Wait keyboard hit on start", cxxopts::value<bool>(debug_stop_))
 		;
 
 	add_command_line_options(options, config);
@@ -219,6 +254,9 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		auto result = options.parse(argc, argv);
 		if (result.count("help"))
 		{
+			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-pipe", get_default_manual_path());
+			std::cout << man;
+			std::cout << "\r\n";
 			std::cout << options.help({ "" });
 			std::cout << "\r\n\r\n";
 
@@ -240,6 +278,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		{
 			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
 				<< "\r\nUse --input and --output options to specify handles."
+				<< "\r\nUse --help for more datails"
 				<< "\r\nExiting...";
 
 			return false;
@@ -260,7 +299,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	sec_ctx->login();
+	auto result = sec_ctx->login();
 
 	security::security_auto_context dummy(sec_ctx);
 
@@ -276,7 +315,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";
-	auto result = rx_platform::rx_gate::instance().initialize(this, config);
+	result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (result)
 	{
 		std::cout << "OK\r\n";
@@ -301,23 +340,36 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
 
 					std::cout << "OK\r\n";
-					
-					string_type sys_info = get_system_storage()->get_storage_info();
-					string_type sys_ref = get_system_storage()->get_storage_reference();
-					string_type user_info = get_user_storage()->get_storage_info();
-					string_type user_ref = get_user_storage()->get_storage_reference();
-					string_type test_info = get_test_storage()->get_storage_info();
-					string_type test_ref = get_test_storage()->get_storage_reference();
 
-					std::cout << "Storage Information:\r\n============================\r\n";
-					std::cout << "System Storage: " << sys_info << "\r\n";
-					std::cout << "System Reference: " << sys_ref << "\r\n";
-					std::cout << "User Storage: " << user_info << "\r\n";
-					std::cout << "User Reference: " << user_ref << "\r\n";
-					std::cout << "Test Storage: " << test_info << "\r\n";
-					std::cout << "Test Reference: " << test_ref << "\r\n";
+					if (dump_storage_references_)
+					{
+						string_type sys_info = get_system_storage()->get_storage_info();
+						string_type sys_ref = get_system_storage()->get_storage_reference();
+						string_type user_info = get_user_storage()->get_storage_info();
+						string_type user_ref = get_user_storage()->get_storage_reference();
+						string_type test_info = get_test_storage()->get_storage_info();
+						string_type test_ref = get_test_storage()->get_storage_reference();
+
+						std::cout << "\r\nStorage Information:\r\n============================\r\n";
+						std::cout << "System Storage: " << sys_info << "\r\n";
+						std::cout << "System Reference: " << sys_ref << "\r\n";
+						std::cout << "User Storage: " << user_info << "\r\n";
+						std::cout << "User Reference: " << user_ref << "\r\n";
+						std::cout << "Test Storage: " << test_info << "\r\n";
+						std::cout << "Test Reference: " << test_ref << "\r\n";
+					}
+					if(dump_start_log_)
+						std::cout << "\r\nStartup log:\r\n============================\r\n";
+					stdout_log_->release_log(dump_start_log_);
+
+					std::cout << "\r\nEnternig loop....\r\n============================\r\n";
+
 
 					pipes_.receive_loop();
+
+					stdout_log_->suspend_log();
+
+					std::cout << "Exited loop....\r\n";
 
 					pipes_.close();
 
@@ -376,6 +428,45 @@ rx_result rx_pipe_host::build_host (rx_directory_ptr root)
 storage_base::rx_platform_storage::smart_ptr rx_pipe_host::get_storage ()
 {
 	return rx_storage_ptr();
+}
+
+string_type rx_pipe_host::get_host_manual () const
+{
+	return rx_platform_host::get_manual("hosts/rx-pipe");
+}
+
+
+// Class host::pipe::rx_pipe_stdout_log_subscriber 
+
+
+void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+{
+	log::log_event_data one = { event_type,library,source,level,code,message,when };
+	if (running_)
+	{
+		one.dump_to_stream_simple(std::cout);	}
+	else
+	{
+		pending_events_.emplace_back(std::move(one));
+	}
+}
+
+void rx_pipe_stdout_log_subscriber::release_log (bool dump_previous)
+{
+	running_ = true;
+	if (dump_previous)
+	{
+		for (const auto& one : pending_events_)
+		{
+			one.dump_to_stream_simple(std::cout);
+		}
+	}
+	pending_events_.clear();
+}
+
+void rx_pipe_stdout_log_subscriber::suspend_log ()
+{
+	running_ = false;
 }
 
 

@@ -254,6 +254,9 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 
 			restore_console();
 
+			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-interactive", get_default_manual_path());
+			std::cout << man;
+			std::cout << "\r\n";
 			std::cout << options.help({ "" });
 			std::cout << "\r\n\r\n";
 
@@ -290,10 +293,6 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 {
 	rx_result ret = setup_console(argc, argv);
 
-	std::cout << "\r\n"
-		<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform" ANSI_COLOR_RESET " Interactive Console Host"
-		<< "\r\n======================================\r\n";
-
 	rx_platform::configuration_data_t config;
 	ret = parse_command_line(argc, argv, config); 
 	if (ret)
@@ -310,7 +309,31 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
 			std::cout << ANSI_STATUS_OK "\r\n";
-
+			
+			std::cout << "\r\n"
+				<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform "
+				<< rx_gate::instance().get_rx_version()
+				<< ANSI_COLOR_RESET "\r\n\r\n";
+				
+			string_array hosts;
+			get_host_info(hosts);
+			bool first = true;
+			for (const auto& one : hosts)
+			{
+				std::cout << one;
+				if (first)
+				{
+					std::cout << " [PID:"
+						<< rx_pid
+						<< "]\r\n";
+					first = false;
+				}
+				else
+				{
+					std::cout << "\r\n";
+				}
+			}
+			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
 			ret = rx::log::log_object::instance().start(config.general.test_log);			
 			if (ret)
@@ -390,6 +413,11 @@ rx_result interactive_console_host::build_host (rx_directory_ptr root)
 storage_base::rx_platform_storage::smart_ptr interactive_console_host::get_storage ()
 {
 	return rx_storage_ptr();
+}
+
+string_type interactive_console_host::get_host_manual () const
+{
+	return rx_platform_host::get_manual("hosts/rx-interactive");
 }
 
 

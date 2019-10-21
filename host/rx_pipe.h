@@ -39,6 +39,8 @@
 #include "system/hosting/rx_host.h"
 // rx_anonymus_pipes
 #include "interfaces/rx_anonymus_pipes.h"
+// rx_log
+#include "lib/rx_log.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -46,6 +48,36 @@
 namespace host {
 
 namespace pipe {
+
+
+
+
+
+class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber  
+{
+	typedef std::vector<log::log_event_data> pending_events_type;
+
+  public:
+
+      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+
+      void release_log (bool dump_previous);
+
+      void suspend_log ();
+
+
+  protected:
+
+  private:
+
+
+      pending_events_type pending_events_;
+
+      bool running_;
+
+
+};
+
 
 
 
@@ -87,6 +119,8 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       storage_base::rx_platform_storage::smart_ptr get_storage ();
 
+      string_type get_host_manual () const;
+
 
   protected:
 
@@ -100,10 +134,18 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       interfaces::anonymus_pipe::anonymus_pipe_endpoint pipes_;
 
+      rx_reference<rx_pipe_stdout_log_subscriber> stdout_log_;
+
 
       bool exit_;
 
       opcua_transport_protocol_type transport_;
+
+      bool dump_start_log_;
+
+      bool dump_storage_references_;
+
+      bool debug_stop_;
 
 
 };

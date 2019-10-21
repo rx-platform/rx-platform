@@ -347,6 +347,12 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 	SetConsoleMode(in_handle_, in_bits.to_ulong());
 	SetConsoleMode(out_handle_, out_bits.to_ulong());
 
+	if (GetConsoleMode(out_handle_, &out_mode) && (ENABLE_VIRTUAL_TERMINAL_PROCESSING & out_mode))
+		printf("********************Ima ANSI support\r\n");
+	else
+		printf("********************Nema ANSI support\r\n");
+
+
 	return true;
 }
 
@@ -390,6 +396,13 @@ string_type win32_console_host::get_win32_interactive_info ()
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_WIN32_CON_HOST_NAME, RX_WIN32_CON_HOST_MAJOR_VERSION, RX_WIN32_CON_HOST_MINOR_VERSION, RX_WIN32_CON_HOST_BUILD_NUMBER);
 	}
+	return ret;
+}
+
+string_type win32_console_host::get_default_manual_path () const
+{
+	string_type ret;
+	get_full_path("man", ret);
 	return ret;
 }
 

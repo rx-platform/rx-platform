@@ -69,6 +69,9 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
 
   protected:
 
+      string_type get_default_manual_path () const;
+
+
   private:
 
 

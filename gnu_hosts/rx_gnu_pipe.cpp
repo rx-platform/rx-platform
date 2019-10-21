@@ -74,6 +74,10 @@ string_type gnu_pipe_host::get_gnu_pipe_info ()
 {
 }
 
+string_type gnu_pipe_host::get_default_manual_path () const
+{
+}
+
 
 } // namespace gnu
 

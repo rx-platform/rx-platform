@@ -86,6 +86,9 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
   protected:
 
+      string_type get_default_manual_path () const;
+
+
   private:
 
 

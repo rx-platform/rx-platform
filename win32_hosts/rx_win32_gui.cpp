@@ -83,6 +83,17 @@ string_type win32_gui_host::get_win32_gui_info ()
 	return ret;
 }
 
+string_type win32_gui_host::get_default_manual_path () const
+{
+#ifdef _DEBUG
+	return "";
+#else
+	string_type ret;
+	get_full_path("man", ret);
+	return ret;
+#endif
+}
+
 
 } // namespace win32
 

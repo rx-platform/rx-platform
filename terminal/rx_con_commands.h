@@ -196,16 +196,13 @@ all about doing stuff with log");
 class sec_command : public commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(sec_command);
-	DECLARE_CONSOLE_CODE_INFO2( 0,5,0, "\
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
 all about doing stuff with security");
 
   public:
       sec_command();
 
       ~sec_command();
-
-
-      const char* get_help () const;
 
 
   protected:
@@ -466,7 +463,7 @@ This is ugly code comment, type help in console for more details.");
       ~help_command();
 
 
-      const char* get_help () const;
+      string_type get_help () const;
 
 
   protected:

@@ -46,6 +46,8 @@ namespace hosting {
 
 // Class rx_platform::hosting::rx_platform_host 
 
+string_type rx_platform_host::manuals_path_;
+
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
 {
@@ -146,9 +148,13 @@ rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_p
 					else if (row.first == "storage.test"
 						&& config.namespace_data.test_storage_reference.empty())
 						config.namespace_data.test_storage_reference = row.second;
+					else if (row.first == "other.manuals")
+						manuals_path_ = row.second;
 				}
 			}
 		}
+		if (manuals_path_.empty())
+			manuals_path_ = get_default_manual_path();
 		return ret;
 	}
 	else
@@ -196,10 +202,10 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 
 rx_result rx_platform_host::deinitialize_storages ()
 {
-	test_storage_->deinit_storage();
-	user_storage_->deinit_storage();
-	system_storage_->deinit_storage();
-	return true;
+	auto result = test_storage_->deinit_storage();
+	result = user_storage_->deinit_storage();
+	result = system_storage_->deinit_storage();
+	return result;
 }
 
 string_type rx_platform_host::defualt_system_storage_reference () const
@@ -230,11 +236,46 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_result ret;
 	for (auto one : plugins)
 	{
-		sys_internal::plugins::plugins_manager::instance().register_plugin(one);
+		ret = sys_internal::plugins::plugins_manager::instance().register_plugin(one);
 	}
-	return true;
+	return ret;
+}
+
+string_type rx_platform_host::get_manual (string_type what)
+{
+	if (manuals_path_.empty())
+		return "";
+	string_type path = rx_combine_paths(manuals_path_, what + ".man");
+	rx_source_file file;
+	auto result = file.open(path.c_str());
+	if (result)
+	{
+		string_type buffer;
+		result = file.read_string(buffer);
+		if (!result)
+			return "";
+		return buffer;
+	}
+	return "";
+}
+
+string_type rx_platform_host::get_manual_explicit (string_type what, string_type man_folder)
+{
+	string_type path = rx_combine_paths(man_folder, what + ".man");
+	rx_source_file file;
+	auto result = file.open(path.c_str());
+	if (result)
+	{
+		string_type buffer;
+		result = file.read_string(buffer);
+		if (!result)
+			return "";
+		return buffer;
+	}
+	return "";
 }
 
 

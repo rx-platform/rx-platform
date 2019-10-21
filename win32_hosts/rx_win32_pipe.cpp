@@ -69,7 +69,7 @@ string_type win32_pipe_host::get_default_name () const
 
 void win32_pipe_host::get_host_info (string_array& hosts)
 {
-	hosts.emplace_back(get_pipe_info());
+	hosts.emplace_back(get_win32_pipe_info());
 	host::pipe::rx_pipe_host::get_host_info(hosts);
 }
 
@@ -87,6 +87,13 @@ string_type win32_pipe_host::defualt_system_storage_reference () const
 {
 	string_type ret;
 	get_full_path("storage/rx-system-storage", ret);
+	return ret;
+}
+
+string_type win32_pipe_host::get_default_manual_path () const
+{
+	string_type ret;
+	get_full_path("man", ret);
 	return ret;
 }
 

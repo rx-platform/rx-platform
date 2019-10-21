@@ -119,6 +119,7 @@ struct log_event_data
 	rx_time when;
 
 	void dump_to_stream(std::ostream& stream) const;
+	void dump_to_stream_simple(std::ostream& stream) const;
 };
 
 typedef std::vector<log_event_data> log_events_type;

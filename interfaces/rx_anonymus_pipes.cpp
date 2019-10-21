@@ -95,9 +95,7 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 void anonymus_pipe_endpoint::receive_loop ()
 {
 	rx_result result;
-
-	std::cout << "Entering receive loop!\r\n";
-
+	
 	while (true)
 	{
 		rx_const_packet_buffer buffer{};

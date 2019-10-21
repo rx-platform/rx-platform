@@ -82,6 +82,35 @@ void log_event_data::dump_to_stream(std::ostream& stream) const
 	}
 }
 
+const char* get_log_type_string(log::log_event_type type)
+{
+	switch (type)
+	{
+	case log::log_event_type::info_log_event:
+		return " INFO     ";
+	case log::log_event_type::warning_log_event:
+		return " WARNING  ";
+	case log::log_event_type::error_log_event:
+		return " ERROR    ";
+	case log::log_event_type::critical_log_event:
+		return " CRITICAL ";
+	case log::log_event_type::debug_log_event:
+		return " DEBUG    ";
+	case log::log_event_type::trace_log_event:
+		return " TRACE    ";
+	default:
+		return "***UNKNOWN***";
+	}
+}
+
+void log_event_data::dump_to_stream_simple(std::ostream& stream) const
+{
+	stream << when.get_string(false)
+		<< get_log_type_string(event_type)
+		<< message
+		<< "\r\n";	
+}
+
 #define LOG_SELF_INFO(msg) RX_LOG_INFO(RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, msg);
 
 // Class rx::log::log_object 
