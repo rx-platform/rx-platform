@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_gui.h
+*  win32_hosts\rx_win32_simple.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,13 +27,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_win32_gui_h
-#define rx_win32_gui_h 1
+#ifndef rx_win32_simple_h
+#define rx_win32_simple_h 1
 
 
 
-// rx_gui_host
-#include "host/rx_gui_host.h"
+// rx_simple_host
+#include "host/rx_simple_host.h"
 
 
 
@@ -43,16 +43,14 @@ namespace win32 {
 
 
 
-class win32_gui_host : public host::gui::gui_platform_host  
+class win32_simple_host : public host::simple::simple_platform_host  
 {
 
   public:
-      win32_gui_host (hosting::rx_host_storages& storage);
+      win32_simple_host (hosting::rx_host_storages& storage);
 
-      ~win32_gui_host();
+      ~win32_simple_host();
 
-
-      string_type get_config_path () const;
 
       string_type get_default_name () const;
 
@@ -61,9 +59,9 @@ class win32_gui_host : public host::gui::gui_platform_host
 
   protected:
 
-      static string_type get_win32_gui_info ();
+      static string_type get_win32_simple_info ();
 
-      string_type get_default_manual_path () const;
+      rx_result fill_host_directories (rx_host_directories& data);
 
 
   private:

@@ -385,6 +385,8 @@ bool cache_log_subscriber::read_log (const log_query_type& query, log_events_typ
 	}
 	for (events_cache_type::const_iterator it=start_it; it!=end_it; it++)
 	{
+		if (!query.include_trace && it->second.event_type == log::trace_log_event)
+			continue;// this is not our's!
 		result.emplace_back(it->second);
 	}
 	return true;

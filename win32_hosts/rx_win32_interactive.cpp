@@ -356,36 +356,10 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
-string_type win32_console_host::get_config_path () const
-{
-//#ifdef _DEBUG
-	string_type ret;
-	get_full_path("config", ret);
-	return ret;	
-//#else
-//	const char* app_data = getenv("ALLUSERSPROFILE");
-//	if (app_data)
-//	{
-//		return rx_combine_paths(app_data, "rx-platform\\config");
-//	}
-//	else
-//	{
-//		return "";
-//	}
-//#endif
-}
-
 string_type win32_console_host::get_default_name () const
 {
 	string_type ret;
-	get_host_name(ret);
-	return ret;
-}
-
-string_type win32_console_host::defualt_system_storage_reference () const
-{
-	string_type ret;
-	get_full_path("storage/rx-system-storage", ret);
+	get_win_host_name(ret);
 	return ret;
 }
 
@@ -399,11 +373,9 @@ string_type win32_console_host::get_win32_interactive_info ()
 	return ret;
 }
 
-string_type win32_console_host::get_default_manual_path () const
+rx_result win32_console_host::fill_host_directories (rx_host_directories& data)
 {
-	string_type ret;
-	get_full_path("man", ret);
-	return ret;
+	return build_directories(data);
 }
 
 

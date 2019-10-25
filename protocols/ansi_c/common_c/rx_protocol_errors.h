@@ -31,6 +31,7 @@
 #define rx_protocol_errors_h 1
 
 
+
 #define RX_PROTOCOL_OK 0
 #define RX_PROTOCOL_EMPTY 1
 #define RX_PROTOCOL_WRONG_STATE 2

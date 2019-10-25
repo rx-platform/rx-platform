@@ -3,8 +3,8 @@
 
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
-#define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 21
+#define RX_HAL_MINOR_VERSION 11
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -26,5 +26,6 @@
 0.10.19. corrected windows implementation for RX_ASSERT
 0.10.19. corrected include for python support
 0.10.21. removed SetThreadDescription from os itf for win32 to work with older kernels
+0.11.0. added os errors support
 
 *********************************************************************************/

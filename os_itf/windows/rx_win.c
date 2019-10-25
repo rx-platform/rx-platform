@@ -48,9 +48,35 @@
 
 
 
-uint32_t rx_last_eror()
+rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
 {
-	return GetLastError();
+	LPSTR msg = NULL;
+	DWORD err = GetLastError();
+	DWORD ret = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		err,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+		(LPSTR)&msg,
+		1,
+		NULL);
+	if (ret)
+	{
+		if(text)
+			snprintf(buffer, buffer_size, "%s. %s (%u)", text, msg, err);
+		else
+			snprintf(buffer, buffer_size, "%s (%u)", msg, err);
+		LocalFree((LPVOID)msg);
+	}
+	else
+	{
+		if (text)
+			snprintf(buffer, buffer_size, "%s. Error retriveing error code (%u)", text, err);
+		else
+			snprintf(buffer, buffer_size, "Error retriveing error code (%u)", err);
+	}
+	return err;
 }
 
 uuid_t g_null_uuid = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };

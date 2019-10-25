@@ -49,14 +49,12 @@ extern "C" {
 	// match pattern function
 	int match_pattern(const char *string, const char *Pattern, int bCaseSensitive);
 
-	const char* rx_get_error_text(uint32_t code);
 
 	extern const char* g_ositf_version;
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	// error handling here
 
-	uint32_t rx_last_eror();
-	void fill_error_string(uint32_t err_code);
+	rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size);
 	///////////////////////////////////////////////////////////////////
 	// anynoimus pipes
 

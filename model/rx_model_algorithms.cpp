@@ -135,7 +135,10 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		ret.register_error("Error deleting type from the cache.");
 		return ret;
 	}
-	META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_name());
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
+	else
+		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
 	return true;
 }
 template<class typeCache, class typeType>
@@ -243,8 +246,58 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
 			return ret;
 		}
+		META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
 	}
-	META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_name());
+	else
+		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+	return prototype;
+}
+template<class typeCache, class typeT>
+rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_directory_ptr dir, bool increment_version, rx_transaction_type& transaction)
+{	
+	if (!dir)
+		dir = rx_gate::instance().get_root_directory();
+
+	prototype->meta_info().resolve();
+	prototype->meta_info().increment_version(increment_version);
+	auto result = prototype->resolve(dir);
+	if (!result)
+	{
+		return result.errors();
+	}
+
+	auto ret = cache.get_type_definition(prototype->meta_info().get_id());
+	if (!ret)
+	{// error, didn't created runtime
+		ret.register_error("Unable to get type from cache.");
+		return ret.errors();
+	}
+
+	typeT old_value = ret.value();
+
+	result = cache.update_type(prototype);
+	if (!ret)
+	{// error, didn't created runtime
+		ret.register_error("Unable to update type in cache.");
+		return ret.errors();
+	}
+	transaction.push([&cache, old_value]() mutable {
+		auto delete_result = cache.update_type(old_value);
+		});
+
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		auto save_result = prototype->get_item_ptr()->save();
+		if (!save_result)
+		{
+			rx_result_with<typeT> ret(save_result.errors());
+			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
+			return ret;
+		}
+		META_LOG_INFO("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+	}
+	else
+		META_LOG_TRACE("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
 	return prototype;
 }
 template<class typeT>
@@ -339,7 +392,10 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 				callback(std::move(ret));
 				return;
 			}
-			META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_name());
+			if (rx_gate::instance().get_platform_status() == rx_platform_running)
+				META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
+			else
+				META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
 			transaction.commit();
 			callback(std::move(ret));
 
@@ -455,15 +511,19 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		auto mark_result = cache.mark_runtime_for_delete(item_id);
 		});
 
-	runtime::runtime_init_context ctx;
-	result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value(), ctx);
-	if (!result)
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		result.register_error("Unable to initialize "s + runtime_name);
-		return result.errors();
+		runtime::runtime_init_context ctx;
+		result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value(), ctx);
+		if (!result)
+		{
+			result.register_error("Unable to initialize "s + runtime_name);
+			return result.errors();
+		}
+		META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RType::type_id) + " "s + meta.get_full_path());
 	}
-
-	META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RType::type_id) + " "s + runtime_name);
+	else
+		META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RType::type_id) + " "s + meta.get_full_path());
 
 	return ret_value;
 }
@@ -560,30 +620,13 @@ void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr protot
 template <class typeT>
 rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
 {
-	prototype->meta_info().resolve();
-	prototype->meta_info().increment_version(increment_version);
-	auto result = prototype->resolve(dir);
-	if (!result)
+	rx_transaction_type transaction;
+	auto result = update_some_type(platform_types_manager::instance().internal_get_type_cache<typeT>(), prototype, dir, increment_version, transaction);
+	if (result)
 	{
-		return result.errors();
+		transaction.commit();
 	}
-
-	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().update_type(prototype);
-	if (!ret)
-	{// error, didn't updated type
-		return ret.errors();
-	}
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
-	{
-		auto save_result = prototype->get_item_ptr()->save();
-		if (!save_result)
-		{
-			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
-			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
-			return ret;
-		}
-	}
-	return prototype;
+	return result;
 }
 
 template <class typeT>
@@ -711,30 +754,13 @@ void simple_types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr
 template <class typeT>
 rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
 {
-	prototype->meta_info().resolve();
-	prototype->meta_info().increment_version(increment_version);
-	auto result = prototype->resolve(dir);
-	if (!result)
+	rx_transaction_type transaction;
+	auto result = update_some_type(platform_types_manager::instance().internal_get_simple_type_cache<typeT>(), prototype, dir, increment_version, transaction);
+	if (result)
 	{
-		return result.errors();
+		transaction.commit();
 	}
-
-	auto ret = platform_types_manager::instance().internal_get_simple_type_cache<typeT>().update_type(prototype);
-	if (!ret)
-	{// error, didn't updated type
-		return ret.errors();
-	}
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
-	{
-		auto save_result = prototype->get_item_ptr()->save();
-		if (!save_result)
-		{
-			rx_result_with<typename typeT::smart_ptr> ret(save_result.errors());
-			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
-			return ret;
-		}
-	}
-	return prototype;
+	return result;
 }
 
 template <class typeT>

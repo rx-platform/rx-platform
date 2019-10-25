@@ -56,6 +56,7 @@ rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
 	, hosting::rx_platform_host(storage)
 	, stdout_log_(rx_create_reference< rx_pipe_stdout_log_subscriber>())
 {
+	stdout_log_->show_traces = false;
 }
 
 
@@ -211,7 +212,7 @@ string_type rx_pipe_host::get_pipe_info ()
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_PIPE_HOST_NAME, RX_PIPE_HOST_MAJOR_VERSION, RX_PIPE_HOST_MINOR_VERSION, RX_PIPE_HOST_BUILD_NUMBER);
 	}
 	return ret;
 }
@@ -245,6 +246,8 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
 		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
 		("debug", "Wait keyboard hit on start", cxxopts::value<bool>(debug_stop_))
+		("trace", "Dump traces in standard output", cxxopts::value<bool>(stdout_log_->show_traces))
+		
 		;
 
 	add_command_line_options(options, config);
@@ -254,7 +257,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		auto result = options.parse(argc, argv);
 		if (result.count("help"))
 		{
-			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-pipe", get_default_manual_path());
+			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-pipe", get_host_directories().manuals);
 			std::cout << man;
 			std::cout << "\r\n";
 			std::cout << options.help({ "" });
@@ -432,7 +435,12 @@ storage_base::rx_platform_storage::smart_ptr rx_pipe_host::get_storage ()
 
 string_type rx_pipe_host::get_host_manual () const
 {
-	return rx_platform_host::get_manual("hosts/rx-pipe");
+	return rx_platform_host::get_manual("hosts/" RX_PIPE_HOST);
+}
+
+string_type rx_pipe_host::get_host_name ()
+{
+	return RX_PIPE_HOST;
 }
 
 
@@ -442,6 +450,8 @@ string_type rx_pipe_host::get_host_manual () const
 void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 	log::log_event_data one = { event_type,library,source,level,code,message,when };
+	if (!show_traces && event_type == log::log_event_type::trace_log_event)
+		return;
 	if (running_)
 	{
 		one.dump_to_stream_simple(std::cout);	}

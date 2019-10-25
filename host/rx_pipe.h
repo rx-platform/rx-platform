@@ -66,6 +66,9 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
       void suspend_log ();
 
 
+      bool show_traces;
+
+
   protected:
 
   private:
@@ -120,6 +123,8 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
       storage_base::rx_platform_storage::smart_ptr get_storage ();
 
       string_type get_host_manual () const;
+
+      string_type get_host_name ();
 
 
   protected:

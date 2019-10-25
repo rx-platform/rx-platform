@@ -129,6 +129,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 						break;
 					case STREAMING_TYPE_OBJECT:
 						result = create_object_from_storage(stream, std::move(item), root);
+						item->close();
 						break;
 					default:
 						item->close();
@@ -241,9 +242,9 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
 			break;
 		default:
-			storage->close();
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
+		storage->close();
 	}
 	else
 	{

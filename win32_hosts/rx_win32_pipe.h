@@ -56,20 +56,16 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
       ~win32_pipe_host();
 
 
-      string_type get_config_path () const;
-
       string_type get_default_name () const;
 
       void get_host_info (string_array& hosts);
 
       static string_type get_win32_pipe_info ();
 
-      string_type defualt_system_storage_reference () const;
-
 
   protected:
 
-      string_type get_default_manual_path () const;
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:

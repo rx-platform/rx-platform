@@ -2,8 +2,8 @@
 
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 0
-#define RX_HAL_MINOR_VERSION 10
-#define RX_HAL_BUILD_NUMBER 13
+#define RX_HAL_MINOR_VERSION 11
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -18,5 +18,7 @@
 0.10.11. implemented rx_crypt_gen_random
 0.10.12. added rx_current_thread
 0.10.13. added thread name
+0.10.13. corrected rx_create_and_bind_ip4_udp_socket
+0.11.0. added os errors support
 
 *********************************************************************************/

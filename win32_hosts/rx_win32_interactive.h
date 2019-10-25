@@ -39,6 +39,8 @@
 
 #include "storage/rx_storage_policy.h"
 
+using rx_platform::hosting::rx_host_directories;
+
 
 namespace win32 {
 
@@ -74,18 +76,14 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       rx_result setup_console (int argc, char* argv[]);
 
-      string_type get_config_path () const;
-
       string_type get_default_name () const;
-
-      string_type defualt_system_storage_reference () const;
 
       static string_type get_win32_interactive_info ();
 
 
   protected:
 
-      string_type get_default_manual_path () const;
+      rx_result fill_host_directories (rx_host_directories& data);
 
 
   private:

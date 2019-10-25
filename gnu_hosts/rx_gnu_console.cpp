@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -61,7 +61,7 @@ void sig_handler(int s)
 
 namespace gnu {
 
-// Class gnu::gnu_console_host
+// Class gnu::gnu_console_host 
 
 gnu_console_host::gnu_console_host (hosting::rx_host_storages& storage)
 	: host::interactive::interactive_console_host(storage)
@@ -182,36 +182,19 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
-rx_result gnu_console_host::restore_console ()
+void gnu_console_host::restore_console ()
 {
 	//set old terminal attributes
 	if (tcsetattr(STDIN_FILENO, TCSANOW, &ttyold_) != 0)
-		return "Failed setting terminal attributes\n";
-	else
-		return true;
-}
+		perror("Failed setting terminal attributes\n");
 
-string_type gnu_console_host::get_config_path () const
-{
-#ifdef _DEBUG
-	string_type ret;
-	get_full_path("config", ret);
-	return ret;
-#else //_DEBUG
-	return "/etc/rx-platform/config";
-#endif //_DEBUG
 }
 
 string_type gnu_console_host::get_default_name () const
 {
 	string_type ret;
-	get_host_name(ret);
+	get_gnu_host_name(ret);
 	return ret;
-}
-
-string_type gnu_console_host::defualt_system_storage_reference () const
-{
-  return "";
 }
 
 string_type gnu_console_host::get_gnu_interactive_info ()
@@ -224,11 +207,29 @@ string_type gnu_console_host::get_gnu_interactive_info ()
 	return ret;
 }
 
-string_type gnu_console_host::get_default_manual_path () const
+rx_result gnu_console_host::fill_host_directories (hosting::rx_host_directories& data)
 {
-  return "";
+	return build_directories(data);
 }
 
 
 } // namespace gnu
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+#ifdef _DEBUG
+	string_type ret;
+	get_full_path("config", ret);
+	return ret;
+#else //_DEBUG
+	return "/etc/rx-platform/config";
+#endif //_DEBUG
+
+  return "";
+
+  return "";
+
+#endif

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_gui.cpp
+*  win32_hosts\rx_win32_simple.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -29,51 +29,44 @@
 
 #include "stdafx.h"
 
-#include "rx_win32_gui_version.h"
+#include "rx_win32_simple_version.h"
 #include "rx_win32_common.h"
 
-// rx_win32_gui
-#include "win32_hosts/rx_win32_gui.h"
+// rx_win32_simple
+#include "win32_hosts/rx_win32_simple.h"
 
 
 
 namespace win32 {
 
-// Class win32::win32_gui_host 
+// Class win32::win32_simple_host 
 
-win32_gui_host::win32_gui_host (hosting::rx_host_storages& storage)
-	: host::gui::gui_platform_host(storage)
+win32_simple_host::win32_simple_host (hosting::rx_host_storages& storage)
+	: host::simple::simple_platform_host(storage)
 {
 }
 
 
-win32_gui_host::~win32_gui_host()
+win32_simple_host::~win32_simple_host()
 {
 }
 
 
 
-string_type win32_gui_host::get_config_path () const
+string_type win32_simple_host::get_default_name () const
 {
 	string_type ret;
-	get_full_path("config", ret);
+	get_win_host_name(ret);
 	return ret;
 }
 
-string_type win32_gui_host::get_default_name () const
+void win32_simple_host::get_host_info (string_array& hosts)
 {
-	string_type ret;
-	get_host_name(ret);
-	return ret;
+	hosts.emplace_back(get_win32_simple_info());
+	host::simple::simple_platform_host::get_host_info(hosts);
 }
 
-void win32_gui_host::get_host_info (string_array& hosts)
-{
-	hosts.emplace_back(get_win32_gui_info());
-	host::gui::gui_platform_host::get_host_info(hosts);
-}
-
-string_type win32_gui_host::get_win32_gui_info ()
+string_type win32_simple_host::get_win32_simple_info ()
 {
 	static string_type ret;
 	if (ret.empty())
@@ -83,17 +76,24 @@ string_type win32_gui_host::get_win32_gui_info ()
 	return ret;
 }
 
-string_type win32_gui_host::get_default_manual_path () const
+rx_result win32_simple_host::fill_host_directories (rx_host_directories& data)
 {
-#ifdef _DEBUG
-	return "";
-#else
-	string_type ret;
-	get_full_path("man", ret);
-	return ret;
-#endif
+	return build_directories(data);
 }
 
 
 } // namespace win32
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return string_array({
+			get_config_directory(),
+			get_full_path("")
+		});
+
+	return get_manual_directory();
+
+#endif

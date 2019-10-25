@@ -53,17 +53,10 @@ win32_pipe_host::~win32_pipe_host()
 
 
 
-string_type win32_pipe_host::get_config_path () const
-{
-	string_type ret;
-	get_full_path("config", ret);
-	return ret;
-}
-
 string_type win32_pipe_host::get_default_name () const
 {
 	string_type ret;
-	get_host_name(ret);
+	get_win_host_name(ret);
 	return ret;
 }
 
@@ -83,18 +76,9 @@ string_type win32_pipe_host::get_win32_pipe_info ()
 	return ret;
 }
 
-string_type win32_pipe_host::defualt_system_storage_reference () const
+rx_result win32_pipe_host::fill_host_directories (hosting::rx_host_directories& data)
 {
-	string_type ret;
-	get_full_path("storage/rx-system-storage", ret);
-	return ret;
-}
-
-string_type win32_pipe_host::get_default_manual_path () const
-{
-	string_type ret;
-	get_full_path("man", ret);
-	return ret;
+	return build_directories(data);
 }
 
 

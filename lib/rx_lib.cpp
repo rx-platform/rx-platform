@@ -309,7 +309,7 @@ rx_result rx_list_files(const std::string& dir, const std::string& pattern, std:
 	}
 	else
 	{
-		return false;
+		return rx_result::create_from_last_os_error("Error listing directory "s + search);
 	}
 }
 std::string rx_get_extension(const std::string& path)
@@ -414,6 +414,20 @@ rx_result::operator bool() const
 {
 	return !result_value_;
 }
+
+rx_result rx_result::create_from_last_os_error(const string_type& text)
+{
+	char buffer[0x100];
+	
+	rx_os_error_t err = rx_last_os_error(text.empty() ? nullptr : text.c_str(), buffer, sizeof(buffer));
+
+	return rx_result(buffer);
+}
+rx_result rx_result::create_from_c_error(const string_type& text)
+{
+	return rx_result(text);
+}
+
 void rx_dump_error_result(std::ostream& err, const rx_result& result)
 {
 	for (const auto& one : result.errors())

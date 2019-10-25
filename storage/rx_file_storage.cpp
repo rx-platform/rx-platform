@@ -368,6 +368,7 @@ rx_result rx_json_file::open_for_read ()
 			else
 			{
 				rx_result ret = reader_->get_errors();
+				reader_.reset();
 				ret.register_error("Error parsing Json file "s + file_path_ + "!");
 				return ret;
 			}

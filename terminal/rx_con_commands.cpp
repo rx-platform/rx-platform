@@ -427,6 +427,11 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	log::log_query_type query;
+	query.include_trace = false;
+	string_type options;
+	in >> options;
+	if (options == "-t")
+		query.include_trace = true;
 	log::log_events_type result;
 	auto ret = rx_gate::instance().read_log(query, result);
 	if (ret)

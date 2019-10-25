@@ -55,8 +55,6 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
       ~gnu_pipe_host();
 
 
-      string_type get_config_path () const;
-
       string_type get_default_name () const;
 
       void get_host_info (string_array& hosts);
@@ -66,7 +64,7 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
 
   protected:
 
-      string_type get_default_manual_path () const;
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:

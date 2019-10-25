@@ -254,7 +254,7 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 
 			restore_console();
 
-			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-interactive", get_default_manual_path());
+			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-interactive", get_host_directories().manuals);
 			std::cout << man;
 			std::cout << "\r\n";
 			std::cout << options.help({ "" });
@@ -390,9 +390,8 @@ rx_result interactive_console_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
-rx_result interactive_console_host::restore_console ()
+void interactive_console_host::restore_console ()
 {
-	return true;
 }
 
 string_type interactive_console_host::get_interactive_info ()
@@ -400,7 +399,7 @@ string_type interactive_console_host::get_interactive_info ()
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_HOST_NAME, RX_HOST_MAJOR_VERSION, RX_HOST_MINOR_VERSION, RX_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_INTERACTIVE_HOST_NAME, RX_INTERACTIVE_HOST_MAJOR_VERSION, RX_INTERACTIVE_HOST_MINOR_VERSION, RX_INTERACTIVE_HOST_BUILD_NUMBER);
 	}
 	return ret;
 }
@@ -417,7 +416,12 @@ storage_base::rx_platform_storage::smart_ptr interactive_console_host::get_stora
 
 string_type interactive_console_host::get_host_manual () const
 {
-	return rx_platform_host::get_manual("hosts/rx-interactive");
+	return rx_platform_host::get_manual("hosts/" RX_INTERACTIVE_HOST);
+}
+
+string_type interactive_console_host::get_host_name ()
+{
+	return RX_INTERACTIVE_HOST;
 }
 
 

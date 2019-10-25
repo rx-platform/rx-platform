@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_gui_host.h
+*  host\rx_simple_host.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,8 +27,8 @@
 ****************************************************************************/
 
 
-#ifndef rx_gui_host_h
-#define rx_gui_host_h 1
+#ifndef rx_simple_host_h
+#define rx_simple_host_h 1
 
 
 
@@ -43,14 +43,14 @@
 
 namespace host {
 
-namespace gui {
+namespace simple {
 
 typedef std::function<void(jobs::job_ptr)> synchronize_callback_t;
 
 
 
 
-class gui_thread_synchronizer : public rx::threads::job_thread  
+class rx_thread_synchronizer : public rx::threads::job_thread  
 {
 
   public:
@@ -78,13 +78,13 @@ class gui_thread_synchronizer : public rx::threads::job_thread
 
 
 
-class gui_platform_host : public rx_platform::hosting::rx_platform_host  
+class simple_platform_host : public rx_platform::hosting::rx_platform_host  
 {
 
   public:
-      gui_platform_host (hosting::rx_host_storages& storage);
+      simple_platform_host (hosting::rx_host_storages& storage);
 
-      ~gui_platform_host();
+      ~simple_platform_host();
 
 
       void get_host_info (string_array& hosts);
@@ -99,9 +99,9 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int gui_initialize (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback);
+      int initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback);
 
-      static string_type get_gui_info ();
+      static string_type get_simple_info ();
 
       bool is_canceling () const;
 
@@ -109,9 +109,7 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool write_stdout (const void* data, size_t size);
 
-      int gui_deinitialize ();
-
-      rx_result gui_loop ();
+      int deinitialize_platform ();
 
       string_type just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 
@@ -121,6 +119,12 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       string_type get_host_manual () const;
 
+      int start_platform ();
+
+      int stop_platform ();
+
+      string_type get_host_name ();
+
 
   protected:
 
@@ -129,9 +133,9 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
   private:
 
-      rx_result set_gui_thread_security ();
+      rx_result set_simple_thread_security ();
 
-      rx_result remove_gui_thread_security ();
+      rx_result remove_simple_thread_security ();
 
 
 
@@ -139,16 +143,20 @@ class gui_platform_host : public rx_platform::hosting::rx_platform_host
 
       rx_reference<interactive::interactive_security_context> user_security_context_;
 
-      gui_thread_synchronizer thread_synchronizer_;
+      rx_thread_synchronizer thread_synchronizer_;
 
 
       bool exit_;
+
+      rx_platform::configuration_data_t config_;
+
+      bool debug_break_;
 
 
 };
 
 
-} // namespace gui
+} // namespace simple
 } // namespace host
 
 

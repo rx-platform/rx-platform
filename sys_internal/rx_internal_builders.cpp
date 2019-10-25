@@ -146,18 +146,19 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 	else
 		return errors.errors();
 
-	BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins items");
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
 	for (auto one : sys_internal::plugins::plugins_manager::instance().get_plugins())
 	{
+		BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
 		auto storage_ptr = one->get_storage();
 		if (storage_ptr)
 		{
-
 			storage::configuration_storage_builder builder(storage_ptr);
 			builder.do_build(root);
 		}
+		BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
 	}
-
+	BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
 
 	for (auto& one : user_builders)
 	{

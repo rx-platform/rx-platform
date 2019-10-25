@@ -125,6 +125,20 @@ struct rx_host_storages
 	storage_base::rx_platform_storage::smart_ptr test_storage;
 };
 typedef cxxopts::Options command_line_options_t;
+struct rx_host_directories
+{
+	// configuration files locations
+	string_type system_config;
+	string_type user_config;
+	string_type local_folder;
+	// storage files locations
+	string_type system_storage;
+	string_type user_storage;
+	// manual files location
+	string_type manuals;
+	// log files location
+	string_type logs;
+};
 
 
 
@@ -157,11 +171,7 @@ class rx_platform_host
 
       virtual std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-      virtual string_type get_config_path () const = 0;
-
       virtual string_type get_default_name () const = 0;
-
-      virtual string_type defualt_system_storage_reference () const;
 
       virtual bool is_canceling () const = 0;
 
@@ -184,6 +194,8 @@ class rx_platform_host
       virtual string_type get_host_manual () const = 0;
 
       static string_type get_manual_explicit (string_type what, string_type man_folder);
+
+      virtual string_type get_host_name () = 0;
 
 
       rx_platform_host * get_parent ()
@@ -211,17 +223,24 @@ class rx_platform_host
 
 
 
+      static const rx_host_directories& get_host_directories ()
+      {
+        return host_directories_;
+      }
+
+
+
   protected:
 
       rx_result read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
 
       rx_result initialize_storages (rx_platform::configuration_data_t& config);
 
-      rx_result deinitialize_storages ();
+      void deinitialize_storages ();
 
       rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
 
-      virtual string_type get_default_manual_path () const = 0;
+      virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
 
 
   private:
@@ -240,7 +259,7 @@ class rx_platform_host
       rx_reference<storage_base::rx_platform_storage> test_storage_;
 
 
-      static string_type manuals_path_;
+      static rx_host_directories host_directories_;
 
 
 };

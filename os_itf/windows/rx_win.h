@@ -126,6 +126,7 @@ typedef struct find_file_struct_t* find_file_handle_t;
 
 
 typedef DWORD rx_pid_t;
+typedef DWORD rx_os_error_t;
 
 #define memzero(S, N) ZeroMemory(S,N) 
 

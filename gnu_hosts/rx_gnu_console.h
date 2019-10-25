@@ -73,20 +73,16 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       rx_result setup_console (int argc, char* argv[]);
 
-      rx_result restore_console ();
-
-      string_type get_config_path () const;
+      void restore_console ();
 
       string_type get_default_name () const;
-
-      string_type defualt_system_storage_reference () const;
 
       static string_type get_gnu_interactive_info ();
 
 
   protected:
 
-      string_type get_default_manual_path () const;
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:

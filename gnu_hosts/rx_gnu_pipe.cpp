@@ -52,30 +52,28 @@ gnu_pipe_host::~gnu_pipe_host()
 
 
 
-string_type gnu_pipe_host::get_config_path () const
-{
-}
-
 string_type gnu_pipe_host::get_default_name () const
 {
 }
 
 void gnu_pipe_host::get_host_info (string_array& hosts)
 {
-	if (ret.empty())
-	{
-		ASSIGN_MODULE_VERSION(ret, RX_GNU_PIPE_HOST_NAME, RX_GNU_PIPE_HOST_MAJOR_VERSION, RX_GNU_PIPE_OST_MINOR_VERSION, RX_GNU_PIPE_HOST_BUILD_NUMBER);
-	}
-	hosts.emplace_back(ret);
+	hosts.emplace_back(get_gnu_pipe_info());
 	host::pipe::rx_pipe_host::get_host_info(hosts);
 }
 
 string_type gnu_pipe_host::get_gnu_pipe_info ()
 {
+	if (ret.empty())
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_GNU_PIPE_HOST_NAME, RX_GNU_PIPE_HOST_MAJOR_VERSION, RX_GNU_PIPE_OST_MINOR_VERSION, RX_GNU_PIPE_HOST_BUILD_NUMBER);
+	}
+	return ret;
 }
 
-string_type gnu_pipe_host::get_default_manual_path () const
+rx_result gnu_pipe_host::fill_host_directories (hosting::rx_host_directories& data)
 {
+	return build_directories(data);
 }
 
 

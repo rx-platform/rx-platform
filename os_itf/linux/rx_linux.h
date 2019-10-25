@@ -147,7 +147,7 @@ typedef struct linux_epoll_struct_t* rx_kernel_dispather_t;
 
 
 typedef pid_t rx_pid_t;
-
+typedef int rx_os_error_t;
 
 #define memzero(S, N) memset((S), 0, (N))
 

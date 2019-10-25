@@ -98,7 +98,7 @@ rx_result udp_port::start_runtime (runtime::runtime_start_context& ctx)
 		uint16_t port = ctx.structure.get_root()->get_local_as<uint16_t>("Bind.IPPort", 0);
 		if (!udp_socket_->bind_socket_tcpip_4(port, addr, rx_gate::instance().get_infrastructure().get_io_pool()->get_pool()))
 		{
-			result.register_error("Unable to bind socket");
+			return rx_result::create_from_last_os_error("Unable to bind socket");
 		}
 	}
 	return result;

@@ -38,6 +38,7 @@
 
 
 
+const char* rx_get_error_text(uint32_t code);
 
 
 

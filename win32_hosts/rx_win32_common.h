@@ -32,11 +32,19 @@
 
 
 
+#include "system/hosting/rx_host.h"
+using rx_platform::hosting::rx_host_directories;
+
+
 
 namespace win32
 {
-void get_full_path(const std::string& base, std::string& path);
-void get_host_name(std::string& name);
+void get_win_host_name(string_type& name);
+rx_result build_directories(rx_host_directories& data);
+string_type get_full_path(const string_type& base);
+string_type get_storage_directory();
+
+
 }
 
 

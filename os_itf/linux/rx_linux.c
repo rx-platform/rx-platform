@@ -160,9 +160,18 @@ void rx_deinitialize_os()
 }
 ///////////////////////////////////////////////////////////////////
 // errors support pipes
-uint32_t rx_get_last_socket_eror()
+
+rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
 {
-    return errno;
+	char* buff[0x100];
+	char* msg;
+	int err = errno;
+	msg = strerror_r(err, buff, sizeof(buff));
+	if (text)
+		snprintf(buffer, buffer_size, "%s. %s (%d)", text, msg, err);
+	else
+		snprintf(buffer, buffer_size, "%s (%d)", msg, err);
+	return err;
 }
 ///////////////////////////////////////////////////////////////////
 // anynoimus pipes
@@ -1770,10 +1779,14 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
         }
 
         addr->sin_family=AF_INET;
-
-        if(0==bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in)))
+        int result = bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in));
+        if(0 == result)
         {
             return ret;
+        }
+        else
+        {
+            perror("Error binding socket.");
         }
     }
     if(ret)

@@ -34,12 +34,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_vt100
 #include "host/rx_vt100.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_cmds
+#include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
 
@@ -166,7 +166,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       virtual rx_result setup_console (int argc, char* argv[]);
 
-      virtual rx_result restore_console ();
+      virtual void restore_console ();
 
       static string_type get_interactive_info ();
 
@@ -175,6 +175,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       storage_base::rx_platform_storage::smart_ptr get_storage ();
 
       string_type get_host_manual () const;
+
+      string_type get_host_name ();
 
 
   protected:

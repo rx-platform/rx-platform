@@ -124,6 +124,9 @@ public:
 	rx_result(rx_result&&) noexcept = default;
 	rx_result& operator=(const rx_result&) = delete;
 	rx_result& operator=(rx_result&&) noexcept = default;
+
+	static rx_result create_from_last_os_error(const string_type& text);
+	static rx_result create_from_c_error(const string_type& text);
 };
 
 typedef std::vector<rx_result> results_array;

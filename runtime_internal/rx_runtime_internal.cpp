@@ -85,9 +85,8 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 	ss << " [PID:"
 		<< rx_pid
 		<< "]";
-	RUNTIME_LOG_INFO("platform_runtime_manager", 900, "Detected CPU "s + ss.str() + buff);
 	rx_collect_processor_info(buff, sizeof(buff), &cpu_count);
-	RUNTIME_LOG_INFO("platform_runtime_manager", 900, "Detected CPU "s + buff);
+	RUNTIME_LOG_INFO("platform_runtime_manager", 900, "Detected CPU "s + buff + ss.str());
 
 	if (cpu_count > (size_t)data.io_pool_size)
 	{
@@ -99,8 +98,8 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 	}
 	last_cpu_ = first_cpu_ + data.workers_pool_size;
 	cpu_coverage_.assign(last_cpu_ - first_cpu_, 0);
-	data_source::data_source_factory::instance().register_internal_sources();
-	return true;
+	rx_result result = data_source::data_source_factory::instance().register_internal_sources();
+	return result;
 }
 
 rx_thread_handle_t platform_runtime_manager::resolve_processor_auto ()
