@@ -163,7 +163,7 @@ template rx_result rx_create_runtime_implicit<port_type>(
 	, namespace_item_attributes attributes // required attributes
 	, data::runtime_values_data* init_data  // initialization data
 	, runtime::objects::port_instance_data instance_data
-	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback
+	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_runtime_implicit<application_type>(
 	const string_type& name, const string_type& type_name
@@ -174,20 +174,19 @@ template rx_result rx_create_runtime_implicit<application_type>(
 	, rx_context ctx);
 
 template<class typeT>
-rx_result rx_create_prototype(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+rx_result rx_create_prototype(rx_platform::meta::meta_data& meta_info, typename typeT::instance_data_t instance_data
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<typeT>::create_prototype(
-		name, type_name, ctx.directory, namespace_item_attributes::namespace_item_null, callback, ctx.object);
+	model::algorithms::runtime_model_algorithm<typeT>::create_prototype(meta_info, instance_data, ctx.safe_directory(), callback, ctx.object);
 	return true;
 }
-template rx_result rx_create_prototype<object_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+template rx_result rx_create_prototype<object_type>(rx_platform::meta::meta_data& meta_info, object_type::instance_data_t instance_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
-template rx_result rx_create_prototype<domain_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+template rx_result rx_create_prototype<domain_type>(rx_platform::meta::meta_data& meta_info, domain_type::instance_data_t instance_data
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_create_prototype<application_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+template rx_result rx_create_prototype<application_type>(rx_platform::meta::meta_data& meta_info, application_type::instance_data_t instance_data
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
-template rx_result rx_create_prototype<port_type>(const string_type& name, const rx_node_id& instance_id, const string_type& type_name
+template rx_result rx_create_prototype<port_type>(rx_platform::meta::meta_data& meta_info, port_type::instance_data_t instance_data
 	, std::function<void(rx_result_with<rx_port_ptr>&&)> callback, rx_context ctx);
 
 
@@ -196,7 +195,7 @@ rx_result rx_get_runtime(const item_reference& ref
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
 	model::algorithms::runtime_model_algorithm<typeT>::get_runtime(ref,
-		ctx.directory, callback, ctx.object);
+		ctx.safe_directory(), callback, ctx.object);
 	return true;
 }
 

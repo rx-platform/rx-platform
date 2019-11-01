@@ -35,6 +35,7 @@
 // rx_host
 #include "system/hosting/rx_host.h"
 
+#include "system/hosting/rx_yaml.h"
 #include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_plugin_manager.h"
@@ -43,10 +44,85 @@
 namespace rx_platform {
 
 namespace hosting {
+namespace
+{
+rx_result do_read_config_files(const rx_host_directories& host_directories, const string_type host_name, configuration_reader& reader, rx_platform::configuration_data_t& config)
+{
+	string_type platform_file_name("rx-platform.yml");
+	string_type host_file_name(host_name + ".yml");
+	rx_result ret = false;
+	bool one_success = false;
+
+	string_array paths{
+			rx_combine_paths(host_directories.local_folder, host_file_name),
+			rx_combine_paths(host_directories.local_folder, platform_file_name),
+			rx_combine_paths(host_directories.user_config, host_file_name),
+			rx_combine_paths(host_directories.user_config, platform_file_name),
+			rx_combine_paths(host_directories.system_config, host_file_name),
+			rx_combine_paths(host_directories.system_config, platform_file_name)
+	};
+	for (const auto& config_path : paths)
+	{
+		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
+			continue;
+
+		string_type settings_buff;
+		rx_source_file file;
+		if (file.open(config_path.c_str()))
+		{
+			ret = file.read_string(settings_buff);
+			if (!ret)
+			{
+				ret = rx_result::create_from_last_os_error("error reading configuration file: "s + config_path);
+			}
+		}
+		else
+		{
+			ret = rx_result::create_from_last_os_error("error opening configuration file: "s + config_path);
+		}
+
+		if (ret)
+		{
+			std::map<string_type, string_type> config_values;
+			ret = reader.parse_configuration(settings_buff, config_values);
+			if (ret)
+			{
+				for (auto& row : config_values)
+				{
+					if (row.first == "storage.system"
+						&& config.storage.system_storage_reference.empty())
+						config.storage.system_storage_reference = row.second;
+					else if (row.first == "storage.user"
+						&& config.storage.user_storage_reference.empty())
+						config.storage.user_storage_reference = row.second;
+					else if (row.first == "storage.test"
+						&& config.storage.test_storage_reference.empty())
+						config.storage.test_storage_reference = row.second;
+					else if (row.first == "other.manuals" && config.other.manuals_path.empty())
+						config.other.manuals_path = row.second;
+				}
+				one_success = true;
+			}
+			else
+			{
+				ret.register_error("Error parsing config file "s + config_path);
+			}
+		}
+		else
+		{
+			ret.register_error("Error reading config file "s + config_path);
+		}
+	}
+	if (one_success)
+	{
+		return true;
+	}
+	else
+		return ret;
+}
+}
 
 // Class rx_platform::hosting::rx_platform_host 
-
-rx_host_directories rx_platform_host::host_directories_;
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -111,104 +187,38 @@ std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type
 
 rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
 {
-	string_type platform_file_name("rx-platform.yml");
-	string_type host_file_name(get_host_name() + ".yml");
-	rx_result ret = false;
-	bool one_success = false;
 	// fill paths
-	rx_result fill_result = fill_host_directories(host_directories_);
-	if (!fill_result)
-		return fill_result;
-
-	string_array paths{
-			rx_combine_paths(host_directories_.local_folder, host_file_name),
-			rx_combine_paths(host_directories_.local_folder, platform_file_name),
-			rx_combine_paths(host_directories_.user_config, host_file_name),
-			rx_combine_paths(host_directories_.user_config, platform_file_name),
-			rx_combine_paths(host_directories_.system_config, host_file_name),
-			rx_combine_paths(host_directories_.system_config, platform_file_name)
-		};
-	for (const auto& config_path : paths)
-	{
-		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
-			continue;
-
-		string_type settings_buff;
-		rx_source_file file;
-		if (file.open(config_path.c_str()))
-		{
-			ret = file.read_string(settings_buff);
-			if (!ret)
-			{
-				ret = rx_result::create_from_last_os_error("error reading configuration file: "s + config_path);
-			}
-		}
-		else
-		{
-			ret = rx_result::create_from_last_os_error("error opening configuration file: "s + config_path);
-		}
-
-		if (ret)
-		{
-			std::map<string_type, string_type> config_values;
-			ret = reader.parse_configuration(settings_buff, config_values);
-			if (ret)
-			{
-				for (auto& row : config_values)
-				{
-					if (row.first == "storage.system"
-						&& config.namespace_data.system_storage_reference.empty())
-						config.namespace_data.system_storage_reference = row.second;
-					else if (row.first == "storage.user"
-						&& config.namespace_data.user_storage_reference.empty())
-						config.namespace_data.user_storage_reference = row.second;
-					else if (row.first == "storage.test"
-						&& config.namespace_data.test_storage_reference.empty())
-						config.namespace_data.test_storage_reference = row.second;
-					else if (row.first == "other.manuals" && host_directories_.manuals.empty())
-						host_directories_.manuals = row.second;
-				}
-				one_success = true;
-			}
-			else
-			{
-				ret.register_error("Error parsing config file "s + config_path);
-			}
-		}
-		else
-		{
-			ret.register_error("Error reading config file "s + config_path);
-		}
-	}
-	if (one_success)
-		return true;
-	else
+	rx_host_directories temp_directories;
+	rx_result ret = fill_host_directories(temp_directories);
+	if (!ret)
 		return ret;
+
+	ret = do_read_config_files(temp_directories, get_host_name(), reader, config);
+
+	if (ret) // now add the missing parts from code
+		manuals_path_ = config.other.manuals_path;
+
+	return ret;
 }
 
 rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config)
 {
 	rx_result ret;
-	if (config.namespace_data.system_storage_reference.empty())
-		config.namespace_data.system_storage_reference = host_directories_.system_storage;
-	if (config.namespace_data.user_storage_reference.empty())
-		config.namespace_data.user_storage_reference = host_directories_.user_storage;
-
-	if (config.namespace_data.system_storage_reference.empty())
+	if (config.storage.system_storage_reference.empty())
 		ret = "No valid system storage reference!";
 	else
-		ret = system_storage_->init_storage(config.namespace_data.system_storage_reference);
+		ret = system_storage_->init_storage(config.storage.system_storage_reference);
 	if (ret)
 	{
-		if (config.namespace_data.user_storage_reference.empty())
+		if (config.storage.user_storage_reference.empty())
 			ret = "No valid user storage reference!";
 		else
-			ret = user_storage_->init_storage(config.namespace_data.user_storage_reference);
+			ret = user_storage_->init_storage(config.storage.user_storage_reference);
 		if (ret)
 		{
-			if (!config.namespace_data.test_storage_reference.empty())
+			if (!config.storage.test_storage_reference.empty())
 			{
-				ret = test_storage_->init_storage(config.namespace_data.test_storage_reference);
+				ret = test_storage_->init_storage(config.storage.test_storage_reference);
 				if (!ret)
 				{
 					ret.register_error("Error initializing test storage!");
@@ -257,15 +267,15 @@ bool rx_platform_host::write_stdout (const string_type& lines)
 void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
 {
 	options.add_options()
-		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.runtime_data.real_time))
-		("s,startup", "Startup script", cxxopts::value<string_type>(config.general.startup_script))
-		("f,files", "File storage root folder", cxxopts::value<string_type>(config.namespace_data.user_storage_reference))
-		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.namespace_data.test_storage_reference))
-		("y,system", "System storage root folder", cxxopts::value<string_type>(config.namespace_data.system_storage_reference))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration_data.instance_name))
-		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.general.test_log))
+		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
+		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
+		("f,files", "File storage root folder", cxxopts::value<string_type>(config.storage.user_storage_reference))
+		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.storage.test_storage_reference))
+		("y,system", "System storage root folder", cxxopts::value<string_type>(config.storage.system_storage_reference))
+		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
+		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
 		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.namespace_data.build_system_from_code))
+		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
 		("h,help", "Print help")
 		;
 }
@@ -280,11 +290,11 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 	return ret;
 }
 
-string_type rx_platform_host::get_manual (string_type what)
+string_type rx_platform_host::get_manual (string_type what) const
 {
-	if (host_directories_.manuals.empty())
+	if (manuals_path_.empty())
 		return "";
-	string_type path = rx_combine_paths(host_directories_.manuals, what + ".man");
+	string_type path = rx_combine_paths(manuals_path_, what + ".man");
 	rx_source_file file;
 	auto result = file.open(path.c_str());
 	if (result)
@@ -298,20 +308,37 @@ string_type rx_platform_host::get_manual (string_type what)
 	return "";
 }
 
-string_type rx_platform_host::get_manual_explicit (string_type what, string_type man_folder)
+void rx_platform_host::print_offline_manual (const string_type& host, const rx_host_directories& dirs)
 {
-	string_type path = rx_combine_paths(man_folder, what + ".man");
+	rx_platform::configuration_data_t config;
+
+	rx_platform::hosting::simplified_yaml_reader reader;
+	auto result = do_read_config_files(dirs, host, reader, config);
+	if (!result)
+	{
+		std::cout << "Error parsing config files";
+		return;
+	}
+	string_type path = rx_combine_paths(config.other.manuals_path, "hosts/"s + host + ".man");
 	rx_source_file file;
-	auto result = file.open(path.c_str());
+	string_type man;
+	result = file.open(path.c_str());
 	if (result)
 	{
-		string_type buffer;
-		result = file.read_string(buffer);
+		result = file.read_string(man);
 		if (!result)
-			return "";
-		return buffer;
+		{
+			std::cout << "Error reading file";
+			return;
+		}
 	}
-	return "";
+	else
+	{
+		std::cout << "Error reading file";
+		return;
+	}
+	std::cout << man;
+	std::cout << "\r\n";
 }
 
 

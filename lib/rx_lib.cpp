@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -418,8 +418,8 @@ rx_result::operator bool() const
 rx_result rx_result::create_from_last_os_error(const string_type& text)
 {
 	char buffer[0x100];
-	
-	rx_os_error_t err = rx_last_os_error(text.empty() ? nullptr : text.c_str(), buffer, sizeof(buffer));
+
+	rx_last_os_error(text.empty() ? nullptr : text.c_str(), buffer, sizeof(buffer));
 
 	return rx_result(buffer);
 }
@@ -1053,18 +1053,25 @@ void extract_next(const string_type& path, string_type& name, string_type& rest,
 	}
 }
 
-void rx_trim_string(string_type& what)
-{
-	static const string_type delimeters(" \t\r\n");
-	size_t idx1 = what.find_first_not_of(delimeters);
-	size_t idx2 = what.find_last_not_of(delimeters);
+string_type& trim_left_in_place(string_type& str) {
+	size_t i = 0;
+	while (i < str.size() && isspace(str[i])) { ++i; };
+	return str.erase(0, i);
+}
 
-	if (idx1 != string_type::npos && idx2 != string_type::npos)
-		what = what.substr(idx1, idx2 - idx1 + 1);
-	else if (idx1 != string_type::npos && idx2 == string_type::npos)
-		what = what.substr(idx1);
-	else if (idx1 == string_type::npos && idx2 != string_type::npos)
-		what = what.substr(0, idx2 + 1);
+string_type& trim_right_in_place(string_type& str) {
+	size_t i = str.size();
+	while (i > 0 && isspace(str[i - 1])) { --i; };
+	return str.erase(i, str.size());
+}
+
+string_type& rx_trim_in_place(string_type& str) {
+	return trim_left_in_place(trim_right_in_place(str));
+}
+
+string_type rx_trim(const string_type str) {
+	string_type temp(str);
+	return trim_left_in_place(trim_right_in_place(temp));
 }
 
 

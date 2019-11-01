@@ -758,6 +758,45 @@ bool rx_names_cache::should_cache (const platform_item_ptr& item)
 }
 
 
+// Class rx_platform::ns::rx_directory_resolver 
+
+
+platform_item_ptr rx_directory_resolver::resolve_path (const string_type& path)
+{
+	if (path.empty() && directories_.empty())
+		return platform_item_ptr::null_ptr;
+	// path length is checked in preious condition!!!
+	if (path[0] == RX_DIR_DELIMETER)
+	{// global path
+		return rx_gate::instance().get_root_directory()->get_sub_item(path);
+	}
+	for (auto& one : directories_)
+	{
+		if (!one.resolved)
+		{
+			one.dir = rx_gate::instance().get_root_directory()->get_sub_directory(one.path);
+			one.resolved = true;
+		}
+		if (!one.dir)
+		{// get directory
+			return platform_item_ptr::null_ptr;
+		}
+		auto item = one.dir->get_sub_item(path);
+		if (item)
+		{
+			return item;
+		}
+	}
+	return platform_item_ptr::null_ptr;
+}
+
+void rx_directory_resolver::add_paths (std::initializer_list<string_type> paths)
+{
+	for (auto&& one : paths)
+		directories_.emplace_back(resolver_data { std::move(one), rx_directory_ptr::null_ptr, false });
+}
+
+
 } // namespace ns
 } // namespace rx_platform
 

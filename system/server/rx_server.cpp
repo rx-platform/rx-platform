@@ -129,18 +129,18 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	scripts_.emplace(python->get_definition().name, python);
 #endif	
 	host_ = host;
-	rx_name_ = data.meta_configuration_data.instance_name.empty() ? host_->get_default_name() : data.meta_configuration_data.instance_name;
+	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
 
-	auto result = infrastructure_.initialize(host, data.runtime_data);
+	auto result = infrastructure_.initialize(host, data.processor, data.io);
 	if (result)
 	{
-		result = manager_.initialize(host, data.managment_data);
+		result = manager_.initialize(host, data.management);
 		if (result)
 		{
-			result = io_manager_->initialize(host, data.io_manager_data);
+			result = io_manager_->initialize(host, data.io);
 			if (result)
 			{
-				auto build_result =	sys_internal::builders::rx_platform_builder::buid_platform(host, data.namespace_data);
+				auto build_result =	sys_internal::builders::rx_platform_builder::buid_platform(host, data.storage, data.meta_configuration);
 
 				if (build_result)
 				{
@@ -149,7 +149,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 					for (auto one : scripts_)
 						one.second->initialize();
 
-					result = model::platform_types_manager::instance().initialize(host, data.meta_configuration_data);
+					result = model::platform_types_manager::instance().initialize(host, data.meta_configuration);
 					if(!result)
 						result.register_error("Error initializing platform types manager!");
 				}
@@ -204,13 +204,13 @@ rx_result rx_gate::deinitialize ()
 
 rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	auto result = infrastructure_.start(host, data.runtime_data);
+	auto result = infrastructure_.start(host, data.processor, data.io);
 	if (result)
 	{
-		result = manager_.start(host, data.managment_data);
+		result = manager_.start(host, data.management);
 		if (result)
 		{
-			result = model::platform_types_manager::instance().start(host, data.meta_configuration_data);
+			result = model::platform_types_manager::instance().start(host, data.meta_configuration);
 			if (result)
 			{
 				platform_status_ = rx_platform_running;

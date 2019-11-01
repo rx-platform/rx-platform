@@ -115,11 +115,11 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx_platform_host* host, namespace_data_t& data)
+rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data)
 {
 	register_system_constructors();
 
-	auto sys_builders = get_system_builders(data, host);
+	auto sys_builders = get_system_builders(data, meta_data, host);
 	auto user_builders = get_user_builders(data, host);
 	auto test_builders = get_test_builders(data, host);
 	auto other_builders = get_other_builders(data, host);
@@ -188,16 +188,16 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 	return rx_result_with<rx_directory_ptr>(root);
 }
 
-std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, hosting::rx_platform_host* host)
+std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, hosting::rx_platform_host* host)
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// create system folder structure
 	builders.emplace_back(std::make_unique<root_folder_builder>());
-	if (data.build_system_from_code)
+	if (meta_data.build_system_from_code)
 	{
 		// types builders
 		builders.emplace_back(std::make_unique<basic_types_builder>());
-		builders.emplace_back(std::make_unique<support_types_builder>());
+		//builders.emplace_back(std::make_unique<support_types_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		//// objects builders
@@ -711,58 +711,6 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
-	return true;
-}
-
-
-// Class sys_internal::builders::support_types_builder 
-
-
-rx_result support_types_builder::do_build (rx_directory_ptr root)
-{
-	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SUPPORT_CLASSES_NAME);
-	string_type full_path = RX_DIR_DELIMETER + path;
-	auto dir = root->get_sub_directory(path);
-	if (dir)
-	{
-		// IP bind data
-		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
-			RX_IP_BIND_TYPE_NAME
-			, RX_IP_BIND_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		str->complex_data().register_simple_value_static<string_type>("IPAddress", true, "");
-		str->complex_data().register_simple_value_static<uint16_t>("IPPort", true, 0);
-		add_simple_type_to_configuration(dir, str, false);
-
-		// port status
-		str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
-			RX_PORT_STATUS_TYPE_NAME
-			, RX_PORT_STATUS_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		str->complex_data().register_simple_value_static<bool>("Connected", true, false);
-		str->complex_data().register_simple_value_static<int64_t>("RxPackets", true, 0);
-		str->complex_data().register_simple_value_static<int64_t>("TxPackets", true, 0);
-		add_simple_type_to_configuration(dir, str, false);
-
-		// physical port status
-		str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
-			RX_PHY_PORT_STATUS_TYPE_NAME
-			, RX_PHY_PORT_STATUS_TYPE_ID
-			, RX_PORT_STATUS_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		str->complex_data().register_simple_value_static<int64_t>("RxBytes", true, 0);
-		str->complex_data().register_simple_value_static<int64_t>("TxBytes", true, 0);
-		add_simple_type_to_configuration(dir, str, false);
-		BUILD_LOG_INFO("support_types_builder", 900, "Support types built.");
-	}
 	return true;
 }
 

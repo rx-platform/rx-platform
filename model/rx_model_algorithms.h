@@ -41,6 +41,25 @@ namespace model {
 
 namespace algorithms {
 
+rx_result_with<rx_node_id> resolve_reference(
+	const item_reference& ref
+	, ns::rx_directory_resolver& directories);
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_type_reference(
+	const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_simple_type_reference(
+	const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_runtime_reference(
+	const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+
 
 
 
@@ -138,7 +157,7 @@ class runtime_model_algorithm
 
       static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
 
-      static void create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+      static void create_prototype (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
       static void create_runtime_implicit (const string_type& name, const item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
 
@@ -159,7 +178,7 @@ class runtime_model_algorithm
 
       static rx_result delete_runtime_sync (const item_reference& item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref);
 
-      static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes);
+      static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir);
 
       static rx_result helper_delete_runtime_sync (meta_data_t info);
 

@@ -113,7 +113,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 			string_type server_name = get_default_name();
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config_.runtime_data.real_time, tls, server_name.c_str());
+			rx_initialize_os(config_.processor.real_time, tls, server_name.c_str());
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
 				<< "rx-platform "
@@ -141,7 +141,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 			std::cout << "Starting log...";
 			if (log_subscriber)
 				rx::log::log_object::instance().register_subscriber(log_subscriber);
-			ret = rx::log::log_object::instance().start(config_.general.test_log);
+			ret = rx::log::log_object::instance().start(config_.management.test_log);
 			if (ret)
 			{
 				std::cout << "OK\r\n";
@@ -160,18 +160,18 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 
 					host_security_context_->impersonate();
 
-					if (!config_.managment_data.telnet_port)// set to the last default if not set
-						config_.managment_data.telnet_port = 12345;
-					if (config_.runtime_data.genereal_pool_size < 0)
-						config_.runtime_data.genereal_pool_size = 2;
-					if (config_.runtime_data.io_pool_size <= 0)// has to have at least one
-						config_.runtime_data.io_pool_size = 1;
-					if (config_.runtime_data.workers_pool_size < 0)
-						config_.runtime_data.workers_pool_size = 2;
+					if (!config_.management.telnet_port)// set to the last default if not set
+						config_.management.telnet_port = 12345;
+					if (config_.processor.genereal_pool_size < 0)
+						config_.processor.genereal_pool_size = 2;
+					if (config_.processor.io_pool_size <= 0)// has to have at least one
+						config_.processor.io_pool_size = 1;
+					if (config_.processor.workers_pool_size < 0)
+						config_.processor.workers_pool_size = 2;
 
 					// init exter ui thread
 					thread_synchronizer_.init_callback(sync_callback);
-					config_.runtime_data.extern_executer = &thread_synchronizer_;
+					config_.processor.extern_executer = &thread_synchronizer_;
 
 
 					HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");

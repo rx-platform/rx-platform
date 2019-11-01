@@ -68,7 +68,7 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result_with<rx_directory_ptr> buid_platform (hosting::rx_platform_host* host, namespace_data_t& data);
+      static rx_result_with<rx_directory_ptr> buid_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data);
 
       virtual rx_result do_build (rx_directory_ptr root) = 0;
 
@@ -81,7 +81,7 @@ class rx_platform_builder
       rx_platform_builder & operator=(const rx_platform_builder &right);
 
 
-      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data, hosting::rx_platform_host* host);
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, hosting::rx_platform_host* host);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_user_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 
@@ -196,26 +196,6 @@ class port_types_builder : public rx_platform_builder
 
 
 class system_objects_builder : public rx_platform_builder  
-{
-
-  public:
-
-      rx_result do_build (rx_directory_ptr root);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class support_types_builder : public rx_platform_builder  
 {
 
   public:

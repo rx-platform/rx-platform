@@ -62,7 +62,7 @@ server_rt::~server_rt()
 
 
 
-rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data)
+rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
 {
 	if (data.io_pool_size > 0)
 	{
@@ -78,8 +78,8 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 		workers_->reserve();
 	}
 	general_timer_ = std::make_unique<rx::threads::timer>("Timer", 0);
-	if (data.has_callculation_timer)
-		callculation_timer_ = std::make_unique<rx::threads::timer>("Calc",0);
+	if (data.has_calculation_timer)
+		calculation_timer_ = std::make_unique<rx::threads::timer>("Calc",0);
 
 	extern_executer_ = data.extern_executer;
 
@@ -103,8 +103,8 @@ rx_result server_rt::deinitialize ()
 
 	if (general_timer_)
 		general_timer_.release();
-	if (callculation_timer_)
-		callculation_timer_.release();
+	if (calculation_timer_)
+		calculation_timer_.release();
 
 	return true;
 }
@@ -116,7 +116,7 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, 
 		general_timer_->append_job(job,executer,period, now);
 }
 
-rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data)
+rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
 {
 	if (io_pool_)
 		io_pool_->get_pool().run(RX_PRIORITY_ABOVE_NORMAL);
@@ -126,14 +126,14 @@ rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_
 		workers_->run();
 	if (general_timer_)
 		general_timer_->start(RX_PRIORITY_HIGH);
-	if (callculation_timer_)
-		callculation_timer_->start(RX_PRIORITY_NORMAL);
+	if (calculation_timer_)
+		calculation_timer_->start(RX_PRIORITY_NORMAL);
 
 	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
-	if (callculation_timer_)
-		callculation_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), data.io_timer_period);
+	if (calculation_timer_)
+		calculation_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), io_data.io_timer_period);
 	if (general_timer_)
-		general_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), data.io_timer_period);
+		general_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), io_data.io_timer_period);
 
 	return true;
 }
@@ -158,10 +158,10 @@ rx_result server_rt::stop ()
 		general_timer_->stop();
 		general_timer_->wait_handle();
 	}
-	if (callculation_timer_)
+	if (calculation_timer_)
 	{
-		callculation_timer_->stop();
-		callculation_timer_->wait_handle();
+		calculation_timer_->stop();
+		calculation_timer_->wait_handle();
 	}
 
 	return true;
@@ -219,7 +219,7 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
-	if(callculation_timer_)
+	if(calculation_timer_)
 		general_timer_->append_job(job, executer, period, now);
 	if (general_timer_)
 		general_timer_->append_job(job, executer, period, now);

@@ -573,7 +573,8 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 void rx_split_string(const string_type& what, string_vector& result, char delimeter);
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
-void rx_trim_string(string_type& what);
+string_type& rx_trim_in_place(string_type& str);
+string_type rx_trim(const string_type str);
 
 }// namespace rx
 

@@ -64,10 +64,18 @@ class type_check_context
 
       void reinit ();
 
+      void add_error (const string_type& msg, const rx_result& error);
+
 
       const string_array& get_errors () const
       {
         return errors_;
+      }
+
+
+      ns::rx_directory_resolver& get_directories ()
+      {
+        return directories_;
       }
 
 
@@ -78,6 +86,8 @@ class type_check_context
 
 
       string_array errors_;
+
+      ns::rx_directory_resolver directories_;
 
 
 };
@@ -165,6 +175,13 @@ class construct_context
       void reinit ();
 
 
+      ns::rx_directory_resolver& get_directories ()
+      {
+        return directories_;
+      }
+
+
+
       runtime_data_prototype runtime_data;
 
 
@@ -174,6 +191,9 @@ class construct_context
   protected:
 
   private:
+
+
+      ns::rx_directory_resolver directories_;
 
 
 };
@@ -264,6 +284,12 @@ public:
       }
 
 
+      ns::rx_directory_resolver& get_directories ()
+      {
+        return directories_;
+      }
+
+
 
   protected:
 
@@ -271,6 +297,8 @@ public:
 
 
       string_array errors_;
+
+      ns::rx_directory_resolver directories_;
 
 
 };

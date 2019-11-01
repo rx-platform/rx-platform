@@ -59,6 +59,7 @@ using rx_platform::namespace_item_attributes;
 
 
 namespace rx_platform {
+struct io_manager_data_t;
 
 namespace infrastructure {
 
@@ -190,8 +191,7 @@ struct runtime_data_t
 	int genereal_pool_size = -1;
 	int workers_pool_size = -1;
 	int slow_pool_size = -1;
-	bool has_callculation_timer = false;
-	uint32_t io_timer_period = 200;
+	bool has_calculation_timer = false;
 	threads::job_thread* extern_executer = nullptr;
 };
 
@@ -220,13 +220,13 @@ callculation ( normal priority)");
       ~server_rt();
 
 
-      rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data);
 
       rx_result deinitialize ();
 
       void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
-      rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
 
       rx_result stop ();
 
@@ -281,7 +281,7 @@ callculation ( normal priority)");
 
       std::unique_ptr<rx::threads::timer> general_timer_;
 
-      std::unique_ptr<rx::threads::timer> callculation_timer_;
+      std::unique_ptr<rx::threads::timer> calculation_timer_;
 
       rx_reference<server_dispatcher_object> io_pool_;
 

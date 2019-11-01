@@ -50,6 +50,8 @@
 
 rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
 {
+	size_t msg_len = 0;
+	char* help_ptr;
 	LPSTR msg = NULL;
 	DWORD err = GetLastError();
 	DWORD ret = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -63,6 +65,14 @@ rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_siz
 		NULL);
 	if (ret)
 	{
+		size_t msg_len = strlen(msg);
+		if (msg_len > 0)
+		{
+			help_ptr = msg + msg_len - 1;
+			while (help_ptr > msg && *help_ptr == '\r' || *help_ptr == '\n')
+				help_ptr--;
+			*(help_ptr + 1) = '\0';
+		}
 		if(text)
 			snprintf(buffer, buffer_size, "%s. %s (%u)", text, msg, err);
 		else
@@ -617,7 +627,7 @@ int rx_create_server_side_pipe(struct pipe_server_t* pipes, size_t size)
 		if (DuplicateHandle(me, temp_write, me, &pipes->server_write, 0, FALSE, DUPLICATE_SAME_ACCESS))
 		{
 			CloseHandle(temp_write);
-
+			temp_write = NULL;
 			if (CreatePipe(&temp_read, &pipes->client_write, &sa, (DWORD)size))
 			{
 				if (DuplicateHandle(me, temp_read, me, &pipes->server_read, 0, FALSE, DUPLICATE_SAME_ACCESS))
@@ -823,9 +833,12 @@ BOOL GetOsVersion(RTL_OSVERSIONINFOEXW* pk_OsVer)
 
 	memset(pk_OsVer, 0, sizeof(RTL_OSVERSIONINFOEXW));
 	pk_OsVer->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
-
+	tRtlGetVersion f_RtlGetVersion = NULL;
 	HMODULE h_NtDll = GetModuleHandleW(L"ntdll.dl");
-	tRtlGetVersion f_RtlGetVersion = (tRtlGetVersion)GetProcAddress(h_NtDll, "RtlGetVersion");
+	if (h_NtDll)
+	{
+		tRtlGetVersion f_RtlGetVersion = (tRtlGetVersion)GetProcAddress(h_NtDll, "RtlGetVersion");
+	}
 
 	if (!f_RtlGetVersion)
 		return FALSE; // This will never happen (all processes load ntdll.dll)
@@ -1833,6 +1846,7 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);
+			SetLastError(err);
 			return NULL;
 		}
 	}

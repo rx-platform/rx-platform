@@ -45,6 +45,27 @@ namespace api
 {
 namespace ns
 {
+rx_result_with<rx_node_id> rx_resolve_reference(
+	const item_reference& ref
+	, rx_directory_resolver& directories);
+
+template<typename typeT>
+rx_result_with<rx_node_id> rx_resolve_type_reference(
+	const item_reference& ref
+	, rx_directory_resolver& directories
+	, tl::type2type<typeT> _);
+
+template<typename typeT>
+rx_result_with<rx_node_id> rx_resolve_simple_type_reference(
+	const item_reference& ref
+	, rx_directory_resolver& directories
+	, tl::type2type<typeT> _);
+
+template<typename typeT>
+rx_result_with<rx_node_id> rx_resolve_runtime_reference(
+	const item_reference& ref
+	, rx_directory_resolver& directories
+	, tl::type2type<typeT> _);
 
 rx_result rx_get_directory(
 	const string_type& name // directories's path

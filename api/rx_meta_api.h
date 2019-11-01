@@ -76,9 +76,7 @@ rx_result rx_create_runtime_implicit(
 
 template<class typeT>
 rx_result rx_create_prototype(
-	const string_type& name // item's path
-	, const rx_node_id& instance_id // prototype's id
-	, const string_type& type_name  // type's path
+	rx_platform::meta::meta_data& meta_info, typename typeT::instance_data_t instance_data
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
 	, rx_context ctx);
 

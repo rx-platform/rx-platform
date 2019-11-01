@@ -223,18 +223,10 @@ class event_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
         return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
       }
 
 
@@ -251,8 +243,6 @@ class event_attribute
 
 
       string_type name_;
-
-      rx_node_id target_id_;
 
       item_reference target_;
 
@@ -290,18 +280,10 @@ class filter_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
         return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
       }
 
 
@@ -318,8 +300,6 @@ class filter_attribute
 
 
       string_type name_;
-
-      rx_node_id target_id_;
 
       item_reference target_;
 
@@ -357,18 +337,10 @@ class mapper_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
         return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
       }
 
 
@@ -385,8 +357,6 @@ class mapper_attribute
 
 
       string_type name_;
-
-      rx_node_id target_id_;
 
       item_reference target_;
 
@@ -491,8 +461,6 @@ class complex_data_type
       rx_result register_const_value (const string_type& name, const rx_simple_value& val);
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const const_values_type& get_const_values () const
@@ -607,8 +575,6 @@ class mapped_data_type
 
       bool check_type (type_check_context& ctx);
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
   protected:
 
@@ -651,18 +617,10 @@ class source_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
         return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
       }
 
 
@@ -679,8 +637,6 @@ class source_attribute
 
 
       string_type name_;
-
-      rx_node_id target_id_;
 
       item_reference target_;
 
@@ -718,8 +674,6 @@ class struct_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
@@ -733,12 +687,6 @@ class struct_attribute
       }
 
 
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
-      }
-
-
 
   protected:
 
@@ -748,8 +696,6 @@ class struct_attribute
       string_type name_;
 
       item_reference target_;
-
-      rx_node_id target_id_;
 
 
 };
@@ -787,18 +733,10 @@ class variable_attribute
 
       rx_result construct (construct_context& ctx) const;
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const string_type& get_name () const
       {
         return name_;
-      }
-
-
-      rx_node_id get_target_id () const
-      {
-        return target_id_;
       }
 
 
@@ -821,8 +759,6 @@ class variable_attribute
 
 
       string_type name_;
-
-      rx_node_id target_id_;
 
       bool read_only_;
 
@@ -866,8 +802,6 @@ class variable_data_type
       rx_result register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
   protected:

@@ -124,7 +124,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			//config.namespace_data.build_system_from_code = true;
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
+			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
 			std::cout << "OK\r\n";
 
 			std::cout << "\r\n"
@@ -152,7 +152,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
 			rx::log::log_object::instance().register_subscriber(stdout_log_);
-			ret = rx::log::log_object::instance().start(config.general.test_log);
+			ret = rx::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
 				std::cout << "OK\r\n";
@@ -257,9 +257,15 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		auto result = options.parse(argc, argv);
 		if (result.count("help"))
 		{
-			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-pipe", get_host_directories().manuals);
-			std::cout << man;
-			std::cout << "\r\n";
+			// fill paths
+			hosting::rx_host_directories host_directories;
+			rx_result fill_result = fill_host_directories(host_directories);
+			if (!fill_result)
+			{
+				std::cout << "\r\nERROR\r\n";
+			}
+			rx_platform_host::print_offline_manual(RX_PIPE_HOST, host_directories);
+
 			std::cout << options.help({ "" });
 			std::cout << "\r\n\r\n";
 
@@ -306,14 +312,14 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 
 	security::security_auto_context dummy(sec_ctx);
 
-	if (!config.managment_data.telnet_port)// set to the last default if not set
-		config.managment_data.telnet_port = 12345;
-	if (config.runtime_data.genereal_pool_size < 0)
-		config.runtime_data.genereal_pool_size = 2;
-	if (config.runtime_data.io_pool_size <= 0)// has to have at least one
-		config.runtime_data.io_pool_size = 1;
-	if (config.runtime_data.workers_pool_size < 0)
-		config.runtime_data.workers_pool_size = 2;
+	if (!config.management.telnet_port)// set to the last default if not set
+		config.management.telnet_port = 12345;
+	if (config.processor.genereal_pool_size < 0)
+		config.processor.genereal_pool_size = 2;
+	if (config.processor.io_pool_size <= 0)// has to have at least one
+		config.processor.io_pool_size = 1;
+	if (config.processor.workers_pool_size < 0)
+		config.processor.workers_pool_size = 2;
 
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
@@ -457,6 +463,7 @@ void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, c
 		one.dump_to_stream_simple(std::cout);	}
 	else
 	{
+		locks::auto_slim_lock _(&pending_lock_);
 		pending_events_.emplace_back(std::move(one));
 	}
 }
@@ -466,12 +473,13 @@ void rx_pipe_stdout_log_subscriber::release_log (bool dump_previous)
 	running_ = true;
 	if (dump_previous)
 	{
+		locks::auto_slim_lock _(&pending_lock_);
 		for (const auto& one : pending_events_)
 		{
 			one.dump_to_stream_simple(std::cout);
 		}
+		pending_events_.clear();
 	}
-	pending_events_.clear();
 }
 
 void rx_pipe_stdout_log_subscriber::suspend_log ()

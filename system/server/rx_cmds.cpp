@@ -193,7 +193,7 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 
 string_type server_command_base::get_help () const
 {
-	string_type str = hosting::rx_platform_host::get_manual("commands/"s + get_name());
+	string_type str = rx_gate::instance().get_host()->get_manual("commands/"s + get_name());
 	if (str.empty())
 		return "jebi ga bato!!!";
 	else

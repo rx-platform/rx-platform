@@ -129,6 +129,8 @@ struct log_query_type
 	rx_time start_time;
 	rx_time stop_time;
 	bool include_trace;
+	bool warning_level;
+	bool error_level;
 };
 
 

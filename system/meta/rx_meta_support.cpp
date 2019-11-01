@@ -60,6 +60,13 @@ void type_check_context::reinit ()
 	errors_.clear();
 }
 
+void type_check_context::add_error (const string_type& msg, const rx_result& error)
+{
+	errors_.emplace_back(msg);
+	for (const auto& one : error.errors())
+		errors_.emplace_back(one);
+}
+
 
 // Class rx_platform::meta::construct_context 
 

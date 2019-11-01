@@ -68,7 +68,7 @@ server_manager::~server_manager()
 
 
 
-rx_result server_manager::initialize (hosting::rx_platform_host* host, managment_data_t& data)
+rx_result server_manager::initialize (hosting::rx_platform_host* host, management_data_t& data)
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	telnet_port_ = data.telnet_port;
@@ -87,7 +87,7 @@ rx_result server_manager::deinitialize ()
 	return true;
 }
 
-rx_result server_manager::start (hosting::rx_platform_host* host, const managment_data_t& data)
+rx_result server_manager::start (hosting::rx_platform_host* host, const management_data_t& data)
 {
 	if (telnet_port_)
 	{

@@ -37,10 +37,10 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -239,7 +239,7 @@ class meta_data
 
       static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
 
-      rx_result resolve ();
+      void resolve ();
 
       void set_path (const string_type& path);
 

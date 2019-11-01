@@ -81,8 +81,6 @@ class meta_blocks_algorithm
 
       static rx_result construct_complex_attribute (const typeT& whose, construct_context& ctx);
 
-      static rx_result resolve_complex_attribute (typeT& whose, rx_directory_ptr dir);
-
 
   protected:
 
@@ -110,8 +108,6 @@ class basic_types_algorithm
 
       static rx_result construct_basic_type (const typeT& whose, construct_context& ctx);
 
-      static rx_result resolve_basic_type (typeT& whose, rx_directory_ptr dir);
-
 
   protected:
 
@@ -138,8 +134,6 @@ class object_types_algorithm
       static bool check_object_type (typeT& whose, type_check_context& ctx);
 
       static rx_result construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx);
-
-      static rx_result resolve_object_type (typeT& whose, rx_directory_ptr dir);
 
 
   protected:

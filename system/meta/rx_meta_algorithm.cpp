@@ -37,6 +37,7 @@
 #include "rx_def_blocks.h"
 #include "rx_types.h"
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 #include "runtime_internal/rx_runtime_algorithms.h"
 
 
@@ -72,7 +73,16 @@ rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& wh
 template <class typeT>
 bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_check_context& ctx)
 {
-	auto target = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().get_type_definition(whose.target_id_);
+	rx_node_id target_id;
+	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target_id = resolve_result.value();
+	auto target = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().get_type_definition(target_id);
 	if (!target)
 	{
 		std::ostringstream ss;
@@ -93,7 +103,16 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
 {
-	auto temp = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().create_simple_runtime(whose.target_id_);
+	rx_node_id target;
+	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
@@ -103,36 +122,6 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 	{
 		return temp.errors();
 	}
-}
-
-template <class typeT>
-rx_result meta_blocks_algorithm<typeT>::resolve_complex_attribute (typeT& whose, rx_directory_ptr dir)
-{
-	if (whose.target_.is_node_id() && !whose.target_.is_null())
-	{
-		whose.target_id_ = whose.target_.get_node_id();
-		return true;// already resolved
-	}
-	if (!whose.target_.is_node_id() && whose.target_.is_null())
-		return "Unable to resolve empty target name";
-	auto item = dir->get_sub_item(whose.target_.get_path());
-	if (!item)
-	{
-		return whose.target_.get_path() + " does not exists!";
-	}
-	auto id = item->meta_info().get_id();
-	if (id.is_null())
-	{// TODO error, item does not have id
-		return whose.target_.get_path() + " does not have valid id!";
-	}
-	auto ret = model::platform_types_manager::instance().internal_get_simple_type_cache<typename typeT::TargetType>().type_exists(id);
-	if (!ret)
-	{// type does not exist
-		return ret;
-	}
-	// everything is good we resolved it
-	whose.target_id_ = std::move(id);
-	return true;
 }
 
 // Variable Attribute is a special case!!!
@@ -173,7 +162,16 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_attribute(const def_blocks::variable_attribute& whose, construct_context& ctx)
 {
-	auto temp = model::platform_types_manager::instance().get_simple_type_cache<def_blocks::variable_attribute::TargetType>().create_simple_runtime(whose.target_id_);
+	rx_node_id target;
+	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::variable_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = model::platform_types_manager::instance().get_simple_type_cache<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		temp.value().set_value(whose.get_value(ctx.now));
@@ -234,15 +232,6 @@ template <class typeT>
 rx_result basic_types_algorithm<typeT>::construct_basic_type (const typeT& whose, construct_context& ctx)
 {
 	return whose.complex_data_.construct(ctx);
-}
-
-template <class typeT>
-rx_result basic_types_algorithm<typeT>::resolve_basic_type (typeT& whose, rx_directory_ptr dir)
-{
-	auto ret = whose.complex_data_.resolve(dir);
-	return ret;
-	
-	
 }
 
 // Template specialization for variable_type and struct_type
@@ -362,29 +351,6 @@ rx_result basic_types_algorithm<struct_type>::construct_basic_type(const struct_
 }
 
 
-template <>
-rx_result basic_types_algorithm<variable_type>::resolve_basic_type(variable_type& whose, rx_directory_ptr dir)
-{
-	auto ret = whose.complex_data_.resolve(dir);
-	if (ret)
-	{
-		ret = whose.variable_data_.resolve(dir);
-		if (ret)
-			ret = whose.mapping_data_.resolve(dir);
-	}
-	return ret;
-}
-
-
-template <>
-rx_result basic_types_algorithm<struct_type>::resolve_basic_type(struct_type& whose, rx_directory_ptr dir)
-{
-	auto ret = whose.complex_data_.resolve(dir);
-	if (ret)
-		ret = whose.mapping_data_.resolve(dir);
-	return ret;
-}
-
 template class basic_types_algorithm<basic_types::struct_type>;
 template class basic_types_algorithm<basic_types::variable_type>;
 template class basic_types_algorithm<basic_types::source_type>;
@@ -451,19 +417,6 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 			{
 			}
 		}
-	}
-	return ret;
-}
-
-template <class typeT>
-rx_result object_types_algorithm<typeT>::resolve_object_type (typeT& whose, rx_directory_ptr dir)
-{
-	auto ret = whose.complex_data_.resolve(dir);
-	if (ret)
-	{
-		ret = whose.mapping_data_.resolve(dir);
-		if (ret)
-			ret = whose.object_data_.resolve(dir);
 	}
 	return ret;
 }

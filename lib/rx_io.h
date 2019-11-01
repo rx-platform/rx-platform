@@ -257,7 +257,6 @@ class tcp_socket : public full_duplex_comm<buffT>
 
       string_type peer_name_;
 
-	  friend int dispatcher_connect_callback(void* data, uint32_t status);
 };
 
 
@@ -281,9 +280,9 @@ public:
       ~tcp_listen_socket();
 
 
-      bool start (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+      rx_result start_tcpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      bool start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
+      rx_result start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
 
       void stop ();
 
@@ -306,8 +305,6 @@ public:
 
       make_function_t make_function_;
 
-	  friend int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size);
-	  friend int listen_dispatcher_shutdown_callback(void* data, uint32_t status);
 };
 
 
@@ -340,15 +337,15 @@ class tcp_client_socket : public tcp_socket<buffT>
       ~tcp_client_socket();
 
 
-      bool bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_tcpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      bool bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
 
-      bool connect_to (sockaddr* addr, size_t addrsize);
+      rx_result connect_to (sockaddr* addr, size_t addrsize);
 
-      bool connect_to_tcpip_4 (unsigned long address, uint16_t port);
+      rx_result connect_to_tcpip_4 (unsigned long address, uint16_t port);
 
-      bool connect_to_tcpip_4 (const string_type& address, uint16_t port);
+      rx_result connect_to_tcpip_4 (const string_type& address, uint16_t port);
 
       void timer_tick (uint32_t tick);
 
@@ -356,7 +353,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       virtual bool connect_complete ();
 
-      bool bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher);
 
 
       void set_connect_timeout (uint32_t value)
@@ -445,9 +442,9 @@ class udp_socket : public full_duplex_comm<buffT>
       ~udp_socket();
 
 
-      bool bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_udpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      bool bind_socket_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_udpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher);
 
       void close ();
 
@@ -863,7 +860,7 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result tcp_listen_socket<buffT>::start_tcpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
 	this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr);
 	if (this->dispatcher_data_.handle)
@@ -877,19 +874,20 @@ bool tcp_listen_socket<buffT>::start (sockaddr_in* addr, threads::dispatcher_poo
 			}
 		}
 	}
+	auto result = rx_result::create_from_last_os_error("Unable to bind to endpoint.");
 	if (this->dispatcher_data_.handle)
 		rx_close_socket(this->dispatcher_data_.handle);
-	return false;
+	return result;
 }
 
 template <class buffT>
-bool tcp_listen_socket<buffT>::start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
+rx_result tcp_listen_socket<buffT>::start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = INADDR_ANY;
-	return start(dispatcher, &temp_addr);
+	return this->start(dispatcher, &temp_addr);
 }
 
 template <class buffT>
@@ -939,7 +937,7 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
 	this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr);
 	if (this->dispatcher_data_.handle)
@@ -947,23 +945,21 @@ bool tcp_client_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatch
 		this->connect_dispatcher(dispatcher);
 		return true;
 	}
-	if (this->dispatcher_data_.handle)
-		rx_close_socket(this->dispatcher_data_.handle);
-	return false;
+	return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
 	temp_addr.sin_port = htons(port);
 	temp_addr.sin_addr.s_addr = INADDR_ANY;
-	return bind_socket(&temp_addr, dispatcher);
+	return bind_socket_tcpip_4(&temp_addr, dispatcher);
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to (sockaddr* addr, size_t addrsize)
+rx_result tcp_client_socket<buffT>::connect_to (sockaddr* addr, size_t addrsize)
 {
 	{
 
@@ -980,13 +976,16 @@ bool tcp_client_socket<buffT>::connect_to (sockaddr* addr, size_t addrsize)
 	{
 		this->connecting_ = false;
 		this->release();
+		auto result = rx_result::create_from_last_os_error("Error connecting socket");
 		close();
+		return result;
 	}
-	return ret;
+	else
+		return true;
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (unsigned long address, uint16_t port)
+rx_result tcp_client_socket<buffT>::connect_to_tcpip_4 (unsigned long address, uint16_t port)
 {
 	struct sockaddr_in temp_addr;
 	memzero(&temp_addr, sizeof(temp_addr));
@@ -997,7 +996,7 @@ bool tcp_client_socket<buffT>::connect_to_tcpip_4 (unsigned long address, uint16
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::connect_to_tcpip_4 (const string_type& address, uint16_t port)
+rx_result tcp_client_socket<buffT>::connect_to_tcpip_4 (const string_type& address, uint16_t port)
 {
     unsigned long num_addr=inet_addr(address.c_str());
     struct sockaddr_in temp_addr;
@@ -1064,9 +1063,9 @@ bool tcp_client_socket<buffT>::connect_complete ()
 }
 
 template <class buffT>
-bool tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_pool& dispatcher)
 {
-	return bind_socket_tcpip_4(0, dispatcher);
+	return this->bind_socket_tcpip_4((uint16_t)0, dispatcher);
 }
 
 
@@ -1224,7 +1223,7 @@ udp_socket<buffT>::~udp_socket()
 
 
 template <class buffT>
-bool udp_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result udp_socket<buffT>::bind_socket_udpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
 	this->dispatcher_data_.handle = rx_create_and_bind_ip4_udp_socket(addr);
 	if (this->dispatcher_data_.handle)
@@ -1233,20 +1232,25 @@ bool udp_socket<buffT>::bind_socket (sockaddr_in* addr, threads::dispatcher_pool
 		this->start_loops();
 		return true;
 	}
-	if (this->dispatcher_data_.handle)
-		rx_close_socket(this->dispatcher_data_.handle);
-	return false;
+	return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
 }
 
 template <class buffT>
-bool udp_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher)
+rx_result udp_socket<buffT>::bind_socket_udpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher)
 {
 	sockaddr_in temp_addr;
-	auto result = fill_ip4_addr(addr, port, &temp_addr);
+	string_type trimmed(rx_trim(addr));
+
+	auto result = fill_ip4_addr(trimmed, port, &temp_addr);
 	if (result)
-		return bind_socket(&temp_addr, dispatcher);
+	{
+		return this->bind_socket_udpip_4(&temp_addr, dispatcher);
+	}
 	else
-		return false;
+	{
+		result.register_error("Unable to parse address string.");
+		return result;
+	}
 }
 
 template <class buffT>

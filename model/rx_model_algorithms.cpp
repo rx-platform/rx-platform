@@ -65,6 +65,45 @@ using namespace rx;
 //helper functions, anonymus namespace i think is perfect for theese
 namespace
 {
+
+rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns::rx_directory_resolver& directories, meta_data& info, rx_item_type& ret_type)
+{
+	rx_node_id ret;
+	if (ref.is_node_id())
+	{
+		ret = ref.get_node_id();
+		if (!ret)
+		{
+			return "Can't resolve " RX_NULL_ITEM_NAME " reference!";
+		}
+	}
+	else
+	{
+		auto item = directories.resolve_path(ref.get_path());
+		if (!item)
+		{
+			return ref.get_path() + " does not exists!";
+		}
+		ret = item->meta_info().get_id();
+		if (ret.is_null())
+		{// TODO error, item does not have id
+			return ref.get_path() + " does not have valid id!";
+		}
+		// everything is good we resolved it
+	}
+	// but, is it registered?
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(ret, info);
+		if (type == rx_item_type::rx_invalid_type)
+		{
+			return ret.to_string() + " is not the registered id!";
+		}
+		ret_type = type;
+	}
+	return ret;
+}
+
 template<class typeCache>
 rx_result delete_some_type(typeCache& cache, const item_reference& item_reference, rx_directory_ptr dir, rx_transaction_type& transaction)
 {
@@ -95,7 +134,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		}
 		id = item_reference.get_node_id();
 		meta_data item_meta;
-		auto result = platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
+		platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
 
 		item = dir->get_sub_item(item_meta.get_full_path());
 		if (!item)
@@ -147,7 +186,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 	if (!prototype)
 		prototype = typeType(pointers::_create_new);
 
-	auto proto_result = prototype->meta_info().resolve();
+	prototype->meta_info().resolve();
 
 	rx_node_id base_id = prototype->meta_info().get_parent();
 	rx_node_id item_id = prototype->meta_info().get_id();
@@ -210,10 +249,15 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 		item_id = rx_node_id::generate_new();
 
 	prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
-	auto result = prototype->resolve(dir);
-	if (!result)
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
 	{
-		return result.errors();
+		type_check_context ctx;
+		ctx.get_directories().add_paths({ path });
+		auto result = prototype->check_type(ctx);
+		if (!result)
+		{
+			return ctx.get_errors();
+		}
 	}
 
 	auto ret = cache.register_type(prototype);
@@ -254,16 +298,18 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 }
 template<class typeCache, class typeT>
 rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_directory_ptr dir, bool increment_version, rx_transaction_type& transaction)
-{	
+{
 	if (!dir)
 		dir = rx_gate::instance().get_root_directory();
 
 	prototype->meta_info().resolve();
 	prototype->meta_info().increment_version(increment_version);
-	auto result = prototype->resolve(dir);
+	type_check_context ctx;
+	ctx.get_directories().add_paths({ prototype->meta_info().get_path() });
+	auto result = prototype->check_type(ctx);
 	if (!result)
 	{
-		return result.errors();
+		return ctx.get_errors();
 	}
 
 	auto ret = cache.get_type_definition(prototype->meta_info().get_id());
@@ -330,7 +376,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 		}
 		id = item_reference.get_node_id();
 		meta_data item_meta;
-		auto result = platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
+		platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
 
 		item = dir->get_sub_item(item_meta.get_full_path());
 		if (!item)
@@ -466,7 +512,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		item_id = rx_node_id::generate_new();
 
 
-	meta_data meta;
+	meta_data meta(info);
 	meta.construct(runtime_name, item_id, base_id, attributes, path);
 	meta.resolve();
 	auto ret_value = cache.create_runtime(meta, std::move(instance_data), init_data);
@@ -527,6 +573,90 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 
 	return ret_value;
 }
+
+}
+
+rx_result_with<rx_node_id> resolve_reference(const item_reference& ref, ns::rx_directory_resolver& directories)
+{
+	rx_item_type type;
+	meta_data temp;
+	return resolve_some_reference(ref, directories, temp, type);
+}
+
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
+{
+	rx_item_type type;
+	meta_data info;
+	auto result = resolve_some_reference(ref, directories, info, type);
+	if (!result)
+		return result;
+	if (type != typeT::type_id)
+	{
+		return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
+	}
+	auto ret = model::platform_types_manager::instance().internal_get_type_cache<typeT>().type_exists(result.value());
+	if (!ret)
+	{// type does not exist
+		return ret.errors();
+	}
+	return result;
+}
+
+template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<object_type>);
+template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<port_type>);
+template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<domain_type>);
+template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
+
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
+{
+	rx_item_type type;
+	meta_data info;
+	auto result = resolve_some_reference(ref, directories, info, type);
+	if (!result)
+		return result;
+	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	{
+		if (type != typeT::type_id)
+		{
+			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
+		}
+	}
+	auto ret = model::platform_types_manager::instance().internal_get_simple_type_cache<typeT>().type_exists(result.value());
+	if (!ret)
+	{// type does not exist
+		return ret.errors();
+	}
+	return result;
+}
+
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<struct_type>);
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<variable_type>);
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<source_type>);
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<filter_type>);
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<event_type>);
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<mapper_type>);
+
+template<typename typeT>
+rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+	, rx_directory_ptr dir, tl::type2type<typeT>)
+{
+    return "Not implemented yet!";
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -722,7 +852,6 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 template <class typeT>
 void simple_types_model_algorithm<typeT>::delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
-	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<rx_result(void)> func = [=]() {
 		return delete_type_sync(item_reference, dir);
 	};
@@ -854,37 +983,31 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_prototype (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
+void runtime_model_algorithm<typeT>::create_prototype (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
-	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [name, type_name, dir, attributes]() mutable {
-		return create_prototype_sync(name, type_name, dir, attributes);
+	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [info, instance_data, dir]() mutable {
+		return create_prototype_sync(info, instance_data, dir);
 	};
 	rx_do_with_callback<rx_result_with<typename typeT::RTypePtr>, rx_reference_ptr>(std::move(func), RX_DOMAIN_META, callback, ref);
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_prototype_sync (const string_type& name, const string_type& type_name, rx_directory_ptr dir, namespace_item_attributes attributes)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_prototype_sync (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir)
 {
 	string_type path;
-	auto dir_result = dir->reserve_name(name, path);
+	auto dir_result = dir->reserve_name(info.get_name(), path);
+	if (dir_result)
+		dir->cancel_reserve(info.get_name()); // cancel it straight away, this is just prototype!!!
 	if (!dir_result)
 		return dir_result.errors();
-	else
-		dir->cancel_reserve(name);// cancel it straight away;
-	rx_platform_item::smart_ptr item = dir->get_sub_item(type_name);
-	if (!item)
-	{// error, type does not exists
-		return "Type "s + type_name + " does not exists!";
-	}
-	auto id = item->meta_info().get_id();
-	if (id.is_null())
-	{// error, item does not have id
-		return type_name + " does not have valid Id!";
-	}
+
+	rx_node_id super_id(info.get_parent());
+
+	namespace_item_attributes attributes = info.get_attributes() == namespace_item_attributes::namespace_item_null ?
+		namespace_item_attributes::namespace_item_full_access : info.get_attributes();
 	meta_data meta;
-	meta.construct(name, rx_node_id::null_id, id, attributes, path);
-	typename typeT::instance_data_t data;
-	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().create_runtime(meta, std::move(data), nullptr, true);
+	meta.construct(info.get_name(), rx_node_id::null_id, super_id, attributes, path);
+	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().create_runtime(meta, std::move(instance_data), nullptr, true);
 
 	return ret;
 }
@@ -985,7 +1108,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 					callback(std::move(create_result));
 			}
 			if (!ret)
-				callback(std::move(ret.errors()));
+				callback(ret.errors());
 		}, ctx);
 
 	return result;

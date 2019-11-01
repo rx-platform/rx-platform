@@ -81,7 +81,9 @@ void get_gnu_host_name(std::string& name)
 rx_result build_directories(hosting::rx_host_directories& data)
 {
 	data.system_config = "/etc/rx-platform/config";
-	data.system_config = "/etc/rx-platform/storage/rx-system-storage";
+	data.system_storage = "/etc/rx-platform/storage/rx-system-storage";
+	data.user_config = "~/.rx-platform/config";
+	data.user_storage = "~/.rx-platform/storage/rx-system-storage";
 	data.manuals = "/usr/share/man/rx-platform";
 	data.local_folder = get_full_path("");
 

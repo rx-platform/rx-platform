@@ -70,23 +70,22 @@ namespace rx_platform {
 
 struct io_manager_data_t
 {
+	uint32_t io_timer_period = 200;
 };
 
 struct general_data_t
 {
-	bool test_log = false;
-	string_type startup_script;
 	string_type manuals_path;
 };
 
 struct configuration_data_t
 {
-	infrastructure::runtime_data_t runtime_data;
-	mngt::managment_data_t managment_data;
-	ns::namespace_data_t namespace_data;
-	meta::meta_configuration_data_t meta_configuration_data;
-	io_manager_data_t io_manager_data;
-	general_data_t general;
+	infrastructure::runtime_data_t processor;
+	mngt::management_data_t management;
+	ns::namespace_data_t storage;
+	meta::meta_configuration_data_t meta_configuration;
+	io_manager_data_t io;
+	general_data_t other;
 };
 
 enum rx_platform_status

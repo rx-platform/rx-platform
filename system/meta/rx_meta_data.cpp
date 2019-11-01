@@ -346,7 +346,7 @@ rx_result_with<platform_item_ptr> meta_data::deserialize_runtime_item (base_meta
 	return "Undefined error";
 }
 
-rx_result meta_data::resolve ()
+void meta_data::resolve ()
 {
 	// resolve storage type by attributes
 	modified_time_ = rx_time::now();
@@ -354,10 +354,7 @@ rx_result meta_data::resolve ()
 	if (id_.is_null())
 	{
 		id_ = rx_node_id::generate_new(RX_USER_NAMESPACE);
-		return true;
 	}
-	else
-		return false;
 }
 
 void meta_data::set_path (const string_type& path)

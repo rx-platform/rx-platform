@@ -32,12 +32,12 @@
 
 
 
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 // rx_queries
 #include "system/meta/rx_queries.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 
 
 
@@ -372,7 +372,7 @@ class get_runtime_response : public runtime_response_message<itemT>
 
       static string_type type_name;
 
-      static uint16_t type_id;
+      static rx_message_type_t type_id;
 
 
   protected:
@@ -448,6 +448,73 @@ class browse_runtime_response_message : public rx_message_base
       static rx_message_type_t type_id;
 
       std::vector<runtime_item_attribute> items;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class prototype_runtime_request : public rx_request_message  
+{
+	  template<typename T>
+	  message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      rx_item_type item_type;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      meta_data info;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <class itemT>
+class prototype_runtime_response : public runtime_response_message<itemT>  
+{
+
+  public:
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:

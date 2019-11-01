@@ -71,18 +71,23 @@ interactive_console_host::~interactive_console_host()
 void interactive_console_host::console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	sec_ctx->login();
+	rx_result login_result = sec_ctx->login();
+	if (!login_result)
+	{
+		std::cout << ANSI_STATUS_ERROR "\r\nError while trying to login as a host:\r\n";
+		rx_dump_error_result(std::cout, login_result);
+	}
 
 	security::security_auto_context dummy(sec_ctx);
 
-	if (!config.managment_data.telnet_port)// set to the last default if not set
-		config.managment_data.telnet_port = 12345;
-	if (config.runtime_data.genereal_pool_size < 0)
-		config.runtime_data.genereal_pool_size = 2;
-	if (config.runtime_data.io_pool_size <= 0)// has to have at least one
-		config.runtime_data.io_pool_size = 1;
-	if (config.runtime_data.workers_pool_size < 0)
-		config.runtime_data.workers_pool_size = 2;
+	if (!config.management.telnet_port)// set to the last default if not set
+		config.management.telnet_port = 12345;
+	if (config.processor.genereal_pool_size < 0)
+		config.processor.genereal_pool_size = 2;
+	if (config.processor.io_pool_size <= 0)// has to have at least one
+		config.processor.io_pool_size = 1;
+	if (config.processor.workers_pool_size < 0)
+		config.processor.workers_pool_size = 2;
 
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
@@ -254,9 +259,15 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 
 			restore_console();
 
-			string_type man = rx_platform_host::get_manual_explicit("hosts/rx-interactive", get_host_directories().manuals);
-			std::cout << man;
-			std::cout << "\r\n";
+			// fill paths
+			hosting::rx_host_directories host_directories;
+			rx_result fill_result = fill_host_directories(host_directories);
+			if (!fill_result)
+			{
+				std::cout << "\r\nERROR\r\n";
+			}
+			rx_platform_host::print_offline_manual(RX_INTERACTIVE_HOST, host_directories);
+			
 			std::cout << options.help({ "" });
 			std::cout << "\r\n\r\n";
 
@@ -307,7 +318,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			string_type server_name = get_default_name();
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.runtime_data.real_time, tls, server_name.c_str());
+			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
 			std::cout << ANSI_STATUS_OK "\r\n";
 			
 			std::cout << "\r\n"
@@ -335,7 +346,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			}
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
-			ret = rx::log::log_object::instance().start(config.general.test_log);			
+			ret = rx::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
 				std::cout << ANSI_STATUS_OK "\r\n";
@@ -471,7 +482,7 @@ rx_result interactive_console_client::run_interactive (configuration_data_t& con
 	security::security_auto_context dummy(security_context_);
 
 
-	string_type temp_script(config.general.startup_script);
+	string_type temp_script(config.management.startup_script);
 	if(!temp_script.empty())
 		temp_script += "\r\n";
 

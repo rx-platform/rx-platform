@@ -33,14 +33,14 @@
 
 #include "lib/rx_lock.h"
 
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace ns {
@@ -111,14 +111,9 @@ namespace ns {
 
 struct namespace_data_t
 {
-	namespace_data_t()
-	{
-		build_system_from_code = false;
-	}
 	string_type system_storage_reference;
 	string_type user_storage_reference;
 	string_type test_storage_reference;
-	bool build_system_from_code;
 };
 
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
@@ -329,6 +324,38 @@ class rx_names_cache
 
 
       name_items_hash_type name_items_hash_;
+
+
+};
+
+
+
+
+
+
+class rx_directory_resolver 
+{
+	struct resolver_data
+	{
+		string_type path;
+		rx_directory_ptr dir;
+		bool resolved;
+	};
+	typedef std::vector<resolver_data> directories_type;
+
+  public:
+
+      platform_item_ptr resolve_path (const string_type& path);
+
+      void add_paths (std::initializer_list<string_type> paths);
+
+
+  protected:
+
+  private:
+
+
+      directories_type directories_;
 
 
 };

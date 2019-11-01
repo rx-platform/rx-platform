@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -99,7 +99,7 @@ typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object
 
 
 
-class relations_hash_data
+class relations_hash_data 
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -162,7 +162,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash
+class inheritance_hash 
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -224,7 +224,7 @@ class inheritance_hash
 
 
 
-class instance_hash
+class instance_hash 
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -263,7 +263,7 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash
+class type_hash 
 {
 	type_hash(const type_hash&) = delete;
 	type_hash(type_hash&&) = delete;
@@ -328,6 +328,8 @@ public:
 
       rx_result_with<typename typeT::RTypePtr> mark_runtime_running (rx_node_id id);
 
+      rx_result type_exists (rx_node_id id) const;
+
 
   protected:
 
@@ -354,7 +356,7 @@ public:
 
 
 template <class typeT>
-class simple_type_hash
+class simple_type_hash 
 {
 	simple_type_hash(const simple_type_hash&) = delete;
 	simple_type_hash(simple_type_hash&&) = delete;
@@ -417,7 +419,7 @@ public:
 
 
 
-class types_resolver
+class types_resolver 
 {
 	struct resolver_data
 	{
@@ -483,7 +485,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager
+class platform_types_manager 
 {
 	//friend class worker_registration_object;
 	template<class T>

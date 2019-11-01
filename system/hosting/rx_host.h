@@ -138,6 +138,27 @@ struct rx_host_directories
 	string_type manuals;
 	// log files location
 	string_type logs;
+
+	void fill_missing(rx_host_directories&& from)
+	{
+		if (system_config.empty())
+			system_config = std::move(from.system_config);
+		if (user_config.empty())
+			user_config = std::move(from.user_config);
+		if (local_folder.empty())
+			local_folder = std::move(from.local_folder);
+
+		if (system_storage.empty())
+			system_storage = std::move(from.system_storage);
+		if (user_storage.empty())
+			user_storage = std::move(from.user_storage);
+
+		if (manuals.empty())
+			manuals = std::move(from.manuals);
+
+		if (logs.empty())
+			logs = std::move(from.logs);
+	}
 };
 
 
@@ -189,13 +210,13 @@ class rx_platform_host
 
       virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
 
-      static string_type get_manual (string_type what);
+      string_type get_manual (string_type what) const;
 
       virtual string_type get_host_manual () const = 0;
 
-      static string_type get_manual_explicit (string_type what, string_type man_folder);
-
       virtual string_type get_host_name () = 0;
+
+      static void print_offline_manual (const string_type& host, const rx_host_directories& dirs);
 
 
       rx_platform_host * get_parent ()
@@ -219,13 +240,6 @@ class rx_platform_host
       rx_reference<storage_base::rx_platform_storage> get_test_storage () const
       {
         return test_storage_;
-      }
-
-
-
-      static const rx_host_directories& get_host_directories ()
-      {
-        return host_directories_;
       }
 
 
@@ -259,7 +273,7 @@ class rx_platform_host
       rx_reference<storage_base::rx_platform_storage> test_storage_;
 
 
-      static rx_host_directories host_directories_;
+      string_type manuals_path_;
 
 
 };

@@ -34,6 +34,8 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
@@ -44,8 +46,6 @@
 #include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 using rx_platform::meta::construct_context;
 
@@ -169,8 +169,6 @@ public:
 
       rx_result check_type (type_check_context& ctx);
 
-      rx_result resolve (rx_directory_ptr dir);
-
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
       static void set_instance_data (instance_data_t&& data, RTypePtr where);
@@ -252,8 +250,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 
@@ -341,8 +337,6 @@ public:
 
       bool check_type (type_check_context& ctx);
 
-      rx_result resolve (rx_directory_ptr dir);
-
       static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
@@ -422,8 +416,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
 

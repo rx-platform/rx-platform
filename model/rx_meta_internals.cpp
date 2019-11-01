@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager 
+// Class model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 	: worker_("config", RX_DOMAIN_META)
@@ -110,7 +110,7 @@ rx_result platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data 
+// Class model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -284,7 +284,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash 
+// Parameterized Class model::type_hash
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -347,7 +347,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 {
 	if (meta.get_id().is_null() || prototype)
 	{
-		auto resolve_result = meta.resolve();
+		meta.resolve();
 	}
 	else
 	{
@@ -397,6 +397,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 		ret = default_constructor_();
 
 	construct_context ctx;
+	ctx.get_directories().add_paths({meta.get_path()});
 	ret->meta_info() = meta;
 	for (auto one_id : base)
 	{
@@ -668,8 +669,27 @@ rx_result_with<typename typeT::RTypePtr> type_hash<typeT>::mark_runtime_running 
 	}
 }
 
+template <class typeT>
+rx_result type_hash<typeT>::type_exists (rx_node_id id) const
+{
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		return true;
+	}
+	else
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< rx_item_type_name(typeT::type_id)
+			<< " with node_id "
+			<< id;
+		return ss.str();
+	}
+}
 
-// Class model::inheritance_hash 
+
+// Class model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -796,7 +816,7 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 			if (rel_it != hash_data_.end())
 			{
 				rel_it->second.unordered.erase(id);
-				auto remove_resut = std::remove(rel_it->second.ordered.begin(), rel_it->second.ordered.end(), id);
+				std::remove(rel_it->second.ordered.begin(), rel_it->second.ordered.end(), id);
 			}
 		}
 	}
@@ -836,7 +856,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash 
+// Class model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -903,7 +923,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_type_hash 
+// Parameterized Class model::simple_type_hash
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -965,7 +985,6 @@ template <class typeT>
 rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typeT>::create_simple_runtime (const rx_node_id& type_id) const
 {
 	RTypePtr ret;
-
 	rx_node_ids base;
 	base.emplace_back(type_id);
 	if (rx_gate::instance().get_platform_status() == rx_platform_running)
@@ -1004,6 +1023,7 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 		ret = default_constructor_();
 
 	construct_context ctx;
+	ctx.get_directories().add_paths({ "/" });
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -1134,7 +1154,7 @@ rx_result simple_type_hash<typeT>::update_type (typename simple_type_hash<typeT>
 }
 
 
-// Class model::types_resolver 
+// Class model::types_resolver
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)

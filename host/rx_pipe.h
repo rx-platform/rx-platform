@@ -78,6 +78,8 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
 
       bool running_;
 
+      locks::slim_lock pending_lock_;
+
 
 };
 

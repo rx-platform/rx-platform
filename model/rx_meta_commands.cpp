@@ -582,9 +582,17 @@ bool dump_types_command::do_console_command (std::istream& in, std::ostream& out
 	{
 		return dump_types_to_console(tl::type2type<object_types::object_type>(), in, out, err, ctx);
 	}
-	if (item_type == "ports")
+	else if (item_type == "ports")
 	{
 		return dump_types_to_console(tl::type2type<object_types::port_type>(), in, out, err, ctx);
+	}
+	else if (item_type == "apps" || item_type == "applications")
+	{
+		return dump_types_to_console(tl::type2type<object_types::application_type>(), in, out, err, ctx);
+	}
+	else if (item_type == "domains")
+	{
+		return dump_types_to_console(tl::type2type<object_types::domain_type>(), in, out, err, ctx);
 	}
 	return true;
 }
@@ -1113,12 +1121,13 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 {
 	string_type name;
 	string_type from_command;
-	string_type class_name;
+	string_type base_type_name;
+	item_reference base_reference;
 	string_type to_command;
 	string_type def_command;
 	in >> name
 		>> from_command
-		>> class_name
+		>> base_type_name
 		>> to_command
 		>> def_command;
 
@@ -1126,29 +1135,20 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	// try to acquire the type
-	//if (from_command == "from")
-	//{
-	//	type_definition = platform_types_manager::instance().get_type<T>(class_name, ctx->get_current_directory());
-	//}
-	//else
-	//{
-	//	err << "Unknown base "
-	//		<< rx_item_type_name(T::RType::type_id)
-	//		<< " specifier:"
-	//		<< from_command << "!";
-	//	return false;
-	//}
-	//// do we have type
-	//if (!type_definition)
-	//{
-	//	err << "Undefined "
-	//		<< rx_item_type_name(T::type_id)
-	//		<< ":"
-	//		<< class_name << "!";
-	//	return false;
-	//}
-	// try to acquire definition
+	//// try to acquire the type
+	if (from_command == "from")
+	{
+		base_reference = base_type_name;
+	}
+	else
+	{
+		err << "Unknown base "
+			<< rx_item_type_name(T::type_id)
+			<< " specifier:"
+			<< from_command << "!";
+		return false;
+	}
+
 	if (to_command == "to")
 	{
 		if (def_command == "json")
@@ -1157,7 +1157,9 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 			rx_context rxc;
 			rxc.object = ctx->get_client();
 			rxc.directory = ctx->get_current_directory();
-			auto result = rx_platform::api::meta::rx_create_prototype<T>(name, rx_node_id::null_id, class_name,
+			meta_data info;
+			typename T::instance_data_t data{};
+			auto result = rx_platform::api::meta::rx_create_prototype<T>(info, data,
 				[=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				bool ret = result;

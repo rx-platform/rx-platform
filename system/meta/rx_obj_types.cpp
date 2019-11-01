@@ -110,11 +110,6 @@ rx_result application_type::check_type (type_check_context& ctx)
 	return object_types_algorithm<application_type>::check_object_type(*this, ctx);
 }
 
-rx_result application_type::resolve (rx_directory_ptr dir)
-{
-	return object_types_algorithm<application_type>::resolve_object_type(*this, dir);
-}
-
 void application_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
 	where->runtime_.set_runtime_data(prototype);
@@ -214,11 +209,6 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 bool domain_type::check_type (type_check_context& ctx)
 {
 	return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
-}
-
-rx_result domain_type::resolve (rx_directory_ptr dir)
-{
-	return object_types_algorithm<domain_type>::resolve_object_type(*this, dir);
 }
 
 void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
@@ -326,11 +316,6 @@ def_blocks::mapped_data_type& object_type::mapping_data ()
 bool object_type::check_type (type_check_context& ctx)
 {
 	return object_types_algorithm<object_type>::check_object_type(*this, ctx);
-}
-
-rx_result object_type::resolve (rx_directory_ptr dir)
-{
-	return object_types_algorithm<object_type>::resolve_object_type(*this, dir);
 }
 
 void object_type::set_instance_data (instance_data_t&& data, RTypePtr where)
@@ -467,11 +452,6 @@ bool port_type::check_type (type_check_context& ctx)
 	return object_types_algorithm<port_type>::check_object_type(*this, ctx);
 }
 
-rx_result port_type::resolve (rx_directory_ptr dir)
-{
-	return object_types_algorithm<port_type>::resolve_object_type(*this, dir);
-}
-
 void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
 	where->runtime_.set_runtime_data(prototype);
@@ -507,4 +487,6 @@ const def_blocks::mapped_data_type& port_type::mapping_data () const
 } // namespace object_types
 } // namespace meta
 } // namespace rx_platform
+
+
 

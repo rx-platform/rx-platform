@@ -53,6 +53,7 @@ namespace meta {
 
 struct meta_configuration_data_t
 {
+	bool build_system_from_code = false;
 	string_type instance_name;
 	uint32_t wd_timer_period = 1000;
 };
@@ -97,8 +98,6 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -166,8 +165,6 @@ public:
 
       bool check_type (type_check_context& ctx);
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const def_blocks::complex_data_type& complex_data () const;
 
@@ -234,8 +231,6 @@ public:
 
       bool check_type (type_check_context& ctx);
 
-      rx_result resolve (rx_directory_ptr dir);
-
 
       const meta_data& meta_info () const;
 
@@ -301,8 +296,6 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -371,8 +364,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -449,8 +440,6 @@ public:
       def_blocks::variable_data_type& variable_data ();
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const meta_data& meta_info () const;

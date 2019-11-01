@@ -76,7 +76,7 @@ rx_protocol_port::rx_protocol_port()
       : current_directory_path_("/world")
 {
 	stack_entry_.my_port_ = smart_this();
-	//current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
+	current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
 }
 
 
