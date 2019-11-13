@@ -38,6 +38,7 @@
 #include "api/rx_namespace_api.h"
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace sys_internal {
@@ -955,16 +956,15 @@ rx_message_type_t browse_runtime_response_message::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::query_messages::prototype_runtime_request 
+// Class sys_internal::rx_protocol::messages::query_messages::get_code_info_request 
 
-string_type prototype_runtime_request::type_name = "protoRuntimeReq";
+string_type get_code_info_request::type_name = "codeReq";
 
-rx_message_type_t prototype_runtime_request::type_id = rx_proto_runtime_request_id;
+rx_message_type_t get_code_info_request::type_id = rx_code_request_id;
 
 
-rx_result prototype_runtime_request::serialize (base_meta_writer& stream) const
+rx_result get_code_info_request::serialize (base_meta_writer& stream) const
 {
-	
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
@@ -975,15 +975,14 @@ rx_result prototype_runtime_request::serialize (base_meta_writer& stream) const
 		if (!stream.write_byte("type", item_type))
 			return false;
 	}
-	
-	auto result = info.serialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	auto result = reference.serialize_reference("target", stream);
 	if (!result)
 		return result;
 
 	return result;
 }
 
-rx_result prototype_runtime_request::deserialize (base_meta_reader& stream)
+rx_result get_code_info_request::deserialize (base_meta_reader& stream)
 {
 	if (stream.is_string_based())
 	{
@@ -1003,101 +1002,108 @@ rx_result prototype_runtime_request::deserialize (base_meta_reader& stream)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
-	auto result = info.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, item_type);
+	auto result = reference.deserialize_reference("target", stream);
 	if (!result)
 		return result;
 
 	return result;
 }
 
-message_ptr prototype_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
+	rx_directory_resolver directories{};
+	meta_data data;
+	rx_result_with<rx_node_id> result;
 	switch (item_type)
 	{
 	case rx_item_type::rx_object:
-		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::object_type>());
+		break;
 	case rx_item_type::rx_domain:
-		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::domain_type>());
+		break;
 	case rx_item_type::rx_port:
-		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::port_type>());
+		break;
 	case rx_item_type::rx_application:
-		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::application_type>());
+		break;
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
 			return ret_value;
 		}
 	}
+	if(!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 15, request_id);
+		return ret_value;
+	}
+	auto data_result = model::platform_types_manager::instance().get_types_resolver().get_item_data(result.value(), data);
+	if (data_result == rx_item_type::rx_invalid_type)
+	{
+		auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " can't be found in types resolver!", 15, request_id);
+		return ret_value;
+	}
+	auto item_ptr = rx_gate::instance().get_root_directory()->get_sub_item(data.get_full_path());
+	if (!item_ptr)
+	{
+		auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " can't be found in root directory!", 15, request_id);
+		return ret_value;
+	}
+	string_type info;
+	item_ptr->code_info_to_string(info);
+
+	auto ret_msg = std::make_unique<get_code_info_response_message>();
+	ret_msg->request_id = request_id;
+	ret_msg->code_info = info;
+
+	return ret_msg;
 }
 
-const string_type& prototype_runtime_request::get_type_name ()
+const string_type& get_code_info_request::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t prototype_runtime_request::get_type_id ()
+rx_message_type_t get_code_info_request::get_type_id ()
 {
   return type_id;
 
 }
 
 
-template<typename T>
-message_ptr prototype_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+// Class sys_internal::rx_protocol::messages::query_messages::get_code_info_response_message 
+
+string_type get_code_info_response_message::type_name = "codeResp";
+
+rx_message_type_t get_code_info_response_message::type_id = rx_code_response_id;
+
+
+rx_result get_code_info_response_message::serialize (base_meta_writer& stream) const
 {
-	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	if (!stream.write_string("code", code_info))
+		return "Error writing code info";
 
-	auto callback = [request_id, port](rx_result_with<typename T::RTypePtr>&& result) mutable
-	{
-		if (result)
-		{
-			auto response = std::make_unique<prototype_runtime_response<T> >();
-			response->item = result.value();
-			response->request_id = request_id;
-			port->data_processed(std::move(response));
-
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-	typename T::instance_data_t data{};
-	rx_result result = api::meta::rx_create_prototype<T>(info, data, callback, ctx);
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
+	return true;
 }
-// Parameterized Class sys_internal::rx_protocol::messages::query_messages::prototype_runtime_response 
 
-template <class itemT>
-string_type prototype_runtime_response<itemT>::type_name = "protoRuntimeResp";
+rx_result get_code_info_response_message::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("code", code_info))
+		return "Error reading code info";
+	
+	return true;
+}
 
-template <class itemT>
-rx_message_type_t prototype_runtime_response<itemT>::type_id = rx_proto_runtime_response_id;
-
-
-template <class itemT>
-const string_type& prototype_runtime_response<itemT>::get_type_name ()
+const string_type& get_code_info_response_message::get_type_name ()
 {
   return type_name;
 
 }
 
-template <class itemT>
-rx_message_type_t prototype_runtime_response<itemT>::get_type_id ()
+rx_message_type_t get_code_info_response_message::get_type_id ()
 {
   return type_id;
 

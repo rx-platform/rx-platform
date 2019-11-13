@@ -107,6 +107,9 @@ const rx_message_type_t rx_delete_runtime_response_id = 0x8014;
 const rx_message_type_t rx_proto_runtime_request_id = 0x0015;
 const rx_message_type_t rx_proto_runtime_response_id = 0x8015;
 
+const rx_message_type_t rx_code_request_id = 0x0016;
+const rx_message_type_t rx_code_response_id = 0x8016; 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;

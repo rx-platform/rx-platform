@@ -526,7 +526,7 @@ rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_
 // Class sys_internal::internal_ns::system_directory 
 
 system_directory::system_directory()
-	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage())
+	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys"))
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -547,7 +547,8 @@ system_directory::~system_directory()
 // Class sys_internal::internal_ns::host_directory 
 
 host_directory::host_directory()
-	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_storage())
+	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
+		, rx_gate::instance().get_host()->get_system_storage(rx_gate::instance().get_host()->get_host_name()))
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -572,7 +573,8 @@ host_directory::~host_directory()
 // Class sys_internal::internal_ns::plugin_directory 
 
 plugin_directory::plugin_directory (rx_plugin_ptr plugin)
-	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access, plugin->get_storage())
+	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access
+		, rx_gate::instance().get_host()->get_system_storage(plugin->get_plugin_name()))
 {
 	auto storage = resolve_storage();
 	if (storage)

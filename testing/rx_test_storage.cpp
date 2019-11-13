@@ -78,17 +78,17 @@ bool storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostr
 {
 	std::vector<rx_storage_item_ptr> storage_items;
 	auto storage = rx_gate::instance().get_host()->get_test_storage();
-	if (!storage || storage->get_storage_reference().empty())
+	if (!storage || storage.value()->get_storage_reference().empty())
 	{// no test storage
 		out << "Test storage not defined in platform\r\n";
 		return true;
 	}
 	out << "Listing test storage " ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-		<< storage->get_storage_info()
+		<< storage.value()->get_storage_info()
 		<< ANSI_COLOR_RESET "\r\nStorage reference: " ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-		<< storage->get_storage_reference()
+		<< storage.value()->get_storage_reference()
 		<< ANSI_COLOR_RESET "\r\n\r\n";
-	auto result = storage->list_storage(storage_items);
+	auto result = storage.value()->list_storage(storage_items);
 	if (result)
 	{
 		out << "Storage list succeeded:\r\n\r\n";

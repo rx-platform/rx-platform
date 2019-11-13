@@ -204,78 +204,86 @@ rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* re
 	uint32_t message_type;
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference;
 
-	available_data = rx_get_packet_available_data(buffer);
-	// check message sizes
-	if (available_data <= sizeof(opcua_transport_header))
+	while (1)
 	{
-		result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
-		goto end;
-	}
 
-	// check message type
-	header = (opcua_transport_header*)rx_get_from_packet(buffer, sizeof(opcua_transport_header),&result);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-
-	message_type = (header->message_type[0] << 16) | (header->message_type[1] << 8) | (header->message_type[2]);
-
-	// check correct message size in header
-	if (header->message_size != available_data)
-	{
-		result = RX_PROTOCOL_PARSING_ERROR;
-		goto end;
-	}
-
-	if (transport->server_side)
-	{
-		switch (message_type)
+		available_data = rx_get_packet_available_data(buffer);
+		// check message sizes
+		if (available_data <= sizeof(opcua_transport_header))
 		{
-		case opcua_regular_msg_type:
-			result = opcua_parse_regular_message(transport, header, end_point, buffer);
+			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
 			break;
-		case rx_pipe_msg_type:
-			result = opcua_parse_pipe_message(transport, header, end_point, buffer);
-			break;
-		case opcua_error_msg_type:
-			result = opcua_parse_error_message(transport, header, end_point, buffer);
-			break;
-		case opcua_hello_msg_type:
-			result = opcua_parse_hello_message(transport, header, end_point, buffer);
-			break;
-		case opcua_open_msg_type:
-			result = opcua_parse_open_message(transport, header, end_point, buffer);
-			break;
-		case opcua_close_msg_type:
-			result = opcua_parse_close_message(transport, header, end_point, buffer);
-			break;
-		default:
+		}
+
+		// check message type
+		header = (opcua_transport_header*)rx_get_from_packet(buffer, sizeof(opcua_transport_header), &result);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+
+		message_type = (header->message_type[0] << 16) | (header->message_type[1] << 8) | (header->message_type[2]);
+
+		// check correct message size in header
+		if (header->message_size > available_data)
+		{
 			result = RX_PROTOCOL_PARSING_ERROR;
+			break;
+		}
+
+		if (transport->server_side)
+		{
+			switch (message_type)
+			{
+			case opcua_regular_msg_type:
+				result = opcua_parse_regular_message(transport, header, end_point, buffer);
+				break;
+			case rx_pipe_msg_type:
+				result = opcua_parse_pipe_message(transport, header, end_point, buffer);
+				break;
+			case opcua_error_msg_type:
+				result = opcua_parse_error_message(transport, header, end_point, buffer);
+				break;
+			case opcua_hello_msg_type:
+				result = opcua_parse_hello_message(transport, header, end_point, buffer);
+				break;
+			case opcua_open_msg_type:
+				result = opcua_parse_open_message(transport, header, end_point, buffer);
+				break;
+			case opcua_close_msg_type:
+				result = opcua_parse_close_message(transport, header, end_point, buffer);
+				break;
+			default:
+				result = RX_PROTOCOL_PARSING_ERROR;
+			}
+		}
+		else
+		{
+			switch (message_type)
+			{
+			case opcua_regular_msg_type:
+				result = opcua_parse_regular_message(transport, header, end_point, buffer);
+				break;
+			case rx_pipe_msg_type:
+				result = opcua_parse_pipe_message(transport, header, end_point, buffer);
+				break;
+			case opcua_reverse_hello_msg_type:
+				result = opcua_parse_reverse_hello_message(transport, header, end_point, buffer);
+				break;
+			case opcua_ack_msg_type:
+				result = opcua_parse_ack_message(transport, header, end_point, buffer);
+				break;
+			case opcua_error_msg_type:
+				result = opcua_parse_error_message(transport, header, end_point, buffer);
+				break;
+			default:
+				result = RX_PROTOCOL_PARSING_ERROR;
+			}
+		}
+		// check correct message size in header
+		if (header->message_size == available_data)
+		{
+			break;
 		}
 	}
-	else
-	{
-		switch (message_type)
-		{
-		case opcua_regular_msg_type:
-			result = opcua_parse_regular_message(transport, header, end_point, buffer);
-			break;
-		case rx_pipe_msg_type:
-			result = opcua_parse_pipe_message(transport, header, end_point, buffer);
-			break;
-		case opcua_reverse_hello_msg_type:
-			result = opcua_parse_reverse_hello_message(transport, header, end_point, buffer);
-			break;
-		case opcua_ack_msg_type:
-			result = opcua_parse_ack_message(transport, header, end_point, buffer);
-			break;
-		case opcua_error_msg_type:
-			result = opcua_parse_error_message(transport, header, end_point, buffer);
-			break;
-		default:
-			result = RX_PROTOCOL_PARSING_ERROR;
-		}
-	}
-end:
 	if (result != RX_PROTOCOL_OK)
 	{
 		opcua_init_transport_state(transport);
@@ -418,6 +426,7 @@ rx_protocol_result_t opcua_bin_bytes_send(
 	opcua_security_simetric_header* sec_header;
 	opcua_sequence_header* sequence_header;
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference;
+
 
 	size_t size = rx_get_packet_usable_data(buffer);
 	if (size <= transport->connection_data.receive_buffer_size)

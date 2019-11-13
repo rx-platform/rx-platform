@@ -4,8 +4,8 @@
 
 #define RX_SERVER_NAME "Atom" 
 #define RX_SERVER_MAJOR_VERSION 0
-#define RX_SERVER_MINOR_VERSION 19
-#define RX_SERVER_BUILD_NUMBER 3
+#define RX_SERVER_MINOR_VERSION 20
+#define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -18,3 +18,4 @@
 // version 0.18.0 introduced runtime subscription and "tags browsing"
 // version 0.19.0 introduced item_reference type
 // version 0.19.3 introduced resolve_reference api-s
+// version 0.20.0 introduced storage_holder

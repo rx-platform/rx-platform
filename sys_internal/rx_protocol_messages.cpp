@@ -171,12 +171,12 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_message (
 
 rx_result rx_request_message::init_request_messages ()
 {
+	registered_messages_.emplace(query_messages::get_code_info_request::type_id, [] { return std::make_unique<query_messages::get_code_info_request>(); });
 	registered_messages_.emplace(query_messages::browse_request_message::type_id, [] { return std::make_unique<query_messages::browse_request_message>(); });
 	registered_messages_.emplace(query_messages::browse_runtime_request::type_id, [] { return std::make_unique<query_messages::browse_runtime_request>(); });
 	registered_messages_.emplace(query_messages::query_request_message::type_id, [] { return std::make_unique<query_messages::query_request_message>(); });
 	registered_messages_.emplace(query_messages::get_type_request::type_id, [] { return std::make_unique<query_messages::get_type_request>(); });
 	registered_messages_.emplace(query_messages::get_runtime_request::type_id, [] { return std::make_unique<query_messages::get_runtime_request>(); });
-	registered_messages_.emplace(query_messages::prototype_runtime_request::type_id, [] { return std::make_unique<query_messages::prototype_runtime_request>(); });
 	registered_messages_.emplace(rx_connection_context_request::type_id, [] { return std::make_unique<rx_connection_context_request>(); });
 	registered_messages_.emplace(set_messages::delete_type_request::type_id, [] { return std::make_unique<set_messages::delete_type_request>(); });
 	registered_messages_.emplace(set_messages::set_type_request::type_id, [] { return std::make_unique<set_messages::set_type_request>(); });
@@ -184,6 +184,7 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(set_messages::delete_runtime_request::type_id, [] { return std::make_unique<set_messages::delete_runtime_request>(); });
 	registered_messages_.emplace(set_messages::set_runtime_request::type_id, [] { return std::make_unique<set_messages::set_runtime_request>(); });
 	registered_messages_.emplace(set_messages::update_runtime_request::type_id, [] { return std::make_unique<set_messages::update_runtime_request>(); });
+	registered_messages_.emplace(set_messages::prototype_runtime_request::type_id, [] { return std::make_unique<set_messages::prototype_runtime_request>(); });
 	// directory messages
 	registered_messages_.emplace(directory_messages::rx_make_directory_request::type_id, [] { return std::make_unique<directory_messages::rx_make_directory_request>(); });
 	registered_messages_.emplace(directory_messages::rx_remove_directory_request::type_id, [] { return std::make_unique<directory_messages::rx_remove_directory_request>(); });
@@ -199,12 +200,12 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(items_messages::write_items_request::type_id, [] { return std::make_unique<items_messages::write_items_request>(); });
 	registered_messages_.emplace(items_messages::execute_item_request::type_id, [] { return std::make_unique<items_messages::execute_item_request>(); });
 
+	registered_string_messages_.emplace(query_messages::get_code_info_request::type_name, [] { return std::make_unique<query_messages::get_code_info_request>(); });
 	registered_string_messages_.emplace(query_messages::browse_request_message::type_name, [] { return std::make_unique<query_messages::browse_request_message>(); });
 	registered_string_messages_.emplace(query_messages::browse_runtime_request::type_name, [] { return std::make_unique<query_messages::browse_runtime_request>(); });
 	registered_string_messages_.emplace(query_messages::query_request_message::type_name, [] { return std::make_unique<query_messages::query_request_message>(); });
 	registered_string_messages_.emplace(query_messages::get_type_request::type_name, [] { return std::make_unique<query_messages::get_type_request>(); });
 	registered_string_messages_.emplace(query_messages::get_runtime_request::type_name, [] { return std::make_unique<query_messages::get_runtime_request>(); });
-	registered_string_messages_.emplace(query_messages::prototype_runtime_request::type_name, [] { return std::make_unique<query_messages::prototype_runtime_request>(); });
 	registered_string_messages_.emplace(rx_connection_context_request::type_name, [] { return std::make_unique<rx_connection_context_request>(); });
 	registered_string_messages_.emplace(set_messages::delete_type_request::type_name, [] { return std::make_unique<set_messages::delete_type_request>(); });
 	registered_string_messages_.emplace(set_messages::set_type_request::type_name, [] { return std::make_unique<set_messages::set_type_request>(); });
@@ -212,6 +213,7 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(set_messages::delete_runtime_request::type_name, [] { return std::make_unique<set_messages::delete_runtime_request>(); });
 	registered_string_messages_.emplace(set_messages::set_runtime_request::type_name, [] { return std::make_unique<set_messages::set_runtime_request>(); });
 	registered_string_messages_.emplace(set_messages::update_runtime_request::type_name, [] { return std::make_unique<set_messages::update_runtime_request>(); });
+	registered_string_messages_.emplace(set_messages::prototype_runtime_request::type_name, [] { return std::make_unique<set_messages::prototype_runtime_request>(); });
 	// directory messages
 	registered_string_messages_.emplace(directory_messages::rx_make_directory_request::type_name, [] { return std::make_unique<directory_messages::rx_make_directory_request>(); });
 	registered_string_messages_.emplace(directory_messages::rx_remove_directory_request::type_name, [] { return std::make_unique<directory_messages::rx_remove_directory_request>(); });

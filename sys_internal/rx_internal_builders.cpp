@@ -115,7 +115,7 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data)
+rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, sys_internal::internal_ns::platform_root::smart_ptr root)
 {
 	register_system_constructors();
 
@@ -126,7 +126,6 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 
 	rx_result errors = true;
 
-	auto root = rx_create_reference<sys_internal::internal_ns::platform_root>();
 	root->add_sub_directory(rx_create_reference<unassigned_directory>());
 
 	for (auto& one : sys_builders)
@@ -146,14 +145,23 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 	else
 		return errors.errors();
 
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
+	auto storage_ptr = host->get_system_storage(host->get_host_name());
+	if (storage_ptr)
+	{
+		storage::configuration_storage_builder builder(storage_ptr.value());
+		builder.do_build(root);
+	}
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
+
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
 	for (auto one : sys_internal::plugins::plugins_manager::instance().get_plugins())
 	{
 		BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
-		auto storage_ptr = one->get_storage();
+		auto storage_ptr = host->get_system_storage(one->get_plugin_name());
 		if (storage_ptr)
 		{
-			storage::configuration_storage_builder builder(storage_ptr);
+			storage::configuration_storage_builder builder(storage_ptr.value());
 			builder.do_build(root);
 		}
 		BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
@@ -185,7 +193,7 @@ rx_result_with<rx_directory_ptr> rx_platform_builder::buid_platform (hosting::rx
 		}
 	}
 
-	return rx_result_with<rx_directory_ptr>(root);
+	return true;
 }
 
 std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, hosting::rx_platform_host* host)
@@ -197,7 +205,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 	{
 		// types builders
 		builders.emplace_back(std::make_unique<basic_types_builder>());
-		//builders.emplace_back(std::make_unique<support_types_builder>());
+		builders.emplace_back(std::make_unique<support_types_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		//// objects builders
@@ -206,7 +214,9 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 	else
 	{
 		// storage builder
-		builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(host->get_system_storage()));
+		auto storage_result = host->get_system_storage("sys");
+		if (storage_result)
+			builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(storage_result.value()));
 	}
 	return builders;
 }
@@ -215,7 +225,9 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_user
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// storage builder
-	builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(host->get_user_storage()));
+	auto storage_result = host->get_user_storage();
+	if (storage_result)
+		builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(storage_result.value()));
 	return builders;
 }
 
@@ -223,7 +235,9 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_test
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// storage builder
-	builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(host->get_test_storage()));
+	auto storage_result = host->get_test_storage();
+	if (storage_result)
+		builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(storage_result.value()));
 	return builders;
 }
 
@@ -474,7 +488,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 	string_type full_path = RX_DIR_DELIMETER + path;
 	auto dir = root->get_sub_directory(path);
 	if (dir)
-	{
+	{		
 		// system application and domain types
 		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_APP_TYPE_NAME
@@ -556,6 +570,15 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
+
+		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
+			RX_RX_JSON_TYPE_NAME
+			, RX_RX_JSON_TYPE_ID
+			, RX_PROTOCOL_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
 	}
 	BUILD_LOG_INFO("system_classes_builder", 900, "System types built.");
 	return true;
@@ -711,6 +734,58 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
+	return true;
+}
+
+
+// Class sys_internal::builders::support_types_builder 
+
+
+rx_result support_types_builder::do_build (rx_directory_ptr root)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SUPPORT_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		// system statuses for physical ports
+		auto what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_PORT_STATUS_TYPE_NAME
+			, RX_PORT_STATUS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+
+		what->complex_data().register_simple_value_static("Connected", true, false);
+		what->complex_data().register_simple_value_static<int64_t>("RxPackets", false, 0);
+		what->complex_data().register_simple_value_static<int64_t>("TxPackets", false, 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_PHY_PORT_STATUS_TYPE_NAME
+			, RX_PHY_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+
+		what->complex_data().register_simple_value_static<int64_t>("RxBytes", false, 0);
+		what->complex_data().register_simple_value_static<int64_t>("TxBytes", false, 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_IP_BIND_TYPE_NAME
+			, RX_IP_BIND_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+
+		what->complex_data().register_const_value_static("IPAddress", ""s);
+		what->complex_data().register_const_value_static<uint16_t>("IPPort", 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+	}
 	return true;
 }
 

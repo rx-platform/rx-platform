@@ -74,8 +74,6 @@ class rx_plugin_base
 
       virtual string_type get_plugin_name () = 0;
 
-      virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
-
 
   protected:
 

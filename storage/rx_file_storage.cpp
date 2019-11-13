@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -41,7 +41,7 @@ namespace storage {
 
 namespace files {
 
-// Parameterized Class storage::files::file_system_storage 
+// Parameterized Class storage::files::file_system_storage
 
 template <class policyT>
 file_system_storage<policyT>::file_system_storage()
@@ -120,9 +120,8 @@ rx_result file_system_storage<policyT>::init_storage (const string_type& storage
 }
 
 template <class policyT>
-rx_result file_system_storage<policyT>::deinit_storage ()
+void file_system_storage<policyT>::deinit_storage ()
 {
-	return true;
 }
 
 template <class policyT>
@@ -262,7 +261,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage<policyT>::get_item_stora
 }
 
 template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
-// Class storage::files::rx_file_item 
+// Class storage::files::rx_file_item
 
 rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path)
       : valid_(false),
@@ -324,7 +323,7 @@ const string_type& rx_file_item::get_item_reference () const
 }
 
 
-// Class storage::files::rx_json_file 
+// Class storage::files::rx_json_file
 
 rx_json_file::rx_json_file (const string_type& file_path)
 	: rx_file_item(RX_JSON_SERIALIZATION_TYPE, file_path)
@@ -419,7 +418,7 @@ rx_result rx_json_file::close ()
 }
 
 
-// Class storage::files::rx_binary_file 
+// Class storage::files::rx_binary_file
 
 rx_binary_file::rx_binary_file (const string_type& file_path)
 	: rx_file_item(RX_BINARY_SERIALIZATION_TYPE, file_path)
@@ -463,6 +462,49 @@ rx_result rx_binary_file::close ()
 }
 
 
+// Parameterized Class storage::files::file_system_storage_holder
+
+
+template <class storageT>
+string_type file_system_storage_holder<storageT>::get_storage_info ()
+{
+	return rx_file_item::get_file_storage_info();
+}
+
+template <class storageT>
+rx_result file_system_storage_holder<storageT>::init_storage (const string_type& storage_reference)
+{
+	root_path_ = storage_reference;
+	string_array files, directories;
+	auto result = rx_list_files(root_path_, "*", files, directories);
+	if (!result)
+	{
+		result.register_error("error reading storage directory at: "s + storage_reference);
+	}
+	return result;
+}
+
+template <class storageT>
+rx_result_with<rx_storage_ptr> file_system_storage_holder<storageT>::get_and_init_storage (const string_type& name)
+{
+	string_type sub_path = rx_combine_paths(root_path_, name);
+	rx_storage_ptr result_ptr = rx_create_reference< storageT>();
+	auto result = result_ptr->init_storage(sub_path);
+	if (result)
+		return result_ptr;
+	else
+		return result.errors();
+}
+
+template <class storageT>
+string_type file_system_storage_holder<storageT>::get_storage_reference ()
+{
+	return root_path_;
+}
+
+// explicit instanation
+template class file_system_storage< storage_policy::file_path_addresing_policy>;
+template class file_system_storage_holder<file_system_path_storage>;
 } // namespace files
 } // namespace storage
 

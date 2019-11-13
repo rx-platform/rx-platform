@@ -160,15 +160,15 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual rx_result init_storage (const string_type& storage_reference);
 
-      virtual rx_result deinit_storage ();
+      virtual void deinit_storage ();
 
       virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
-
-      virtual string_type get_storage_reference () = 0;
 
       virtual bool is_valid_storage () const = 0;
 
       virtual rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data) = 0;
+
+      virtual string_type get_storage_reference () = 0;
 
 
       const string_type& get_base_path () const
@@ -189,6 +189,45 @@ class rx_platform_storage : public rx::pointers::reference_object
 
 
       string_type base_path_;
+
+
+};
+
+
+
+
+
+
+class rx_platform_storage_holder 
+{
+	typedef std::map<string_type, rx_platform_storage::smart_ptr> initialized_storages_type;
+
+  public:
+      rx_platform_storage_holder();
+
+      virtual ~rx_platform_storage_holder();
+
+
+      virtual string_type get_storage_info () = 0;
+
+      virtual rx_result init_storage (const string_type& storage_reference) = 0;
+
+      void deinit_storage ();
+
+      virtual string_type get_storage_reference () = 0;
+
+      rx_result_with<rx_storage_ptr> get_storage (const string_type& name);
+
+
+  protected:
+
+      virtual rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name) = 0;
+
+
+  private:
+
+
+      initialized_storages_type initialized_storages_;
 
 
 };

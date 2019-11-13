@@ -132,9 +132,7 @@ rx_platform_host::rx_platform_host(const rx_platform_host &right)
 
 rx_platform_host::rx_platform_host (rx_host_storages& storage)
       : parent_(nullptr)
-	, system_storage_(storage.system_storage)
-	, user_storage_(storage.user_storage)
-	, test_storage_(storage.test_storage)
+	, storages_(storage)
 {
 }
 
@@ -195,34 +193,61 @@ rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_p
 
 	ret = do_read_config_files(temp_directories, get_host_name(), reader, config);
 
-	if (ret) // now add the missing parts from code
-		manuals_path_ = config.other.manuals_path;
+	if (config.storage.system_storage_reference.empty())
+		config.storage.system_storage_reference = temp_directories.system_storage;
+	if (config.storage.user_storage_reference.empty())
+		config.storage.user_storage_reference = temp_directories.user_storage;
+	if (config.other.manuals_path.empty())
+		config.other.manuals_path = temp_directories.manuals;
+
+	manuals_path_ = config.other.manuals_path;
+
+	
 
 	return ret;
 }
 
-rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config)
+rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config, const std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_result ret;
 	if (config.storage.system_storage_reference.empty())
 		ret = "No valid system storage reference!";
 	else
-		ret = system_storage_->init_storage(config.storage.system_storage_reference);
+		ret = storages_.system_storage->init_storage(config.storage.system_storage_reference);
 	if (ret)
 	{
 		if (config.storage.user_storage_reference.empty())
 			ret = "No valid user storage reference!";
 		else
-			ret = user_storage_->init_storage(config.storage.user_storage_reference);
+			ret = storages_.user_storage->init_storage(config.storage.user_storage_reference);
 		if (ret)
 		{
 			if (!config.storage.test_storage_reference.empty())
 			{
-				ret = test_storage_->init_storage(config.storage.test_storage_reference);
+				ret = storages_.test_storage->init_storage(config.storage.test_storage_reference);
 				if (!ret)
 				{
 					ret.register_error("Error initializing test storage!");
 				}
+			}
+			auto add_result = storages_.system_storage->get_storage(get_host_name());
+			if (add_result)
+			{
+				for (const auto& one : plugins)
+				{
+					add_result = storages_.system_storage->get_storage(get_host_name());
+					if (!add_result)
+					{
+						ret.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");
+						ret.register_errors(add_result.errors());
+						break;
+					}
+				}
+			}
+			else
+			{
+				ret.register_error("Unable to initialize host storage.");
+				ret.register_errors(add_result.errors());
 			}
 		}
 		else
@@ -239,24 +264,9 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 
 void rx_platform_host::deinitialize_storages ()
 {
-	auto result = test_storage_->deinit_storage();
-	if (!result)
-	{
-		std::cout << "ERROR\r\nError deinitializing test storage:\r\n";
-		rx_dump_error_result(std::cout, result);
-	}
-	result = user_storage_->deinit_storage();
-	if (!result)
-	{
-		std::cout << "ERROR\r\nError deinitializing user storage:\r\n";
-		rx_dump_error_result(std::cout, result);
-	}
-	result = system_storage_->deinit_storage();
-	if (!result)
-	{
-		std::cout << "ERROR\r\nError deinitializing system storage:\r\n";
-		rx_dump_error_result(std::cout, result);
-	}
+	storages_.test_storage->deinit_storage();
+	storages_.user_storage->deinit_storage();
+	storages_.system_storage->deinit_storage();
 }
 
 bool rx_platform_host::write_stdout (const string_type& lines)
@@ -269,9 +279,9 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 	options.add_options()
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
 		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
-		("f,files", "File storage root folder", cxxopts::value<string_type>(config.storage.user_storage_reference))
-		("t,test", "Test storage root folder", cxxopts::value<string_type>(config.storage.test_storage_reference))
-		("y,system", "System storage root folder", cxxopts::value<string_type>(config.storage.system_storage_reference))
+		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
+		("t,test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
+		("y,system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
 		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
 		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
 		("v,version", "Displays platform version")
@@ -339,6 +349,26 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 	}
 	std::cout << man;
 	std::cout << "\r\n";
+}
+
+rx_result rx_platform_host::register_hosts ()
+{
+	return true;
+}
+
+rx_result_with<rx_storage_ptr> rx_platform_host::get_system_storage (const string_type& name)
+{
+	return storages_.system_storage->get_storage(name);
+}
+
+rx_result_with<rx_storage_ptr> rx_platform_host::get_user_storage (const string_type& name)
+{
+	return storages_.user_storage->get_storage(name);
+}
+
+rx_result_with<rx_storage_ptr> rx_platform_host::get_test_storage (const string_type& name)
+{
+	return storages_.test_storage->get_storage(name);
 }
 
 

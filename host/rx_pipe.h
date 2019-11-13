@@ -33,14 +33,14 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
-// rx_interactive
-#include "host/rx_interactive.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_anonymus_pipes
-#include "interfaces/rx_anonymus_pipes.h"
 // rx_log
 #include "lib/rx_log.h"
+// rx_interactive
+#include "host/rx_interactive.h"
+// rx_anonymus_pipes
+#include "interfaces/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -122,8 +122,6 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       rx_result build_host (rx_directory_ptr root);
 
-      storage_base::rx_platform_storage::smart_ptr get_storage ();
-
       string_type get_host_manual () const;
 
       string_type get_host_name ();
@@ -134,6 +132,8 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
       bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes);
 
       void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins);
+
+      rx_result register_hosts ();
 
 
   private:

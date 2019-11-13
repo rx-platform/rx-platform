@@ -294,6 +294,11 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<v
 					{
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
+						/*auto erase_result = platform_runtime_manager::instance().applications_.erase(whose->meta_info().get_id());
+						if (erase_result == 0)
+						{
+							RUNTIME_LOG_CRITICAL("application_algorithms", 500, "this application is not registered in cache!!!");
+						}*/
 						callback(std::move(result));
 					}, whose, RX_DOMAIN_META);
 			}
@@ -483,8 +488,14 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
 				rx_post_function<rx_application_ptr>([callback](rx_application_ptr whose)
 					{
+						
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
+						auto erase_result = platform_runtime_manager::instance().applications_.erase(whose->meta_info().get_id());
+						if (erase_result == 0)
+						{
+							RUNTIME_LOG_CRITICAL("application_algorithms", 500, "this application is not registered in cache!!!");
+						}
 						callback(std::move(result));
 					}, whose, RX_DOMAIN_META);
 			}

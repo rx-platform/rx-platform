@@ -163,7 +163,7 @@ void rx_deinitialize_os()
 
 rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
 {
-	char* buff[0x100];
+	char buff[0x100];
 	char* msg;
 	int err = errno;
 	msg = strerror_r(err, buff, sizeof(buff));
@@ -1783,10 +1783,6 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
         if(0 == result)
         {
             return ret;
-        }
-        else
-        {
-            perror("Error binding socket.");
         }
     }
     if(ret)

@@ -222,13 +222,13 @@ callculation ( normal priority)");
 
       rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data);
 
-      rx_result deinitialize ();
+      void deinitialize ();
 
       void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
       rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
 
-      rx_result stop ();
+      void stop ();
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 

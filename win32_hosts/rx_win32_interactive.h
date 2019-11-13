@@ -80,6 +80,10 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       static string_type get_win32_interactive_info ();
 
+      bool supports_ansi () const;
+
+      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
+
 
   protected:
 
@@ -92,6 +96,14 @@ class win32_console_host : public host::interactive::interactive_console_host
       HANDLE out_handle_;
 
       HANDLE in_handle_;
+
+      bool supports_ansi_;
+
+      WORD default_attribute_;
+
+      bool no_ansi_;
+
+      bool use_ansi_;
 
 
 };

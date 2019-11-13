@@ -88,7 +88,7 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 	return result;
 }
 
-rx_result server_rt::deinitialize ()
+void server_rt::deinitialize ()
 {
 	if (extern_executer_)
 		extern_executer_ = nullptr;
@@ -105,8 +105,6 @@ rx_result server_rt::deinitialize ()
 		general_timer_.release();
 	if (calculation_timer_)
 		calculation_timer_.release();
-
-	return true;
 }
 
 void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
@@ -138,7 +136,7 @@ rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_
 	return true;
 }
 
-rx_result server_rt::stop ()
+void server_rt::stop ()
 {
 	if (dispatcher_timer_)
 	{
@@ -163,8 +161,6 @@ rx_result server_rt::stop ()
 		calculation_timer_->stop();
 		calculation_timer_->wait_handle();
 	}
-
-	return true;
 }
 
 void server_rt::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)

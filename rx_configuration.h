@@ -17,9 +17,9 @@
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
 #define RX_NS_STORAGE_NAME "storage"
-#define RX_NS_SYS_NAME "_sys"
-#define RX_NS_TEST_NAME "_test"
-#define RX_NS_UNASSIGNED_NAME "_unassigned"
+#define RX_NS_SYS_NAME "sys"
+#define RX_NS_TEST_NAME "test"
+#define RX_NS_UNASSIGNED_NAME "unassigned"
 #define RX_NS_BIN_NAME "bin"
 #define RX_NS_OBJ_NAME "objects"
 #define RX_NS_SYSTEM_OBJ_NAME "system"
@@ -183,6 +183,10 @@
 #define RX_PHY_PORT_STATUS_TYPE_ID 0xc000020
 #define RX_IP_BIND_TYPE_NAME "IPBindData"
 #define RX_IP_BIND_TYPE_ID 0xc000021
+
+
+#define RX_RX_JSON_TYPE_NAME "RxJsonProtocol"
+#define RX_RX_JSON_TYPE_ID 0xc000022
 
 
 // cpp classes stuff

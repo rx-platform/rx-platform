@@ -462,10 +462,8 @@ class browse_runtime_response_message : public rx_message_base
 
 
 
-class prototype_runtime_request : public rx_request_message  
+class get_code_info_request : public rx_request_message  
 {
-	  template<typename T>
-	  message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
 
   public:
 
@@ -480,13 +478,13 @@ class prototype_runtime_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
+      item_reference reference;
+
       rx_item_type item_type;
 
       static string_type type_name;
 
       static rx_message_type_t type_id;
-
-      meta_data info;
 
 
   protected:
@@ -501,11 +499,14 @@ class prototype_runtime_request : public rx_request_message
 
 
 
-template <class itemT>
-class prototype_runtime_response : public runtime_response_message<itemT>  
+class get_code_info_response_message : public rx_message_base  
 {
 
   public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
 
       const string_type& get_type_name ();
 
@@ -515,6 +516,8 @@ class prototype_runtime_response : public runtime_response_message<itemT>
       static string_type type_name;
 
       static rx_message_type_t type_id;
+
+      string_type code_info;
 
 
   protected:

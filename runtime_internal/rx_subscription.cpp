@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -42,7 +42,7 @@ namespace sys_runtime {
 
 namespace subscriptions {
 
-// Class sys_runtime::subscriptions::rx_subscription 
+// Class sys_runtime::subscriptions::rx_subscription
 
 rx_subscription::rx_subscription (rx_subscription_callback* callback)
       : callback_(callback),
@@ -55,6 +55,8 @@ rx_subscription::rx_subscription (rx_subscription_callback* callback)
 
 rx_result rx_subscription::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result)
 {
+
+	// OutputDebugStringA("****************Something to connect\r\n");
 	for (const auto& one : paths)
 	{
 		auto it_inv = inverse_tags_.find(one);
@@ -151,6 +153,8 @@ rx_result rx_subscription::process_connections ()
 			}
 			if (!query_names_.empty())
 			{
+
+				// OutputDebugStringA("****************Something to query\r\n");
 				api::rx_context ctx;
 				ctx.object = smart_this();
 				api::ns::rx_get_items(query_names_
@@ -177,6 +181,7 @@ rx_result rx_subscription::process_connections ()
 			}
 			if (attempts_.empty())
 			{
+				// OutputDebugStringA("****************Something to connect attempts empty\r\n");
 				for (auto& one : to_connect_)
 				{
 					if (one.second.item && !one.second.querying && !one.second.items.empty())
@@ -191,6 +196,8 @@ rx_result rx_subscription::process_connections ()
 						}
 						if (!items.empty())
 						{
+
+							// OutputDebugStringA("****************Something to connect calling\r\n");
 							one.second.querying = true;
 							attempts_.emplace(one.first, std::move(items));
 
@@ -300,10 +307,10 @@ rx_thread_handle_t rx_subscription::get_target ()
 }
 
 
-// Class sys_runtime::subscriptions::rx_subscription_tag 
+// Class sys_runtime::subscriptions::rx_subscription_tag
 
 
-// Class sys_runtime::subscriptions::rx_subscription_callback 
+// Class sys_runtime::subscriptions::rx_subscription_callback
 
 rx_subscription_callback::~rx_subscription_callback()
 {

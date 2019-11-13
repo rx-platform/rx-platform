@@ -33,7 +33,6 @@
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
-#include "rx_configuration.h"
 
 
 namespace rx {
@@ -60,7 +59,7 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 {
 	if (path.empty())
 		return rx_simple_value();
-	auto idx = path.find(RX_OBJECT_DELIMETER);
+	auto idx = path.find(".");
 	
 	if (idx == string_type::npos)
 	{// our value

@@ -32,12 +32,12 @@
 
 
 
-// rx_interactive
-#include "host/rx_interactive.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_interactive
+#include "host/rx_interactive.h"
 
 
 
@@ -99,7 +99,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback);
+      int initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
 
       static string_type get_simple_info ();
 
@@ -114,8 +114,6 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
       string_type just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 
       rx_result build_host (rx_directory_ptr root);
-
-      storage_base::rx_platform_storage::smart_ptr get_storage ();
 
       string_type get_host_manual () const;
 

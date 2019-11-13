@@ -74,7 +74,7 @@ rx_gate::rx_gate()
         pid_(0),
         security_guard_(std::make_unique<security::security_guard>()),
         shutting_down_(false),
-        platform_status_(rx_platform_initializing)
+        platform_status_(rx_platform_status::initializing)
 {
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
@@ -140,12 +140,12 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 			result = io_manager_->initialize(host, data.io);
 			if (result)
 			{
-				auto build_result =	sys_internal::builders::rx_platform_builder::buid_platform(host, data.storage, data.meta_configuration);
+				auto root = rx_create_reference<sys_internal::internal_ns::platform_root>();
+				root_ = root;
+				auto build_result =	sys_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration, root);
 
 				if (build_result)
 				{
-					root_ = build_result.value();
-
 					for (auto one : scripts_)
 						one.second->initialize();
 
@@ -184,7 +184,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 		result.register_error("Error initializing platform runtime!");
 	}
 	if (result)
-		platform_status_ = rx_platform_starting;
+		platform_status_ = rx_platform_status::starting;
 	return result;
 }
 
@@ -213,7 +213,7 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			result = model::platform_types_manager::instance().start(host, data.meta_configuration);
 			if (result)
 			{
-				platform_status_ = rx_platform_running;
+				platform_status_ = rx_platform_status::running;
 				host->server_started_event();
 				return true;
 			}
@@ -239,11 +239,11 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 
 rx_result rx_gate::stop ()
 {
-	platform_status_ = rx_platform_stopping;
+	platform_status_ = rx_platform_status::stopping;
 	model::platform_types_manager::instance().stop();
 	manager_.stop();
 	infrastructure_.stop();
-	platform_status_ = rx_platform_deinitializing;
+	platform_status_ = rx_platform_status::deinitializing;
 	return true;
 }
 
@@ -289,6 +289,19 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 	}
 }
 
+template <class typeT>
+rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
+{
+	if (platform_status_ == rx_platform_status::initializing)
+		return model::platform_types_manager::instance().internal_get_type_cache<typeT>().register_constructor(id, f);
+	else
+		return "Wrong platform status for constructor registration!";
+}
+
+template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& id, std::function<object_type::RTypePtr()> f);
+template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RTypePtr()> f);
+template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RTypePtr()> f);
+template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RTypePtr()> f);
 
 } // namespace rx_platform
 

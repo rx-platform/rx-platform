@@ -120,11 +120,11 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, management_data_t& data);
 
-      rx_result deinitialize ();
+      void deinitialize ();
 
       rx_result start (hosting::rx_platform_host* host, const management_data_t& data);
 
-      rx_result stop ();
+      void stop ();
 
       void get_directories (platform_directories_type& dirs);
 

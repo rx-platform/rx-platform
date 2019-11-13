@@ -79,6 +79,8 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       static string_type get_gnu_interactive_info ();
 
+      bool supports_ansi () const;
+
 
   protected:
 

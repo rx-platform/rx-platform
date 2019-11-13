@@ -1172,8 +1172,13 @@ rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& p
 	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
 	using smart_ptr = typename typeT::RTypePtr;
 
+
+	// OutputDebugStringA("****************Something to connect object runtime\r\n");
+
 	std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
 	{
+
+		// OutputDebugStringA("****************Something to connect object runtime\r\n");
 		connect_result_t results;
 		bool has_errors = false;
 		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);

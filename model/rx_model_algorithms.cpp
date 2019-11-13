@@ -92,7 +92,7 @@ rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns:
 		// everything is good we resolved it
 	}
 	// but, is it registered?
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(ret, info);
 		if (type == rx_item_type::rx_invalid_type)
@@ -144,7 +144,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		name = item->meta_info().get_name();
 		dir = item->get_parent();
 	}
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		auto delete_result = item->delete_item();
 		if (!delete_result)
@@ -154,7 +154,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		}
 	}
 	transaction.push([=] {
-		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			auto save_result = item->save();
 		}
@@ -174,7 +174,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		ret.register_error("Error deleting type from the cache.");
 		return ret;
 	}
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
 	else
 		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
@@ -249,7 +249,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 		item_id = rx_node_id::generate_new();
 
 	prototype->meta_info().construct(type_name, item_id, base_id, attributes, path);
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		type_check_context ctx;
 		ctx.get_directories().add_paths({ path });
@@ -276,7 +276,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 		ret.register_error("Unable to add "s + type_name + " to directory!");
 		return ret.errors();
 	}
-	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	else if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		transaction.push([=]() mutable {
 			auto remove_result = dir->delete_item(type_name);
@@ -331,7 +331,7 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_dir
 		auto delete_result = cache.update_type(old_value);
 		});
 
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		auto save_result = prototype->get_item_ptr()->save();
 		if (!save_result)
@@ -405,7 +405,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 				callback(std::move(deinit_result));
 				return;
 			}
-			if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			{
 				auto delete_result = item->delete_item();
 				if (!delete_result)
@@ -416,7 +416,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 				}
 			}
 			transaction.push([=] {
-				if (rx_gate::instance().get_platform_status() == rx_platform_running)
+				if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				{
 					auto save_result = item->save();
 				}
@@ -438,7 +438,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 				callback(std::move(ret));
 				return;
 			}
-			if (rx_gate::instance().get_platform_status() == rx_platform_running)
+			if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
 			else
 				META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
@@ -449,11 +449,11 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 	return true;
 }
 template<class typeCache>
-rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cache, const string_type& name, const item_reference& base_reference, const meta_data& info, data::runtime_values_data* init_data, typename typeCache::HType::instance_data_t instance_data, rx_directory_ptr dir, namespace_item_attributes attributes, rx_transaction_type& transaction)
+rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cache,const meta_data& info , data::runtime_values_data* init_data, typename typeCache::HType::instance_data_t instance_data, rx_directory_ptr dir, namespace_item_attributes attributes, rx_transaction_type& transaction)
 {
 	rx_node_id base_id = info.get_parent();
 	rx_node_id item_id = info.get_id();
-	string_type runtime_name = info.get_name();
+	string_type full_name = info.get_full_path();
 	if (!attributes)
 		attributes = info.get_attributes();
 
@@ -465,17 +465,15 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 			dir = rx_gate::instance().get_root_directory();
 	}
 
-	if (runtime_name.empty())
+	string_type sub_dir;
+	string_type  runtime_name;
+	rx_split_path(full_name, sub_dir, runtime_name);
+	if (!sub_dir.empty())
 	{
-		string_type sub_dir;
-		rx_split_path(name, sub_dir, runtime_name);
-		if (!sub_dir.empty())
+		dir = dir->get_sub_directory(sub_dir);
+		if (!dir)
 		{
-			dir = dir->get_sub_directory(sub_dir);
-			if (!dir)
-			{
-				return sub_dir + " is invalid path!";
-			}
+			return sub_dir + " is invalid path!";
 		}
 	}
 
@@ -488,26 +486,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		auto cancel_reserve = dir->cancel_reserve(runtime_name);
 		});
 
-	if (!base_id && !base_reference.is_null())
-	{
-		if (base_reference.is_node_id())
-		{
-			base_id = base_reference.get_node_id();
-		}
-		else
-		{
-			rx_platform_item::smart_ptr item = dir->get_sub_item(base_reference.get_path());
-			if (!item)
-			{// type does not exists
-				return "Type "s + base_reference.get_path() + " does not exists!";
-			}
-			base_id = item->meta_info().get_id();
-			if (base_id.is_null())
-			{// item does not have id
-				return base_reference.get_path() + " does not have valid Id!";
-			}
-		}
-	}
+	
 	if (!item_id)
 		item_id = rx_node_id::generate_new();
 
@@ -533,7 +512,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		result.register_error("Unable to add "s + runtime_name + " to directory!");
 		return result.errors();
 	}
-	else if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	else if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		transaction.push([=]() mutable {
 			auto remove_result = dir->delete_item(runtime_name);
@@ -557,7 +536,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		auto mark_result = cache.mark_runtime_for_delete(item_id);
 		});
 
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		runtime::runtime_init_context ctx;
 		result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value(), ctx);
@@ -624,7 +603,7 @@ rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& r
 	auto result = resolve_some_reference(ref, directories, info, type);
 	if (!result)
 		return result;
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		if (type != typeT::type_id)
 		{
@@ -654,10 +633,39 @@ template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_ref
 
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
-	, rx_directory_ptr dir, tl::type2type<typeT>)
+	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
 {
-    return "Not implemented yet!";
+	rx_item_type type;
+	meta_data info;
+	auto result = resolve_some_reference(ref, directories, info, type);
+	if (!result)
+		return result;
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		if (type != typeT::RType::type_id)
+		{
+			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
+		}
+	}
+	//auto ret = model::platform_types_manager::instance().internal_get_type_cache()<typeT>().(result.value());
+	//if (!ret)
+	//{// type does not exist
+	//	return ret.errors();
+	//}
+	return result;
 }
+
+template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<object_type>);
+template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<domain_type>);
+template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<port_type>);
+template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Parameterized Class model::algorithms::types_model_algorithm
@@ -973,7 +981,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 {
 	rx_transaction_type transaction;
 	auto result = create_some_runtime<type_hash<typeT> >(platform_types_manager::instance().internal_get_type_cache<typeT>()
-		, info.get_name(), item_reference(info.get_parent()), info, init_data, instance_data
+		, info, init_data, instance_data
 		, dir, namespace_item_attributes::namespace_item_full_access, transaction);
 	if (result)
 	{
@@ -1026,9 +1034,18 @@ template <class typeT>
 rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_implicit_sync (const string_type& name, const item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 	rx_transaction_type transaction;
+	meta_data base_meta;
+	rx_item_type ret_type;
+	ns::rx_directory_resolver resolver;
+	auto resolved = resolve_some_reference(base_reference, resolver, base_meta, ret_type);
+	if (!resolved)
+		return resolved.errors();
+	string_type path;
+	dir->fill_path(path);
 	meta_data meta;
+	meta.construct(name, rx_node_id::null_id, resolved.value(), attributes, path);
 	auto result = create_some_runtime<type_hash<typeT> >(platform_types_manager::instance().internal_get_type_cache<typeT>()
-		, name, base_reference, meta, init_data, instance_data
+		, meta, init_data, instance_data
 		, dir, attributes, transaction);
 	if (result)
 	{
@@ -1090,7 +1107,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(meta_info.get_path());
 				if (dir)
 					dir->delete_item(meta_info.get_name());
-				if (rx_gate::instance().get_platform_status() == rx_platform_running)
+				if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				{
 					auto storage_result = meta_info.resolve_storage();
 					if (storage_result)
@@ -1105,7 +1122,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 				}
 				meta_info.increment_version(increment_version);
 				auto create_result = create_runtime_sync(meta_info, init_data, instance_data, dir, ref);
-					callback(std::move(create_result));
+				callback(std::move(create_result));
 			}
 			if (!ret)
 				callback(ret.errors());
@@ -1128,7 +1145,7 @@ rx_result runtime_model_algorithm<typeT>::helper_delete_runtime_sync (meta_data_
 		auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
 		if (dir)
 			dir->delete_item(info.get_name());
-		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			auto storage_result = info.resolve_storage();
 			if (storage_result)
@@ -1168,7 +1185,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
 				if (dir)
 					dir->delete_item(info.get_name());
-				if (rx_gate::instance().get_platform_status() == rx_platform_running)
+				if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				{
 					auto storage_result = info.resolve_storage();
 					if (storage_result)

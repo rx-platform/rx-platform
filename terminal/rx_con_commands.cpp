@@ -808,7 +808,7 @@ license_command::~license_command()
 
 bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
-	auto storage = rx_gate::instance().get_host()->get_system_storage();
+	auto storage = rx_gate::instance().get_host()->get_system_storage("sys");
 	if (storage)
 	{
 		const string_type& lic_info = "aaaa";//storage->get_license();

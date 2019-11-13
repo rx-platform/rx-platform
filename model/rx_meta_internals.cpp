@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager
+// Class model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 	: worker_("config", RX_DOMAIN_META)
@@ -92,9 +92,8 @@ rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, c
 	return result;
 }
 
-rx_result platform_types_manager::deinitialize ()
+void platform_types_manager::deinitialize ()
 {
-	return true;
 }
 
 rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
@@ -103,14 +102,13 @@ rx_result platform_types_manager::start (hosting::rx_platform_host* host, const 
 	return true;
 }
 
-rx_result platform_types_manager::stop ()
+void platform_types_manager::stop ()
 {
 	worker_.end();
-	return true;
 }
 
 
-// Class model::relations_hash_data
+// Class model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -284,7 +282,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::type_hash
+// Parameterized Class model::type_hash 
 
 template <class typeT>
 type_hash<typeT>::type_hash()
@@ -323,7 +321,7 @@ rx_result type_hash<typeT>::register_type (typename type_hash<typeT>::Tptr what)
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
-		if(rx_gate::instance().get_platform_status()==rx_platform_running)
+		if(rx_gate::instance().get_platform_status()== rx_platform_status::running)
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
@@ -362,7 +360,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	rx_node_ids base;
 	std::vector<const data::runtime_values_data*> overrides;
 	base.emplace_back(meta.get_parent());
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
 		if (!base_result)
@@ -431,7 +429,7 @@ rx_result_with<typename type_hash<typeT>::RTypePtr> type_hash<typeT>::create_run
 	if (!prototype)
 	{
 		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state::runtime_state_created });
-		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id, meta);
 		RX_ASSERT(type_ret);// has to be, we checked earlier
@@ -581,7 +579,7 @@ rx_result type_hash<typeT>::update_type (typename type_hash<typeT>::Tptr what)
 	{
 		it->second = what;
 		// TODO Should check and change if parent is different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
 		return true;
 	}
@@ -689,7 +687,7 @@ rx_result type_hash<typeT>::type_exists (rx_node_id id) const
 }
 
 
-// Class model::inheritance_hash
+// Class model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -816,7 +814,9 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 			if (rel_it != hash_data_.end())
 			{
 				rel_it->second.unordered.erase(id);
-				std::remove(rel_it->second.ordered.begin(), rel_it->second.ordered.end(), id);
+				auto remove_result = std::remove(rel_it->second.ordered.begin(), rel_it->second.ordered.end(), id);
+				if (remove_result == rel_it->second.ordered.end())
+					META_LOG_DEBUG("inheritance_hash", 999, "Unexpected remove result: strange but id is not cached");
 			}
 		}
 	}
@@ -856,7 +856,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash
+// Class model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -923,7 +923,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_type_hash
+// Parameterized Class model::simple_type_hash 
 
 template <class typeT>
 simple_type_hash<typeT>::simple_type_hash()
@@ -962,7 +962,7 @@ rx_result simple_type_hash<typeT>::register_type (typename simple_type_hash<type
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info().get_id(), what);
-		if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
@@ -987,7 +987,7 @@ rx_result_with<typename simple_type_hash<typeT>::RDataType> simple_type_hash<typ
 	RTypePtr ret;
 	rx_node_ids base;
 	base.emplace_back(type_id);
-	if (rx_gate::instance().get_platform_status() == rx_platform_running)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 		auto base_result = inheritance_hash_.get_base_types(type_id, base);
 		if (!base_result)
@@ -1143,7 +1143,7 @@ rx_result simple_type_hash<typeT>::update_type (typename simple_type_hash<typeT>
 	{
 		it->second = what;
 		// TODO Should check and change if parent is different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_running)
+		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
 		return true;
 	}
@@ -1154,7 +1154,7 @@ rx_result simple_type_hash<typeT>::update_type (typename simple_type_hash<typeT>
 }
 
 
-// Class model::types_resolver
+// Class model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)

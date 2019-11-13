@@ -55,10 +55,10 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 
@@ -120,9 +120,9 @@ class configuration_reader
 
 struct rx_host_storages
 {
-	storage_base::rx_platform_storage::smart_ptr system_storage;
-	storage_base::rx_platform_storage::smart_ptr user_storage;
-	storage_base::rx_platform_storage::smart_ptr test_storage;
+	storage_base::rx_platform_storage_holder* system_storage = nullptr;
+	storage_base::rx_platform_storage_holder* user_storage = nullptr;
+	storage_base::rx_platform_storage_holder* test_storage = nullptr;
 };
 typedef cxxopts::Options command_line_options_t;
 struct rx_host_directories
@@ -208,8 +208,6 @@ class rx_platform_host
 
       virtual rx_result build_host (rx_directory_ptr root) = 0;
 
-      virtual storage_base::rx_platform_storage::smart_ptr get_storage () = 0;
-
       string_type get_manual (string_type what) const;
 
       virtual string_type get_host_manual () const = 0;
@@ -218,6 +216,12 @@ class rx_platform_host
 
       static void print_offline_manual (const string_type& host, const rx_host_directories& dirs);
 
+      rx_result_with<rx_storage_ptr> get_system_storage (const string_type& name);
+
+      rx_result_with<rx_storage_ptr> get_user_storage (const string_type& name = "");
+
+      rx_result_with<rx_storage_ptr> get_test_storage (const string_type& name = "");
+
 
       rx_platform_host * get_parent ()
       {
@@ -225,21 +229,10 @@ class rx_platform_host
       }
 
 
-      rx_reference<storage_base::rx_platform_storage> get_system_storage () const
+
+      const rx_host_storages& get_storages () const
       {
-        return system_storage_;
-      }
-
-
-      rx_reference<storage_base::rx_platform_storage> get_user_storage () const
-      {
-        return user_storage_;
-      }
-
-
-      rx_reference<storage_base::rx_platform_storage> get_test_storage () const
-      {
-        return test_storage_;
+        return storages_;
       }
 
 
@@ -248,13 +241,15 @@ class rx_platform_host
 
       rx_result read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
 
-      rx_result initialize_storages (rx_platform::configuration_data_t& config);
+      rx_result initialize_storages (rx_platform::configuration_data_t& config, const std::vector<library::rx_plugin_base*>& plugins);
 
       void deinitialize_storages ();
 
       rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
 
       virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
+
+      virtual rx_result register_hosts ();
 
 
   private:
@@ -266,14 +261,10 @@ class rx_platform_host
 
       rx_platform_host *parent_;
 
-      rx_reference<storage_base::rx_platform_storage> system_storage_;
-
-      rx_reference<storage_base::rx_platform_storage> user_storage_;
-
-      rx_reference<storage_base::rx_platform_storage> test_storage_;
-
 
       string_type manuals_path_;
+
+      rx_host_storages storages_;
 
 
 };

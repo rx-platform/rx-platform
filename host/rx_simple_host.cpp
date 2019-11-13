@@ -90,7 +90,7 @@ bool simple_platform_host::break_host (const string_type& msg)
 	return true;
 }
 
-int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback)
+int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
 {
 	debug_break_ = false;
 
@@ -147,7 +147,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 				std::cout << "OK\r\n";
 
 				std::cout << "Initializing storages...";
-				ret = initialize_storages(config_);
+				ret = initialize_storages(config_, plugins);
 				if (ret)
 				{
 					std::cout << "OK\r\n";
@@ -307,11 +307,6 @@ int simple_platform_host::parse_command_line (int argc, char* argv[], rx_platfor
 rx_result simple_platform_host::build_host (rx_directory_ptr root)
 {
 	return true;
-}
-
-storage_base::rx_platform_storage::smart_ptr simple_platform_host::get_storage ()
-{
-	return rx_storage_ptr();
 }
 
 string_type simple_platform_host::get_host_manual () const

@@ -58,9 +58,8 @@ rx_result rx_platform_storage::init_storage (const string_type& storage_referenc
 	return "Not implemented!!!";
 }
 
-rx_result rx_platform_storage::deinit_storage ()
+void rx_platform_storage::deinit_storage ()
 {
-	return "Not implemented!!!";
 }
 
 
@@ -76,6 +75,49 @@ rx_storage_item::~rx_storage_item()
 {
 }
 
+
+
+// Class rx_platform::storage_base::rx_platform_storage_holder 
+
+rx_platform_storage_holder::rx_platform_storage_holder()
+{
+}
+
+
+rx_platform_storage_holder::~rx_platform_storage_holder()
+{
+}
+
+
+
+void rx_platform_storage_holder::deinit_storage ()
+{
+	for (auto one : initialized_storages_)
+	{
+		one.second->deinit_storage();
+	}
+	initialized_storages_.clear();
+}
+
+rx_result_with<rx_storage_ptr> rx_platform_storage_holder::get_storage (const string_type& name)
+{
+	auto it = initialized_storages_.find(name);
+	if (it != initialized_storages_.end())
+	{
+		return it->second;
+	}
+	else if(rx_gate::instance().get_platform_status() == rx_platform_status::initializing)
+	{
+		auto result = get_and_init_storage(name);
+		if (result)
+			initialized_storages_.emplace(name, result.value());
+		return result;
+	}
+	else
+	{
+		return "Storage "s + name + "not found!";
+	}
+}
 
 
 } // namespace storage_base

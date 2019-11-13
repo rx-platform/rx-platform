@@ -118,6 +118,9 @@ rx_platform_item::~rx_platform_item()
 
 void rx_platform_item::code_info_to_string (string_type& info)
 {
+	std::ostringstream ss;
+	fill_code_info(ss, this->get_name());
+	info = ss.str();
 }
 
 void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)

@@ -79,12 +79,16 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
 	// handle rx_protocol stuff!
 	auto result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
+	// register protocol constructors
+	result = model::platform_types_manager::instance().internal_get_type_cache<port_type>().register_constructor(
+		RX_RX_JSON_TYPE_ID, [] {
+			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
+		});
 	return result;
 }
 
-rx_result server_manager::deinitialize ()
+void server_manager::deinitialize ()
 {
-	return true;
 }
 
 rx_result server_manager::start (hosting::rx_platform_host* host, const management_data_t& data)
@@ -102,7 +106,7 @@ rx_result server_manager::start (hosting::rx_platform_host* host, const manageme
 	return true;
 }
 
-rx_result server_manager::stop ()
+void server_manager::stop ()
 {
 	if (telnet_listener_)
 	{
@@ -110,7 +114,6 @@ rx_result server_manager::stop ()
 		//telnet_listener_->stop();
 		telnet_listener_ = rx_port_ptr::null_ptr;
 	}
-	return true;
 }
 
 void server_manager::get_directories (platform_directories_type& dirs)

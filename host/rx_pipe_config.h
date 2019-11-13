@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_file_sys.cpp
+*  host\rx_pipe_config.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,29 +27,18 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
+#ifndef rx_pipe_config_h
+#define rx_pipe_config_h 1
 
 
 
-namespace win32 {
-
-// Parameterized Class win32::win32_file_system_storage 
-
-template <class policyT>
-win32_file_system_storage<policyT>::win32_file_system_storage()
-{
-}
 
 
-template <class policyT>
-win32_file_system_storage<policyT>::~win32_file_system_storage()
-{
-}
+#define RX_LOCAL_PIPE_TYPE_NAME "LocalPipe"
+#define RX_LOCAL_PIPE_TYPE_ID { 0xbd24d581, 0xb6a1, 0x434c, { 0xbb, 0xa1, 0x8f, 0x6, 0x85, 0x3, 0x24, 0xac } }
 
 
-} // namespace win32
 
+
+
+#endif

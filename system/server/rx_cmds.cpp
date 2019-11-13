@@ -481,12 +481,12 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		std::ostream err(err_buffer.unsafe_ptr());
 
 		out << "Storage Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-		string_type sys_info = rx_gate::instance().get_host()->get_system_storage()->get_storage_info();
-		string_type sys_ref = rx_gate::instance().get_host()->get_system_storage()->get_storage_reference();
-		string_type user_info = rx_gate::instance().get_host()->get_user_storage()->get_storage_info();
-		string_type user_ref = rx_gate::instance().get_host()->get_user_storage()->get_storage_reference();
-		string_type test_info = rx_gate::instance().get_host()->get_test_storage()->get_storage_info();
-		string_type test_ref = rx_gate::instance().get_host()->get_test_storage()->get_storage_reference();
+		string_type sys_info = rx_gate::instance().get_host()->get_storages().system_storage->get_storage_info();
+		string_type sys_ref = rx_gate::instance().get_host()->get_storages().system_storage->get_storage_reference();
+		string_type user_info = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_info();
+		string_type user_ref = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_reference();
+		string_type test_info = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_info();
+		string_type test_ref = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_reference();
 		out << ANSI_COLOR_GREEN "System Storage" ANSI_COLOR_RESET "\r\nReference: " << sys_ref << "\r\nVersion: "<< sys_info << "\r\n\r\n";
 		out << ANSI_COLOR_GREEN "User Storage" ANSI_COLOR_RESET "\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n\r\n";
 		out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";

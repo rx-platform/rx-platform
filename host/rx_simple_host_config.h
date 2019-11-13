@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_file_sys.cpp
+*  host\rx_simple_host_config.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,29 +27,14 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
+#ifndef rx_simple_host_config_h
+#define rx_simple_host_config_h 1
 
 
 
-namespace win32 {
-
-// Parameterized Class win32::win32_file_system_storage 
-
-template <class policyT>
-win32_file_system_storage<policyT>::win32_file_system_storage()
-{
-}
 
 
-template <class policyT>
-win32_file_system_storage<policyT>::~win32_file_system_storage()
-{
-}
 
 
-} // namespace win32
 
+#endif

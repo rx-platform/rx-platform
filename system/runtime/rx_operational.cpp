@@ -145,7 +145,7 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 {
 	if (!next_send_.empty())
 	{
-		//OutputDebugStringA("****************Something to send\r\n");
+		// OutputDebugStringA("****************Something to send\r\n");
 		std::vector<update_item> update_data;
 		for (auto& one : next_send_)
 		{
@@ -155,7 +155,7 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 			auto monitor = one.first;
 			std::function<void(tags_callback_ptr)> func=[update_data](tags_callback_ptr monitor)
 				{
-					//OutputDebugStringA("****************Item changed fired\r\n");
+					// OutputDebugStringA("****************Item changed fired\r\n");
 					monitor->items_changed(update_data);
 				};
 			rx_post_function_to<tags_callback_ptr, tags_callback_ptr>(monitor->get_target(), func, monitor, monitor);

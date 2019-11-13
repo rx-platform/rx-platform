@@ -58,9 +58,13 @@ rx_result anonymus_pipe_client::write_pipe (const rx_packet_buffer* buffer)
 {
 	auto ret = rx_write_pipe_client(&handles_, buffer->buffer_ptr, buffer->size);
 	if (ret == RX_OK)
+	{
 		return true;
+	}
 	else
-		return "Error writing pipe";
+	{
+		return rx_result::create_from_last_os_error("Error writing pipe");
+	}
 }
 
 rx_result anonymus_pipe_client::read_pipe (rx_const_packet_buffer* buffer)
@@ -73,7 +77,9 @@ rx_result anonymus_pipe_client::read_pipe (rx_const_packet_buffer* buffer)
 		return true;
 	}
 	else
-		return "Error reading pipe";
+	{
+		return rx_result::create_from_last_os_error("Error reading pipe");
+	}
 }
 
 rx_result anonymus_pipe_client::close_pipe ()
@@ -102,7 +108,6 @@ void anonymus_pipe_endpoint::receive_loop ()
 		result = pipes_->read_pipe(&buffer);
 		if (!result)
 		{
-			std::cout << "Error reading pipe, exiting!\r\n";
 			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
 			break;
 		}
@@ -150,6 +155,11 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 				if (result)
 				{
 					rx_move_result_up(self, NULL, RX_PROTOCOL_OK);
+				}
+				else
+				{
+					for (const auto& one : result.errors())
+						std::cout << one << "\r\n";
 				}
 				rx_deinit_packet_buffer(&buffer);
 			},

@@ -40,6 +40,8 @@
 #include "system/server/rx_server.h"
 #include "system/hosting/rx_yaml.h"
 #include "sys_internal/rx_internal_protocol.h"
+#include "rx_pipe_config.h"
+#include "api/rx_meta_api.h"
 
 
 namespace host {
@@ -166,7 +168,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 				{
 					std::cout << "OK\r\n";
 					std::cout << "Initializing storages...";
-					ret = initialize_storages(config);
+					ret = initialize_storages(config, plugins);
 
 					if (ret)
 					{
@@ -345,6 +347,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 				{
 					res = rx_push_stack(&pipes_, &transport_.protocol_stack_entry);
 
+					
 					auto json = rx_create_reference< sys_internal::rx_protocol::rx_protocol_port>();
 					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
 
@@ -352,20 +355,23 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 
 					if (dump_storage_references_)
 					{
-						string_type sys_info = get_system_storage()->get_storage_info();
-						string_type sys_ref = get_system_storage()->get_storage_reference();
-						string_type user_info = get_user_storage()->get_storage_info();
-						string_type user_ref = get_user_storage()->get_storage_reference();
-						string_type test_info = get_test_storage()->get_storage_info();
-						string_type test_ref = get_test_storage()->get_storage_reference();
+						string_type sys_info = get_storages().system_storage->get_storage_info();
+						string_type sys_ref = get_storages().system_storage->get_storage_reference();
+						string_type user_info = get_storages().user_storage->get_storage_info();
+						string_type user_ref = get_storages().user_storage->get_storage_reference();
 
 						std::cout << "\r\nStorage Information:\r\n============================\r\n";
 						std::cout << "System Storage: " << sys_info << "\r\n";
 						std::cout << "System Reference: " << sys_ref << "\r\n";
 						std::cout << "User Storage: " << user_info << "\r\n";
 						std::cout << "User Reference: " << user_ref << "\r\n";
-						std::cout << "Test Storage: " << test_info << "\r\n";
-						std::cout << "Test Reference: " << test_ref << "\r\n";
+						if (get_storages().test_storage)
+						{
+							string_type test_info = get_storages().test_storage->get_storage_info();
+							string_type test_ref = get_storages().test_storage->get_storage_reference();
+							std::cout << "Test Storage: " << test_info << "\r\n";
+							std::cout << "Test Reference: " << test_ref << "\r\n";
+						}
 					}
 					if(dump_start_log_)
 						std::cout << "\r\nStartup log:\r\n============================\r\n";
@@ -434,11 +440,6 @@ rx_result rx_pipe_host::build_host (rx_directory_ptr root)
 	return true;
 }
 
-storage_base::rx_platform_storage::smart_ptr rx_pipe_host::get_storage ()
-{
-	return rx_storage_ptr();
-}
-
 string_type rx_pipe_host::get_host_manual () const
 {
 	return rx_platform_host::get_manual("hosts/" RX_PIPE_HOST);
@@ -447,6 +448,15 @@ string_type rx_pipe_host::get_host_manual () const
 string_type rx_pipe_host::get_host_name ()
 {
 	return RX_PIPE_HOST;
+}
+
+rx_result rx_pipe_host::register_hosts ()
+{
+	auto result = rx_gate::instance().register_constructor<meta::object_types::port_type>(
+		rx_node_id(RX_LOCAL_PIPE_TYPE_ID), [] {
+			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
+		});
+	return result;
 }
 
 
@@ -491,3 +501,11 @@ void rx_pipe_stdout_log_subscriber::suspend_log ()
 } // namespace pipe
 } // namespace host
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return rx_storage_ptr();
+
+#endif

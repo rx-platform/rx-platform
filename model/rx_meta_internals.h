@@ -570,11 +570,11 @@ class platform_types_manager
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
-      rx_result deinitialize ();
+      void deinitialize ();
 
       rx_result start (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
-      rx_result stop ();
+      void stop ();
 
 
       rx::threads::physical_job_thread& get_worker ()

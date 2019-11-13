@@ -44,6 +44,9 @@
 #include "system/constructors/rx_construct.h"
 #include "api/rx_meta_api.h"
 
+#define SAFE_ANSI_STATUS_ERROR (supports_ansi() ? ANSI_STATUS_ERROR : "ERROR")
+#define SAFE_ANSI_STATUS_OK (supports_ansi() ? ANSI_STATUS_OK : "OK")
+
 //#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
 
@@ -74,7 +77,7 @@ void interactive_console_host::console_loop (configuration_data_t& config, std::
 	rx_result login_result = sec_ctx->login();
 	if (!login_result)
 	{
-		std::cout << ANSI_STATUS_ERROR "\r\nError while trying to login as a host:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError while trying to login as a host:\r\n";
 		rx_dump_error_result(std::cout, login_result);
 	}
 
@@ -95,52 +98,51 @@ void interactive_console_host::console_loop (configuration_data_t& config, std::
 	auto result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (result)	
 	{
-		std::cout << ANSI_STATUS_OK "\r\n";
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
 		result = rx_platform::rx_gate::instance().start(this, config);
 		if (result)
 		{
-			std::cout << ANSI_STATUS_OK "\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			interactive_console_client interactive(this);
 
 			std::cout << "Starting interactive console...";
-			std::cout << ANSI_STATUS_OK "\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			result = interactive.run_interactive(config);
 			if (!result)
 			{
-				std::cout << ANSI_STATUS_ERROR "\r\nError running Interactive Console:\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 			std::cout << "Stopping rx-platform...";
 			result = rx_platform::rx_gate::instance().stop();
 			if(result)
-				std::cout << ANSI_STATUS_OK "\r\n";
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			else
 			{
-				std::cout << ANSI_STATUS_ERROR "\r\nError stopping rx-platform:\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError stopping rx-platform:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
-
 		}
 		else
 		{
-			std::cout << ANSI_STATUS_ERROR "\r\nError starting rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing rx-platform...";
 		result = rx_platform::rx_gate::instance().deinitialize();
 		if (result)
-			std::cout << ANSI_STATUS_OK "\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
 		{
-			std::cout << ANSI_STATUS_ERROR "\r\nError deinitialize rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 	}
 	else
 	{
-		std::cout << ANSI_STATUS_ERROR "\r\nError initializing rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 
@@ -160,10 +162,11 @@ void interactive_console_host::server_started_event ()
 bool interactive_console_host::shutdown (const string_type& msg)
 {
 	security::security_context_ptr ctx = security::active_security();
-	std::cout << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
-	std::cout << ANSI_COLOR_RESET "\r\n";
-	std::cout << "Message:" << msg << "\r\n";
-	std::cout.flush();
+	std::ostringstream ss;
+	ss << "\r\n" ANSI_COLOR_RED "SHUTDOWN" ANSI_COLOR_RESET " initiated by " ANSI_COLOR_GREEN << ctx->get_full_name();
+	ss << ANSI_COLOR_RESET "\r\n";
+	ss << "Message:" << msg << "\r\n";
+	write_stdout(ss.str().c_str());
 	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
 	return true;
@@ -313,18 +316,22 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		ret = read_config_file(reader, config);
 		if (ret)
 		{			
-			std::cout << ANSI_STATUS_OK "\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
-			std::cout << ANSI_STATUS_OK "\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			
-			std::cout << "\r\n"
-				<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD "rx-platform "
-				<< rx_gate::instance().get_rx_version()
-				<< ANSI_COLOR_RESET "\r\n\r\n";
+			std::cout << "\r\n";
+			if(supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << "rx-platform "
+				<< rx_gate::instance().get_rx_version();
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
+			std::cout << "\r\n\r\n";;
 				
 			string_array hosts;
 			get_host_info(hosts);
@@ -349,19 +356,19 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			ret = rx::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
-				std::cout << ANSI_STATUS_OK "\r\n";
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 				std::cout << "Registering plug-ins...";
 				ret = register_plugins(plugins);
 				if (ret)
 				{
-					std::cout << ANSI_STATUS_OK "\r\n";
+					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 					std::cout << "Initializing storages...";
-					ret = initialize_storages(config);
+					ret = initialize_storages(config, plugins);
 					if (ret)
 					{
-						std::cout << ANSI_STATUS_OK "\r\n";
+						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 						// execute main loop of the console host
 						console_loop(config, plugins);
@@ -371,13 +378,13 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 					}
 					else
 					{
-						std::cout << ANSI_STATUS_ERROR "\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
 				}
 				else
 				{
-					std::cout << ANSI_STATUS_ERROR "\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -387,7 +394,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		}
 		else
 		{
-			std::cout << ANSI_STATUS_ERROR "\r\nError reading configuration file\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError reading configuration file\r\n";
 			rx_dump_error_result(std::cout, ret);
 		}
 		restore_console();
@@ -418,11 +425,6 @@ string_type interactive_console_host::get_interactive_info ()
 rx_result interactive_console_host::build_host (rx_directory_ptr root)
 {
 	return true;
-}
-
-storage_base::rx_platform_storage::smart_ptr interactive_console_host::get_storage ()
-{
-	return rx_storage_ptr();
 }
 
 string_type interactive_console_host::get_host_manual () const

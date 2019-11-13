@@ -73,10 +73,9 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 	return result;
 }
 
-rx_result rx_io_manager::deinitialize ()
+void rx_io_manager::deinitialize ()
 {
-	auto result = rx_deinit_protocols();
-	return result == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result));
+	rx_deinit_protocols();
 }
 
 rx_result rx_io_manager::start (hosting::rx_platform_host* host, const io_manager_data_t& data)
@@ -84,9 +83,8 @@ rx_result rx_io_manager::start (hosting::rx_platform_host* host, const io_manage
 	return true;
 }
 
-rx_result rx_io_manager::stop ()
+void rx_io_manager::stop ()
 {
-	return true;
 }
 
 

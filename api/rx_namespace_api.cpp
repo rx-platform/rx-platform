@@ -94,6 +94,15 @@ rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& re
 	return model::algorithms::resolve_runtime_reference<typeT>(ref, directories, tl::type2type<typeT>());
 }
 
+template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& ref
+	, rx_directory_resolver& directories, tl::type2type<object_type>);
+template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& ref
+	, rx_directory_resolver& directories, tl::type2type<domain_type>);
+template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& ref
+	, rx_directory_resolver& directories, tl::type2type<port_type>);
+template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& ref
+	, rx_directory_resolver& directories, tl::type2type<application_type>);
+
 
 rx_result rx_get_directory(const string_type& name // directory's path
 	, std::function<void(rx_result_with<rx_directory_ptr>&&)> callback

@@ -212,24 +212,12 @@ rx_result gnu_console_host::fill_host_directories (hosting::rx_host_directories&
 	return build_directories(data);
 }
 
+bool gnu_console_host::supports_ansi () const
+{
+  return true;
+
+}
+
 
 } // namespace gnu
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-#ifdef _DEBUG
-	string_type ret;
-	get_full_path("config", ret);
-	return ret;
-#else //_DEBUG
-	return "/etc/rx-platform/config";
-#endif //_DEBUG
-
-  return "";
-
-  return "";
-
-#endif

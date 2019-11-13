@@ -68,7 +68,7 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result_with<rx_directory_ptr> buid_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data);
+      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, sys_internal::internal_ns::platform_root::smart_ptr root);
 
       virtual rx_result do_build (rx_directory_ptr root) = 0;
 
@@ -196,6 +196,26 @@ class port_types_builder : public rx_platform_builder
 
 
 class system_objects_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (rx_directory_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class support_types_builder : public rx_platform_builder  
 {
 
   public:

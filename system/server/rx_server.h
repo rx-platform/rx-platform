@@ -88,13 +88,13 @@ struct configuration_data_t
 	general_data_t other;
 };
 
-enum rx_platform_status
+enum class rx_platform_status
 {
-	rx_platform_initializing,
-	rx_platform_starting,
-	rx_platform_running,
-	rx_platform_stopping,
-	rx_platform_deinitializing
+	initializing,
+	starting,
+	running,
+	stopping,
+	deinitializing
 };
 
 
@@ -208,6 +208,9 @@ class rx_gate
       }
 
 
+
+	  template <class typeT>
+	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
   protected:
 

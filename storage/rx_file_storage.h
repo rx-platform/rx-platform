@@ -112,7 +112,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result init_storage (const string_type& storage_reference);
 
-      rx_result deinit_storage ();
+      void deinit_storage ();
 
       rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
 
@@ -217,6 +217,52 @@ class rx_binary_file : public rx_file_item
 
 
 };
+
+
+
+
+
+
+
+template <class storageT>
+class file_system_storage_holder : public rx_platform::storage_base::rx_platform_storage_holder  
+{
+
+  public:
+
+      string_type get_storage_info ();
+
+      rx_result init_storage (const string_type& storage_reference);
+
+      string_type get_storage_reference ();
+
+
+  protected:
+
+      rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name);
+
+
+  private:
+
+
+      string_type root_path_;
+
+
+};
+
+
+
+
+
+
+typedef file_system_storage< storage_policy::file_path_addresing_policy  > file_system_path_storage;
+
+
+
+
+
+
+typedef file_system_storage_holder< storage::files::file_system_path_storage  > file_system_path_storage_holder;
 
 
 } // namespace files
