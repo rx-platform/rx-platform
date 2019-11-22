@@ -6,30 +6,32 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
 #include "pch.h"
 
 
+// rx_relations
+#include "system/runtime/rx_relations.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
 
@@ -46,7 +48,7 @@ namespace runtime {
 
 namespace blocks {
 
-// Class rx_platform::runtime::blocks::filter_runtime
+// Class rx_platform::runtime::blocks::filter_runtime 
 
 string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
 
@@ -83,7 +85,7 @@ rx_result filter_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::mapper_runtime
+// Class rx_platform::runtime::blocks::mapper_runtime 
 
 string_type mapper_runtime::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
@@ -125,7 +127,7 @@ rx_result mapper_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::source_runtime
+// Class rx_platform::runtime::blocks::source_runtime 
 
 string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
@@ -171,7 +173,7 @@ rx_result source_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::struct_runtime
+// Class rx_platform::runtime::blocks::struct_runtime 
 
 string_type struct_runtime::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -229,7 +231,7 @@ rx_result struct_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::variable_runtime
+// Class rx_platform::runtime::blocks::variable_runtime 
 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -275,7 +277,7 @@ rx_result variable_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::event_runtime
+// Class rx_platform::runtime::blocks::event_runtime 
 
 string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
 
@@ -312,7 +314,7 @@ rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::runtime_holder
+// Class rx_platform::runtime::blocks::runtime_holder 
 
 
 rx_result runtime_holder::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx, rx_thread_handle_t whose) const
@@ -585,6 +587,12 @@ void runtime_holder::fill_data (const data::runtime_values_data& data)
 {
 	auto ctx = structure::init_context::create_initialization_context(this);
 	item_->fill_data(data, ctx);
+	// now do the relations
+	// they create their own context!
+	for (auto& one : relations_)
+	{
+		one->fill_data(data);
+	}
 }
 
 void runtime_holder::collect_data (data::runtime_values_data& data) const

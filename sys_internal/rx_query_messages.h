@@ -131,6 +131,7 @@ class get_type_request : public rx_request_message
 	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
 	template<typename T>
 	message_ptr do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_relation_job(api::rx_context ctx, rx_protocol_port_ptr port);
 
   public:
 

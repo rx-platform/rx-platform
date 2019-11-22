@@ -71,7 +71,7 @@ interactive_console_host::~interactive_console_host()
 
 
 
-void interactive_console_host::console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins)
+rx_result interactive_console_host::console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
 	rx_result login_result = sec_ctx->login();
@@ -147,6 +147,8 @@ void interactive_console_host::console_loop (configuration_data_t& config, std::
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
+
+	return result;
 }
 
 void interactive_console_host::get_host_info (string_array& hosts)
@@ -371,7 +373,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 						// execute main loop of the console host
-						console_loop(config, plugins);
+						ret = console_loop(config, plugins);
 						HOST_LOG_INFO("Main", 999, "Console Host exited.");
 
 						deinitialize_storages();
@@ -380,6 +382,19 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 					{
 						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
 						rx_dump_error_result(std::cout, ret);
+					}
+					if (!ret)
+					{// we had error, dump log
+
+						std::cout << "\r\n\r\nStartup log entries:\r\n";
+
+						log::log_query_type query;
+						log::log_events_type events;
+						query.type = log::rx_log_query_type::error_level;
+						rx::log::log_object::instance().read_cache(query, events);
+						
+						hosting::rx_platform_host::dump_log_items(events, std::cout);
+
 					}
 				}
 				else

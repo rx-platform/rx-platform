@@ -124,6 +124,10 @@ rx_result derived_types_query::do_query (api::query_result& result, rx_directory
 	{
 		return do_query(result, dir, tl::type2type<object_types::application_type>());
 	}
+	else if (type_name == "relation")
+	{
+		return do_relation_query(result, dir);
+	}
 	else
 	{
 		return type_name + " is unknown type name!";
@@ -142,7 +146,7 @@ rx_result derived_types_query::do_query(api::query_result& result, rx_directory_
 			return base_type + " not found!";
 		id = item->meta_info().get_id();
 	}
-	result = model::platform_types_manager::instance().get_type_cache<T>().get_derived_types(id);
+	result = model::platform_types_manager::instance().get_type_repository<T>().get_derived_types(id);
 
 	return result.success;
 }
@@ -157,7 +161,22 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, rx_dir
 			return base_type + " not found!";
 		id = item->meta_info().get_id();
 	}
-	result = model::platform_types_manager::instance().get_simple_type_cache<T>().get_derived_types(id);
+	result = model::platform_types_manager::instance().get_simple_type_repository<T>().get_derived_types(id);
+
+	return result.success;
+}
+rx_result derived_types_query::do_relation_query(api::query_result& result, rx_directory_ptr dir)
+{
+
+	rx_node_id id = rx_node_id::null_id;
+	if (!base_type.empty())
+	{
+		auto item = dir->get_sub_item(base_type);
+		if (!item)
+			return base_type + " not found!";
+		id = item->meta_info().get_id();
+	}
+	result = model::platform_types_manager::instance().get_relations_repository().get_derived_types(id);
 
 	return result.success;
 }
@@ -272,7 +291,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 						return type_name + " not found!";
 					id = item->meta_info().get_id();
 				}
-				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
+				auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
 					app_ptr.value()->get_ports(result);
@@ -292,7 +311,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 						return type_name + " not found!";
 					id = item->meta_info().get_id();
 				}
-				auto app_ptr = model::platform_types_manager::instance().get_type_cache<application_type>().get_runtime(id);
+				auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
 					app_ptr.value()->get_domains(result);
@@ -312,7 +331,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 						return type_name + " not found!";
 					id = item->meta_info().get_id();
 				}
-				auto app_ptr = model::platform_types_manager::instance().get_type_cache<domain_type>().get_runtime(id);
+				auto app_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
 				if (app_ptr)
 				{
 					app_ptr.value()->get_objects(result);

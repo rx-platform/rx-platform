@@ -63,6 +63,11 @@ rx_result init_runtime<meta::object_types::domain_type>(rx_domain_ptr what, runt
 	return domain_algorithms::init_runtime(what, ctx);
 }
 template<>
+rx_result init_runtime<meta::object_types::relation_type>(rx_relation_ptr what, runtime::runtime_init_context& ctx)
+{
+	return relations_algorithms::init_runtime(what, ctx);
+}
+template<>
 rx_result deinit_runtime<meta::object_types::object_type>(rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
 	return object_algorithms::deinit_runtime(what, callback, ctx);
@@ -82,6 +87,11 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what, st
 {
 	return domain_algorithms::deinit_runtime(what, callback, ctx);
 }
+template<>
+rx_result deinit_runtime<meta::object_types::relation_type>(rx_relation_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return relations_algorithms::deinit_runtime(what, callback, ctx);
+}
 
 // Class sys_runtime::algorithms::object_algorithms 
 
@@ -95,7 +105,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 
 		if (what->get_instance_data().domain_id)
 		{
-			auto domain_ptr = model::platform_types_manager::instance().internal_get_type_cache<domain_type>().get_runtime(what->get_instance_data().domain_id);
+			auto domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(what->get_instance_data().domain_id);
 			if (!domain_ptr)
 			{
 				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object to unassigned domain.");
@@ -130,7 +140,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 			}
 		}
 		if (result)
-		{			
+		{
 			rx_post_function<rx_object_ptr>([](rx_object_ptr whose)
 				{
 					runtime::runtime_start_context start_ctx;
@@ -216,7 +226,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 
 		if (what->get_instance_data().app_id)
 		{
-			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
+			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(what->get_instance_data().app_id);
 			if (!application_ptr)
 			{
 				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
@@ -335,7 +345,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 
 		if (what->get_instance_data().app_id)
 		{
-			auto application_ptr = model::platform_types_manager::instance().internal_get_type_cache<application_type>().get_runtime(what->get_instance_data().app_id);
+			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(what->get_instance_data().app_id);
 			if (!application_ptr)
 			{
 				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
@@ -488,7 +498,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
 				rx_post_function<rx_application_ptr>([callback](rx_application_ptr whose)
 					{
-						
+
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
 						auto erase_result = platform_runtime_manager::instance().applications_.erase(whose->meta_info().get_id());
@@ -514,6 +524,30 @@ rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime
 {
 	auto ret = what->stop_runtime(ctx);
 	return ret;
+}
+
+
+// Class sys_runtime::algorithms::relations_algorithms 
+
+
+rx_result relations_algorithms::init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx)
+{
+	return (string_type(_rx_func_)+ " not implemented");
+}
+
+rx_result relations_algorithms::start_runtime (rx_relation_ptr what, runtime::runtime_start_context& ctx)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result relations_algorithms::deinit_runtime (rx_relation_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result relations_algorithms::stop_runtime (rx_relation_ptr what, runtime::runtime_stop_context& ctx)
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 

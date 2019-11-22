@@ -40,7 +40,7 @@
 // rx_interactive
 #include "host/rx_interactive.h"
 // rx_anonymus_pipes
-#include "interfaces/rx_anonymus_pipes.h"
+#include "host/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -58,6 +58,8 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
 	typedef std::vector<log::log_event_data> pending_events_type;
 
   public:
+      rx_pipe_stdout_log_subscriber();
+
 
       void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
 
@@ -139,9 +141,9 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
   private:
 
 
-      interfaces::anonymus_pipe::anonymus_pipe_endpoint pipes_;
-
       rx_reference<rx_pipe_stdout_log_subscriber> stdout_log_;
+
+      rx_reference<local_pipe_port> pipe_port_;
 
 
       bool exit_;

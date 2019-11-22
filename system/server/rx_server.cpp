@@ -293,7 +293,7 @@ template <class typeT>
 rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
 {
 	if (platform_status_ == rx_platform_status::initializing)
-		return model::platform_types_manager::instance().internal_get_type_cache<typeT>().register_constructor(id, f);
+		return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
 	else
 		return "Wrong platform status for constructor registration!";
 }

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  interfaces\rx_anonymus_pipes.h
+*  host\rx_anonymus_pipes.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -40,20 +40,20 @@
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
 
-namespace interfaces {
-namespace anonymus_pipe {
+namespace host {
+namespace pipe {
 class anonymus_pipe_client;
 
-} // namespace anonymus_pipe
-} // namespace interfaces
+} // namespace pipe
+} // namespace host
 
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
 
-namespace interfaces {
+namespace host {
 
-namespace anonymus_pipe {
+namespace pipe {
 
 
 
@@ -73,7 +73,7 @@ class anonymus_pipe_client
 
       rx_result read_pipe (rx_const_packet_buffer* buffer);
 
-      rx_result close_pipe ();
+      void close_pipe ();
 
 	  anonymus_pipe_client(const anonymus_pipe_client&) = delete;
 	  anonymus_pipe_client(anonymus_pipe_client&&) = delete;
@@ -104,11 +104,11 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
       anonymus_pipe_endpoint();
 
 
-      void receive_loop ();
+      void receive_loop (std::function<void(int64_t)> received_func);
 
-      rx_result open (const pipe_client_t& pipes);
+      rx_result open (const pipe_client_t& pipes, std::function<void(int64_t)> sent_func);
 
-      rx_result close ();
+      void close ();
 
 
   protected:
@@ -124,11 +124,60 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
       rx::threads::physical_job_thread pipe_sender_;
 
 
+      std::function<void(int64_t)> sent_func_;
+
+
 };
 
 
-} // namespace anonymus_pipe
-} // namespace interfaces
+
+
+
+
+class local_pipe_port : public interfaces::io_endpoints::physical_port  
+{
+	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+Local Pipe class. implementation of an local pipe port port");
+
+	DECLARE_REFERENCE_PTR(local_pipe_port);
+
+  public:
+      local_pipe_port (const pipe_client_t& pipes);
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void receive_loop ();
+
+      rx_result open ();
+
+      void close ();
+
+      rx_protocol_stack_entry* get_stack_entry ();
+
+
+  protected:
+
+  private:
+
+
+      anonymus_pipe_endpoint pipes_;
+
+
+      pipe_client_t pipe_handles_;
+
+
+};
+
+
+} // namespace pipe
+} // namespace host
 
 
 

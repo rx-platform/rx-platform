@@ -210,6 +210,8 @@ template<>
 rx_value_t inner_get_type(tl::type2type<typename std::string>);
 template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>);
+template<>
+rx_value_t inner_get_type(tl::type2type<typename rx::rx_node_id>);
 
 
 template<typename typeT>
@@ -361,6 +363,10 @@ public:
       rx_value_storage operator / (const rx_value_storage& right) const;
 
       rx_value_storage operator % (const rx_value_storage& right) const;
+
+      rx_node_id get_id_value () const;
+
+      string_type get_string_value () const;
 
 	  template<typename T>
 	  void assign_static(T&& right)

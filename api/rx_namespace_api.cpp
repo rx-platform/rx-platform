@@ -87,6 +87,14 @@ template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const item_
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const item_reference& ref
 	, rx_directory_resolver& directories, tl::type2type<mapper_type>);
 
+
+rx_result_with<rx_node_id> rx_resolve_relation_reference(const item_reference& ref
+	, rx_directory_resolver& directories)
+{
+	return model::algorithms::resolve_relation_reference(ref, directories);
+
+}
+
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_reference& ref
 	, rx_directory_resolver& directories, tl::type2type<typeT>)
@@ -173,7 +181,7 @@ rx_result rx_list_runtime(
 {
 	std::function<rx_result_with<runtime_browse_result>(const string_type, const string_type, rx_node_id)> func = [](const string_type path, const string_type pattern, rx_node_id id) mutable -> rx_result_with<runtime_browse_result> {
 		runtime_browse_result ret_val;
-		auto rt_item = model::platform_types_manager::instance().internal_get_type_cache<typeT>().get_runtime(id);
+		auto rt_item = model::platform_types_manager::instance().get_type_repository<typeT>().get_runtime(id);
 		if (!rt_item)
 		{
 			rt_item.register_error("Runtime not found");

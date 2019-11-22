@@ -81,6 +81,7 @@ class configuration_storage_builder : public rx_platform_builder
 	  rx_result create_concrete_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>);
 	  template<class T>
 	  rx_result create_concrete_simple_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>);
+	  rx_result create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage);
 	  template<class T>
 	  rx_result create_concrete_object_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>);
 };

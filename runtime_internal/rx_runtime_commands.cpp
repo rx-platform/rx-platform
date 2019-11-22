@@ -122,7 +122,7 @@ pull_command::~pull_command()
 bool pull_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	out << "Hello from pull!!!\r\n";
-	err << "Not implemented yet!!!";
+	err << RX_NOT_IMPLEMENTED;
 	return false;
 }
 

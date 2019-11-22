@@ -100,7 +100,7 @@ class rx_storage_item
 
       virtual rx_result open_for_write () = 0;
 
-      virtual rx_result close () = 0;
+      virtual void close () = 0;
 
       virtual base_meta_reader& read_stream () = 0;
 

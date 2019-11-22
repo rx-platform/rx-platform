@@ -263,12 +263,12 @@ class instance_hash
 
 
 template <class typeT>
-class type_hash 
+class types_repository 
 {
-	type_hash(const type_hash&) = delete;
-	type_hash(type_hash&&) = delete;
-	void operator=(const type_hash&) = delete;
-	void operator=(type_hash&&) = delete;
+	types_repository(const types_repository&) = delete;
+	types_repository(types_repository&&) = delete;
+	void operator=(const types_repository&) = delete;
+	void operator=(types_repository&&) = delete;
 
 public:
 	typedef typeT HType;
@@ -297,22 +297,22 @@ public:
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
-      type_hash();
+      types_repository();
 
 
-      typename type_hash<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
+      typename types_repository<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
 
-      rx_result register_type (typename type_hash<typeT>::Tptr what);
+      rx_result register_type (typename types_repository<typeT>::Tptr what);
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result_with<typename types_repository<typeT>::RTypePtr> create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
       rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
 
-      rx_result_with<typename type_hash<typeT>::RTypePtr> get_runtime (const rx_node_id& id) const;
+      rx_result_with<typename types_repository<typeT>::RTypePtr> get_runtime (const rx_node_id& id) const;
 
       rx_result delete_runtime (rx_node_id id);
 
@@ -320,7 +320,7 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
-      rx_result update_type (typename type_hash<typeT>::Tptr what);
+      rx_result update_type (types_repository<typeT>::Tptr what);
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
@@ -356,12 +356,12 @@ public:
 
 
 template <class typeT>
-class simple_type_hash 
+class simple_types_repository 
 {
-	simple_type_hash(const simple_type_hash&) = delete;
-	simple_type_hash(simple_type_hash&&) = delete;
-	void operator=(const simple_type_hash&) = delete;
-	void operator=(simple_type_hash&&) = delete;
+	simple_types_repository(const simple_types_repository&) = delete;
+	simple_types_repository(simple_types_repository&&) = delete;
+	void operator=(const simple_types_repository&) = delete;
+	void operator=(simple_types_repository&&) = delete;
 
 public:
 	typedef typeT HType;
@@ -375,16 +375,16 @@ public:
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
-      simple_type_hash();
+      simple_types_repository();
 
 
-      typename simple_type_hash<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
+      typename simple_types_repository<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
 
-      rx_result register_type (typename simple_type_hash<typeT>::Tptr what);
+      rx_result register_type (typename simple_types_repository<typeT>::Tptr what);
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename simple_type_hash<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id) const;
+      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id) const;
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -396,7 +396,7 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
-      rx_result update_type (typename simple_type_hash<typeT>::Tptr what);
+      rx_result update_type (typename simple_types_repository<typeT>::Tptr what);
 
 
   protected:
@@ -454,6 +454,90 @@ class types_resolver
 
 
 
+
+
+class relations_type_repository 
+{
+	relations_type_repository(const relations_type_repository&) = delete;
+	relations_type_repository(relations_type_repository&&) = delete;
+	void operator=(const relations_type_repository&) = delete;
+	void operator=(relations_type_repository&&) = delete;
+
+public:
+	typedef relation_type HType;
+	typedef typename relation_type::RType RType;
+	typedef typename relation_type::RTypePtr RTypePtr;
+	typedef typename relation_type::smart_ptr Tptr;
+	typedef rx_result_with<Tptr> TdefRes;
+
+	enum class runtime_state
+	{
+		runtime_state_created = 0,
+		runtime_state_initializing = 1,
+		runtime_state_running = 2,
+		runtime_state_deleting = 3,
+		runtime_state_destroyed = 4
+	};
+
+	struct runtime_data_t
+	{
+		RTypePtr target;
+		runtime_state state;
+	};
+
+	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
+	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+
+  public:
+      relations_type_repository();
+
+
+      relations_type_repository::TdefRes get_type_definition (const rx_node_id& id) const;
+
+      rx_result register_type (relations_type_repository::Tptr what);
+
+      rx_result_with<relations_type_repository::RTypePtr> create_runtime (meta_data& meta, typename relation_type::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+
+      api::query_result get_derived_types (const rx_node_id& id) const;
+
+      rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
+
+      rx_result_with<relations_type_repository::RTypePtr> get_runtime (const rx_node_id& id) const;
+
+      rx_result delete_runtime (rx_node_id id);
+
+      rx_result delete_type (rx_node_id id);
+
+      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
+      rx_result update_type (relations_type_repository::Tptr what);
+
+      rx_result type_exists (rx_node_id id) const;
+
+
+  protected:
+
+  private:
+
+      relations_type_repository::RTypePtr create_relation_runtime (relations_type_repository::Tptr form_what);
+
+
+
+      inheritance_hash inheritance_hash_;
+
+      instance_hash instance_hash_;
+
+
+      registered_objects_type registered_objects_;
+
+      registered_types_type registered_types_;
+
+
+};
+
+
+
+
 struct names_hash_element
 {
 	rx_node_id id;
@@ -489,80 +573,68 @@ class platform_types_manager
 {
 	//friend class worker_registration_object;
 	template<class T>
-	struct type_cache_holder
+	struct type_repositories_holder
 	{
 	public:
-		type_hash<T>* value_;
-		type_cache_holder()
+		types_repository<T>* value_;
+		type_repositories_holder()
 			: value_(NULL)
 		{
 		}
-		~type_cache_holder()
+		~type_repositories_holder()
 		{
 		}
 	};
 
-	class type_cache_list_container
-		: public tl::gen_scatter_hierarchy<object_rx_types, type_cache_holder>
+	class type_repositories_container
+		: public tl::gen_scatter_hierarchy<object_rx_types, type_repositories_holder>
 	{
 	public:
 		template<class T>
-		type_hash<T>& get_internal(tl::type2type<T>)
+		types_repository<T>& get_internal(tl::type2type<T>)
 		{
-			type_hash<T>* ret = (static_cast<type_cache_holder<T>&>(*this)).value_;
+			types_repository<T>* ret = (static_cast<type_repositories_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
 			{
-				ret = new type_hash<T>();
-				(static_cast<type_cache_holder<T>&>(*this)).value_ = ret;
+				ret = new types_repository<T>();
+				(static_cast<type_repositories_holder<T>&>(*this)).value_ = ret;
 			}
 			return *ret;
 		}
-		template<class T>
-		const type_hash<T>& get_internal_const(tl::type2type<T>) const
-		{
-			const type_hash<T>* ret = (static_cast<const type_cache_holder<T>&>(*this)).value_;
-			return *ret;
-		}
 	};
-	type_cache_list_container _types_container;
+	type_repositories_container _types_container;
 
 	template<class T>
-	struct simple_type_cache_holder
+	struct simple_types_repositories_holder
 	{
 	public:
-		simple_type_hash<T>* value_;
-		simple_type_cache_holder()
+		simple_types_repository<T>* value_;
+		simple_types_repositories_holder()
 			: value_(NULL)
 		{
 		}
-		~simple_type_cache_holder()
+		~simple_types_repositories_holder()
 		{
 		}
 	};
 
-	class simple_type_cache_list_container
-		: public tl::gen_scatter_hierarchy<simple_rx_types, simple_type_cache_holder>
+	class simple_type_repositories_container
+		: public tl::gen_scatter_hierarchy<simple_rx_types, simple_types_repositories_holder>
 	{
 	public:
 		template<class T>
-		simple_type_hash<T>& get_internal(tl::type2type<T>)
+		simple_types_repository<T>& get_internal(tl::type2type<T>)
 		{
-			simple_type_hash<T>* ret = (static_cast<simple_type_cache_holder<T>&>(*this)).value_;
+			simple_types_repository<T>* ret = (static_cast<simple_types_repositories_holder<T>&>(*this)).value_;
 			if (ret == nullptr)
 			{
-				ret = new simple_type_hash<T>();
-				(static_cast<simple_type_cache_holder<T>&>(*this)).value_ = ret;
+				ret = new simple_types_repository<T>();
+				(static_cast<simple_types_repositories_holder<T>&>(*this)).value_ = ret;
 			}
 			return *ret;
 		}
-		template<class T>
-		const simple_type_hash<T>& get_internal_const(tl::type2type<T>) const
-		{
-			const simple_type_hash<T>* ret = (static_cast<const simple_type_cache_holder<T>&>(*this)).value_;
-			return *ret;
-		}
 	};
-	simple_type_cache_list_container _simple_types_container;
+	simple_type_repositories_container _simple_types_container;
 
   public:
 
@@ -589,25 +661,19 @@ class platform_types_manager
       }
 
 
+	  relations_type_repository& get_relations_repository()
+	  {
+		  return relations_repository_;
+	  }
 	  template<class T>
-	  type_hash<T>& internal_get_type_cache()
+	  types_repository<T>& get_type_repository()
 	  {
 		  return _types_container.get_internal<T>(tl::type2type<T>());
 	  }
 	  template<class T>
-	  simple_type_hash<T>& internal_get_simple_type_cache()
+	  simple_types_repository<T>& get_simple_type_repository()
 	  {
 		  return _simple_types_container.get_internal<T>(tl::type2type<T>());
-	  }
-	  template<class T>
-	  const type_hash<T>& get_type_cache() const
-	  {
-		  return _types_container.get_internal_const<T>(tl::type2type<T>());
-	  }
-	  template<class T>
-	  const simple_type_hash<T>& get_simple_type_cache() const
-	  {
-		  return _simple_types_container.get_internal_const<T>(tl::type2type<T>());
 	  }
 	  template<class T>
 	  typename T::smart_ptr get_type_sync(const string_type& path, rx_directory_ptr dir)
@@ -622,7 +688,7 @@ class platform_types_manager
 		  {// TODO error, item does not have id
 			  return T::smart_ptr::null_ptr;
 		  }
-		  auto ret = internal_get_type_cache<T>().get_type_definition(std::move(id));
+		  auto ret = get_type_repository<T>().get_type_definition(std::move(id));
 		  if (!ret)
 		  {// TODO error, invalid node id
 			  return T::smart_ptr::null_ptr;
@@ -642,7 +708,7 @@ class platform_types_manager
 		  {// TODO error, item does not have id
 			  return T::RTypePtr::null_ptr;
 		  }
-		  auto ret = internal_get_type_cache<T>().get_runtime(std::move(id));
+		  auto ret = get_type_repository<T>().get_runtime(std::move(id));
 		  if (!ret)
 		  {// TODO error, invalid node id
 			  return T::RTypePtr::null_ptr;
@@ -659,6 +725,8 @@ class platform_types_manager
       rx::threads::physical_job_thread worker_;
 
       types_resolver types_resolver_;
+
+      relations_type_repository relations_repository_;
 
 	  template <class typeT>
 	  friend class algorithms::types_model_algorithm;

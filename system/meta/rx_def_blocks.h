@@ -90,6 +90,7 @@ namespace object_types
 	class application_type;
 	class domain_type;
 	class port_type;
+	class relation_type;
 
 }
 namespace basic_types
@@ -98,7 +99,6 @@ namespace basic_types
 	class event_type;
 	class filter_type;
 	class source_type;
-	class reference_type;
 	class mapper_type;
 	class struct_type;
 }

@@ -545,7 +545,7 @@ namespace meta_test {
 
 	 out << ANSI_COLOR_YELLOW "Checking invalid Object Type\r\n" ANSI_COLOR_RESET;
 	 meta::type_check_context check_ctx;
-	 rx_result result = model::platform_types_manager::instance().get_type_cache<rx_platform::meta::object_types::object_type>().check_type(object_id, check_ctx);
+	 rx_result result = model::platform_types_manager::instance().get_type_repository<rx_platform::meta::object_types::object_type>().check_type(object_id, check_ctx);
 	 if (!result)
 	 {
 		 out << "check returned following errors:\r\n";
@@ -555,7 +555,7 @@ namespace meta_test {
 		 }
 		 out << ANSI_COLOR_YELLOW "Checking invalid Struct Type\r\n" ANSI_COLOR_RESET;
 		 check_ctx.reinit();
-		 if (!model::platform_types_manager::instance().get_simple_type_cache<rx_platform::meta::basic_types::struct_type>().check_type(struct_id, check_ctx))
+		 if (!model::platform_types_manager::instance().get_simple_type_repository<rx_platform::meta::basic_types::struct_type>().check_type(struct_id, check_ctx))
 		 {
 			 out << "check returned following errors:\r\n";
 			 for (const auto& one : check_ctx.get_errors())

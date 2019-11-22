@@ -113,6 +113,18 @@ rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increm
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx);
 
+rx_result rx_create_relation_type(
+	const string_type& name // type's path
+	, const item_reference& base_reference // base reference
+	, object_types::relation_type::smart_ptr prototype // prototype
+	, namespace_item_attributes attributes // required attributes
+	, std::function<void(rx_result_with<typename object_types::relation_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
+rx_result rx_update_relation_type(object_types::relation_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback
+	, rx_context ctx);
+
 
 rx_result rx_save_item(
 	const string_type& name // item's path
@@ -128,6 +140,10 @@ template<class T>
 rx_result rx_get_simple_type(const item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
 
+rx_result rx_get_relation_type(const item_reference& ref
+	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback, rx_context ctx);
+
+
 
 template<class T>
 rx_result rx_delete_type(const item_reference& ref
@@ -136,6 +152,9 @@ rx_result rx_delete_type(const item_reference& ref
 
 template<class T>
 rx_result rx_delete_simple_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx);
+
+rx_result rx_delete_relation_type(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
 
 }

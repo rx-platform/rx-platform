@@ -82,6 +82,10 @@ string_type rx_item_type_name(rx_item_type type)
 		return RX_CPP_PROGRAM_TYPE_NAME;
 	case rx_item_type::rx_method:
 		return RX_CPP_METHOD_TYPE_NAME;
+
+	case rx_item_type::rx_relation_type:
+		return RX_CPP_RELATION_CLASS_TYPE_NAME;
+
 	default:
 		return string_type();
 	}
@@ -125,6 +129,9 @@ rx_item_type rx_parse_type_name(const string_type name)
 		return rx_item_type::rx_program;
 	else if (name == RX_CPP_METHOD_TYPE_NAME)
 		return rx_item_type::rx_method;
+
+	else if (name == RX_CPP_RELATION_CLASS_TYPE_NAME)
+		return rx_item_type::rx_relation_type;
 
 	return rx_item_type::rx_invalid_type;
 }
@@ -402,7 +409,7 @@ void meta_data::increment_version (bool full_ver)
 	version_++;
 }
 
-item_reference meta_data::create_item_reference ()
+rx_platform::meta::item_reference meta_data::create_item_reference ()
 {
 	if (id_.is_null() && !path_.empty())
 		return item_reference(get_full_path());
@@ -410,7 +417,7 @@ item_reference meta_data::create_item_reference ()
 		return item_reference(id_);
 }
 
-item_reference meta_data::create_weak_item_reference (const string_array& dirs)
+rx_platform::meta::item_reference meta_data::create_weak_item_reference (const string_array& dirs)
 {
 	string_type my_path = get_full_path();
 	if (my_path.empty())
@@ -519,6 +526,20 @@ item_reference::item_reference (const char* right)
 {
 	is_id_ = false;
 	new(&path_) string_type(right);
+}
+
+item_reference::item_reference (const rx_simple_value& right)
+{
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(right.get_storage().get_id_value());
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(right.get_storage().get_string_value());
+	}
 }
 
 
@@ -651,6 +672,36 @@ const rx_node_id& item_reference::get_node_id () const
 		return id_;
 }
 
+rx_simple_value item_reference::to_value () const
+{
+	values::rx_simple_value temp;
+	if (is_id_)
+	{
+		temp.assign_static<rx_node_id>(rx_node_id(id_));
+	}
+	else
+	{
+		temp.assign_static<string_type>(string_type(path_));
+	}
+	return temp;
+}
+
+item_reference& item_reference::operator = (const rx_simple_value& right)
+{
+	clear_content();
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(right.get_storage().get_id_value());
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(right.get_storage().get_string_value());
+	}
+	return *this;
+}
+
 
 item_reference::item_reference(item_reference&& right) noexcept
 {
@@ -691,6 +742,20 @@ item_reference::item_reference(string_type&& right) noexcept
 	new(&path_) string_type(std::move(right));
 }
 
+item_reference::item_reference(rx_simple_value&& right) noexcept
+{
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
+	}
+}
+
 item_reference& item_reference::operator= (rx_node_id&& right) noexcept
 {
 	clear_content();
@@ -704,6 +769,21 @@ item_reference& item_reference::operator= (string_type&& right) noexcept
 	clear_content();
 	is_id_ = false;
 	new(&path_) string_type(std::move(right));
+	return *this;
+}
+item_reference& item_reference::operator= (rx_simple_value&& right) noexcept
+{
+	clear_content();
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
+	}
 	return *this;
 }
 } // namespace meta

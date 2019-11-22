@@ -136,22 +136,22 @@ namespace_item_attributes program_runtime::create_attributes_from_flags (bool sy
 
 rx_result program_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 rx_result program_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 rx_result program_runtime::start_runtime (runtime::runtime_start_context& ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 rx_result program_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 

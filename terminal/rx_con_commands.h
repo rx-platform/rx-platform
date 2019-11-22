@@ -169,20 +169,21 @@ all about doing stuff with log");
       ~log_command();
 
 
+      static void dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out);
+
+
   protected:
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
       bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
-      bool do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
 
 
   private:
 
-      bool dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-      rx_table_cell_struct create_log_type_cell (log::log_event_type type);
+      static rx_table_cell_struct create_log_type_cell (log::log_event_type type);
 
 
 

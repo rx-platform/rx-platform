@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  interfaces\rx_anonymus_pipes.cpp
+*  host\rx_anonymus_pipes.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -31,15 +31,15 @@
 
 
 // rx_anonymus_pipes
-#include "interfaces/rx_anonymus_pipes.h"
+#include "host/rx_anonymus_pipes.h"
 
 
 
-namespace interfaces {
+namespace host {
 
-namespace anonymus_pipe {
+namespace pipe {
 
-// Class interfaces::anonymus_pipe::anonymus_pipe_client
+// Class host::pipe::anonymus_pipe_client
 
 anonymus_pipe_client::anonymus_pipe_client (const pipe_client_t& pipes)
       : handles_(pipes)
@@ -82,14 +82,13 @@ rx_result anonymus_pipe_client::read_pipe (rx_const_packet_buffer* buffer)
 	}
 }
 
-rx_result anonymus_pipe_client::close_pipe ()
+void anonymus_pipe_client::close_pipe ()
 {
 	rx_destry_client_side_pipe(&handles_);
-	return true;
 }
 
 
-// Class interfaces::anonymus_pipe::anonymus_pipe_endpoint
+// Class host::pipe::anonymus_pipe_endpoint
 
 anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 	: pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
@@ -98,10 +97,10 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 
 
 
-void anonymus_pipe_endpoint::receive_loop ()
+void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received_func)
 {
 	rx_result result;
-	
+
 	while (true)
 	{
 		rx_const_packet_buffer buffer{};
@@ -111,6 +110,7 @@ void anonymus_pipe_endpoint::receive_loop ()
 			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
 			break;
 		}
+		received_func(buffer.size);
 		auto res = rx_move_packet_up(this, nullptr, &buffer);
 		if (res != RX_PROTOCOL_OK)
 		{
@@ -120,11 +120,12 @@ void anonymus_pipe_endpoint::receive_loop ()
 	}
 }
 
-rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes)
+rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::function<void(int64_t)> sent_func)
 {
 	rx_protocol_stack_entry* mine_entry = this;
 
 	pipes_ = std::make_unique<anonymus_pipe_client>(pipes);
+	sent_func_ = sent_func;
 	pipe_sender_.start();
 	mine_entry->downward = nullptr;
 	mine_entry->upward = nullptr;
@@ -154,6 +155,7 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 				auto result = self->pipes_->write_pipe(&buffer);
 				if (result)
 				{
+					self->sent_func_(buffer.size);
 					rx_move_result_up(self, NULL, RX_PROTOCOL_OK);
 				}
 				else
@@ -170,15 +172,88 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 	return RX_PROTOCOL_OK;
 }
 
-rx_result anonymus_pipe_endpoint::close ()
+void anonymus_pipe_endpoint::close ()
 {
-	auto result = pipes_->close_pipe();
-	if(result)
-		pipes_.release();
-	return result;
+	pipe_sender_.end();
+	pipes_->close_pipe();
+	pipes_.release();
 }
 
 
-} // namespace anonymus_pipe
-} // namespace interfaces
+// Class host::pipe::local_pipe_port
+
+local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
+      : pipe_handles_(pipes)
+{
+}
+
+
+
+rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = physical_port::initialize_runtime(ctx);
+	if (result)
+	{
+		ctx.tags->set_item_static("PipeDetails.InPipe"s, (uint64_t)(pipe_handles_.client_read), ctx);
+		ctx.tags->set_item_static("PipeDetails.OutPipe"s, (uint64_t)(pipe_handles_.client_write) , ctx);
+	}
+	return result;
+}
+
+rx_result local_pipe_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	auto result = physical_port::deinitialize_runtime(ctx);
+	if (result)
+	{
+	}
+	return result;
+}
+
+rx_result local_pipe_port::start_runtime (runtime::runtime_start_context& ctx)
+{
+	auto result = physical_port::start_runtime(ctx);
+	if (result)
+	{
+	}
+	return result;
+}
+
+rx_result local_pipe_port::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	auto result = physical_port::stop_runtime(ctx);
+	if (result)
+	{
+	}
+	return result;
+}
+
+void local_pipe_port::receive_loop ()
+{
+	pipes_.receive_loop([this] (size_t count)
+		{
+			update_received_counters(count);
+		});
+}
+
+rx_result local_pipe_port::open ()
+{
+	return pipes_.open(pipe_handles_, [this](size_t count)
+		{
+			update_sent_counters(count);
+		});
+}
+
+void local_pipe_port::close ()
+{
+	return pipes_.close();
+}
+
+rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
+{
+	return &pipes_;
+}
+
+
+} // namespace pipe
+} // namespace host
 

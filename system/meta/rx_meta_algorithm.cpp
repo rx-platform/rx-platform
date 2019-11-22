@@ -30,6 +30,8 @@
 #include "pch.h"
 
 
+// rx_obj_types
+#include "system/meta/rx_obj_types.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 
@@ -82,7 +84,7 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 		return ret;
 	}
 	target_id = resolve_result.value();
-	auto target = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().get_type_definition(target_id);
+	auto target = model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
 	if (!target)
 	{
 		std::ostringstream ss;
@@ -112,7 +114,7 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = model::platform_types_manager::instance().get_simple_type_cache<typename typeT::TargetType>().create_simple_runtime(target);
+	auto temp = model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
@@ -171,7 +173,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = model::platform_types_manager::instance().get_simple_type_cache<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		temp.value().set_value(whose.get_value(ctx.now));
@@ -310,6 +312,7 @@ rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type
 
 
 
+
 template <>
 bool basic_types_algorithm<variable_type>::check_basic_type(variable_type& whose, type_check_context& ctx)
 {
@@ -421,10 +424,147 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 	return ret;
 }
 
+
+template <>
+rx_result object_types_algorithm<relation_type>::serialize_object_type(const relation_type& whose, base_meta_writer& stream, uint8_t type)
+{
+	if (!whose.meta_info_.serialize_meta_data(stream, type, relation_type::type_id))
+		return false;
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!whose.inverse_reference_.serialize_reference("inverse", stream))
+		return false;
+	if (!stream.write_bool("hierarchical", whose.hierarchical_))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+template <>
+rx_result object_types_algorithm<relation_type>::deserialize_object_type(relation_type& whose, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("def"))
+		return false;
+
+	if (!whose.inverse_reference_.deserialize_reference("inverse", stream))
+		return false;
+	if (!stream.read_bool("hierarchical", whose.hierarchical_))
+		return false;
+
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+template <>
+bool object_types_algorithm<relation_type>::check_object_type(relation_type& whose, type_check_context& ctx)
+{
+	// if there is no inverse refernce then nothing to check
+	if (whose.inverse_reference_.is_null())
+		return true;
+
+	rx_node_id target_id;
+	auto resolve_result = model::algorithms::resolve_relation_reference(whose.inverse_reference_, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target_id = resolve_result.value();
+	auto target = model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
+	if (!target)
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< rx_item_type_name(relation_type::type_id)
+			<< " as inverse relation type in relation "
+			<< whose.meta_info().get_full_path();
+
+		ctx.add_error(ss.str());
+		for (const auto& one : target.errors())
+		{
+			ctx.add_error(one);
+		}
+	}
+	return ctx.is_check_ok();
+}
+
+
+template <>
+rx_result object_types_algorithm<relation_type>::construct_object(const relation_type& whose, relation_type::RTypePtr what, construct_context& ctx)
+{
+	return true;
+}
+
 template class object_types_algorithm<object_types::object_type>;
 template class object_types_algorithm<object_types::port_type>;
 template class object_types_algorithm<object_types::application_type>;
 template class object_types_algorithm<object_types::domain_type>;
+template class object_types_algorithm<object_types::relation_type>;
+// Class rx_platform::meta::meta_algorithm::relation_blocks_algorithm 
+
+
+rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream)
+{
+	if (!stream.write_string("name", whose.name_))
+		return false;
+	if (!whose.relation_type_.serialize_reference("relation", stream))
+		return false;
+	if (!whose.target_.serialize_reference("target", stream))
+		return false;
+	return true;
+}
+
+rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_types::relation_attribute& whose, base_meta_reader& stream)
+{
+	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!whose.relation_type_.deserialize_reference("relation", stream))
+		return false;
+	if (!whose.target_.deserialize_reference("target", stream))
+		return false;
+	return true;
+}
+
+bool relation_blocks_algorithm::check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx)
+{
+	rx_node_id target_id;
+	auto resolve_result = model::algorithms::resolve_relation_reference(whose.target_, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target_id = resolve_result.value();
+	auto target = model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
+	if (!target)
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< rx_item_type_name(relation_type::type_id)
+			<< " in attribute "
+			<< whose.name_;
+
+		ctx.add_error(ss.str());
+		for (const auto& one : target.errors())
+		{
+			ctx.add_error(one);
+		}
+	}
+	return ctx.is_check_ok();
+}
+
+rx_result relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx)
+{
+	return true;
+}
+
+
 } // namespace meta_algorithm
 } // namespace meta
 } // namespace rx_platform

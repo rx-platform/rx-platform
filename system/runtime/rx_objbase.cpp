@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -90,7 +90,7 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 	}
 }
 
-// Class rx_platform::runtime::objects::object_runtime
+// Class rx_platform::runtime::objects::object_runtime 
 
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
@@ -297,7 +297,7 @@ rx_result object_runtime::read_items (const std::vector<runtime_handle_t>& items
 }
 
 
-// Class rx_platform::runtime::objects::application_runtime
+// Class rx_platform::runtime::objects::application_runtime 
 
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
@@ -567,7 +567,7 @@ rx_result application_runtime::read_items (const std::vector<runtime_handle_t>& 
 }
 
 
-// Class rx_platform::runtime::objects::domain_runtime
+// Class rx_platform::runtime::objects::domain_runtime 
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
@@ -789,22 +789,18 @@ rx_result domain_runtime::read_items (const std::vector<runtime_handle_t>& items
 }
 
 
-// Class rx_platform::runtime::objects::port_runtime
+// Class rx_platform::runtime::objects::port_runtime 
 
 rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
-      : rx_packets_item_(0),
-        tx_packets_item_(0),
-        job_pending_(false)
+      : job_pending_(false)
 {
 	my_job_ptr_ = rx_create_reference<process_runtime_job<rx_port_ptr> >(smart_this());
 }
 
 port_runtime::port_runtime (const meta::meta_data& meta, const port_instance_data& instance)
-      : rx_packets_item_(0),
-        tx_packets_item_(0),
-        job_pending_(false)
+      : job_pending_(false)
 	, meta_info_(meta)
 	, instance_data_(instance)
 {
@@ -959,17 +955,7 @@ rx_result port_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 	auto result = runtime_.initialize_runtime(ctx);
 	if (result)
 	{
-		auto bind_result = ctx.tags->bind_item("Status.RxPackets", ctx);
-		if (bind_result)
-			rx_packets_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
-
-		bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
-		if (bind_result)
-			tx_packets_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+		
 	}
 	return result;
 }
@@ -999,16 +985,6 @@ rx_result port_runtime::do_command (rx_object_command_t command_type)
 	return runtime_.do_command(command_type);
 }
 
-void port_runtime::update_received_packets (size_t count)
-{
-	if(rx_packets_item_)
-	{
-		auto current = runtime_.get_binded_as<int64_t>(rx_packets_item_, 0);
-		current += count;
-		runtime_.set_binded_as<int64_t>(rx_packets_item_, std::move(current));
-	}
-}
-
 void port_runtime::process_runtime ()
 {
 	object_runtime_algorithms<meta::object_types::port_type>::process_runtime(this);
@@ -1035,7 +1011,7 @@ rx_result port_runtime::read_items (const std::vector<runtime_handle_t>& items, 
 }
 
 
-// Class rx_platform::runtime::objects::object_instance_data
+// Class rx_platform::runtime::objects::object_instance_data 
 
 
 bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1061,7 +1037,7 @@ bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class rx_platform::runtime::objects::domain_instance_data
+// Class rx_platform::runtime::objects::domain_instance_data 
 
 
 bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1111,7 +1087,7 @@ bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Class rx_platform::runtime::objects::application_instance_data
+// Class rx_platform::runtime::objects::application_instance_data 
 
 
 bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1137,7 +1113,7 @@ bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t t
 }
 
 
-// Class rx_platform::runtime::objects::port_instance_data
+// Class rx_platform::runtime::objects::port_instance_data 
 
 
 bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -1163,7 +1139,7 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 }
 
 
-// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms
+// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms 
 
 
 template <class typeT>
@@ -1250,7 +1226,47 @@ rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtim
 }
 
 
-// Parameterized Class rx_platform::runtime::objects::process_runtime_job
+
+template <>
+rx_result object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, object_types::relation_type::RType* whose)
+{
+	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+	using smart_ptr = object_types::relation_type::RTypePtr;
+
+	return RX_NOT_IMPLEMENTED;
+
+	// OutputDebugStringA("****************Something to connect object runtime\r\n");
+
+	/*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
+	{
+
+		// OutputDebugStringA("****************Something to connect object runtime\r\n");
+		connect_result_t results;
+		bool has_errors = false;
+		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
+		if (ret)
+		{
+			whose->runtime_context_.process_tag_connections = true;
+		}
+		else
+		{
+			auto size = paths.size();
+			results.reserve(size);
+			for (size_t i = 0; i < size; i++)
+				results.emplace_back(ret.errors());
+		}
+		if (whose->runtime_context_.process_tag_connections)
+		{
+			whose->fire_job();
+		}
+		return results;
+	};
+	auto ret_thread = whose->get_executer();
+	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
+	return true;*/
+}
+
+// Parameterized Class rx_platform::runtime::objects::process_runtime_job 
 
 template <class typePtr>
 process_runtime_job<typePtr>::process_runtime_job (typePtr whose)
@@ -1270,4 +1286,5 @@ void process_runtime_job<typePtr>::process ()
 } // namespace objects
 } // namespace runtime
 } // namespace rx_platform
+
 

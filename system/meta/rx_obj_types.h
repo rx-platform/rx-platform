@@ -47,6 +47,7 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+#include "system/runtime/rx_relations.h"
 using rx_platform::meta::construct_context;
 
 
@@ -55,6 +56,68 @@ namespace rx_platform {
 namespace meta {
 
 namespace object_types {
+
+
+
+
+
+class relation_attribute 
+{
+  public:
+	relation_attribute(const relation_attribute& right) = default;
+	relation_attribute(relation_attribute&& right) = default;
+	relation_attribute() = default;
+	~relation_attribute() = default;
+
+  public:
+      relation_attribute (const string_type& name, const rx_node_id& id);
+
+      relation_attribute (const string_type& name, const string_type& target_name);
+
+
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      rx_result check (type_check_context& ctx);
+
+      rx_result construct (construct_context& ctx) const;
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      item_reference get_relation_type () const
+      {
+        return relation_type_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      item_reference target_;
+
+      item_reference relation_type_;
+
+
+    friend class meta_algorithm::relation_blocks_algorithm;
+};
+
 
 template<class T>
 bool generate_json(T whose, std::ostream& def, std::ostream& err)
@@ -88,6 +151,7 @@ bool generate_json(T whose, std::ostream& def, std::ostream& err)
 class object_data_type 
 {
 	typedef std::vector<program_runtime_ptr> programs_type;
+	typedef std::vector<relation_attribute> relations_type;
 	//typedef std::vector<int> programs_type;
 
   public:
@@ -120,6 +184,8 @@ class object_data_type
 
 
       programs_type programs_;
+
+      relations_type relations_;
 
 
       bool constructable_;
@@ -458,6 +524,112 @@ public:
 };
 
 
+
+
+
+
+class relation_data_type 
+{
+
+  public:
+
+      rx::data::runtime_values_data& get_overrides () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class relation_type : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(relation_type);
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+relation is now full blown object!");
+public:
+	typedef runtime::relation_runtime_ptr RDataType;
+	typedef runtime::relations::relation_runtime RType;
+	typedef runtime::relations::relation_instance_data instance_data_t;
+	typedef runtime::objects::domain_instance_data domain_instance_data_t;
+	template<class typeT>
+	friend class meta_algorithm::object_types_algorithm;
+	typedef runtime::relation_runtime_ptr RTypePtr;
+
+  public:
+      relation_type();
+
+      relation_type (const object_type_creation_data& data);
+
+
+      platform_item_ptr get_item_ptr () const;
+
+      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      meta_data& meta_info ();
+
+      rx_result construct (runtime::relation_runtime_ptr what, construct_context& ctx) const;
+
+      bool check_type (type_check_context& ctx);
+
+      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
+
+      static void set_instance_data (instance_data_t&& data, RTypePtr where);
+
+
+      const meta_data& meta_info () const;
+
+      const relation_data_type& complex_data () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+      item_reference get_inverse_reference () const
+      {
+        return inverse_reference_;
+      }
+
+
+      bool get_hierarchical () const
+      {
+        return hierarchical_;
+      }
+
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
+
+
+      meta_data meta_info_;
+
+      relation_data_type complex_data_;
+
+
+      item_reference inverse_reference_;
+
+      bool hierarchical_;
+
+
+};
+
+
 } // namespace object_types
 } // namespace meta
 } // namespace rx_platform
@@ -471,6 +643,7 @@ typedef pointers::reference<object_types::object_type> object_type_ptr;
 typedef pointers::reference<object_types::domain_type> domain_type_ptr;
 typedef pointers::reference<object_types::application_type> application_type_ptr;
 typedef pointers::reference<object_types::port_type> port_type_ptr;
+typedef pointers::reference<object_types::relation_type> relation_type_ptr;
 
 }
 
@@ -478,6 +651,7 @@ typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
 typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;
 typedef pointers::reference<meta::object_types::application_type> rx_application_type_ptr;
 typedef pointers::reference<meta::object_types::port_type> rx_port_type_ptr;
+typedef pointers::reference<meta::object_types::relation_type> relation_type_ptr;
 }
 
 

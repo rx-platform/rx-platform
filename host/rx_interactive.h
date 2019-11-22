@@ -180,8 +180,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
   protected:
-
-      void console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
+	  
+      rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
 
       bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 

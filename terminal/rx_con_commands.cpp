@@ -360,9 +360,19 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	{// testing stuff
 		do_test_command(in, out, err, ctx);
 	}
-	else if (sub_command == "hist")
+	else if (sub_command == "last")
 	{// testing stuff
-		do_hist_command(in, out, err, ctx);
+		do_last_command(in, out, err, ctx);
+	}
+	else if (sub_command == "help")
+	{
+		out << get_help();
+	}
+	else
+	{
+		err << sub_command
+			<< " is unkonwn command type.";
+		return false;
 	}
 	return true;
 }
@@ -424,14 +434,23 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	return true;
 }
 
-bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
 {
 	log::log_query_type query;
-	query.include_trace = false;
+	query.type = log::rx_log_query_type::normal_level;
 	string_type options;
 	in >> options;
-	if (options == "-t")
-		query.include_trace = true;
+	if (!options.empty())
+	{
+		if (options == "-t")
+			query.type = log::rx_log_query_type::trace_level;
+		if (options == "-d")
+			query.type = log::rx_log_query_type::debug_level;
+		if (options == "-w")
+			query.type = log::rx_log_query_type::warining_level;
+		if (options == "-e")
+			query.type = log::rx_log_query_type::error_level;
+	}
 	log::log_events_type result;
 	auto ret = rx_gate::instance().read_log(query, result);
 	if (ret)
@@ -442,12 +461,12 @@ bool log_command::do_hist_command (std::istream& in, std::ostream& out, std::ost
 		options.list_library = false;
 		options.list_source = false;
 		options.list_dates = false;
-		dump_log_items(result, options, out, err, ctx);
+		dump_log_items(result, options, out);
 	}
 	return true;
 }
 
-bool log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out)
 {
 	rx_table_type table(items.size() + 1);
 	table[0].emplace_back("Time");
@@ -481,25 +500,23 @@ bool log_command::dump_log_items (const log::log_events_type& items, list_log_op
 	}
 
 	rx_dump_table(table, out, true, false);
-
-	return true;
 }
 
 rx_table_cell_struct log_command::create_log_type_cell (log::log_event_type type)
 {
 	switch (type)
 	{
-	case log::log_event_type::info_log_event:
+	case log::log_event_type::info:
 		return rx_table_cell_struct{ "INFO", ANSI_RX_LOG_INFO, ANSI_COLOR_RESET };
-	case log::log_event_type::warning_log_event:
+	case log::log_event_type::warning:
 		return rx_table_cell_struct{ "WARNING", ANSI_RX_LOG_WARNING, ANSI_COLOR_RESET };
-	case log::log_event_type::error_log_event:
+	case log::log_event_type::error:
 		return rx_table_cell_struct{ "ERROR", ANSI_RX_LOG_ERROR, ANSI_COLOR_RESET };
-	case log::log_event_type::critical_log_event:
+	case log::log_event_type::critical:
 		return rx_table_cell_struct{ "CRITICAL", ANSI_RX_LOG_CRITICAL, ANSI_COLOR_RESET };
-	case log::log_event_type::debug_log_event:
+	case log::log_event_type::debug:
 		return rx_table_cell_struct{ "DEBUG", ANSI_RX_LOG_DEBUG, ANSI_COLOR_RESET };
-	case log::log_event_type::trace_log_event:
+	case log::log_event_type::trace:
 		return rx_table_cell_struct{ "TRACE", ANSI_RX_LOG_TRACE, ANSI_COLOR_RESET };
 	default:
 		return rx_table_cell_struct{ "***UNKNOWN***", ANSI_RX_LOG_UNKNOWN, ANSI_COLOR_RESET };
@@ -850,9 +867,9 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 	string_type command_name;
 	in >> command_name;
 	out << "Printing help...\r\n";
-	out << RX_CONSOLE_HEADER_LINE "\r\n";
 	if (command_name.empty())
 	{
+		out << RX_CONSOLE_HEADER_LINE "\r\n";
 		out << get_help();
 		return true;
 	}
@@ -861,11 +878,7 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 		auto command = terminal::commands::server_command_manager::instance()->get_command_by_name(command_name);
 		if (command)
 		{
-			out << ANSI_COLOR_GREEN << ":>";
-			out << ANSI_COLOR_YELLOW ANSI_COLOR_BOLD << command->get_name() << ANSI_COLOR_RESET << "\r\n";
-			out << RX_CONSOLE_HEADER_LINE "\r\n\r\n";
 			out << command->get_help();
-			out << "\r\n\r\n";
 			return true;
 		}
 		else
@@ -914,5 +927,4 @@ string_type help_command::get_help () const
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
-
 

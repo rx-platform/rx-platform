@@ -68,7 +68,8 @@ enum rx_attribute_type
 	event_attribute_type = 5,
 	mapper_attribute_type = 6,
 	const_attribute_type = 7,
-	value_attribute_type = 8
+	value_attribute_type = 8,
+	relation_attribute_type = 9
 };
 struct runtime_item_attribute
 {
@@ -94,10 +95,12 @@ enum rx_item_type : uint8_t
 	rx_filter_type = 12,
 	rx_event_type = 13,
 	rx_mapper_type = 14,
-	rx_program = 15,
-	rx_method = 16,
+	rx_relation_type = 15,
+	rx_program = 16,
+	rx_method = 17,
+	rx_relation = 18,
 
-	rx_first_invalid = 17,
+	rx_first_invalid = 19,
 
 	rx_test_case_type = 0xfe,
 	rx_invalid_type = 0xff
@@ -166,6 +169,8 @@ class item_reference
 
       item_reference (const char* right);
 
+      item_reference (const rx_simple_value& right);
+
       ~item_reference();
 
       item_reference & operator=(const item_reference &right);
@@ -187,14 +192,20 @@ class item_reference
 
       const rx_node_id& get_node_id () const;
 
+      rx_simple_value to_value () const;
+
+      item_reference& operator = (const rx_simple_value& right);
+
 	  item_reference(item_reference&& right) noexcept;
 	  item_reference& operator=(item_reference&& right) noexcept;
 
 	  item_reference(rx_node_id&& right) noexcept;
 	  item_reference(string_type&& right) noexcept;
+	  item_reference(rx_simple_value&& right) noexcept;
 
 	  item_reference& operator= (rx_node_id&& right) noexcept;
 	  item_reference& operator= (string_type&& right) noexcept;
+	  item_reference& operator= (rx_simple_value&& right) noexcept;
   protected:
 
   private:
@@ -251,9 +262,9 @@ class meta_data
 
       void increment_version (bool full_ver);
 
-      item_reference create_item_reference ();
+      rx_platform::meta::item_reference create_item_reference ();
 
-      item_reference create_weak_item_reference (const string_array& dirs);
+      rx_platform::meta::item_reference create_weak_item_reference (const string_array& dirs);
 
 
       const rx_node_id& get_parent () const

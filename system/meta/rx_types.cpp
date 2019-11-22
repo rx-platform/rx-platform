@@ -478,4 +478,3 @@ const def_blocks::complex_data_type& variable_type::complex_data () const
 } // namespace meta
 } // namespace rx_platform
 
-

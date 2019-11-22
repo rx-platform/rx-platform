@@ -63,6 +63,11 @@ namespace objects
 {
 	class object_runtime;
 }
+namespace relations
+{
+
+class relation_runtime;
+}
 typedef rx::pointers::reference<blocks::struct_runtime> struct_runtime_ptr;
 typedef rx::pointers::reference<blocks::variable_runtime> variable_runtime_ptr;
 typedef rx::pointers::reference<blocks::source_runtime> source_runtime_ptr;
@@ -70,6 +75,7 @@ typedef rx::pointers::reference<blocks::mapper_runtime> mapper_runtime_ptr;
 typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
 typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
 typedef rx::pointers::reference<objects::object_runtime> object_runtime_ptr;
+typedef rx::pointers::reference<relations::relation_runtime> relation_runtime_ptr;
 
 namespace structure {
 

@@ -166,7 +166,7 @@ class rx_json_file : public rx_file_item
 
       rx_result open_for_write ();
 
-      rx_result close ();
+      void close ();
 
 
   protected:
@@ -203,7 +203,7 @@ class rx_binary_file : public rx_file_item
 
       rx_result open_for_write ();
 
-      rx_result close ();
+      void close ();
 
 
   protected:
@@ -262,7 +262,7 @@ typedef file_system_storage< storage_policy::file_path_addresing_policy  > file_
 
 
 
-typedef file_system_storage_holder< storage::files::file_system_path_storage  > file_system_path_storage_holder;
+typedef file_system_storage_holder< file_system_path_storage  > file_system_path_storage_holder;
 
 
 } // namespace files

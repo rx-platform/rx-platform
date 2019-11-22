@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -131,6 +131,11 @@ rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>)
 {
 	return RX_TIME_TYPE;
 }
+template<>
+rx_value_t inner_get_type(tl::type2type<typename rx::rx_node_id>)
+{
+	return RX_NODE_ID_TYPE;
+}
 
 double complex_value_struct::amplitude() const
 {
@@ -155,7 +160,7 @@ bool complex_value_struct::parse_string(const string_type& str)
 	return true;
 }
 
-// Class rx::values::rx_value
+// Class rx::values::rx_value 
 
 
 bool rx_value::is_good () const
@@ -465,7 +470,7 @@ rx_value & rx_value::operator=(const rx_value &right)
 	return *this;
 }
 
-// Class rx::values::rx_simple_value
+// Class rx::values::rx_simple_value 
 
 rx_simple_value::rx_simple_value (const rx_value_storage& storage)
 	: storage_(storage)
@@ -619,7 +624,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 	storage_ = right.storage_;
 	return *this;
 }
-// Class rx::values::rx_value_storage
+// Class rx::values::rx_value_storage 
 
 rx_value_storage::rx_value_storage()
 	: value_type_(RX_NULL_TYPE)
@@ -1727,7 +1732,7 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
@@ -1815,7 +1820,7 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1846,7 +1851,7 @@ rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1873,7 +1878,7 @@ rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1904,7 +1909,7 @@ rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1918,6 +1923,38 @@ rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) co
 		}
 	}
 	return result;
+}
+
+rx_node_id rx_value_storage::get_id_value () const
+{
+	if (value_type_ == RX_NODE_ID_TYPE)
+	{
+		return *value_.node_id_value;
+	}
+	else
+	{
+		return rx_node_id();
+	}
+}
+
+string_type rx_value_storage::get_string_value () const
+{
+	if (value_type_ == RX_STRING_TYPE)
+	{
+		return *value_.string_value;
+	}
+	else
+	{
+		rx_value_storage conv(*this);
+		if (conv.convert_to(RX_STRING_TYPE))
+		{
+			return *conv.value_.string_value;
+		}
+		else
+		{
+			return string_type();
+		}
+	}
 }
 
 void rx_value_storage::assign(bool val)
@@ -3981,7 +4018,7 @@ byte_string extract_value(const rx_value_storage& from, const byte_string& defau
 	}
 	return default_value;
 }
-// Class rx::values::rx_timed_value
+// Class rx::values::rx_timed_value 
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {
@@ -4191,6 +4228,4 @@ rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 
 } // namespace values
 } // namespace rx
-
-
 

@@ -155,6 +155,33 @@ class application_algorithms
 };
 
 
+
+
+
+
+class relations_algorithms 
+{
+
+  public:
+
+      static rx_result init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result deinit_runtime (rx_relation_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+
+  protected:
+
+  private:
+
+      static rx_result start_runtime (rx_relation_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result stop_runtime (rx_relation_ptr what, runtime::runtime_stop_context& ctx);
+
+
+
+};
+
+
 } // namespace algorithms
 } // namespace sys_runtime
 

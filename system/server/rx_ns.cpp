@@ -166,19 +166,7 @@ rx_result rx_platform_item::save () const
 		if (result)
 		{
 			result = serialize(item_result.value()->write_stream());
-			if (!result)
-			{// first error is on serialize so pack all errors (we have to close file)
-				auto result_close = item_result.value()->close();
-				if (!result_close)
-				{
-					for (const auto& one : result_close.errors())
-					{
-						result.register_error(string_type(one));
-					}
-				}
-			}
-			else
-				result = item_result.value()->close();
+			item_result.value()->close();
 		}
 		return result;
 	}
@@ -211,7 +199,7 @@ bool rx_platform_item::is_type () const
 {
 	auto type = get_type_id();
 	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
-		|| (type >= rx_port_type && type <= rx_mapper_type);
+		|| (type >= rx_port_type && type <= rx_mapper_type) || type == rx_relation_type;
 }
 
 rx_result rx_platform_item::delete_item () const
@@ -796,7 +784,7 @@ platform_item_ptr rx_directory_resolver::resolve_path (const string_type& path)
 void rx_directory_resolver::add_paths (std::initializer_list<string_type> paths)
 {
 	for (auto&& one : paths)
-		directories_.emplace_back(resolver_data { std::move(one), rx_directory_ptr::null_ptr, false });
+		directories_.emplace_back(resolver_data { std::forward<decltype(one)>(one), rx_directory_ptr::null_ptr, false });
 }
 
 

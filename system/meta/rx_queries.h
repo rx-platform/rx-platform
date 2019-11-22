@@ -126,6 +126,7 @@ class derived_types_query : public rx_query
 	  rx_result do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
 	  template<typename T>
 	  rx_result do_simple_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
+	  rx_result do_relation_query(api::query_result& result, rx_directory_ptr dir);
 
 };
 

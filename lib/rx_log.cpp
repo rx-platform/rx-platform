@@ -43,17 +43,17 @@ const char* event_type_to_string(log_event_type type)
 {
 	switch (type)
 	{
-	case info_log_event:
+	case log_event_type::info:
 		return "INFO";
-	case warning_log_event:
+	case log_event_type::warning:
 		return "WARNING";
-	case error_log_event:
+	case log_event_type::error:
 		return "ERROR";
-	case critical_log_event:
+	case log_event_type::critical:
 		return "CRITICAL";
-	case debug_log_event:
+	case log_event_type::debug:
 		return "DEBUG";
-	case trace_log_event:
+	case log_event_type::trace:
 		return "TRACE";
 	default:
 		return "***UNKNOWN***";
@@ -86,17 +86,17 @@ const char* get_log_type_string(log::log_event_type type)
 {
 	switch (type)
 	{
-	case log::log_event_type::info_log_event:
+	case log_event_type::info:
 		return " INFO     ";
-	case log::log_event_type::warning_log_event:
+	case log_event_type::warning:
 		return " WARNING  ";
-	case log::log_event_type::error_log_event:
+	case log_event_type::error:
 		return " ERROR    ";
-	case log::log_event_type::critical_log_event:
+	case log_event_type::critical:
 		return " CRITICAL ";
-	case log::log_event_type::debug_log_event:
+	case log_event_type::debug:
 		return " DEBUG    ";
-	case log::log_event_type::trace_log_event:
+	case log_event_type::trace:
 		return " TRACE    ";
 	default:
 		return "***UNKNOWN***";
@@ -207,7 +207,7 @@ void log_object::deinitialize ()
 	worker_.end();
 	const char* line = "Log Stopped!";
 	LOG_CODE_PREFIX
-	sync_log_event(rx::log::info_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
+	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
 	if (cache_)
@@ -227,7 +227,7 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 	}
 	const char* line = "Log started!";
 	LOG_CODE_PREFIX
-	sync_log_event(rx::log::info_log_event, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
+	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
 	worker_.start(priority);
@@ -385,8 +385,27 @@ bool cache_log_subscriber::read_log (const log_query_type& query, log_events_typ
 	}
 	for (events_cache_type::const_iterator it=start_it; it!=end_it; it++)
 	{
-		if (!query.include_trace && it->second.event_type == log::trace_log_event)
-			continue;// this is not our's!
+		switch (query.type)
+		{
+		case rx_log_query_type::debug_level:
+			break;// pass all
+		case rx_log_query_type::trace_level:
+			if (it->second.event_type < log_event_type::trace)
+				continue;
+			break;
+		case rx_log_query_type::normal_level:
+			if (it->second.event_type < log_event_type::info)
+				continue;
+			break;
+		case rx_log_query_type::warining_level:
+			if (it->second.event_type < log_event_type::warning)
+				continue;
+			break;
+		case rx_log_query_type::error_level:
+			if (it->second.event_type < log_event_type::error)
+				continue;
+			break;
+		}
 		result.emplace_back(it->second);
 	}
 	return true;

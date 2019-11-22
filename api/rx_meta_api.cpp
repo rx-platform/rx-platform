@@ -321,6 +321,7 @@ template rx_result rx_create_simple_type<mapper_type>(const string_type& name
 	, rx_context ctx);
 
 
+
 template<class typeT>
 rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
@@ -350,6 +351,30 @@ template rx_result rx_update_simple_type<event_type>(event_type::smart_ptr proto
 template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr prototype, bool increment_version
 	, std::function<void(rx_result_with<mapper_type::smart_ptr>&&)> callback
 	, rx_context ctx);
+
+
+
+rx_result rx_create_relation_type(
+	const string_type& name // type's path
+	, const item_reference& base_reference // base reference
+	, typename relation_type::smart_ptr prototype // prototype
+	, namespace_item_attributes attributes // required attributes
+	, std::function<void(rx_result_with<typename relation_type::smart_ptr>&&)> callback
+	, rx_context ctx)
+{
+	model::algorithms::relation_types_algorithm::create_type(
+		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
+	return true;
+}
+
+rx_result rx_update_relation_type(typename relation_type::smart_ptr prototype, bool increment_version
+	, std::function<void(rx_result_with<typename relation_type::smart_ptr>&&)> callback
+	, rx_context ctx)
+{
+	model::algorithms::relation_types_algorithm::update_type(
+		prototype, ctx.directory, increment_version, callback, ctx.object);
+	return true;
+}
 
 
 
@@ -446,7 +471,13 @@ template rx_result rx_get_simple_type<event_type>(const item_reference& ref
 template rx_result rx_get_simple_type<mapper_type>(const item_reference& ref
 	, std::function<void(rx_result_with<typename mapper_type::smart_ptr>&&)> callback, rx_context ctx);
 
-
+rx_result rx_get_relation_type(const item_reference& ref
+	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback, rx_context ctx)
+{
+	model::algorithms::relation_types_algorithm::get_type(ref,
+		ctx.directory, callback, ctx.object);
+	return true;
+}
 
 template<class T>
 rx_result rx_delete_type(const item_reference& ref
@@ -490,6 +521,16 @@ template rx_result rx_delete_simple_type<event_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
 template rx_result rx_delete_simple_type<mapper_type>(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
+
+
+template<class T>
+rx_result rx_delete_relation_type(const item_reference& ref
+	, std::function<void(rx_result&&)> callback, rx_context ctx)
+{
+	model::algorithms::relation_types_algorithm::delete_type(ref,
+		ctx.directory, callback, ctx.object);
+	return true;
+}
 
 
 }

@@ -75,7 +75,7 @@ rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	auto result = physical_port::initialize_runtime(ctx);
 	if (result)
-	{		
+	{
 	}
 	return result;
 }

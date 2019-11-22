@@ -39,9 +39,21 @@
 #include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_plugin_manager.h"
+#include "model/rx_meta_internals.h"
+#include "terminal/rx_con_commands.h"
 
 
 namespace rx_platform {
+
+template<typename typeT>
+rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
+{
+	return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
+}
+template rx_result register_host_constructor<meta::object_types::object_type>(const rx_node_id& id, std::function<rx_object_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::domain_type>(const rx_node_id& id, std::function<rx_domain_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::port_type>(const rx_node_id& id, std::function<rx_port_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::application_type>(const rx_node_id& id, std::function<rx_application_ptr()> f);
 
 namespace hosting {
 namespace
@@ -369,6 +381,17 @@ rx_result_with<rx_storage_ptr> rx_platform_host::get_user_storage (const string_
 rx_result_with<rx_storage_ptr> rx_platform_host::get_test_storage (const string_type& name)
 {
 	return storages_.test_storage->get_storage(name);
+}
+
+void rx_platform_host::dump_log_items (const log::log_events_type& items, std::ostream& out)
+{
+	terminal::console::console_commands::list_log_options options;
+	options.list_level = false;
+	options.list_code = false;
+	options.list_library = false;
+	options.list_source = false;
+	options.list_dates = false;
+	terminal::console::console_commands::log_command::dump_log_items(items, options, out);
 }
 
 

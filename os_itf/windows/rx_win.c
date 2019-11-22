@@ -764,7 +764,6 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, uint8_t* data, size_t* size
 	if (!ret)
 	{
 		DWORD err = GetLastError();
-		printf("***Pipe error %x\r\n", err);
 		return RX_ERROR;
 	}
 	*size = read;

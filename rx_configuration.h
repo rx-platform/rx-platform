@@ -66,6 +66,10 @@
 #define RX_NS_OBJECT_DATA_NAME "ObjectData"
 #define RX_NS_OBJECT_DATA_ID 0x0000000d
 
+
+#define RX_NS_RELATION_BASE_NAME "RelationBase"
+#define RX_NS_RELATION_BASE_ID 0x0000000e
+
 #define NS_RX_COMMANDS_MANAGER_NAME "CmdManager"
 #define RX_COMMANDS_MANAGER_ID 0x8000001
 
@@ -221,6 +225,8 @@
 #define RX_CPP_FILTER_TYPE_NAME "filter"
 #define RX_CPP_EVENT_CLASS_TYPE_NAME "event_type"
 #define RX_CPP_EVENT_TYPE_NAME "event"
+#define RX_CPP_RELATION_CLASS_TYPE_NAME "relation_type"
+#define RX_CPP_RELATION_TYPE_NAME "relation"
 
 //Main messages
 #define RX_ACCESS_DENIED "*ACCESS DENIED*"

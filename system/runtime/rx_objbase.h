@@ -96,6 +96,8 @@ typedef rx_reference<runtime::objects::domain_runtime> rx_domain_ptr;
 typedef rx_reference<runtime::objects::port_runtime> rx_port_ptr;
 typedef rx_reference<runtime::objects::object_runtime> rx_object_ptr;
 typedef rx_reference<runtime::objects::application_runtime> rx_application_ptr;
+typedef rx_reference<runtime::relations::relation_runtime> rx_relation_ptr;
+
 
 
 
@@ -646,8 +648,6 @@ system port class. basic implementation of a port");
 
       virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
 
-      void update_received_packets (size_t count);
-
 
   private:
 
@@ -660,10 +660,6 @@ system port class. basic implementation of a port");
       blocks::runtime_holder runtime_;
 
       meta::meta_data meta_info_;
-
-      runtime_handle_t rx_packets_item_;
-
-      runtime_handle_t tx_packets_item_;
 
       runtime_process_context runtime_context_;
 
@@ -831,3 +827,4 @@ system application class. basic implementation of a application");
 
 
 #endif
+

@@ -35,6 +35,16 @@
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
+namespace rx_platform {
+namespace meta {
+namespace object_types {
+class relation_attribute;
+
+} // namespace object_types
+} // namespace meta
+} // namespace rx_platform
+
+
 namespace rx_platform
 {
 	namespace meta
@@ -134,6 +144,33 @@ class object_types_algorithm
       static bool check_object_type (typeT& whose, type_check_context& ctx);
 
       static rx_result construct_object (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class relation_blocks_algorithm 
+{
+
+  public:
+
+      static rx_result serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream);
+
+      static rx_result deserialize_relation_attribute (object_types::relation_attribute& whose, base_meta_reader& stream);
+
+      static bool check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx);
+
+      static rx_result construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx);
 
 
   protected:

@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -386,7 +386,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 		name = item->meta_info().get_name();
 		dir = item->get_parent();
 	}
-	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_for_delete(id);
+	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
 		return obj_ptr.errors();
@@ -397,7 +397,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 		{
 			rx_transaction_type transaction;
 			transaction.push([=] {
-					auto unmark = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_running(id);
+					auto unmark = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_running(id);
 				});
 
 			if (!deinit_result)
@@ -431,7 +431,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 			transaction.push([dir, item]() mutable {
 				auto add_result = dir->add_item(item);
 				});
-			ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(id);
+			ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(id);
 			if (!ret)
 			{// error, didn't deleted runtime
 				ret.register_error("Error deleting runtime from the cache.");
@@ -486,7 +486,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		auto cancel_reserve = dir->cancel_reserve(runtime_name);
 		});
 
-	
+
 	if (!item_id)
 		item_id = rx_node_id::generate_new();
 
@@ -576,7 +576,7 @@ rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
 	{
 		return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
 	}
-	auto ret = model::platform_types_manager::instance().internal_get_type_cache<typeT>().type_exists(result.value());
+	auto ret = model::platform_types_manager::instance().get_type_repository<typeT>().type_exists(result.value());
 	if (!ret)
 	{// type does not exist
 		return ret.errors();
@@ -594,6 +594,26 @@ template rx_result_with<rx_node_id> resolve_type_reference(const item_reference&
 	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
+rx_result_with<rx_node_id> resolve_relation_reference(const item_reference& ref
+	, ns::rx_directory_resolver& directories)
+{
+	rx_item_type type;
+	meta_data info;
+	auto result = resolve_some_reference(ref, directories, info, type);
+	if (!result)
+		return result;
+	if (type != relation_type::type_id)
+	{
+		return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(relation_type::type_id) + "!";
+	}
+	auto ret = model::platform_types_manager::instance().get_relations_repository().type_exists(result.value());
+	if (!ret)
+	{// type does not exist
+		return ret.errors();
+	}
+	return result;
+}
+
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
@@ -610,7 +630,7 @@ rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& r
 			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
 		}
 	}
-	auto ret = model::platform_types_manager::instance().internal_get_simple_type_cache<typeT>().type_exists(result.value());
+	auto ret = model::platform_types_manager::instance().get_simple_type_repository<typeT>().type_exists(result.value());
 	if (!ret)
 	{// type does not exist
 		return ret.errors();
@@ -668,7 +688,7 @@ template rx_result_with<rx_node_id> resolve_runtime_reference(const item_referen
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm
+// Parameterized Class model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -696,7 +716,7 @@ type_check_context types_model_algorithm<typeT>::check_type_sync (const string_t
 		ret.add_error(name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!");
 		return ret;
 	}
-	auto result = platform_types_manager::instance().internal_get_type_cache<typeT>().check_type(id, ret);
+	auto result = platform_types_manager::instance().get_type_repository<typeT>().check_type(id, ret);
 	return ret;
 }
 
@@ -714,7 +734,7 @@ template <class typeT>
 rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_type_sync (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
 {
 	rx_transaction_type transaction;
-	auto result = create_some_type(platform_types_manager::instance().internal_get_type_cache<typeT>()
+	auto result = create_some_type(platform_types_manager::instance().get_type_repository<typeT>()
 		, name, base_reference, prototype,
 		dir, attributes, transaction);
 	if (result)
@@ -737,7 +757,7 @@ template <class typeT>
 rx_result types_model_algorithm<typeT>::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_transaction_type transaction;
-	auto result = delete_some_type(platform_types_manager::instance().internal_get_type_cache<typeT>(), item_reference, dir, transaction);
+	auto result = delete_some_type(platform_types_manager::instance().get_type_repository<typeT>(), item_reference, dir, transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -759,7 +779,7 @@ template <class typeT>
 rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
 {
 	rx_transaction_type transaction;
-	auto result = update_some_type(platform_types_manager::instance().internal_get_type_cache<typeT>(), prototype, dir, increment_version, transaction);
+	auto result = update_some_type(platform_types_manager::instance().get_type_repository<typeT>(), prototype, dir, increment_version, transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -797,11 +817,11 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 			return item_reference.get_path() + " is not valid path.";
 		}
 	}
-	return platform_types_manager::instance().get_type_cache<typeT>().get_type_definition(id);
+	return platform_types_manager::instance().get_type_repository<typeT>().get_type_definition(id);
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm
+// Parameterized Class model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -829,7 +849,7 @@ type_check_context simple_types_model_algorithm<typeT>::check_type_sync (const s
 		ret.add_error(name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!");
 		return ret;
 	}
-	platform_types_manager::instance().internal_get_simple_type_cache<typeT>().check_type(id, ret);
+	platform_types_manager::instance().get_simple_type_repository<typeT>().check_type(id, ret);
 	return ret;
 }
 
@@ -847,7 +867,7 @@ template <class typeT>
 rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::create_type_sync (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
 {
 	rx_transaction_type transaction;
-	auto result = create_some_type(platform_types_manager::instance().internal_get_simple_type_cache<typeT>()
+	auto result = create_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>()
 		, name, base_reference, prototype,
 		dir, attributes, transaction);
 	if (result)
@@ -870,7 +890,7 @@ template <class typeT>
 rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_transaction_type transaction;
-	auto result = delete_some_type(platform_types_manager::instance().internal_get_simple_type_cache<typeT>(), item_reference, dir, transaction);
+	auto result = delete_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), item_reference, dir, transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -892,7 +912,7 @@ template <class typeT>
 rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
 {
 	rx_transaction_type transaction;
-	auto result = update_some_type(platform_types_manager::instance().internal_get_simple_type_cache<typeT>(), prototype, dir, increment_version, transaction);
+	auto result = update_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), prototype, dir, increment_version, transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -930,11 +950,11 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 			return item_reference.get_path() + " is not valid path.";
 		}
 	}
-	return platform_types_manager::instance().get_simple_type_cache<typeT>().get_type_definition(id);
+	return platform_types_manager::instance().get_simple_type_repository<typeT>().get_type_definition(id);
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm
+// Parameterized Class model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
@@ -980,7 +1000,7 @@ template <class typeT>
 rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 	rx_transaction_type transaction;
-	auto result = create_some_runtime<type_hash<typeT> >(platform_types_manager::instance().internal_get_type_cache<typeT>()
+	auto result = create_some_runtime<types_repository<typeT> >(platform_types_manager::instance().get_type_repository<typeT>()
 		, info, init_data, instance_data
 		, dir, namespace_item_attributes::namespace_item_full_access, transaction);
 	if (result)
@@ -1015,7 +1035,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		namespace_item_attributes::namespace_item_full_access : info.get_attributes();
 	meta_data meta;
 	meta.construct(info.get_name(), rx_node_id::null_id, super_id, attributes, path);
-	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().create_runtime(meta, std::move(instance_data), nullptr, true);
+	auto ret = platform_types_manager::instance().get_type_repository<typeT>().create_runtime(meta, std::move(instance_data), nullptr, true);
 
 	return ret;
 }
@@ -1044,7 +1064,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 	dir->fill_path(path);
 	meta_data meta;
 	meta.construct(name, rx_node_id::null_id, resolved.value(), attributes, path);
-	auto result = create_some_runtime<type_hash<typeT> >(platform_types_manager::instance().internal_get_type_cache<typeT>()
+	auto result = create_some_runtime<types_repository<typeT> >(platform_types_manager::instance().get_type_repository<typeT>()
 		, meta, init_data, instance_data
 		, dir, attributes, transaction);
 	if (result)
@@ -1062,7 +1082,7 @@ rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr
 	if (init_result)
 	{// make object running in state
 
-		auto init_result = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_running(what->meta_info().get_id());
+		auto init_result = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_running(what->meta_info().get_id());
 	}
 	return init_result;
 }
@@ -1091,7 +1111,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 	{// error, item does not have id
 		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
 	}
-	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_for_delete(id);
+	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
 		return obj_ptr.errors();
@@ -1101,7 +1121,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 	meta_data meta_info(info);
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [meta_info, increment_version, callback, init_data, instance_data, dir, ref] (rx_result&& deinit_result) mutable
 		{
-			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(meta_info.get_id());
+			auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(meta_info.get_id());
 			if (ret)
 			{
 				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(meta_info.get_path());
@@ -1139,7 +1159,7 @@ rx_result runtime_model_algorithm<typeT>::helper_delete_runtime_sync (meta_data_
 	{// error, item does not have id
 		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
 	}
-	auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(id);
+	auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(id);
 	if (ret)
 	{
 		auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
@@ -1170,7 +1190,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 	{// error, item does not have id
 		return info.get_name() + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!";
 	}
-	auto obj_ptr = platform_types_manager::instance().internal_get_type_cache<typeT>().mark_runtime_for_delete(id);
+	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
 		return obj_ptr.errors();
@@ -1179,7 +1199,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 	runtime::runtime_deinit_context ctx;
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [info, callback](rx_result&& deinit_result)
 		{
-			auto ret = platform_types_manager::instance().internal_get_type_cache<typeT>().delete_runtime(info.get_id());
+			auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(info.get_id());
 			if (ret)
 			{
 				auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(info.get_path());
@@ -1235,7 +1255,130 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 			return item_reference.get_path() + " is not valid path.";
 		}
 	}
-	return platform_types_manager::instance().get_type_cache<typeT>().get_runtime(id);
+	return platform_types_manager::instance().get_type_repository<typeT>().get_runtime(id);
+}
+
+
+// Class model::algorithms::relation_types_algorithm 
+
+
+void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
+{
+	std::function<type_check_context(const string_type, rx_directory_ptr)> func = [=](const string_type loc_name, rx_directory_ptr loc_dir) mutable {
+		return check_type_sync(loc_name, loc_dir);
+	};
+	rx_do_with_callback(func, RX_DOMAIN_META, callback, ref, name, dir);
+}
+
+type_check_context relation_types_algorithm::check_type_sync (const string_type& name, rx_directory_ptr dir)
+{
+	type_check_context ret;
+	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+	if (!item)
+	{
+		ret.add_error(name + " does not exists!");
+		return ret;
+	}
+	auto id = item->meta_info().get_id();
+	if (id.is_null())
+	{// error, item does not have id
+		ret.add_error(name + " does not have valid " + rx_item_type_name(relation_type::type_id) + " id!");
+		return ret;
+	}
+	platform_types_manager::instance().get_relations_repository().check_type(id, ret);
+	return ret;
+}
+
+void relation_types_algorithm::create_type (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
+{
+	using result_t = rx_result_with<relation_type::smart_ptr>;
+	std::function<result_t(void)> func = [=]() {
+		return create_type_sync(name, base_reference, prototype, dir, attributes);
+	};
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
+}
+
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::create_type_sync (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
+{
+	rx_transaction_type transaction;
+	auto result = create_some_type(platform_types_manager::instance().get_relations_repository()
+		, name, base_reference, prototype,
+		dir, attributes, transaction);
+	if (result)
+	{
+		transaction.commit();
+	}
+	return result;
+}
+
+void relation_types_algorithm::delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+{
+	std::function<rx_result(void)> func = [=]() {
+		return delete_type_sync(item_reference, dir);
+	};
+	rx_do_with_callback<rx_result, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
+}
+
+rx_result relation_types_algorithm::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+{
+	rx_transaction_type transaction;
+	auto result = delete_some_type(platform_types_manager::instance().get_relations_repository(), item_reference, dir, transaction);
+	if (result)
+	{
+		transaction.commit();
+	}
+	return result;
+}
+
+void relation_types_algorithm::update_type (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
+{
+	using result_t = rx_result_with<typename relation_type::smart_ptr>;
+	std::function<result_t(void)> func = [=]() {
+		return update_type_sync(prototype, dir, increment_version);
+	};
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
+}
+
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::update_type_sync (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version)
+{
+	rx_transaction_type transaction;
+	auto result = update_some_type(platform_types_manager::instance().get_relations_repository(), prototype, dir, increment_version, transaction);
+	if (result)
+	{
+		transaction.commit();
+	}
+	return result;
+}
+
+void relation_types_algorithm::get_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
+{
+	using result_t = rx_result_with<typename relation_type::smart_ptr>;
+	std::function<result_t(void)> func = [=]() {
+		return get_type_sync(item_reference, dir);
+	};
+	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
+}
+
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+{
+	rx_node_id id;
+	if (item_reference.is_node_id())
+	{
+		id = item_reference.get_node_id();
+	}
+	else
+	{
+		auto item = dir->get_sub_item(item_reference.get_path());
+		if (item)
+		{
+			id = item->meta_info().get_id();
+		}
+		else
+		{
+			return item_reference.get_path() + " is not valid path.";
+		}
+	}
+	return platform_types_manager::instance().get_relations_repository().get_type_definition(id);
 }
 
 

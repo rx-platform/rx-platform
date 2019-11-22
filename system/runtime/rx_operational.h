@@ -32,10 +32,10 @@
 
 
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 
 
@@ -174,7 +174,17 @@ class binded_tags
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
 
+      rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
 
+	  template<typename T>
+	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
+	  {
+		  rx_simple_value temp;
+		  temp.assign_static<T>(std::forward<T>(value));
+		  auto result = set_item(path, std::move(temp), ctx);
+		  
+		  return result;
+	  }
   protected:
 
   private:

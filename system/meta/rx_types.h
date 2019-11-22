@@ -497,3 +497,10 @@ typedef pointers::reference<basic_types::filter_type> filter_type_ptr;
 
 
 #endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+
+#endif

@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -46,10 +46,10 @@ namespace runtime {
 
 namespace operational {
 
-// Class rx_platform::runtime::operational::rx_tags_callback
+// Class rx_platform::runtime::operational::rx_tags_callback 
 
 
-// Class rx_platform::runtime::operational::connected_tags
+// Class rx_platform::runtime::operational::connected_tags 
 
 connected_tags::connected_tags()
 {
@@ -194,7 +194,7 @@ void connected_tags::value_set (structure::value_data* whose, const rx_simple_va
 }
 
 
-// Class rx_platform::runtime::operational::binded_tags
+// Class rx_platform::runtime::operational::binded_tags 
 
 binded_tags::binded_tags()
 {
@@ -293,6 +293,7 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 		case RX_PATH_CURRENT:
 			{
 				string_type full_path(ctx.path.get_current_path() + path);
+				revisied_path = full_path;
 				auto it = ctx.binded_tags.find(full_path);
 				if (it != ctx.binded_tags.end())
 					return it->second;
@@ -308,6 +309,7 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 				while (idx < path.size() && path[idx] == RX_PATH_PARENT)
 					idx++;
 				string_type full_path(ctx.path.get_parent_path(idx) + path);
+				revisied_path = full_path;
 				auto it = ctx.binded_tags.find(full_path);
 				if (it != ctx.binded_tags.end())
 					return it->second;
@@ -324,6 +326,7 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 		auto ref_result = ctx.structure.get_root()->get_value_ref(path, ref);
 		if (!ref_result)
 			return ref_result.errors();
+		revisied_path = path;
 	}
 
 	if (ref.ref_type == rt_value_ref_type::rt_variable)
@@ -333,9 +336,56 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	auto bind_result = bind_tag(ref, handle);
 	if (bind_result)
 	{
-		ctx.binded_tags.emplace(path, bind_result.value());
+		ctx.binded_tags.emplace(revisied_path, bind_result.value());
 	}
 	return bind_result;
+}
+
+rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx)
+{
+	string_type revisied_path;
+	rt_value_ref ref;
+	ref.ref_type = rt_value_ref_type::rt_null;
+
+	if (!path.empty())
+	{
+		switch (path[0])
+		{
+		case RX_PATH_CURRENT:
+			{
+				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		case RX_PATH_PARENT:
+			{
+				size_t idx = 1;
+				while (idx < path.size() && path[idx] == RX_PATH_PARENT)
+					idx++;
+				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		}
+	}
+	if (ref.ref_type == rt_value_ref_type::rt_null)
+	{
+		auto ref_result = ctx.structure.get_root()->get_value_ref(path, ref);
+		if (!ref_result)
+			return ref_result.errors();
+	}
+	switch (ref.ref_type)
+	{
+	case rt_value_ref_type::rt_const_value:
+		return ref.ref_value_ptr.const_value->set_value(std::move(what));
+	case rt_value_ref_type::rt_value:
+		ref.ref_value_ptr.value->set_value(std::move(what), structure::init_context::create_initialization_context(ctx.structure.get_root()));
+		return true;
+	default:
+		return "Unsupported type!.";
+	}
 }
 
 

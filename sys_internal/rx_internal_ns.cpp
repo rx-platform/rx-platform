@@ -556,8 +556,6 @@ host_directory::host_directory()
 		string_type base(RX_DIR_DELIMETER_STR);
 		base += RX_NS_SYS_NAME;
 		base += RX_DIR_DELIMETER_STR;
-		base += RX_NS_PLUGINS_NAME;
-		base += RX_DIR_DELIMETER_STR;
 		base += RX_NS_HOST_NAME;
 		storage.value()->set_base_path(base);
 	}
@@ -611,6 +609,7 @@ template class sys_internal::internal_ns::rx_meta_item_implementation<meta::appl
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<meta::relation_type_ptr>;
 
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_type_ptr>;
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::mapper_type_ptr>;

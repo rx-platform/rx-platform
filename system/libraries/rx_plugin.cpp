@@ -40,7 +40,7 @@ namespace rx_platform {
 template<typename typeT>
 rx_result register_plugin_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
 {
-	return model::platform_types_manager::instance().internal_get_type_cache<typeT>().register_constructor(id, f);
+	return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
 }
 template rx_result register_plugin_constructor<object_type>(const rx_node_id& id, std::function<rx_object_ptr()> f);
 template rx_result register_plugin_constructor<domain_type>(const rx_node_id& id, std::function<rx_domain_ptr()> f);

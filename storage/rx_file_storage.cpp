@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -41,7 +41,7 @@ namespace storage {
 
 namespace files {
 
-// Parameterized Class storage::files::file_system_storage
+// Parameterized Class storage::files::file_system_storage 
 
 template <class policyT>
 file_system_storage<policyT>::file_system_storage()
@@ -261,7 +261,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage<policyT>::get_item_stora
 }
 
 template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
-// Class storage::files::rx_file_item
+// Class storage::files::rx_file_item 
 
 rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path)
       : valid_(false),
@@ -323,7 +323,7 @@ const string_type& rx_file_item::get_item_reference () const
 }
 
 
-// Class storage::files::rx_json_file
+// Class storage::files::rx_json_file 
 
 rx_json_file::rx_json_file (const string_type& file_path)
 	: rx_file_item(RX_JSON_SERIALIZATION_TYPE, file_path)
@@ -390,7 +390,7 @@ rx_result rx_json_file::open_for_write ()
 	return true;
 }
 
-rx_result rx_json_file::close ()
+void rx_json_file::close ()
 {
 	if (writer_)
 	{
@@ -410,15 +410,13 @@ rx_result rx_json_file::close ()
 		else
 			ret = "Error opening Json file "s + file_path_ + "!";
 		writer_.release();
-		return ret;
 	}
 	if (reader_)
 		reader_.release();
-	return true;
 }
 
 
-// Class storage::files::rx_binary_file
+// Class storage::files::rx_binary_file 
 
 rx_binary_file::rx_binary_file (const string_type& file_path)
 	: rx_file_item(RX_BINARY_SERIALIZATION_TYPE, file_path)
@@ -444,17 +442,16 @@ base_meta_writer& rx_binary_file::write_stream ()
 
 rx_result rx_binary_file::open_for_read ()
 {
-	return "Not implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 rx_result rx_binary_file::open_for_write ()
 {
-	return "Not implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
-rx_result rx_binary_file::close ()
+void rx_binary_file::close ()
 {
-	return "Not implemented!";
 	if (writer_)
 		writer_.release();
 	if (reader_)
@@ -462,7 +459,7 @@ rx_result rx_binary_file::close ()
 }
 
 
-// Parameterized Class storage::files::file_system_storage_holder
+// Parameterized Class storage::files::file_system_storage_holder 
 
 
 template <class storageT>

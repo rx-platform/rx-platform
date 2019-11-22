@@ -43,6 +43,16 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+namespace rx_platform {
+namespace runtime {
+namespace relations {
+class relation_runtime;
+
+} // namespace relations
+} // namespace runtime
+} // namespace rx_platform
+
+
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
 using namespace rx_platform::ns;
@@ -356,6 +366,7 @@ event runtime. basic implementation of an event runtime");
 class runtime_holder 
 {
 	typedef std::vector<program_runtime_ptr> programs_type;
+	typedef std::vector<relation_runtime_ptr> relations_type;
 
   public:
 
@@ -445,6 +456,8 @@ class runtime_holder
       programs_type programs_;
 
       structure::runtime_item::smart_ptr item_;
+
+      relations_type relations_;
 
 
       rx_mode_type mode_;

@@ -253,6 +253,8 @@ message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr 
 		return do_job(ctx, port, tl::type2type<object_types::port_type>());
 	case rx_item_type::rx_application_type:
 		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+	case rx_item_type::rx_relation_type:
+		return do_relation_job(ctx, port);
 
 	case rx_item_type::rx_struct_type:
 		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
@@ -347,6 +349,42 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 	};
 
 	rx_result result = api::meta::rx_get_simple_type<T>(reference, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [request_id, port](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			auto response = std::make_unique<get_type_response<object_types::relation_type> >();
+			response->item = result.value();
+			response->request_id = request_id;
+			port->data_processed(std::move(response));
+
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+
+	rx_result result = api::meta::rx_get_relation_type(reference, callback, ctx);
 
 	if (!result)
 	{

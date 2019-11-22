@@ -231,6 +231,26 @@ class support_types_builder : public rx_platform_builder
 };
 
 
+
+
+
+
+class relation_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (rx_directory_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace builders
 } // namespace sys_internal
 

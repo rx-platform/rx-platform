@@ -241,6 +241,9 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		case rx_item_type::rx_mapper_type:
 			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
 			break;
+		case rx_item_type::rx_relation_type:
+			result = create_concrete_relation_type_from_storage(meta, stream, dir, std::move(storage));
+			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
@@ -251,6 +254,8 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		result = dir.errors();
 		result.register_error("Error retrieving directory for the new item!");
 	}
+	if (!result)
+		result.register_error("Error building "s + meta.get_full_path());
 	return result;
 }
 
@@ -307,6 +312,31 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 		else
 		{
 			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_name());
+			return create_result.errors();
+		}
+	}
+	return result;
+}
+
+rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage)
+{
+	auto created = rx_create_reference<relation_type>();
+	created->meta_info() = meta_data;
+	auto result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	storage->close();
+	if (result)
+	{
+		auto create_result = model::algorithms::relation_types_algorithm::create_type_sync(
+			"", "", created, dir
+			, created->meta_info().get_attributes());
+		if (create_result)
+		{
+			auto rx_type_item = create_result.value()->get_item_ptr();
+			return true;
+		}
+		else
+		{
+			create_result.register_error("Error creating "s + rx_item_type_name(relation_type::type_id) + " " + meta_data.get_name());
 			return create_result.errors();
 		}
 	}

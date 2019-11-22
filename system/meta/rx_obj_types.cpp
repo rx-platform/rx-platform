@@ -361,6 +361,30 @@ rx_result object_data_type::serialize_object_definition (base_meta_writer& strea
 {
 	if (!stream.write_bool("constructable", constructable_))
 		return false;
+	if (!stream.start_array("relations", relations_.size()))
+		return false;
+	for (const auto& one : relations_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		if (!one.serialize_definition(stream, type))
+			return false;
+
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	if (!stream.start_array("programs", relations_.size()))
+		return false;
+	for (const auto& one : programs_)
+	{
+		if (!one->save_program(stream, type))
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
 	return true;
 }
 
@@ -368,6 +392,22 @@ rx_result object_data_type::deserialize_object_definition (base_meta_reader& str
 {
 	if (!stream.read_bool("constructable", constructable_))
 		return false;
+	if (!stream.start_array("relations"))
+		return false;
+
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		relation_attribute one;
+		if (!one.deserialize_definition(stream, type))
+			return false;
+		relations_.emplace_back(one);
+
+		if (!stream.end_object())
+			return false;
+	}
 	return true;
 }
 
@@ -484,9 +524,121 @@ const def_blocks::mapped_data_type& port_type::mapping_data () const
 }
 
 
+// Class rx_platform::meta::object_types::relation_attribute 
+
+relation_attribute::relation_attribute (const string_type& name, const rx_node_id& id)
+      : name_(name)
+{
+}
+
+relation_attribute::relation_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+{
+}
+
+
+
+rx_result relation_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return relation_blocks_algorithm::serialize_relation_attribute(*this, stream);
+}
+
+rx_result relation_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return relation_blocks_algorithm::deserialize_relation_attribute(*this, stream);
+}
+
+rx_result relation_attribute::check (type_check_context& ctx)
+{
+	return true;
+}
+
+rx_result relation_attribute::construct (construct_context& ctx) const
+{
+	return true;
+}
+
+
+// Class rx_platform::meta::object_types::relation_type 
+
+rx_item_type relation_type::type_id = rx_item_type::rx_relation_type;
+
+relation_type::relation_type()
+      : hierarchical_(false)
+{
+}
+
+relation_type::relation_type (const object_type_creation_data& data)
+      : hierarchical_(false)
+	, meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+{
+}
+
+
+
+platform_item_ptr relation_type::get_item_ptr () const
+{
+  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+
+}
+
+rx_result relation_type::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return object_types_algorithm<relation_type>::serialize_object_type(*this, stream, type);
+}
+
+rx_result relation_type::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return object_types_algorithm<relation_type>::deserialize_object_type(*this, stream, type);
+}
+
+meta_data& relation_type::meta_info ()
+{
+  return meta_info_;
+
+}
+
+rx_result relation_type::construct (runtime::relation_runtime_ptr what, construct_context& ctx) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+bool relation_type::check_type (type_check_context& ctx)
+{
+	return object_types_algorithm<relation_type>::check_object_type(*this, ctx);
+}
+
+void relation_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
+{
+}
+
+void relation_type::set_instance_data (instance_data_t&& data, RTypePtr where)
+{
+}
+
+
+const meta_data& relation_type::meta_info () const
+{
+  return meta_info_;
+}
+
+const relation_data_type& relation_type::complex_data () const
+{
+  return complex_data_;
+}
+
+
+// Class rx_platform::meta::object_types::relation_data_type 
+
+
+rx::data::runtime_values_data& relation_data_type::get_overrides () const
+{
+	static rx::data::runtime_values_data dummy;
+	return dummy;
+}
+
+
 } // namespace object_types
 } // namespace meta
 } // namespace rx_platform
-
-
 

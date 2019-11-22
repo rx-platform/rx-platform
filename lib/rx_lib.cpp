@@ -44,6 +44,10 @@
 
 #define DEFAULT_TIME_QUALITY (TIME_QUALITY_NOT_SYNCHRONIZED|TIME_QUALITY_CLASS_T1)
 #define SYNCHRONIZED_TIME_QUALITY (TIME_QUALITY_CLASS_T1)
+string_type _not_implemented_func(const char* fname)
+{
+    return string_type(fname) + " not implemented";
+}
 
 namespace rx
 {

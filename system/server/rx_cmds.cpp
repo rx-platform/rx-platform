@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -52,6 +52,51 @@ namespace rx_platform {
 
 namespace prog {
 
+namespace
+{
+void read_to_eol(string_type::const_iterator& it, const string_type& data, std::ostringstream& out)
+{
+	while (it != data.end() && *it != '\r' && *it != '\n')
+	{
+		out << *it;
+		it++;
+	}
+}
+string_type parse_man_file(const string_type& data)
+{
+	std::ostringstream out;
+
+	auto it = data.begin();
+	while (it != data.end())
+	{
+		if (*it == '.')
+		{// macro stuff
+			it++;
+			string_type macro;
+			auto it_temp = it;
+			while (it != data.end() && !std::isblank(*it))
+				it++;
+			std::copy(it_temp, it,std::back_inserter(macro));
+			if (it != data.end())
+				it++;
+			if (macro == "B")
+			{
+				out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
+				read_to_eol(it, data, out);
+				out << ANSI_COLOR_RESET;
+			}
+		}
+		else
+			read_to_eol(it, data, out);
+		while (it != data.end() && (*it == '\r' || *it == '\n'))
+		{
+			out << *it;
+			it++;
+		}
+	}
+	return out.str();
+}
+}
 
 /*
 char g_console_welcome[] = "\r\n\
@@ -80,7 +125,7 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 
 char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
 
-// Class rx_platform::prog::server_command_base 
+// Class rx_platform::prog::server_command_base
 
 server_command_base::server_command_base (const string_type& name, const rx_node_id& id)
       : time_stamp_(rx_time::now()),
@@ -193,15 +238,22 @@ bool server_command_base::deserialize_definition (base_meta_reader& stream, uint
 
 string_type server_command_base::get_help () const
 {
+	std::ostringstream ss;
+	ss << RX_CONSOLE_HEADER_LINE "\r\n";
+	ss << ANSI_COLOR_GREEN << ":>";
+	ss << ANSI_COLOR_YELLOW ANSI_COLOR_BOLD << get_name() << ANSI_COLOR_RESET << "\r\n";
+	ss << RX_CONSOLE_HEADER_LINE "\r\n\r\n";
 	string_type str = rx_gate::instance().get_host()->get_manual("commands/"s + get_name());
 	if (str.empty())
-		return "jebi ga bato!!!";
+		ss << "jebi ga bato!!!";
 	else
-		return str;
+		ss << parse_man_file(str);
+	ss << "\r\n\r\n";
+	return ss.str();
 }
 
 
-// Class rx_platform::prog::console_program_context 
+// Class rx_platform::prog::console_program_context
 
 console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client)
       : client_(client),
@@ -337,7 +389,7 @@ bool console_program_context::should_next_line ()
 }
 
 
-// Class rx_platform::prog::server_console_program 
+// Class rx_platform::prog::server_console_program
 
 server_console_program::server_console_program (console_client::smart_ptr client, const string_type& name, const rx_node_id& id, bool system)
 	: program_runtime(name, id, system)
@@ -352,7 +404,7 @@ server_console_program::~server_console_program()
 
 
 
-// Class rx_platform::prog::console_client 
+// Class rx_platform::prog::console_client
 
 console_client::console_client()
       : current_context_(nullptr)
@@ -454,7 +506,7 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		out << "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
 		out << "Info: " << get_console_terminal() << "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Console: ";
 		out << get_console_name() << " Console\r\n";
-		
+
 		ret = true;
 	}
 	else if (line == "host")
@@ -490,7 +542,7 @@ void console_client::synchronized_do_command (const string_type& line, memory::b
 		out << ANSI_COLOR_GREEN "System Storage" ANSI_COLOR_RESET "\r\nReference: " << sys_ref << "\r\nVersion: "<< sys_info << "\r\n\r\n";
 		out << ANSI_COLOR_GREEN "User Storage" ANSI_COLOR_RESET "\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n\r\n";
 		out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
-		
+
 		ret = true;
 	}
 	else if (line == "welcome")
@@ -623,7 +675,7 @@ rx_result console_client::check_validity ()
 }
 
 
-// Class rx_platform::prog::server_script_host 
+// Class rx_platform::prog::server_script_host
 
 server_script_host::server_script_host (const script_def_t& definition)
 {
@@ -636,7 +688,7 @@ server_script_host::~server_script_host()
 
 
 
-// Class rx_platform::prog::console_program 
+// Class rx_platform::prog::console_program
 
 console_program::console_program()
 {

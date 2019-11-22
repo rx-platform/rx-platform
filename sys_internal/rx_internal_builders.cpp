@@ -55,8 +55,24 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 {
 	what->meta_info().resolve();
 	what->complex_data().set_abstract(abstract_type);
-	model::platform_types_manager::instance().internal_get_type_cache<T>().register_type(what);
-	dir->add_item(what->get_item_ptr());
+	auto result = model::platform_types_manager::instance().get_type_repository<T>().register_type(what);
+	if (!result)
+	{
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path());
+	}
+	result = dir->add_item(what->get_item_ptr());
+	if (!result)
+	{
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path() + " to directory.");
+	}
 }
 
 template<class T>
@@ -64,8 +80,24 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 {
 	what->meta_info().resolve();
 	what->complex_data().set_abstract(abstract_type);
-	model::platform_types_manager::instance().internal_get_simple_type_cache<T>().register_type(what);
-	dir->add_item(what->get_item_ptr());
+	auto result = model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
+	if (!result)
+	{		
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path());
+	}
+	result = dir->add_item(what->get_item_ptr());
+	if (!result)
+	{
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path() + " to directory.");
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+	}
 }
 
 
@@ -126,7 +158,12 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 
 	rx_result errors = true;
 
-	root->add_sub_directory(rx_create_reference<unassigned_directory>());
+	errors = root->add_sub_directory(rx_create_reference<unassigned_directory>());
+	if (!errors)
+	{
+		errors.register_error("Unable to add directory " RX_NS_WORLD_NAME ".");
+		return errors;
+	}
 
 	for (auto& one : sys_builders)
 	{
@@ -135,6 +172,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		{
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform system!");
 			errors.register_errors(result.errors());
+			return errors;
 		}
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system!");
@@ -143,14 +181,19 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built!");
 	// system is critical so an error in building system is fatal
 	else
-		return errors.errors();
+		return errors;
 
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
 	auto storage_ptr = host->get_system_storage(host->get_host_name());
 	if (storage_ptr)
 	{
 		storage::configuration_storage_builder builder(storage_ptr.value());
-		builder.do_build(root);
+		errors = builder.do_build(root);
+		if (!errors)
+		{
+			errors.register_error("Unable to build host "s + host->get_host_name());
+			return errors;
+		}
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
 
@@ -162,7 +205,12 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		if (storage_ptr)
 		{
 			storage::configuration_storage_builder builder(storage_ptr.value());
-			builder.do_build(root);
+			errors = builder.do_build(root);
+			if (!errors)
+			{
+				errors.register_error("Unable to build plugin "s + one->get_plugin_name());
+				return errors;
+			}
 		}
 		BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
 	}
@@ -250,16 +298,16 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_othe
 void rx_platform_builder::register_system_constructors ()
 {
 	// system app
-	model::platform_types_manager::instance().internal_get_type_cache<application_type>().register_constructor(
+	model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_app(); } );
 	// system domain
-	model::platform_types_manager::instance().internal_get_type_cache<domain_type>().register_constructor(
+	model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
 		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_domain(); });
 	// unassigned app
-	model::platform_types_manager::instance().internal_get_type_cache<application_type>().register_constructor(
+	model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_app(); });
 	// unassigned domain
-	model::platform_types_manager::instance().internal_get_type_cache<domain_type>().register_constructor(
+	model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_domain(); });
 }
 
@@ -296,34 +344,103 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_plug
 
 rx_result root_folder_builder::do_build (rx_directory_ptr root)
 {
-	root->add_sub_directory(rx_create_reference<world_directory>());
-
+	auto ret = root->add_sub_directory(rx_create_reference<world_directory>());
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_WORLD_NAME ".");
+		return ret;
+	}
 	auto sys_dir = rx_create_reference<system_directory>();
-	sys_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BIN_NAME));
+	ret = sys_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BIN_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_BIN_NAME ".");
+		return ret;
+	}
 
 	auto classes_dir = rx_create_reference<internal_directory>(RX_NS_CLASSES_NAME);
-	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BASE_CLASSES_NAME));
-	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_CLASSES_NAME));
-	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_CLASSES_NAME));
-	classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SUPPORT_CLASSES_NAME));
-	sys_dir->add_sub_directory(classes_dir);
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_BASE_CLASSES_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_BASE_CLASSES_NAME ".");
+		return ret;
+	}
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_CLASSES_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_SYSTEM_CLASSES_NAME ".");
+		return ret;
+	}
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_CLASSES_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_PORT_CLASSES_NAME ".");
+		return ret;
+	}
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SUPPORT_CLASSES_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_SUPPORT_CLASSES_NAME ".");
+		return ret;
+	}
+	ret = sys_dir->add_sub_directory(classes_dir);
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_CLASSES_NAME ".");
+		return ret;
+	}
 
 	auto objects_dir = rx_create_reference<internal_directory>(RX_NS_OBJ_NAME);
-	objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_OBJ_NAME));
-	objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_OBJ_NAME));
-	sys_dir->add_sub_directory(objects_dir);
+	ret = objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SYSTEM_OBJ_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_SYSTEM_OBJ_NAME ".");
+		return ret;
+	}
+	ret = objects_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_PORT_OBJ_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_PORT_OBJ_NAME ".");
+		return ret;
+	}
+	ret = sys_dir->add_sub_directory(objects_dir);
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_OBJ_NAME ".");
+		return ret;
+	}
+	ret = sys_dir->add_sub_directory(rx_create_reference<host_directory>());
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_HOST_NAME ".");
+		return ret;
+	}
 
 	auto plugins_dir = rx_create_reference<internal_directory>(RX_NS_PLUGINS_NAME);
-	plugins_dir->add_sub_directory(rx_create_reference<host_directory>());
 	auto& plugins = plugins::plugins_manager::instance().get_plugins();
 	for (auto& plugin : plugins)
 	{
-		plugins_dir->add_sub_directory(rx_create_reference<plugin_directory>(plugin));
+		ret = plugins_dir->add_sub_directory(rx_create_reference<plugin_directory>(plugin));
+		if (!ret)
+		{
+			ret.register_error("Unable to add directory "s + plugin->get_plugin_name() + ".");
+			return ret;
+		}
 	}
 
-	sys_dir->add_sub_directory(plugins_dir);
+	ret = sys_dir->add_sub_directory(plugins_dir);
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_PLUGINS_NAME ".");
+		return ret;
+	}
 
-	root->add_sub_directory(sys_dir);
+	ret = root->add_sub_directory(sys_dir);
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_SYS_NAME ".");
+		return ret;
+	}
 	BUILD_LOG_INFO("root_folder_builder", 900, "Root folder structure built.");
 	return true;
 }
@@ -338,8 +455,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 	string_type full_path = RX_DIR_DELIMETER + path;
 	auto dir = root->get_sub_directory(path);
 	if (dir)
-	{		
-
+	{
 		//build base types, user extensible
 		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
 			RX_CLASS_STRUCT_BASE_NAME
@@ -437,6 +553,15 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_port_type<port_type>(dir, port);
+		// build relations
+		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+			RX_NS_RELATION_BASE_NAME
+			, RX_NS_RELATION_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_port_type<port_type>(dir, port);
 
 	}
 	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
@@ -476,7 +601,7 @@ template<class T>
 void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T> what)
 {
 	what->meta_info().resolve();
-	model::platform_types_manager::instance().internal_get_simple_type_cache<T>().register_type(what);
+	model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
 // Class sys_internal::builders::system_types_builder 
@@ -786,6 +911,15 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		what->complex_data().register_const_value_static<uint16_t>("IPPort", 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 	}
+	return true;
+}
+
+
+// Class sys_internal::builders::relation_types_builder 
+
+
+rx_result relation_types_builder::do_build (rx_directory_ptr root)
+{
 	return true;
 }
 

@@ -41,8 +41,8 @@ namespace sys_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_type_creator_base;
 class protocol_runtime_creator_base;
+class protocol_type_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -318,6 +318,34 @@ class update_type_response : public query_messages::type_response_message<itemT>
 
 
 
+template <class itemT>
+class protocol_simple_type_creator : public protocol_type_creator_base  
+{
+
+  public:
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+
+
+      typename itemT::smart_ptr item;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class delete_runtime_request : public rx_request_message  
 {
 	template<typename T>
@@ -577,34 +605,6 @@ class update_runtime_response : public query_messages::runtime_response_message<
 
 
 template <class itemT>
-class protocol_simple_type_creator : public protocol_type_creator_base  
-{
-
-  public:
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
-
-
-      typename itemT::smart_ptr item;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-template <class itemT>
 class prototype_runtime_response : public query_messages::runtime_response_message<itemT>  
 {
 
@@ -665,6 +665,33 @@ class prototype_runtime_request : public rx_request_message
 
 
       std::unique_ptr<protocol_runtime_creator_base> creator_;
+
+
+};
+
+
+
+
+
+
+class protocol_relation_type_creator : public protocol_type_creator_base  
+{
+
+  public:
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+
+
+      object_types::relation_type::smart_ptr item;
+
+
+  protected:
+
+  private:
 
 
 };

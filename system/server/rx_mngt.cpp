@@ -80,7 +80,7 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 	// handle rx_protocol stuff!
 	auto result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
 	// register protocol constructors
-	result = model::platform_types_manager::instance().internal_get_type_cache<port_type>().register_constructor(
+	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
 		});
@@ -123,7 +123,7 @@ void server_manager::get_directories (platform_directories_type& dirs)
 template<class clsT>
 typename clsT::smart_ptr server_manager::get_type(const rx_node_id& id)
 {
-	auto& cache = model::platform_types_manager::instance().get_type_cache<clsT>();
+	auto& cache = model::platform_types_manager::instance().get_type_repository<clsT>();
 	auto def = cache.get_type_definition(id);
 	return def;
 }
@@ -134,7 +134,7 @@ template application_type_ptr server_manager::get_type<application_type>(const r
 template<class clsT>
 rx_result_with<typename clsT::smart_ptr> server_manager::get_simple_type(const rx_node_id& id)
 {
-	auto& cache = model::platform_types_manager::instance().get_simple_type_cache<clsT>();
+	auto& cache = model::platform_types_manager::instance().get_simple_type_repository<clsT>();
 	auto def = cache.get_type_definition(id);
 	return def;
 }

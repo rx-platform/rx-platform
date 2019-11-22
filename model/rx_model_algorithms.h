@@ -50,6 +50,10 @@ rx_result_with<rx_node_id> resolve_type_reference(
 	const item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
+rx_result_with<rx_node_id> resolve_relation_reference(
+	const item_reference& ref
+	, ns::rx_directory_resolver& directories);
+
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_simple_type_reference(
 	const item_reference& ref
@@ -185,6 +189,45 @@ class runtime_model_algorithm
       static rx_result delete_runtime_sync (meta_data_t info, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref);
 
       static rx_result_with<typename typeT::RTypePtr> get_runtime_sync (const item_reference& item_reference, rx_directory_ptr dir);
+
+
+
+};
+
+
+
+
+
+
+class relation_types_algorithm 
+{
+
+  public:
+
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
+
+      static void create_type (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+
+      static rx_result_with<relation_type::smart_ptr> create_type_sync (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
+
+      static void delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+
+      static void update_type (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+
+      static void get_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+
+
+  protected:
+
+  private:
+
+      static type_check_context check_type_sync (const string_type& name, rx_directory_ptr dir);
+
+      static rx_result delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir);
+
+      static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version);
+
+      static rx_result_with<relation_type::smart_ptr> get_type_sync (const item_reference& item_reference, rx_directory_ptr dir);
 
 
 

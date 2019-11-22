@@ -65,6 +65,8 @@ struct configuration_data_t;
 
 
 namespace rx_platform {
+template<typename typeT>
+rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -221,6 +223,8 @@ class rx_platform_host
       rx_result_with<rx_storage_ptr> get_user_storage (const string_type& name = "");
 
       rx_result_with<rx_storage_ptr> get_test_storage (const string_type& name = "");
+	  
+      static void dump_log_items (const log::log_events_type& items, std::ostream& out);
 
 
       rx_platform_host * get_parent ()

@@ -324,11 +324,22 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 		config.processor.workers_pool_size = 2;
 
 
+	result = rx_platform::register_host_constructor<object_types::port_type>(rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2), [this] {
+		return pipe_port_;
+		});
+	if (!result)
+		HOST_LOG_WARNING("Main", 999, "Error registering local pipe port constructor:"s + result.errors()[0]);
+
+	pipe_port_ = rx_create_reference<local_pipe_port>(pipes);
+
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";
 	result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (result)
 	{
+		auto json = rx_create_reference< sys_internal::rx_protocol::rx_protocol_port>();
+
+
 		std::cout << "OK\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
@@ -342,13 +353,12 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			
 			if (res == RX_PROTOCOL_OK)
 			{
-				result = pipes_.open(pipes);
+				result = pipe_port_->open();
 				if (result)
 				{
-					res = rx_push_stack(&pipes_, &transport_.protocol_stack_entry);
+					res = rx_push_stack(pipe_port_->get_stack_entry(), &transport_.protocol_stack_entry);
 
 					
-					auto json = rx_create_reference< sys_internal::rx_protocol::rx_protocol_port>();
 					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
 
 					std::cout << "OK\r\n";
@@ -380,13 +390,13 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 					std::cout << "\r\nEnternig loop....\r\n============================\r\n";
 
 
-					pipes_.receive_loop();
+					pipe_port_->receive_loop();
 
 					stdout_log_->suspend_log();
 
 					std::cout << "Exited loop....\r\n";
 
-					pipes_.close();
+					pipe_port_->close();
 
 					opcua_bin_deinit_transport(&transport_);
 				}
@@ -453,7 +463,7 @@ string_type rx_pipe_host::get_host_name ()
 rx_result rx_pipe_host::register_hosts ()
 {
 	auto result = rx_gate::instance().register_constructor<meta::object_types::port_type>(
-		rx_node_id(RX_LOCAL_PIPE_TYPE_ID), [] {
+		rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2), [] {
 			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
 		});
 	return result;
@@ -462,11 +472,18 @@ rx_result rx_pipe_host::register_hosts ()
 
 // Class host::pipe::rx_pipe_stdout_log_subscriber 
 
+rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber()
+      : running_(false),
+        show_traces(false)
+{
+}
+
+
 
 void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 	log::log_event_data one = { event_type,library,source,level,code,message,when };
-	if (!show_traces && event_type == log::log_event_type::trace_log_event)
+	if (!show_traces && event_type == log::log_event_type::trace)
 		return;
 	if (running_)
 	{
@@ -501,11 +518,3 @@ void rx_pipe_stdout_log_subscriber::suspend_log ()
 } // namespace pipe
 } // namespace host
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return rx_storage_ptr();
-
-#endif
