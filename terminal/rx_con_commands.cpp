@@ -49,18 +49,14 @@ namespace console {
 namespace console_commands {
 namespace
 {
-bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
+bool dump_info(std::ostream& out, sys_internal::internal_ns::rx_platform_item::smart_ptr& item)
 {
 	string_type quality_string;
 	values::rx_value val(item->get_value());
 	fill_quality_string(val, quality_string);
 	string_type attrs;
 	ns::fill_attributes_string(item->meta_info().get_attributes(), attrs);
-	string_type cls_name;
-	bool has_code = false;
 	string_type console;
-	item->get_class_info(cls_name, console, has_code);
-	cls_name=item->get_class_name();
 	string_type storage_name(RX_NULL_ITEM_NAME);
 	string_type storage_reference(RX_NULL_ITEM_NAME);
 	auto storage_result = item->meta_info().resolve_storage();
@@ -88,8 +84,6 @@ bool dump_info(std::ostream& out, rx_platform_item::smart_ptr& item)
 	out << "Quality	   : " << quality_string << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Class      : " << cls_name << "\r\n";
-	out << "Has Code   : " << (has_code ? "true" : "false") << "\r\n";
 	return true;
 }
 void fill_context_attributes(security::security_context_ptr ctx,string_type& val)
@@ -133,7 +127,7 @@ bool info_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 		else
 		{
-			platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
+			platform_item_ptr item = platform_item_ptr();// ctx->get_current_directory()->get_sub_item(whose);
 			if (item)
 			{
 				dump_info(out, item);
@@ -213,7 +207,7 @@ bool code_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 		else
 		{
-			platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
+			platform_item_ptr item = platform_item_ptr();// platform_item_ptr();// ctx->get_current_directory()->get_sub_item(whose);
 			if (item)
 			{
 				item->fill_code_info(out,whose);
@@ -718,14 +712,14 @@ bool def_command::do_console_command (std::istream& in, std::ostream& out, std::
 		in >> whose;
 	if (!whose.empty())
 	{
-		platform_item_ptr item = ctx->get_current_directory()->get_sub_item(whose);
-		if (item)
+		string_type item;// = ctx->get_current_directory()->create_sub_item_as_json(whose);
+		if (!item.empty())
 		{
-			dump_object_definition(out,err, item);
+			out << item;
 		}
 		else
 		{
-			err << "ERROR: unknown object name";
+			err << "ERROR: " << whose << " is unknown object name";
 			return false;
 		}
 	}
@@ -735,20 +729,6 @@ bool def_command::do_console_command (std::istream& in, std::ostream& out, std::
 		return false;
 	}
 	return true;
-}
-
-bool def_command::dump_object_definition (std::ostream& out, std::ostream& err, platform_item_ptr item)
-{
-	bool ret = false;
-	if (item)
-	{
-		ret =item->generate_json(out, err);
-	}
-	else
-	{
-		err << "Unknown Item!!!";
-	}
-	return ret;
 }
 
 

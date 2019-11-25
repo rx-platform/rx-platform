@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\constructors\rx_construct.cpp
+*  sys_internal\rx_namespace_algorithms.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -27,18 +27,41 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_construct
-#include "system/constructors/rx_construct.h"
+#ifndef rx_namespace_algorithms_h
+#define rx_namespace_algorithms_h 1
 
 
 
-namespace rx_platform {
+// rx_ns
+#include "system/server/rx_ns.h"
 
-namespace constructors {
 
-} // namespace constructors
-} // namespace rx_platform
 
+namespace sys_internal {
+
+namespace internal_ns {
+
+
+
+
+
+
+class namespace_algorithms 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace internal_ns
+} // namespace sys_internal
+
+
+
+#endif

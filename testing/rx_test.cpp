@@ -460,7 +460,7 @@ rx_time test_case::get_created_time () const
 
 platform_item_ptr test_case::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 bool test_case::serialize (base_meta_writer& stream, uint8_t type) const

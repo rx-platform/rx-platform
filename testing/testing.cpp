@@ -8,7 +8,6 @@
 #include "lib/rx_std.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
-#include "system/constructors/rx_construct.h"
 #include "system/server/rx_inf.h"
 #include "lib/rx_log.h"
 #include "system/server/rx_server.h"
@@ -61,7 +60,7 @@ namespace obsolite
 
 /////////////// callbacks
 
-	
+
 class smart_test : public pointers::reference_object
 {
 	DECLARE_REFERENCE_PTR(smart_test);

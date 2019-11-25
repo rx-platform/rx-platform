@@ -486,10 +486,10 @@ rx_result types_repository<typeT>::check_type (const rx_node_id& id, type_check_
 }
 
 template <class typeT>
-rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<typeT>::get_runtime (const rx_node_id& id) const
+rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<typeT>::get_runtime (const rx_node_id& id, bool only_running) const
 {
 	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end() && it->second.state == runtime_state::runtime_state_running)
+	if (it != registered_objects_.end() && (!only_running || it->second.state == runtime_state::runtime_state_running))
 	{
 		return it->second.target;
 	}
@@ -653,12 +653,11 @@ rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_r
 		{
 		case runtime_state::runtime_state_created:
 		case runtime_state::runtime_state_initializing:
+		case runtime_state::runtime_state_deleting:// this is when delete fails to reset object as running
 			it->second.state = runtime_state::runtime_state_running;
 			return it->second.target;
 		case runtime_state::runtime_state_running:
 			return "Wrong state, object already running!";
-		case runtime_state::runtime_state_deleting:
-			return "Wrong state, object marked for delete!";
 		case runtime_state::runtime_state_destroyed:
 			return "Wrong state, object destroyed!";
 		default:
@@ -1250,84 +1249,28 @@ rx_result relations_type_repository::register_type (relations_type_repository::T
 	}
 }
 
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (meta_data& meta, typename relation_type::instance_data_t&& type_data, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, relation_type::instance_data_t&& type_data, rx_directory_resolver& dirs)
 {
-	if (meta.get_id().is_null() || prototype)
-	{
-		meta.resolve();
-	}
-	else
-	{
-		if (!platform_types_manager::instance().get_types_resolver().is_available_id(meta.get_id()) || registered_objects_.find(meta.get_id()) != registered_objects_.end())
-		{
-			return "Duplicate Id!";
-		}
-	}
-
 	RTypePtr ret;
-	Tptr def;
-	rx_node_ids base;
-	std::vector<const data::runtime_values_data*> overrides;
-	base.emplace_back(meta.get_parent());
-	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-	{
-		auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
-		if (!base_result)
-			return base_result.errors();
-	}
-	else
-	{
-		rx_node_id temp_base = meta.get_parent();
-		while (!temp_base.is_null())
-		{
-			auto temp_type = get_type_definition(temp_base);
-			if (temp_type)
-			{
-				temp_base = temp_type.value()->meta_info().get_parent();
-				if (temp_base)
-					base.emplace_back(temp_base);
-			}
-			else
-				return temp_type.errors();
-		}
-	}
+	auto type_result = get_type_definition(type_id);
+	if (!type_result)
+		return type_result.errors();
 
-	construct_context ctx;
-	ctx.get_directories().add_paths({ meta.get_path() });
-	ret->meta_info() = meta;
+	relation_type::smart_ptr relation_type_ptr = type_result.move_value();
 
-
-	auto my_class = get_type_definition(base[0]);
-	if (my_class)
-	{
-		overrides.push_back(&my_class.value()->complex_data().get_overrides());
-		auto result = my_class.value()->construct(ret, ctx);
-		if (!result)
-		{// error constructing object
-			return result.errors();
-		}
+	rx_node_id target_relation_type_id = type_id;
+	auto inv_ref = relation_type_ptr->get_inverse_reference();
+	if (!inv_ref.is_null())
+	{// this is symetrical reference
+		auto resolve_result = model::algorithms::resolve_relation_reference(inv_ref, dirs);
+		if (!resolve_result)
+			return resolve_result.errors();
+		target_relation_type_id = resolve_result.move_value();
 	}
-	else
-	{
-		my_class.register_error("Error finding type definition");
-		return my_class.errors();
-	}
-
-	relation_type::set_runtime_data(ctx.runtime_data, ret);
+	ret = create_relation_runtime(relation_type_ptr);
+	ret->target_relation_type = target_relation_type_id;
 	relation_type::set_instance_data(std::move(type_data), ret);
-	
-	if (init_data)
-	{
-		ret->fill_data(*init_data);
-	}
-	if (!prototype)
-	{
-		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state::runtime_state_created });
-		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), relation_type::RType::type_id, meta);
-		RX_ASSERT(type_ret);// has to be, we checked earlier
-	}
+
 	return ret;
 }
 

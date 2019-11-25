@@ -113,7 +113,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 			}
 			if (domain_ptr)
 			{
-				what->connect_domain(std::move(domain_ptr));
+				what->connect_domain(std::move(domain_ptr.value()));
 			}
 			else
 			{
@@ -234,7 +234,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 			}
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr));
+				what->connect_application(std::move(application_ptr.value()));
 			}
 			else
 			{
@@ -353,7 +353,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 			}
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr));
+				what->connect_application(std::move(application_ptr.value()));
 			}
 			else
 			{

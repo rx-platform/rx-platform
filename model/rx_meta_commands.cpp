@@ -37,6 +37,7 @@
 #include "terminal/rx_terminal_style.h"
 #include "system/meta/rx_obj_types.h"
 #include "rx_model_algorithms.h"
+#include "sys_internal/rx_internal_ns.h"
 
 using namespace rx_platform::api;
 using namespace rx_platform::api::meta;
@@ -1178,7 +1179,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 					out << "Prototyped " << rx_item_type_name(T::RType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
-					ret = result.value()->get_item_ptr()->generate_json(out, err);
+					out << result.value()->get_item_ptr()->clone_as_json();
 				}
 				ctx->send_results(ret);
 			}, rxc);

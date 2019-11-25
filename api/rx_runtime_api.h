@@ -34,6 +34,21 @@
 
 
 
+#include "rx_platform_api.h"
+
+namespace rx_platform
+{
+namespace api
+{
+namespace runtime
+{
+
+rx_result get_working_item(const rx_node_id& what, std::function<void(rx_result_with<platform_item_ptr>&&)> callback);
+
+}// runtime
+}// api
+}// rx-platform
+
 
 
 

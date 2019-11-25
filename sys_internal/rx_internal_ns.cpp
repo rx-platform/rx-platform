@@ -58,12 +58,12 @@ platform_root::~platform_root()
 
 
 
-platform_item_ptr platform_root::get_cached_item (const string_type& name)
+rx_namespace_item platform_root::get_cached_item (const string_type& name)
 {
 	return cache_.get_cached_item(name);
 }
 
-rx_result platform_root::insert_cached_item (const string_type& name, platform_item_ptr item)
+rx_result platform_root::insert_cached_item (const string_type& name, const rx_namespace_item& item)
 {
 	return cache_.insert_cached_item(name, item);
 }
@@ -100,7 +100,7 @@ unassigned_directory::~unassigned_directory()
 // Class sys_internal::internal_ns::world_directory 
 
 world_directory::world_directory()
-	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage())
+	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage().value())
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -143,28 +143,6 @@ template <class TImpl>
 values::rx_value rx_item_implementation<TImpl>::get_value () const
 {
 	return impl_->get_value();
-}
-
-template <class TImpl>
-rx_result rx_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
-{
-	rx_platform::serialization::json_writer writer;
-
-	writer.write_header(STREAMING_TYPE_OBJECT, 0);
-
-	impl_->serialize(writer, STREAMING_TYPE_OBJECT);
-
-	writer.write_footer();
-
-	string_type result;
-	bool out = writer.get_string(result, true);
-
-	if (out)
-		def << result;
-	else
-		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
-
-	return true;
 }
 
 template <class TImpl>
@@ -243,9 +221,9 @@ rx_result rx_item_implementation<TImpl>::do_command (rx_object_command_t command
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return impl_->browse(path, filter, items);
+	return impl_->browse(prefix, path, filter, items);
 }
 
 template <class TImpl>
@@ -258,6 +236,38 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return impl_->read_items(items, monitor, ctx);
+}
+
+template <class TImpl>
+string_type&& rx_item_implementation<TImpl>::clone_as_json () const
+{
+	rx_platform::serialization::json_writer writer;
+
+	writer.write_header(STREAMING_TYPE_OBJECT, 0);
+
+	impl_->serialize(writer, STREAMING_TYPE_OBJECT);
+
+	writer.write_footer();
+
+	string_type result;
+	bool out = writer.get_string(result, true);
+
+	if (out)
+		return std::move(result);
+	else
+		return std::move(string_type());
+}
+
+template <class TImpl>
+rx_platform_item::smart_ptr&& rx_item_implementation<TImpl>::clone () const
+{
+	return std::move(rx_platform_item::smart_ptr());
+}
+
+template <class TImpl>
+rx_thread_handle_t rx_item_implementation<TImpl>::get_executer () const
+{
+	return impl_->get_executer();
 }
 
 
@@ -286,33 +296,6 @@ template <class TImpl>
 values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 {
 	return impl_->meta_info().get_value();
-}
-
-template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
-{
-	rx_platform::serialization::json_writer writer;
-
-	writer.write_header(STREAMING_TYPE_TYPE, 0);
-
-	bool out = false;
-
-	out = impl_->serialize_definition(writer, STREAMING_TYPE_TYPE);
-
-	writer.write_footer();
-
-	string_type result;
-	if (out)
-	{
-		out = writer.get_string(result, true);
-	}
-
-	if (out)
-		def << result;
-	else
-		def << "\r\n" ANSI_COLOR_RED "Error in JSON deserialization." ANSI_COLOR_RESET "\r\n";
-
-	return out;
 }
 
 template <class TImpl>
@@ -379,7 +362,7 @@ rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t co
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return "Not valid for this type!";
 }
@@ -394,6 +377,43 @@ template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
+}
+
+template <class TImpl>
+string_type&& rx_meta_item_implementation<TImpl>::clone_as_json () const
+{
+	rx_platform::serialization::json_writer writer;
+
+	writer.write_header(STREAMING_TYPE_TYPE, 0);
+
+	bool out = false;
+
+	out = impl_->serialize_definition(writer, STREAMING_TYPE_TYPE);
+
+	writer.write_footer();
+
+	string_type result;
+	if (out)
+	{
+		out = writer.get_string(result, true);
+	}
+
+	if (out)
+		return std::move(result);
+	else
+		return std::move(string_type());
+}
+
+template <class TImpl>
+rx_platform_item::smart_ptr&& rx_meta_item_implementation<TImpl>::clone () const
+{
+	return std::move(rx_platform_item::smart_ptr());
+}
+
+template <class TImpl>
+rx_thread_handle_t rx_meta_item_implementation<TImpl>::get_executer () const
+{
+	return RX_DOMAIN_META;
 }
 
 
@@ -436,12 +456,6 @@ template <class TImpl>
 values::rx_value rx_other_implementation<TImpl>::get_value () const
 {
 	return impl_->get_value();
-}
-
-template <class TImpl>
-rx_result rx_other_implementation<TImpl>::generate_json (std::ostream& def, std::ostream& err) const
-{
-	return "Not valid for this item";
 }
 
 template <class TImpl>
@@ -505,7 +519,7 @@ rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t comman
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result rx_other_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return "Not valid for this type!";
 }
@@ -522,11 +536,29 @@ rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_
 	return "Not valid for this type!";
 }
 
+template <class TImpl>
+string_type&& rx_other_implementation<TImpl>::clone_as_json () const
+{
+	return std::move(string_type());
+}
+
+template <class TImpl>
+rx_platform_item::smart_ptr&& rx_other_implementation<TImpl>::clone () const
+{
+	return std::move(rx_platform_item::smart_ptr());
+}
+
+template <class TImpl>
+rx_thread_handle_t rx_other_implementation<TImpl>::get_executer () const
+{
+	return RX_DOMAIN_META;
+}
+
 
 // Class sys_internal::internal_ns::system_directory 
 
 system_directory::system_directory()
-	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys"))
+	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys").value())
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -548,7 +580,7 @@ system_directory::~system_directory()
 
 host_directory::host_directory()
 	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
-		, rx_gate::instance().get_host()->get_system_storage(rx_gate::instance().get_host()->get_host_name()))
+		, rx_gate::instance().get_host()->get_system_storage(rx_gate::instance().get_host()->get_host_name()).value())
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -572,7 +604,7 @@ host_directory::~host_directory()
 
 plugin_directory::plugin_directory (rx_plugin_ptr plugin)
 	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access
-		, rx_gate::instance().get_host()->get_system_storage(plugin->get_plugin_name()))
+		, rx_gate::instance().get_host()->get_system_storage(plugin->get_plugin_name()).value())
 {
 	auto storage = resolve_storage();
 	if (storage)
@@ -592,6 +624,72 @@ plugin_directory::~plugin_directory()
 {
 }
 
+
+
+// Class sys_internal::internal_ns::rx_platform_item 
+
+rx_platform_item::rx_platform_item()
+{
+}
+
+
+rx_platform_item::~rx_platform_item()
+{
+}
+
+
+
+rx_result rx_platform_item::save () const
+{
+	const auto& meta = meta_info();
+	auto storage_result = meta.resolve_storage();
+	if (storage_result)
+	{
+		auto item_result = storage_result.value()->get_item_storage(meta);
+		if (!item_result)
+		{
+			item_result.register_error("Error saving item "s + meta.get_path());
+			return item_result.errors();
+		}
+		auto result = item_result.value()->open_for_write();
+		if (result)
+		{
+			result = serialize(item_result.value()->write_stream());
+			item_result.value()->close();
+		}
+		return result;
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		storage_result.register_error("Error saving item "s + meta.get_path());
+		return result;
+	}
+}
+
+rx_result rx_platform_item::delete_item () const
+{
+	const auto& meta = meta_info();
+	auto storage_result = meta.resolve_storage();
+	if (storage_result)
+	{
+		auto item_result = storage_result.value()->get_item_storage(meta);
+		if (!item_result)
+		{
+			item_result.register_error("Error saving item "s + meta.get_path());
+			return item_result.errors();
+		}
+		auto result = item_result.value()->delete_item();
+
+		return result;
+	}
+	else // !storage_result
+	{
+		rx_result result(storage_result.errors());
+		storage_result.register_error("Error saving item "s + meta.get_path());
+		return result;
+	}
+}
 
 
 } // namespace internal_ns

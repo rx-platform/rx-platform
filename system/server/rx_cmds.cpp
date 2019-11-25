@@ -213,7 +213,7 @@ bool server_command_base::generate_json (std::ostream& def, std::ostream& err) c
 
 platform_item_ptr server_command_base::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 string_type server_command_base::get_name () const

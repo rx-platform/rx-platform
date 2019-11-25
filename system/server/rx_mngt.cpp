@@ -120,25 +120,6 @@ void server_manager::get_directories (platform_directories_type& dirs)
 {
 }
 
-template<class clsT>
-typename clsT::smart_ptr server_manager::get_type(const rx_node_id& id)
-{
-	auto& cache = model::platform_types_manager::instance().get_type_repository<clsT>();
-	auto def = cache.get_type_definition(id);
-	return def;
-}
-template object_type_ptr server_manager::get_type<object_type>(const rx_node_id& id);
-template application_type_ptr server_manager::get_type<application_type>(const rx_node_id& id);
-
-
-template<class clsT>
-rx_result_with<typename clsT::smart_ptr> server_manager::get_simple_type(const rx_node_id& id)
-{
-	auto& cache = model::platform_types_manager::instance().get_simple_type_repository<clsT>();
-	auto def = cache.get_type_definition(id);
-	return def;
-}
-template rx_result_with<struct_type::smart_ptr> server_manager::get_simple_type<struct_type>(const rx_node_id& id);
 // Class rx_platform::mngt::manager_initialization_context 
 
 manager_initialization_context::manager_initialization_context()

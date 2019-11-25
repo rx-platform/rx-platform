@@ -32,10 +32,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -81,6 +81,17 @@ class relation_runtime : public rx::pointers::reference_object
 {
 	DECLARE_REFERENCE_PTR(relation_runtime);
 
+	enum relation_state
+	{
+		relation_state_idle = 0,
+		relation_state_querying = 1,
+		relation_state_same_domain = 2,
+		relation_state_local_domain = 3,
+		relation_state_remote = 4,
+		relation_state_stopping = 5,
+	};
+	relation_state my_state_ = relation_state::relation_state_idle;
+
   public:
       relation_runtime();
 
@@ -111,6 +122,8 @@ class relation_runtime : public rx::pointers::reference_object
 
       meta::meta_data& meta_info ();
 
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
 
       const relation_instance_data& get_instance_data () const
       {
@@ -136,9 +149,9 @@ class relation_runtime : public rx::pointers::reference_object
 
       static string_type type_name;
 
-      rx_node_id target_type;
+      rx_node_id target_base_id;
 
-      rx_node_id reference_type;
+      rx_node_id target_relation_type;
 
       string_type target;
 
@@ -146,10 +159,15 @@ class relation_runtime : public rx::pointers::reference_object
 
       static rx_item_type type_id;
 
+      string_type object_directory;
+
 
   protected:
 
   private:
+
+      void try_resolve ();
+
 
 
       relation_instance_data instance_data_;
@@ -162,6 +180,10 @@ class relation_runtime : public rx::pointers::reference_object
 
 
       meta::meta_data meta_info_;
+
+      platform_item_ptr item_ptr_;
+
+      rx_thread_handle_t executer_;
 
 
 };

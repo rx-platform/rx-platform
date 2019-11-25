@@ -103,128 +103,6 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 		str[6] = 'i';
 }
 
-// Class rx_platform::ns::rx_platform_item 
-
-rx_platform_item::rx_platform_item()
-{
-}
-
-
-rx_platform_item::~rx_platform_item()
-{
-}
-
-
-
-void rx_platform_item::code_info_to_string (string_type& info)
-{
-	std::ostringstream ss;
-	fill_code_info(ss, this->get_name());
-	info = ss.str();
-}
-
-void rx_platform_item::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-	has_own_code_info = false;
-}
-
-void rx_platform_item::lock ()
-{
-	item_lock_.lock();
-}
-
-void rx_platform_item::unlock ()
-{
-	item_lock_.unlock();
-}
-
-rx_directory_ptr rx_platform_item::get_parent () const
-{
-	locks::auto_lock_t<rx_platform_item> dummy (const_cast<rx_platform_item*>(this));
-	return parent_;
-}
-
-void rx_platform_item::set_parent (rx_directory_ptr parent)
-{
-	locks::auto_lock_t<rx_platform_item> dummy(this);
-	parent_ = parent;
-}
-
-rx_result rx_platform_item::save () const
-{
-	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
-	if (storage_result)
-	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
-		if (!item_result)
-		{
-			item_result.register_error("Error saving item "s + meta.get_path());
-			return item_result.errors();
-		}
-		auto result = item_result.value()->open_for_write();
-		if (result)
-		{
-			result = serialize(item_result.value()->write_stream());
-			item_result.value()->close();
-		}
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
-
-string_type rx_platform_item::callculate_path () const
-{
-	string_type ret;
-	locks::auto_lock_t<rx_platform_item> dummy(const_cast<rx_platform_item*>(this));
-	if (parent_)
-	{
-		parent_->fill_path(ret);
-	}
-	return ret + get_name();
-}
-
-bool rx_platform_item::is_object () const
-{
-	auto type = get_type_id();
-	return type == rx_application || type == rx_object || type == rx_port || type == rx_domain;
-}
-
-bool rx_platform_item::is_type () const
-{
-	auto type = get_type_id();
-	return type == rx_application_type || type == rx_object_type || type == rx_domain_type
-		|| (type >= rx_port_type && type <= rx_mapper_type) || type == rx_relation_type;
-}
-
-rx_result rx_platform_item::delete_item () const
-{
-	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
-	if (storage_result)
-	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
-		if (!item_result)
-		{
-			item_result.register_error("Error saving item "s + meta.get_path());
-			return item_result.errors();
-		}
-		auto result = item_result.value()->delete_item();
-		
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
 
 
 // Class rx_platform::ns::rx_platform_directory 
@@ -362,14 +240,6 @@ void rx_platform_directory::fill_path (string_type& path) const
 
 void rx_platform_directory::set_parent (rx_directory_ptr parent)
 {
-	/*if (library::cpp_classes_manager::instance().check_class(parent.get_code_behind()))
-	{
-		locks::auto_slim_lock dummy(&structure_lock_);
-		parent_ = parent;
-	}
-	else
-		RX_ASSERT(false);*/
-
 	string_type path;
 	parent->fill_path(path);
 	locks::auto_lock_t<decltype(structure_lock_)> _(&structure_lock_);
@@ -398,39 +268,6 @@ rx_item_type rx_platform_directory::get_type_id () const
   return rx_item_type::rx_directory;
 
 
-}
-
-platform_item_ptr rx_platform_directory::get_sub_item (const string_type& path) const
-{
-	size_t idx = path.rfind(RX_DIR_DELIMETER);
-	if (idx == string_type::npos)
-	{// plain item
-		auto ret_ptr = sys_internal::internal_ns::platform_root::get_cached_item(path);
-		if (ret_ptr)
-		{// found it in cache, return!
-			return ret_ptr;
-		}
-		locks::const_auto_slim_lock dummy(&structure_lock_);
-		auto it = sub_items_.find(path);
-		if (it != sub_items_.end())
-			return it->second;
-		else
-			return platform_item_ptr::null_ptr;
-	}
-	else
-	{// dir + item
-		string_type dir_path = path.substr(0, idx);
-		string_type item_name = path.substr(idx + 1);
-		rx_directory_ptr dir = get_sub_directory(dir_path);
-		if (dir)
-		{
-			return dir->get_sub_item(item_name);
-		}
-		else
-		{
-			return platform_item_ptr::null_ptr;
-		}
-	}
 }
 
 void rx_platform_directory::structure_lock () const
@@ -476,7 +313,7 @@ rx_result rx_platform_directory::add_sub_directory (rx_directory_ptr who)
 	return ret;
 }
 
-rx_result rx_platform_directory::add_item (platform_item_ptr who)
+rx_result rx_platform_directory::add_item (platform_item_ptr&& who)
 {
 	auto name = who->get_name();
 	rx_result ret;
@@ -489,7 +326,6 @@ rx_result rx_platform_directory::add_item (platform_item_ptr who)
 		if (it != reserved_.end())
 			reserved_.erase(it);
 		sub_items_.emplace(name, who);
-		who->set_parent(smart_this());
 	}
 	else
 	{
@@ -695,6 +531,92 @@ rx_result_with<rx_storage_ptr> rx_platform_directory::resolve_storage () const
 		return "Storage not defined";
 }
 
+rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path)
+{
+	size_t idx = path.rfind(RX_DIR_DELIMETER);
+	if (idx == string_type::npos)
+	{// plain item
+		auto ret_item = sys_internal::internal_ns::platform_root::get_cached_item(path);
+		if (ret_item)
+		{// found it in cache, return!
+			return ret_item;
+		}
+		locks::const_auto_slim_lock dummy(&structure_lock_);
+		auto it = sub_items_.find(path);
+		if (it != sub_items_.end())
+			return it->second;
+		else
+			return rx_namespace_item();
+	}
+	else
+	{// dir + item
+		string_type dir_path = path.substr(0, idx);
+		string_type item_name = path.substr(idx + 1);
+		rx_directory_ptr dir = get_sub_directory(dir_path);
+		if (dir)
+		{
+			return dir->get_sub_item(item_name);
+		}
+		else
+		{
+			return rx_namespace_item();
+		}
+	}
+}
+
+rx_result rx_platform_directory::add_item (const rx_namespace_item& what)
+{
+	auto name = what.get_meta().get_name();
+	rx_result ret;
+	structure_lock();
+	auto it = sub_items_.find(name);
+	if (it == sub_items_.end())
+	{
+		// check if name is reserved
+		auto it = reserved_.find(name);
+		if (it != reserved_.end())
+			reserved_.erase(it);
+		sub_items_.emplace(name, what);
+	}
+	else
+	{
+		ret.register_error("Item " + name + " already exists");
+	}
+	structure_unlock();
+	if (ret && rx_names_cache::should_cache(what))
+	{
+		auto cache_result = sys_internal::internal_ns::platform_root::insert_cached_item(name, what);
+		if (!cache_result)
+		{
+			std::ostringstream stream;
+			stream << "Unable to register item "
+				<< what.get_meta().get_full_path()
+				<< " to names cache! Details: ";
+			bool first = true;
+			for (auto one : cache_result.errors())
+			{
+				if (first)
+					first = false;
+				else
+					stream << ", ";
+				stream << one;
+			}
+			stream << " ";
+			NAMESPACE_LOG_WARNING("root", 900, stream.str().c_str());
+		}
+		else
+		{
+			std::ostringstream stream;
+			stream << "Item "
+				<< name
+				<< " registered in cache";
+			NAMESPACE_LOG_TRACE("root", 500, stream.str().c_str());
+		}
+	}
+
+	return ret;
+}
+
 template<class TImpl>
 rx_result rx_platform_directory::add_item(TImpl who)
 {
@@ -708,7 +630,7 @@ rx_names_cache::rx_names_cache()
 
 
 
-platform_item_ptr rx_names_cache::get_cached_item (const string_type& name) const
+rx_namespace_item rx_names_cache::get_cached_item (const string_type& name) const
 {
 	const auto it = name_items_hash_.find(name);
 	if (it != name_items_hash_.end())
@@ -717,11 +639,11 @@ platform_item_ptr rx_names_cache::get_cached_item (const string_type& name) cons
 	}
 	else
 	{
-		return platform_item_ptr::null_ptr;
+		return std::move(rx_namespace_item());
 	}
 }
 
-rx_result rx_names_cache::insert_cached_item (const string_type& name, platform_item_ptr item)
+rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_namespace_item& item)
 {
 	auto it = name_items_hash_.find(name);
 	if (it != name_items_hash_.end())
@@ -748,14 +670,26 @@ bool rx_names_cache::should_cache (const platform_item_ptr& item)
 	}
 }
 
+bool rx_names_cache::should_cache (const rx_namespace_item& item)
+{
+	if (item.get_meta().get_attributes() & namespace_item_system_mask)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 
 // Class rx_platform::ns::rx_directory_resolver 
 
 
-platform_item_ptr rx_directory_resolver::resolve_path (const string_type& path)
+rx_namespace_item rx_directory_resolver::resolve_path (const string_type& path)
 {
 	if (path.empty() && directories_.empty())
-		return platform_item_ptr::null_ptr;
+		return rx_namespace_item();
 	// path length is checked in preious condition!!!
 	if (path[0] == RX_DIR_DELIMETER)
 	{// global path
@@ -766,11 +700,14 @@ platform_item_ptr rx_directory_resolver::resolve_path (const string_type& path)
 		if (!one.resolved)
 		{
 			one.dir = rx_gate::instance().get_root_directory()->get_sub_directory(one.path);
-			one.resolved = true;
+			if (one.dir)
+			{
+				one.resolved = true;
+			}
 		}
 		if (!one.dir)
 		{// get directory
-			return platform_item_ptr::null_ptr;
+			return rx_namespace_item();
 		}
 		auto item = one.dir->get_sub_item(path);
 		if (item)
@@ -778,13 +715,59 @@ platform_item_ptr rx_directory_resolver::resolve_path (const string_type& path)
 			return item;
 		}
 	}
-	return platform_item_ptr::null_ptr;
+	return rx_namespace_item();
 }
 
 void rx_directory_resolver::add_paths (std::initializer_list<string_type> paths)
 {
 	for (auto&& one : paths)
 		directories_.emplace_back(resolver_data { std::forward<decltype(one)>(one), rx_directory_ptr::null_ptr, false });
+}
+
+
+// Class rx_platform::ns::rx_namespace_item 
+
+rx_namespace_item::rx_namespace_item()
+      : type_(rx_item_type::rx_invalid_type),
+        executer_(0)
+{
+}
+
+rx_namespace_item::rx_namespace_item (const platform_item_ptr& who)
+      : type_(rx_item_type::rx_invalid_type),
+        executer_(0)
+{
+	type_ = who->get_type_id();
+	meta_ = who->meta_info();
+	executer_ = who->get_executer();
+}
+
+
+
+rx_namespace_item::operator bool () const
+{
+	return type_ != rx_item_type::rx_invalid_type;
+}
+
+string_type rx_namespace_item::callculate_path (rx_directory_ptr dir) const
+{
+	string_type ret;
+	if (dir)
+	{
+		dir->fill_path(ret);
+	}
+	return ret + meta_.get_name();
+}
+
+bool rx_namespace_item::is_object () const
+{
+	return type_ == rx_application || type_ == rx_object || type_ == rx_port || type_ == rx_domain;
+}
+
+bool rx_namespace_item::is_type () const
+{
+	return type_ == rx_application_type || type_ == rx_object_type || type_ == rx_domain_type
+		|| (type_ >= rx_port_type && type_ <= rx_mapper_type) || type_ == rx_relation_type;
 }
 
 

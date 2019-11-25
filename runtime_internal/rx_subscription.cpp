@@ -36,6 +36,7 @@
 #include "rx_runtime_internal.h"
 #include "system/server/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace sys_runtime {
@@ -81,7 +82,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 			}
 			else
 			{
-				to_connect_type::mapped_type temp{ platform_item_ptr::null_ptr, false };
+				runtime_data temp;
 				temp.items.emplace(new_id, connect_data(item_path));
 				to_connect_.emplace(object_path, std::move(temp));
 			}
@@ -138,128 +139,126 @@ rx_result rx_subscription::process_connections ()
 {
 	if (!active_)
 		return false;
-	if (!to_connect_.empty())
-	{
-		// query for object items from paths
-		if (query_names_.empty())
-		{
-			for (auto& one : to_connect_)
-			{
-				if (!one.second.item && !one.second.querying && !one.second.items.empty())
-				{
-					query_names_.emplace_back(one.first);
-					one.second.querying = true;
-				}
-			}
-			if (!query_names_.empty())
-			{
 
-				// OutputDebugStringA("****************Something to query\r\n");
-				api::rx_context ctx;
-				ctx.object = smart_this();
-				api::ns::rx_get_items(query_names_
-					, [this](std::vector<rx_result_with<platform_item_ptr> > result)
-					{
-						size_t idx = 0;
-						RX_ASSERT(result.size() == query_names_.size());
-						for (const auto& one : result)
-						{
-							auto it = to_connect_.find(query_names_[idx]);
-							if (it != to_connect_.end())
-							{
-								it->second.querying = false;
-								if (one)
-								{
-									it->second.item = one.value();
-								}
-							}
-							idx++;
-						}
-						query_names_.clear();
-					}
-					, ctx);
-			}
-			if (attempts_.empty())
-			{
-				// OutputDebugStringA("****************Something to connect attempts empty\r\n");
-				for (auto& one : to_connect_)
-				{
-					if (one.second.item && !one.second.querying && !one.second.items.empty())
-					{
-						std::vector<runtime_handle_t> items;
-						string_array paths;
+	//if (!to_connect_.empty())
+	//{
+	//	// query for object items from paths
+	//	if (query_names_.empty())
+	//	{
+	//		for (auto& one : to_connect_)
+	//		{
+	//			if (!one.second.item.get_name().empty() && !one.second.querying && !one.second.items.empty())
+	//			{
+	//				query_names_.emplace_back(one.first);
+	//				one.second.querying = true;
+	//			}
+	//		}
+	//		if (!query_names_.empty())
+	//		{
 
-						for (auto& item : one.second.items)
-						{
-							items.emplace_back(item.first);
-							paths.emplace_back(item.second.local_path);
-						}
-						if (!items.empty())
-						{
+	//			// OutputDebugStringA("****************Something to query\r\n");
+	//			api::rx_context ctx;
+	//			ctx.object = smart_this();
+	//			auto result = api::ns::rx_list_runtime_from_path(query_names_, ctx);
 
-							// OutputDebugStringA("****************Something to connect calling\r\n");
-							one.second.querying = true;
-							attempts_.emplace(one.first, std::move(items));
+	//			size_t idx = 0;
+	//			RX_ASSERT(result.size() == query_names_.size());
+	//			for (const auto& one : result)
+	//			{
+	//				auto it = to_connect_.find(query_names_[idx]);
+	//				if (it != to_connect_.end())
+	//				{
+	//					it->second.querying = false;
+	//					if (one)
+	//					{
+	//						it->second.item = one.value();
+	//					}
+	//				}
+	//				idx++;
+	//			}
+	//			query_names_.clear();
+	//		}
+	//		if (attempts_.empty())
+	//		{
+	//			// OutputDebugStringA("****************Something to connect attempts empty\r\n");
+	//			for (auto& one : to_connect_)
+	//			{
+	//				if (one.second.item && !one.second.querying && !one.second.items.empty())
+	//				{
+	//					std::vector<runtime_handle_t> items;
+	//					string_array paths;
 
-							string_type object_path(one.first);
-							api::rx_context ctx;
-							ctx.object = smart_this();
-							auto item_ptr = one.second.item;
-							item_ptr->connect_items(paths, [this, object_path, item_ptr] (std::vector<rx_result_with<runtime_handle_t> > result)
-								{
-									auto attempts_it = attempts_.find(object_path);
-									if (attempts_it != attempts_.end())
-									{
-										auto to_connect_it = to_connect_.find(object_path);
-										if (to_connect_it != to_connect_.end())
-										{
-											to_connect_it->second.querying = false;
-											size_t result_size = result.size();
-											if (attempts_it->second.size() == result_size)
-											{
-												for (size_t idx = 0; idx < result_size; idx++)
-												{
-													auto& one_result = result[idx];
-													if (one_result)
-													{
-														runtime_handle_t local_handle = attempts_it->second[idx];
-														auto temp_it = to_connect_it->second.items.find(local_handle);
-														if (temp_it != to_connect_it->second.items.end())
-														{
-															runtime_handle_t remote_handle = one_result.value();
-															to_connect_it->second.items.erase(temp_it);
-															auto tags_it = tags_.find(local_handle);
-															if (tags_it != tags_.end())
-															{
-																tags_it->second.target_handle = remote_handle;
-																tags_it->second.item_ptr = item_ptr;
-																handles_[remote_handle] = local_handle;
-															}
-														}
-														else
-															RX_ASSERT(false);
-													}
-												}
-											}
-											else
-												RX_ASSERT(false);
-											if (to_connect_it->second.items.empty())
-											{
-												to_connect_.erase(to_connect_it);
-											}
-										}
-										attempts_.erase(attempts_it);
-									}
-									else
-										RX_ASSERT(false);
-								}
-								, smart_this(), ctx);
-						}
-					}
-				}
-			}
-		}
-	}
+	//					for (auto& item : one.second.items)
+	//					{
+	//						items.emplace_back(item.first);
+	//						paths.emplace_back(item.second.local_path);
+	//					}
+	//					if (!items.empty())
+	//					{
+
+	//						// OutputDebugStringA("****************Something to connect calling\r\n");
+	//						one.second.querying = true;
+	//						attempts_.emplace(one.first, std::move(items));
+
+	//						string_type object_path(one.first);
+	//						api::rx_context ctx;
+	//						ctx.object = smart_this();
+	//						auto& item_ptr = one.second.item;
+	//						item_ptr->connect_items(paths, [this, object_path] (std::vector<rx_result_with<runtime_handle_t> > result)
+	//							{
+	//								auto attempts_it = attempts_.find(object_path);
+	//								if (attempts_it != attempts_.end())
+	//								{
+	//									auto to_connect_it = to_connect_.find(object_path);
+	//									if (to_connect_it != to_connect_.end())
+	//									{
+	//										to_connect_it->second.querying = false;
+	//										size_t result_size = result.size();
+	//										if (attempts_it->second.size() == result_size)
+	//										{
+	//											for (size_t idx = 0; idx < result_size; idx++)
+	//											{
+	//												auto& one_result = result[idx];
+	//												if (one_result)
+	//												{
+	//													runtime_handle_t local_handle = attempts_it->second[idx];
+	//													auto temp_it = to_connect_it->second.items.find(local_handle);
+	//													if (temp_it != to_connect_it->second.items.end())
+	//													{
+	//														runtime_handle_t remote_handle = one_result.value();
+	//														to_connect_it->second.items.erase(temp_it);
+	//														auto tags_it = tags_.find(local_handle);
+	//														if (tags_it != tags_.end())
+	//														{
+	//															tags_it->second.target_handle = remote_handle;
+	//															tags_it->second.item_ptr = item_ptr;
+	//															handles_[remote_handle] = local_handle;
+	//														}
+	//													}
+	//													else
+	//														RX_ASSERT(false);
+	//												}
+	//											}
+	//										}
+	//										else
+	//											RX_ASSERT(false);
+	//										if (to_connect_it->second.items.empty())
+	//										{
+	//											to_connect_.erase(to_connect_it);
+	//										}
+	//									}
+	//									attempts_.erase(attempts_it);
+	//								}
+	//								else
+	//									RX_ASSERT(false);
+	//							}
+	//							, smart_this(), ctx);
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 	return true;
 }
 

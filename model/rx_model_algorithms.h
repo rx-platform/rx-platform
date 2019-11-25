@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -31,10 +31,12 @@
 #define rx_model_algorithms_h 1
 
 
+#include "system/server/rx_async_functions.h"
 
 // rx_meta_internals
 #include "model/rx_meta_internals.h"
 
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace model {
@@ -64,13 +66,55 @@ rx_result_with<rx_node_id> resolve_runtime_reference(
 	const item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
+rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id);
+
+rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id);
+
+template<class resultT, class refT>
+rx_result do_with_item(
+	const rx_node_id& id
+	, std::function<resultT(rx_result_with<platform_item_ptr>&&)> what
+	, std::function<void(resultT)> callback
+	, rx_platform::api::rx_context ctx)
+{
+	auto ret_executer = rx_thread_context();
+
+	std::function<void(rx_result_with<platform_item_ptr>&&)> func2 = [what, ret_executer, callback, ctx](rx_result_with<platform_item_ptr>&& who)
+	{
+		auto ret_val = what(std::move(who.move_value()));
+		rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, ret_val);
+	};
+
+	std::function<void(const rx_node_id&)> func = [func2, ctx](const rx_node_id& id) {
+		auto result = get_working_runtime_sync(id);
+
+		auto executer = result.value()->get_executer();
+		if (executer == RX_DOMAIN_META)
+			func2(std::move(result));
+		else
+			rx_post_result_to(executer, func2, ctx.object, std::move(result));
+
+	};
+	rx_platform::rx_post_function_to<rx_reference_ptr, const rx_node_id&>(RX_DOMAIN_META, func, ctx.object, id);
+	return true;
+}
+
+
+
+template<class resultT, class refT, class... Args>
+rx_result do_with_items(
+	const rx_node_ids& ids
+	, std::function<resultT(Args...)> what
+	, std::function<void(resultT)> callback
+	, rx_platform::api::rx_context ctx);
+
 
 
 
 
 
 template <class typeT>
-class types_model_algorithm 
+class types_model_algorithm
 {
 
   public:
@@ -110,7 +154,7 @@ class types_model_algorithm
 
 
 template <class typeT>
-class simple_types_model_algorithm 
+class simple_types_model_algorithm
 {
 
   public:
@@ -150,7 +194,7 @@ class simple_types_model_algorithm
 
 
 template <class typeT>
-class runtime_model_algorithm 
+class runtime_model_algorithm
 {
 
   public:
@@ -199,7 +243,7 @@ class runtime_model_algorithm
 
 
 
-class relation_types_algorithm 
+class relation_types_algorithm
 {
 
   public:

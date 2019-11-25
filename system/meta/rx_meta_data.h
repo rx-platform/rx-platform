@@ -262,9 +262,9 @@ class meta_data
 
       void increment_version (bool full_ver);
 
-      rx_platform::meta::item_reference create_item_reference ();
+      item_reference create_item_reference ();
 
-      rx_platform::meta::item_reference create_weak_item_reference (const string_array& dirs);
+      item_reference create_weak_item_reference (const string_array& dirs);
 
 
       const rx_node_id& get_parent () const
@@ -344,6 +344,8 @@ class meta_data
       string_type path_;
 
       rx_item_state state_;
+
+      rx_thread_handle_t executer_;
 
 
 };

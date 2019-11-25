@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  api\rx_runtime_api.cpp
+*  sys_internal\rx_namespace_algorithms.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -30,25 +30,18 @@
 #include "pch.h"
 
 
-// rx_runtime_api
-#include "api/rx_runtime_api.h"
+// rx_namespace_algorithms
+#include "sys_internal/rx_namespace_algorithms.h"
 
-#include "model/rx_model_algorithms.h"
 
-namespace rx_platform
-{
-namespace api
-{
-namespace runtime
-{
 
-rx_result get_working_item(const rx_node_id& what, std::function<void(rx_result_with<platform_item_ptr>&&)> callback)
-{
-	return RX_NOT_IMPLEMENTED;
-}
+namespace sys_internal {
 
-}// runtime
-}// api
-}// rx-platform
+namespace internal_ns {
 
+// Class sys_internal::internal_ns::namespace_algorithms 
+
+
+} // namespace internal_ns
+} // namespace sys_internal
 

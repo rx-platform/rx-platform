@@ -45,6 +45,15 @@ void rx_post_result_to(rx_thread_handle_t target, std::function<void(rx_result_w
 	et->append(rx_create_reference<jobs::result_lambda_job<Arg, refT> >(what, std::move(arg), ref));
 }
 
+
+template<class refT>
+void rx_post_platform_item_to(rx_thread_handle_t target, std::function<void(platform_item_ptr&&)> what, refT ref, platform_item_ptr&& arg)
+{
+	auto et = rx_gate::instance().get_infrastructure().get_executer(target);
+
+	et->append(rx_create_reference<jobs::result_lambda_job<platform_item_ptr, refT> >(what, std::move(arg), ref));
+}
+
 template<class refT, class... Args>
 void rx_post_function_to(rx_thread_handle_t target, std::function<void(Args...)> what, refT ref, Args... args)
 {

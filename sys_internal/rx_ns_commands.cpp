@@ -42,27 +42,27 @@ namespace internal_ns {
 namespace namespace_commands {
 namespace
 {
-bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, ns::rx_platform_item::smart_ptr one)
+bool dump_items_on_console(rx_row_type& row, const term_list_item_options& options, const ns::rx_namespace_item& one)
 {
-	if (one->is_type())
-		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET });
-	else if (one->is_object())
-		row.emplace_back(rx_table_cell_struct{ one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+	if (one.is_type())
+		row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET });
+	else if (one.is_object())
+		row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
 	else
-		row.emplace_back(one->get_name());
+		row.emplace_back(one.get_meta().get_name());
 	if (options.list_type)
 	{
-		row.emplace_back(rx_item_type_name(one->get_type_id()));
+		row.emplace_back(rx_item_type_name(one.get_type()));
 	}
 	if (options.list_attributes)
 	{
 		string_type attrs;
-		ns::fill_attributes_string(one->meta_info().get_attributes(), attrs);
+		ns::fill_attributes_string(one.get_meta().get_attributes(), attrs);
 		row.emplace_back(attrs);
 	}
 	if (options.list_qualities || options.list_timestamps)
 	{
-		values::rx_value val = one->get_value();
+		values::rx_value val = one.get_value();
 
 		if (options.list_qualities)
 		{
@@ -73,15 +73,9 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 		if (options.list_timestamps)
 			row.emplace_back(val.get_time().get_string());
 	}
-	if (options.list_size)
-	{
-		std::ostringstream temp;
-		temp << one->get_size();
-		row.emplace_back(temp.str());
-	}
 	if (options.list_created)
 	{
-		row.emplace_back(one->meta_info().get_created_time().get_string());
+		row.emplace_back(one.get_meta().get_created_time().get_string());
 	}
 
 	return true;
@@ -151,7 +145,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	string_type path;
 	in >> path;
 
-	platform_item_ptr item;
+	rx_namespace_item item;
 
 	rx_directory_ptr where = ctx->get_current_directory()->get_sub_directory(path);
 	if (!where)
@@ -219,12 +213,12 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 		}
 		for (auto& one : items)
 		{
-			if (one->is_type())
-				row.emplace_back(one->get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
-			else if (one->is_object())
-				row.emplace_back(one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
+			if (one.is_type())
+				row.emplace_back(one.get_meta().get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
+			else if (one.is_object())
+				row.emplace_back(one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
 			else
-				row.emplace_back(one->get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+				row.emplace_back(one.get_meta().get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 
 		}
 		rx_dump_large_row(row, out, RX_CONSOLE_WIDTH);

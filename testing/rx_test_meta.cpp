@@ -119,11 +119,13 @@ namespace meta_test {
 			 ,std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
-			 rx_object_ptr test_object=test_result;
+			 rx_object_ptr test_object=test_result.value();
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
-			 if (test_object->get_item_ptr()->generate_json(out, err))
+			 auto json_str = test_object->get_item_ptr()->clone_as_json();
+			 if (!json_str.empty())
 			 {
+				 out << json_str;
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
 				 test_object->get_runtime().collect_data(init_data);
@@ -131,8 +133,10 @@ namespace meta_test {
 				 test_object->get_runtime().fill_data(init_data);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
-				 if (test_object->get_item_ptr()->generate_json(out, err))
+				 json_str = test_object->get_item_ptr()->clone_as_json();
+				 if (!json_str.empty())
 				 {
+					 out << json_str;
 					 ctx->set_passed();
 					 return true;
 				 }
@@ -164,9 +168,11 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 ctx->get_current_directory()->add_item(rx_type_item);
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Variable type created\r\n";
 		 }
@@ -192,9 +198,11 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 ctx->get_current_directory()->add_item(rx_type_item);
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
@@ -222,8 +230,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = result.value()->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
@@ -248,8 +258,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Filter type created\r\n";
 		 }
@@ -274,8 +286,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Event type created\r\n";
 		 }
@@ -300,8 +314,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Source type created\r\n";
 		 }
@@ -326,8 +342,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Mapper type created\r\n";
 		 }
@@ -387,11 +405,13 @@ namespace meta_test {
 			 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());
 		 if (test_result)
 		 {
-			 rx_object_ptr test_object = test_result;
-			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
+			 auto test_object = test_result.value()->get_item_ptr();
+			 auto json_str = test_object->clone_as_json();
+			 ctx->get_current_directory()->add_item(std::move(test_object));
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
-			 if (test_object->get_item_ptr()->generate_json(out, err))
-			 {				 
+			 if (!json_str.empty())
+			 {				
+				 out << json_str;
 				ctx->set_passed();
 				return true;
 			 }
@@ -416,8 +436,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
@@ -443,8 +465,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }
@@ -465,8 +489,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Variable type created\r\n";
 		 }
@@ -486,8 +512,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
@@ -609,8 +637,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Object type created\r\n";
 		 }
@@ -636,8 +666,10 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 if (rx_type_item->generate_json(out, err))
+		 auto json_str = rx_type_item->clone_as_json();
+		 if (!json_str.empty())
 		 {
+			 out << json_str;
 			 id = test_type->meta_info().get_id();
 			 out << "Struct type created\r\n";
 		 }

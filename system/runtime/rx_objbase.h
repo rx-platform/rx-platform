@@ -33,16 +33,16 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -329,7 +329,7 @@ object class. basic implementation of an object");
 
       void process_runtime ();
 
-      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
@@ -466,7 +466,7 @@ public:
 
       void remove_object (rx_object_ptr what);
 
-      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
@@ -606,7 +606,7 @@ system port class. basic implementation of a port");
 
       void process_runtime ();
 
-      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
@@ -752,7 +752,7 @@ system application class. basic implementation of a application");
 
       void get_domains (api::query_result& result);
 
-      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
@@ -827,4 +827,3 @@ system application class. basic implementation of a application");
 
 
 #endif
-

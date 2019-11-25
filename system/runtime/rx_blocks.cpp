@@ -368,7 +368,7 @@ rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&
 bool runtime_holder::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	data::runtime_values_data temp_data;
-	item_->collect_data(temp_data);
+	collect_data(temp_data);
 	if (!stream.write_init_values("values", temp_data))
 		return false;
 
@@ -389,8 +389,7 @@ bool runtime_holder::deserialize (base_meta_reader& stream, uint8_t type)
 	data::runtime_values_data temp_data;
 	if (!stream.read_init_values("values", temp_data))
 		return false;
-	structure::init_context ctx;
-	item_->fill_data(temp_data, ctx);
+	fill_data(temp_data);
 
 	if (!stream.start_array("programs"))
 		return false;
@@ -412,11 +411,20 @@ rx_result runtime_holder::initialize_runtime (runtime::runtime_init_context& ctx
 	auto result = item_->initialize_runtime(ctx);
 	if (result)
 	{
-		for (auto& one : programs_)
+		for (auto& one : relations_)
 		{
 			result = one->initialize_runtime(ctx);
 			if (!result)
 				break;
+		}
+		if (result)
+		{
+			for (auto& one : programs_)
+			{
+				result = one->initialize_runtime(ctx);
+				if (!result)
+					break;
+			}
 		}
 	}
 	ctx.structure.pop_item();
@@ -434,7 +442,16 @@ rx_result runtime_holder::deinitialize_runtime (runtime::runtime_deinit_context&
 	}
 	if (result)
 	{
-		result = item_->deinitialize_runtime(ctx);
+		for (auto& one : relations_)
+		{
+			result = one->deinitialize_runtime(ctx);
+			if (!result)
+				break;
+		}
+		if (result)
+		{
+			result = item_->deinitialize_runtime(ctx);
+		}
 	}
 
 	return result;
@@ -448,11 +465,20 @@ rx_result runtime_holder::start_runtime (runtime::runtime_start_context& ctx)
 	auto result = item_->start_runtime(ctx);
 	if (result)
 	{
-		for (auto& one : programs_)
+		for (auto& one : relations_)
 		{
 			result = one->start_runtime(ctx);
 			if (!result)
 				break;
+		}
+		if (result)
+		{
+			for (auto& one : programs_)
+			{
+				result = one->start_runtime(ctx);
+				if (!result)
+					break;
+			}
 		}
 	}
 	ctx.structure.pop_item();
@@ -470,7 +496,16 @@ rx_result runtime_holder::stop_runtime (runtime::runtime_stop_context& ctx)
 	}
 	if (result)
 	{
-		result = item_->stop_runtime(ctx);
+		for (auto& one : relations_)
+		{
+			result = one->stop_runtime(ctx);
+			if (!result)
+				break;
+		}
+		if (result)
+		{
+			result = item_->stop_runtime(ctx);
+		}
 	}
 	return result;
 }
@@ -514,7 +549,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 {
 	switch (command_type)
 	{
-	case rx_turn_off:
+	case rx_object_command_t::rx_turn_off:
 		{
 			if (mode_.turn_off())
 			{
@@ -523,7 +558,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 			}
 		}
 		break;
-	case rx_turn_on:
+	case rx_object_command_t::rx_turn_on:
 		{
 			if (mode_.turn_on())
 			{
@@ -532,7 +567,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 			}
 		}
 		break;
-	case rx_set_blocked:
+	case rx_object_command_t::rx_set_blocked:
 		{
 			if (mode_.set_blocked())
 			{
@@ -541,7 +576,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 			}
 		}
 		break;
-	case rx_reset_blocked:
+	case rx_object_command_t::rx_reset_blocked:
 		{
 			if (mode_.reset_blocked())
 			{
@@ -551,7 +586,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 
 		}
 		break;
-	case rx_set_test:
+	case rx_object_command_t::rx_set_test:
 		{
 			if (mode_.set_test())
 			{
@@ -560,7 +595,7 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 			}
 		}
 		break;
-	case rx_reset_test:
+	case rx_object_command_t::rx_reset_test:
 		{
 			if (mode_.reset_test())
 			{
@@ -569,6 +604,8 @@ rx_result runtime_holder::do_command (rx_object_command_t command_type)
 			}
 		}
 		break;
+	default:
+		return "Unsupported command type!";
 	}
 	return true;
 }
@@ -598,6 +635,10 @@ void runtime_holder::fill_data (const data::runtime_values_data& data)
 void runtime_holder::collect_data (data::runtime_values_data& data) const
 {
 	item_->collect_data(data);
+	for (auto& one : relations_)
+	{
+		one->collect_data(data);
+	}
 }
 
 rx_result runtime_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
@@ -617,18 +658,51 @@ bool runtime_holder::process_runtime (runtime_process_context& ctx)
 	return ret;
 }
 
-rx_result runtime_holder::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result runtime_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	if (path.empty())
 	{
-		return item_->browse_items(filter, path, items);
+		auto ret = item_->browse_items(filter, path, items);
+		if (ret)
+		{
+			for (const auto one : relations_)
+			{
+				runtime_item_attribute attr;
+				attr.full_path = prefix + one->name;
+				attr.name = one->name;
+				attr.type = rx_attribute_type::relation_attribute_type;
+				items.push_back(attr);
+			}
+		}
+		return ret;
 	}
 	else
 	{
 		string_type current_path(path + RX_OBJECT_DELIMETER);
 		const auto& sub_item = item_->get_child_item(path);
 		if (!sub_item)
+		{
+			auto idx = path.find(RX_OBJECT_DELIMETER);
+			string_type sub_path;
+			string_type rest_path;
+			if (idx != string_type::npos)
+			{
+				sub_path = path.substr(0, idx);
+				rest_path = path.substr(idx + 1);
+			}
+			else
+			{
+				sub_path = path;
+			}
+			for (auto one : relations_)
+			{
+				if (one->name == sub_path)
+				{
+					return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+				}
+			}
 			return path + " not found";
+		}
 		return sub_item->browse_items(filter, current_path, items);
 	}
 }

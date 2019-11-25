@@ -106,11 +106,6 @@ struct management_data_t
 
 class server_manager 
 {
-public:
-	template<class clsT>
-	typename clsT::smart_ptr get_type(const rx_node_id& id);
-	template<class clsT>
-	rx_result_with<typename clsT::smart_ptr> get_simple_type(const rx_node_id& id);
 
   public:
       server_manager();

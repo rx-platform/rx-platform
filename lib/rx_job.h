@@ -211,7 +211,7 @@ class lambda_job : public job
 	DECLARE_REFERENCE_PTR(lambda_job);
 
   public:
-      lambda_job (std::function<void(argT)> f, argT&& arg, refT ref)
+      lambda_job (std::function<void(argT&&)> f, argT&& arg, refT ref)
             : f_(f)
 		  , arg_(std::forward<argT>(arg))
 		  , ref_(ref)
@@ -230,7 +230,7 @@ class lambda_job : public job
   private:
 
 
-      std::function<void(argT)> f_;
+      std::function<void(argT&&)> f_;
 
       argT arg_;
 
@@ -426,7 +426,7 @@ class result_lambda_job : public job
   public:
       result_lambda_job (std::function<void(rx_result_with<argT>&&)> f, rx_result_with<argT>&& arg, refT ref)
             : f_(f)
-		  , argument_(std::forward<argT>(arg))
+		  , argument_(std::move(arg))
 		  , ref_(ref)
       {
       }
@@ -443,7 +443,7 @@ class result_lambda_job : public job
   private:
 
 
-      std::function<void(argT)> f_;
+      std::function<void(rx_result_with<argT>&&)> f_;
 
       rx_result_with<argT> argument_;
 
@@ -471,3 +471,4 @@ class result_lambda_job : public job
 
 
 #endif
+

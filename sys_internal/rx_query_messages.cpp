@@ -77,41 +77,26 @@ rx_result browse_request_message::deserialize (base_meta_reader& stream)
 message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
 	auto request_id = this->request_id;
-	auto result = api::ns::rx_list_directory(path, filter,
-		[request_id, port](rx_result_with<api::ns::directory_browse_result>&& result) mutable
-		{
-			if (result)
-			{
-				auto response = std::make_unique<browse_response_message>();
-				for (const auto one : result.value().directories)
-				{
-					response->items.emplace_back(one->get_type_id(), one->meta_info());
-				}
-				for (const auto one : result.value().items)
-				{
-					response->items.emplace_back(one->get_type_id(), one->meta_info());
-				}
-				response->request_id = request_id;
-				port->data_processed(std::move(response));
+	auto result = api::ns::rx_list_directory(path, filter, ctx);
 
-			}
-			else
-			{
-				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-				port->data_processed(std::move(ret_value));
-			}
-
-		}, ctx);
-
-	if (!result)
+	if (result)
 	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
-		return ret_value;
+		auto response = std::make_unique<browse_response_message>();
+		for (const auto one : result.value().directories)
+		{
+			response->items.emplace_back(one->get_type_id(), one->meta_info());
+		}
+		for (const auto one : result.value().items)
+		{
+			response->items.emplace_back(one.get_type(), one.get_meta());
+		}
+		response->request_id = request_id;
+		return std::move(response);
 	}
 	else
 	{
-		// just return we send callback
-		return message_ptr();
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
 	}
 }
 
@@ -1090,7 +1075,7 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_port
 		return ret_value;
 	}
 	string_type info;
-	item_ptr->code_info_to_string(info);
+	info = "dummy";// item_ptr->code_info_to_string(info);
 
 	auto ret_msg = std::make_unique<get_code_info_response_message>();
 	ret_msg->request_id = request_id;

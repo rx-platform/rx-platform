@@ -157,6 +157,9 @@ rx_result rx_delete_simple_type(const item_reference& ref
 rx_result rx_delete_relation_type(const item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx);
 
+template<class resultT, class refT, class... Args>
+rx_result rx_do_with_items(const std::vector<rx_namespace_item>& items, std::function<resultT(Args...)> verb, std::function<void(resultT)> callback, rx_context ctx);
+
 }
 }
 }

@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -36,6 +36,7 @@
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/server/rx_async_functions.h"
 #include "lib/rx_lib.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace model {
@@ -62,9 +63,157 @@ template class runtime_model_algorithm<application_type>;
 
 using namespace rx;
 
+
+rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id)
+{
+	switch (type)
+	{
+	case rx_item_type::rx_application:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id, false);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_domain:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id, false);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_port:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id, false);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_object:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(id, false);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_application_type:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<application_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_domain_type:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<domain_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_port_type:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<port_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_object_type:
+		{
+			auto result = model::platform_types_manager::instance().get_type_repository<object_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_struct_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<struct_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_variable_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<variable_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_source_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<source_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_filter_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<filter_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_event_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<event_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	case rx_item_type::rx_mapper_type:
+		{
+			auto result = model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+
+	case rx_item_type::rx_relation_type:
+		{
+			auto result = model::platform_types_manager::instance().get_relations_repository().get_type_definition(id);
+			if (result)
+				return result.value()->get_item_ptr();
+			else
+				return result.errors();
+		}
+		break;
+	default:
+		{
+			return "Not supported type";
+		}
+	}
+}
 //helper functions, anonymus namespace i think is perfect for theese
 namespace
 {
+
 
 rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns::rx_directory_resolver& directories, meta_data& info, rx_item_type& ret_type)
 {
@@ -84,7 +233,7 @@ rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns:
 		{
 			return ref.get_path() + " does not exists!";
 		}
-		ret = item->meta_info().get_id();
+		ret = item.get_meta().get_id();
 		if (ret.is_null())
 		{// TODO error, item does not have id
 			return ref.get_path() + " does not have valid id!";
@@ -104,12 +253,13 @@ rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns:
 	return ret;
 }
 
+
 template<class typeCache>
 rx_result delete_some_type(typeCache& cache, const item_reference& item_reference, rx_directory_ptr dir, rx_transaction_type& transaction)
 {
 	rx_node_id id;
 	string_type name;
-	rx_platform_item::smart_ptr item;
+	rx_namespace_item item;
 	if (!dir)
 		dir = rx_gate::instance().get_root_directory();
 	if (!item_reference.is_node_id())
@@ -120,7 +270,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		{// error, item does not exists
 			return name + " does not exists";
 		}
-		id = item->meta_info().get_id();
+		id = item.get_meta().get_id();
 		if (id.is_null())
 		{// error, item does not have id
 			return name + " does not have id";
@@ -141,22 +291,30 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		{// error, item does not exists
 			return item_meta.get_full_path() + " does not exists";
 		}
-		name = item->meta_info().get_name();
-		dir = item->get_parent();
+		name = item.get_meta().get_name();
+		dir = rx_gate::instance().get_root_directory()->get_sub_directory(item.get_meta().get_path());
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		auto delete_result = item->delete_item();
+		auto work_item = get_platform_item_sync(typeCache::HType::type_id, id);
+		if(!work_item)
+		{
+			work_item.register_error("Error retriveing type item "s + item.get_meta().get_full_path());
+			return work_item.errors();
+		}
+		auto delete_result = work_item.value()->delete_item();
 		if (!delete_result)
 		{
-			delete_result.register_error("Error deleting type item "s + item->meta_info().get_full_path());
+			delete_result.register_error("Error deleting type item "s + item.get_meta().get_full_path());
 			return delete_result;
 		}
 	}
 	transaction.push([=] {
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
-			auto save_result = item->save();
+			auto work_item = get_platform_item_sync(typeCache::HType::type_id, id);
+			if(work_item)
+				auto save_result = work_item.value()->save();
 		}
 	});
 	auto ret = dir->delete_item(name);
@@ -175,9 +333,9 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 		return ret;
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
+		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item.get_meta().get_full_path());
 	else
-		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item->meta_info().get_full_path());
+		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item.get_meta().get_full_path());
 	return true;
 }
 template<class typeCache, class typeType>
@@ -233,12 +391,12 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 		}
 		else
 		{
-			rx_platform_item::smart_ptr item = dir->get_sub_item(base_reference.get_path());
+			auto item = dir->get_sub_item(base_reference.get_path());
 			if (!item)
 			{// type does not exists
 				return "Type "s + base_reference.get_path() + " does not exists!";
 			}
-			base_id = item->meta_info().get_id();
+			base_id = item.get_meta().get_id();
 			if (base_id.is_null())
 			{// item does not have id
 				return base_reference.get_path() + " does not have valid Id!";
@@ -351,7 +509,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 {
 	rx_node_id id;
 	string_type name;
-	rx_platform_item::smart_ptr item;
+	rx_namespace_item item;
 	if (!dir)
 		dir = rx_gate::instance().get_root_directory();
 	if (!item_reference.is_node_id())
@@ -362,7 +520,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 		{// error, item does not exists
 			return name + " does not exists";
 		}
-		id = item->meta_info().get_id();
+		id = item.get_meta().get_id();
 		if (id.is_null())
 		{// error, item does not have id
 			return name + " does not have id";
@@ -383,8 +541,8 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 		{// error, item does not exists
 			return item_meta.get_full_path() + " does not exists";
 		}
-		name = item->meta_info().get_name();
-		dir = item->get_parent();
+		name = item.get_meta().get_name();
+		dir = rx_gate::instance().get_root_directory()->get_sub_directory(item.get_meta().get_path());;
 	}
 	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
@@ -407,10 +565,17 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 			}
 			if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			{
-				auto delete_result = item->delete_item();
+				auto work_item = get_platform_item_sync(typeT::RType::type_id, id);
+				if (!work_item)
+				{
+					work_item.register_error("Error retriveing type item "s + item.get_meta().get_full_path());
+					callback(std::move(rx_result(work_item.errors())));
+					return;
+				}
+				auto delete_result = work_item.value()->delete_item();
 				if (!delete_result)
 				{
-					delete_result.register_error("Error deleting runtime item "s + item->meta_info().get_full_path());
+					delete_result.register_error("Error deleting runtime item "s + item.get_meta().get_full_path());
 					callback(std::move(delete_result));
 					return;
 				}
@@ -418,7 +583,9 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 			transaction.push([=] {
 				if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				{
-					auto save_result = item->save();
+					auto work_item = get_platform_item_sync(typeT::RType::type_id, id);
+					if (work_item)
+						auto save_result = work_item.value()->save();
 				}
 				});
 			auto ret = dir->delete_item(name);
@@ -439,9 +606,9 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 				return;
 			}
 			if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-				META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
+				META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item.get_meta().get_full_path());
 			else
-				META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item->meta_info().get_full_path());
+				META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::get_type_id()) + " "s + item.get_meta().get_full_path());
 			transaction.commit();
 			callback(std::move(ret));
 
@@ -572,9 +739,12 @@ rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
 	auto result = resolve_some_reference(ref, directories, info, type);
 	if (!result)
 		return result;
-	if (type != typeT::type_id)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
+		if (type != typeT::type_id)
+		{
+			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
+		}
 	}
 	auto ret = model::platform_types_manager::instance().get_type_repository<typeT>().type_exists(result.value());
 	if (!ret)
@@ -602,9 +772,12 @@ rx_result_with<rx_node_id> resolve_relation_reference(const item_reference& ref
 	auto result = resolve_some_reference(ref, directories, info, type);
 	if (!result)
 		return result;
-	if (type != relation_type::type_id)
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(relation_type::type_id) + "!";
+		if (type != relation_type::type_id)
+		{
+			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(relation_type::type_id) + "!";
+		}
 	}
 	auto ret = model::platform_types_manager::instance().get_relations_repository().type_exists(result.value());
 	if (!ret)
@@ -685,10 +858,75 @@ template rx_result_with<rx_node_id> resolve_runtime_reference(const item_referen
 	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
+rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id)
+{
+	meta::meta_data info;
+	auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(id, info);
+	if (type == rx_item_type::rx_invalid_type)
+	{
+		return (id.to_string() + " is not the registered id!");
+	}
+	switch (type)
+	{
+	case rx_item_type::rx_object:
+		{
+			auto ret_val = platform_types_manager::instance().get_type_repository<object_type>().get_runtime(id);
+			if (ret_val)
+				return ret_val.value()->get_item_ptr();
+			else
+				return ret_val.errors();
+		}
+		break;
+	case rx_item_type::rx_domain:
+		{
+			auto ret_val = platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
+			if (ret_val)
+				return ret_val.value()->get_item_ptr();
+			else
+				return ret_val.errors();
+		}
+		break;
+	case rx_item_type::rx_application:
+		{
+			auto ret_val = platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
+			if (ret_val)
+				return ret_val.value()->get_item_ptr();
+			else
+				return ret_val.errors();
+		}
+		break;
+	case rx_item_type::rx_port:
+		{
+			auto ret_val = platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
+			if (ret_val)
+				return ret_val.value()->get_item_ptr();
+			else
+				return ret_val.errors();
+		}
+		break;
+	default:
+		{
+			return "Can't retreive details about "s + rx_item_type_name(type);
+		}
+	}
+}
+
+std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const rx_node_ids& ids)
+{
+	std::vector<rx_result_with<platform_item_ptr> > return_value;
+	return_value.reserve(ids.size());
+	for (const auto& id : ids)
+	{
+		return_value.emplace_back(get_working_runtime_sync(id));
+	}
+	return return_value;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm 
+// Parameterized Class model::algorithms::types_model_algorithm
 
 
 template <class typeT>
@@ -704,13 +942,13 @@ template <class typeT>
 type_check_context types_model_algorithm<typeT>::check_type_sync (const string_type& name, rx_directory_ptr dir)
 {
 	type_check_context ret;
-	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+	auto item = dir->get_sub_item(name);
 	if (!item)
 	{
 		ret.add_error(name + " does not exists!");
 		return ret;
 	}
-	auto id = item->meta_info().get_id();
+	auto id = item.get_meta().get_id();
 	if (id.is_null())
 	{// error, item does not have id
 		ret.add_error(name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!");
@@ -810,7 +1048,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 		auto item = dir->get_sub_item(item_reference.get_path());
 		if (item)
 		{
-			id = item->meta_info().get_id();
+			id = item.get_meta().get_id();
 		}
 		else
 		{
@@ -821,7 +1059,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm 
+// Parameterized Class model::algorithms::simple_types_model_algorithm
 
 
 template <class typeT>
@@ -837,13 +1075,13 @@ template <class typeT>
 type_check_context simple_types_model_algorithm<typeT>::check_type_sync (const string_type& name, rx_directory_ptr dir)
 {
 	type_check_context ret;
-	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+	auto item = dir->get_sub_item(name);
 	if (!item)
 	{
 		ret.add_error(name + " does not exists!");
 		return ret;
 	}
-	auto id = item->meta_info().get_id();
+	auto id = item.get_meta().get_id();
 	if (id.is_null())
 	{// error, item does not have id
 		ret.add_error(name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!");
@@ -943,7 +1181,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 		auto item = dir->get_sub_item(item_reference.get_path());
 		if (item)
 		{
-			id = item->meta_info().get_id();
+			id = item.get_meta().get_id();
 		}
 		else
 		{
@@ -954,7 +1192,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm 
+// Parameterized Class model::algorithms::runtime_model_algorithm
 
 
 template <class typeT>
@@ -1248,7 +1486,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 		auto item = dir->get_sub_item(item_reference.get_path());
 		if (item)
 		{
-			id = item->meta_info().get_id();
+			id = item.get_meta().get_id();
 		}
 		else
 		{
@@ -1259,7 +1497,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 
-// Class model::algorithms::relation_types_algorithm 
+// Class model::algorithms::relation_types_algorithm
 
 
 void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
@@ -1273,13 +1511,13 @@ void relation_types_algorithm::check_type (const string_type& name, rx_directory
 type_check_context relation_types_algorithm::check_type_sync (const string_type& name, rx_directory_ptr dir)
 {
 	type_check_context ret;
-	rx_platform_item::smart_ptr item = dir->get_sub_item(name);
+	rx_namespace_item item = dir->get_sub_item(name);
 	if (!item)
 	{
 		ret.add_error(name + " does not exists!");
 		return ret;
 	}
-	auto id = item->meta_info().get_id();
+	auto id = item.get_meta().get_id();
 	if (id.is_null())
 	{// error, item does not have id
 		ret.add_error(name + " does not have valid " + rx_item_type_name(relation_type::type_id) + " id!");
@@ -1371,7 +1609,7 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync
 		auto item = dir->get_sub_item(item_reference.get_path());
 		if (item)
 		{
-			id = item->meta_info().get_id();
+			id = item.get_meta().get_id();
 		}
 		else
 		{

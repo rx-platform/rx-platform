@@ -379,9 +379,6 @@ command that dumps specified object into a Json stream and write it on a console
       ~def_command();
 
 
-      bool dump_object_definition (std::ostream& out, std::ostream& err, platform_item_ptr item);
-
-
   protected:
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);

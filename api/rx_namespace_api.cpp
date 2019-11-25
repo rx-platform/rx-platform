@@ -36,8 +36,8 @@
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
-#include "system/server/rx_async_functions.h"
 #include "system/server/rx_ns.h"
+#include "sys_internal/rx_internal_ns.h"
 
 namespace rx_platform
 {
@@ -112,61 +112,25 @@ template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const item_refe
 	, rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
-rx_result rx_get_directory(const string_type& name // directory's path
-	, std::function<void(rx_result_with<rx_directory_ptr>&&)> callback
-	, rx_context ctx)
-{
-	return true;
-}
 
-
-rx_result rx_get_items(const string_array& names // item's path
-	, std::function<void(std::vector<rx_result_with<platform_item_ptr> >)> callback
-	, rx_context ctx)
-{
-	std::function<std::vector<rx_result_with<platform_item_ptr> >(const string_array, rx_directory_ptr)> func = [=](const string_array names, rx_directory_ptr dir) mutable -> std::vector<rx_result_with<platform_item_ptr> > {
-		std::vector<rx_result_with<platform_item_ptr> > ret;
-		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
-		for (const auto& path : names)
-		{
-			platform_item_ptr who = from->get_sub_item(path);
-			if (who)
-			{
-				ret.emplace_back(who);
-			}
-			else
-			{
-				ret.emplace_back(path + " not found!");
-			}
-		}
-		return ret;
-	};
-	rx_do_with_callback<std::vector<rx_result_with<platform_item_ptr> >, rx_reference_ptr, string_array, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, names, ctx.directory);
-	return true;
-}
-
-rx_result rx_list_directory(const string_type& name // directory's path
+rx_result_with<directory_browse_result> rx_list_directory(const string_type& name // directory's path
 	, const string_type& pattern // search pattern
-	, std::function<void(rx_result_with<directory_browse_result>&&)> callback
 	, rx_context ctx)
 {
-	std::function<rx_result_with<directory_browse_result>(const string_type, rx_directory_ptr)> func = [=](const string_type path, rx_directory_ptr dir) mutable -> rx_result_with<directory_browse_result> {
-		directory_browse_result ret_val;
-		rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
-		rx_directory_ptr who = from->get_sub_directory(path);
-		if (who)
-		{
-			who->get_content(ret_val.directories, ret_val.items, pattern);
-			ret_val.success = true;
-			return ret_val;
-		}
-		else
-		{
-			return (path + " not found!");
-		}
-	};
-	rx_do_with_callback<rx_result_with<directory_browse_result>, rx_reference_ptr, string_type, rx_directory_ptr>(func, RX_DOMAIN_META, callback, ctx.object, name, ctx.directory);
-	return true;
+
+	directory_browse_result ret_val;
+	rx_directory_ptr from = ctx.directory ? ctx.directory : rx_gate::instance().get_root_directory();
+	rx_directory_ptr who = from->get_sub_directory(name);
+	if (who)
+	{
+		who->get_content(ret_val.directories, ret_val.items, pattern);
+		ret_val.success = true;
+		return ret_val;
+	}
+	else
+	{
+		return (name + " not found!");
+	}
 }
 
 
@@ -179,22 +143,22 @@ rx_result rx_list_runtime(
 	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
 	, rx_context ctx, tl::type2type<typeT>)
 {
-	std::function<rx_result_with<runtime_browse_result>(const string_type, const string_type, rx_node_id)> func = [](const string_type path, const string_type pattern, rx_node_id id) mutable -> rx_result_with<runtime_browse_result> {
-		runtime_browse_result ret_val;
-		auto rt_item = model::platform_types_manager::instance().get_type_repository<typeT>().get_runtime(id);
-		if (!rt_item)
+	auto result = model::algorithms::do_with_item<runtime_browse_result, rx_reference_ptr>(id, [=] (rx_result_with<platform_item_ptr>&& item)
 		{
-			rt_item.register_error("Runtime not found");
-			return rt_item.errors();
-		}
-		auto result = rt_item.value()->browse(path, pattern, ret_val.items);
-		if (!result)
-			return result.errors();
-		ret_val.success = true;
-		return ret_val;
-	};
-	rx_do_with_callback<rx_result_with<runtime_browse_result>, rx_reference_ptr, string_type, string_type, rx_node_id>(func, RX_DOMAIN_META, callback, ctx.object, path, pattern, id);
-	return true;
+			runtime_browse_result ret_val;
+			if (item)
+			{
+				auto result = item.value()->browse("", path, pattern, ret_val.items);
+				ret_val.success = result;
+			}
+			return ret_val;
+		},
+		[callback](runtime_browse_result result)
+		{
+			callback(result);
+		}, ctx);
+
+	return result;
 }
 template rx_result rx_list_runtime(
 	rx_node_id id
@@ -229,29 +193,32 @@ rx_result rx_list_runtime_from_path(
 	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
 	, rx_context ctx)
 {
-	std::function<rx_result_with<runtime_browse_result>(const string_type, const string_type, rx_directory_ptr)> func = [](const string_type path, const string_type pattern, rx_directory_ptr dir) mutable -> rx_result_with<runtime_browse_result> {
-		runtime_browse_result ret_val;
-		platform_item_ptr item = platform_item_ptr::null_ptr;
-		size_t idx = path.rfind(RX_DIR_OBJECT_DELIMETER);
-		if (idx == string_type::npos)
+	rx_namespace_item item;
+	size_t idx = path.rfind(RX_DIR_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{
+		item = ctx.safe_directory()->get_sub_item(path);
+	}
+	else
+	{
+		item = ctx.safe_directory()->get_sub_item(path.substr(idx+1));
+	}
+	if (!item)
+		return "Runtime not found";
+
+	auto result = model::algorithms::do_with_item<runtime_browse_result, rx_reference_ptr>(item.get_meta().get_id(), [=](rx_result_with<platform_item_ptr>&& item)
 		{
-			item = dir->get_sub_item(path);
-		}
-		else
+			runtime_browse_result ret_val;
+			if (item)
+			{
+				auto result = item.value()->browse("", path, pattern, ret_val.items);
+			}
+			return ret_val;
+		},
+		[](runtime_browse_result result)
 		{
-			item = dir->get_sub_item(path.substr(idx+1));
-		}
-		if (!item)
-			return "Runtime not found";
-		auto result = item->browse(path, pattern, ret_val.items);
-		if (!result)
-			return result.errors();
-		ret_val.success = true;
-		return ret_val;
-	};
-	rx_do_with_callback<rx_result_with<runtime_browse_result>, rx_reference_ptr, string_type, string_type, rx_directory_ptr>
-		(func, RX_DOMAIN_META, callback, ctx.object, path, pattern, ctx.directory ? ctx.directory : rx_gate::instance().get_root_directory());
-	return true;
+		}, ctx);
+	return result;
 }
 
 

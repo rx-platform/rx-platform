@@ -124,7 +124,8 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 	};
 	struct runtime_data
 	{
-		platform_item_ptr item = platform_item_ptr::null_ptr;
+		platform_item_ptr item;
+		meta::meta_data data;
 		bool querying = false;
 		std::map<runtime_handle_t, connect_data> items;
 	};

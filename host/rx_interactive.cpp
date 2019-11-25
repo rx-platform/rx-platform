@@ -41,7 +41,6 @@
 // rx_interactive
 #include "host/rx_interactive.h"
 
-#include "system/constructors/rx_construct.h"
 #include "api/rx_meta_api.h"
 
 #define SAFE_ANSI_STATUS_ERROR (supports_ansi() ? ANSI_STATUS_ERROR : "ERROR")

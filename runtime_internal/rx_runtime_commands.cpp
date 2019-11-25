@@ -71,7 +71,9 @@ bool read_command::do_console_command (std::istream& in, std::ostream& out, std:
 		err << object_path << " not found!";
 		return false;
 	}
-	api::rx_context rx_ctx;
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+	/*api::rx_context rx_ctx;
 	rx_ctx.object = ctx->get_client();
 	rx_ctx.directory = ctx->get_current_directory();
 	auto result = item->read_value(item_path,[ctx, full_path](rx_value val)
@@ -101,7 +103,7 @@ bool read_command::do_console_command (std::istream& in, std::ostream& out, std:
 	{
 		ctx->set_waiting();
 		return true;
-	}
+	}*/
 }
 
 
@@ -162,7 +164,10 @@ bool write_command::do_console_command (std::istream& in, std::ostream& out, std
 		err << object_path << " not found!";
 		return false;
 	}
-	rx_value val;
+
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+	/*rx_value val;
 	rx_simple_value to_write;
 	to_write.parse(val_str);
 	if (to_write.is_null())
@@ -203,7 +208,7 @@ bool write_command::do_console_command (std::istream& in, std::ostream& out, std
 			ctx->set_waiting();
 			return true;
 		}
-	}
+	}*/
 }
 
 
@@ -236,14 +241,16 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 		err << object_path << " not found!";
 		return false;
 	}
+	err << RX_NOT_IMPLEMENTED;
+	return false;
 	rx_value val;
-	auto result = item->do_command(rx_object_command_t::rx_turn_on);
+	/*auto result = item->do_command(rx_object_command_t::rx_turn_on);
 	if (!result)
 	{
 		dump_error_result(err, result);
 		return false;
 	}
-	return true;
+	return true;*/
 }
 
 
@@ -276,14 +283,16 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 		err << object_path << " not found!";
 		return false;
 	}
-	rx_value val;
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+	/*rx_value val;
 	auto result = item->do_command(rx_object_command_t::rx_turn_off);
 	if (!result)
 	{
 		dump_error_result(err, result);
 		return false;
 	}
-	return true;
+	return true;*/
 }
 
 

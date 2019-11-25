@@ -559,9 +559,40 @@ bool relation_blocks_algorithm::check_relation_attribute (object_types::relation
 	return ctx.is_check_ok();
 }
 
-rx_result relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx)
+rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx)
 {
-	return true;
+	auto resolve_result = model::algorithms::resolve_relation_reference(whose.relation_type_, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve relation type");
+		return ret.errors();
+	}
+	auto relation_type_id = resolve_result.value();
+	resolve_result = model::algorithms::resolve_reference(whose.target_, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve relation target type");
+		return ret.errors();
+	}
+	auto target_base_id = resolve_result.value();
+	runtime::relations::relation_instance_data data;
+
+	auto ret_val = model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, std::move(data), ctx.get_directories());
+	if (ret_val)
+	{
+		ret_val.value()->name = whose.name_;
+		ret_val.value()->target_base_id = target_base_id;
+		rx_timed_value val;
+		val.assign_static<string_type>("", ctx.now);
+		ctx.runtime_data.add_value(whose.name_, val);
+		return ret_val;
+	}
+	else
+	{
+		return ret_val;
+	}
 }
 
 

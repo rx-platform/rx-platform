@@ -185,7 +185,7 @@ bool object_runtime::deserialize (base_meta_reader& stream, uint8_t type)
 
 platform_item_ptr object_runtime::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 string_type object_runtime::get_name () const
@@ -276,9 +276,9 @@ void object_runtime::process_runtime ()
 	object_runtime_algorithms<meta::object_types::object_type>::process_runtime(this);
 }
 
-rx_result object_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result object_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return runtime_.browse(path, filter, items);
+	return runtime_.browse(prefix, path, filter, items);
 }
 
 rx_result object_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
@@ -324,7 +324,7 @@ application_runtime::~application_runtime()
 
 platform_item_ptr application_runtime::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 rx_item_type application_runtime::get_type () const
@@ -546,9 +546,9 @@ void application_runtime::get_domains (api::query_result& result)
 	}
 }
 
-rx_result application_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result application_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return runtime_.browse(path, filter, items);
+	return runtime_.browse(prefix, path, filter, items);
 }
 
 rx_result application_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
@@ -599,7 +599,7 @@ rx_thread_handle_t domain_runtime::get_executer () const
 
 platform_item_ptr domain_runtime::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 rx_item_type domain_runtime::get_type () const
@@ -768,9 +768,9 @@ void domain_runtime::remove_object (rx_object_ptr what)
 		objects_.erase(it);
 }
 
-rx_result domain_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result domain_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return runtime_.browse(path, filter, items);
+	return runtime_.browse(prefix, path, filter, items);
 }
 
 rx_result domain_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
@@ -826,7 +826,7 @@ bool port_runtime::readed (buffer_ptr what, rx_thread_handle_t destination)
 
 platform_item_ptr port_runtime::get_item_ptr () const
 {
-	return rx_create_reference<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 rx_protocol_stack_entry* port_runtime::get_stack_entry ()
@@ -990,9 +990,9 @@ void port_runtime::process_runtime ()
 	object_runtime_algorithms<meta::object_types::port_type>::process_runtime(this);
 }
 
-rx_result port_runtime::browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result port_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return runtime_.browse(path, filter, items);
+	return runtime_.browse(prefix, path, filter, items);
 }
 
 rx_result port_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
@@ -1286,5 +1286,4 @@ void process_runtime_job<typePtr>::process ()
 } // namespace objects
 } // namespace runtime
 } // namespace rx_platform
-
 

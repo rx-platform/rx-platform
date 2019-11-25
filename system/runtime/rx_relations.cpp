@@ -38,6 +38,8 @@
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "rx_objbase.h"
+#include "model/rx_model_algorithms.h"
+#include "system/server/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -53,10 +55,12 @@ string_type relation_runtime::type_name = RX_CPP_RELATION_TYPE_NAME;
 rx_item_type relation_runtime::type_id = rx_item_type::rx_relation;
 
 relation_runtime::relation_runtime()
+      : executer_(0)
 {
 }
 
 relation_runtime::relation_runtime (const string_type& name, const rx_node_id& id, bool system)
+      : executer_(0)
 {
 }
 
@@ -75,22 +79,25 @@ string_type relation_runtime::get_type_name () const
 
 rx_result relation_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 rx_result relation_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 rx_result relation_runtime::start_runtime (runtime::runtime_start_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	executer_ = rx_thread_context();
+	try_resolve();
+	return true;
 }
 
 rx_result relation_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	my_state_ = relation_state::relation_state_stopping;
+	return true;
 }
 
 void relation_runtime::fill_data (const data::runtime_values_data& data)
@@ -129,6 +136,83 @@ meta::meta_data& relation_runtime::meta_info ()
 {
   return meta_info_;
 
+}
+
+void relation_runtime::try_resolve ()
+{
+	if (my_state_ != relation_state::relation_state_idle)
+		return;// not in right state
+	if (target.empty())
+		return;// do nothing it's blank
+	rx_directory_resolver dirs;
+	dirs.add_paths({object_directory});
+	auto resolve_result = model::algorithms::resolve_reference(target, dirs);
+	if (!resolve_result)
+	{
+		RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + target);
+		return;
+	}
+	rx_node_id id = resolve_result.move_value();
+	my_state_ = relation_state::relation_state_querying;
+	using result_t = std::vector<rx_result_with<platform_item_ptr> >;
+	std::function<rx_result_with<platform_item_ptr>()> func = [id] 
+	{
+		auto result = model::algorithms::get_working_runtime_sync(id);
+		return result;
+	};
+	rx_do_with_callback<rx_result_with<platform_item_ptr>, rx_reference_ptr>(
+		func, RX_DOMAIN_META, [this](rx_result_with<platform_item_ptr>&& result)
+		{
+			if (my_state_ != relation_state::relation_state_querying)
+				return;
+			if (result)
+			{
+				item_ptr_ = result.move_value();
+				if (item_ptr_->get_executer() == executer_)
+				{
+					my_state_ = relation_state::relation_state_same_domain;
+					return;
+				}
+				else
+				{
+					RUNTIME_LOG_ERROR("relation_runtime", 999, "Not supported type, local domain for "s + target);
+				}
+			}
+			my_state_ = relation_state::relation_state_idle;
+		}, smart_this());
+}
+
+rx_result relation_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+{
+	switch (my_state_)
+	{
+	case relation_state::relation_state_idle:
+	case relation_state::relation_state_querying:
+		return true;
+	case relation_state::relation_state_same_domain:
+		{// the only one so far
+			if (item_ptr_)
+			{
+				return item_ptr_->browse(prefix, path, filter, items);
+			}
+			else
+			{
+				RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state is relation_state_same_domain ans item is nullptr");
+			}
+			return true;
+		}
+	case relation_state::relation_state_local_domain:
+		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state relation_state_local_domain is still not supported");
+		return RX_NOT_IMPLEMENTED;
+	case relation_state::relation_state_remote:
+		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state relation_state_remote is still not supported");
+		return RX_NOT_IMPLEMENTED;
+	case relation_state::relation_state_stopping:
+		return "Unexpected, relation is stopping";
+	default:
+		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state is in undefined state!");
+		return "Unexpected relation state";
+	}
 }
 
 

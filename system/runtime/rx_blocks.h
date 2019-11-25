@@ -32,16 +32,16 @@
 
 
 
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -76,6 +76,10 @@ namespace basic_types
 	class mapper_type;
 	class filter_type;
 	class event_type;
+}
+namespace object_types
+{
+	class object_data_type;
 }
 }
 
@@ -404,7 +408,7 @@ class runtime_holder
 
       bool process_runtime (runtime_process_context& ctx);
 
-      rx_result browse (const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
@@ -467,6 +471,7 @@ class runtime_holder
       jobs::job_ptr process_job_;
 
 
+    friend class meta::object_types::object_data_type;
 };
 
 

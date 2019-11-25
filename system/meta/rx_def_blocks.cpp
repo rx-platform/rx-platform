@@ -35,7 +35,6 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "sys_internal/rx_internal_ns.h"
-#include "system/constructors/rx_construct.h"
 #include "system/runtime/rx_objbase.h"
 #include "lib/rx_rt_data.h"
 using namespace rx_platform::meta::meta_algorithm;

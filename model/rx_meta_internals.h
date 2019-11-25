@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -99,7 +99,7 @@ typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object
 
 
 
-class relations_hash_data 
+class relations_hash_data
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -162,7 +162,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash 
+class inheritance_hash
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -224,7 +224,7 @@ class inheritance_hash
 
 
 
-class instance_hash 
+class instance_hash
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -263,7 +263,7 @@ class instance_hash
 
 
 template <class typeT>
-class types_repository 
+class types_repository
 {
 	types_repository(const types_repository&) = delete;
 	types_repository(types_repository&&) = delete;
@@ -312,7 +312,7 @@ public:
 
       rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
 
-      rx_result_with<typename types_repository<typeT>::RTypePtr> get_runtime (const rx_node_id& id) const;
+      rx_result_with<typename types_repository<typeT>::RTypePtr> get_runtime (const rx_node_id& id, bool only_running = true) const;
 
       rx_result delete_runtime (rx_node_id id);
 
@@ -356,7 +356,7 @@ public:
 
 
 template <class typeT>
-class simple_types_repository 
+class simple_types_repository
 {
 	simple_types_repository(const simple_types_repository&) = delete;
 	simple_types_repository(simple_types_repository&&) = delete;
@@ -419,7 +419,7 @@ public:
 
 
 
-class types_resolver 
+class types_resolver
 {
 	struct resolver_data
 	{
@@ -456,7 +456,7 @@ class types_resolver
 
 
 
-class relations_type_repository 
+class relations_type_repository
 {
 	relations_type_repository(const relations_type_repository&) = delete;
 	relations_type_repository(relations_type_repository&&) = delete;
@@ -496,7 +496,7 @@ public:
 
       rx_result register_type (relations_type_repository::Tptr what);
 
-      rx_result_with<relations_type_repository::RTypePtr> create_runtime (meta_data& meta, typename relation_type::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, relation_type::instance_data_t&& type_data, rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -569,7 +569,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager 
+class platform_types_manager
 {
 	//friend class worker_registration_object;
 	template<class T>
@@ -674,46 +674,6 @@ class platform_types_manager
 	  simple_types_repository<T>& get_simple_type_repository()
 	  {
 		  return _simple_types_container.get_internal<T>(tl::type2type<T>());
-	  }
-	  template<class T>
-	  typename T::smart_ptr get_type_sync(const string_type& path, rx_directory_ptr dir)
-	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
-		  if (!item)
-		  {// TODO error, item does not exists
-			  return T::smart_ptr::null_ptr;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return T::smart_ptr::null_ptr;
-		  }
-		  auto ret = get_type_repository<T>().get_type_definition(std::move(id));
-		  if (!ret)
-		  {// TODO error, invalid node id
-			  return T::smart_ptr::null_ptr;
-		  }
-		  return ret;
-	  }
-	  template<class T>
-	  typename T::RTypePtr get_runtime_sync(const string_type& path, rx_directory_ptr dir)
-	  {
-		  rx_platform_item::smart_ptr item = dir->get_sub_item(path);
-		  if (!item)
-		  {// TODO error, item does not exists
-			  return T::RTypePtr::null_ptr;
-		  }
-		  auto id = item->meta_info().get_id();
-		  if (id.is_null())
-		  {// TODO error, item does not have id
-			  return T::RTypePtr::null_ptr;
-		  }
-		  auto ret = get_type_repository<T>().get_runtime(std::move(id));
-		  if (!ret)
-		  {// TODO error, invalid node id
-			  return T::RTypePtr::null_ptr;
-		  }
-		  return ret;
 	  }
   protected:
 

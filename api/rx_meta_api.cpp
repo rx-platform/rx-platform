@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,6 +38,7 @@
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
 #include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_internal_ns.h"
 
 namespace rx_platform
 {
@@ -391,7 +392,10 @@ rx_result recursive_save_directory(rx_directory_ptr dir)
 	}
 	for (auto& item : items)
 	{
-		auto result = item->save();
+		auto temp_result = model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
+		if (!temp_result)
+			return "Error retriveing "s + item.get_meta().get_full_path() + " from it's parnt's directory.";
+		auto result = temp_result.value()->save();
 		if (!result)
 			return result;
 	}
@@ -413,7 +417,11 @@ rx_result save_item_helper(const string_type& name, rx_directory_ptr dir)
 		{
 			return name + " does not exists!";
 		}
-		return item->save();
+		auto temp_result = model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
+		if (!temp_result)
+			return "Error retriveing "s + item.get_meta().get_full_path() + " from it's parnt's directory.";
+		auto result = temp_result.value()->save();
+		return result;
 	}
 }
 
@@ -424,7 +432,7 @@ rx_result rx_save_item(const string_type& name
 		return save_item_helper(name, ctx.directory);
 	};
 	rx_do_with_callback<rx_result, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ctx.object);
-	
+
 	return true;
 }
 
@@ -532,6 +540,15 @@ rx_result rx_delete_relation_type(const item_reference& ref
 	return true;
 }
 
+struct item_transaction_data
+{
+	size_t current_idx;
+	bool done = false;
+	operator bool()
+	{
+		return !done;
+	}
+};
 
 }
 }

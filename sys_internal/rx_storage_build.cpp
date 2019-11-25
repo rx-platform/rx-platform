@@ -170,16 +170,16 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 		{
 			// objects
 		case rx_item_type::rx_object:
-			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port:
-			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application:
-			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain:
-			result = create_concrete_object_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<domain_type>());
 			break;
 		default:
 			storage->close();
@@ -210,39 +210,39 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		{
 		// object types
 		case rx_item_type::rx_object_type:
-			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<object_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port_type:
-			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<port_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application_type:
-			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<application_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain_type:
-			result = create_concrete_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<domain_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<domain_type>());
 			break;
 		// simple types
 		case rx_item_type::rx_struct_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<struct_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<struct_type>());
 			break;
 		case rx_item_type::rx_variable_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<variable_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<variable_type>());
 			break;
 		// variable sub-types
 		case rx_item_type::rx_source_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<source_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<source_type>());
 			break;
 		case rx_item_type::rx_filter_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<filter_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<filter_type>());
 			break;
 		case rx_item_type::rx_event_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<event_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<event_type>());
 			break;
 		case rx_item_type::rx_mapper_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir, std::move(storage), tl::type2type<mapper_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<mapper_type>());
 			break;
 		case rx_item_type::rx_relation_type:
-			result = create_concrete_relation_type_from_storage(meta, stream, dir, std::move(storage));
+			result = create_concrete_relation_type_from_storage(meta, stream, dir.value(), std::move(storage));
 			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);

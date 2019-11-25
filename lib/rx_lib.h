@@ -201,10 +201,6 @@ public:
 				errors_->emplace_back(std::move(one));
 		}
 	}
-	operator T() const
-	{
-		return value_;
-	}
 	const T& value() const
 	{
 		return value_;
@@ -212,6 +208,10 @@ public:
 	T& value()
 	{
 		return value_;
+	}
+	T&& move_value()
+	{
+		return std::move(value_);
 	}
 	operator bool() const
 	{

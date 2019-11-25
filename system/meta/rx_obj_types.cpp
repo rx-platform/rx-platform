@@ -37,6 +37,7 @@
 #include "system/runtime/rx_objbase.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 using namespace rx_platform::meta::meta_algorithm;
 
 
@@ -73,7 +74,7 @@ rx_result application_type::construct (rx_application_ptr& what, construct_conte
 
 platform_item_ptr application_type::get_item_ptr () const
 {
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -174,7 +175,7 @@ rx_result domain_type::construct (rx_domain_ptr what, construct_context& ctx) co
 
 platform_item_ptr domain_type::get_item_ptr () const
 {
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -276,7 +277,7 @@ rx_result object_type::construct (runtime::object_runtime_ptr what, construct_co
 
 platform_item_ptr object_type::get_item_ptr () const
 {
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -413,6 +414,13 @@ rx_result object_data_type::deserialize_object_definition (base_meta_reader& str
 
 rx_result object_data_type::construct (runtime::blocks::runtime_holder& what, construct_context& ctx) const
 {
+	for (const auto& one : relations_)
+	{
+		auto one_result = one.construct(ctx);
+		if (!one_result)
+			return one_result.errors();
+		what.relations_.emplace_back(one_result.value());
+	}
 	return true;
 }
 
@@ -455,7 +463,7 @@ rx_result port_type::construct (rx_port_ptr what, construct_context& ctx) const
 
 platform_item_ptr port_type::get_item_ptr () const
 {
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -553,9 +561,9 @@ rx_result relation_attribute::check (type_check_context& ctx)
 	return true;
 }
 
-rx_result relation_attribute::construct (construct_context& ctx) const
+rx_result_with<runtime::relation_runtime_ptr> relation_attribute::construct (construct_context& ctx) const
 {
-	return true;
+	return meta_algorithm::relation_blocks_algorithm::construct_relation_attribute(*this, ctx);	
 }
 
 
@@ -578,7 +586,7 @@ relation_type::relation_type (const object_type_creation_data& data)
 
 platform_item_ptr relation_type::get_item_ptr () const
 {
-  return rx_create_reference<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -598,7 +606,7 @@ meta_data& relation_type::meta_info ()
 
 }
 
-rx_result relation_type::construct (runtime::relation_runtime_ptr what, construct_context& ctx) const
+rx_result_with<runtime::relation_runtime_ptr> relation_type::construct (runtime::relation_runtime_ptr what, construct_context& ctx) const
 {
 	return RX_NOT_IMPLEMENTED;
 }

@@ -38,6 +38,7 @@
 #include "system/meta/rx_obj_types.h"
 #include "system/server/rx_server.h"
 #include "api/rx_platform_api.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace rx_platform {
@@ -409,7 +410,7 @@ void meta_data::increment_version (bool full_ver)
 	version_++;
 }
 
-rx_platform::meta::item_reference meta_data::create_item_reference ()
+item_reference meta_data::create_item_reference ()
 {
 	if (id_.is_null() && !path_.empty())
 		return item_reference(get_full_path());
@@ -417,7 +418,7 @@ rx_platform::meta::item_reference meta_data::create_item_reference ()
 		return item_reference(id_);
 }
 
-rx_platform::meta::item_reference meta_data::create_weak_item_reference (const string_array& dirs)
+item_reference meta_data::create_weak_item_reference (const string_array& dirs)
 {
 	string_type my_path = get_full_path();
 	if (my_path.empty())

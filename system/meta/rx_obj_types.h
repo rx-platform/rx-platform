@@ -34,8 +34,6 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
@@ -46,6 +44,10 @@
 #include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 
 #include "system/runtime/rx_relations.h"
 using rx_platform::meta::construct_context;
@@ -81,7 +83,7 @@ class relation_attribute
 
       rx_result check (type_check_context& ctx);
 
-      rx_result construct (construct_context& ctx) const;
+      rx_result_with<runtime::relation_runtime_ptr> construct (construct_context& ctx) const;
 
 
       const string_type& get_name () const
@@ -576,7 +578,7 @@ public:
 
       meta_data& meta_info ();
 
-      rx_result construct (runtime::relation_runtime_ptr what, construct_context& ctx) const;
+      rx_result_with<runtime::relation_runtime_ptr> construct (runtime::relation_runtime_ptr what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
 
