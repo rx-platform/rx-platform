@@ -143,7 +143,7 @@ rx_result rx_list_runtime(
 	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
 	, rx_context ctx, tl::type2type<typeT>)
 {
-	auto result = model::algorithms::do_with_item<runtime_browse_result, rx_reference_ptr>(id, [=] (rx_result_with<platform_item_ptr>&& item)
+	auto result = model::algorithms::do_with_runtime_item<runtime_browse_result>(id, [=] (rx_result_with<platform_item_ptr>&& item)
 		{
 			runtime_browse_result ret_val;
 			if (item)
@@ -206,7 +206,7 @@ rx_result rx_list_runtime_from_path(
 	if (!item)
 		return "Runtime not found";
 
-	auto result = model::algorithms::do_with_item<runtime_browse_result, rx_reference_ptr>(item.get_meta().get_id(), [=](rx_result_with<platform_item_ptr>&& item)
+	auto result = model::algorithms::do_with_runtime_item<runtime_browse_result>(item.get_meta().get_id(), [=](rx_result_with<platform_item_ptr>&& item)
 		{
 			runtime_browse_result ret_val;
 			if (item)

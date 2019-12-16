@@ -37,18 +37,21 @@
 
 #include "lib/rx_ser_lib.h"
 
-
-namespace sys_internal
+namespace terminal
 {
-namespace internal_ns
+namespace commands
 {
-class rx_platform_item;
+class server_command;
 }
 }
 
 namespace rx_platform
 {
 struct configuration_data_t;
+namespace ns
+{
+class rx_platform_item;
+}
 namespace meta
 {
 class meta_data;
@@ -78,12 +81,8 @@ namespace ns
 class rx_platform_directory;
 }
 
-namespace prog
-{
-class server_command_base;
-}
-typedef rx::pointers::reference<prog::server_command_base> server_command_base_ptr;
-typedef std::unique_ptr<sys_internal::internal_ns::rx_platform_item> platform_item_ptr;
+typedef rx::pointers::reference<terminal::commands::server_command> server_command_base_ptr;
+typedef std::unique_ptr<rx_platform::ns::rx_platform_item> platform_item_ptr;
 typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
 typedef std::vector<rx_directory_ptr> platform_directories_type;
 

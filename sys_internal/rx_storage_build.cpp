@@ -352,7 +352,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 	bool ret = false;
 	if (stream.start_object("def"))
 	{
-		if (stream.read_init_values("values", *init_data))
+		if (stream.read_init_values("overrides", *init_data))
 		{
 			if (instance_data.deserialize(stream, 1))
 			{
@@ -377,7 +377,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		}
 	}
 	else
-		return "Error reading initialize values";
+		return "Error reading initialize values for "s + meta.get_full_path();
 }
 
 // Class sys_internal::builders::storage::directory_creator 

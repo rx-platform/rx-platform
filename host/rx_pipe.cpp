@@ -206,6 +206,13 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		}
 	}
 	std::cout << "\r\n";
+
+	if (debug_stop_)
+	{
+		std::cout << "Press <ENTER> to continue...\r\n";
+		string_type dummy;
+		std::getline(std::cin, dummy);
+	}
 	return ret ? 0 : -1;
 }
 

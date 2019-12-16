@@ -39,6 +39,7 @@
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"
 #include "model/rx_meta_internals.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace sys_internal {
@@ -1035,53 +1036,42 @@ rx_result get_code_info_request::deserialize (base_meta_reader& stream)
 message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
 	rx_directory_resolver directories{};
-	meta_data data;
-	rx_result_with<rx_node_id> result;
-	switch (item_type)
+	rx_request_id_t request = request_id;
+
+	auto resolve_result = api::ns::rx_resolve_reference(reference, directories);
+	if (!resolve_result)
 	{
-	case rx_item_type::rx_object:
-		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::object_type>());
-		break;
-	case rx_item_type::rx_domain:
-		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::domain_type>());
-		break;
-	case rx_item_type::rx_port:
-		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::port_type>());
-		break;
-	case rx_item_type::rx_application:
-		result = api::ns::rx_resolve_runtime_reference(reference, directories, tl::type2type<object_types::application_type>());
-		break;
-	default:
+		auto ret_value = std::make_unique<error_message>(resolve_result, 15, request_id);
+		return ret_value;
+	}
+	rx_result result = model::algorithms::do_with_runtime_item<string_type>(resolve_result.value(), [](rx_result_with<platform_item_ptr>&& data)
 		{
-			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
-			return ret_value;
-		}
-	}
-	if(!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 15, request_id);
-		return ret_value;
-	}
-	auto data_result = model::platform_types_manager::instance().get_types_resolver().get_item_data(result.value(), data);
-	if (data_result == rx_item_type::rx_invalid_type)
-	{
-		auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " can't be found in types resolver!", 15, request_id);
-		return ret_value;
-	}
-	auto item_ptr = rx_gate::instance().get_root_directory()->get_sub_item(data.get_full_path());
-	if (!item_ptr)
-	{
-		auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " can't be found in root directory!", 15, request_id);
-		return ret_value;
-	}
-	string_type info;
-	info = "dummy";// item_ptr->code_info_to_string(info);
+			if (data)
+			{
+				std::ostringstream ss;
+				data.value()->fill_code_info(ss, data.value()->meta_info().get_full_path());
+				return ss.str();
+			}
+			else
+			{
+				std::ostringstream ss;
+				ss << "Errors occured: \r\n";
+				for (const auto& one : data.errors())
+				{
+					ss << one << "\r\n";
+				}
+				return ss.str();
+			}
+		}, [request, port]  (string_type&& result) mutable
+		{
+			auto ret_msg = std::make_unique<get_code_info_response_message>();
+			ret_msg->request_id = request;
+			ret_msg->code_info = result;
+			port->data_processed(std::move(ret_msg));
+		}, ctx);
 
-	auto ret_msg = std::make_unique<get_code_info_response_message>();
-	ret_msg->request_id = request_id;
-	ret_msg->code_info = info;
 
-	return ret_msg;
+	return message_ptr();
 }
 
 const string_type& get_code_info_request::get_type_name ()

@@ -76,6 +76,10 @@ struct runtime_item_attribute
 	rx_attribute_type type;
 	string_type name;
 	string_type full_path;
+    bool is_complex() const
+    {
+        return type != const_attribute_type && type != value_attribute_type;
+    }
 };
 
 enum rx_item_type : uint8_t
@@ -115,6 +119,7 @@ enum rx_item_state : uint8_t
 };
 
 string_type rx_item_type_name(rx_item_type type);
+string_type rx_runtime_attribute_type_name(rx_attribute_type type);
 rx_item_type rx_parse_type_name(const string_type name);
 
 enum namespace_item_attributes

@@ -101,14 +101,15 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
-		RUNTIME_LOG_TRACE("object_algorithms", 100, "Initialized "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_name());
+		RUNTIME_LOG_TRACE("object_algorithms", 100, "Initialized "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_full_path());
 
 		if (what->get_instance_data().domain_id)
 		{
 			auto domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(what->get_instance_data().domain_id);
 			if (!domain_ptr)
 			{
-				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object to unassigned domain.");
+				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object "s
+					+ what->meta_info().get_full_path() + " to unassigned domain.");
 				domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
 			}
 			if (domain_ptr)
@@ -125,7 +126,8 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 		}
 		else
 		{
-			RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is null, connecting object to unassigned domain.");
+			RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is " RX_NULL_ITEM_NAME ", connecting object "s
+				+ what->meta_info().get_full_path() + " to unassigned domain.");
 			auto domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
 			if (domain_ptr)
 			{
@@ -147,13 +149,13 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
-						RUNTIME_LOG_TRACE("object_algorithms", 100, ("Started "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_TRACE("object_algorithms", 100, ("Started "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 					else
 					{
 						for (const auto& error : result.errors())
 							RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 				}, what, what->get_executer());
 		}
@@ -185,7 +187,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
-				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function<rx_object_ptr>([callback](rx_object_ptr whose)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
@@ -197,7 +199,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
-				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
 		}, what, what->get_executer());
 
@@ -222,14 +224,15 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
-		RUNTIME_LOG_TRACE("domain_algorithms", 100, "Initialized "s + rx_item_type_name(rx_domain) + " "s + what->meta_info().get_name());
+		RUNTIME_LOG_TRACE("domain_algorithms", 100, "Initialized "s + rx_item_type_name(rx_domain) + " "s + what->meta_info().get_full_path());
 
 		if (what->get_instance_data().app_id)
 		{
 			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(what->get_instance_data().app_id);
 			if (!application_ptr)
 			{
-				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
+				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain "s 
+					+ what->meta_info().get_full_path() + " to unassigned application.");
 				application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			}
 			if (application_ptr)
@@ -246,7 +249,8 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		}
 		else
 		{
-			RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is null, connecting domain to unassigned application.");
+			RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting domain "s
+				+ what->meta_info().get_full_path() + " to unassigned application.");
 			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			if (application_ptr)
 			{
@@ -268,13 +272,13 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
-						RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Started "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Started "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 					else
 					{
 						for (const auto& error : result.errors())
 							RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 				}, what, what->get_executer());
 		}
@@ -299,7 +303,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<v
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
-				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function<rx_domain_ptr>([callback](rx_domain_ptr whose)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
@@ -316,7 +320,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<v
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
-				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
 		}, what, what->get_executer());
 
@@ -341,14 +345,16 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 	auto result = what->initialize_runtime(ctx);
 	if (result)
 	{
-		RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_name());
+		RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_full_path());
 
 		if (what->get_instance_data().app_id)
 		{
 			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(what->get_instance_data().app_id);
 			if (!application_ptr)
 			{
-				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting domain to unassigned application.");
+
+				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting port "s
+					+ what->meta_info().get_full_path() + " to unassigned application.");
 				application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			}
 			if (application_ptr)
@@ -365,7 +371,8 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		}
 		else
 		{
-			RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is null, connecting domain to unassigned application.");
+			RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting port "s
+				+ what->meta_info().get_full_path() + " to unassigned application.");
 			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			if (application_ptr)
 			{
@@ -387,13 +394,13 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
-						RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 					else
 					{
 						for (const auto& error : result.errors())
 							RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+						RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 					}
 				}, what, what->get_executer());
 		}
@@ -418,7 +425,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, std::function<void(
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
-				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function<rx_port_ptr>([callback](rx_port_ptr whose)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
@@ -430,7 +437,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, std::function<void(
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
-				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
 		}, what, what->get_executer());
 
@@ -455,7 +462,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	auto ret = what->initialize_runtime(ctx);
 	if (ret)
 	{
-		RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_name());
+		RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
 
 		auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().get_id());
 		if (it == platform_runtime_manager::instance().applications_.end())
@@ -468,13 +475,13 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 				auto result = start_runtime(whose, start_ctx);
 				if (result)
 				{
-					RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+					RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 				}
 				else
 				{
 					for (const auto& error : result.errors())
 						RUNTIME_LOG_ERROR("application_algorithms", 800, error.c_str());
-					RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+					RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 				}
 			}, what, what->get_executer());
 	}
@@ -495,7 +502,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
-				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function<rx_application_ptr>([callback](rx_application_ptr whose)
 					{
 
@@ -513,7 +520,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("application_algorithms", 800, error.c_str());
-				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_name()).c_str());
+				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
 		}, what, what->get_executer());
 

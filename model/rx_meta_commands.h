@@ -36,12 +36,12 @@
 #include "terminal/rx_commands.h"
 
 #include "api/rx_meta_api.h"
+using terminal::console_context_ptr;
 
 
 namespace model {
 
 namespace meta_commands {
-typedef rx_platform::prog::console_program_context::smart_ptr console_program_contex_ptr;
 
 
 
@@ -63,16 +63,16 @@ command for creating various objects and types in platform\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
 	  template<class T>
-	  bool create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 	  template<class T>
-	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool create_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 	  template<class T>
-	  bool create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -97,15 +97,15 @@ command for dumping types data\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
 	  template<typename T>
-	  bool dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+	  bool dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 	  
 	  template<typename T>
-	  bool dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+	  bool dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 };
 
@@ -124,16 +124,16 @@ class delete_command : public terminal::commands::server_command
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
 	  template<class T>
-	  bool delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 	  template<class T>
-	  bool delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 	  template<class T>
-	  bool delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -206,14 +206,14 @@ command for checking various types in platform\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
 	  template<class T>
-	  bool check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool check_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 	  template<class T>
-	  bool check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -238,12 +238,12 @@ command for prototyping objects in platform\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
 	  template<class T>
-	  bool create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>);
+	  bool create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
 
 };
 
@@ -268,7 +268,7 @@ command for saving items to storage\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

@@ -35,40 +35,12 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-#include "terminal/rx_con_commands.h"
-using terminal::console::console_commands::console_program_contex_ptr;
+using terminal::console_context_ptr;
 
 
 namespace sys_runtime {
 
 namespace runtime_commands {
-
-
-
-
-
-class read_command : public terminal::commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(read_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-command for reading values from various items");
-
-  public:
-      read_command();
-
-      ~read_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
-
-
-  private:
-
-
-};
-
 
 
 
@@ -88,7 +60,7 @@ command for pulling values from various items");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -116,7 +88,7 @@ command for writing values to various items");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -143,7 +115,7 @@ command for turning on any object, domain, port or application");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -170,7 +142,7 @@ command for turning off any object, domain, port or application");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -183,7 +155,59 @@ command for turning off any object, domain, port or application");
 
 
 
-class browse_command : public terminal::commands::server_command  
+class runtime_command_base : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(runtime_command_base);
+
+  public:
+      runtime_command_base (const string_type& name);
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+      virtual bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err) = 0;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class read_command : public runtime_command_base  
+{
+	DECLARE_REFERENCE_PTR(read_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for reading values from various items");
+
+  public:
+      read_command();
+
+      ~read_command();
+
+
+  protected:
+
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class browse_command : public runtime_command_base  
 {
 	DECLARE_REFERENCE_PTR(browse_command);
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
@@ -197,7 +221,7 @@ command for browsing inside of object, domain, port or application");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err);
 
 
   private:

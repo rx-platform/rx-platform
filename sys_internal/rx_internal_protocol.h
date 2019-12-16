@@ -32,8 +32,8 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
@@ -187,7 +187,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
 
 
-class rx_protocol_port : public rx_platform::runtime::objects::port_runtime  
+class rx_protocol_port : public rx_platform::runtime::io_types::protocol_port  
 {
 	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 system protocol port class. basic implementation of a rx-platform protocol");
@@ -213,7 +213,7 @@ system protocol port class. basic implementation of a rx-platform protocol");
       rx_result delete_subscription (const rx_uuid& id);
 
       rx_result update_subscription (subscription_data& data);
-	  
+
       rx_result add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
 

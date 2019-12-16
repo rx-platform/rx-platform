@@ -36,7 +36,7 @@
 #include "rx_runtime_internal.h"
 #include "system/server/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
-#include "sys_internal/rx_internal_ns.h"
+#include "system/server/rx_platform_item.h"
 
 
 namespace sys_runtime {

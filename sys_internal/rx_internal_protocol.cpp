@@ -255,6 +255,8 @@ rx_json_protocol::rx_json_protocol()
 	mine_entry->sent_function = nullptr;
 	mine_entry->received_function = &rx_json_protocol::received_function;
 
+	mine_entry->connected_function = nullptr;
+
 	mine_entry->close_function = nullptr;
 	mine_entry->closed_function = nullptr;
 

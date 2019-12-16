@@ -55,7 +55,37 @@ namespace terminal {
 namespace console {
 
 namespace console_commands {
-typedef rx_platform::prog::console_program_context::smart_ptr console_program_contex_ptr;
+
+
+
+
+
+class info_command : public commands::server_command  
+{
+	DECLARE_REFERENCE_PTR(info_command);
+
+	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
+displays details of selected item");
+
+  public:
+      info_command();
+
+      ~info_command();
+
+
+      bool dump_dir_info (std::ostream& out, rx_directory_ptr directory);
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+
+};
+
 
 
 
@@ -77,7 +107,7 @@ displays details of software and system information");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -106,7 +136,7 @@ clears the console screen");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -134,7 +164,7 @@ all about shutdown of a server");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -174,11 +204,11 @@ all about doing stuff with log");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      bool do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -208,9 +238,9 @@ all about doing stuff with security");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      bool do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -239,7 +269,7 @@ time related stuff ( start time, current time... )");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -272,7 +302,7 @@ sleeps for the amaount of time specified in miliseconds");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -285,46 +315,21 @@ sleeps for the amaount of time specified in miliseconds");
 
 
 
-class directory_aware_command : public commands::server_command  
+class item_query_command : public commands::server_command  
 {
+    DECLARE_REFERENCE_PTR(item_query_command);
 
   public:
-      directory_aware_command (const string_type& console_name);
+      item_query_command (const string_type& console_name);
 
-      ~directory_aware_command();
+      ~item_query_command();
 
 
   protected:
 
-  private:
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-
-};
-
-
-
-
-
-
-class info_command : public directory_aware_command  
-{
-	DECLARE_REFERENCE_PTR(info_command);
-
-	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
-displays details of selected item");
-
-  public:
-      info_command();
-
-      ~info_command();
-
-
-      bool dump_dir_info (std::ostream& out, rx_directory_ptr directory);
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      virtual bool do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err) = 0;
 
 
   private:
@@ -337,7 +342,7 @@ displays details of selected item");
 
 
 
-class code_command : public directory_aware_command  
+class code_command : public item_query_command  
 {
 	DECLARE_REFERENCE_PTR(code_command);
 	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
@@ -353,7 +358,7 @@ uses fill_server_info function");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err);
 
 
   private:
@@ -366,7 +371,7 @@ uses fill_server_info function");
 
 
 
-class def_command : public directory_aware_command  
+class def_command : public item_query_command  
 {
 	DECLARE_REFERENCE_PTR(def_command);
 
@@ -381,7 +386,7 @@ command that dumps specified object into a Json stream and write it on a console
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err);
 
 
   private:
@@ -409,7 +414,7 @@ pyhton command for interfacing python scripting");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -436,7 +441,7 @@ displays license info");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -466,7 +471,7 @@ This is ugly code comment, type help in console for more details.");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

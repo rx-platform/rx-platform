@@ -72,9 +72,6 @@ rx_result_with<rx_node_id> rx_resolve_runtime_reference(
 	, tl::type2type<typeT> _);
 
 
-std::vector<rx_result_with<platform_item_ptr> > rx_get_items(
-	const string_array& name // directories's path
-	, rx_context ctx);
 
 struct directory_browse_result
 {

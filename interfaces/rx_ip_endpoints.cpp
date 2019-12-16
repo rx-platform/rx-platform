@@ -33,6 +33,7 @@
 // rx_ip_endpoints
 #include "interfaces/rx_ip_endpoints.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace interfaces {
@@ -52,7 +53,7 @@ rx_result rx_udp_endpoint::open (const string_type& addr, uint16_t port)
 	return "Nisam jos implementirao";
 }
 
-rx_protocol_result_t rx_udp_endpoint::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_udp_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }

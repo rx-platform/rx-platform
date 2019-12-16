@@ -39,6 +39,8 @@
 #include "lib/rx_thread.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 namespace host {
 namespace pipe {
@@ -134,7 +136,7 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
 
 
 
-class local_pipe_port : public interfaces::io_endpoints::physical_port  
+class local_pipe_port : public rx_platform::runtime::io_types::physical_port  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 Local Pipe class. implementation of an local pipe port port");

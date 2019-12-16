@@ -32,14 +32,14 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 namespace testing {
 class test_case;
@@ -81,15 +81,15 @@ test cases are divided into several categories. you can use test command to expl
       ~test_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
-      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
-      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
-      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
-      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
 
   protected:
@@ -109,13 +109,13 @@ struct test_context_data
 
 
 
-class test_program_context : public rx_platform::prog::console_program_context  
+class test_program_context : public terminal::console::console_program_context  
 {
   public:
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_client> client);
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<terminal::console::console_runtime> client);
 
       ~test_program_context();
 
@@ -207,7 +207,7 @@ public:
 
       test_context_data get_data (test_context_data* data = nullptr) const;
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
 
       rx_time get_created_time () const;
 
@@ -348,7 +348,7 @@ public:
 
       test_case::smart_ptr get_test_case (const string_type& test_name);
 
-      test_program_context* create_test_context (rx_platform::prog::console_program_context::smart_ptr console_ctx);
+      test_program_context* create_test_context (terminal::console_context_ptr console_ctx);
 
 
   protected:

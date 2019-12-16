@@ -65,6 +65,9 @@ typedef rx_protocol_result_t(*rx_closed_function_type)(
 	struct rx_protocol_stack_entry* reference
 	, rx_protocol_result_t result);
 
+typedef rx_protocol_result_t(*rx_connected_function_type)(
+	struct rx_protocol_stack_entry* reference);
+
 typedef rx_protocol_result_t(*rx_allocate_packet_type)(
 	struct rx_protocol_stack_entry* reference
 	, rx_packet_buffer* buffer
@@ -89,6 +92,8 @@ struct rx_protocol_stack_entry
 
 	rx_close_function_type close_function;
 	rx_closed_function_type closed_function;
+
+	rx_connected_function_type connected_function;
 
 	rx_allocate_packet_type allocate_packet_function;
 	rx_modify_packet_type free_packet_function;

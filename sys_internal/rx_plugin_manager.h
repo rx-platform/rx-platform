@@ -37,8 +37,7 @@
 // rx_plugin
 #include "system/libraries/rx_plugin.h"
 
-#include "terminal/rx_con_commands.h"
-using terminal::console::console_commands::console_program_contex_ptr;
+using terminal::console_context_ptr;
 
 
 namespace sys_internal {
@@ -126,7 +125,7 @@ command for working with platform plug-ins");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

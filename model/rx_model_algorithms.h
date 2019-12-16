@@ -36,7 +36,7 @@
 // rx_meta_internals
 #include "model/rx_meta_internals.h"
 
-#include "sys_internal/rx_internal_ns.h"
+#include "system/server/rx_platform_item.h"
 
 
 namespace model {
@@ -67,10 +67,11 @@ rx_result_with<rx_node_id> resolve_runtime_reference(
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id);
+rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id);
 
 rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id);
 
-template<class resultT, class refT>
+template<class resultT>
 rx_result do_with_item(
 	const rx_node_id& id
 	, std::function<resultT(rx_result_with<platform_item_ptr>&&)> what
@@ -81,22 +82,64 @@ rx_result do_with_item(
 
 	std::function<void(rx_result_with<platform_item_ptr>&&)> func2 = [what, ret_executer, callback, ctx](rx_result_with<platform_item_ptr>&& who)
 	{
-		auto ret_val = what(std::move(who.move_value()));
-		rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, ret_val);
+		auto ret_val = what(std::move(who));
+		rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
 	};
 
 	std::function<void(const rx_node_id&)> func = [func2, ctx](const rx_node_id& id) {
-		auto result = get_working_runtime_sync(id);
 
-		auto executer = result.value()->get_executer();
-		if (executer == RX_DOMAIN_META)
-			func2(std::move(result));
-		else
-			rx_post_result_to(executer, func2, ctx.object, std::move(result));
+		auto result = get_platform_item_sync(id);
+        if (!result)
+        {
+            func2(std::move(result));
+        }
+        else
+        {
+            auto executer = result.value()->get_executer();
+            if (executer == RX_DOMAIN_META)
+                func2(std::move(result));
+            else
+                rx_post_result_to(executer, func2, ctx.object, std::move(result));
+        }
 
 	};
 	rx_platform::rx_post_function_to<rx_reference_ptr, const rx_node_id&>(RX_DOMAIN_META, func, ctx.object, id);
 	return true;
+}
+
+template<class resultT>
+rx_result do_with_runtime_item(
+    const rx_node_id& id
+    , std::function<resultT(rx_result_with<platform_item_ptr>&&)> what
+    , std::function<void(resultT)> callback
+    , rx_platform::api::rx_context ctx)
+{
+    auto ret_executer = rx_thread_context();
+
+    std::function<void(rx_result_with<platform_item_ptr>&&)> func2 = [what, ret_executer, callback, ctx](rx_result_with<platform_item_ptr>&& who)
+    {
+        auto ret_val = what(std::move(who));
+        rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
+    };
+
+    std::function<void(const rx_node_id&)> func = [func2, ctx](const rx_node_id& id) {
+        auto result = get_working_runtime_sync(id);
+        if (!result)
+        {
+            func2(std::move(result));
+        }
+        else
+        {
+            auto executer = result.value()->get_executer();
+            if (executer == RX_DOMAIN_META)
+                func2(std::move(result));
+            else
+                rx_post_result_to(executer, func2, ctx.object, std::move(result));
+        }
+
+    };
+    rx_platform::rx_post_function_to<rx_reference_ptr, const rx_node_id&>(RX_DOMAIN_META, func, ctx.object, id);
+    return true;
 }
 
 

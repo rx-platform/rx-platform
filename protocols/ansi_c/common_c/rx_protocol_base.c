@@ -125,6 +125,18 @@ rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, pr
 	}
 	return RX_PROTOCOL_OK;// o.k. to ignore the result
 }
+void rx_send_connected(struct rx_protocol_stack_entry* stack)
+{
+	while (stack->upward != NULL)
+	{
+		if (stack->upward->connected_function)
+		{
+			stack->upward->connected_function(stack->upward);
+			return;
+		}
+		stack = stack->upward;
+	}
+}
 rx_protocol_result_t rx_allocate_packet(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer, size_t initial_capacity)
 {
 	if (stack)

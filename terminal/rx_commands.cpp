@@ -40,11 +40,58 @@
 #include "sys_internal/rx_ns_commands.h"
 #include "runtime_internal/rx_runtime_commands.h"
 #include "sys_internal/rx_plugin_manager.h"
+#include "rx_console.h"
+#include "sys_internal/rx_internal_ns.h"
 
 
 namespace terminal {
 
 namespace commands {
+namespace
+{
+void read_to_eol(string_type::const_iterator& it, const string_type& data, std::ostringstream& out)
+{
+	while (it != data.end() && *it != '\r' && *it != '\n')
+	{
+		out << *it;
+		it++;
+	}
+}
+string_type parse_man_file(const string_type& data)
+{
+	std::ostringstream out;
+
+	auto it = data.begin();
+	while (it != data.end())
+	{
+		if (*it == '.')
+		{// macro stuff
+			it++;
+			string_type macro;
+			auto it_temp = it;
+			while (it != data.end() && !std::isblank(*it))
+				it++;
+			std::copy(it_temp, it, std::back_inserter(macro));
+			if (it != data.end())
+				it++;
+			if (macro == "B")
+			{
+				out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW;
+				read_to_eol(it, data, out);
+				out << ANSI_COLOR_RESET;
+			}
+		}
+		else
+			read_to_eol(it, data, out);
+		while (it != data.end() && (*it == '\r' || *it == '\n'))
+		{
+			out << *it;
+			it++;
+		}
+	}
+	return out.str();
+}
+}
 
 // Class terminal::commands::server_command_manager 
 
@@ -161,7 +208,7 @@ echo_server_command::~echo_server_command()
 
 
 
-bool echo_server_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx)
+bool echo_server_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	// just copy from one steam to another
 	if (!in.eof())
@@ -178,9 +225,12 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 
 // Class terminal::commands::server_command 
 
-server_command::server_command (const string_type& console_name)
-	: rx_platform::prog::server_command_base(console_name,45)
-	, options_(console_name, "jbg help stuff")
+server_command::server_command (const string_type& name)
+      : time_stamp_(rx_time::now()),
+        console_name_(name),
+        security_guard_(std::make_unique<security::security_guard>()),
+        modified_time_(rx_time::now())
+	, program_runtime(name, name.c_str(), true)
 {
 }
 
@@ -191,14 +241,86 @@ server_command::~server_command()
 
 
 
+string_type server_command::get_type_name () const
+{
+	static string_type type_name = RX_CPP_COMMAND_TYPE_NAME;
+	return type_name;
+}
+
+values::rx_value server_command::get_value () const
+{
+	values::rx_value temp;
+	temp.assign_static(get_console_name(), time_stamp_);
+	return temp;
+}
+
 namespace_item_attributes server_command::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_execute_access | namespace_item_read_access | namespace_item_system);
 }
 
+bool server_command::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	if (security_guard_->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	{
+		return do_console_command(in, out, err, ctx);
+	}
+	else
+	{
+		err << ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET;
+		return false;
+	}
+}
+
+bool server_command::dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
+{
+	return security_guard_->check_premissions(mask, extended_mask);
+}
+
+rx_time server_command::get_created_time () const
+{
+	return rx_gate::instance().get_started();
+}
+
 bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 {
-	return true;
+	return false;
+}
+
+platform_item_ptr server_command::get_item_ptr () const
+{
+	return std::make_unique<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
+}
+
+string_type server_command::get_name () const
+{
+	return console_name_;
+}
+
+bool server_command::serialize_definition (base_meta_writer& stream, uint8_t type) const
+{
+	return false;
+}
+
+bool server_command::deserialize_definition (base_meta_reader& stream, uint8_t type)
+{
+	return false;
+}
+
+string_type server_command::get_help () const
+{
+	std::ostringstream ss;
+	ss << RX_CONSOLE_HEADER_LINE "\r\n";
+	ss << ANSI_COLOR_GREEN << ":>";
+	ss << ANSI_COLOR_YELLOW ANSI_COLOR_BOLD << get_name() << ANSI_COLOR_RESET << "\r\n";
+	ss << RX_CONSOLE_HEADER_LINE "\r\n\r\n";
+	string_type str = rx_gate::instance().get_host()->get_manual("commands/"s + get_name());
+	if (str.empty())
+		ss << "jebi ga bato!!!";
+	else
+		ss << parse_man_file(str);
+	ss << "\r\n\r\n";
+	return ss.str();
 }
 
 void server_command::dump_error_result (std::ostream& err, const rx_result& result) const

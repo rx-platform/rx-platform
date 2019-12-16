@@ -55,10 +55,10 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 
 
@@ -223,7 +223,7 @@ class rx_platform_host
       rx_result_with<rx_storage_ptr> get_user_storage (const string_type& name = "");
 
       rx_result_with<rx_storage_ptr> get_test_storage (const string_type& name = "");
-	  
+
       static void dump_log_items (const log::log_events_type& items, std::ostream& out);
 
 

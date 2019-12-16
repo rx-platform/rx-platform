@@ -90,16 +90,6 @@ typedef typename meta::meta_data meta_data_t;
 bool rx_is_valid_name_character(char ch);
 bool rx_is_valid_namespace_name(const string_type& name);
 
-namespace ns
-{
-class rx_platform_directory;
-}
-namespace prog
-{
-class server_command_base;
-}
-typedef rx::pointers::reference<prog::server_command_base> server_command_base_ptr;
-typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
 typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 

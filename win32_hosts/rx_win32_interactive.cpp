@@ -511,7 +511,7 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 	in_bits.reset(1);
 	in_bits.reset(2);
 	in_bits.set(3);
-	//in_bits.set(9);
+	in_bits.set(9);
 
 	out_bits.set(2);
 	out_bits.set(0);

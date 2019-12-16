@@ -6,24 +6,24 @@
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -47,7 +47,7 @@ namespace model {
 
 namespace meta_commands {
 
-// Class model::meta_commands::create_command
+// Class model::meta_commands::create_command 
 
 create_command::create_command()
 	: server_command("create")
@@ -61,7 +61,7 @@ create_command::~create_command()
 
 
 
-bool create_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool create_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	if (!in.eof())
 	{
@@ -171,7 +171,7 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 
 
 template<class T>
-bool create_command::create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool create_command::create_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	string_type from_command;
@@ -303,7 +303,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	}
 }
 template<class T>
-bool create_command::create_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool create_command::create_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	string_type from_command;
@@ -433,7 +433,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 }
 
 template<class T>
-bool create_command::create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool create_command::create_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	string_type from_command;
@@ -561,7 +561,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
-// Class model::meta_commands::dump_types_command
+// Class model::meta_commands::dump_types_command 
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -575,7 +575,7 @@ dump_types_command::~dump_types_command()
 
 
 
-bool dump_types_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool dump_types_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type item_type;
 	in >> item_type;
@@ -600,7 +600,7 @@ bool dump_types_command::do_console_command (std::istream& in, std::ostream& out
 
 
 template<typename T>
-bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type where_from;
 	in >> where_from;
@@ -619,7 +619,7 @@ bool dump_types_command::dump_types_to_console(tl::type2type<T>, std::istream& i
 }
 
 template<typename T>
-bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start, int indent, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type indent_str(indent * 4ll, ' ');
 	auto result = platform_types_manager::instance().get_type_repository<T>().get_derived_types(start);
@@ -630,7 +630,7 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	}
 	return true;
 }
-// Class model::meta_commands::delete_command
+// Class model::meta_commands::delete_command 
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -639,7 +639,7 @@ delete_command::delete_command (const string_type& console_name)
 
 
 
-bool delete_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool delete_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	bool ret = false;
 	if (!in.eof())
@@ -740,7 +740,7 @@ bool delete_command::do_console_command (std::istream& in, std::ostream& out, st
 }
 
 template<class T>
-bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	in >> name;
@@ -792,7 +792,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 }
 
 template<class T>
-bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	in >> name;
@@ -833,7 +833,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 }
 
 template<class T>
-bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	in >> name;
@@ -872,7 +872,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	ctx->set_waiting();
 	return true;
 }
-// Class model::meta_commands::rm_command
+// Class model::meta_commands::rm_command 
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -881,7 +881,7 @@ rm_command::rm_command()
 
 
 
-// Class model::meta_commands::del_command
+// Class model::meta_commands::del_command 
 
 del_command::del_command()
 	: delete_command("del")
@@ -890,7 +890,7 @@ del_command::del_command()
 
 
 
-// Class model::meta_commands::check_command
+// Class model::meta_commands::check_command 
 
 check_command::check_command()
 	: server_command("check")
@@ -904,7 +904,7 @@ check_command::~check_command()
 
 
 
-bool check_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool check_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	
 	bool ret = false;
@@ -987,7 +987,7 @@ bool check_command::do_console_command (std::istream& in, std::ostream& out, std
 
 
 template<class T>
-bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	in >> name;
@@ -1020,7 +1020,7 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 	}
 }
 template<class T>
-bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	in >> name;
@@ -1052,7 +1052,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class model::meta_commands::prototype_command
+// Class model::meta_commands::prototype_command 
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -1066,7 +1066,7 @@ prototype_command::~prototype_command()
 
 
 
-bool prototype_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool prototype_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	if (!in.eof())
 	{
@@ -1118,7 +1118,7 @@ bool prototype_command::do_console_command (std::istream& in, std::ostream& out,
 }
 
 template<class T>
-bool prototype_command::create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx, tl::type2type<T>)
+bool prototype_command::create_prototype(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>)
 {
 	string_type name;
 	string_type from_command;
@@ -1179,7 +1179,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 					out << "Prototyped " << rx_item_type_name(T::RType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
-					out << result.value()->get_item_ptr()->clone_as_json();
+					out << result.value()->get_item_ptr()->get_definition_as_json();
 				}
 				ctx->send_results(ret);
 			}, rxc);
@@ -1207,7 +1207,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
-// Class model::meta_commands::save_command
+// Class model::meta_commands::save_command 
 
 save_command::save_command()
 	: server_command("save")
@@ -1221,7 +1221,7 @@ save_command::~save_command()
 
 
 
-bool save_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool save_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	bool ret = false;
 	if (!in.eof())

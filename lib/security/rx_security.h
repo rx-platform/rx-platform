@@ -54,6 +54,7 @@ using namespace rx;
 
 
 namespace rx {
+typedef std::uint_fast16_t sec_error_num_t;
 
 namespace security {
 class security_context;

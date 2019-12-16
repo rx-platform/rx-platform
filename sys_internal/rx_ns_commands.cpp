@@ -140,7 +140,7 @@ cd_command::~cd_command()
 
 
 
-bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type path;
 	in >> path;
@@ -191,7 +191,7 @@ ls_command::~ls_command()
 
 
 
-bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	if (in.eof())
 	{// dump here
@@ -288,7 +288,7 @@ bool list_command::list_directory (std::ostream& out, std::ostream& err, const s
 	return true;
 }
 
-bool list_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool list_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type filter;
 	term_list_item_options options;
@@ -339,7 +339,7 @@ mkdir_command::~mkdir_command()
 
 
 
-bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type path;
 	in >> path;
@@ -369,7 +369,7 @@ rmdir_command::~rmdir_command()
 
 
 
-bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type path;
 	in >> path;
@@ -399,7 +399,7 @@ clone_system_command::~clone_system_command()
 
 
 
-bool clone_system_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool clone_system_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	out << "Cloning rx-platform system types and objects...\r\n";
 	err << "Nema jos jebiga!!!\r\n";

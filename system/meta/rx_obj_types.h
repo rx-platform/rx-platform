@@ -207,6 +207,7 @@ class application_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of application type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::objects::application_runtime RType;
 	typedef runtime::objects::application_runtime::smart_ptr RTypePtr;
 	typedef runtime::objects::application_instance_data instance_data_t;
@@ -289,6 +290,7 @@ class domain_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of domain type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::objects::domain_runtime RType;
 	typedef typename runtime::objects::domain_runtime::smart_ptr RTypePtr;
 	typedef runtime::objects::domain_instance_data instance_data_t;
@@ -371,6 +373,7 @@ class object_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 2, "\
 implementation of object type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::objects::object_runtime RType;
 	typedef runtime::object_runtime_ptr RTypePtr;
 	typedef runtime::objects::object_instance_data instance_data_t;
@@ -455,6 +458,7 @@ class port_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of port type");
 public:
+    static constexpr bool has_default_constructor = false;
 	typedef runtime::objects::port_runtime RType;
 	typedef runtime::objects::port_runtime::smart_ptr RTypePtr;
 	typedef runtime::objects::port_instance_data instance_data_t;

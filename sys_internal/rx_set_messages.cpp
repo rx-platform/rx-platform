@@ -674,6 +674,76 @@ rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& st
 }
 
 
+// Class sys_internal::rx_protocol::messages::set_messages::protocol_relation_type_creator 
+
+
+message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
+{
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = [create, request, port](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
+	{
+		if (result)
+		{
+			if (create)
+			{
+				auto response = std::make_unique<set_type_response<object_types::relation_type> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+			else
+			{
+				auto response = std::make_unique<update_type_response<object_types::relation_type> >();
+				response->item = result.value();
+				response->request_id = request;
+				port->data_processed(std::move(response));
+			}
+		}
+		else
+		{
+			auto ret_value = std::make_unique<error_message>(result, 14, request);
+			port->data_processed(std::move(ret_value));
+		}
+
+	};
+	rx_result result;
+	if (create)
+		result = api::meta::rx_create_relation_type("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+	else
+		result = api::meta::rx_update_relation_type(item, false, callback, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+rx_result protocol_relation_type_creator::serialize (base_meta_writer& stream) const
+{
+	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	return true;
+}
+
+rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+{
+	item = rx_create_reference<object_types::relation_type>();
+	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	item->meta_info() = meta;
+	return result;
+}
+
+
 // Class sys_internal::rx_protocol::messages::set_messages::delete_runtime_request 
 
 string_type delete_runtime_request::type_name = "delRuntimeReq";
@@ -882,10 +952,10 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 		result = api::meta::rx_create_prototype<itemT>(meta_, instance_data_, callback, ctx);
 		break;
 	case 1:// create
-		result = api::meta::rx_create_runtime<itemT>(meta_, &values_, instance_data_, callback, ctx);
+		result = api::meta::rx_create_runtime<itemT>(meta_, &overrides_, instance_data_, callback, ctx);
 		break;
 	case 2:// update
-		result = api::meta::rx_update_runtime<itemT>(meta_, &values_, instance_data_, false, callback, ctx);
+		result = api::meta::rx_update_runtime<itemT>(meta_, &overrides_, instance_data_, false, callback, ctx);
 		break;
 	default:
 		result = "Uexpected create_type error!";
@@ -915,7 +985,7 @@ rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream
 	bool ret = false;
 	if (stream.start_object("def"))
 	{
-		if (stream.read_init_values("values", values_))
+		if (stream.read_init_values("overrides", overrides_))
 		{
 			if (instance_data_.deserialize(stream, STREAMING_TYPE_OBJECT))
 			{
@@ -1267,76 +1337,6 @@ rx_message_type_t prototype_runtime_request::get_type_id ()
 {
   return type_id;
 
-}
-
-
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_relation_type_creator 
-
-
-message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
-{
-	rx_node_id id = rx_node_id::null_id;
-
-	auto callback = [create, request, port](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
-	{
-		if (result)
-		{
-			if (create)
-			{
-				auto response = std::make_unique<set_type_response<object_types::relation_type> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-			else
-			{
-				auto response = std::make_unique<update_type_response<object_types::relation_type> >();
-				response->item = result.value();
-				response->request_id = request;
-				port->data_processed(std::move(response));
-			}
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request);
-			port->data_processed(std::move(ret_value));
-		}
-
-	};
-	rx_result result;
-	if (create)
-		result = api::meta::rx_create_relation_type("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
-	else
-		result = api::meta::rx_update_relation_type(item, false, callback, ctx);
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 13, request);
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
-}
-
-rx_result protocol_relation_type_creator::serialize (base_meta_writer& stream) const
-{
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	return true;
-}
-
-rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
-{
-	item = rx_create_reference<object_types::relation_type>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
-	if (!result)
-		return result;
-	item->meta_info() = meta;
-	return result;
 }
 
 

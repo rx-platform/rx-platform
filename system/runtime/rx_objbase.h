@@ -33,16 +33,16 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -199,6 +199,10 @@ class port_instance_data
 
 
       rx_node_id app_id;
+
+      meta::item_reference up_port;
+
+      meta::item_reference down_port;
 
 
   protected:
@@ -650,6 +654,11 @@ system port class. basic implementation of a port");
 
 
   private:
+
+      virtual bool has_up_port () const = 0;
+
+      virtual bool has_down_port () const = 0;
+
 
 
       rx_application_ptr my_application_;

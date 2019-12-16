@@ -33,6 +33,8 @@
 // rx_runtime_commands
 #include "runtime_internal/rx_runtime_commands.h"
 
+#include "api/rx_namespace_api.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace sys_runtime {
@@ -42,7 +44,7 @@ namespace runtime_commands {
 // Class sys_runtime::runtime_commands::read_command 
 
 read_command::read_command()
-	: terminal::commands::server_command("read")
+	: runtime_command_base("read")
 {
 }
 
@@ -53,57 +55,10 @@ read_command::~read_command()
 
 
 
-bool read_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err)
 {
-	string_type full_path;
-	in >> full_path;
-	if (full_path.empty())
-	{
-		err << "Empty path!";
-		return false;
-	}
-	string_type object_path;
-	string_type item_path;
-	rx_split_item_path(full_path, object_path, item_path);
-	auto item = ctx->get_current_directory()->get_sub_item(object_path);
-	if (!item)
-	{
-		err << object_path << " not found!";
-		return false;
-	}
 	err << RX_NOT_IMPLEMENTED;
 	return false;
-	/*api::rx_context rx_ctx;
-	rx_ctx.object = ctx->get_client();
-	rx_ctx.directory = ctx->get_current_directory();
-	auto result = item->read_value(item_path,[ctx, full_path](rx_value val)
-		{
-			auto& out = ctx->get_stdout();
-			out << full_path << " = ";
-			if (val.is_good())
-				out << ANSI_RX_GOOD_COLOR;
-			else if (val.is_uncertain())
-				out << ANSI_RX_UNCERTAIN_COLOR;
-			else
-				out << ANSI_RX_BAD_COLOR;
-			val.dump_to_stream(out);
-			out << ANSI_COLOR_RESET "\r\n";
-
-
-			ctx->send_results(true);
-
-		}, rx_ctx);
-
-	if (!result)
-	{
-		dump_error_result(err, result);
-		return false;
-	}
-	else
-	{
-		ctx->set_waiting();
-		return true;
-	}*/
 }
 
 
@@ -121,7 +76,7 @@ pull_command::~pull_command()
 
 
 
-bool pull_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool pull_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	out << "Hello from pull!!!\r\n";
 	err << RX_NOT_IMPLEMENTED;
@@ -143,7 +98,7 @@ write_command::~write_command()
 
 
 
-bool write_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool write_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	
 	string_type full_path;
@@ -226,7 +181,7 @@ turn_on_command::~turn_on_command()
 
 
 
-bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type object_path;
 	in >> object_path;
@@ -268,7 +223,7 @@ turn_off_command::~turn_off_command()
 
 
 
-bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type object_path;
 	in >> object_path;
@@ -299,7 +254,7 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 // Class sys_runtime::runtime_commands::browse_command 
 
 browse_command::browse_command()
-	: terminal::commands::server_command("brw")
+	: runtime_command_base("brw")
 {
 }
 
@@ -310,10 +265,103 @@ browse_command::~browse_command()
 
 
 
-bool browse_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err)
 {
-	out << "Hello from browse command\r\n";
-	return true;
+	std::vector<runtime_item_attribute> items;
+	auto result = rt_item->browse("", sub_item, "", items);
+	if (result)
+	{
+		rx_table_type table(items.size() + 1);
+		size_t idx = 0;
+		table[0].emplace_back("Name");
+		table[0].emplace_back("Type");
+		for (const auto& one : items)
+		{
+			idx++;
+			if (one.is_complex())
+				table[idx].emplace_back(one.name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
+			else
+				table[idx].emplace_back(one.name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
+			table[idx].emplace_back(rx_runtime_attribute_type_name(one.type));
+		}
+		rx_dump_table(table, out, true, true);
+		return true;
+	}
+	else
+	{
+		dump_error_result(err, result);
+		return false;
+	}
+}
+
+
+// Class sys_runtime::runtime_commands::runtime_command_base 
+
+runtime_command_base::runtime_command_base (const string_type& name)
+	: server_command(name)
+{
+}
+
+
+
+bool runtime_command_base::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type full_path;
+	in >> full_path;
+	if (full_path.empty())
+	{
+		err << "Empty path!";
+		return false;
+	}
+	string_type whose;
+	string_type item_path;
+	rx_split_item_path(full_path, whose, item_path);
+	if (!whose.empty())
+	{
+		string_type path;
+		ctx->get_current_directory()->fill_path(path);
+		rx_directory_resolver directories;
+		directories.add_paths({ path });
+		api::rx_context context;
+		context.directory = ctx->get_current_directory();
+		context.object = smart_this();
+
+		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
+		if (!resolve_result)
+		{
+			dump_error_result(err, resolve_result);
+			return resolve_result;
+
+		}
+		rx_result result = model::algorithms::do_with_runtime_item<bool>(resolve_result.value()
+			, [ctx, item_path, this](rx_result_with<platform_item_ptr>&& data) -> bool
+			{
+				auto& out = ctx->get_stdout();
+				auto& err = ctx->get_stderr();
+				if (data)
+				{
+					return do_with_item(data.move_value(), item_path, out, err);
+				}
+				else
+				{
+					dump_error_result(err, data);
+					return false;
+				}
+			}, [ctx](bool&& result) mutable
+			{
+				ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+			}, context);
+		if (result)
+		{
+			ctx->set_waiting();
+		}
+		return result;
+	}
+	else
+	{
+		err << "Please, define item!";
+		return false;
+	}
 }
 
 

@@ -91,6 +91,33 @@ string_type rx_item_type_name(rx_item_type type)
 		return string_type();
 	}
 }
+
+string_type rx_runtime_attribute_type_name(rx_attribute_type type)
+{
+	switch (type)
+	{
+		case struct_attribute_type:
+			return RX_CPP_STRUCT_TYPE_NAME;
+		case variable_attribute_type:
+			return RX_CPP_VARIABLE_TYPE_NAME;
+		case source_attribute_type:
+			return RX_CPP_SOURCE_TYPE_NAME;
+		case filter_attribute_type:
+			return RX_CPP_FILTER_TYPE_NAME;
+		case event_attribute_type:
+			return RX_CPP_EVENT_TYPE_NAME;
+		case mapper_attribute_type:
+			return RX_CPP_MAPPER_TYPE_NAME;
+		case const_attribute_type:
+			return RX_CPP_MAPPER_TYPE_NAME;
+		case value_attribute_type:
+			return RX_VALUE_TYPE_NAME;
+		case relation_attribute_type:
+			return RX_CONST_VALUE_TYPE_NAME;
+		default:
+			return "Unknown attribute type!!!";
+	}
+}
 rx_item_type rx_parse_type_name(const string_type name)
 {
 	// TODO might do this faster with hash stuff

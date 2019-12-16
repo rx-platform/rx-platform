@@ -51,6 +51,7 @@ namespace win32 {
 
 class win32_console_host : public host::interactive::interactive_console_host  
 {
+	typedef std::tuple<double> win32_console_types;
 
   public:
       win32_console_host (hosting::rx_host_storages& storage);
@@ -84,6 +85,11 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
 
+	  template<class tupleType>
+	  auto register_types(tupleType before)
+	  {
+		  return std::tuple_cat(before, win32_console_types());
+	  }
 
   protected:
 

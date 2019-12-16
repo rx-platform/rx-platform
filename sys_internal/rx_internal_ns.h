@@ -32,14 +32,14 @@
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
-// rx_values
-#include "lib/rx_values.h"
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_platform_item
+#include "system/server/rx_platform_item.h"
+// rx_ns
+#include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -171,6 +171,122 @@ used to create user defined folders...\
 
 
 
+template <class TImpl>
+class rx_item_implementation : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      rx_item_implementation (TImpl impl);
+
+
+      rx_item_type get_type_id () const;
+
+      values::rx_value get_value () const;
+
+      string_type get_name () const;
+
+      rx_node_id get_node_id () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const meta_data_t& meta_info () const;
+
+      void fill_code_info (std::ostream& info, const string_type& name);
+
+      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      string_type get_definition_as_json () const;
+
+      rx_platform_item::smart_ptr&& clone () const;
+
+      rx_thread_handle_t get_executer () const;
+
+	  ~rx_item_implementation() = default;
+  protected:
+
+  private:
+
+
+      TImpl impl_;
+
+
+};
+
+
+
+
+
+
+template <class TImpl>
+class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      rx_meta_item_implementation (TImpl impl);
+
+
+      rx_item_type get_type_id () const;
+
+      values::rx_value get_value () const;
+
+      string_type get_name () const;
+
+      void fill_code_info (std::ostream& info, const string_type& name);
+
+      rx_node_id get_node_id () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const meta_data_t& meta_info () const;
+
+      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      string_type get_definition_as_json () const;
+
+      rx_platform_item::smart_ptr&& clone () const;
+
+      rx_thread_handle_t get_executer () const;
+
+
+  protected:
+
+  private:
+
+
+      TImpl impl_;
+
+
+};
+
+
+
+
+
+
 class internal_directory : public rx_platform::ns::rx_platform_directory  
 {
 	DECLARE_REFERENCE_PTR(internal_directory);
@@ -188,6 +304,64 @@ used to create system defined folders...\
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+template <class TImpl>
+class rx_other_implementation : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      rx_other_implementation (TImpl impl);
+
+
+      rx_item_type get_type_id () const;
+
+      values::rx_value get_value () const;
+
+      string_type get_name () const;
+
+      void fill_code_info (std::ostream& info, const string_type& name);
+
+      rx_node_id get_node_id () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const meta_data_t& meta_info () const;
+
+      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+
+      string_type get_definition_as_json () const;
+
+      rx_platform_item::smart_ptr&& clone () const;
+
+      rx_thread_handle_t get_executer () const;
+
+
+  protected:
+
+  private:
+
+
+      TImpl impl_;
 
 
 };
@@ -266,266 +440,6 @@ used to hold specific plugin folders...\
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-
-class rx_platform_item 
-{
-public:
-	typedef std::unique_ptr<rx_platform_item> smart_ptr;
-	typedef std::unique_ptr<rx_platform_item> null_ptr;
-private:
-	rx_platform_item* smart_this() { return this; }
-	const rx_platform_item* smart_this() const { return this; }
-
-
-  public:
-      rx_platform_item();
-
-      ~rx_platform_item();
-
-
-      virtual rx_item_type get_type_id () const = 0;
-
-      virtual values::rx_value get_value () const = 0;
-
-      virtual rx_result serialize (base_meta_writer& stream) const = 0;
-
-      virtual rx_result deserialize (base_meta_reader& stream) = 0;
-
-      virtual string_type get_name () const = 0;
-
-      virtual size_t get_size () const = 0;
-
-      rx_result save () const;
-
-      virtual const meta_data_t& meta_info () const = 0;
-
-      virtual rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const = 0;
-
-      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
-
-      virtual rx_result do_command (rx_object_command_t command_type) = 0;
-
-      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
-
-      virtual rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
-
-      virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
-
-      rx_result delete_item () const;
-
-      virtual rx_platform_item::smart_ptr&& clone () const = 0;
-
-      virtual string_type&& clone_as_json () const = 0;
-
-      virtual rx_thread_handle_t get_executer () const = 0;
-
-      virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
-
-
-  protected:
-
-  private:
-
-
-      rx_reference<rx_platform::ns::rx_platform_directory> parent_;
-
-
-      locks::lockable item_lock_;
-
-
-};
-
-
-
-
-
-
-template <class TImpl>
-class rx_item_implementation : public rx_platform_item  
-{
-
-  public:
-      rx_item_implementation (TImpl impl);
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      rx_item_type get_type_id () const;
-
-      values::rx_value get_value () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      rx_node_id get_node_id () const;
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const meta_data_t& meta_info () const;
-
-      void fill_code_info (std::ostream& info, const string_type& name);
-
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
-
-      rx_result do_command (rx_object_command_t command_type);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      string_type&& clone_as_json () const;
-
-      rx_platform_item::smart_ptr&& clone () const;
-
-      rx_thread_handle_t get_executer () const;
-
-	  ~rx_item_implementation() = default;
-  protected:
-
-  private:
-
-
-      TImpl impl_;
-
-
-};
-
-
-
-
-
-
-template <class TImpl>
-class rx_meta_item_implementation : public rx_platform_item  
-{
-
-  public:
-      rx_meta_item_implementation (TImpl impl);
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      rx_item_type get_type_id () const;
-
-      values::rx_value get_value () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      void fill_code_info (std::ostream& info, const string_type& name);
-
-      rx_node_id get_node_id () const;
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const meta_data_t& meta_info () const;
-
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
-
-      rx_result do_command (rx_object_command_t command_type);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      string_type&& clone_as_json () const;
-
-      rx_platform_item::smart_ptr&& clone () const;
-
-      rx_thread_handle_t get_executer () const;
-
-
-  protected:
-
-  private:
-
-
-      TImpl impl_;
-
-
-};
-
-
-
-
-
-
-template <class TImpl>
-class rx_other_implementation : public rx_platform_item  
-{
-
-  public:
-      rx_other_implementation (TImpl impl);
-
-
-      void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
-
-      rx_item_type get_type_id () const;
-
-      values::rx_value get_value () const;
-
-      string_type get_name () const;
-
-      size_t get_size () const;
-
-      void fill_code_info (std::ostream& info, const string_type& name);
-
-      rx_node_id get_node_id () const;
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const meta_data_t& meta_info () const;
-
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
-
-      rx_result do_command (rx_object_command_t command_type);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      string_type&& clone_as_json () const;
-
-      rx_platform_item::smart_ptr&& clone () const;
-
-      rx_thread_handle_t get_executer () const;
-
-
-  protected:
-
-  private:
-
-
-      TImpl impl_;
 
 
 };

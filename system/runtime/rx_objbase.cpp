@@ -1122,6 +1122,10 @@ bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) cons
 		return false;
 	if (!stream.write_id("app", app_id))
 		return false;
+	if (!up_port.serialize_reference("up_port", stream))
+		return false;
+	if (!down_port.serialize_reference("down_port", stream))
+		return false;
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -1132,6 +1136,10 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 	if (!stream.start_object("instance"))
 		return false;
 	if (!stream.read_id("app", app_id))
+		return false;
+	if (!up_port.deserialize_reference("up_port", stream))
+		return false;
+	if (!down_port.deserialize_reference("down_port", stream))
 		return false;
 	if (!stream.end_object())
 		return false;

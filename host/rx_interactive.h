@@ -36,12 +36,20 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_cmds
-#include "system/server/rx_cmds.h"
+// dummy
+#include "dummy.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_thread
+#include "lib/rx_thread.h"
+// rx_console
+#include "terminal/rx_console.h"
 // rx_vt100
-#include "host/rx_vt100.h"
+#include "terminal/rx_vt100.h"
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 
 
@@ -53,6 +61,39 @@ using namespace rx_platform;
 namespace host {
 
 namespace interactive {
+
+
+
+
+
+class interactive_console_client : public terminal::console::console_runtime  
+{
+	DECLARE_REFERENCE_PTR(interactive_console_client);
+
+
+  public:
+
+      rx_result run_interactive (configuration_data_t& config);
+
+
+  protected:
+
+      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+
+
+  private:
+
+
+      rx_platform::hosting::rx_platform_host *host_;
+
+      terminal::rx_vt100::vt100_transport vt100_transport_;
+
+
+      bool exit_;
+
+
+};
+
 
 
 
@@ -88,47 +129,75 @@ class interactive_security_context : public rx::security::built_in_security_cont
 
 
 
-class interactive_console_client : public rx_platform::prog::console_client  
-{
-	DECLARE_REFERENCE_PTR(interactive_console_client);
 
+class interactive_console_endpoint : public rx_protocol_stack_entry  
+{
 
   public:
-      interactive_console_client (hosting::rx_platform_host* host);
-
-      ~interactive_console_client();
+      interactive_console_endpoint (hosting::rx_platform_host* host);
 
 
-      const string_type& get_console_name ();
+      rx_result run_interactive (std::function<void(int64_t)> received_func);
 
-      rx_result run_interactive (configuration_data_t& config);
+      void close ();
 
-      security::security_context::smart_ptr get_current_security_context ();
-
-
-      static string_type license_message;
+      rx_result open (std::function<void(int64_t)> sent_func);
 
 
   protected:
 
-      void exit_console ();
+  private:
 
-      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
-      bool readed (const void* data, size_t count, rx_thread_handle_t destination);
 
+
+      rx_platform::hosting::rx_platform_host *host_;
+
+      rx::threads::physical_job_thread std_out_sender_;
+
+
+      std::function<void(int64_t)> sent_func_;
+
+
+};
+
+
+
+
+
+
+
+class interactive_console_port : public rx_platform::runtime::io_types::physical_port  
+{
+	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+Standard IO class. implementation of an standard IO console port");
+
+	DECLARE_REFERENCE_PTR(interactive_console_port);
+
+  public:
+      interactive_console_port (hosting::rx_platform_host* host);
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_protocol_stack_entry* get_stack_entry ();
+
+      rx_result run_interactive (hosting::rx_platform_host* host);
+
+
+  protected:
 
   private:
 
 
-      rx_reference<interactive_security_context> security_context_;
-
-      rx_platform::hosting::rx_platform_host *host_;
-
-      rx_vt100::vt100_transport vt100_transport_;
-
-
-      bool exit_;
+      interactive_console_endpoint endpoint_;
 
 
 };
@@ -180,13 +249,16 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
   protected:
-	  
+
       rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
 
       bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 
 
   private:
+
+
+      rx_reference<interactive_console_port> interactive_port_;
 
 
       bool exit_;

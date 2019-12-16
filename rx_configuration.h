@@ -24,6 +24,7 @@
 #define RX_NS_OBJ_NAME "objects"
 #define RX_NS_SYSTEM_OBJ_NAME "system"
 #define RX_NS_PORT_OBJ_NAME "ports"
+#define RX_NS_RELATIONS_NAME "relations"
 #define RX_NS_CLASSES_NAME "types"
 #define RX_NS_BASE_CLASSES_NAME "base"
 #define RX_NS_SYSTEM_CLASSES_NAME "system"
@@ -69,6 +70,13 @@
 
 #define RX_NS_RELATION_BASE_NAME "RelationBase"
 #define RX_NS_RELATION_BASE_ID 0x0000000e
+
+#define RX_NS_PORT_STACK_NAME "PortStack"
+#define RX_NS_PORT_STACK_ID 0x0000000f
+#define RX_NS_UP_STACK_NAME "UpStack"
+#define RX_NS_UP_STACK_ID 0x00000010
+#define RX_NS_DOWN_STACK_NAME "DownStack"
+#define RX_NS_DOWN_STACK_ID 0x00000011
 
 #define NS_RX_COMMANDS_MANAGER_NAME "CmdManager"
 #define RX_COMMANDS_MANAGER_ID 0x8000001

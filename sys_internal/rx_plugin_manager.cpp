@@ -108,7 +108,7 @@ plugin_command::~plugin_command()
 
 
 
-bool plugin_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool plugin_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;

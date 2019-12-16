@@ -63,6 +63,15 @@ template class runtime_model_algorithm<application_type>;
 
 using namespace rx;
 
+rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id)
+{
+	meta::meta_data info;
+	auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(id, info);
+	if (type == rx_item_type::rx_invalid_type)
+		return (id.to_string() + " is not the registered id!");
+	else
+		return get_platform_item_sync(type, id);
+}
 
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id)
 {
@@ -329,7 +338,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 	ret = cache.delete_type(id);
 	if (!ret)
 	{// error, didn't deleted runtime
-		ret.register_error("Error deleting type from the cache.");
+		ret.register_error("Error deleting type from the repository.");
 		return ret;
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
@@ -421,7 +430,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 	auto ret = cache.register_type(prototype);
 	if (!ret)
 	{// error, didn't created runtime
-		ret.register_error("Unable to register type to cache.");
+		ret.register_error("Unable to register type to repository.");
 		return ret.errors();
 	}
 	transaction.push([&cache, item_id] () mutable {
@@ -473,7 +482,7 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_dir
 	auto ret = cache.get_type_definition(prototype->meta_info().get_id());
 	if (!ret)
 	{// error, didn't created runtime
-		ret.register_error("Unable to get type from cache.");
+		ret.register_error("Unable to get type from repository.");
 		return ret.errors();
 	}
 
@@ -601,7 +610,7 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 			ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(id);
 			if (!ret)
 			{// error, didn't deleted runtime
-				ret.register_error("Error deleting runtime from the cache.");
+				ret.register_error("Error deleting runtime from the repository.");
 				callback(std::move(ret));
 				return;
 			}
@@ -664,7 +673,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 	auto ret_value = cache.create_runtime(meta, std::move(instance_data), init_data);
 	if (!ret_value)
 	{// error, didn't created runtime
-		ret_value.register_error("Unable to create runtime in cache.");
+		ret_value.register_error("Unable to create runtime in repository.");
 		return ret_value;
 	}
 

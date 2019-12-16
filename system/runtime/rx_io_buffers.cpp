@@ -106,9 +106,26 @@ rx_result rx_io_buffer::write_string (const string_type& val)
 	auto result = write_to_buffer(size);
 	if (result)
 	{
-		result = rx_push_to_packet(this, &val[0], size);
+		result = write(&val[0], size);
 	}
 	return result;
+}
+
+rx_result rx_io_buffer::write_chars (const string_type& val)
+{
+	return write(val.c_str(), val.size());
+}
+
+rx_result rx_io_buffer::write (const void* data, size_t size)
+{
+	rx_protocol_result_t result;
+
+	result = rx_push_to_packet(this, data, size);
+
+	if (result == RX_PROTOCOL_OK)
+		return true;
+	else
+		return rx_protocol_error_message(result);
 }
 
 rx_io_buffer::rx_io_buffer(rx_io_buffer&& right) noexcept
@@ -142,7 +159,7 @@ rx_io_buffer& rx_io_buffer::operator=(rx_io_buffer&& right) noexcept
 // Class rx_platform::runtime::io_types::rx_const_io_buffer 
 
 rx_const_io_buffer::rx_const_io_buffer (rx_const_packet_buffer* buffer)
-      : buffer_(buffer)
+	: buffer_(buffer)
 {
 }
 
@@ -164,6 +181,30 @@ rx_result rx_const_io_buffer::read_string (string_type& val)
 			result = rx_protocol_error_message(ret);
 	}
 	return result;
+}
+
+rx_result rx_const_io_buffer::read_chars (string_type& val)
+{
+	auto available = rx_get_packet_available_data(buffer_);
+	if (available > 0)
+	{
+		rx_protocol_result_t ret;
+		char* temp = (char*)rx_get_from_packet(buffer_, available, &ret);
+		if (temp)
+		{
+			val.assign(temp, available);
+			return true;
+		}
+		else
+			return rx_protocol_error_message(ret);
+	}
+	return "Buffer empty!";
+}
+
+rx_const_packet_buffer rx_const_io_buffer::create_from_chars (const string_type& str)
+{
+	rx_const_packet_buffer ret{ (const uint8_t*)str.c_str(), 0, str.size() };
+	return ret;
 }
 
 

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_vt100.h
+*  terminal\rx_vt100.h
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -32,10 +32,14 @@
 
 
 
+// dummy
+#include "dummy.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 
 
-namespace host {
+namespace terminal {
 
 namespace rx_vt100 {
 
@@ -43,7 +47,7 @@ namespace rx_vt100 {
 
 
 
-class vt100_transport 
+class vt100_transport : public rx_protocol_stack_entry  
 {
   public:
 	vt100_transport(const vt100_transport &right) = delete;
@@ -70,6 +74,8 @@ class vt100_transport
       bool char_received (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
 
       void add_to_history (const string_type& line);
+
+      void bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
 
       void set_password_mode (bool value)
@@ -101,6 +107,10 @@ class vt100_transport
 
       bool move_history_down (string_type& to_echo);
 
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+
 
 
       parser_state state_;
@@ -118,6 +128,10 @@ class vt100_transport
       bool had_first_;
 
       int opened_brackets_;
+
+      std::function<void(int64_t)> sent_func_;
+
+      std::function<void(int64_t)> received_func_;
 
 
 };
@@ -154,8 +168,39 @@ class dummy_transport
 };
 
 
+
+
+
+
+class vt100_transport_port : public rx_platform::runtime::io_types::transport_port  
+{
+	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+VT100 terminal. implementation of an VT100 transport protocol port");
+
+	DECLARE_REFERENCE_PTR(vt100_transport_port);
+
+  public:
+      vt100_transport_port();
+
+
+      rx_protocol_stack_entry* get_stack_entry ();
+
+      void bind_port ();
+
+
+  protected:
+
+  private:
+
+
+      vt100_transport endpoint_;
+
+
+};
+
+
 } // namespace rx_vt100
-} // namespace host
+} // namespace terminal
 
 
 

@@ -40,6 +40,9 @@
 #include "system/python/py_support.h"
 #include "system/server/rx_cmds.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "system/server/rx_async_functions.h"
+#include "api/rx_namespace_api.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace terminal {
@@ -49,17 +52,17 @@ namespace console {
 namespace console_commands {
 namespace
 {
-bool dump_info(std::ostream& out, sys_internal::internal_ns::rx_platform_item::smart_ptr& item)
+bool dump_info(std::ostream& out, rx_namespace_item& item)
 {
 	string_type quality_string;
-	values::rx_value val(item->get_value());
+	values::rx_value val(item.get_value());
 	fill_quality_string(val, quality_string);
 	string_type attrs;
-	ns::fill_attributes_string(item->meta_info().get_attributes(), attrs);
+	ns::fill_attributes_string(item.get_meta().get_attributes(), attrs);
 	string_type console;
 	string_type storage_name(RX_NULL_ITEM_NAME);
 	string_type storage_reference(RX_NULL_ITEM_NAME);
-	auto storage_result = item->meta_info().resolve_storage();
+	auto storage_result = item.get_meta().resolve_storage();
 	if (storage_result)
 	{
 		storage_name = storage_result.value()->get_storage_info();
@@ -69,11 +72,11 @@ bool dump_info(std::ostream& out, sys_internal::internal_ns::rx_platform_item::s
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << item->get_name() << "\r\n";
-	out << "Path       : " << item->meta_info().get_path() << "\r\n";
+	out << "Name       : " << item.get_meta().get_name() << "\r\n";
+	out << "Path       : " << item.get_meta().get_path() << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
-	out << "Type       : " << rx_item_type_name(item->get_type_id()) << "\r\n";
+	out << "Type       : " << rx_item_type_name(item.get_type()) << "\r\n";
 	out << "Attributes : " << attrs << "\r\n";
 	out << "Storage    : " << storage_name << "\r\n";
 	out << "Storage Ref: " << storage_reference << "\r\n\r\n";
@@ -102,7 +105,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 // Class terminal::console::console_commands::info_command 
 
 info_command::info_command()
-  : directory_aware_command("info")
+  : server_command("info")
 {
 }
 
@@ -113,7 +116,7 @@ info_command::~info_command()
 
 
 
-bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool info_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
@@ -127,7 +130,7 @@ bool info_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 		else
 		{
-			platform_item_ptr item = platform_item_ptr();// ctx->get_current_directory()->get_sub_item(whose);
+			auto item = ctx->get_current_directory()->get_sub_item(whose);
 			if (item)
 			{
 				dump_info(out, item);
@@ -182,7 +185,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 // Class terminal::console::console_commands::code_command 
 
 code_command::code_command()
-  : directory_aware_command("code")
+  : item_query_command("code")
 {
 }
 
@@ -193,36 +196,10 @@ code_command::~code_command()
 
 
 
-bool code_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool code_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err)
 {
-	string_type whose;
-	if (!in.eof())
-		in >> whose;
-	if (!whose.empty())
-	{
-		rx_directory_ptr dir = ctx->get_current_directory()->get_sub_directory(whose);
-		if (dir)
-		{
-			dir->fill_dir_code_info(out);
-		}
-		else
-		{
-			platform_item_ptr item = platform_item_ptr();// platform_item_ptr();// ctx->get_current_directory()->get_sub_item(whose);
-			if (item)
-			{
-				item->fill_code_info(out,whose);
-			}
-			else
-			{
-				err << "ERROR: unknown object name";
-				return false;
-			}
-		}
-	}
-	else
-	{
-		ctx->get_current_directory()->fill_dir_code_info(out);
-	}
+	string_type name = item->meta_info().get_full_path();
+	item->fill_code_info(out, name);
 	return true;
 }
 
@@ -241,7 +218,7 @@ rx_name_command::~rx_name_command()
 
 
 
-bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	out << "System Information\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
@@ -295,7 +272,7 @@ cls_command::~cls_command()
 
 
 
-bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	out << ANSI_CLS ANSI_CUR_HOME;
 	return true;
@@ -316,7 +293,7 @@ shutdown_command::~shutdown_command()
 
 
 
-bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	std::istreambuf_iterator<char> begin(in), end;
 	std::string msg(begin, end);
@@ -342,7 +319,7 @@ log_command::~log_command()
 
 
 
-bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -371,7 +348,7 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 
 	char buffer[0x100];
@@ -428,7 +405,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	return true;
 }
 
-bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	log::log_query_type query;
 	query.type = log::rx_log_query_type::normal_level;
@@ -532,7 +509,7 @@ sec_command::~sec_command()
 
 
 
-bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type sub_command;
 	in >> sub_command;
@@ -556,7 +533,7 @@ bool sec_command::do_console_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	std::vector<security::security_context_ptr> ctxs;
 	security::security_manager::instance().get_active_contexts(ctxs);
@@ -627,7 +604,7 @@ time_command::~time_command()
 
 
 
-bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool time_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	out << "Start Time\t: " << rx_gate::instance().get_started().get_string() << " UTC\r\n";
 	out << "Current Time\t: " << rx_time::now().get_string() << " UTC\r\n";
@@ -649,7 +626,7 @@ sleep_command::~sleep_command()
 
 
 
-bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 
 	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
@@ -669,6 +646,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 			data->started = rx_get_us_ticks();
 			ctx->set_instruction_data(data);
 			ctx->postpone(period);
+			ctx->one_more_time();
 		}
 	}
 	else
@@ -694,7 +672,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 // Class terminal::console::console_commands::def_command 
 
 def_command::def_command()
-	: directory_aware_command("def")
+	: item_query_command("def")
 {
 }
 
@@ -705,45 +683,83 @@ def_command::~def_command()
 
 
 
-bool def_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool def_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err)
+{
+	out << "Definition of " ANSI_RX_OBJECT_COLOR 
+		<< item->meta_info().get_full_path() 
+		<< ANSI_COLOR_RESET ":\r\n";
+	auto def = item->get_definition_as_json();
+	out << def;
+	return true;
+}
+
+
+// Class terminal::console::console_commands::item_query_command 
+
+item_query_command::item_query_command (const string_type& console_name)
+	: server_command(console_name)
+{
+}
+
+
+item_query_command::~item_query_command()
+{
+}
+
+
+
+bool item_query_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type whose;
 	if (!in.eof())
 		in >> whose;
 	if (!whose.empty())
 	{
-		string_type item;// = ctx->get_current_directory()->create_sub_item_as_json(whose);
-		if (!item.empty())
+		string_type path;
+		ctx->get_current_directory()->fill_path(path);
+		rx_directory_resolver directories;
+		directories.add_paths({ path });
+		api::rx_context context;
+		context.directory = ctx->get_current_directory();
+		context.object = smart_this();
+
+		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
+		if (!resolve_result)
 		{
-			out << item;
+			dump_error_result(err, resolve_result);
+			return resolve_result;
+
 		}
-		else
+		rx_result result = model::algorithms::do_with_item<bool>(resolve_result.value()
+			, [ctx, this](rx_result_with<platform_item_ptr>&& data) -> bool
+			{
+				auto& out = ctx->get_stdout();
+				auto& err = ctx->get_stderr();
+				if (data)
+				{
+					return do_with_item(data.move_value(), out, err);
+				}
+				else
+				{
+					dump_error_result(err, data);
+					return false;
+				}
+			}, [ctx](bool&& result) mutable
+			{
+				ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+			}, context);
+		if (result)
 		{
-			err << "ERROR: " << whose << " is unknown object name";
-			return false;
+			ctx->set_waiting();
 		}
+		return result;
 	}
 	else
 	{
-		err << "ERROR: unknown object name";
+		err << "Please, define item!";
 		return false;
 	}
-	return true;
 }
-
-
-// Class terminal::console::console_commands::directory_aware_command 
-
-directory_aware_command::directory_aware_command (const string_type& console_name)
-	: server_command(console_name)
-{
-}
-
-
-directory_aware_command::~directory_aware_command()
-{
-}
-
 
 
 // Class terminal::console::console_commands::phyton_command 
@@ -760,7 +776,7 @@ phyton_command::~phyton_command()
 
 
 
-bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool phyton_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 #ifdef PYTHON_SUPPORT
 	string_type sub_command;
@@ -803,7 +819,7 @@ license_command::~license_command()
 
 
 
-bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	auto storage = rx_gate::instance().get_host()->get_system_storage("sys");
 	if (storage)
@@ -842,7 +858,7 @@ help_command::~help_command()
 
 
 
-bool help_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx)
+bool help_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type command_name;
 	in >> command_name;
@@ -882,7 +898,7 @@ string_type help_command::get_help () const
 			std::ostringstream out;
 			out << "Well, this is a list of commands:\r\n\r\n";
 
-			std::vector<command_ptr> commands;
+			std::vector<server_command_ptr> commands;
 			commands::server_command_manager::instance()->get_commands(commands);
 
 			rx_row_type names;

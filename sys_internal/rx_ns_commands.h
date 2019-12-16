@@ -35,8 +35,7 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-#include "terminal/rx_con_commands.h"
-using terminal::console::console_commands::console_program_contex_ptr;
+using terminal::console_context_ptr;
 
 
 namespace sys_internal {
@@ -63,7 +62,7 @@ changes current active directory");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -102,7 +101,7 @@ list current directory on console ( dir, ls ");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -147,7 +146,7 @@ class ls_command : public list_command
       ~ls_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   protected:
@@ -176,7 +175,7 @@ creates new directory in namespace");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -203,7 +202,7 @@ removes directory from namespace");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:
@@ -236,7 +235,7 @@ command for cloning system types and objects of this rx-platform instance\r\n\
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_program_contex_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

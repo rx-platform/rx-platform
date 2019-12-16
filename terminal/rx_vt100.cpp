@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_vt100.cpp
+*  terminal\rx_vt100.cpp
 *
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
@@ -31,16 +31,16 @@
 
 
 // rx_vt100
-#include "host/rx_vt100.h"
+#include "terminal/rx_vt100.h"
 
 #define VT100_CURCOR_UP ""
 
 
-namespace host {
+namespace terminal {
 
 namespace rx_vt100 {
 
-// Class host::rx_vt100::vt100_transport 
+// Class terminal::rx_vt100::vt100_transport 
 
 vt100_transport::vt100_transport()
       : state_(parser_normal),
@@ -317,8 +317,74 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
+rx_protocol_result_t vt100_transport::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+{
+	// just pass througth
+	return rx_move_packet_down(reference, end_point, buffer);
+}
 
-// Class host::rx_vt100::dummy_transport 
+rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+{
+	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference);
+	string_type to_echo;
+	string_array lines;
+	for (size_t i = 0; i < buffer->size; i++)
+	{
+		self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, [&lines](string_type line)
+			{
+				lines.emplace_back(line);
+			});
+	}
+	rx_protocol_result_t result = RX_PROTOCOL_OK;
+	if (!to_echo.empty())
+	{
+		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
+		auto temp = send_buffer.write_chars(to_echo);
+		if (!temp)
+			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+		else
+			result = rx_move_packet_down(reference, end_point, &send_buffer);
+		if (result == RX_PROTOCOL_OK)
+			send_buffer.detach(nullptr);
+	}
+	if (result == RX_PROTOCOL_OK && !lines.empty())
+	{
+		for (const auto& one : lines)
+		{
+			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
+			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
+			result = rx_move_packet_up(reference, NULL, &up_buffer);
+			if (result != RX_PROTOCOL_OK)
+				break;
+		}
+	}
+	return result;
+}
+
+void vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+{
+	sent_func_ = sent_func;
+	received_func_ = received_func;
+	rx_protocol_stack_entry* mine_entry = this;
+
+	mine_entry->downward = nullptr;
+	mine_entry->upward = nullptr;
+
+	mine_entry->send_function = nullptr;
+	mine_entry->sent_function = nullptr;
+	mine_entry->received_function = &vt100_transport::received_function;
+
+	mine_entry->connected_function = nullptr;
+
+	mine_entry->close_function = nullptr;
+	mine_entry->closed_function = nullptr;
+
+	mine_entry->allocate_packet_function = nullptr;
+	mine_entry->free_packet_function = nullptr;
+}
+
+
+// Class terminal::rx_vt100::dummy_transport 
 
 dummy_transport::dummy_transport()
 {
@@ -340,6 +406,32 @@ void dummy_transport::do_stuff ()
 }
 
 
+// Class terminal::rx_vt100::vt100_transport_port 
+
+vt100_transport_port::vt100_transport_port()
+{
+}
+
+
+
+rx_protocol_stack_entry* vt100_transport_port::get_stack_entry ()
+{
+	return &endpoint_;
+}
+
+void vt100_transport_port::bind_port ()
+{
+	endpoint_.bind([this](int64_t count)
+		{
+			update_sent_counters(count);
+		},
+		[this](int64_t count)
+		{
+			update_received_counters(count);
+		});
+}
+
+
 } // namespace rx_vt100
-} // namespace host
+} // namespace terminal
 

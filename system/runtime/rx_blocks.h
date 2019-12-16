@@ -32,16 +32,18 @@
 
 
 
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_rt_data
+#include "lib/rx_rt_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -412,6 +414,13 @@ class runtime_holder
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
+
+      rx::data::runtime_values_data& get_overrides ()
+      {
+        return overrides_;
+      }
+
+
 	  template<typename valT>
 	  valT get_binded_as(runtime_handle_t handle, const valT& default_value)
 	  {
@@ -462,6 +471,8 @@ class runtime_holder
       structure::runtime_item::smart_ptr item_;
 
       relations_type relations_;
+
+      rx::data::runtime_values_data overrides_;
 
 
       rx_mode_type mode_;

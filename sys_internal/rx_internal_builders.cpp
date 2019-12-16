@@ -256,6 +256,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<support_types_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
+		builders.emplace_back(std::make_unique<relation_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
 	}
@@ -381,6 +382,12 @@ rx_result root_folder_builder::do_build (rx_directory_ptr root)
 	if (!ret)
 	{
 		ret.register_error("Unable to add directory " RX_NS_SUPPORT_CLASSES_NAME ".");
+		return ret;
+	}
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_RELATIONS_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_RELATIONS_NAME ".");
 		return ret;
 	}
 	ret = sys_dir->add_sub_directory(classes_dir);
@@ -561,7 +568,9 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		build_basic_port_type<port_type>(dir, port);
+		relation->meta_info().resolve();
+		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		dir->add_item(relation->get_item_ptr());
 
 	}
 	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
@@ -920,6 +929,44 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 
 rx_result relation_types_builder::do_build (rx_directory_ptr root)
 {
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_RELATIONS_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+			RX_NS_PORT_STACK_NAME
+			, RX_NS_PORT_STACK_ID
+			, RX_NS_RELATION_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->meta_info().resolve();
+		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		dir->add_item(relation->get_item_ptr());
+
+		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+			RX_NS_UP_STACK_NAME
+			, RX_NS_UP_STACK_ID
+			, RX_NS_PORT_STACK_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->meta_info().resolve();
+		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		dir->add_item(relation->get_item_ptr());
+
+		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+			RX_NS_DOWN_STACK_NAME
+			, RX_NS_DOWN_STACK_ID
+			, RX_NS_PORT_STACK_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->meta_info().resolve();
+		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		dir->add_item(relation->get_item_ptr());
+	}
 	return true;
 }
 

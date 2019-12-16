@@ -122,7 +122,7 @@ namespace meta_test {
 			 rx_object_ptr test_object=test_result.value();
 			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
-			 auto json_str = test_object->get_item_ptr()->clone_as_json();
+			 auto json_str = test_object->get_item_ptr()->get_definition_as_json();
 			 if (!json_str.empty())
 			 {
 				 out << json_str;
@@ -133,7 +133,7 @@ namespace meta_test {
 				 test_object->get_runtime().fill_data(init_data);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
-				 json_str = test_object->get_item_ptr()->clone_as_json();
+				 json_str = test_object->get_item_ptr()->get_definition_as_json();
 				 if (!json_str.empty())
 				 {
 					 out << json_str;
@@ -168,7 +168,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
 		 if (!json_str.empty())
 		 {
@@ -198,7 +198,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
 		 if (!json_str.empty())
 		 {
@@ -230,7 +230,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = result.value()->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -258,7 +258,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -286,7 +286,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -314,7 +314,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -342,7 +342,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -406,7 +406,7 @@ namespace meta_test {
 		 if (test_result)
 		 {
 			 auto test_object = test_result.value()->get_item_ptr();
-			 auto json_str = test_object->clone_as_json();
+			 auto json_str = test_object->get_definition_as_json();
 			 ctx->get_current_directory()->add_item(std::move(test_object));
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 if (!json_str.empty())
@@ -436,7 +436,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -465,7 +465,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -489,7 +489,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -512,7 +512,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -637,7 +637,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -666,7 +666,7 @@ namespace meta_test {
 	 if (result)
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
-		 auto json_str = rx_type_item->clone_as_json();
+		 auto json_str = rx_type_item->get_definition_as_json();
 		 if (!json_str.empty())
 		 {
 			 out << json_str;

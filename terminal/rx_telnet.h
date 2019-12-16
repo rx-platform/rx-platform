@@ -32,18 +32,18 @@
 
 
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_console
+#include "terminal/rx_console.h"
+// rx_vt100
+#include "terminal/rx_vt100.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-// rx_vt100
-#include "host/rx_vt100.h"
 
 
 
@@ -84,7 +84,7 @@ class telnet_security_context : public rx::security::security_context
 
 
 
-class telnet_client : public rx_platform::prog::console_client  
+class telnet_client : public console_runtime  
 {
 	DECLARE_REFERENCE_PTR(telnet_client);
 	typedef std::queue<buffer_ptr> running_buffers_type;
@@ -138,7 +138,7 @@ class telnet_client : public rx_platform::prog::console_client
 
       rx_reference<telnet_security_context> security_context_;
 
-      host::rx_vt100::vt100_transport vt100_parser_;
+      rx_vt100::vt100_transport vt100_parser_;
 
       rx_reference<rx::io::tcp_socket_std_buffer> my_socket_;
 

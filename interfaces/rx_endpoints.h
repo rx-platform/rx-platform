@@ -43,10 +43,12 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -63,93 +65,10 @@ namespace io_endpoints {
 
 
 
-
-template <typename defT>
-class rx_io_address 
-{
-
-  public:
-      rx_io_address();
-
-      rx_io_address (size_t value_size);
-
-
-      protocol_endpoint* get_endpoint ();
-
-      const protocol_endpoint* get_endpoint () const;
-
-	  ~rx_io_address() = default;
-  protected:
-
-  private:
-
-
-      uint8_t value_[sizeof(defT)];
-
-
-};
-
-
-
-
-
-
-class physical_port : public rx_platform::runtime::objects::port_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-physical port class. basic implementation of a port");
-
-	DECLARE_REFERENCE_PTR(physical_port);
-
-
-  public:
-      physical_port();
-
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-
-  protected:
-
-      void update_received_counters (size_t count);
-
-      void update_sent_counters (size_t count);
-
-      void update_received_packets (size_t count);
-
-      void update_sent_packets (size_t count);
-
-      void update_connected_status (bool status);
-
-
-  private:
-
-
-      rx_protocol_stack_entry *my_endpoints_;
-
-
-      runtime_handle_t rx_bytes_item_;
-
-      runtime_handle_t tx_bytes_item_;
-
-      runtime_handle_t rx_packets_item_;
-
-      runtime_handle_t tx_packets_item_;
-
-      runtime_handle_t connected_item_;
-
-
-};
-
-
-
-
-
-
 class rx_io_manager : public rx_platform::runtime::objects::object_runtime  
 {
 	typedef std::map<string_type, rx_protocol_stack_entry*> endpoints_type;
-	typedef std::map<string_type, physical_port::smart_ptr> physical_ports_type;
+	typedef std::map<string_type, runtime::io_types::physical_port::smart_ptr> physical_ports_type;
 
   public:
       rx_io_manager();
@@ -205,6 +124,37 @@ public:
 };
 
 
+
+
+
+
+
+template <typename defT>
+class rx_io_address 
+{
+
+  public:
+      rx_io_address();
+
+      rx_io_address (size_t value_size);
+
+
+      protocol_endpoint* get_endpoint ();
+
+      const protocol_endpoint* get_endpoint () const;
+
+	  ~rx_io_address() = default;
+  protected:
+
+  private:
+
+
+      uint8_t value_[sizeof(defT)];
+
+
+};
+
+
 // Parameterized Class interfaces::io_endpoints::rx_io_address 
 
 template <typename defT>
@@ -239,3 +189,4 @@ const protocol_endpoint* rx_io_address<defT>::get_endpoint () const
 
 
 #endif
+

@@ -129,11 +129,6 @@ rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
 
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-template <class TImpl>
 rx_item_type rx_item_implementation<TImpl>::get_type_id () const
 {
 	return impl_->get_type_id();
@@ -149,12 +144,6 @@ template <class TImpl>
 string_type rx_item_implementation<TImpl>::get_name () const
 {
 	return impl_->get_name();
-}
-
-template <class TImpl>
-size_t rx_item_implementation<TImpl>::get_size () const
-{
-	return impl_->get_size();
 }
 
 template <class TImpl>
@@ -239,7 +228,7 @@ rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_h
 }
 
 template <class TImpl>
-string_type&& rx_item_implementation<TImpl>::clone_as_json () const
+string_type rx_item_implementation<TImpl>::get_definition_as_json () const
 {
 	rx_platform::serialization::json_writer writer;
 
@@ -253,9 +242,9 @@ string_type&& rx_item_implementation<TImpl>::clone_as_json () const
 	bool out = writer.get_string(result, true);
 
 	if (out)
-		return std::move(result);
+		return result;
 	else
-		return std::move(string_type());
+		return string_type();
 }
 
 template <class TImpl>
@@ -282,11 +271,6 @@ rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
 
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-template <class TImpl>
 rx_item_type rx_meta_item_implementation<TImpl>::get_type_id () const
 {
 	return impl_->get_type_id();
@@ -302,12 +286,6 @@ template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_name () const
 {
 	return impl_->meta_info().get_name();
-}
-
-template <class TImpl>
-size_t rx_meta_item_implementation<TImpl>::get_size () const
-{
-	return sizeof(*this) + sizeof(TImpl);
 }
 
 template <class TImpl>
@@ -380,7 +358,7 @@ rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runt
 }
 
 template <class TImpl>
-string_type&& rx_meta_item_implementation<TImpl>::clone_as_json () const
+string_type rx_meta_item_implementation<TImpl>::get_definition_as_json () const
 {
 	rx_platform::serialization::json_writer writer;
 
@@ -398,10 +376,10 @@ string_type&& rx_meta_item_implementation<TImpl>::clone_as_json () const
 		out = writer.get_string(result, true);
 	}
 
-	if (out)
-		return std::move(result);
-	else
-		return std::move(string_type());
+    if (out)
+        return result;
+    else
+        return string_type();
 }
 
 template <class TImpl>
@@ -442,11 +420,6 @@ rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
 
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
-{
-}
-
-template <class TImpl>
 rx_item_type rx_other_implementation<TImpl>::get_type_id () const
 {
 	return impl_->get_type_id();
@@ -462,12 +435,6 @@ template <class TImpl>
 string_type rx_other_implementation<TImpl>::get_name () const
 {
 	return impl_->get_name();
-}
-
-template <class TImpl>
-size_t rx_other_implementation<TImpl>::get_size () const
-{
-	return impl_->get_size();
 }
 
 template <class TImpl>
@@ -537,9 +504,9 @@ rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_
 }
 
 template <class TImpl>
-string_type&& rx_other_implementation<TImpl>::clone_as_json () const
+string_type rx_other_implementation<TImpl>::get_definition_as_json () const
 {
-	return std::move(string_type());
+    return string_type();
 }
 
 template <class TImpl>
@@ -626,72 +593,6 @@ plugin_directory::~plugin_directory()
 
 
 
-// Class sys_internal::internal_ns::rx_platform_item 
-
-rx_platform_item::rx_platform_item()
-{
-}
-
-
-rx_platform_item::~rx_platform_item()
-{
-}
-
-
-
-rx_result rx_platform_item::save () const
-{
-	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
-	if (storage_result)
-	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
-		if (!item_result)
-		{
-			item_result.register_error("Error saving item "s + meta.get_path());
-			return item_result.errors();
-		}
-		auto result = item_result.value()->open_for_write();
-		if (result)
-		{
-			result = serialize(item_result.value()->write_stream());
-			item_result.value()->close();
-		}
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
-
-rx_result rx_platform_item::delete_item () const
-{
-	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
-	if (storage_result)
-	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
-		if (!item_result)
-		{
-			item_result.register_error("Error saving item "s + meta.get_path());
-			return item_result.errors();
-		}
-		auto result = item_result.value()->delete_item();
-
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
-
-
 } // namespace internal_ns
 } // namespace sys_internal
 
@@ -700,7 +601,7 @@ template class sys_internal::internal_ns::rx_item_implementation<rx_application_
 template class sys_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
 template class sys_internal::internal_ns::rx_item_implementation<rx_port_ptr>;
 template class sys_internal::internal_ns::rx_other_implementation<testing::test_case::smart_ptr>;
-template class sys_internal::internal_ns::rx_other_implementation<prog::command_ptr>;
+template class sys_internal::internal_ns::rx_other_implementation<terminal::server_command_ptr>;
 template class sys_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
 
 template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_type_ptr>;

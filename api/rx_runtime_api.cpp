@@ -44,7 +44,7 @@ namespace runtime
 
 rx_result get_working_item(const rx_node_id& what, std::function<void(rx_result_with<platform_item_ptr>&&)> callback)
 {
-	return RX_NOT_IMPLEMENTED;
+	return RX_NOT_IMPLEMENTED;// model::algorithms::get_working_runtime_sync;
 }
 
 }// runtime

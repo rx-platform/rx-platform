@@ -367,11 +367,8 @@ rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&
 
 bool runtime_holder::serialize (base_meta_writer& stream, uint8_t type) const
 {
-	data::runtime_values_data temp_data;
-	collect_data(temp_data);
-	if (!stream.write_init_values("values", temp_data))
+	if (!stream.write_init_values("overrides", overrides_))
 		return false;
-
 	if (!stream.start_array("programs", programs_.size()))
 		return false;
 	for (const auto& one : programs_)
@@ -386,11 +383,8 @@ bool runtime_holder::serialize (base_meta_writer& stream, uint8_t type) const
 
 bool runtime_holder::deserialize (base_meta_reader& stream, uint8_t type)
 {
-	data::runtime_values_data temp_data;
-	if (!stream.read_init_values("values", temp_data))
+	if (!stream.read_init_values("overrides", overrides_))
 		return false;
-	fill_data(temp_data);
-
 	if (!stream.start_array("programs"))
 		return false;
 	while (!stream.array_end())

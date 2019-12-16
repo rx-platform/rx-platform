@@ -34,6 +34,9 @@
 
 
 
+#define RX_STD_IO_TYPE_NAME "StdIO"
+#define RX_STD_IO_TYPE_ID 0x00001
+
 
 
 

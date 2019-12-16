@@ -84,6 +84,10 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
 		});
+	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_VT00_TYPE_ID, [] {
+			return rx_create_reference<terminal::rx_vt100::vt100_transport_port>();
+		});
 	return result;
 }
 
@@ -96,7 +100,7 @@ rx_result server_manager::start (hosting::rx_platform_host* host, const manageme
 	if (telnet_port_)
 	{
 		//TODOIO
-		telnet_listener_ = rx_create_reference<runtime::objects::port_runtime>();
+		telnet_listener_ = rx_create_reference<runtime::io_types::transport_port>();
 		//telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())

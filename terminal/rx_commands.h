@@ -34,14 +34,15 @@
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_cmds
-#include "system/server/rx_cmds.h"
+// rx_logic
+#include "system/logic/rx_logic.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
 #include "third-party/cxxopts/include/cxxopts.hpp"
 #include "terminal/rx_terminal_style.h"
-using namespace rx_platform::prog;
 using namespace rx_platform; 
 using namespace rx_platform::ns;
 using namespace rx;
@@ -52,9 +53,96 @@ namespace commands
 {
 class server_command;
 }
+namespace console
+{
+class console_program_context;
+}
+typedef console::console_program_context* console_context_ptr;
 typedef rx::pointers::reference<commands::server_command> server_command_ptr;
 
 namespace commands {
+typedef pointers::reference<server_command> command_ptr;
+
+
+
+
+
+
+class server_command : public rx_platform::logic::program_runtime  
+{
+	DECLARE_REFERENCE_PTR(server_command);
+
+  public:
+      server_command (const string_type& name);
+
+      ~server_command();
+
+
+      string_type get_type_name () const;
+
+      values::rx_value get_value () const;
+
+      namespace_item_attributes get_attributes () const;
+
+      bool console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+      rx_time get_created_time () const;
+
+      bool generate_json (std::ostream& def, std::ostream& err) const;
+
+      platform_item_ptr get_item_ptr () const;
+
+      string_type get_name () const;
+
+      bool serialize_definition (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
+
+      virtual string_type get_help () const;
+
+      void dump_error_result (std::ostream& err, const rx_result& result) const;
+
+
+      const string_type& get_console_name () const
+      {
+        return console_name_;
+      }
+
+
+      const rx_time get_modified_time () const
+      {
+        return modified_time_;
+      }
+
+
+	  template<typename T>
+	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
+	  {
+		  for (const auto& one : result.errors())
+			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+	  }
+  protected:
+
+      virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx) = 0;
+
+      bool dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask);
+
+
+      rx_time time_stamp_;
+
+
+  private:
+
+
+      string_type console_name_;
+
+      security::security_guard_ptr security_guard_;
+
+      rx_time modified_time_;
+
+
+};
+
 
 
 
@@ -108,43 +196,6 @@ bin folder in file hierarcyh\
 
 
 
-class server_command : public rx_platform::prog::server_command_base  
-{
-	DECLARE_REFERENCE_PTR(server_command);
-
-  public:
-      server_command (const string_type& console_name);
-
-      ~server_command();
-
-
-      namespace_item_attributes get_attributes () const;
-
-      bool generate_json (std::ostream& def, std::ostream& err) const;
-
-      void dump_error_result (std::ostream& err, const rx_result& result) const;
-
-
-  protected:
-	  template<typename T>
-	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
-	  {
-		  for (const auto& one : result.errors())
-			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-	  }
-  private:
-
-
-      cxxopts::Options options_;
-
-
-};
-
-
-
-
-
-
 class echo_server_command : public server_command  
 {
 	DECLARE_REFERENCE_PTR(echo_server_command);
@@ -160,7 +211,7 @@ acctualiy first command class good for testing.)");
 
   protected:
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_platform::prog::console_program_context::smart_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

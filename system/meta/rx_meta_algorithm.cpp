@@ -584,9 +584,12 @@ rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::constru
 	{
 		ret_val.value()->name = whose.name_;
 		ret_val.value()->target_base_id = target_base_id;
-		rx_timed_value val;
+		// this is something i still don't know about
+		// it will have to wait
+		//!!!!!
+		/*rx_timed_value val;
 		val.assign_static<string_type>("", ctx.now);
-		ctx.runtime_data.add_value(whose.name_, val);
+		ctx.runtime_data.add_value(whose.name_, val);*/
 		return ret_val;
 	}
 	else

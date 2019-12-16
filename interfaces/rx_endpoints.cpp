@@ -89,116 +89,6 @@ void rx_io_manager::stop ()
 }
 
 
-// Class interfaces::io_endpoints::physical_port 
-
-physical_port::physical_port()
-      : my_endpoints_(nullptr),
-        rx_bytes_item_(0),
-        tx_bytes_item_(0),
-        rx_packets_item_(0),
-        tx_packets_item_(0),
-        connected_item_(0)
-{
-}
-
-
-
-rx_result physical_port::initialize_runtime (runtime::runtime_init_context& ctx)
-{
-	auto result = port_runtime::initialize_runtime(ctx);
-	if (result)
-	{
-		auto bind_result = ctx.tags->bind_item("Status.RxPackets", ctx);
-		if (bind_result)
-			rx_packets_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
-
-		bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
-		if (bind_result)
-			tx_packets_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
-
-		bind_result = ctx.tags->bind_item("Status.Connected", ctx);
-		if (bind_result)
-			connected_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.Connected");
-
-		bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
-		if (bind_result)
-			rx_bytes_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
-
-		bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
-		if (bind_result)
-			tx_bytes_item_ = bind_result.value();
-		else
-			RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
-	}
-	return result;
-}
-
-void physical_port::update_received_counters (size_t count)
-{
-	rx_platform::rx_post_function<physical_port::smart_ptr>([count](physical_port::smart_ptr whose)
-		{
-			if (whose->rx_bytes_item_)
-			{
-				auto current = whose->get_runtime().get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
-				current += count;
-				whose->get_runtime().set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
-			}
-			whose->update_received_packets(1);
-		}, smart_this(), get_executer());
-}
-
-void physical_port::update_sent_counters (size_t count)
-{
-	rx_platform::rx_post_function<physical_port::smart_ptr>([count](physical_port::smart_ptr whose)
-		{
-			if (whose->tx_bytes_item_)
-			{
-				auto current = whose->get_runtime().get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
-				current += count;
-				whose->get_runtime().set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
-			}
-			whose->update_sent_packets(1);
-		}, smart_this(), get_executer());
-}
-
-void physical_port::update_received_packets (size_t count)
-{
-	if (rx_packets_item_)
-	{
-		auto current = get_runtime().get_binded_as<int64_t>(rx_packets_item_, 0);
-		current += count;
-		get_runtime().set_binded_as<int64_t>(rx_packets_item_, std::move(current));
-	}
-}
-
-void physical_port::update_sent_packets (size_t count)
-{
-	if (tx_packets_item_)
-	{
-		auto current = get_runtime().get_binded_as<int64_t>(tx_packets_item_, 0);
-		current += count;
-		get_runtime().set_binded_as<int64_t>(tx_packets_item_, std::move(current));
-	}
-}
-
-void physical_port::update_connected_status (bool status)
-{
-	rx_platform::rx_post_function<physical_port::smart_ptr>([status](physical_port::smart_ptr whose)
-		{
-			whose->get_runtime().set_binded_as(whose->connected_item_, status);
-		}, smart_this(), get_executer());
-
-}
-
-
 // Class interfaces::io_endpoints::rx_io_endpoint 
 
 rx_io_endpoint::rx_io_endpoint()
@@ -214,4 +104,6 @@ rx_io_endpoint::~rx_io_endpoint()
 
 } // namespace io_endpoints
 } // namespace interfaces
+
+
 
