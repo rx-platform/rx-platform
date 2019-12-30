@@ -4,6 +4,7 @@
 *
 *  system\logic\rx_logic.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +35,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 
 
 

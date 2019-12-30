@@ -4,6 +4,7 @@
 *
 *  terminal\rx_console.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +35,12 @@
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "interfaces/rx_endpoints.h"
 
+// dummy
+#include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// dummy
-#include "dummy.h"
 // rx_mem
 #include "lib/rx_mem.h"
 // sl_script

@@ -4,6 +4,7 @@
 *
 *  testing\rx_test_meta.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -273,7 +274,7 @@ namespace meta_test {
 	 }
 	 return id;
  }
- 
+
  rx_node_id object_creation_test::create_event_type (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
 	 rx_node_id id;

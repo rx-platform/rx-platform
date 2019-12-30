@@ -4,6 +4,7 @@
 *
 *  system\serialization\rx_ser.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -803,11 +804,45 @@ bool json_reader::is_string_based () const
 
 }
 
+bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
+{
+
+	if (!start_object(name))
+		return false;
+
+	int index = 0;
+	Json::Value& val = get_current_value(index);
+
+	if (!val.isObject())
+		return false;
+
+	if (val.isMember("id"))
+	{
+		rx_node_id temp_id;
+		if (!read_id("id", temp_id))
+			return false;
+		ref = std::move(temp_id);
+	}
+	else if (val.isMember("path"))
+	{
+		string_type temp_str;
+		if (!read_string("path", temp_str))
+			return false;
+		ref = std::move(temp_str);
+	}
+
+	if (!end_object())
+		return false;
+	return true;
+
+}
+
 
 // Class rx_platform::serialization::json_writer 
 
 json_writer::json_writer (int version)
 	: base_meta_writer(version)
+	, type_(0)
 {
 }
 
@@ -1221,6 +1256,28 @@ bool json_writer::is_string_based () const
 {
   return true;
 
+}
+
+bool json_writer::write_item_reference (const char* name, const rx_item_reference& ref)
+{
+	if (!start_object(name))
+		return false;
+	if (!ref.is_null())
+	{
+		if (ref.is_node_id())
+		{
+			if (!write_id("id", ref.get_node_id()))
+				return false;
+		}
+		else
+		{
+			if (!write_string("path", ref.get_path()))
+				return false;
+		}
+	}
+	if (!end_object())
+		return false;
+	return true;
 }
 
 

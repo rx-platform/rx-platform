@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_def_blocks.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -118,8 +119,6 @@ class filter_runtime;
 class mapper_runtime;
 class source_runtime;
 
-class const_value_item;
-class value_item;
 }
 
 }
@@ -230,7 +229,7 @@ class event_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -244,7 +243,7 @@ class event_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };
@@ -287,7 +286,7 @@ class filter_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -301,7 +300,7 @@ class filter_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };
@@ -344,7 +343,7 @@ class mapper_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -358,7 +357,7 @@ class mapper_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };
@@ -624,7 +623,7 @@ class source_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -638,7 +637,7 @@ class source_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };
@@ -681,7 +680,7 @@ class struct_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -695,7 +694,7 @@ class struct_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };
@@ -746,7 +745,7 @@ class variable_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_target () const
       {
         return target_;
       }
@@ -764,7 +763,7 @@ class variable_attribute
 
       values::rx_simple_value storage_;
 
-      item_reference target_;
+      rx_item_reference target_;
 
 
 };

@@ -4,6 +4,7 @@
 *
 *  host\rx_simple_host.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,14 +37,30 @@
 #include "system/hosting/rx_host.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_interactive
-#include "host/rx_interactive.h"
 
+#include "system/server/rx_server.h"
 
 
 namespace host {
 
 namespace simple {
+
+
+
+
+
+class simple_security 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
 
 typedef std::function<void(jobs::job_ptr)> synchronize_callback_t;
 
@@ -71,7 +88,6 @@ class rx_thread_synchronizer : public rx::threads::job_thread
 
 
 };
-
 
 
 
@@ -131,15 +147,13 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
   private:
 
-      rx_result set_simple_thread_security ();
+      virtual rx_result set_simple_thread_security ();
 
-      rx_result remove_simple_thread_security ();
+      virtual rx_result remove_simple_thread_security ();
 
 
 
       rx_reference<rx_platform::hosting::host_security_context> host_security_context_;
-
-      rx_reference<interactive::interactive_security_context> user_security_context_;
 
       rx_thread_synchronizer thread_synchronizer_;
 

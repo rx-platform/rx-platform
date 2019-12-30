@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_queries.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -174,7 +175,7 @@ class runtime_objects_query : public rx_query
 
 class translate_query : public rx_query  
 {
-	typedef std::vector<item_reference> items_type;
+	typedef std::vector<rx_item_reference> items_type;
 
   public:
 

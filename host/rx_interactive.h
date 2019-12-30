@@ -4,6 +4,7 @@
 *
 *  host\rx_interactive.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,22 +35,22 @@
 
 #include "system/server/rx_server.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
-// rx_security
-#include "lib/security/rx_security.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_console
 #include "terminal/rx_console.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
+// rx_host
+#include "system/hosting/rx_host.h"
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
+// rx_security
+#include "lib/security/rx_security.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 
 

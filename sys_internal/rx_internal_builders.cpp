@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -149,14 +150,15 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, sys_internal::internal_ns::platform_root::smart_ptr root)
 {
-	register_system_constructors();
+	rx_result errors = register_system_constructors();
+	if (!errors)
+		return errors;
 
 	auto sys_builders = get_system_builders(data, meta_data, host);
 	auto user_builders = get_user_builders(data, host);
 	auto test_builders = get_test_builders(data, host);
 	auto other_builders = get_other_builders(data, host);
 
-	rx_result errors = true;
 
 	errors = root->add_sub_directory(rx_create_reference<unassigned_directory>());
 	if (!errors)
@@ -296,20 +298,41 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_othe
 	return builders;
 }
 
-void rx_platform_builder::register_system_constructors ()
+rx_result rx_platform_builder::register_system_constructors ()
 {
 	// system app
-	model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
+	auto result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_app(); } );
+	if (!result)
+	{
+		result.register_error("Error registering constructor for system application!");
+		return result;
+	}
 	// system domain
-	model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
+	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
 		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_domain(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for system domain!");
+		return result;
+	}
 	// unassigned app
-	model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
+	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_app(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for unassigned application!");
+		return result;
+	}
 	// unassigned domain
-	model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
+	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_domain(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for unassigned domain!");
+		return result;
+	}
+	return true;
 }
 
 rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data)
@@ -323,12 +346,21 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 		instance_data.processor = 1;
 		instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
 		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
-		
+		auto result = add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
+		if (!result)
+		{
+			result.register_error("Unable to add unassigned application!");
+			return result;
+		}
 		runtime::objects::application_instance_data app_instance_data;
 		app_instance_data.processor = 1;
 		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
+		result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
+		if (!result)
+		{
+			result.register_error("Unable to add unassigned domain!");
+			return result;
+		}
 	}
 	return true;
 }
@@ -755,6 +787,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
+
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_UDP_PORT_TYPE_NAME
 			, RX_UDP_PORT_TYPE_ID
@@ -764,36 +797,21 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			});
 		port->complex_data().register_struct("Bind", RX_IP_BIND_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
+		
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_TCP_PORT_TYPE_NAME
-			, RX_TCP_PORT_TYPE_ID
+			RX_TCP_SERVER_PORT_TYPE_NAME
+			, RX_TCP_SERVER_PORT_TYPE_ID
 			, RX_PHYSICAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		port->complex_data().register_struct("Bind", RX_IP_BIND_TYPE_ID);
-		add_type_to_configuration(dir, port, true);
-		// tcp/ip port types
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_TCP_LISTEN_PORT_TYPE_NAME
-			, RX_TCP_LISTEN_PORT_TYPE_ID
-			, RX_TCP_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_TCP_SERVER_PORT_TYPE_NAME
-			, RX_TCP_SERVER_PORT_TYPE_ID
-			, RX_TCP_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
+		port->complex_data().register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_TCP_CLIENT_PORT_TYPE_NAME
 			, RX_TCP_CLIENT_PORT_TYPE_ID
-			, RX_TCP_PORT_TYPE_ID
+			, RX_PHYSICAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -812,6 +830,15 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_VT00_TYPE_NAME
 			, RX_VT00_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+			RX_TELNET_TYPE_NAME
+			, RX_TELNET_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -882,7 +909,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
-		// system statuses for physical ports
+		// port related helper structures
 		auto what = rx_create_reference<struct_type>(meta::type_creation_data{
 			RX_PORT_STATUS_TYPE_NAME
 			, RX_PORT_STATUS_TYPE_ID
@@ -890,7 +917,6 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-
 		what->complex_data().register_simple_value_static("Connected", true, false);
 		what->complex_data().register_simple_value_static<int64_t>("RxPackets", false, 0);
 		what->complex_data().register_simple_value_static<int64_t>("TxPackets", false, 0);
@@ -903,7 +929,6 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-
 		what->complex_data().register_simple_value_static<int64_t>("RxBytes", false, 0);
 		what->complex_data().register_simple_value_static<int64_t>("TxBytes", false, 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
@@ -915,9 +940,29 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-
 		what->complex_data().register_const_value_static("IPAddress", ""s);
 		what->complex_data().register_const_value_static<uint16_t>("IPPort", 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_TIMEOUTS_TYPE_NAME
+			, RX_TIMEOUTS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data().register_simple_value_static<uint32_t>("ReceiveTimeout", false, 10000);
+		what->complex_data().register_simple_value_static<uint32_t>("SendTimeout", false, 1000);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_CLIENT_TIMEOUTS_TYPE_NAME
+			, RX_CLIENT_TIMEOUTS_TYPE_ID
+			, RX_TIMEOUTS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data().register_simple_value_static<uint32_t>("ConnectTimeout", false, 5000);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 	}
 	return true;
@@ -942,8 +987,18 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		relation->meta_info().resolve();
-		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		dir->add_item(relation->get_item_ptr());
+		auto type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		if (!type_result)
+		{
+			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
+			return type_result.errors();
+		}
+		auto simple_result = dir->add_item(relation->get_item_ptr());
+		if (!simple_result)
+		{
+			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
+			return simple_result;
+		}
 
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_UP_STACK_NAME
@@ -953,8 +1008,18 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		relation->meta_info().resolve();
-		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		dir->add_item(relation->get_item_ptr());
+		type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		if (!type_result)
+		{
+			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
+			return type_result.errors();
+		}
+		simple_result = dir->add_item(relation->get_item_ptr());
+		if (!simple_result)
+		{
+			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
+			return simple_result;
+		}
 
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_DOWN_STACK_NAME
@@ -964,8 +1029,18 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		relation->meta_info().resolve();
-		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		dir->add_item(relation->get_item_ptr());
+		type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
+		if (!type_result)
+		{
+			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
+			return type_result.errors();
+		}
+		simple_result = dir->add_item(relation->get_item_ptr());
+		if (!simple_result)
+		{
+			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
+			return simple_result;
+		}
 	}
 	return true;
 }

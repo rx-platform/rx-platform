@@ -4,6 +4,7 @@
 *
 *  testing\rx_test_io.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -96,7 +97,7 @@ void test_tcp_client()
 	{
 		if (client_socket->connect_to_tcpip_4("192.168.56.101", 12345))
 		{
-			rx_msleep(200);
+			rx_ms_sleep(200);
 			client_socket->close();
 		}
 	}
@@ -146,7 +147,7 @@ bool test_client_basics::run_test (std::istream& in, std::ostream& out, std::ost
 				out << "Sending Connect...\r\n";
 				if (client->connect_to_tcpip_4(addr, port))
 				{
-					rx_msleep(200);
+					rx_ms_sleep(200);
 					out << "Closing Connection...\r\n";
 				}
 			}

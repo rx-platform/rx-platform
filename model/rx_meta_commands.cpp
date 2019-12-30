@@ -4,6 +4,7 @@
 *
 *  model\rx_meta_commands.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -176,7 +177,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	string_type name;
 	string_type from_command;
 	string_type base_type_name;
-	item_reference base_reference;
+	rx_item_reference base_reference;
 	string_type as_command;
 	string_type def_command;
 	in >> name
@@ -308,7 +309,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	string_type name;
 	string_type from_command;
 	string_type base_type_name;
-	item_reference base_reference;
+	rx_item_reference base_reference;
 	string_type as_command;
 	string_type def_command;
 	in >> name
@@ -438,7 +439,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 	string_type name;
 	string_type from_command;
 	string_type base_type_name;
-	item_reference base_reference;
+	rx_item_reference base_reference;
 	string_type as_command;
 	string_type def_command;
 	in >> name
@@ -759,7 +760,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	rx_context rxc;
 	rxc.object = ctx->get_client();
 	rxc.directory = ctx->get_current_directory();
-	auto result = rx_platform::api::meta::rx_delete_runtime<T>(item_reference(name),
+	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(name),
 		[ctx, name, this](rx_result&& result)
 		{
 			if (!result)
@@ -1123,7 +1124,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	string_type name;
 	string_type from_command;
 	string_type base_type_name;
-	item_reference base_reference;
+	rx_item_reference base_reference;
 	string_type to_command;
 	string_type def_command;
 	in >> name

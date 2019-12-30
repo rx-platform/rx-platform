@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_internal_ns.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,14 +33,14 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"

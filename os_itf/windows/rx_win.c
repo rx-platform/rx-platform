@@ -4,6 +4,7 @@
 *
 *  os_itf\windows\rx_win.c
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1235,7 +1236,7 @@ sys_handle_t rx_current_thread()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // basic apstractions
-void rx_msleep(uint32_t timeout)
+void rx_ms_sleep(uint32_t timeout)
 {
 	Sleep(timeout);
 }
@@ -1721,6 +1722,7 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 	if (internal_data->helper_socket == 0)
 	{
 		error = WSAGetLastError();
+		SetLastError(error);
 		return RX_ERROR;
 	}
 
@@ -1733,7 +1735,10 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 	{
 		err = GetLastError();
 		if (err != ERROR_IO_PENDING)
+		{
+			SetLastError(err);
 			return RX_ERROR;
+		}
 	}
 	return RX_ASYNC;
 }
@@ -1781,6 +1786,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	if (sock == INVALID_SOCKET)
 	{
 		int err = WSAGetLastError();     // convenience for the debugger
+		SetLastError(err);
 		return NULL;
 	}
 
@@ -1813,6 +1819,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);
+			SetLastError(err);
 			return NULL;
 		}
 	}
@@ -1825,6 +1832,7 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
 	if (sock == INVALID_SOCKET)
 	{
 		int err = WSAGetLastError();     // convenience for the debugger
+		SetLastError(err);
 		return NULL;
 	}
 
@@ -1868,7 +1876,10 @@ void rx_close_socket(sys_handle_t handle)
 {
 	int err = 0;
 	if (SOCKET_ERROR == shutdown((SOCKET)handle, 2))
+	{
 		err = WSAGetLastError();
+		SetLastError(err);
+	}
 	closesocket((SOCKET)handle);
 }
 

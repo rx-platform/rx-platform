@@ -4,6 +4,7 @@
 *
 *  host\rx_interactive.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -749,7 +750,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		bool result = host_->read_stdin(in_buffer, count);
 		if (!result)
 		{
-			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
+			ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading stdin, exiting!");
 			break;
 		}
 		if (count > 0)
@@ -759,7 +760,12 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 			auto res = rx_move_packet_up(this, nullptr, &buffer);
 			if (res != RX_PROTOCOL_OK)
 			{
-				std::cout << "Error code " << (int)res << " returned by stack!\r\n";
+				std::ostringstream ss;
+				ss << "Error code " << (int)res << "(" << rx_protocol_error_message(res) << ") returned by stack!\r\n";
+				std::cout << ss.str();
+
+				ITF_LOG_ERROR("interactive_console_endpoint", 900, ss.str());
+				ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading stdin, exiting!");
 				break;
 			}
 		}

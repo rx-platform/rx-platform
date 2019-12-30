@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_objbase.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
@@ -188,35 +189,6 @@ class application_instance_data
 
 
 
-class port_instance_data 
-{
-
-  public:
-
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      rx_node_id app_id;
-
-      meta::item_reference up_port;
-
-      meta::item_reference down_port;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 template <class typeT>
 class object_runtime_algorithms 
 {
@@ -225,13 +197,11 @@ class object_runtime_algorithms
 
       static rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose);
 
-      static void fire_job (typename typeT::RType* whose);
-
       static void process_runtime (typename typeT::RType* whose);
 
       static rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose);
 
-
+      static void fire_job(typename typeT::RType* whose);
   protected:
 
   private:
@@ -544,6 +514,33 @@ public:
 
 
 
+class port_instance_data 
+{
+
+  public:
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      rx_node_id app_id;
+
+      rx_item_reference up_port;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 
 class port_runtime : public rx::pointers::reference_object  
 {
@@ -618,6 +615,12 @@ system port class. basic implementation of a port");
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
+      virtual rx_port_ptr up_stack () const = 0;
+
+      virtual rx_port_ptr down_stack () const = 0;
+
+      virtual void process_stack () const = 0;
+
 
       const port_instance_data& get_instance_data () const
       {
@@ -656,8 +659,6 @@ system port class. basic implementation of a port");
   private:
 
       virtual bool has_up_port () const = 0;
-
-      virtual bool has_down_port () const = 0;
 
 
 

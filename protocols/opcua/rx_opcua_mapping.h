@@ -4,6 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_mapping.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -60,10 +61,13 @@ class opc_ua_trasport : public rx_protocol_stack_entry
 {
 
   public:
-	  
+
   protected:
 
   private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+
 
 
 };

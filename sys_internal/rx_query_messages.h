@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_query_messages.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,12 +33,12 @@
 
 
 
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 // rx_queries
 #include "system/meta/rx_queries.h"
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 
 
 
@@ -146,7 +147,7 @@ class get_type_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      item_reference reference;
+      rx_item_reference reference;
 
       rx_item_type item_type;
 
@@ -313,7 +314,7 @@ class get_runtime_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      item_reference reference;
+      rx_item_reference reference;
 
       rx_item_type item_type;
 
@@ -479,7 +480,7 @@ class get_code_info_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      item_reference reference;
+      rx_item_reference reference;
 
       rx_item_type item_type;
 

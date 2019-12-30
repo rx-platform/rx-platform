@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_storage_build.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -358,7 +359,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 			{
 				ret = true;
 			}
-		}		
+		}
 	}
 	storage->close();
 	if (ret)

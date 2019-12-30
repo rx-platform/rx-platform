@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -295,6 +296,8 @@ struct runtime_start_context
 
       runtime_structure_resolver structure;
 
+      operational::binded_tags *tags;
+
   public:
 
   protected:
@@ -321,12 +324,18 @@ struct runtime_process_context
 
       bool should_repeat () const;
 
+      void tag_updates_pending ();
+
+      rx_result init_context ();
+
 
       runtime_process_step current_step;
 
       bool process_all;
 
       bool process_tag_connections;
+
+      rx_time now;
 
   public:
 

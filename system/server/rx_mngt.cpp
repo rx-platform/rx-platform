@@ -4,6 +4,7 @@
 *
 *  system\server\rx_mngt.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -123,6 +124,7 @@ void server_manager::stop ()
 void server_manager::get_directories (platform_directories_type& dirs)
 {
 }
+
 
 // Class rx_platform::mngt::manager_initialization_context 
 

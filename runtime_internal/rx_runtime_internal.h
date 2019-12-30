@@ -4,6 +4,7 @@
 *
 *  runtime_internal\rx_runtime_internal.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,12 +33,12 @@
 
 
 
-// rx_job
-#include "lib/rx_job.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_job
+#include "lib/rx_job.h"
 
 #include "rx_runtime_algorithms.h"
 #include "system/server/rx_inf.h"

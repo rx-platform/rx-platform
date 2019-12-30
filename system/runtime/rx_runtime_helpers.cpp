@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -196,6 +197,16 @@ void runtime_structure_resolver::set_root (blocks::runtime_holder* item)
 bool runtime_process_context::should_repeat () const
 {
 	return false;
+}
+
+void runtime_process_context::tag_updates_pending ()
+{
+}
+
+rx_result runtime_process_context::init_context ()
+{
+	now = rx_time::now();
+	return true;
 }
 
 

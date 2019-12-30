@@ -4,6 +4,7 @@
 *
 *  interfaces\rx_interfaces.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -100,13 +101,3 @@ rx_ip_address & rx_ip_address::operator=(rx_ip_address &&right)
 } // namespace ip_endpoints
 } // namespace interfaces
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-
-
-
-
-#endif

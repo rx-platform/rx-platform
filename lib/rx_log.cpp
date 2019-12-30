@@ -4,6 +4,7 @@
 *
 *  lib\rx_log.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -253,7 +254,7 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 			snprintf(buffer, sizeof(buffer), "Initial log test %d passed. Delay time: %g ms...", (int)i, ms);
 			LOG_SELF_INFO(buffer);
 			spans[i] = ms;
-			rx_msleep(10);
+			rx_ms_sleep(10);
 		}
 
 		double val = 0.0;

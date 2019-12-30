@@ -4,26 +4,27 @@
 *
 *  lib\rx_lib.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -35,6 +36,9 @@
 
 #include "lib/rx_mem.h"
 #include "version/rx_version.h"
+#include "lib/rx_ser_lib.h"
+#include "lib/rx_values.h"
+
 
 #define MS_IN_DAY (1000*60*60*24)
 #define MS_START_1984 0x00000afe0bd9e400L
@@ -360,57 +364,57 @@ rx_result file_exist(const std::string& file)
 rx_result::rx_result(bool value)
 {
 	if (!value)
-		result_value_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+		result_value_ = std::make_unique<rx_result_erros_t>(string_vector{ "Undefined error!"s });
 }
 rx_result::rx_result(const string_vector& errors)
-	: result_value_(std::make_unique<result_erros_t>(errors))
+	: result_value_(std::make_unique<rx_result_erros_t>(errors))
 {
 }
 rx_result::rx_result(string_vector&& errors)
-	: result_value_ (std::make_unique<result_erros_t>(std::move(errors)))
+	: result_value_ (std::make_unique<rx_result_erros_t>(std::move(errors)))
 {
 }
 rx_result::rx_result(const char* error)
-	: result_value_(std::make_unique<result_erros_t>(string_vector{ error }))
+	: result_value_(std::make_unique<rx_result_erros_t>(string_vector{ error }))
 {
 }
 rx_result::rx_result(const string_type& error)
-	: result_value_(std::make_unique<result_erros_t>(string_vector{ error }))
+	: result_value_(std::make_unique<rx_result_erros_t>(string_vector{ error }))
 {
 }
 rx_result::rx_result(string_type&& error)
-	: result_value_(std::make_unique<result_erros_t>(string_vector{ std::move(error) }))
+	: result_value_(std::make_unique<rx_result_erros_t>(string_vector{ std::move(error) }))
 {
 }
 void rx_result::register_error(string_type&& error)
 {
 	if (!result_value_)
-		result_value_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
+		result_value_ = std::make_unique<rx_result_erros_t>(string_vector{ std::move(error) });
 	else
 		result_value_->emplace_back(std::move(error));
 }
 
-void rx_result::register_errors(const result_erros_t& errors)
+void rx_result::register_errors(const rx_result_erros_t& errors)
 {
 	if (!result_value_)
-		result_value_ = std::make_unique<result_erros_t>(errors);
+		result_value_ = std::make_unique<rx_result_erros_t>(errors);
 	else
 	{
 		for (const auto& one : errors)
 			result_value_->emplace_back(one);
 	}
 }
-void rx_result::register_errors(result_erros_t&& errors)
+void rx_result::register_errors(rx_result_erros_t&& errors)
 {
 	if (!result_value_)
-		result_value_ = std::make_unique<result_erros_t>(std::move(errors));
+		result_value_ = std::make_unique<rx_result_erros_t>(std::move(errors));
 	else
 	{
 		for (auto& one : errors)
 			result_value_->emplace_back(std::move(one));
 	}
 }
-const rx_result::result_erros_t& rx_result::errors() const
+const rx_result_erros_t& rx_result::errors() const
 {
 	return *result_value_;
 }
@@ -436,6 +440,257 @@ void rx_dump_error_result(std::ostream& err, const rx_result& result)
 {
 	for (const auto& one : result.errors())
 		err <<  one << "\r\n";
+}
+
+
+rx_item_reference::rx_item_reference()
+{
+	is_id_ = true;
+	new(&id_) rx_node_id();
+}
+
+rx_item_reference::rx_item_reference(const rx_item_reference& right)
+{
+	if (right.is_id_)
+	{
+		new(&id_) rx_node_id(right.id_);
+	}
+	else
+	{
+		new(&path_) string_type(right.path_);
+	}
+	is_id_ = right.is_id_;
+}
+
+rx_item_reference::rx_item_reference(const rx_node_id& right)
+{
+	is_id_ = true;
+	new(&id_) rx_node_id(right);
+}
+
+rx_item_reference::rx_item_reference(const string_type& right)
+{
+	is_id_ = false;
+	new(&path_) string_type(right);
+}
+
+rx_item_reference::rx_item_reference(const char* right)
+{
+	is_id_ = false;
+	new(&path_) string_type(right);
+}
+
+rx_item_reference::rx_item_reference(const rx_simple_value& right)
+{
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(right.get_storage().get_id_value());
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(right.get_storage().get_string_value());
+	}
+}
+
+
+rx_item_reference::~rx_item_reference()
+{
+	clear_content();
+}
+
+
+rx_item_reference& rx_item_reference::operator=(const rx_item_reference& right)
+{
+	clear_content();
+	if (right.is_id_)
+	{
+		new(&id_) rx_node_id(right.id_);
+	}
+	else
+	{
+		new(&path_) string_type(right.path_);
+	}
+	is_id_ = right.is_id_;
+	return *this;
+}
+
+
+bool rx_item_reference::is_null() const
+{
+	if (is_id_)
+	{
+		return id_.is_null();
+	}
+	else
+	{
+		return path_.empty();
+	}
+}
+
+void rx_item_reference::clear_content()
+{
+	if (is_id_)
+	{
+		id_.~rx_node_id();
+	}
+	else
+	{
+		path_.~string_type();
+	}
+}
+
+rx_item_reference& rx_item_reference::operator = (const rx_node_id& right)
+{
+	clear_content();
+	is_id_ = true;
+	new(&id_) rx_node_id(right);
+	return *this;
+}
+
+rx_item_reference& rx_item_reference::operator = (const string_type& right)
+{
+	clear_content();
+	is_id_ = false;
+	new(&path_) string_type(right);
+	return *this;
+}
+
+bool rx_item_reference::is_node_id() const
+{
+	return is_id_;
+}
+
+const string_type& rx_item_reference::get_path() const
+{
+	if (is_id_)
+		throw std::invalid_argument("Target is referenced by id!");
+	else
+		return path_;
+}
+
+const rx_node_id& rx_item_reference::get_node_id() const
+{
+	if (!is_id_)
+		throw std::invalid_argument("Target is referenced by path!");
+	else
+		return id_;
+}
+
+rx_simple_value rx_item_reference::to_value() const
+{
+	values::rx_simple_value temp;
+	if (is_id_)
+	{
+		temp.assign_static<rx_node_id>(rx_node_id(id_));
+	}
+	else
+	{
+		temp.assign_static<string_type>(string_type(path_));
+	}
+	return temp;
+}
+
+rx_item_reference& rx_item_reference::operator = (const rx_simple_value& right)
+{
+	clear_content();
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(right.get_storage().get_id_value());
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(right.get_storage().get_string_value());
+	}
+	return *this;
+}
+
+
+rx_item_reference::rx_item_reference(rx_item_reference&& right) noexcept
+{
+	if (right.is_id_)
+	{
+		new(&id_) rx_node_id(std::move(right.id_));
+	}
+	else
+	{
+		new(&path_) string_type(std::move(right.path_));
+	}
+	is_id_ = right.is_id_;
+
+}
+rx_item_reference& rx_item_reference::operator=(rx_item_reference&& right) noexcept
+{
+	clear_content();
+	if (right.is_id_)
+	{
+		new(&id_) rx_node_id(std::move(right.id_));
+	}
+	else
+	{
+		new(&path_) string_type(std::move(right.path_));
+	}
+	is_id_ = right.is_id_;
+	return *this;
+}
+
+rx_item_reference::rx_item_reference(rx_node_id&& right) noexcept
+{
+	is_id_ = true;
+	new(&id_) rx_node_id(std::move(right));
+}
+rx_item_reference::rx_item_reference(string_type&& right) noexcept
+{
+	is_id_ = false;
+	new(&path_) string_type(std::move(right));
+}
+
+rx_item_reference::rx_item_reference(rx_simple_value&& right) noexcept
+{
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
+	}
+}
+
+rx_item_reference& rx_item_reference::operator= (rx_node_id&& right) noexcept
+{
+	clear_content();
+	is_id_ = true;
+	new(&id_) rx_node_id(std::move(right));
+	return *this;
+
+}
+rx_item_reference& rx_item_reference::operator= (string_type&& right) noexcept
+{
+	clear_content();
+	is_id_ = false;
+	new(&path_) string_type(std::move(right));
+	return *this;
+}
+rx_item_reference& rx_item_reference::operator= (rx_simple_value&& right) noexcept
+{
+	clear_content();
+	if (right.get_type() == RX_NODE_ID_TYPE)
+	{
+		is_id_ = true;
+		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
+	}
+	else
+	{
+		is_id_ = false;
+		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
+	}
+	return *this;
 }
 
 rx_uuid::rx_uuid()

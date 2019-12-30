@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_operational.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,10 +33,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -175,6 +176,8 @@ class binded_tags
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
+
+      rx_result pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const;
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)

@@ -4,26 +4,27 @@
 *
 *  lib\rx_io.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -56,6 +57,7 @@ typedef std::set<io::dispatcher_subscriber> dispatcher_subscriber_ptr;
 typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_subscribers_type;
 
 rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct);
+string_type get_ip4_addr_string(const sockaddr_in* addr_struct);
 
 
 
@@ -257,6 +259,7 @@ class tcp_socket : public full_duplex_comm<buffT>
 
       string_type peer_name_;
 
+
 };
 
 
@@ -282,7 +285,7 @@ public:
 
       rx_result start_tcpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
-      rx_result start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher);
+      rx_result start_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher);
 
       void stop ();
 
@@ -304,6 +307,7 @@ public:
       bool connected_;
 
       make_function_t make_function_;
+
 
 };
 
@@ -393,7 +397,7 @@ typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > 
 
 
 template <class headerT, class bufferT>
-class stream_chuks_decoder
+class stream_chuks_decoder 
 {
 
   public:
@@ -471,7 +475,7 @@ class udp_socket : public full_duplex_comm<buffT>
 typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm
+// Parameterized Class rx::io::full_duplex_comm 
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -774,7 +778,7 @@ bool full_duplex_comm<buffT>::start_loops ()
 }
 
 
-// Parameterized Class rx::io::tcp_socket
+// Parameterized Class rx::io::tcp_socket 
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -816,7 +820,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket
+// Parameterized Class rx::io::tcp_listen_socket 
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
@@ -867,12 +871,17 @@ rx_result tcp_listen_socket<buffT>::start_tcpip_4 (sockaddr_in* addr, threads::d
 	{
 		if (rx_socket_listen(this->dispatcher_data_.handle))
 		{
+            connected_ = true;
 			if (this->connect_dispatcher(dispatcher))
 			{
 				if (accept_new())
 					return true;
 			}
 		}
+        else
+        {
+            return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+        }
 	}
 	auto result = rx_result::create_from_last_os_error("Unable to bind to endpoint.");
 	if (this->dispatcher_data_.handle)
@@ -881,18 +890,28 @@ rx_result tcp_listen_socket<buffT>::start_tcpip_4 (sockaddr_in* addr, threads::d
 }
 
 template <class buffT>
-rx_result tcp_listen_socket<buffT>::start_tcpip_4 (uint16_t port, threads::dispatcher_pool& dispatcher)
+rx_result tcp_listen_socket<buffT>::start_tcpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher)
 {
-	struct sockaddr_in temp_addr;
-	memzero(&temp_addr, sizeof(temp_addr));
-	temp_addr.sin_port = htons(port);
-	temp_addr.sin_addr.s_addr = INADDR_ANY;
-	return this->start(dispatcher, &temp_addr);
+    sockaddr_in temp_addr;
+    string_type trimmed(rx_trim(addr));
+
+    auto result = fill_ip4_addr(trimmed, port, &temp_addr);
+    if (result)
+    {
+        return this->start_tcpip_4(&temp_addr, dispatcher);
+    }
+    else
+    {
+        result.register_error("Unable to parse address string.");
+        return result;
+    }
 }
 
 template <class buffT>
 void tcp_listen_socket<buffT>::stop ()
 {
+
+    connected_ = false;
 	disconnect_dispatcher();
 	rx_close_socket(dispatcher_data_.handle);
 }
@@ -918,7 +937,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket
+// Parameterized Class rx::io::tcp_client_socket 
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -1069,7 +1088,7 @@ rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (threads::dispatcher_poo
 }
 
 
-// Parameterized Class rx::io::stream_chuks_decoder
+// Parameterized Class rx::io::stream_chuks_decoder 
 
 template <class headerT, class bufferT>
 stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<bool(const bufferT&)> callback)
@@ -1198,7 +1217,7 @@ bool stream_chuks_decoder<headerT,bufferT>::push_bytes (const void* data, size_t
 }
 
 
-// Parameterized Class rx::io::udp_socket
+// Parameterized Class rx::io::udp_socket 
 
 template <class buffT>
 udp_socket<buffT>::udp_socket()

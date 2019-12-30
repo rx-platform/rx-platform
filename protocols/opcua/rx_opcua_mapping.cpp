@@ -4,6 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_mapping.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -42,8 +43,13 @@ namespace opc_ua {
 // Class protocols::opc_ua::opc_ua_trasport 
 
 
-opc_ua_endpoint test;
+rx_protocol_result_t opc_ua_trasport::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+{
+    return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
 
+
+opc_ua_endpoint test;
 } // namespace opc_ua
 } // namespace protocols
 

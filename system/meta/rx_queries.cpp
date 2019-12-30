@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_queries.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -357,9 +358,11 @@ rx_result translate_query::serialize (base_meta_writer& stream) const
 		return "Error writing array";
 	for(const auto& one : items)
 	{
-		if(!one.serialize_reference("ref", stream))
+
+		if (!stream.write_item_reference("ref", one))
 			return "Error writing item reference";
-	}if (!stream.end_array())
+	}
+	if (!stream.end_array())
 		return "Error writing end of paths array";
 	return true;
 }
@@ -371,8 +374,8 @@ rx_result translate_query::deserialize (base_meta_reader& stream)
 	items.clear();
 	while (!stream.array_end())
 	{
-		item_reference temp;
-		if (!temp.deserialize_reference("ref", stream))
+		rx_item_reference temp;
+		if (!stream.read_item_reference("ref", temp))
 			return "Error reading item reference";
 		items.emplace_back(std::move(temp));
 	}

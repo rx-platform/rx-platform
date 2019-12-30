@@ -4,6 +4,7 @@
 *
 *  terminal\rx_commands.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,12 +33,12 @@
 
 
 
+// rx_console
+#include "terminal/rx_console.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_console
-#include "terminal/rx_console.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>

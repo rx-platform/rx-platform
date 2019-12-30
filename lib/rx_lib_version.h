@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 18
-#define RX_LIB_BUILD_NUMBER 0
+#define RX_LIB_BUILD_NUMBER 3
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -20,3 +20,7 @@
 // version 0.17.15 added rx_result for io types
 // version 0.17.17 log_query_type revisied, enum classes fro log enums
 // version 0.18.0 added runtime_constructor stuff
+// version 0.18.2 rx_result_erros_t is now global typedef
+// version 0.18.3 rx_item_reference is part of lib and has specific serialization
+
+

@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,10 +33,10 @@
 
 
 
-// rx_values
-#include "lib/rx_values.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
+// rx_values
+#include "lib/rx_values.h"
 
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
@@ -47,7 +48,6 @@ using rx_platform::runtime_item_attribute;
 
 
 namespace rx_platform {
-using runtime::blocks::runtime_holder;
 
 namespace runtime {
 namespace blocks
@@ -58,6 +58,7 @@ namespace blocks
 	class mapper_runtime;
 	class filter_runtime;
 	class event_runtime;
+    class runtime_holder;
 }
 namespace objects
 {
@@ -68,6 +69,10 @@ namespace relations
 
 class relation_runtime;
 }
+
+
+using blocks::runtime_holder;
+
 typedef rx::pointers::reference<blocks::struct_runtime> struct_runtime_ptr;
 typedef rx::pointers::reference<blocks::variable_runtime> variable_runtime_ptr;
 typedef rx::pointers::reference<blocks::source_runtime> source_runtime_ptr;

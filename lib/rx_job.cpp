@@ -4,26 +4,27 @@
 *
 *  lib\rx_job.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -43,7 +44,7 @@ bool rx_pop_security_context();
 
 namespace jobs {
 
-// Class rx::jobs::job
+// Class rx::jobs::job 
 
 job::job()
       : canceled_(false)
@@ -84,7 +85,7 @@ void job::release_unsafe_ptr ()
 }
 
 
-// Class rx::jobs::timer_job
+// Class rx::jobs::timer_job 
 
 timer_job::timer_job()
       : next_(0x0),
@@ -110,7 +111,7 @@ void timer_job::unlock ()
 }
 
 
-// Class rx::jobs::post_period_job
+// Class rx::jobs::post_period_job 
 
 post_period_job::post_period_job()
 {
@@ -135,7 +136,7 @@ rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& rem
 }
 
 
-// Class rx::jobs::periodic_job
+// Class rx::jobs::periodic_job 
 
 periodic_job::periodic_job()
 {

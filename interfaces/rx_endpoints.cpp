@@ -4,6 +4,7 @@
 *
 *  interfaces\rx_endpoints.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -66,10 +67,19 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 	if (result)
 	{
 		// register I/O constructors
-		model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_UDP_PORT_TYPE_ID, [] {
 				return rx_create_reference<ip_endpoints::udp_port>();
 			});
+        /*if (!result)
+        {
+            
+        }*/
+        // register I/O constructors
+        result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+            RX_TCP_SERVER_PORT_TYPE_ID, [] {
+                return rx_create_reference<ip_endpoints::tcp_server_port>();
+            });
 	}
 	return result;
 }
@@ -104,6 +114,4 @@ rx_io_endpoint::~rx_io_endpoint()
 
 } // namespace io_endpoints
 } // namespace interfaces
-
-
 

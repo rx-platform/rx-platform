@@ -4,6 +4,7 @@
 *
 *  host\rx_pipe.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,14 +34,12 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
+// rx_anonymus_pipes
+#include "host/rx_anonymus_pipes.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_log
 #include "lib/rx_log.h"
-// rx_anonymus_pipes
-#include "host/rx_anonymus_pipes.h"
-// rx_interactive
-#include "host/rx_interactive.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -84,7 +83,6 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
 
 
 };
-
 
 
 

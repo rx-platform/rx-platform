@@ -4,26 +4,27 @@
 *
 *  lib\rx_lib.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -41,6 +42,12 @@ string_type _not_implemented_func(const char* fname);
 
 namespace rx
 {
+class base_meta_writer;
+class base_meta_reader;
+namespace values
+{
+class rx_simple_value;
+}
 
 struct rx_table_cell_struct
 {
@@ -103,10 +110,12 @@ public:
 	}
 };
 
+
+typedef std::vector<string_type> rx_result_erros_t;
+
 class rx_result
 {
-	typedef std::vector<string_type> result_erros_t;
-	std::unique_ptr<result_erros_t> result_value_;
+	std::unique_ptr<rx_result_erros_t> result_value_;
 public:
 	rx_result(bool value);
 	rx_result(const string_vector& errors);
@@ -115,10 +124,10 @@ public:
 	rx_result(const string_type& error);
 	rx_result(string_type&& error);
 	void register_error(string_type&& error);
-	void register_errors(result_erros_t&& errors);
-	void register_errors(const result_erros_t& errors);
+	void register_errors(rx_result_erros_t&& errors);
+	void register_errors(const rx_result_erros_t& errors);
 	operator bool() const;
-	const result_erros_t& errors()const;
+	const rx_result_erros_t& errors()const;
 	rx_result(const rx_result& right) = delete;// because of the unique_ptr!
 
 	rx_result() = default;
@@ -139,62 +148,61 @@ template<class T>
 class rx_result_with
 {
 	T value_;
-	typedef std::vector<string_type> result_erros_t;
-	std::unique_ptr<result_erros_t> errors_;
+	std::unique_ptr<rx_result_erros_t> errors_;
 public:
 	rx_result_with(const T& value)
 		: value_(value)
 	{
 		if (!value_)
-			errors_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+			errors_ = std::make_unique<rx_result_erros_t>(string_vector{ "Undefined error!"s });
 	}
 	rx_result_with(T&& value)
 		: value_(std::move(value))
 	{
 		if (!value_)
-			errors_ = std::make_unique<result_erros_t>(string_vector{ "Undefined error!"s });
+			errors_ = std::make_unique<rx_result_erros_t>(string_vector{ "Undefined error!"s });
 	}
 	rx_result_with(const string_vector& errors)
-		: errors_(std::make_unique<result_erros_t>(errors))
+		: errors_(std::make_unique<rx_result_erros_t>(errors))
 	{
 	}
 	rx_result_with(string_vector&& errors)
-		: errors_(std::make_unique<result_erros_t>(std::move(errors)))
+		: errors_(std::make_unique<rx_result_erros_t>(std::move(errors)))
 	{
 	}
 	rx_result_with(const char* error)
-		: errors_(std::make_unique<result_erros_t>(string_vector{ error }))
+		: errors_(std::make_unique<rx_result_erros_t>(string_vector{ error }))
 	{
 	}
 	rx_result_with(const string_type& error)
-		: errors_(std::make_unique<result_erros_t>(string_vector{ error }))
+		: errors_(std::make_unique<rx_result_erros_t>(string_vector{ error }))
 	{
 	}
 	rx_result_with(string_type&& error)
-		: errors_(std::make_unique<result_erros_t>(string_vector{ std::move(error) }))
+		: errors_(std::make_unique<rx_result_erros_t>(string_vector{ std::move(error) }))
 	{
 	}
 	void register_error(string_type&& error)
 	{
 		if (!errors_)
-			errors_ = std::make_unique<result_erros_t>(string_vector{ std::move(error) });
+			errors_ = std::make_unique<rx_result_erros_t>(string_vector{ std::move(error) });
 		else
 			errors_->emplace_back(std::move(error));
 	}
-	void register_errors(const result_erros_t& errors)
+	void register_errors(const rx_result_erros_t& errors)
 	{
 		if (!errors_)
-			errors_ = std::make_unique<result_erros_t>(errors);
+			errors_ = std::make_unique<rx_result_erros_t>(errors);
 		else
 		{
 			for (const auto& one : errors)
 				errors_->emplace_back(one);
 		}
 	}
-	void register_errors(result_erros_t&& errors)
+	void register_errors(rx_result_erros_t&& errors)
 	{
 		if (!errors_)
-			errors_ = std::make_unique<result_erros_t>(std::move(errors));
+			errors_ = std::make_unique<rx_result_erros_t>(std::move(errors));
 		else
 		{
 			for (auto& one : errors)
@@ -217,7 +225,7 @@ public:
 	{
 		return static_cast<bool>(value_);
 	}
-	const result_erros_t& errors()const
+	const rx_result_erros_t& errors()const
 	{
 		return *errors_;
 	}
@@ -229,6 +237,8 @@ public:
 	rx_result_with& operator=(const rx_result_with&) = delete;
 	rx_result_with& operator=(rx_result_with&&) noexcept = default;
 };
+
+
 
 rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
 std::string rx_combine_paths(const std::string& path1, const std::string& path2);
@@ -442,6 +452,60 @@ private:
 std::ostream & operator << (std::ostream &out, const rx_node_id &val);
 
 typedef std::vector<rx_node_id> rx_node_ids;
+
+
+
+class rx_item_reference
+{
+	union
+	{
+		string_type path_;
+		rx_node_id id_;
+	};
+
+public:
+
+	rx_item_reference();
+
+	rx_item_reference(const rx_item_reference& right);
+	rx_item_reference(const rx_node_id& right);
+	rx_item_reference(const string_type& right);
+	rx_item_reference(const char* right);
+	rx_item_reference(const values::rx_simple_value& right);
+	~rx_item_reference();
+
+	bool is_null() const;
+
+	rx_item_reference& operator=(const rx_item_reference& right);
+	rx_item_reference& operator = (const rx_node_id& right);
+	rx_item_reference& operator = (const string_type& right);
+
+	bool is_node_id() const;
+
+	const string_type& get_path() const;
+
+	const rx_node_id& get_node_id() const;
+
+	values::rx_simple_value to_value() const;
+
+	rx_item_reference& operator = (const values::rx_simple_value& right);
+	rx_item_reference(rx_item_reference&& right) noexcept;
+	rx_item_reference& operator=(rx_item_reference&& right) noexcept;
+
+	rx_item_reference(rx_node_id&& right) noexcept;
+	rx_item_reference(string_type&& right) noexcept;
+	rx_item_reference(values::rx_simple_value&& right) noexcept;
+
+	rx_item_reference& operator= (rx_node_id&& right) noexcept;
+	rx_item_reference& operator= (string_type&& right) noexcept;
+	rx_item_reference& operator= (values::rx_simple_value&& right) noexcept;
+
+private:
+	void clear_content();
+	bool is_id_;
+
+};
+
 ///////////////////////////////////////////////////////////////
 //
 

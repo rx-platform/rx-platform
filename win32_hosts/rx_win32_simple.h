@@ -4,6 +4,7 @@
 *
 *  win32_hosts\rx_win32_simple.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

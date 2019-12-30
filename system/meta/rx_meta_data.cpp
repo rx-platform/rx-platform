@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_meta_data.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -437,19 +438,19 @@ void meta_data::increment_version (bool full_ver)
 	version_++;
 }
 
-item_reference meta_data::create_item_reference ()
+rx_item_reference meta_data::create_item_reference ()
 {
 	if (id_.is_null() && !path_.empty())
-		return item_reference(get_full_path());
+		return rx_item_reference(get_full_path());
 	else
-		return item_reference(id_);
+		return rx_item_reference(id_);
 }
 
-item_reference meta_data::create_weak_item_reference (const string_array& dirs)
+rx_item_reference meta_data::create_weak_item_reference (const string_array& dirs)
 {
 	string_type my_path = get_full_path();
 	if (my_path.empty())
-		return item_reference();
+		return rx_item_reference();
 	rx_directory_ptr my_directory = rx_gate::instance().get_root_directory()->get_sub_directory(path_);
 	size_t best_idx = 0;
 	string_array best_splitted;
@@ -508,312 +509,15 @@ item_reference meta_data::create_weak_item_reference (const string_array& dirs)
 		}
 		relative_path += name_;
 
-		return item_reference(relative_path);
+		return rx_item_reference(relative_path);
 	}
 	else
 	{
-		return item_reference(my_path);
+		return rx_item_reference(my_path);
 	}
 }
 
 
-// Class rx_platform::meta::item_reference 
-
-item_reference::item_reference()
-{
-	is_id_ = true;
-	new(&id_) rx_node_id();
-}
-
-item_reference::item_reference(const item_reference &right)
-{
-	if (right.is_id_)
-	{
-		new(&id_) rx_node_id(right.id_);
-	}
-	else
-	{
-		new(&path_) string_type(right.path_);
-	}
-	is_id_ = right.is_id_;
-}
-
-item_reference::item_reference (const rx_node_id& right)
-{
-	is_id_ = true;
-	new(&id_) rx_node_id(right);
-}
-
-item_reference::item_reference (const string_type& right)
-{
-	is_id_ = false;
-	new(&path_) string_type(right);
-}
-
-item_reference::item_reference (const char* right)
-{
-	is_id_ = false;
-	new(&path_) string_type(right);
-}
-
-item_reference::item_reference (const rx_simple_value& right)
-{
-	if (right.get_type() == RX_NODE_ID_TYPE)
-	{
-		is_id_ = true;
-		new(&id_) rx_node_id(right.get_storage().get_id_value());
-	}
-	else
-	{
-		is_id_ = false;
-		new(&path_) string_type(right.get_storage().get_string_value());
-	}
-}
-
-
-item_reference::~item_reference()
-{
-	clear_content();
-}
-
-
-item_reference & item_reference::operator=(const item_reference &right)
-{
-	clear_content();
-	if (right.is_id_)
-	{
-		new(&id_) rx_node_id(right.id_);
-	}
-	else
-	{
-		new(&path_) string_type(right.path_);
-	}
-	is_id_ = right.is_id_;
-	return *this;
-}
-
-
-
-rx_result item_reference::serialize_reference (const char* name, base_meta_writer& stream) const
-{
-	if (!stream.start_object(name))
-		return false;
-	if (!stream.write_bool("is_id", is_id_))
-		return false;
-	if (is_id_)
-	{
-		if (!stream.write_id("id", id_))
-			return false;
-	}
-	else
-	{
-		if (!stream.write_string("path", path_))
-			return false;
-	}
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-rx_result item_reference::deserialize_reference (const char* name, base_meta_reader& stream)
-{
-	clear_content();
-	if (!stream.start_object(name))
-		return false;
-	if (!stream.read_bool("is_id", is_id_))
-		return false;
-	if (is_id_)
-	{
-		new(&id_) rx_node_id();
-		if (!stream.read_id("id", id_))
-			return false;
-	}
-	else
-	{
-		new(&path_) string_type();
-		if (!stream.read_string("path", path_))
-			return false;
-	}
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool item_reference::is_null () const
-{
-	if (is_id_)
-	{
-		return id_.is_null();
-	}
-	else
-	{
-		return path_.empty();
-	}
-}
-
-void item_reference::clear_content ()
-{
-	if (is_id_)
-	{
-		id_.~rx_node_id();
-	}
-	else
-	{
-		path_.~string_type();
-	}
-}
-
-item_reference& item_reference::operator = (const rx_node_id& right)
-{
-	clear_content();
-	is_id_ = true;
-	new(&id_) rx_node_id(right);
-	return *this;
-}
-
-item_reference& item_reference::operator = (const string_type& right)
-{
-	clear_content();
-	is_id_ = false;
-	new(&path_) string_type(right);
-	return *this;
-}
-
-bool item_reference::is_node_id () const
-{
-	return is_id_;
-}
-
-const string_type& item_reference::get_path () const
-{
-	if (is_id_)
-		throw std::invalid_argument("Target is referenced by id!");
-	else
-		return path_;
-}
-
-const rx_node_id& item_reference::get_node_id () const
-{
-	if (!is_id_)
-		throw std::invalid_argument("Target is referenced by path!");
-	else
-		return id_;
-}
-
-rx_simple_value item_reference::to_value () const
-{
-	values::rx_simple_value temp;
-	if (is_id_)
-	{
-		temp.assign_static<rx_node_id>(rx_node_id(id_));
-	}
-	else
-	{
-		temp.assign_static<string_type>(string_type(path_));
-	}
-	return temp;
-}
-
-item_reference& item_reference::operator = (const rx_simple_value& right)
-{
-	clear_content();
-	if (right.get_type() == RX_NODE_ID_TYPE)
-	{
-		is_id_ = true;
-		new(&id_) rx_node_id(right.get_storage().get_id_value());
-	}
-	else
-	{
-		is_id_ = false;
-		new(&path_) string_type(right.get_storage().get_string_value());
-	}
-	return *this;
-}
-
-
-item_reference::item_reference(item_reference&& right) noexcept
-{
-	if (right.is_id_)
-	{
-		new(&id_) rx_node_id(std::move(right.id_));
-	}
-	else
-	{
-		new(&path_) string_type(std::move(right.path_));
-	}
-	is_id_ = right.is_id_;
-
-}
-item_reference& item_reference::operator=(item_reference&& right) noexcept
-{
-	clear_content();
-	if (right.is_id_)
-	{
-		new(&id_) rx_node_id(std::move(right.id_));
-	}
-	else
-	{
-		new(&path_) string_type(std::move(right.path_));
-	}
-	is_id_ = right.is_id_;
-	return *this;
-}
-
-item_reference::item_reference(rx_node_id&& right) noexcept
-{
-	is_id_ = true;
-	new(&id_) rx_node_id(std::move(right));
-}
-item_reference::item_reference(string_type&& right) noexcept
-{
-	is_id_ = false;
-	new(&path_) string_type(std::move(right));
-}
-
-item_reference::item_reference(rx_simple_value&& right) noexcept
-{
-	if (right.get_type() == RX_NODE_ID_TYPE)
-	{
-		is_id_ = true;
-		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
-	}
-	else
-	{
-		is_id_ = false;
-		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
-	}
-}
-
-item_reference& item_reference::operator= (rx_node_id&& right) noexcept
-{
-	clear_content();
-	is_id_ = true;
-	new(&id_) rx_node_id(std::move(right));
-	return *this;
-
-}
-item_reference& item_reference::operator= (string_type&& right) noexcept
-{
-	clear_content();
-	is_id_ = false;
-	new(&path_) string_type(std::move(right));
-	return *this;
-}
-item_reference& item_reference::operator= (rx_simple_value&& right) noexcept
-{
-	clear_content();
-	if (right.get_type() == RX_NODE_ID_TYPE)
-	{
-		is_id_ = true;
-		new(&id_) rx_node_id(std::move(right.get_storage().get_id_value()));
-	}
-	else
-	{
-		is_id_ = false;
-		new(&path_) string_type(std::move(right.get_storage().get_string_value()));
-	}
-	return *this;
-}
 } // namespace meta
 } // namespace rx_platform
 

@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_set_messages.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -84,7 +85,7 @@ class delete_type_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      item_reference reference;
+      rx_item_reference reference;
 
       rx_item_type item_type;
 
@@ -391,7 +392,7 @@ class delete_runtime_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      item_reference reference;
+      rx_item_reference reference;
 
       rx_item_type item_type;
 

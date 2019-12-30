@@ -4,6 +4,7 @@
 *
 *  system\hosting\rx_host.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -112,6 +113,8 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 						config.storage.test_storage_reference = row.second;
 					else if (row.first == "other.manuals" && config.other.manuals_path.empty())
 						config.other.manuals_path = row.second;
+					else if (row.first == "other.logs" && config.management.logs_directory.empty())
+						config.management.logs_directory = row.second;
 				}
 				one_success = true;
 			}
@@ -295,7 +298,8 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("t,test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
 		("y,system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
 		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
-		("l,log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
+		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
+		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("v,version", "Displays platform version")
 		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
 		("h,help", "Print help")

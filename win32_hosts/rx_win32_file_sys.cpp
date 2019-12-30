@@ -4,6 +4,7 @@
 *
 *  win32_hosts\rx_win32_file_sys.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -49,6 +50,7 @@ template <class policyT>
 win32_file_system_storage<policyT>::~win32_file_system_storage()
 {
 }
+
 
 
 } // namespace win32

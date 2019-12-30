@@ -4,6 +4,7 @@
 *
 *  os_itf\windows\win_crypt.c
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

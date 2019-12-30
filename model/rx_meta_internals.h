@@ -4,26 +4,27 @@
 *
 *  model\rx_meta_internals.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -99,7 +100,7 @@ typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object
 
 
 
-class relations_hash_data
+class relations_hash_data 
 {
 	relations_hash_data(const relations_hash_data&) = delete;
 	relations_hash_data(relations_hash_data&&) = delete;
@@ -162,7 +163,7 @@ class relations_hash_data
 
 
 
-class inheritance_hash
+class inheritance_hash 
 {
 	inheritance_hash(const inheritance_hash&) = delete;
 	inheritance_hash(inheritance_hash&&) = delete;
@@ -224,7 +225,7 @@ class inheritance_hash
 
 
 
-class instance_hash
+class instance_hash 
 {
 	instance_hash(const instance_hash&) = delete;
 	instance_hash(instance_hash&&) = delete;
@@ -263,7 +264,7 @@ class instance_hash
 
 
 template <class typeT>
-class types_repository
+class types_repository 
 {
 	types_repository(const types_repository&) = delete;
 	types_repository(types_repository&&) = delete;
@@ -356,7 +357,7 @@ public:
 
 
 template <class typeT>
-class simple_types_repository
+class simple_types_repository 
 {
 	simple_types_repository(const simple_types_repository&) = delete;
 	simple_types_repository(simple_types_repository&&) = delete;
@@ -419,7 +420,7 @@ public:
 
 
 
-class types_resolver
+class types_resolver 
 {
 	struct resolver_data
 	{
@@ -456,7 +457,7 @@ class types_resolver
 
 
 
-class relations_type_repository
+class relations_type_repository 
 {
 	relations_type_repository(const relations_type_repository&) = delete;
 	relations_type_repository(relations_type_repository&&) = delete;
@@ -569,7 +570,7 @@ struct ids_hash_element
 
 
 
-class platform_types_manager
+class platform_types_manager 
 {
 	//friend class worker_registration_object;
 	template<class T>

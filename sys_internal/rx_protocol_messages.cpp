@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_protocol_messages.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -356,6 +357,4 @@ rx_message_type_t rx_connection_context_response::get_type_id ()
 } // namespace messages
 } // namespace rx_protocol
 } // namespace sys_internal
-
-
 

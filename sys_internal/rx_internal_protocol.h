@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_internal_protocol.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,12 +33,12 @@
 
 
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 

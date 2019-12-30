@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_meta_algorithm.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -57,7 +58,7 @@ rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT
 {
 	if (!stream.write_string("name", whose.name_))
 		return false;
-	if (!whose.target_.serialize_reference("target", stream))
+	if (!stream.write_item_reference("target", whose.target_))
 		return false;
 	return true;
 }
@@ -67,7 +68,7 @@ rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& wh
 {
 	if (!stream.read_string("name", whose.name_))
 		return false;
-	if (!whose.target_.deserialize_reference("target", stream))
+	if (!stream.read_item_reference("target", whose.target_))
 		return false;
 	return true;
 }
@@ -132,7 +133,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 {
 	if (!stream.write_string("name", whose.name_.c_str()))
 		return false;
-	if (!whose.target_.serialize_reference("target", stream))
+	if (!stream.write_item_reference("target", whose.target_))
 		return false;
 	if (!stream.write_bool("ro", whose.read_only_))
 		return false;
@@ -149,7 +150,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 {
 	if (!stream.read_string("name", whose.name_))
 		return false;
-	if (!whose.target_.deserialize_reference("target", stream))
+	if (!stream.read_item_reference("target", whose.target_))
 		return false;
 	if (!stream.read_bool("ro", whose.read_only_))
 		return false;
@@ -433,7 +434,7 @@ rx_result object_types_algorithm<relation_type>::serialize_object_type(const rel
 	if (!stream.start_object("def"))
 		return false;
 
-	if (!whose.inverse_reference_.serialize_reference("inverse", stream))
+	if (!stream.write_item_reference("inverse", whose.inverse_reference_))
 		return false;
 	if (!stream.write_bool("hierarchical", whose.hierarchical_))
 		return false;
@@ -448,8 +449,8 @@ rx_result object_types_algorithm<relation_type>::deserialize_object_type(relatio
 {
 	if (!stream.start_object("def"))
 		return false;
-
-	if (!whose.inverse_reference_.deserialize_reference("inverse", stream))
+	
+	if (!stream.read_item_reference("inverse", whose.inverse_reference_))
 		return false;
 	if (!stream.read_bool("hierarchical", whose.hierarchical_))
 		return false;
@@ -512,9 +513,9 @@ rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_
 {
 	if (!stream.write_string("name", whose.name_))
 		return false;
-	if (!whose.relation_type_.serialize_reference("relation", stream))
+	if (!stream.write_item_reference("inverse", whose.relation_type_))
 		return false;
-	if (!whose.target_.serialize_reference("target", stream))
+	if (!stream.write_item_reference("inverse", whose.target_))
 		return false;
 	return true;
 }
@@ -523,9 +524,9 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 {
 	if (!stream.read_string("name", whose.name_))
 		return false;
-	if (!whose.relation_type_.deserialize_reference("relation", stream))
+	if (!stream.read_item_reference("target", whose.relation_type_))
 		return false;
-	if (!whose.target_.deserialize_reference("target", stream))
+	if (!stream.read_item_reference("target", whose.target_))
 		return false;
 	return true;
 }

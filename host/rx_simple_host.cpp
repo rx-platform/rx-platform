@@ -4,6 +4,7 @@
 *
 *  host\rx_simple_host.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -258,21 +259,11 @@ int simple_platform_host::deinitialize_platform ()
 
 rx_result simple_platform_host::set_simple_thread_security ()
 {
-	RX_ASSERT(!user_security_context_);
-	user_security_context_ = rx_create_reference<interactive::interactive_security_context>();
-	auto result = user_security_context_->login();
-	if(result)
-		result = user_security_context_->impersonate();
-	return result;
+	return true;// just use the host security context
 }
 
 rx_result simple_platform_host::remove_simple_thread_security ()
 {
-	if(user_security_context_)
-	{
-		user_security_context_->revert();
-		user_security_context_->logout();
-	}
 	return true;
 }
 
@@ -376,6 +367,9 @@ string_type simple_platform_host::get_host_name ()
 {
 	return RX_SIMPLE_HOST;
 }
+
+
+// Class host::simple::simple_security 
 
 
 // Class host::simple::rx_thread_synchronizer 

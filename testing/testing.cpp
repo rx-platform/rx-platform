@@ -48,7 +48,7 @@ namespace obsolite
 		my_periodic_job::smart_ptr job(rx::pointers::_create_new);
 		tm.append_job(job, &pool, 100, false);
 
-		rx_msleep(1000);
+		rx_ms_sleep(1000);
 
 
 		printf("Stopping\r\n");
@@ -138,7 +138,7 @@ protected:
 	virtual uint32_t handler()
 	{
 		printf("Usao\r\n");
-		rx_msleep(1500);
+		rx_ms_sleep(1500);
 		printf("Izasao\r\n");
 		return 0;
 	}
@@ -151,7 +151,7 @@ public:
 	void process()
 	{
 		printf("sleeping inside job\r\n");
-		rx_msleep(700);
+		rx_ms_sleep(700);
 		printf("sleep done\r\n");
 	}
 };
@@ -159,7 +159,7 @@ public:
 void testing(int i)
 {
 	printf("jbt_uaso sam!!!!\r\n");
-		rx_msleep(2000);
+	rx_ms_sleep(2000);
 	printf("jbt_izasao sam!!!!\r\n");
 }
 /*

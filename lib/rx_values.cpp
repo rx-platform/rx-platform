@@ -4,6 +4,7 @@
 *
 *  lib\rx_values.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -282,7 +283,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -1732,7 +1733,7 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
@@ -1820,7 +1821,7 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1851,7 +1852,7 @@ rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1878,7 +1879,7 @@ rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1909,7 +1910,7 @@ rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -4150,7 +4151,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

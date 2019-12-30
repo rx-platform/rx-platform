@@ -4,6 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_transport_base.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

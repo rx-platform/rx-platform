@@ -4,6 +4,7 @@
 *
 *  terminal\rx_console.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -212,8 +213,9 @@ void console_runtime::get_wellcome (string_type& wellcome)
 {
 	wellcome = g_console_welcome;
 	wellcome += ANSI_COLOR_BOLD ANSI_COLOR_GREEN ">>>> Running ";
-	wellcome += "Jbg nema jos";
-	wellcome += " Console...\r\n";
+	wellcome += get_console_terminal();
+	wellcome += "\r\n";
+	wellcome += "";
 	wellcome += RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
 }
 
@@ -302,9 +304,10 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(out_buffer.unsafe_ptr());
 
-		out << "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-		out << "Info: " << get_console_terminal() << "\r\n" ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Console: ";
-		out << "Jbg nema jos" << " Console\r\n";
+		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		out << "Version: " << get_console_terminal() << "\r\n";
+		fill_code_info(out, meta_info().get_full_path());
+		out << "\r\n";
 
 		ret = true;
 	}

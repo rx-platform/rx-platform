@@ -4,6 +4,7 @@
 *
 *  lib\rx_io.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -94,6 +95,21 @@ rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* add
 		else
 			return addr + " is not valid IP4 address";
 	}
+}
+
+string_type get_ip4_addr_string(const sockaddr_in* addr_struct)
+{
+	if (addr_struct->sin_family != AF_INET)
+		return "ERROR, wrong address type.";
+	char buff[INET_ADDRSTRLEN];
+	const char* addr = inet_ntop(AF_INET, &addr_struct->sin_addr, buff, sizeof(buff) / sizeof(buff[0]));
+	if (addr)
+	{
+		char buff_end[INET_ADDRSTRLEN+0x10];
+		sprintf(buff_end, "%s:%d", addr, (int)htons(addr_struct->sin_port));
+		return buff_end;
+	}
+	return "ERROR parsing IP4 address.";
 }
 
 // Class rx::io::dispatcher_subscriber 

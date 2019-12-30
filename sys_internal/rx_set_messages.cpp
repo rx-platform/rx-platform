@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_set_messages.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -67,7 +68,7 @@ rx_result delete_type_request::serialize (base_meta_writer& stream) const
 		if (!stream.write_byte("type", item_type))
 			return false;
 	}
-	auto result = reference.serialize_reference("target", stream);
+	auto result = stream.write_item_reference("target", reference);
 	if (!result)
 		return result;
 
@@ -94,7 +95,7 @@ rx_result delete_type_request::deserialize (base_meta_reader& stream)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
-	auto result = reference.deserialize_reference("target", stream);
+	auto result = stream.read_item_reference("target", reference);
 	if (!result)
 		return result;
 
@@ -763,7 +764,7 @@ rx_result delete_runtime_request::serialize (base_meta_writer& stream) const
 		if (!stream.write_byte("type", item_type))
 			return false;
 	}
-	auto result = reference.serialize_reference("target", stream);
+	auto result = stream.write_item_reference("target", reference);
 	if (!result)
 		return result;
 
@@ -790,7 +791,7 @@ rx_result delete_runtime_request::deserialize (base_meta_reader& stream)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
-	auto result = reference.deserialize_reference("target", stream);
+	auto result = stream.read_item_reference("target", reference);
 	if (!result)
 		return result;
 

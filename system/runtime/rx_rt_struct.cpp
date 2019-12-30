@@ -4,26 +4,27 @@
 *
 *  system\runtime\rx_rt_struct.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -61,7 +62,7 @@ template class runtime_data<
 	empty<event_data>, 0x00>;
 
 
-// Parameterized Class rx_platform::runtime::structure::runtime_data
+// Parameterized Class rx_platform::runtime::structure::runtime_data 
 
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
@@ -887,13 +888,13 @@ runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id)
 	return runtime_item::smart_ptr();
 }
 
-// Parameterized Class rx_platform::runtime::structure::empty
+// Parameterized Class rx_platform::runtime::structure::empty 
 
 
-// Parameterized Class rx_platform::runtime::structure::has
+// Parameterized Class rx_platform::runtime::structure::has 
 
 
-// Class rx_platform::runtime::structure::variable_data
+// Class rx_platform::runtime::structure::variable_data 
 
 string_type variable_data::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -990,7 +991,7 @@ rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::struct_data
+// Class rx_platform::runtime::structure::struct_data 
 
 string_type struct_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -1049,7 +1050,7 @@ rx_result struct_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::mapper_data
+// Class rx_platform::runtime::structure::mapper_data 
 
 string_type mapper_data::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
@@ -1101,7 +1102,7 @@ rx_result mapper_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::source_data
+// Class rx_platform::runtime::structure::source_data 
 
 string_type source_data::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
@@ -1153,7 +1154,7 @@ rx_result source_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::event_data
+// Class rx_platform::runtime::structure::event_data 
 
 string_type event_data::type_name = RX_CPP_EVENT_TYPE_NAME;
 
@@ -1205,7 +1206,7 @@ rx_result event_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::filter_data
+// Class rx_platform::runtime::structure::filter_data 
 
 string_type filter_data::type_name = RX_CPP_FILTER_TYPE_NAME;
 
@@ -1257,7 +1258,7 @@ rx_result filter_data::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::structure::const_value_data
+// Class rx_platform::runtime::structure::const_value_data 
 
 string_type const_value_data::type_name = RX_CONST_VALUE_TYPE_NAME;
 
@@ -1297,7 +1298,7 @@ rx_result const_value_data::set_value (rx_simple_value&& val)
 }
 
 
-// Class rx_platform::runtime::structure::value_data
+// Class rx_platform::runtime::structure::value_data 
 
 string_type value_data::type_name = RX_VALUE_TYPE_NAME;
 
@@ -1350,7 +1351,7 @@ void value_data::simple_set_value (rx_simple_value&& val)
 }
 
 
-// Class rx_platform::runtime::structure::hosting_object_data
+// Class rx_platform::runtime::structure::hosting_object_data 
 
 
 rx_value hosting_object_data::adapt_value (const rx_value& from) const
@@ -1363,7 +1364,7 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 }
 
 
-// Class rx_platform::runtime::structure::runtime_item
+// Class rx_platform::runtime::structure::runtime_item 
 
 
 const runtime_item* runtime_item::get_child_item (const string_type& path) const
@@ -1385,7 +1386,7 @@ const runtime_item* runtime_item::get_child_item (const string_type& path) const
 }
 
 
-// Class rx_platform::runtime::structure::init_context
+// Class rx_platform::runtime::structure::init_context 
 
 
 init_context init_context::create_initialization_context (runtime_holder* whose)
@@ -1397,7 +1398,7 @@ init_context init_context::create_initialization_context (runtime_holder* whose)
 }
 
 
-// Class rx_platform::runtime::structure::write_context
+// Class rx_platform::runtime::structure::write_context 
 
 
 write_context write_context::create_write_context (runtime_holder* whose)

@@ -4,6 +4,7 @@
 *
 *  system\server\rx_inf.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -64,6 +65,8 @@ server_rt::~server_rt()
 
 rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
 {
+	// register protocol constructors
+	
 	if (data.io_pool_size > 0)
 	{
 		io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO, IO_POOL_ID);

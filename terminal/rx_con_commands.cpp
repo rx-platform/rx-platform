@@ -4,6 +4,7 @@
 *
 *  terminal\rx_con_commands.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -375,7 +376,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 		CONSOLE_LOG_TRACE("log",0,buffer);
 		out << buffer << "\r\n";
 		spans[i] = ms;
-		rx_msleep(10);
+		rx_ms_sleep(10);
 	}
 
 	double val = 0.0;

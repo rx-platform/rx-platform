@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_obj_types.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,20 +35,20 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_meta_algorithm
-#include "system/meta/rx_meta_algorithm.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_relations.h"
 using rx_platform::meta::construct_context;
@@ -92,15 +93,15 @@ class relation_attribute
       }
 
 
-      item_reference get_target () const
+      rx_item_reference get_relation_type () const
       {
-        return target_;
+        return relation_type_;
       }
 
 
-      item_reference get_relation_type () const
+      rx_item_reference get_target () const
       {
-        return relation_type_;
+        return target_;
       }
 
 
@@ -112,9 +113,9 @@ class relation_attribute
 
       string_type name_;
 
-      item_reference target_;
+      rx_item_reference relation_type_;
 
-      item_reference relation_type_;
+      rx_item_reference target_;
 
 
     friend class meta_algorithm::relation_blocks_algorithm;
@@ -602,7 +603,7 @@ public:
       }
 
 
-      item_reference get_inverse_reference () const
+      rx_item_reference get_inverse_reference () const
       {
         return inverse_reference_;
       }
@@ -628,7 +629,7 @@ public:
       relation_data_type complex_data_;
 
 
-      item_reference inverse_reference_;
+      rx_item_reference inverse_reference_;
 
       bool hierarchical_;
 

@@ -4,6 +4,7 @@
 *
 *  host\rx_anonymus_pipes.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -188,7 +189,11 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 		auto res = rx_move_packet_up(this, nullptr, &buffer);
 		if (res != RX_PROTOCOL_OK)
 		{
-			std::cout << "Error code " << (int)res << " returned by stack!\r\n";
+			std::ostringstream ss;
+			ss << "Error code " << (int)res << "(" << rx_protocol_error_message(res) << ") returned by stack!\r\n";
+			std::cout << ss.str();
+
+			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
 			break;
 		}
 	}

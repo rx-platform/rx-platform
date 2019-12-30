@@ -4,6 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -90,7 +91,6 @@ class win32_console_host : public host::interactive::interactive_console_host
 	  {
 		  return std::tuple_cat(before, win32_console_types());
 	  }
-
   protected:
 
       rx_result fill_host_directories (rx_host_directories& data);

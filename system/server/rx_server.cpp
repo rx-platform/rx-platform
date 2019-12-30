@@ -4,6 +4,7 @@
 *
 *  system\server\rx_server.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -302,6 +303,5 @@ template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& 
 template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RTypePtr()> f);
 template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RTypePtr()> f);
 template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RTypePtr()> f);
-
 } // namespace rx_platform
 

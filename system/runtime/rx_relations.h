@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_relations.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,10 +33,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {

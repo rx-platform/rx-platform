@@ -4,26 +4,27 @@
 *
 *  lib\rx_job.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -256,7 +257,7 @@ public:
 		(f_)(arg_);
 	}
 
-private: 
+private:
 	std::function<void(argT)> f_;
 
 	argT arg_;
@@ -423,6 +424,9 @@ class result_lambda_job : public job
 {
 	DECLARE_REFERENCE_PTR(result_lambda_job);
 
+    typedef typename std::function<void(rx_result_with<argT>)> callback_func_t;
+    typedef rx_result_with<argT> result_t;
+
   public:
       result_lambda_job (std::function<void(rx_result_with<argT>&&)> f, rx_result_with<argT>&& arg, refT ref)
             : f_(f)
@@ -443,9 +447,9 @@ class result_lambda_job : public job
   private:
 
 
-      std::function<void(rx_result_with<argT>&&)> f_;
+      callback_func_t f_;
 
-      rx_result_with<argT> argument_;
+      result_t argument_;
 
       refT ref_;
 
@@ -453,16 +457,16 @@ class result_lambda_job : public job
 };
 
 
-// Parameterized Class rx::jobs::lambda_job 
+// Parameterized Class rx::jobs::lambda_job
 
 
-// Parameterized Class rx::jobs::lambda_period_job 
+// Parameterized Class rx::jobs::lambda_period_job
 
 
-// Parameterized Class rx::jobs::lambda_timer_job 
+// Parameterized Class rx::jobs::lambda_timer_job
 
 
-// Parameterized Class rx::jobs::result_lambda_job 
+// Parameterized Class rx::jobs::result_lambda_job
 
 
 } // namespace jobs
@@ -471,4 +475,3 @@ class result_lambda_job : public job
 
 
 #endif
-

@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_def_blocks.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -326,7 +327,7 @@ rx_result complex_data_type::deserialize_complex_definition (base_meta_reader& s
 
 rx_result complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
 {
-	auto ret = check_name(name, (static_cast<int>(variables_.size() | structs_mask)));
+	auto ret = check_name(name, (static_cast<int>(structs_.size() | structs_mask)));
 	if (ret)
 	{
 		structs_.emplace_back(struct_attribute(name, id));
@@ -1119,6 +1120,4 @@ bool variable_data_type::check_type (type_check_context& ctx)
 } // namespace def_blocks
 } // namespace meta
 } // namespace rx_platform
-
-
 

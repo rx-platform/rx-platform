@@ -4,6 +4,7 @@
 *
 *  lib\rx_ser_lib.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -127,6 +128,8 @@ public:
 
       virtual bool is_string_based () const = 0;
 
+      virtual bool write_item_reference (const char* name, const rx_item_reference& ref) = 0;
+
 
       const size_t get_version () const
       {
@@ -212,6 +215,8 @@ class base_meta_reader
       virtual bool read_init_values (const char* name, data::runtime_values_data& values) = 0;
 
       virtual bool is_string_based () const = 0;
+
+      virtual bool read_item_reference (const char* name, rx_item_reference& ref) = 0;
 
 
       const uint32_t get_version () const

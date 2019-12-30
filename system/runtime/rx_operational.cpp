@@ -4,6 +4,7 @@
 *
 *  system\runtime\rx_operational.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -386,6 +387,11 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 	default:
 		return "Unsupported type!.";
 	}
+}
+
+rx_result binded_tags::pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 

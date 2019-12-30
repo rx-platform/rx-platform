@@ -4,6 +4,7 @@
 *
 *  testing\rx_test_io.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +34,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_io
+#include "lib/rx_io.h"
 
 
 

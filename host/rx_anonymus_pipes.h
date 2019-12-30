@@ -4,6 +4,7 @@
 *
 *  host\rx_anonymus_pipes.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,12 +36,12 @@
 
 // dummy
 #include "dummy.h"
-// rx_thread
-#include "lib/rx_thread.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 namespace host {
 namespace pipe {

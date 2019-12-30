@@ -4,6 +4,7 @@
 *
 *  win32_hosts\rx_win32_simple.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -84,16 +85,3 @@ rx_result win32_simple_host::fill_host_directories (rx_host_directories& data)
 
 } // namespace win32
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return string_array({
-			get_config_directory(),
-			get_full_path("")
-		});
-
-	return get_manual_directory();
-
-#endif

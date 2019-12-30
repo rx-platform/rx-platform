@@ -4,26 +4,27 @@
 *
 *  system\server\rx_server.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -41,8 +42,6 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -51,6 +50,8 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace interfaces {
 namespace io_endpoints {
@@ -102,7 +103,7 @@ enum class rx_platform_status
 
 
 
-class rx_gate
+class rx_gate 
 {
 	typedef std::map<string_type,prog::server_script_host*> scripts_type;
 
@@ -211,7 +212,6 @@ class rx_gate
 
 	  template <class typeT>
 	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
-
   protected:
 
       void interface_bind ();

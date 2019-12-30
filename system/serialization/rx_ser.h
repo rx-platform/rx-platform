@@ -4,6 +4,7 @@
 *
 *  system\serialization\rx_ser.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -120,6 +121,8 @@ class json_reader : public rx::base_meta_reader
 
       bool is_string_based () const;
 
+      bool read_item_reference (const char* name, rx_item_reference& ref);
+
 
   protected:
 
@@ -216,6 +219,8 @@ class json_writer : public rx::base_meta_writer
 
       bool is_string_based () const;
 
+      bool write_item_reference (const char* name, const rx_item_reference& ref);
+
 
   protected:
 
@@ -308,6 +313,8 @@ class binary_reader : public rx::base_meta_reader
 
       bool is_string_based () const;
 
+      bool read_item_reference (const char* name, rx_item_reference& ref);
+
 
   protected:
 
@@ -395,6 +402,8 @@ class binary_writer : public rx::base_meta_writer
       bool write_init_values (const char* name, const data::runtime_values_data& values);
 
       bool is_string_based () const;
+
+      bool write_item_reference (const char* name, const rx_item_reference& ref);
 
 		bool is_string()
 		{
@@ -724,6 +733,12 @@ bool binary_reader<allocT,swap_bytes>::is_string_based () const
 
 }
 
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_item_reference (const char* name, rx_item_reference& ref)
+{
+    return false;
+}
+
 
 // Parameterized Class rx_platform::serialization::binary_writer 
 
@@ -956,6 +971,12 @@ bool binary_writer<allocT,swap_bytes>::is_string_based () const
 {
   return false;
 
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::write_item_reference (const char* name, const rx_item_reference& ref)
+{
+    return false;
 }
 
 

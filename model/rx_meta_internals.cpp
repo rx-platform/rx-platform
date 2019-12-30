@@ -4,26 +4,27 @@
 *
 *  model\rx_meta_internals.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -40,7 +41,7 @@ using namespace rx;
 
 namespace model {
 
-// Class model::platform_types_manager
+// Class model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 	: worker_("config", RX_DOMAIN_META)
@@ -112,7 +113,7 @@ void platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data
+// Class model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -286,7 +287,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::types_repository
+// Parameterized Class model::types_repository 
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -707,7 +708,7 @@ rx_result types_repository<typeT>::type_exists (rx_node_id id) const
 }
 
 
-// Class model::inheritance_hash
+// Class model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -876,7 +877,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash
+// Class model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -943,7 +944,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_types_repository
+// Parameterized Class model::simple_types_repository 
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1174,7 +1175,7 @@ rx_result simple_types_repository<typeT>::update_type (typename simple_types_rep
 }
 
 
-// Class model::types_resolver
+// Class model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1222,7 +1223,7 @@ rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& dat
 }
 
 
-// Class model::relations_type_repository
+// Class model::relations_type_repository 
 
 relations_type_repository::relations_type_repository()
 {

@@ -4,6 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_console.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

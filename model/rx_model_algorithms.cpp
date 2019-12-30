@@ -4,26 +4,27 @@
 *
 *  model\rx_model_algorithms.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -224,7 +225,7 @@ namespace
 {
 
 
-rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns::rx_directory_resolver& directories, meta_data& info, rx_item_type& ret_type)
+rx_result_with<rx_node_id> resolve_some_reference(const rx_item_reference& ref, ns::rx_directory_resolver& directories, meta_data& info, rx_item_type& ret_type)
 {
 	rx_node_id ret;
 	if (ref.is_node_id())
@@ -264,16 +265,16 @@ rx_result_with<rx_node_id> resolve_some_reference(const item_reference& ref, ns:
 
 
 template<class typeCache>
-rx_result delete_some_type(typeCache& cache, const item_reference& item_reference, rx_directory_ptr dir, rx_transaction_type& transaction)
+rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_reference, rx_directory_ptr dir, rx_transaction_type& transaction)
 {
 	rx_node_id id;
 	string_type name;
 	rx_namespace_item item;
 	if (!dir)
 		dir = rx_gate::instance().get_root_directory();
-	if (!item_reference.is_node_id())
+	if (!rx_item_reference.is_node_id())
 	{
-		name = item_reference.get_path();
+		name = rx_item_reference.get_path();
 		item = dir->get_sub_item(name);
 		if (!item)
 		{// error, item does not exists
@@ -287,11 +288,11 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 	}
 	else
 	{
-		if(item_reference.is_null())
+		if(rx_item_reference.is_null())
 		{// error, item does not have id
 			return "Invalid " RX_NULL_ITEM_NAME " id.";
 		}
-		id = item_reference.get_node_id();
+		id = rx_item_reference.get_node_id();
 		meta_data item_meta;
 		platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
 
@@ -348,7 +349,7 @@ rx_result delete_some_type(typeCache& cache, const item_reference& item_referenc
 	return true;
 }
 template<class typeCache, class typeType>
-rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& name, const item_reference& base_reference, typeType prototype, rx_directory_ptr dir, namespace_item_attributes attributes, rx_transaction_type& transaction)
+rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& name, const rx_item_reference& base_reference, typeType prototype, rx_directory_ptr dir, namespace_item_attributes attributes, rx_transaction_type& transaction)
 {
 	if (!prototype)
 		prototype = typeType(pointers::_create_new);
@@ -514,16 +515,16 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_dir
 	return prototype;
 }
 template<class typeT>
-rx_result delete_some_runtime(const item_reference& item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	rx_node_id id;
 	string_type name;
 	rx_namespace_item item;
 	if (!dir)
 		dir = rx_gate::instance().get_root_directory();
-	if (!item_reference.is_node_id())
+	if (!rx_item_reference.is_node_id())
 	{
-		name = item_reference.get_path();
+		name = rx_item_reference.get_path();
 		item = dir->get_sub_item(name);
 		if (!item)
 		{// error, item does not exists
@@ -537,11 +538,11 @@ rx_result delete_some_runtime(const item_reference& item_reference, rx_directory
 	}
 	else
 	{
-		if (item_reference.is_null())
+		if (rx_item_reference.is_null())
 		{// error, item does not have id
 			return "Invalid " RX_NULL_ITEM_NAME " id.";
 		}
-		id = item_reference.get_node_id();
+		id = rx_item_reference.get_node_id();
 		meta_data item_meta;
 		platform_types_manager::instance().get_types_resolver().get_item_data(id, item_meta);
 
@@ -731,7 +732,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 
 }
 
-rx_result_with<rx_node_id> resolve_reference(const item_reference& ref, ns::rx_directory_resolver& directories)
+rx_result_with<rx_node_id> resolve_reference(const rx_item_reference& ref, ns::rx_directory_resolver& directories)
 {
 	rx_item_type type;
 	meta_data temp;
@@ -740,7 +741,7 @@ rx_result_with<rx_node_id> resolve_reference(const item_reference& ref, ns::rx_d
 
 
 template<typename typeT>
-rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+rx_result_with<rx_node_id> resolve_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
 {
 	rx_item_type type;
@@ -763,17 +764,17 @@ rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
 	return result;
 }
 
-template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<object_type>);
-template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<port_type>);
-template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<domain_type>);
-template rx_result_with<rx_node_id> resolve_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
-rx_result_with<rx_node_id> resolve_relation_reference(const item_reference& ref
+rx_result_with<rx_node_id> resolve_relation_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories)
 {
 	rx_item_type type;
@@ -797,7 +798,7 @@ rx_result_with<rx_node_id> resolve_relation_reference(const item_reference& ref
 }
 
 template<typename typeT>
-rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
 {
 	rx_item_type type;
@@ -820,21 +821,21 @@ rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& r
 	return result;
 }
 
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<struct_type>);
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<variable_type>);
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<source_type>);
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<filter_type>);
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<event_type>);
-template rx_result_with<rx_node_id> resolve_simple_type_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<mapper_type>);
 
 template<typename typeT>
-rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<typeT>)
 {
 	rx_item_type type;
@@ -857,13 +858,13 @@ rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
 	return result;
 }
 
-template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<object_type>);
-template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<domain_type>);
-template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<port_type>);
-template rx_result_with<rx_node_id> resolve_runtime_reference(const item_reference& ref
+template rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& ref
 	, ns::rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
@@ -918,6 +919,7 @@ rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id)
 			return "Can't retreive details about "s + rx_item_type_name(type);
 		}
 	}
+	return "This should not happend but compiler is disturbed by this \"no return\"...?";
 }
 
 std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const rx_node_ids& ids)
@@ -935,7 +937,7 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm
+// Parameterized Class model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -968,7 +970,7 @@ type_check_context types_model_algorithm<typeT>::check_type_sync (const string_t
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::create_type (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void types_model_algorithm<typeT>::create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -978,7 +980,7 @@ void types_model_algorithm<typeT>::create_type (const string_type& name, const i
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_type_sync (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
+rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_type_sync (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
 {
 	rx_transaction_type transaction;
 	auto result = create_some_type(platform_types_manager::instance().get_type_repository<typeT>()
@@ -992,7 +994,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+void types_model_algorithm<typeT>::delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result(void)> func = [=]() {
 		return delete_type_sync(item_reference, dir);
@@ -1001,7 +1003,7 @@ void types_model_algorithm<typeT>::delete_type (const item_reference& item_refer
 }
 
 template <class typeT>
-rx_result types_model_algorithm<typeT>::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result types_model_algorithm<typeT>::delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_transaction_type transaction;
 	auto result = delete_some_type(platform_types_manager::instance().get_type_repository<typeT>(), item_reference, dir, transaction);
@@ -1035,7 +1037,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_t
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::get_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void types_model_algorithm<typeT>::get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1045,7 +1047,7 @@ void types_model_algorithm<typeT>::get_type (const item_reference& item_referenc
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_node_id id;
 	if (item_reference.is_node_id())
@@ -1068,7 +1070,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm
+// Parameterized Class model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -1101,7 +1103,7 @@ type_check_context simple_types_model_algorithm<typeT>::check_type_sync (const s
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::create_type (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void simple_types_model_algorithm<typeT>::create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1111,7 +1113,7 @@ void simple_types_model_algorithm<typeT>::create_type (const string_type& name, 
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::create_type_sync (const string_type& name, const item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
+rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::create_type_sync (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
 {
 	rx_transaction_type transaction;
 	auto result = create_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>()
@@ -1125,7 +1127,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+void simple_types_model_algorithm<typeT>::delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result(void)> func = [=]() {
 		return delete_type_sync(item_reference, dir);
@@ -1134,7 +1136,7 @@ void simple_types_model_algorithm<typeT>::delete_type (const item_reference& ite
 }
 
 template <class typeT>
-rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_transaction_type transaction;
 	auto result = delete_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), item_reference, dir, transaction);
@@ -1168,7 +1170,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::u
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::get_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void simple_types_model_algorithm<typeT>::get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1178,7 +1180,7 @@ void simple_types_model_algorithm<typeT>::get_type (const item_reference& item_r
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::get_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_node_id id;
 	if (item_reference.is_node_id())
@@ -1201,11 +1203,11 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm
+// Parameterized Class model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::delete_runtime (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+void runtime_model_algorithm<typeT>::delete_runtime (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	auto result_target = rx_thread_context();
 	std::function<void(rx_thread_handle_t, rx_reference_ptr)> func= [=](rx_thread_handle_t result_target, rx_reference_ptr ref)
@@ -1228,7 +1230,7 @@ void runtime_model_algorithm<typeT>::delete_runtime (const item_reference& item_
 }
 
 template <class typeT>
-rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const item_reference& item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const rx_item_reference& item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	auto result = delete_some_runtime<typeT>(item_reference, dir, result_target, callback, ref);
 	return result;
@@ -1288,7 +1290,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_runtime_implicit (const string_type& name, const item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
+void runtime_model_algorithm<typeT>::create_runtime_implicit (const string_type& name, const rx_item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result_with<typename typeT::RTypePtr>()> func = [name, base_reference, attributes, init_data, dir, ref, instance_data]() mutable {
 		return create_runtime_implicit_sync(name, base_reference, attributes, init_data, std::move(instance_data), dir, ref);
@@ -1298,7 +1300,7 @@ void runtime_model_algorithm<typeT>::create_runtime_implicit (const string_type&
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_implicit_sync (const string_type& name, const item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_implicit_sync (const string_type& name, const rx_item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref)
 {
 	rx_transaction_type transaction;
 	meta_data base_meta;
@@ -1473,7 +1475,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::get_runtime (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
+void runtime_model_algorithm<typeT>::get_runtime (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename typeT::RTypePtr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1483,12 +1485,16 @@ void runtime_model_algorithm<typeT>::get_runtime (const item_reference& item_ref
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_runtime_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_runtime_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_node_id id;
 	if (item_reference.is_node_id())
 	{
 		id = item_reference.get_node_id();
+		if (!id)
+		{
+			return RX_NULL_ITEM_NAME " is invalid argument";
+		}
 	}
 	else
 	{
@@ -1506,7 +1512,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 
-// Class model::algorithms::relation_types_algorithm
+// Class model::algorithms::relation_types_algorithm 
 
 
 void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
@@ -1536,7 +1542,7 @@ type_check_context relation_types_algorithm::check_type_sync (const string_type&
 	return ret;
 }
 
-void relation_types_algorithm::create_type (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void relation_types_algorithm::create_type (const string_type& name, const rx_item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<relation_type::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1545,7 +1551,7 @@ void relation_types_algorithm::create_type (const string_type& name, const item_
 	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
-rx_result_with<relation_type::smart_ptr> relation_types_algorithm::create_type_sync (const string_type& name, const item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::create_type_sync (const string_type& name, const rx_item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes)
 {
 	rx_transaction_type transaction;
 	auto result = create_some_type(platform_types_manager::instance().get_relations_repository()
@@ -1558,7 +1564,7 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::create_type_s
 	return result;
 }
 
-void relation_types_algorithm::delete_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
+void relation_types_algorithm::delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref)
 {
 	std::function<rx_result(void)> func = [=]() {
 		return delete_type_sync(item_reference, dir);
@@ -1566,7 +1572,7 @@ void relation_types_algorithm::delete_type (const item_reference& item_reference
 	rx_do_with_callback<rx_result, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
-rx_result relation_types_algorithm::delete_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result relation_types_algorithm::delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_transaction_type transaction;
 	auto result = delete_some_type(platform_types_manager::instance().get_relations_repository(), item_reference, dir, transaction);
@@ -1597,7 +1603,7 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::update_type_s
 	return result;
 }
 
-void relation_types_algorithm::get_type (const item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
+void relation_types_algorithm::get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref)
 {
 	using result_t = rx_result_with<typename relation_type::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
@@ -1606,7 +1612,7 @@ void relation_types_algorithm::get_type (const item_reference& item_reference, r
 	rx_do_with_callback<result_t, rx_reference_ptr>(func, RX_DOMAIN_META, callback, ref);
 }
 
-rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync (const item_reference& item_reference, rx_directory_ptr dir)
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir)
 {
 	rx_node_id id;
 	if (item_reference.is_node_id())

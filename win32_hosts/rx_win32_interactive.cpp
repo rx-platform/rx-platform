@@ -4,6 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -282,7 +283,8 @@ win32_console_host::win32_console_host (hosting::rx_host_storages& storage)
         in_handle_(NULL),
         supports_ansi_(false),
         default_attribute_(0),
-        no_ansi_(false)
+        no_ansi_(false),
+        use_ansi_(false)
 	, host::interactive::interactive_console_host(storage)
 {
 }

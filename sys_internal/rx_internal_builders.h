@@ -4,6 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -89,7 +90,7 @@ class rx_platform_builder
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_other_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 
-      static void register_system_constructors ();
+      static rx_result register_system_constructors ();
 
       static rx_result buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data);
 

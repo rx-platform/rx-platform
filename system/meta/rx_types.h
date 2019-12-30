@@ -4,6 +4,7 @@
 *
 *  system\meta\rx_types.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,14 +33,14 @@
 
 
 
-// rx_meta_algorithm
-#include "system/meta/rx_meta_algorithm.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -495,12 +496,5 @@ typedef pointers::reference<basic_types::filter_type> filter_type_ptr;
 } // namespace meta
 } // namespace server rx_platform
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
 
 #endif

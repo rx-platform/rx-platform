@@ -4,6 +4,7 @@
 *
 *  host\rx_pipe.cpp
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -58,6 +59,7 @@ rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
 	, hosting::rx_platform_host(storage)
 	, stdout_log_(rx_create_reference< rx_pipe_stdout_log_subscriber>())
 {
+	//opcua_bin_init_client_transport(&transport_, 0x1000, 10);
 	stdout_log_->show_traces = false;
 }
 
@@ -394,7 +396,19 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 						std::cout << "\r\nStartup log:\r\n============================\r\n";
 					stdout_log_->release_log(dump_start_log_);
 
-					std::cout << "\r\nEnternig loop....\r\n============================\r\n";
+					auto user = security::active_security()->get_full_name();
+
+					std::cout << "\r\nEnternig loop as "
+						<< user
+						<< "\r\n.";
+					for (auto i = 0; i < 29; i++)
+					{
+						std::cout << ".";
+						rx_ms_sleep(15);
+					}
+					std::cout << ".\r\n";
+
+					std::cout << ">";
 
 
 					pipe_port_->receive_loop();

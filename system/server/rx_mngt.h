@@ -4,6 +4,7 @@
 *
 *  system\server\rx_mngt.h
 *
+*  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,14 +34,20 @@
 
 #include "lib/rx_lib.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_ns
-#include "system/server/rx_ns.h"
+// rx_platform_item
+#include "system/server/rx_platform_item.h"
 // rx_inf
 #include "system/server/rx_inf.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+
+namespace terminal {
+namespace commands {
+class server_command;
+
+} // namespace commands
+} // namespace terminal
+
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_types.h"
@@ -49,7 +56,6 @@
 namespace rx_platform {
 
 namespace mngt {
-
 
 
 
@@ -93,7 +99,9 @@ class manager_initialization_context
 class manager_initialization_context;
 struct management_data_t
 {
+    string_type telnet_addr = "127.0.0.1";
 	uint16_t telnet_port = 0;
+    string_type logs_directory;
 	bool test_log = false;
 	string_type startup_script;
 	// internal stuff bellow do not change!!!
