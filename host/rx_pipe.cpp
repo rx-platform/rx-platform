@@ -392,24 +392,19 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 							std::cout << "Test Reference: " << test_ref << "\r\n";
 						}
 					}
+					std::cout << "\r\n";
+					stdout_log_->release_log(dump_start_log_);
 					if(dump_start_log_)
 						std::cout << "\r\nStartup log:\r\n============================\r\n";
-					stdout_log_->release_log(dump_start_log_);
+
+
+					local_pipe_security_context::smart_ptr sec_ctx(pointers::_create_new);
+					rx_result login_result = sec_ctx->login();
+
+					security::security_auto_context dummy(sec_ctx);
 
 					auto user = security::active_security()->get_full_name();
-
-					std::cout << "\r\nEnternig loop as "
-						<< user
-						<< "\r\n.";
-					for (auto i = 0; i < 29; i++)
-					{
-						std::cout << ".";
-						rx_ms_sleep(15);
-					}
-					std::cout << ".\r\n";
-
-					std::cout << ">";
-
+								
 
 					pipe_port_->receive_loop();
 

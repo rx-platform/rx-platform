@@ -837,6 +837,20 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 }
 
+bool json_reader::read_value (const char* name, rx_simple_value& val)
+{
+	if (!start_object(name))
+		return false;
+
+	if (!val.deserialize(*this))
+		return false;
+
+	if (!end_object())
+		return false;
+
+	return true;
+}
+
 
 // Class rx_platform::serialization::json_writer 
 
@@ -1277,6 +1291,20 @@ bool json_writer::write_item_reference (const char* name, const rx_item_referenc
 	}
 	if (!end_object())
 		return false;
+	return true;
+}
+
+bool json_writer::write_value (const char* name, const rx_simple_value& val)
+{
+	if (!start_object(name))
+		return false;
+
+	if (!val.serialize(*this))
+		return false;
+
+	if (!end_object())
+		return false;
+
 	return true;
 }
 

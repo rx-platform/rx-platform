@@ -333,6 +333,23 @@ rx_result write_items_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
 		return "error writing subscription id";
+	if (!stream.write_uint("trans_id", transaction_id))
+		return "error writing transaction id";
+	if (!stream.start_array("values", values.size()))
+		return "Unable to start values array";
+	for (const auto& one : values)
+	{
+		if (!stream.start_object("item"))
+			return "Unable to start item";
+		if (!stream.write_uint("handle", one.first))
+			return "error writing handle for item";
+		if (!stream.write_value("handle", one.second))
+			return "error writing value for item";
+		if (!stream.end_object())
+			return "Unable to end item";
+	}
+	if (!stream.end_array())
+		return "Unable to end items array";
 	return true;
 }
 
@@ -342,12 +359,51 @@ rx_result write_items_request::deserialize (base_meta_reader& stream)
 	if (!stream.read_uuid("id", temp))
 		return "error reading subscription id";
 	subscription_id = temp;
+	if (!stream.read_uint("trans_id", transaction_id))
+		return "error reading transaction id";
+	if (!stream.start_array("values"))
+		return "Unable to start values array";
+	while (!stream.array_end())
+	{
+		std::pair<runtime_handle_t, rx_simple_value> one;
+		if (!stream.start_object("item"))
+			return "Unable to start item";
+		if (!stream.read_uint("handle", one.first))
+			return "error reading handle for item";
+		if (!stream.read_value("value", one.second))
+			return "error reading value for item";
+		if (!stream.end_object())
+			return "Unable to end item";
+		values.emplace_back(one);
+	}
 	return true;
 }
 
 message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	if (values.empty())
+	{
+		return std::make_unique<error_message>("Nothing to do!"s, 19, request_id);
+	}
+	std::vector<rx_result> results;
+	results.reserve(values.size());
+	auto result = port->write_items(subscription_id, transaction_id, std::move(values), results);
+	if (result)
+	{
+		auto response = std::make_unique<write_items_response>();
+		response->subscription_id = subscription_id;
+		response->results.reserve(results.size());
+		for (auto& one : results)
+		{
+			response->results.emplace_back(std::move(one));
+		}
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
 }
 
 const string_type& write_items_request::get_type_name ()
@@ -686,15 +742,22 @@ rx_result add_item_result_data::deserialize (base_meta_reader& stream)
 
 item_result_data::item_result_data (rx_result&& result)
 {
-	error_code = 98;
-	bool first = true;
-	for (const auto& one : result.errors())
+	if (result)
 	{
-		if (first)
-			first = false;
-		else
-			error_text += ", ";
-		error_text += one;
+		error_code = 0;
+	}
+	else
+	{
+		error_code = 98;
+		bool first = true;
+		for (const auto& one : result.errors())
+		{
+			if (first)
+				first = false;
+			else
+				error_text += ", ";
+			error_text += one;
+		}
 	}
 }
 

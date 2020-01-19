@@ -188,41 +188,6 @@ template rx_result rx_list_runtime(
 
 
 
-rx_result rx_list_runtime_from_path(
-	const string_type& path // item's path
-	, const string_type& pattern // search pattern
-	, std::function<void(rx_result_with<runtime_browse_result>&&)> callback
-	, rx_context ctx)
-{
-	rx_namespace_item item;
-	size_t idx = path.rfind(RX_DIR_OBJECT_DELIMETER);
-	if (idx == string_type::npos)
-	{
-		item = ctx.safe_directory()->get_sub_item(path);
-	}
-	else
-	{
-		item = ctx.safe_directory()->get_sub_item(path.substr(idx+1));
-	}
-	if (!item)
-		return "Runtime not found";
-
-	auto result = model::algorithms::do_with_runtime_item<runtime_browse_result>(item.get_meta().get_id(), [=](rx_result_with<platform_item_ptr>&& item)
-		{
-			runtime_browse_result ret_val;
-			if (item)
-			{
-				auto result = item.value()->browse("", path, pattern, ret_val.items);
-			}
-			return ret_val;
-		},
-		[](runtime_browse_result result)
-		{
-		}, ctx);
-	return result;
-}
-
-
 rx_result rx_query_model(std::vector<meta::query_ptr> queries
 	, std::function<void(rx_result_with<query_result>&&)> callback
 	, rx_context ctx)

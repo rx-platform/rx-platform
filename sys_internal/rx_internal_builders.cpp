@@ -614,6 +614,7 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
 	what->complex_data().register_simple_value_static("LastScanTime", true, 0.0);
+	what->complex_data().register_simple_value_static("MaxScanTime", true, 0.0);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 template<class T>
@@ -625,7 +626,7 @@ void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_refer
 template<class T>
 void basic_types_builder::build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what)
 {
-	what->complex_data().register_simple_value_static("CPU", true, -1);
+	what->complex_data().register_const_value_static("CPU", -1);
 	build_basic_object_type(dir, what);
 }
 template<class T>

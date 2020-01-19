@@ -33,14 +33,14 @@
 
 
 
-// rx_platform_item
-#include "system/server/rx_platform_item.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_platform_item
+#include "system/server/rx_platform_item.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -204,15 +204,17 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       string_type get_definition_as_json () const;
 
-      rx_platform_item::smart_ptr&& clone () const;
+      rx_platform_item::smart_ptr clone () const;
 
       rx_thread_handle_t get_executer () const;
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -262,15 +264,17 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       string_type get_definition_as_json () const;
 
-      rx_platform_item::smart_ptr&& clone () const;
+      rx_platform_item::smart_ptr clone () const;
 
       rx_thread_handle_t get_executer () const;
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:
@@ -346,15 +350,17 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       string_type get_definition_as_json () const;
 
-      rx_platform_item::smart_ptr&& clone () const;
+      rx_platform_item::smart_ptr clone () const;
 
       rx_thread_handle_t get_executer () const;
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:

@@ -240,7 +240,16 @@ class write_context
 
   public:
 
-      static write_context create_write_context (runtime_holder* whose);
+      static write_context create_write_context (runtime_holder* whose, bool internal_write);
+
+      static write_context create_write_context (const structure::hosting_object_data& state, bool internal_write);
+
+
+      bool is_internal () const
+      {
+        return internal_;
+      }
+
 
 
       hosting_object_data object_data;
@@ -252,6 +261,9 @@ class write_context
   protected:
 
   private:
+
+
+      bool internal_;
 
 
 };
@@ -308,13 +320,15 @@ class value_data
 
       rx_simple_value simple_get_value () const;
 
-      void simple_set_value (rx_simple_value&& val);
+      rx_result simple_set_value (rx_simple_value&& val);
 
 
       rx::values::rx_timed_value value;
 
 
       static string_type type_name;
+
+      bool read_only;
 
 
   protected:

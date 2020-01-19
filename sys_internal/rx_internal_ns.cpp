@@ -217,15 +217,15 @@ rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, cons
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result_with<runtime_handle_t> > rx_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
 {
-	return impl_->connect_items(paths, callback, monitor, ctx);
+	return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
-	return impl_->read_items(items, monitor, ctx);
+	return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -249,15 +249,21 @@ string_type rx_item_implementation<TImpl>::get_definition_as_json () const
 }
 
 template <class TImpl>
-rx_platform_item::smart_ptr&& rx_item_implementation<TImpl>::clone () const
+rx_platform_item::smart_ptr rx_item_implementation<TImpl>::clone () const
 {
-	return std::move(rx_platform_item::smart_ptr());
+	return impl_->get_item_ptr();
 }
 
 template <class TImpl>
 rx_thread_handle_t rx_item_implementation<TImpl>::get_executer () const
 {
 	return impl_->get_executer();
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
+{
+    return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
 }
 
 
@@ -347,9 +353,15 @@ rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& prefix,
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result_with<runtime_handle_t> > rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
 {
-	return "Not valid for this type!";
+    std::vector<rx_result_with<runtime_handle_t> > result;
+    result.reserve(paths.size());
+    for (size_t idx = 0; idx < paths.size(); idx++)
+    {
+        result.emplace_back("Not valid for this type!");
+    }
+    return result;
 }
 
 template <class TImpl>
@@ -384,15 +396,21 @@ string_type rx_meta_item_implementation<TImpl>::get_definition_as_json () const
 }
 
 template <class TImpl>
-rx_platform_item::smart_ptr&& rx_meta_item_implementation<TImpl>::clone () const
+rx_platform_item::smart_ptr rx_meta_item_implementation<TImpl>::clone () const
 {
-	return std::move(rx_platform_item::smart_ptr());
+    return impl_->get_item_ptr();
 }
 
 template <class TImpl>
 rx_thread_handle_t rx_meta_item_implementation<TImpl>::get_executer () const
 {
 	return RX_DOMAIN_META;
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 
@@ -493,9 +511,15 @@ rx_result rx_other_implementation<TImpl>::browse (const string_type& prefix, con
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result_with<runtime_handle_t> > rx_other_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
 {
-	return "Not valid for this type!";
+    std::vector<rx_result_with<runtime_handle_t> > result;
+    result.reserve(paths.size());
+    for (size_t idx = 0; idx < paths.size(); idx++)
+    {
+        result.emplace_back("Not valid for this type!");
+    }
+    return result;
 }
 
 template <class TImpl>
@@ -511,15 +535,21 @@ string_type rx_other_implementation<TImpl>::get_definition_as_json () const
 }
 
 template <class TImpl>
-rx_platform_item::smart_ptr&& rx_other_implementation<TImpl>::clone () const
+rx_platform_item::smart_ptr rx_other_implementation<TImpl>::clone () const
 {
-	return std::move(rx_platform_item::smart_ptr());
+	return impl_->get_item_ptr();
 }
 
 template <class TImpl>
 rx_thread_handle_t rx_other_implementation<TImpl>::get_executer () const
 {
 	return RX_DOMAIN_META;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 

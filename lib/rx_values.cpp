@@ -267,7 +267,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -275,7 +275,7 @@ rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 	return ret;
 }
 
-rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -379,7 +379,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx_value rx_value::operator + (const rx_value& right) const
+rx::values::rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -388,7 +388,7 @@ rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator - (const rx_value& right) const
+rx::values::rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -397,7 +397,7 @@ rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator * (const rx_value& right) const
+rx::values::rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = quality_;
@@ -406,7 +406,7 @@ rx_value rx_value::operator * (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator / (const rx_value& right) const
+rx::values::rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -415,7 +415,7 @@ rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator % (const rx_value& right) const
+rx::values::rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -426,6 +426,11 @@ rx_value rx_value::operator % (const rx_value& right) const
 
 void rx_value::handle_quality_after_arithmetic ()
 {
+}
+
+bool rx_value::is_dead () const
+{
+	return ((quality_ & RX_QUALITY_MASK) == RX_DEAD_QUALITY);
 }
 
 

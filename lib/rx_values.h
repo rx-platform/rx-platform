@@ -87,6 +87,7 @@
 #define RX_GOOD_QUALITY			0x00000000
 #define RX_UNCERTAIN_QUALITY	0x40000000
 #define RX_BAD_QUALITY			0x80000000
+#define RX_DEAD_QUALITY			0xc0000000
 
 
 // bad , uncertain quality codes
@@ -653,6 +654,8 @@ public:
       rx_value operator / (const rx_value& right) const;
 
       rx_value operator % (const rx_value& right) const;
+
+      bool is_dead () const;
 
 
       const rx_value_storage& get_storage () const

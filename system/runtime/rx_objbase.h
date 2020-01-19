@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
@@ -189,19 +189,50 @@ class application_instance_data
 
 
 
+class port_instance_data 
+{
+
+  public:
+
+      bool serialize (base_meta_writer& stream, uint8_t type) const;
+
+      bool deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      rx_node_id app_id;
+
+      rx_item_reference up_port;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 template <class typeT>
 class object_runtime_algorithms 
 {
 
   public:
 
-      static rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose);
+      static std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      static void process_runtime (typename typeT::RType* whose);
+      static void process_runtime (typename typeT::RType& whose);
 
-      static rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose);
+      static rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      static void fire_job(typename typeT::RType* whose);
+      static void fire_job (typename typeT::RType& whose);
+
+      static rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
+
+
   protected:
 
   private:
@@ -254,6 +285,8 @@ object class. basic implementation of an object");
 	friend class meta::meta_algorithm::object_types_algorithm;
 	template <class typeT>
 	friend class object_runtime_algorithms;
+public:
+    typedef meta::object_types::object_type DefType;
 
   public:
       object_runtime();
@@ -301,15 +334,7 @@ object class. basic implementation of an object");
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void process_runtime ();
-
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      void fire_job ();
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const object_instance_data& get_instance_data () const
@@ -378,6 +403,7 @@ class domain_runtime : public rx::pointers::reference_object
 system domain class. basic implementation of a domain");
 
 	DECLARE_REFERENCE_PTR(domain_runtime);
+
 	typedef std::map<rx_node_id, object_runtime::smart_ptr> objects_type;
 
 	friend class meta::object_types::domain_type;
@@ -387,6 +413,7 @@ system domain class. basic implementation of a domain");
 	template <class typeT>
 	friend class object_runtime_algorithms;
 public:
+    typedef meta::object_types::domain_type DefType;
 
   public:
       domain_runtime();
@@ -432,8 +459,6 @@ public:
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void process_runtime ();
-
       void get_objects (api::query_result& result);
 
       void add_object (rx_object_ptr what);
@@ -441,12 +466,6 @@ public:
       void remove_object (rx_object_ptr what);
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      void fire_job ();
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const domain_instance_data& get_instance_data () const
@@ -514,33 +533,6 @@ public:
 
 
 
-class port_instance_data 
-{
-
-  public:
-
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      rx_node_id app_id;
-
-      rx_item_reference up_port;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class port_runtime : public rx::pointers::reference_object  
 {
@@ -554,6 +546,8 @@ system port class. basic implementation of a port");
 	friend class meta::meta_algorithm::object_types_algorithm;
 	template <class typeT>
 	friend class object_runtime_algorithms;
+public:
+    typedef meta::object_types::port_type DefType;
 
   public:
       port_runtime();
@@ -605,21 +599,13 @@ system port class. basic implementation of a port");
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void process_runtime ();
-
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      void fire_job ();
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
       virtual rx_port_ptr up_stack () const = 0;
 
       virtual rx_port_ptr down_stack () const = 0;
 
-      virtual void process_stack () const = 0;
+      virtual void process_stack () = 0;
 
 
       const port_instance_data& get_instance_data () const
@@ -693,6 +679,7 @@ class application_runtime : public rx::pointers::reference_object
 system application class. basic implementation of a application");
 
 	DECLARE_REFERENCE_PTR(application_runtime);
+
 	typedef std::vector<domain_runtime::smart_ptr> domains_type;
 	typedef std::vector<port_runtime::smart_ptr> ports_type;
 
@@ -701,6 +688,8 @@ system application class. basic implementation of a application");
 	friend class meta::meta_algorithm::object_types_algorithm;
 	template <class typeT>
 	friend class object_runtime_algorithms;
+public:
+    typedef meta::object_types::application_type DefType;
 
   public:
       application_runtime();
@@ -748,8 +737,6 @@ system application class. basic implementation of a application");
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void process_runtime ();
-
       void get_ports (api::query_result& result);
 
       void add_port (rx_port_ptr what);
@@ -763,12 +750,6 @@ system application class. basic implementation of a application");
       void get_domains (api::query_result& result);
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
-      void fire_job ();
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
 
 
       const application_instance_data& get_instance_data () const

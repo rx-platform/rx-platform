@@ -45,18 +45,6 @@ namespace terminal {
 
 namespace console {
 
-namespace
-{
-void read_to_eol(string_type::const_iterator& it, const string_type& data, std::ostringstream& out)
-{
-	while (it != data.end() && *it != '\r' && *it != '\n')
-	{
-		out << *it;
-		it++;
-	}
-}
-}
-
 /*
 char g_console_welcome[] = "\r\n\
 	   ____   __  __\r\n\

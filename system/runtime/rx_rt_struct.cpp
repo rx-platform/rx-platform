@@ -1326,6 +1326,8 @@ void value_data::object_state_changed (const hosting_object_data& state)
 
 rx_result value_data::write_value (rx_simple_value&& val, const write_context& ctx)
 {
+	if (read_only && !ctx.is_internal())
+		return "Access Denied!";
 	if (val.convert_to(value.get_type()))
 	{
 		value = rx_timed_value::from_simple(std::move(val), ctx.now);
@@ -1342,11 +1344,16 @@ rx_simple_value value_data::simple_get_value () const
 	return value.to_simple();
 }
 
-void value_data::simple_set_value (rx_simple_value&& val)
+rx_result value_data::simple_set_value (rx_simple_value&& val)
 {
 	if (val.convert_to(value.get_type()))
 	{
 		value = rx_timed_value::from_simple(std::move(val), rx_time::now());
+		return true;
+	}
+	else
+	{
+		return RX_INVALID_CONVERSION;
 	}
 }
 
@@ -1401,11 +1408,21 @@ init_context init_context::create_initialization_context (runtime_holder* whose)
 // Class rx_platform::runtime::structure::write_context 
 
 
-write_context write_context::create_write_context (runtime_holder* whose)
+write_context write_context::create_write_context (runtime_holder* whose, bool internal_write)
 {
 	write_context ret;
 	ret.now = rx_time::now();
 	ret.object_data = whose->get_object_state();
+	ret.internal_ = internal_write;
+	return ret;
+}
+
+write_context write_context::create_write_context (const structure::hosting_object_data& state, bool internal_write)
+{
+	write_context ret;
+	ret.now = rx_time::now();
+	ret.object_data = state;
+	ret.internal_ = internal_write;
 	return ret;
 }
 

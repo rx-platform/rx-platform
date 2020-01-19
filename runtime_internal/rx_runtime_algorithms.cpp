@@ -176,6 +176,7 @@ rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime
 	auto ret = what->start_runtime(ctx);
 	if (ret)
 	{
+		platform_runtime_manager::instance().get_cache().add_to_cache(what->get_item_ptr());
 	}
 	return ret;
 }
@@ -292,6 +293,7 @@ rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime
 	auto ret = what->start_runtime(ctx);
 	if (ret)
 	{
+		platform_runtime_manager::instance().get_cache().add_to_cache(what->get_item_ptr());
 	}
 	return ret;
 }
@@ -389,6 +391,8 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		}
 		if (result)
 		{
+			runtime::objects::object_runtime_algorithms<port_type>::fire_job(*what);
+
 			rx_post_function<rx_port_ptr>([](rx_port_ptr whose)
 				{
 					runtime::runtime_start_context start_ctx;
@@ -414,6 +418,7 @@ rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_sta
 	auto ret = what->start_runtime(ctx);
 	if (ret)
 	{
+		platform_runtime_manager::instance().get_cache().add_to_cache(what->get_item_ptr());
 	}
 	return ret;
 }
@@ -492,6 +497,10 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)
 {
 	auto ret = what->start_runtime(ctx);
+	if (ret)
+	{
+		platform_runtime_manager::instance().get_cache().add_to_cache(what->get_item_ptr());
+	}
 	return ret;
 }
 

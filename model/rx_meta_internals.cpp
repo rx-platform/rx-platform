@@ -432,9 +432,9 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 			return my_class.errors();
 		}
 	}
-	rx_timed_value name_value;
+	rx_simple_value name_value;
 	name_value.assign_static<string_type>(string_type(meta.get_name()));
-	ctx.runtime_data.add_value("Name", name_value);
+	ctx.runtime_data.add_const_value("Name", name_value);
 	typeT::set_runtime_data(ctx.runtime_data, ret);
 	typeT::set_instance_data(std::move(type_data), ret);
 	// go reverse with overrides

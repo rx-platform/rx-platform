@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -41,6 +41,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/server/rx_async_functions.h"
+#include "runtime_internal/rx_subscription.h"
 
 
 namespace rx_platform {
@@ -91,7 +92,7 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 	}
 }
 
-// Class rx_platform::runtime::objects::object_runtime 
+// Class rx_platform::runtime::objects::object_runtime
 
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
@@ -245,7 +246,10 @@ rx_result object_runtime::write_value (const string_type& path, rx_simple_value&
 
 rx_result object_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = runtime_.initialize_runtime(ctx);
+	auto result = runtime_.initialize_runtime(ctx, [this]() mutable
+		{
+			runtime::objects::object_runtime_algorithms<object_types::object_type>::fire_job(*this);
+		}, &runtime_context_);
 	return result;
 }
 
@@ -272,33 +276,13 @@ rx_result object_runtime::do_command (rx_object_command_t command_type)
 	return runtime_.do_command(command_type);
 }
 
-void object_runtime::process_runtime ()
-{
-	object_runtime_algorithms<meta::object_types::object_type>::process_runtime(this);
-}
-
 rx_result object_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return runtime_.browse(prefix, path, filter, items);
 }
 
-rx_result object_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::object_type>::connect_items(paths, callback, monitor, ctx, this);
-}
 
-void object_runtime::fire_job ()
-{
-	object_runtime_algorithms<meta::object_types::object_type>::fire_job(this);
-}
-
-rx_result object_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::object_type>::read_items(items, monitor, ctx, this);
-}
-
-
-// Class rx_platform::runtime::objects::application_runtime 
+// Class rx_platform::runtime::objects::application_runtime
 
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
@@ -435,15 +419,14 @@ void application_runtime::collect_data (data::runtime_values_data& data) const
 
 rx_result application_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = runtime_.initialize_runtime(ctx);
+	auto result = runtime_.initialize_runtime(ctx, [this]() mutable
+		{
+			runtime::objects::object_runtime_algorithms<object_types::application_type>::fire_job(*this);
+		}, &runtime_context_);
 	if (result)
 	{
 		executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(instance_data_);
-		auto hndl = ctx.tags->bind_item("CPU", ctx);
-		if (hndl)
-		{
-			ctx.structure.get_root()->set_binded_as<int>(hndl.value(), (int)executer_);
-		}
+		result = ctx.tags->set_item_static("CPU", (int)executer_, ctx);
 	}
 	return result;
 }
@@ -470,11 +453,6 @@ rx_result application_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 rx_result application_runtime::do_command (rx_object_command_t command_type)
 {
 	return runtime_.do_command(command_type);
-}
-
-void application_runtime::process_runtime ()
-{
-	object_runtime_algorithms<meta::object_types::application_type>::process_runtime(this);
 }
 
 void application_runtime::get_ports (api::query_result& result)
@@ -552,23 +530,8 @@ rx_result application_runtime::browse (const string_type& prefix, const string_t
 	return runtime_.browse(prefix, path, filter, items);
 }
 
-rx_result application_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::application_type>::connect_items(paths, callback, monitor, ctx, this);
-}
 
-void application_runtime::fire_job ()
-{
-	object_runtime_algorithms<meta::object_types::application_type>::fire_job(this);
-}
-
-rx_result application_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::application_type>::read_items(items, monitor, ctx, this);
-}
-
-
-// Class rx_platform::runtime::objects::domain_runtime 
+// Class rx_platform::runtime::objects::domain_runtime
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
@@ -704,7 +667,10 @@ rx_result domain_runtime::write_value (const string_type& path, rx_simple_value&
 
 rx_result domain_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = runtime_.initialize_runtime(ctx);
+	auto result = runtime_.initialize_runtime(ctx, [this]() mutable
+		{
+			runtime::objects::object_runtime_algorithms<object_types::domain_type>::fire_job(*this);
+		}, &runtime_context_);
 	if (result)
 	{
 		executer_ = sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(instance_data_);
@@ -742,11 +708,6 @@ rx_result domain_runtime::do_command (rx_object_command_t command_type)
 	return runtime_.do_command(command_type);
 }
 
-void domain_runtime::process_runtime ()
-{
-	object_runtime_algorithms<meta::object_types::domain_type>::process_runtime(this);
-}
-
 void domain_runtime::get_objects (api::query_result& result)
 {
 	result.items.reserve(objects_.size());
@@ -774,313 +735,18 @@ rx_result domain_runtime::browse (const string_type& prefix, const string_type& 
 	return runtime_.browse(prefix, path, filter, items);
 }
 
-rx_result domain_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::domain_type>::connect_items(paths, callback, monitor, ctx, this);
-}
-
-void domain_runtime::fire_job ()
-{
-	object_runtime_algorithms<meta::object_types::domain_type>::fire_job(this);
-}
-
-rx_result domain_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return object_runtime_algorithms<meta::object_types::domain_type>::read_items(items, monitor, ctx, this);
-}
-
-
-// Class rx_platform::runtime::objects::object_instance_data 
-
-
-bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_id("domain", domain_id))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_id("domain", domain_id))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::runtime::objects::domain_instance_data 
-
-
-bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_int("processor", processor))
-		return false;
-	if (!stream.write_id("app", app_id))
-		return false;
-
-	if (!stream.start_array("objects", objects.size()))
-		return false;
-	for (const auto& one : objects)
-	{
-		if (!stream.write_id("id", one))
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_int("processor", processor))
-		return false;
-	if (!stream.read_id("app", app_id))
-		return false;
-
-	if (!stream.start_array("objects"))
-		return false;
-	while(!stream.array_end())
-	{
-		rx_node_id one;
-		if (!stream.read_id("id", one))
-			return false;
-	}
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::runtime::objects::application_instance_data 
-
-
-bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_int("processor", processor))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_int("processor", processor))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms 
-
-
-template <class typeT>
-rx_result object_runtime_algorithms<typeT>::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose)
-{
-	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
-	using smart_ptr = typename typeT::RTypePtr;
-
-
-	// OutputDebugStringA("****************Something to connect object runtime\r\n");
-
-	std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
-	{
-
-		// OutputDebugStringA("****************Something to connect object runtime\r\n");
-		connect_result_t results;
-		bool has_errors = false;
-		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
-		if (ret)
-		{
-			whose->runtime_context_.process_tag_connections = true;
-		}
-		else
-		{
-			auto size = paths.size();
-			results.reserve(size);
-			for (size_t i = 0; i < size; i++)
-				results.emplace_back(ret.errors());
-		}
-		if (whose->runtime_context_.process_tag_connections)
-		{
-			whose->fire_job();
-		}
-		return results;
-	};
-	auto ret_thread = whose->get_executer();
-	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
-	return true;
-}
-
-template <class typeT>
-void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType* whose)
-{
-	whose->job_lock_.lock();
-	whose->job_pending_ = false;
-	whose->job_lock_.unlock();
-	whose->runtime_context_.init_context();
-	whose->runtime_.process_runtime(whose->runtime_context_);
-}
-
-template <class typeT>
-rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, typename typeT::RType* whose)
-{
-	using smart_ptr = typename typeT::RTypePtr;
-
-	std::function<void(const std::vector<runtime_handle_t>&, runtime::operational::tags_callback_ptr, smart_ptr)> func = [](const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, smart_ptr whose)
-	{
-		auto ret = whose->runtime_.read_items(items, monitor);
-		if (ret)
-		{
-			whose->runtime_context_.process_tag_connections = true;
-		}
-		if (whose->runtime_context_.process_tag_connections)
-		{
-			whose->fire_job();
-		}
-		return ret;
-	};
-	auto ret_thread = whose->get_executer();
-	rx_post_function_to<decltype(ctx.object), const std::vector<runtime_handle_t>&, runtime::operational::tags_callback_ptr, smart_ptr>(ret_thread, func, ctx.object, items, monitor, whose->smart_this());
-	return true;
-}
-
-
-
+// has to be before call
 template <>
-void object_runtime_algorithms<object_types::port_type>::process_runtime(typename object_types::port_type::RType* whose)
+void object_runtime_algorithms<object_types::port_type>::process_runtime(typename object_types::port_type::RType& whose)
 {
-	whose->job_lock_.lock();
-	whose->job_pending_ = false;
-	whose->job_lock_.unlock();
-	whose->runtime_context_.init_context();
-	whose->process_stack();
-	whose->runtime_.process_runtime(whose->runtime_context_);
+	whose.job_lock_.lock();
+	whose.job_pending_ = false;
+	whose.job_lock_.unlock();
+	whose.runtime_context_.init_context();
+	whose.process_stack();
+	whose.runtime_.process_runtime(whose.runtime_context_);
 }
-
-
-template <class typeT>
-void object_runtime_algorithms<typeT>::fire_job(typename typeT::RType* whose)
-{
-	locks::auto_lock_t<decltype(whose->job_lock_)> _(&whose->job_lock_);
-	if (!whose->job_pending_)
-	{
-		whose->job_pending_ = true;
-		RX_ASSERT(whose->my_job_ptr_);
-		auto executer = rx_gate::instance().get_infrastructure().get_executer(whose->get_executer());
-		executer->append(whose->my_job_ptr_);
-	}
-}
-
-
-template <>
-rx_result object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx, object_types::relation_type::RType* whose)
-{
-	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
-	using smart_ptr = object_types::relation_type::RTypePtr;
-
-	return RX_NOT_IMPLEMENTED;
-
-	// OutputDebugStringA("****************Something to connect object runtime\r\n");
-
-	/*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
-	{
-
-		// OutputDebugStringA("****************Something to connect object runtime\r\n");
-		connect_result_t results;
-		bool has_errors = false;
-		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
-		if (ret)
-		{
-			whose->runtime_context_.process_tag_connections = true;
-		}
-		else
-		{
-			auto size = paths.size();
-			results.reserve(size);
-			for (size_t i = 0; i < size; i++)
-				results.emplace_back(ret.errors());
-		}
-		if (whose->runtime_context_.process_tag_connections)
-		{
-			whose->fire_job();
-		}
-		return results;
-	};
-	auto ret_thread = whose->get_executer();
-	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
-	return true;*/
-}
-
-// Parameterized Class rx_platform::runtime::objects::process_runtime_job 
-
-template <class typePtr>
-process_runtime_job<typePtr>::process_runtime_job (typePtr whose)
-      : whose_(whose)
-{
-}
-
-
-
-template <class typePtr>
-void process_runtime_job<typePtr>::process ()
-{
-	whose_->process_runtime();
-}
-
-
-// Class rx_platform::runtime::objects::port_instance_data 
-
-
-bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.write_id("app", app_id))
-		return false;
-	if (!stream.write_item_reference("next_up", up_port))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.start_object("instance"))
-		return false;
-	if (!stream.read_id("app", app_id))
-		return false;
-	if (!stream.read_item_reference("next_up", up_port))
-		return false;
-	if (!stream.end_object())
-		return false;
-	return true;
-}
-
-
-// Class rx_platform::runtime::objects::port_runtime 
+// Class rx_platform::runtime::objects::port_runtime
 
 rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
@@ -1243,10 +909,12 @@ bool port_runtime::connect_application (rx_application_ptr&& app)
 
 rx_result port_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = runtime_.initialize_runtime(ctx);
+	auto result = runtime_.initialize_runtime(ctx, [this]() mutable
+		{
+			runtime::objects::object_runtime_algorithms<object_types::port_type>::fire_job(*this);
+		}, &runtime_context_);
 	if (result)
 	{
-		fire_job();
 	}
 	return result;
 }
@@ -1276,33 +944,290 @@ rx_result port_runtime::do_command (rx_object_command_t command_type)
 	return runtime_.do_command(command_type);
 }
 
-void port_runtime::process_runtime ()
-{
-	object_runtime_algorithms<meta::object_types::port_type>::process_runtime(this);
-}
-
 rx_result port_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	return runtime_.browse(prefix, path, filter, items);
 }
 
-rx_result port_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+
+// Class rx_platform::runtime::objects::object_instance_data
+
+
+bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
-	return object_runtime_algorithms<meta::object_types::port_type>::connect_items(paths, callback, monitor, ctx, this);
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_id("domain", domain_id))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
 }
 
-void port_runtime::fire_job ()
+bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
-	object_runtime_algorithms<meta::object_types::port_type>::fire_job(this);
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_id("domain", domain_id))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
 }
 
-rx_result port_runtime::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+
+// Class rx_platform::runtime::objects::domain_instance_data
+
+
+bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
-	return object_runtime_algorithms<meta::object_types::port_type>::read_items(items, monitor, ctx, this);
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_int("processor", processor))
+		return false;
+	if (!stream.write_id("app", app_id))
+		return false;
+
+	if (!stream.start_array("objects", objects.size()))
+		return false;
+	for (const auto& one : objects)
+	{
+		if (!stream.write_id("id", one))
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_int("processor", processor))
+		return false;
+	if (!stream.read_id("app", app_id))
+		return false;
+
+	if (!stream.start_array("objects"))
+		return false;
+	while(!stream.array_end())
+	{
+		rx_node_id one;
+		if (!stream.read_id("id", one))
+			return false;
+	}
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+
+// Class rx_platform::runtime::objects::application_instance_data
+
+
+bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_int("processor", processor))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_int("processor", processor))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+
+// Class rx_platform::runtime::objects::port_instance_data
+
+
+bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.write_id("app", app_id))
+		return false;
+	if (!stream.write_item_reference("next_up", up_port))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("instance"))
+		return false;
+	if (!stream.read_id("app", app_id))
+		return false;
+	if (!stream.read_item_reference("next_up", up_port))
+		return false;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+
+// Parameterized Class rx_platform::runtime::objects::object_runtime_algorithms
+
+
+template <class typeT>
+std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<typeT>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+
+	connect_result_t results;
+	bool has_errors = false;
+	auto ret = whose.runtime_.connect_items(paths, monitor, results, has_errors);
+	if (ret)
+	{
+		whose.runtime_context_.tag_updates_pending();
+		object_runtime_algorithms<typeT>::fire_job(whose);
+	}
+	else
+	{
+		auto size = paths.size();
+		results.reserve(size);
+		for (size_t i = 0; i < size; i++)
+			results.emplace_back(ret.errors());
+	}
+	return results;
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& whose)
+{
+	whose.job_lock_.lock();
+	whose.job_pending_ = false;
+	whose.job_lock_.unlock();
+	whose.runtime_context_.init_context();
+	whose.runtime_.process_runtime(whose.runtime_context_);
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+	std::vector<rx_result> results;
+	auto ret = whose.runtime_.read_items(items, monitor, results);
+	if (ret)
+	{
+		whose.runtime_context_.tag_updates_pending();
+		object_runtime_algorithms<typeT>::fire_job(whose);
+	}
+	return ret;
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::fire_job (typename typeT::RType& whose)
+{
+	locks::auto_lock_t<decltype(whose.job_lock_)> _(&whose.job_lock_);
+	if (!whose.job_pending_)
+	{
+		whose.job_pending_ = true;
+		RX_ASSERT(whose.my_job_ptr_);
+		auto executer = rx_gate::instance().get_infrastructure().get_executer(whose.get_executer());
+		executer->append(whose.my_job_ptr_);
+	}
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+	std::vector<rx_result> results;
+	auto ret = whose.runtime_.write_items(transaction_id, items, monitor, results);
+	if (ret)
+	{
+		whose.runtime_context_.tag_writes_pending();
+		object_runtime_algorithms<typeT>::fire_job(whose);
+	}
+	return ret;
+}
+
+
+
+template <>
+std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, runtime::operational::tags_callback_ptr monitor, object_types::relation_type::RType& whose)
+{
+	using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+
+	connect_result_t result;
+	result.reserve(paths.size());
+
+	for (size_t i = 0; i < paths.size(); i++)
+	{
+		result.emplace_back(RX_NOT_IMPLEMENTED);
+	}
+
+	return result;
+
+	// OutputDebugStringA("****************Something to connect object runtime\r\n");
+
+	/*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
+	{
+
+		// OutputDebugStringA("****************Something to connect object runtime\r\n");
+		connect_result_t results;
+		bool has_errors = false;
+		auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
+		if (ret)
+		{
+			whose->runtime_context_.process_tag_connections = true;
+		}
+		else
+		{
+			auto size = paths.size();
+			results.reserve(size);
+			for (size_t i = 0; i < size; i++)
+				results.emplace_back(ret.errors());
+		}
+		if (whose->runtime_context_.process_tag_connections)
+		{
+			whose->fire_job();
+		}
+		return results;
+	};
+	auto ret_thread = whose->get_executer();
+	rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
+	return true;*/
+}
+
+// Parameterized Class rx_platform::runtime::objects::process_runtime_job
+
+template <class typePtr>
+process_runtime_job<typePtr>::process_runtime_job (typePtr whose)
+      : whose_(whose)
+{
+}
+
+
+
+template <class typePtr>
+void process_runtime_job<typePtr>::process ()
+{
+	object_runtime_algorithms<typename typePtr::pointee_type::DefType>::process_runtime(*whose_);
 }
 
 
 } // namespace objects
 } // namespace runtime
 } // namespace rx_platform
+
+template class rx_platform::runtime::objects::object_runtime_algorithms<meta::object_types::object_type>;
+template class rx_platform::runtime::objects::object_runtime_algorithms<meta::object_types::port_type>;
+template class rx_platform::runtime::objects::object_runtime_algorithms<meta::object_types::domain_type>;
+template class rx_platform::runtime::objects::object_runtime_algorithms<meta::object_types::application_type>;
 

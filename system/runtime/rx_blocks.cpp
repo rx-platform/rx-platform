@@ -349,7 +349,7 @@ rx_result runtime_holder::write_value (const string_type& path, rx_simple_value&
 	}
 	std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
 	{
-		structure::write_context my_ctx = structure::write_context::create_write_context(this);
+		structure::write_context my_ctx = structure::write_context::create_write_context(this, false);
 		return item_->write_value(path, std::move(val), my_ctx);
 	};
 	auto current_thread = rx_thread_context();
@@ -398,14 +398,24 @@ bool runtime_holder::deserialize (base_meta_reader& stream, uint8_t type)
 	return true;
 }
 
-rx_result runtime_holder::initialize_runtime (runtime::runtime_init_context& ctx)
+rx_result runtime_holder::initialize_runtime (runtime::runtime_init_context& ctx, std::function<void()> change_callback, runtime_process_context* context)
 {
 	ctx.structure.set_root(this);
 	ctx.structure.push_item(*item_);
 	ctx.tags = &binded_tags_;
+	fire_change_func_ = change_callback;
+	context_ = context;
+
 	auto result = item_->initialize_runtime(ctx);
 	if (result)
 	{
+		auto bind_result = ctx.tags->bind_item("Object.LastScanTime", ctx);
+		if (bind_result)
+			scan_time_item_ = bind_result.value();
+		bind_result = ctx.tags->bind_item("Object.MaxScanTime", ctx);
+		if (bind_result)
+			max_scan_time_item_ = bind_result.value();
+
 		for (auto& one : relations_)
 		{
 			result = one->initialize_runtime(ctx);
@@ -448,7 +458,6 @@ rx_result runtime_holder::deinitialize_runtime (runtime::runtime_deinit_context&
 			result = item_->deinitialize_runtime(ctx);
 		}
 	}
-
 	return result;
 }
 
@@ -502,6 +511,7 @@ rx_result runtime_holder::stop_runtime (runtime::runtime_stop_context& ctx)
 			result = item_->stop_runtime(ctx);
 		}
 	}
+	connected_tags_.runtime_stopped(rx_time::now());
 	return result;
 }
 
@@ -644,12 +654,25 @@ rx_result runtime_holder::get_value_ref (const string_type& path, rt_value_ref& 
 bool runtime_holder::process_runtime (runtime_process_context& ctx)
 {
 	bool ret = false;
+	if (scan_time_item_)
+		set_binded_as(scan_time_item_, last_scan_time_);
+	auto old_tick = rx_get_us_ticks();
 	do
 	{
-		ret = false;
-		ret |= connected_tags_.process_runtime(ctx);
+		if (ctx.should_process_writes())
+			ret = ret | connected_tags_.process_runtime(ctx);
+		if (ctx.should_process_tags())
+			ret = ret | connected_tags_.process_runtime(ctx);
 
 	} while (ctx.should_repeat());
+	auto diff = rx_get_us_ticks() - old_tick;
+	last_scan_time_ = (double)diff /1000.0;
+	if (max_scan_time_ < last_scan_time_)
+	{
+		max_scan_time_ = last_scan_time_;
+		if(max_scan_time_item_)
+			set_binded_as(max_scan_time_item_, max_scan_time_);
+	}
 	return ret;
 }
 
@@ -657,7 +680,7 @@ rx_result runtime_holder::browse (const string_type& prefix, const string_type& 
 {
 	if (path.empty())
 	{
-		auto ret = item_->browse_items(filter, path, items);
+		auto ret = item_->browse_items(filter, prefix + path, items);
 		if (ret)
 		{
 			for (const auto one : relations_)
@@ -698,16 +721,51 @@ rx_result runtime_holder::browse (const string_type& prefix, const string_type& 
 			}
 			return path + " not found";
 		}
-		return sub_item->browse_items(filter, current_path, items);
+		return sub_item->browse_items(filter, prefix + current_path, items);
 	}
 }
 
-rx_result runtime_holder::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
+rx_result runtime_holder::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results)
 {
 	auto state = get_object_state();
 	for (const auto& item : items)
 		connected_tags_.read_tag(item, monitor, state);
 	return true;
+}
+
+rx_result runtime_holder::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results)
+{
+	auto state = get_object_state();
+	for (const auto& item : items)
+	{
+		auto result = connected_tags_.write_tag(item.first, rx_simple_value(item.second), monitor, state);
+		results.emplace_back(std::move(result));
+	}
+	return true;
+}
+
+void runtime_holder::tag_updates_pending () const
+{
+	if(context_->tag_updates_pending())
+		fire_change_func_();
+}
+
+void runtime_holder::tag_writes_pending () const
+{
+	context_->tag_updates_pending();
+	fire_change_func_();
+}
+
+relation_runtime_ptr runtime_holder::get_relation (const string_type& path)
+{
+	for (auto one : relations_)
+	{
+		if (one->name == path)
+		{
+			return one;
+		}
+	}
+	return relation_runtime_ptr::null_ptr;
 }
 
 

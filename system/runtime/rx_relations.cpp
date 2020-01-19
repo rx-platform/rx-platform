@@ -31,8 +31,8 @@
 #include "pch.h"
 
 
-// rx_operational
-#include "system/runtime/rx_operational.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 
@@ -41,6 +41,8 @@
 #include "rx_objbase.h"
 #include "model/rx_model_algorithms.h"
 #include "system/server/rx_async_functions.h"
+#include "runtime_internal/rx_relations_runtime.h"
+using namespace sys_runtime::relations_runtime;
 
 
 namespace rx_platform {
@@ -56,12 +58,14 @@ string_type relation_runtime::type_name = RX_CPP_RELATION_TYPE_NAME;
 rx_item_type relation_runtime::type_id = rx_item_type::rx_relation;
 
 relation_runtime::relation_runtime()
-      : executer_(0)
+      : executer_(0),
+        runtime_handle(0)
 {
 }
 
 relation_runtime::relation_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : executer_(0)
+      : executer_(0),
+        runtime_handle(0)
 {
 }
 
@@ -109,6 +113,9 @@ void relation_runtime::fill_data (const data::runtime_values_data& data)
 	{
 		target = it->second.value.get_storage().get_string_value();
 	}
+	rx_simple_value val;
+	val.assign_static(target);
+	value.simple_set_value(std::move(val));
 }
 
 void relation_runtime::collect_data (data::runtime_values_data& data) const
@@ -126,11 +133,6 @@ rx_result relation_runtime::read_value (const string_type& path, std::function<v
 rx_result relation_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
 	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result relation_runtime::connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
-{
-	return objects::object_runtime_algorithms<meta::object_types::relation_type>::connect_items(paths, callback, monitor, ctx, this);
 }
 
 meta::meta_data& relation_runtime::meta_info ()
@@ -155,8 +157,7 @@ void relation_runtime::try_resolve ()
 	}
 	rx_node_id id = resolve_result.move_value();
 	my_state_ = relation_state::relation_state_querying;
-	using result_t = std::vector<rx_result_with<platform_item_ptr> >;
-	std::function<rx_result_with<platform_item_ptr>()> func = [id] 
+	std::function<rx_result_with<platform_item_ptr>()> func = [id]
 	{
 		auto result = model::algorithms::get_working_runtime_sync(id);
 		return result;
@@ -168,10 +169,11 @@ void relation_runtime::try_resolve ()
 				return;
 			if (result)
 			{
-				item_ptr_ = result.move_value();
-				if (item_ptr_->get_executer() == executer_)
+				auto&& item_ptr = result.move_value();
+				if (item_ptr->get_executer() == executer_)
 				{
 					my_state_ = relation_state::relation_state_same_domain;
+					connector_ = std::make_unique<local_relation_connector>(std::move(item_ptr));
 					return;
 				}
 				else
@@ -185,34 +187,66 @@ void relation_runtime::try_resolve ()
 
 rx_result relation_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	switch (my_state_)
+	if (connector_)
 	{
-	case relation_state::relation_state_idle:
-	case relation_state::relation_state_querying:
-		return true;
-	case relation_state::relation_state_same_domain:
-		{// the only one so far
-			if (item_ptr_)
-			{
-				return item_ptr_->browse(prefix, path, filter, items);
-			}
-			else
-			{
-				RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state is relation_state_same_domain ans item is nullptr");
-			}
-			return true;
-		}
-	case relation_state::relation_state_local_domain:
-		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state relation_state_local_domain is still not supported");
-		return RX_NOT_IMPLEMENTED;
-	case relation_state::relation_state_remote:
-		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state relation_state_remote is still not supported");
-		return RX_NOT_IMPLEMENTED;
-	case relation_state::relation_state_stopping:
-		return "Unexpected, relation is stopping";
-	default:
-		RUNTIME_LOG_DEBUG("relation_runtime", 999, "relation state is in undefined state!");
-		return "Unexpected relation state";
+		auto result = connector_->browse(prefix, path, filter, items);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result relation_runtime::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	if (connector_)
+	{
+		auto result = connector_->read_tag(item, monitor, state);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result relation_runtime::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	if (connector_)
+	{
+		auto result = connector_->write_tag(item, std::move(value), monitor, state);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result_with<runtime_handle_t> relation_runtime::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	if (connector_)
+	{
+		auto result = connector_->connect_tag(path, item, monitor, state);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}	
+}
+
+rx_result relation_runtime::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
+{
+	if (connector_)
+	{
+		auto result = connector_->disconnect_tag(handle, monitor);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
 	}
 }
 
@@ -220,7 +254,17 @@ rx_result relation_runtime::browse (const string_type& prefix, const string_type
 // Class rx_platform::runtime::relations::relation_instance_data 
 
 
+// Class rx_platform::runtime::relations::relation_connector 
+
+relation_connector::~relation_connector()
+{
+}
+
+
+
 } // namespace relations
 } // namespace runtime
 } // namespace rx_platform
+
+
 

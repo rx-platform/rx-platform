@@ -97,15 +97,18 @@ void local_pipe_port::receive_loop ()
 
 rx_result local_pipe_port::open ()
 {
-	return pipes_.open(pipe_handles_, [this](size_t count)
+	auto result = pipes_.open(pipe_handles_, [this](size_t count)
 		{
 			update_sent_counters(count);
 		});
+	update_connected_status(result);
+	return result;
 }
 
 void local_pipe_port::close ()
 {
-	return pipes_.close();
+	pipes_.close();
+	update_connected_status(false);
 }
 
 rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
@@ -258,6 +261,30 @@ void anonymus_pipe_endpoint::close ()
 	pipe_sender_.end();
 	pipes_->close_pipe();
 	pipes_.release();
+}
+
+
+// Class host::pipe::local_pipe_security_context 
+
+local_pipe_security_context::local_pipe_security_context()
+{
+	user_name_ = "pipe";
+	full_name_ = user_name_ + "@";
+	full_name_ += location_;
+	port_ = "internal";
+}
+
+
+local_pipe_security_context::~local_pipe_security_context()
+{
+}
+
+
+
+bool local_pipe_security_context::is_system () const
+{
+  return true;
+
 }
 
 

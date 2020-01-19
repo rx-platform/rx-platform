@@ -37,6 +37,7 @@
 #include "system/server/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
 #include "rx_internal_subscription.h"
+#include "rx_subscription_items.h"
 
 
 namespace sys_internal {
@@ -242,6 +243,19 @@ rx_result rx_protocol_port::add_items (const rx_uuid& id, const std::vector<subs
 	}
 }
 
+rx_result rx_protocol_port::write_items (const rx_uuid& id, runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results)
+{
+	auto it = subscriptions_.find(id);
+	if (it != subscriptions_.end())
+	{
+		return it->second->write_items(transaction_id, std::move(values), results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
 
 // Class sys_internal::rx_protocol::rx_json_protocol 
 
@@ -396,9 +410,24 @@ rx_result rx_protocol_subscription::add_items (const std::vector<subscription_it
 		temp.active = items[idx].active;
 		temp.trigger_type = items[idx].trigger_type;
 		items_.emplace(one.value(), std::move(temp));
+		handles_.emplace(items[idx].client_handle, one.value());
 		idx++;
 	}
 	return true;
+}
+
+rx_result rx_protocol_subscription::write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results)
+{
+	/*for (auto& one : values)
+	{
+		auto it = handles_.find(one.first);
+		if (it != handles_.end())
+			one.first = it->second;
+		else
+			one.first = 0;
+	}*/
+	auto result = my_subscription_->write_items(transaction_id, std::move(values), results);
+	return result;
 }
 
 

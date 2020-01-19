@@ -149,6 +149,10 @@ class write_items_request : public rx_request_message
 
       rx_uuid subscription_id;
 
+      runtime_transaction_id_t transaction_id;
+
+      std::vector<std::pair<runtime_handle_t, rx_simple_value> > values;
+
 
   protected:
 
@@ -505,8 +509,6 @@ class remove_items_response : public subscription_items_response
 
       static rx_message_type_t type_id;
 
-      rx_uuid subscription_id;
-
 
   protected:
 
@@ -533,8 +535,6 @@ class write_items_response : public subscription_items_response
       static string_type type_name;
 
       static rx_message_type_t type_id;
-
-      rx_uuid subscription_id;
 
 
   protected:
@@ -563,8 +563,6 @@ class modify_items_response : public subscription_items_response
 
       static rx_message_type_t type_id;
 
-      rx_uuid subscription_id;
-
 
   protected:
 
@@ -591,8 +589,6 @@ class read_items_response : public subscription_items_response
       static string_type type_name;
 
       static rx_message_type_t type_id;
-
-      rx_uuid subscription_id;
 
 
   protected:

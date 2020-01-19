@@ -87,6 +87,10 @@ namespace object_types
 }
 
 namespace runtime {
+namespace relations {
+class relation_instance_data;
+
+} // namespace relations
 
 namespace blocks {
 
@@ -385,7 +389,7 @@ class runtime_holder
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx, std::function<void()> change_callback, runtime_process_context* context);
 
       rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
 
@@ -413,7 +417,15 @@ class runtime_holder
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
+
+      void tag_updates_pending () const;
+
+      void tag_writes_pending () const;
+
+      relation_runtime_ptr get_relation (const string_type& path);
 
 
       rx::data::runtime_values_data& get_overrides ()
@@ -437,8 +449,9 @@ class runtime_holder
 	  void set_binded_as(runtime_handle_t handle, valT&& value)
 	  {
 		  values::rx_simple_value temp_val;
-		  temp_val.assign_static<valT>(std::move(value));
-		  auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_);
+		  temp_val.assign_static<valT>(std::forward<valT>(value));
+          auto status = this->get_object_state();
+		  auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_, status);
 	  }
 	  template<typename valT>
 	  valT get_local_as(const string_type& path, const valT& default_value)
@@ -481,6 +494,18 @@ class runtime_holder
       rx_time change_time_;
 
       jobs::job_ptr process_job_;
+
+      runtime_handle_t scan_time_item_;
+
+      double last_scan_time_;
+
+      std::function<void()> fire_change_func_;
+
+      runtime_process_context* context_;
+
+      double max_scan_time_;
+
+      runtime_handle_t max_scan_time_item_;
 
 
     friend class meta::object_types::object_data_type;

@@ -689,7 +689,7 @@ bool rx_names_cache::should_cache (const rx_namespace_item& item)
 
 rx_namespace_item rx_directory_resolver::resolve_path (const string_type& path)
 {
-	if (path.empty() && directories_.empty())
+	if (path.empty())
 		return rx_namespace_item();
 	// path length is checked in preious condition!!!
 	if (path[0] == RX_DIR_DELIMETER)

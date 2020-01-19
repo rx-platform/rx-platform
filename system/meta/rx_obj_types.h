@@ -51,6 +51,7 @@
 #include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_relations.h"
+#include "system/runtime//rx_rt_struct.h"
 using rx_platform::meta::construct_context;
 
 

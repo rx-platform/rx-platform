@@ -77,12 +77,16 @@ enum subscription_trigger_type
 };
 
 namespace runtime {
-
+namespace relations
+{
+class relation_runtime;
+}
 namespace operational
 {
 class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 }
+using operational::tags_callback_ptr;
 namespace structure {
 class const_value_data;
 class value_data;
@@ -93,13 +97,15 @@ union rt_value_ref_union
 	structure::const_value_data* const_value;
 	structure::value_data* value;
 	structure::variable_data* variable;
+    relations::relation_runtime* relation;
 };
-enum rt_value_ref_type
+enum class rt_value_ref_type
 {
 	rt_null = 0,
 	rt_const_value = 1,
 	rt_value = 2,
-	rt_variable = 3
+	rt_variable = 3,
+    rt_relation = 4/// !!!!!!/// CHECK shwitches
 };
 struct rt_value_ref
 {
@@ -308,40 +314,54 @@ struct runtime_start_context
 };
 
 
-enum runtime_process_step
+enum runtime_process_step : int
 {
 	runtime_process_idle = 0,
 	runtime_process_scheduled = 1,
-	runtime_process_tag_connections = 2
+    runtime_process_tag_writes = 2,
+	runtime_process_tag_connections = 3,
+
+    runtime_process_over = 4
 };
 
 
 
 
-struct runtime_process_context 
+class runtime_process_context 
 {
+
+  public:
+      runtime_process_context();
 
 
       bool should_repeat () const;
 
-      void tag_updates_pending ();
+      bool tag_updates_pending ();
 
       rx_result init_context ();
 
+      bool tag_writes_pending ();
 
-      runtime_process_step current_step;
+      bool should_process_tags ();
 
-      bool process_all;
+      bool should_process_writes ();
 
-      bool process_tag_connections;
 
       rx_time now;
 
-  public:
 
   protected:
 
   private:
+
+
+      runtime_process_step current_step_;
+
+      bool process_all_;
+
+      bool process_tag_connections_;
+
+      bool process_tag_writes_;
 
 
 };

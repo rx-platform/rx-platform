@@ -35,15 +35,17 @@
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_obj_types
+#include "system/meta/rx_obj_types.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
-namespace operational {
-class connected_tags;
+namespace relations {
+class relation_connector;
 
-} // namespace operational
+} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 
@@ -81,6 +83,7 @@ class relation_instance_data
 class relation_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(relation_runtime);
+    friend class objects::object_runtime_algorithms<object_types::relation_type>;
 
 	enum relation_state
 	{
@@ -119,11 +122,17 @@ class relation_runtime : public rx::pointers::reference_object
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
-      rx_result connect_items (const string_array& paths, std::function<void(std::vector<rx_result_with<runtime_handle_t> >)> callback, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
-
       meta::meta_data& meta_info ();
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
 
       const relation_instance_data& get_instance_data () const
@@ -162,6 +171,10 @@ class relation_runtime : public rx::pointers::reference_object
 
       string_type object_directory;
 
+      runtime_handle_t runtime_handle;
+
+      structure::value_data value;
+
 
   protected:
 
@@ -173,18 +186,42 @@ class relation_runtime : public rx::pointers::reference_object
 
       relation_instance_data instance_data_;
 
-      //	This here is unique_ptr just for the memory sake. here
-      //	we preserve memory with nullptr values.
-      //	I think that about 90% of these will be nullptr and in
-      //	the same domain
-      std::unique_ptr<operational::connected_tags> connected_tags_;
+      std::unique_ptr<relation_connector> connector_;
 
 
       meta::meta_data meta_info_;
 
-      platform_item_ptr item_ptr_;
-
       rx_thread_handle_t executer_;
+
+
+};
+
+
+
+
+
+
+class relation_connector 
+{
+
+  public:
+      virtual ~relation_connector();
+
+
+      virtual rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+
+      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+
+      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+
+      virtual rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor) = 0;
+
+      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+
+
+  protected:
+
+  private:
 
 
 };

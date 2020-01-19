@@ -39,6 +39,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 string_type _not_implemented_func(const char* fname);
 #define RX_NOT_IMPLEMENTED _not_implemented_func(_rx_func_)
+#define RX_INVALID_CONVERSION "Invalid conversion."
 
 namespace rx
 {

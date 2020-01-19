@@ -96,12 +96,12 @@ void runtime_data_prototype::add_const_value (const string_type& name, rx_simple
 	}
 }
 
-void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value)
+void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only)
 {
 	if (check_name(name))
 	{
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
-		values.push_back({ value });
+		values.push_back({ value, read_only });
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
 	}
 }

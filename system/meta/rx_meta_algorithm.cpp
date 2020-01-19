@@ -513,9 +513,9 @@ rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_
 {
 	if (!stream.write_string("name", whose.name_))
 		return false;
-	if (!stream.write_item_reference("inverse", whose.relation_type_))
+	if (!stream.write_item_reference("relation", whose.relation_type_))
 		return false;
-	if (!stream.write_item_reference("inverse", whose.target_))
+	if (!stream.write_item_reference("target", whose.target_))
 		return false;
 	return true;
 }
@@ -524,7 +524,7 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 {
 	if (!stream.read_string("name", whose.name_))
 		return false;
-	if (!stream.read_item_reference("target", whose.relation_type_))
+	if (!stream.read_item_reference("relation", whose.relation_type_))
 		return false;
 	if (!stream.read_item_reference("target", whose.target_))
 		return false;
@@ -585,6 +585,9 @@ rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::constru
 	{
 		ret_val.value()->name = whose.name_;
 		ret_val.value()->target_base_id = target_base_id;
+		rx_timed_value str_val;
+		str_val.assign_static<string_type>("", ctx.now);
+		ret_val.value()->value = runtime::structure::value_data{ str_val, false };
 		// this is something i still don't know about
 		// it will have to wait
 		//!!!!!

@@ -137,7 +137,7 @@ basic testing subscription connect/disconnect.");
 	class internal_callback : public sys_runtime::subscriptions::rx_subscription_callback
 	{
 	public:
-		runtime_connect_test* parent;
+		runtime_connect_test* parent = nullptr;
 		void items_changed(const std::vector<runtime::operational::update_item>& items)
 		{
 			printf("\r\n**********Items changed fired!!!");

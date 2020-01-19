@@ -54,6 +54,64 @@ namespace sys_runtime {
 
 
 
+template <class typeT>
+class execute_runtime_job : public rx::jobs::job  
+{
+	DECLARE_REFERENCE_PTR(execute_runtime_job);
+	typedef typename typeT::RTypePtr targetPtr;
+
+  public:
+      execute_runtime_job (targetPtr target);
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+      targetPtr target_;
+
+
+};
+
+
+
+
+
+
+class runtime_cache 
+{
+    typedef std::map<string_type, platform_item_ptr> path_cache_type;
+
+  public:
+
+      void add_to_cache (platform_item_ptr&& item);
+
+      std::vector<platform_item_ptr> get_items (const string_array& paths);
+
+      platform_item_ptr get_item (const string_type& path);
+
+
+  protected:
+
+  private:
+
+
+      locks::slim_lock lock_;
+
+      path_cache_type path_cache_;
+
+
+};
+
+
+
+
+
+
 
 class platform_runtime_manager 
 {
@@ -77,6 +135,13 @@ class platform_runtime_manager
 
       static runtime_handle_t get_new_handle ();
 
+
+      runtime_cache& get_cache ()
+      {
+        return cache_;
+      }
+
+
 	  template<class typeT>
 	  rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx)
 	  {
@@ -99,40 +164,14 @@ class platform_runtime_manager
 
       applications_type applications_;
 
+      runtime_cache cache_;
+
 
       coverage_type cpu_coverage_;
 
       rx_thread_handle_t first_cpu_;
 
       rx_thread_handle_t last_cpu_;
-
-
-};
-
-
-
-
-
-
-template <class typeT>
-class execute_runtime_job : public rx::jobs::job  
-{
-	DECLARE_REFERENCE_PTR(execute_runtime_job);
-	typedef typename typeT::RTypePtr targetPtr;
-
-  public:
-      execute_runtime_job (targetPtr target);
-
-
-      void process ();
-
-
-  protected:
-
-  private:
-
-
-      targetPtr target_;
 
 
 };

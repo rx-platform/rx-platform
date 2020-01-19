@@ -40,6 +40,8 @@
 #include "system/runtime/rx_port_types.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
+// rx_security
+#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -174,6 +176,31 @@ Local Pipe class. implementation of an local pipe port port");
 
 
       pipe_client_t pipe_handles_;
+
+
+};
+
+
+
+
+
+
+class local_pipe_security_context : public rx::security::built_in_security_context  
+{
+    DECLARE_REFERENCE_PTR(local_pipe_security_context);
+
+  public:
+      local_pipe_security_context();
+
+      ~local_pipe_security_context();
+
+
+      bool is_system () const;
+
+
+  protected:
+
+  private:
 
 
 };

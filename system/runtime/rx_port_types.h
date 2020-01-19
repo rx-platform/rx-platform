@@ -52,65 +52,6 @@ namespace io_types {
 
 
 
-class transport_port : public objects::port_runtime  
-{
-    DECLARE_CODE_INFO("rx", 0, 0, 2, "\
-transport port class. basic implementation of a transport port");
-
-    DECLARE_REFERENCE_PTR(transport_port);
-
-  public:
-      transport_port();
-
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_port_ptr up_stack () const;
-
-      rx_port_ptr down_stack () const;
-
-      void process_stack () const;
-
-
-  protected:
-
-      void update_received_counters (size_t count);
-
-      void update_sent_counters (size_t count);
-
-      void update_received_packets (size_t count);
-
-      void update_sent_packets (size_t count);
-
-
-  private:
-
-      bool has_up_port () const;
-
-
-
-      rx_reference<objects::port_runtime> next_up_;
-
-      rx_reference<objects::port_runtime> next_down_;
-
-
-      runtime_handle_t rx_bytes_item_;
-
-      runtime_handle_t tx_bytes_item_;
-
-      runtime_handle_t rx_packets_item_;
-
-      runtime_handle_t tx_packets_item_;
-
-
-};
-
-
-
-
-
-
-
 class physical_port : public objects::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 2, "\
@@ -128,7 +69,7 @@ physical port class. basic implementation of a physical port");
 
       rx_port_ptr down_stack () const;
 
-      void process_stack () const;
+      void process_stack ();
 
 
   protected:
@@ -191,7 +132,7 @@ protocol port class. basic implementation of a protocol port");
 
       rx_port_ptr down_stack () const;
 
-      void process_stack () const;
+      void process_stack ();
 
 
   protected:
@@ -210,6 +151,65 @@ protocol port class. basic implementation of a protocol port");
       bool has_up_port () const;
 
 
+
+      rx_reference<objects::port_runtime> next_down_;
+
+
+      runtime_handle_t rx_bytes_item_;
+
+      runtime_handle_t tx_bytes_item_;
+
+      runtime_handle_t rx_packets_item_;
+
+      runtime_handle_t tx_packets_item_;
+
+
+};
+
+
+
+
+
+
+
+class transport_port : public objects::port_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 0, 2, "\
+transport port class. basic implementation of a transport port");
+
+    DECLARE_REFERENCE_PTR(transport_port);
+
+  public:
+      transport_port();
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_port_ptr up_stack () const;
+
+      rx_port_ptr down_stack () const;
+
+      void process_stack ();
+
+
+  protected:
+
+      void update_received_counters (size_t count);
+
+      void update_sent_counters (size_t count);
+
+      void update_received_packets (size_t count);
+
+      void update_sent_packets (size_t count);
+
+
+  private:
+
+      bool has_up_port () const;
+
+
+
+      rx_reference<objects::port_runtime> next_up_;
 
       rx_reference<objects::port_runtime> next_down_;
 

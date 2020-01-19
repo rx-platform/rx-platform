@@ -381,7 +381,8 @@ rx_result complex_data_type::construct (construct_context& ctx) const
 		{
 			ctx.runtime_data.add_value(
 				one.first,
-				simple_values_[one.second&index_mask].get_value(ctx.now));
+				simple_values_[one.second&index_mask].get_value(ctx.now),
+				simple_values_[one.second & index_mask].get_read_only());
 		}
 		break;
 		// structures

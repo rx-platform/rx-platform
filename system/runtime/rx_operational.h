@@ -38,6 +38,14 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+namespace rx_platform {
+namespace runtime {
+namespace blocks {
+class runtime_holder;
+
+} // namespace blocks
+} // namespace runtime
+} // namespace rx_platform
 
 
 
@@ -96,6 +104,14 @@ class connected_tags
 	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
 	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
 
+    // IMPORTANT!!!!
+    // relations::relation_runtime* is a pointer because of a object lifetime!!!
+    // since the runtime object is holding a reference smart pointer
+    // and this class is part of an object structure we can be sure that
+    // lifetime of an object is shorter than lifetime of the reference to relation runtime
+    // this is why i'm considering hiding this functionality to a different part of platform?
+    typedef std::map<relations::relation_runtime*, runtime_handle_t> relations_type;
+
 	typedef std::function<void(std::vector<update_item> items)> callback_function_t;
 	struct one_tag_data
 	{
@@ -103,11 +119,15 @@ class connected_tags
 		uint32_t reference_count;
 		std::set<tags_callback_ptr> monitors;
 	};
-	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;
-	
+	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;	
 	typedef std::map<string_type, runtime_handle_t> referenced_tags_type;
 
 	typedef std::map<tags_callback_ptr, std::map<runtime_handle_t, rx_value> > next_send_type;
+
+    typedef std::map<string_type, relations::relation_runtime*> mapped_relations_type;
+
+    typedef std::map<runtime_handle_t, relations::relation_runtime*> relation_handles_map_type;
+
 
   public:
       connected_tags();
@@ -123,7 +143,15 @@ class connected_tags
 
       rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
-      void value_set (structure::value_data* whose, const rx_simple_value& val);
+      void binded_tags_change (structure::value_data* whose, const rx_value& val, structure::hosting_object_data& state);
+
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      void relation_tags_change (relations::relation_runtime* whose, const rx_value& val, structure::hosting_object_data& state);
+
+      rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+
+      void runtime_stopped (const rx_time& now);
 
 
   protected:
@@ -137,6 +165,8 @@ class connected_tags
 
       variables_type variables_;
 
+      relations_type relations_;
+
 
       handles_map_type handles_map_;
 
@@ -145,6 +175,10 @@ class connected_tags
       locks::slim_lock lock_;
 
       next_send_type next_send_;
+
+      mapped_relations_type mapped_relations_;
+
+      relation_handles_map_type relations_handles_map_;
 
 
 };
@@ -171,13 +205,15 @@ class binded_tags
 
       rx_result get_value (runtime_handle_t handle, rx_simple_value& val) const;
 
-      rx_result set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags);
+      rx_result set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags, structure::hosting_object_data& state);
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
 
       rx_result pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const;
+
+      void connected_tags_change (structure::value_data* whose, const rx_value& val);
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)

@@ -62,8 +62,8 @@ int do_types_testing()
 	std::tuple<my_type1, my_type2> resulting_tuple;
 	auto sz = std::tuple_size<my_tuple>();
 	constexpr size_t idx = get_index_of_helper<meta::object_types::domain_type, my_tuple>();
-	std::cout << "Returned idx = " << idx << "\r\n";
-	std::cout << "Duzina = " << sz.value << "\r\n";
+	//std::cout << "Returned idx = " << idx << "\r\n";
+	//std::cout << "Duzina = " << sz.value << "\r\n";
 	return 0;
 }
 

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  rx_platform.h
+*  system\runtime\rx_io_relations.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,34 +28,54 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_h
-#define rx_platform_h 1
+#ifndef rx_io_relations_h
+#define rx_io_relations_h 1
 
 
-/*******************************************************************
- Preprocessor switches
- ======================
 
- #define PYTHON_SUPPORT			- includes the python support
- #define EXCLUDE_TEST_CODE		- exclude testing code in build
- #define RX_LOG_SOURCE_INFO		- log full source code in log
- #define RX_MIN_MEMORY          - remove some hash containers to gain smaller memory footprint
- 
-********************************************************************/
-
-#include "rx_library.h"
-#include "version/rx_code_macros.h"
-#include "system/meta/rx_obj_types.h"
+// rx_relations
+#include "system/runtime/rx_relations.h"
 
 
-#define RX_LICENSE_MESSAGE "\
-\r\n\
-Copyright (c) 2020 ENSACO Solutions doo\r\n\r\n\
-This program comes with ABSOLUTELY NO WARRANTY.\r\n\
-This is free software, and you are welcome to redistribute it\r\n\
-under certain conditions; type `license' for details.\r\n\
-\r\n"
 
+namespace rx_platform {
+
+namespace runtime {
+
+namespace relations {
+
+
+
+
+
+class port_up_relation : public relation_runtime  
+{
+    DECLARE_REFERENCE_PTR(port_up_relation);
+
+  public:
+
+      void process_stack ();
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace relations
+} // namespace runtime
+} // namespace rx_platform
 
 
 

@@ -49,6 +49,8 @@ using namespace rx_platform::runtime::operational;
 namespace sys_runtime {
 
 namespace subscriptions {
+class rx_subscription;
+typedef rx_reference<rx_subscription> rx_subscription_ptr;
 
 
 
@@ -67,7 +69,9 @@ class rx_subscription_tag
 
       runtime_handle_t target_handle;
 
-      platform_item_ptr item_ptr;
+      size_t connection_idx;
+
+      runtime_handle_t mine_handle;
 
 
   protected:
@@ -106,37 +110,68 @@ class rx_subscription_callback
 
 
 
+class runtime_connection_data 
+{
+    typedef std::vector<rx_subscription_tag> tags_type;
+
+  public:
+
+      rx_subscription_tag* get_tag (runtime_handle_t handle);
+
+      bool remove_tag (runtime_handle_t handle);
+
+      runtime_handle_t add_tag (rx_subscription_tag&& tag, runtime_handle_t connection_handle);
+
+      bool process_connection (const rx_time& ts, rx_subscription_ptr whose);
+
+
+      rx_time last_checked;
+
+      string_type path;
+
+      platform_item_ptr item;
+
+      bool connecting;
+
+      bool connected;
+
+
+  protected:
+
+  private:
+
+
+      tags_type tags_;
+
+
+      std::vector<size_t> empty_slots_;
+
+      std::vector<size_t> to_connect_;
+
+
+};
+
+
+
+
+
+
 class rx_subscription : public rx_platform::runtime::operational::rx_tags_callback  
 {
 	DECLARE_REFERENCE_PTR(rx_subscription);
 
-	typedef std::map<runtime_handle_t, rx_subscription_tag> tags_type; // mine handle -> item
-	typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;// target_handle -> mine handle
+	typedef std::map<runtime_handle_t, std::vector<runtime_handle_t> > handles_type;// target_handle -> mine handles
 	typedef std::map<string_type, runtime_handle_t> inverse_tags_type;// path -> mine handle
-	struct connect_data
-	{
-		connect_data(string_type local)
-			: connecting(false), local_path(local)
-		{
-		}
-		bool connecting;
-		string_type local_path;
-		rx_time last_checked;
-	};
-	struct runtime_data
-	{
-		platform_item_ptr item;
-		meta::meta_data data;
-		bool querying = false;
-		std::map<runtime_handle_t, connect_data> items;
-	};
-	typedef std::map<string_type, runtime_data> to_connect_type;
-	typedef std::map<string_type, std::vector<runtime_handle_t> > attempts_type;
+	
+    typedef std::vector<runtime_connection_data> connections_type;
+	typedef std::map<string_type, size_t> connection_paths_type;
+	typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
 	static constexpr uint32_t timer_period_ = 1000;
 
-	string_array query_names_;
-	std::vector<runtime_handle_t> item_handles_;
+    typedef std::map<rx_thread_handle_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > pending_writes_type;
+    typedef std::vector<update_item> pending_updates_type;
 
+    friend class runtime_connection_data;
 
   public:
       rx_subscription (rx_subscription_callback* callback);
@@ -156,18 +191,26 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 
       rx_thread_handle_t get_target ();
 
+      rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
+
 
   protected:
 
   private:
 
-      rx_result process_connections ();
+      rx_result process_subscription (bool force_connect = false);
+
+      runtime_connection_data* get_connection (runtime_handle_t handle);
+
+      rx_subscription_tag* get_tag (runtime_handle_t handle);
+
+      rx_result process_writes (bool force_write = false);
 
 
-
-      tags_type tags_;
 
       rx_subscription_callback *callback_;
+
+      connections_type connections_;
 
 
       handles_type handles_;
@@ -176,13 +219,21 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 
       locks::slim_lock items_lock_;
 
-      to_connect_type to_connect_;
-
-      attempts_type attempts_;
+      connection_attempts_type attempts_;
 
       bool active_;
 
       rx_thread_handle_t target_;
+
+      connection_paths_type connection_paths_;
+
+      bool retrieve_items_;
+
+      bool connect_items_;
+
+      pending_writes_type pending_writes_;
+
+      pending_updates_type pending_updates_;
 
 
 };

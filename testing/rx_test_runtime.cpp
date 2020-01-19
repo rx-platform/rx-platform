@@ -206,10 +206,10 @@ runtime_connect_test::~runtime_connect_test()
 
 bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
-	bool no_subscription = true;
-	string_type path("/_sys/objects/system/SystemApp.CPU");
+	bool no_subscription = false;
+	string_type path("/sys/objects/system/SystemApp.CPU");	
 	string_type expression("{rx://local#"s + path + "} + 1000");
-	out << "Connecting to expression: " + expression + "\r\n";
+	/*out << "Connecting to expression: " + expression + "\r\n";
 	my_value_.connect(expression, 200,
 		[ctx](const rx_value& val)
 		{
@@ -218,7 +218,7 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 			val.dump_to_stream(out);
 			out << "\r\n";
 		});
-
+	*/
 	auto subs = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(&callback_);
 	subs->activate();
 	string_array paths{ path };
@@ -235,9 +235,9 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 				{
 					auto& out = ctx->get_stdout();
 
-					out << "Disconnecting from expression: " + expression + "\r\n";
+					/*out << "Disconnecting from expression: " + expression + "\r\n";
 					my_value_.disconnect();
-					out << "Disconnected!!!\r\n";
+					out << "Disconnected!!!\r\n";*/
 
 					if (!no_subscription)
 					{

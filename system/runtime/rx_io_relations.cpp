@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  rx_platform.h
+*  system\runtime\rx_io_relations.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,35 +28,49 @@
 ****************************************************************************/
 
 
-#ifndef rx_platform_h
-#define rx_platform_h 1
+#include "pch.h"
 
 
-/*******************************************************************
- Preprocessor switches
- ======================
-
- #define PYTHON_SUPPORT			- includes the python support
- #define EXCLUDE_TEST_CODE		- exclude testing code in build
- #define RX_LOG_SOURCE_INFO		- log full source code in log
- #define RX_MIN_MEMORY          - remove some hash containers to gain smaller memory footprint
- 
-********************************************************************/
-
-#include "rx_library.h"
-#include "version/rx_code_macros.h"
-#include "system/meta/rx_obj_types.h"
-
-
-#define RX_LICENSE_MESSAGE "\
-\r\n\
-Copyright (c) 2020 ENSACO Solutions doo\r\n\r\n\
-This program comes with ABSOLUTELY NO WARRANTY.\r\n\
-This is free software, and you are welcome to redistribute it\r\n\
-under certain conditions; type `license' for details.\r\n\
-\r\n"
+// rx_io_relations
+#include "system/runtime/rx_io_relations.h"
 
 
 
+namespace rx_platform {
 
-#endif
+namespace runtime {
+
+namespace relations {
+
+// Class rx_platform::runtime::relations::port_up_relation 
+
+
+void port_up_relation::process_stack ()
+{
+}
+
+rx_result port_up_relation::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    return true;
+}
+
+rx_result port_up_relation::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result port_up_relation::start_runtime (runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result port_up_relation::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
+
+} // namespace relations
+} // namespace runtime
+} // namespace rx_platform
+

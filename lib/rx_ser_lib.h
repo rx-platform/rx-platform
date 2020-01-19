@@ -130,6 +130,8 @@ public:
 
       virtual bool write_item_reference (const char* name, const rx_item_reference& ref) = 0;
 
+      virtual bool write_value (const char* name, const rx_simple_value& val) = 0;
+
 
       const size_t get_version () const
       {
@@ -217,6 +219,8 @@ class base_meta_reader
       virtual bool is_string_based () const = 0;
 
       virtual bool read_item_reference (const char* name, rx_item_reference& ref) = 0;
+
+      virtual bool read_value (const char* name, rx_simple_value& val) = 0;
 
 
       const uint32_t get_version () const

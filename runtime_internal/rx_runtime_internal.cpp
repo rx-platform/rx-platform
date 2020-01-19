@@ -156,12 +156,56 @@ execute_runtime_job<typeT>::execute_runtime_job (targetPtr target)
 template <class typeT>
 void execute_runtime_job<typeT>::process ()
 {
-	target_->process_runtime();
+	runtime::objects::object_runtime_algorithms<typeT>::process_runtime(*target_);
 }
 
 template class execute_runtime_job<meta::object_types::object_type>;
 template class execute_runtime_job<meta::object_types::domain_type>;
 template class execute_runtime_job<meta::object_types::application_type>;
 template class execute_runtime_job<meta::object_types::port_type>;
+// Class sys_runtime::runtime_cache 
+
+
+void runtime_cache::add_to_cache (platform_item_ptr&& item)
+{
+	string_type path = item->meta_info().get_full_path();
+	locks::auto_slim_lock _(&lock_);
+	auto it = path_cache_.find(path);
+	if(it!=path_cache_.end())
+	{
+		it->second = std::move(item);
+	}
+	else
+	{
+		path_cache_.emplace(std::move(path), std::move(item));
+	}
+}
+
+std::vector<platform_item_ptr> runtime_cache::get_items (const string_array& paths)
+{
+	std::vector<platform_item_ptr> ret;
+	ret.reserve(paths.size());
+	locks::auto_slim_lock _(&lock_);
+	for (const auto& path : paths)
+	{
+		auto it = path_cache_.find(path);
+		if (it != path_cache_.end())
+			ret.emplace_back(it->second->clone());
+		else
+			ret.emplace_back(platform_item_ptr());
+	}
+	return ret;
+}
+
+platform_item_ptr runtime_cache::get_item (const string_type& path)
+{
+	locks::auto_slim_lock _(&lock_); auto it = path_cache_.find(path);
+	if (it != path_cache_.end())
+		return it->second->clone();
+	else
+		return platform_item_ptr();
+}
+
+
 } // namespace sys_runtime
 

@@ -33,6 +33,8 @@
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 
@@ -85,6 +87,9 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 			case rt_value_ref_type::rt_variable:
 				next_send_[monitor].emplace(it_tags->second, it_handles->second.reference.ref_value_ptr.variable->get_value(state));
 				break;
+			case rt_value_ref_type::rt_relation:
+				next_send_[monitor].emplace(it_tags->second, it_handles->second.reference.ref_value_ptr.relation->value.get_value(state));
+				break;
 			default:
 				RX_ASSERT(false);
 				return "Internal error";
@@ -100,32 +105,44 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 	else
 	{// new one, connect item
 		rt_value_ref ref;
+
 		auto ref_result = item->get_value_ref(path, ref);
-		if (!ref_result)
-			return ref_result.errors();
-		// fill out the data
-		auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
-		switch (ref.ref_type)
+		if (ref_result)
 		{
-		case rt_value_ref_type::rt_const_value:
-			const_values_.emplace(ref.ref_value_ptr.const_value, handle);
-			next_send_[monitor].emplace(handle, ref.ref_value_ptr.const_value->get_value(state));
-			break;
-		case rt_value_ref_type::rt_value:
-			values_.emplace(ref.ref_value_ptr.value, handle);
-			next_send_[monitor].emplace(handle, ref.ref_value_ptr.value->get_value(state));
-			break;
-		case rt_value_ref_type::rt_variable:
-			variables_.emplace(ref.ref_value_ptr.variable, handle);
-			next_send_[monitor].emplace(handle, ref.ref_value_ptr.variable->get_value(state));
-			break;
-		default:
-			RX_ASSERT(false);
-			return "Internal error";
+			// fill out the data
+			auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
+			switch (ref.ref_type)
+			{
+			case rt_value_ref_type::rt_const_value:
+				const_values_.emplace(ref.ref_value_ptr.const_value, handle);
+				next_send_[monitor].emplace(handle, ref.ref_value_ptr.const_value->get_value(state));
+				break;
+			case rt_value_ref_type::rt_value:
+				values_.emplace(ref.ref_value_ptr.value, handle);
+				next_send_[monitor].emplace(handle, ref.ref_value_ptr.value->get_value(state));
+				break;
+			case rt_value_ref_type::rt_variable:
+				variables_.emplace(ref.ref_value_ptr.variable, handle);
+				next_send_[monitor].emplace(handle, ref.ref_value_ptr.variable->get_value(state));
+				break;
+			default:
+				RX_ASSERT(false);
+				return "Internal error";
+			}
+			handles_map_.emplace(handle, one_tag_data{ ref, 1,  {monitor} });
+			referenced_tags_.emplace(path, handle);
+			return handle;
 		}
-		handles_map_.emplace(handle, one_tag_data{ ref, 1,  {monitor} });
-		referenced_tags_.emplace(path, handle);
-		return handle;
+		else
+		{// try relations to see if there is something!!!
+			// relations code here!!!
+			auto result = connect_tag_from_relations(path, item, monitor, state);
+			if (result)
+			{
+				referenced_tags_.emplace(path, result.value());
+			}
+			return result;
+		}
 	}
 }
 
@@ -146,20 +163,14 @@ bool connected_tags::process_runtime (runtime_process_context& ctx)
 {
 	if (!next_send_.empty())
 	{
-		// OutputDebugStringA("****************Something to send\r\n");
 		std::vector<update_item> update_data;
-		for (auto& one : next_send_)
+		for (auto one : next_send_)
 		{
+			auto monitor = one.first;
 			update_data.clear();
 			for(const auto& item : one.second)
 				update_data.emplace_back(update_item{ item.first, item.second });
-			auto monitor = one.first;
-			std::function<void(tags_callback_ptr)> func=[update_data](tags_callback_ptr monitor)
-				{
-					// OutputDebugStringA("****************Item changed fired\r\n");
-					monitor->items_changed(update_data);
-				};
-			rx_post_function_to<tags_callback_ptr, tags_callback_ptr>(monitor->get_target(), func, monitor, monitor);
+			monitor->items_changed(update_data);
 		}
 		next_send_.clear();
 	}
@@ -182,16 +193,192 @@ rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr mon
 		case rt_value_ref_type::rt_variable:
 			next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.variable->get_value(state));
 			break;
+		case rt_value_ref_type::rt_relation:
+			next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.relation->value.get_value(state));
+			break;
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
+		}
+		return true;
+	}
+	else
+	{
+		auto it_rel = relations_handles_map_.find(item);
+		if (it_rel != relations_handles_map_.end())
+		{
+			auto result = it_rel->second->read_tag(item, monitor, state);
+			return result;
 		}
 	}
 	return true;
 }
 
-void connected_tags::value_set (structure::value_data* whose, const rx_simple_value& val)
+void connected_tags::binded_tags_change (structure::value_data* whose, const rx_value& val, structure::hosting_object_data& state)
 {
+	auto it = values_.find(whose);
+	if (it != values_.end())
+	{
+		auto handle = it->second;
+		auto it_data = handles_map_.find(handle);
+		if (it_data != handles_map_.end())
+		{
+			if (!it_data->second.monitors.empty())
+			{
+				for (auto& one : it_data->second.monitors)
+				{
+					next_send_[one].emplace(handle, val);
+				}
+				state.object->tag_updates_pending();
+			}
+		}
+	}
+}
+
+rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	auto it = handles_map_.find(item);
+	if (it != handles_map_.end())
+	{
+		auto ctx = structure::write_context::create_write_context(state, false);
+		switch (it->second.reference.ref_type)
+		{
+		case rt_value_ref_type::rt_const_value:
+			return "Can't write to const value!";
+		case rt_value_ref_type::rt_value:
+			{
+				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(value), ctx);
+				if (result)
+				{
+					next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.value->get_value(state));
+				}
+				return result;
+			}
+		case rt_value_ref_type::rt_variable:
+			return "Wow";
+			break;
+		case rt_value_ref_type::rt_relation:
+			{
+				auto result = it->second.reference.ref_value_ptr.relation->value.write_value(std::move(value), ctx);
+				if (result)
+				{
+					next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.relation->value.get_value(state));
+				}
+				return result;
+			}
+		default:
+			RX_ASSERT(false);
+			return "Internal error";
+		}
+	}
+	else
+	{
+		auto it_rel = relations_handles_map_.find(item);
+		if (it_rel != relations_handles_map_.end())
+		{
+			auto result = it_rel->second->write_tag(item, std::move(value), monitor, state);
+			return result;
+		}
+		return "Invalid handle value!";
+	}
+	return true;
+}
+
+void connected_tags::relation_tags_change (relations::relation_runtime* whose, const rx_value& val, structure::hosting_object_data& state)
+{
+}
+
+rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+{
+	string_type sub_path = path;
+	auto idx = path.find(RX_OBJECT_DELIMETER);
+	if (idx != string_type::npos)
+	{
+		string_type rest_path(path.substr(idx + 1));
+		auto it = mapped_relations_.find(path.substr(0, idx));
+		if (it == mapped_relations_.end())
+		{
+			auto relation = item->get_relation(path.substr(0, idx));
+			if (relation)
+			{
+				auto result = mapped_relations_.emplace(path.substr(0, idx), relation.unsafe_ptr());
+				if (result.second)
+					it = result.first;
+			}
+		}
+		if (it != mapped_relations_.end())
+		{
+			auto result = it->second->connect_tag(path.substr(idx + 1), item,monitor, state);
+			if (result)
+			{
+				relations_handles_map_.emplace(result.value(), it->second);
+			}
+			return result;
+		}
+		else
+		{
+			return "Not a relation type path!";
+		}
+	}
+	else
+	{
+		auto it = mapped_relations_.find(path);
+		if (it == mapped_relations_.end())
+		{
+			auto relation = item->get_relation(path);
+			if (relation)
+			{
+				auto result = mapped_relations_.emplace(path, relation.unsafe_ptr());
+				if (result.second)
+					it = result.first;
+			}
+		}
+		if (it != mapped_relations_.end())
+		{
+			if (it->second->runtime_handle == 0)
+			{
+				auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
+
+				rt_value_ref reference;
+				reference.ref_type = rt_value_ref_type::rt_relation;
+				reference.ref_value_ptr.relation = it->second;
+				handles_map_.emplace(handle, one_tag_data{ reference, 1,  {monitor} });
+				it->second->runtime_handle = handle;
+
+			}
+			auto result = it->second->runtime_handle;
+			next_send_[monitor].emplace(it->second->runtime_handle, it->second->value.get_value(state));
+			return result;
+		}
+		else
+		{
+			return "Not a relation type path!";
+		}
+	}
+}
+
+void connected_tags::runtime_stopped (const rx_time& now)
+{
+	rx_value temp_val;
+	temp_val.set_time(now);
+	temp_val.set_quality(RX_DEAD_QUALITY);
+	for (const auto& one : handles_map_)
+	{
+		for (auto& monitor : one.second.monitors)
+		{
+			next_send_[monitor].emplace(one.first, temp_val);
+		}
+	}
+	std::vector<update_item> update_data;
+	for (auto one : next_send_)
+	{
+		auto monitor = one.first;
+		update_data.clear();
+		for (const auto& item : one.second)
+			update_data.emplace_back(update_item{ item.first, item.second });
+		monitor->items_changed(update_data);
+	}
+	next_send_.clear();
 }
 
 
@@ -252,7 +439,7 @@ rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val)
 	}
 }
 
-rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags)
+rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags, structure::hosting_object_data& state)
 {
 	auto it_handles = handles_map_.find(handle);
 	if (it_handles != handles_map_.end())
@@ -263,8 +450,15 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 			return "Not supported for constant value!";
 			return true;
 		case rt_value_ref_type::rt_value:
-			it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val));
-			return true;
+			{
+				auto result= it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val));
+				if (result)
+				{
+					auto new_value = it_handles->second.ref_value_ptr.value->get_value(state);
+					tags.binded_tags_change(it_handles->second.ref_value_ptr.value, new_value, state);
+				}
+				return result;
+			}
 		case rt_value_ref_type::rt_variable:
 		default:
 			RX_ASSERT(false);
@@ -392,6 +586,10 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 rx_result binded_tags::pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const
 {
 	return RX_NOT_IMPLEMENTED;
+}
+
+void binded_tags::connected_tags_change (structure::value_data* whose, const rx_value& val)
+{
 }
 
 

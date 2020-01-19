@@ -193,20 +193,74 @@ void runtime_structure_resolver::set_root (blocks::runtime_holder* item)
 
 // Class rx_platform::runtime::runtime_process_context 
 
+runtime_process_context::runtime_process_context()
+      : current_step_(runtime_process_idle),
+        process_all_(false),
+        process_tag_connections_(false),
+        process_tag_writes_(false)
+{
+}
+
+
 
 bool runtime_process_context::should_repeat () const
 {
-	return false;
+	return current_step_!=runtime_process_over;
 }
 
-void runtime_process_context::tag_updates_pending ()
+bool runtime_process_context::tag_updates_pending ()
 {
+    if (process_tag_connections_)
+        return false;
+	process_tag_connections_ = true;
+    return current_step_ > runtime_process_tag_connections;
 }
 
 rx_result runtime_process_context::init_context ()
 {
 	now = rx_time::now();
+    current_step_ = runtime_process_tag_writes;
 	return true;
+}
+
+bool runtime_process_context::tag_writes_pending ()
+{
+    if (process_tag_writes_)
+        return false;
+    process_tag_writes_ = true;
+    return current_step_ > runtime_process_tag_writes;
+}
+
+bool runtime_process_context::should_process_tags ()
+{
+    if (current_step_ == runtime_process_tag_connections)
+    {
+        current_step_ = runtime_process_over;
+        auto temp = process_tag_connections_;
+        if (temp)
+            process_tag_connections_ = false;
+        return temp;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool runtime_process_context::should_process_writes ()
+{
+    if (current_step_ == runtime_process_tag_writes)
+    {
+        current_step_ = runtime_process_tag_connections;
+        auto temp = process_tag_writes_;
+        if (temp)
+            process_tag_writes_ = false;
+        return temp;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 
