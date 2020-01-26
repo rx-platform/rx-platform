@@ -143,26 +143,6 @@ runtime_handle_t platform_runtime_manager::get_new_handle ()
 }
 
 
-// Parameterized Class sys_runtime::execute_runtime_job 
-
-template <class typeT>
-execute_runtime_job<typeT>::execute_runtime_job (targetPtr target)
-      : target_(target)
-{
-}
-
-
-
-template <class typeT>
-void execute_runtime_job<typeT>::process ()
-{
-	runtime::objects::object_runtime_algorithms<typeT>::process_runtime(*target_);
-}
-
-template class execute_runtime_job<meta::object_types::object_type>;
-template class execute_runtime_job<meta::object_types::domain_type>;
-template class execute_runtime_job<meta::object_types::application_type>;
-template class execute_runtime_job<meta::object_types::port_type>;
 // Class sys_runtime::runtime_cache 
 
 
@@ -206,6 +186,22 @@ platform_item_ptr runtime_cache::get_item (const string_type& path)
 		return platform_item_ptr();
 }
 
+void runtime_cache::remove_from_cache (const string_type& path)
+{
+	locks::auto_slim_lock _(&lock_);
+	auto it = path_cache_.find(path);
+	if (it != path_cache_.end())
+		path_cache_.erase(it);
+}
+
 
 } // namespace sys_runtime
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return algorithms::relations_algorithms::init_runtime(what, ctx);
+
+#endif

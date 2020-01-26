@@ -33,14 +33,14 @@
 
 
 
-// rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "sys_internal/rx_internal_objects.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -196,7 +196,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+      rx_result read_value (const string_type& path, rx_value& value) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
@@ -256,7 +256,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       const meta_data_t& meta_info () const;
 
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+      rx_result read_value (const string_type& path, rx_value& value) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 
@@ -342,7 +342,7 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       const meta_data_t& meta_info () const;
 
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+      rx_result read_value (const string_type& path, rx_value& value) const;
 
       rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
 

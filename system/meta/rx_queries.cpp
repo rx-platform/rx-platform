@@ -295,7 +295,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr.value()->get_ports(result);
+					app_ptr.value()->get_instance_data().get_ports(result);
 				}
 			}
 		}
@@ -315,7 +315,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr.value()->get_domains(result);
+					app_ptr.value()->get_instance_data().get_domains(result);
 				}
 			}
 		}
@@ -335,7 +335,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr.value()->get_objects(result);
+					app_ptr.value()->get_instance_data().get_objects(result);
 				}
 			}
 		}

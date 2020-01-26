@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 18
-#define RX_LIB_BUILD_NUMBER 5
+#define RX_LIB_BUILD_NUMBER 7
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -24,5 +24,7 @@
 // version 0.18.3 rx_item_reference is part of lib and has specific serialization
 // version 0.18.4 read simple value is in serialization
 // version 0.18.5 added RX_DEAD_QUALITY
+// version 0.18.6 added rx_thread_data_object stack chacke before push
+// version 0.18.7 added errors_line to rx_result types
 
 

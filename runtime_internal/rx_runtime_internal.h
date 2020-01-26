@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -37,14 +37,12 @@
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_job
-#include "lib/rx_job.h"
 
 #include "rx_runtime_algorithms.h"
 #include "system/server/rx_inf.h"
 #include "api/rx_platform_api.h"
-using rx_platform::runtime::objects::application_instance_data;
-using rx_platform::runtime::objects::domain_instance_data;
+using rx_platform::runtime::items::application_instance_data;
+using rx_platform::runtime::items::domain_instance_data;
 using rx_platform::infrastructure::runtime_data_t;
 
 
@@ -54,35 +52,7 @@ namespace sys_runtime {
 
 
 
-template <class typeT>
-class execute_runtime_job : public rx::jobs::job  
-{
-	DECLARE_REFERENCE_PTR(execute_runtime_job);
-	typedef typename typeT::RTypePtr targetPtr;
-
-  public:
-      execute_runtime_job (targetPtr target);
-
-
-      void process ();
-
-
-  protected:
-
-  private:
-
-
-      targetPtr target_;
-
-
-};
-
-
-
-
-
-
-class runtime_cache 
+class runtime_cache
 {
     typedef std::map<string_type, platform_item_ptr> path_cache_type;
 
@@ -93,6 +63,8 @@ class runtime_cache
       std::vector<platform_item_ptr> get_items (const string_array& paths);
 
       platform_item_ptr get_item (const string_type& path);
+
+      void remove_from_cache (const string_type& path);
 
 
   protected:
@@ -113,7 +85,7 @@ class runtime_cache
 
 
 
-class platform_runtime_manager 
+class platform_runtime_manager
 {
 	typedef std::map<rx_node_id, rx_application_ptr> applications_type;
 	typedef std::vector<int> coverage_type;
@@ -143,14 +115,16 @@ class platform_runtime_manager
 
 
 	  template<class typeT>
-	  rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx)
+	  rx_result init_runtime(typename typeT::RTypePtr what)
 	  {
+          auto ctx = what->create_init_context();
 		  auto result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }
 	  template<class typeT>
-	  rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result)> callback, runtime::runtime_deinit_context& ctx)
+	  rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result)> callback)
 	  {
+          runtime::runtime_deinit_context ctx;
 		  auto result = algorithms::deinit_runtime<typeT>(what, callback, ctx);
 		  return result;
 	  }

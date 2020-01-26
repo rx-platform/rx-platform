@@ -258,7 +258,7 @@ rx_result update_subscription_request::deserialize (base_meta_reader& stream)
 
 message_ptr update_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
 
 const string_type& update_subscription_request::get_type_name ()

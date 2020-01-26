@@ -36,12 +36,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"
@@ -70,15 +70,6 @@ class namespace_algorithms;
 
 namespace rx_platform {
 
-enum class rx_object_command_t
-{
-	rx_turn_off = 0,
-	rx_turn_on,
-	rx_set_blocked,
-	rx_reset_blocked,
-	rx_set_test,
-	rx_reset_test
-};
 
 void rx_split_path(const string_type& full_path, string_type& directory_path, string_type& item_path);
 
@@ -149,12 +140,6 @@ class rx_namespace_item
       }
 
 
-      rx_thread_handle_t get_executer () const
-      {
-        return executer_;
-      }
-
-
 	  rx_namespace_item(const rx_namespace_item& right) = default;
 	  rx_namespace_item(rx_namespace_item&& right) = default;
 	  rx_namespace_item& operator=(const rx_namespace_item & right) = default;
@@ -170,8 +155,6 @@ class rx_namespace_item
 
 
       rx_item_type type_;
-
-      rx_thread_handle_t executer_;
 
 
 };

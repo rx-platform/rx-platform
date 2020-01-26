@@ -100,10 +100,10 @@ void rx_protocol_port::data_received (const string_type& data)
 			if (result)
 			{
 				auto buff_result = allocate_io_buffer();
-				buff_result.value().write_to_buffer((uint8_t)1);
+				result = buff_result.value().write_to_buffer((uint8_t)1);
 				string_type ret_data;
 				writter.get_string(ret_data, true);
-				auto ret = buff_result.value().write_string(ret_data);
+				result = buff_result.value().write_string(ret_data);
 
 				auto protocol_res = rx_move_packet_down(get_stack_entry(), nullptr, &buff_result.value());
 				if (protocol_res != RX_PROTOCOL_OK)
@@ -256,6 +256,19 @@ rx_result rx_protocol_port::write_items (const rx_uuid& id, runtime_transaction_
 	}
 }
 
+rx_result rx_protocol_port::remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results)
+{
+	auto it = subscriptions_.find(id);
+	if (it != subscriptions_.end())
+	{
+		return it->second->remove_items(std::move(items), results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
 
 // Class sys_internal::rx_protocol::rx_json_protocol 
 
@@ -301,6 +314,7 @@ rx_protocol_result_t rx_json_protocol::received_function (rx_protocol_stack_entr
 			{
 				if (self->my_port_)
 				{
+					std::cout << "******Port's executer = " << self->my_port_->get_executer() << "\r\n";
 					rx_post_function<decltype(my_port_)>([json](decltype(my_port_) whose) {
 							whose->data_received(json);
 						}
@@ -427,6 +441,12 @@ rx_result rx_protocol_subscription::write_items (runtime_transaction_id_t transa
 			one.first = 0;
 	}*/
 	auto result = my_subscription_->write_items(transaction_id, std::move(values), results);
+	return result;
+}
+
+rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results)
+{
+	auto result = my_subscription_->disconnect_items(items, results);
 	return result;
 }
 

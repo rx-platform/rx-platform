@@ -59,7 +59,6 @@ namespace mngt {
 server_manager::server_manager()
       : telnet_port_(0)
 {
-	commands_manager_ = rx_create_reference<server_command_manager>();
 }
 
 
@@ -73,13 +72,15 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 {
 	data.manager_internal_data = new mngt::manager_initialization_context;
 	telnet_port_ = data.telnet_port;
-	commands_manager_.cast_to<server_command_manager::smart_ptr>()->register_internal_commands();
-	unassigned_domain_ = rx_create_reference<sys_internal::sys_objects::unssigned_domain>();
-	unassigned_app_ = rx_create_reference<sys_internal::sys_objects::unassigned_application>();
-	system_app_ = rx_create_reference<sys_internal::sys_objects::system_application>();
-	system_domain_ = rx_create_reference<sys_internal::sys_objects::system_domain>();
+    // handle command stuff!
+	server_command_manager::instance()->register_internal_commands();
+    // register constructors
+    auto result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+        RX_RX_JSON_TYPE_ID, [] {
+            return server_command_manager::instance();
+        });
 	// handle rx_protocol stuff!
-	auto result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
+	result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
 	// register protocol constructors
 	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_RX_JSON_TYPE_ID, [] {
@@ -101,12 +102,12 @@ rx_result server_manager::start (hosting::rx_platform_host* host, const manageme
 	if (telnet_port_)
 	{
 		//TODOIO
-		telnet_listener_ = rx_create_reference<runtime::io_types::transport_port>();
+		//telnet_listener_ = rx_create_reference<runtime::io_types::transport_port>();
 		//telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
 	}
 	for (auto& one : data.manager_internal_data->get_to_register())
 	{
-		commands_manager_.cast_to<server_command_manager::smart_ptr>()->register_command(one);
+		server_command_manager::instance()->register_command(one);
 	}
 	return true;
 }

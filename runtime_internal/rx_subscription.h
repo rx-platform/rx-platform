@@ -124,6 +124,8 @@ class runtime_connection_data
 
       bool process_connection (const rx_time& ts, rx_subscription_ptr whose);
 
+      bool connection_dead ();
+
 
       rx_time last_checked;
 
@@ -146,7 +148,9 @@ class runtime_connection_data
 
       std::vector<size_t> empty_slots_;
 
-      std::vector<size_t> to_connect_;
+      string_array to_connect;
+
+      std::vector<size_t> connect_indexes;
 
 
 };
@@ -198,13 +202,13 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 
   private:
 
-      rx_result process_subscription (bool force_connect = false);
+      void process_subscription (bool posted = false);
 
       runtime_connection_data* get_connection (runtime_handle_t handle);
 
       rx_subscription_tag* get_tag (runtime_handle_t handle);
 
-      rx_result process_writes (bool force_write = false);
+      void process_writes ();
 
 
 
@@ -227,13 +231,13 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 
       connection_paths_type connection_paths_;
 
-      bool retrieve_items_;
-
-      bool connect_items_;
-
       pending_writes_type pending_writes_;
 
       pending_updates_type pending_updates_;
+
+      std::unordered_set<size_t> to_retrieve_;
+
+      std::unordered_set<size_t> to_process_;
 
 
 };

@@ -82,6 +82,13 @@ rx_result win32_pipe_host::fill_host_directories (hosting::rx_host_directories& 
 	return build_directories(data);
 }
 
+void win32_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err)
+{
+    in = GetStdHandle(STD_INPUT_HANDLE);
+    out = GetStdHandle(STD_OUTPUT_HANDLE);
+    err = GetStdHandle(STD_ERROR_HANDLE);
+}
+
 
 } // namespace win32
 

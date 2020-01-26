@@ -373,7 +373,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(T::RType::type_id) + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_name());
 			return create_result.errors();
 		}
 	}

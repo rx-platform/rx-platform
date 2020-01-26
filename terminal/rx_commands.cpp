@@ -172,7 +172,12 @@ server_command_base_ptr server_command_manager::get_command_by_name (const strin
 
 server_command_manager::smart_ptr server_command_manager::instance ()
 {
-	return rx_gate::instance().get_manager().get_commands_manager().cast_to<server_command_manager::smart_ptr>();
+	static server_command_manager::smart_ptr g_inst;
+	if (!g_inst)
+	{
+		g_inst = smart_ptr::create_from_pointer(new server_command_manager());
+	}
+	return g_inst;
 }
 
 namespace_item_attributes server_command_manager::get_attributes () const

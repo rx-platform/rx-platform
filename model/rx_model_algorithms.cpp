@@ -220,7 +220,7 @@ rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_n
 		}
 	}
 }
-//helper functions, anonymus namespace i think is perfect for theese
+//helper functions, anonymous namespace i think is perfect for these
 namespace
 {
 
@@ -309,7 +309,7 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 		auto work_item = get_platform_item_sync(typeCache::HType::type_id, id);
 		if(!work_item)
 		{
-			work_item.register_error("Error retriveing type item "s + item.get_meta().get_full_path());
+			work_item.register_error("Error retrieving type item "s + item.get_meta().get_full_path());
 			return work_item.errors();
 		}
 		auto delete_result = work_item.value()->delete_item();
@@ -462,6 +462,9 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 	}
 	else
 		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+	
+	transaction.commit();
+
 	return prototype;
 }
 template<class typeCache, class typeT>
@@ -560,7 +563,6 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_dir
 		return obj_ptr.errors();
 	}
 
-	runtime::runtime_deinit_context ctx;
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [name, dir, id, item, callback](rx_result&& deinit_result) mutable
 		{
 			rx_transaction_type transaction;
@@ -575,10 +577,10 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_dir
 			}
 			if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			{
-				auto work_item = get_platform_item_sync(typeT::RType::type_id, id);
+				auto work_item = get_platform_item_sync(typeT::RImplType::type_id, id);
 				if (!work_item)
 				{
-					work_item.register_error("Error retriveing type item "s + item.get_meta().get_full_path());
+					work_item.register_error("Error retrieving type item "s + item.get_meta().get_full_path());
 					callback(std::move(rx_result(work_item.errors())));
 					return;
 				}
@@ -593,7 +595,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_dir
 			transaction.push([=] {
 				if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 				{
-					auto work_item = get_platform_item_sync(typeT::RType::type_id, id);
+					auto work_item = get_platform_item_sync(typeT::RImplType::type_id, id);
 					if (work_item)
 						auto save_result = work_item.value()->save();
 				}
@@ -622,7 +624,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_dir
 			transaction.commit();
 			callback(std::move(ret));
 
-		}, ctx);
+		});
 	return true;
 }
 template<class typeCache>
@@ -715,17 +717,16 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		runtime::runtime_init_context ctx;
-		result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value(), ctx);
+		result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value());
 		if (!result)
 		{
 			result.register_error("Unable to initialize "s + runtime_name);
 			return result.errors();
 		}
-		META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RType::type_id) + " "s + meta.get_full_path());
+		META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RImplType::type_id) + " "s + meta.get_full_path());
 	}
 	else
-		META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RType::type_id) + " "s + meta.get_full_path());
+		META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RImplType::type_id) + " "s + meta.get_full_path());
 
 	return ret_value;
 }
@@ -845,7 +846,7 @@ rx_result_with<rx_node_id> resolve_runtime_reference(const rx_item_reference& re
 		return result;
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		if (type != typeT::RType::type_id)
+		if (type != typeT::RImplType::type_id)
 		{
 			return info.get_full_path() + " is " + rx_item_type_name(type) + " and not " + rx_item_type_name(typeT::type_id) + "!";
 		}
@@ -916,10 +917,10 @@ rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id)
 		break;
 	default:
 		{
-			return "Can't retreive details about "s + rx_item_type_name(type);
+			return "Can't retrieve details about "s + rx_item_type_name(type);
 		}
 	}
-	return "This should not happend but compiler is disturbed by this \"no return\"...?";
+	return "This should not happened but compiler is disturbed by this \"no return\"...?";
 }
 
 std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const rx_node_ids& ids)
@@ -1326,8 +1327,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 template <class typeT>
 rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr what)
 {
-	runtime::runtime_init_context ctx;
-	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what, ctx);
+	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what);
 	if (init_result)
 	{// make object running in state
 
@@ -1366,7 +1366,6 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 		return obj_ptr.errors();
 	}
 
-	runtime::runtime_deinit_context ctx;
 	meta_data meta_info(info);
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [meta_info, increment_version, callback, init_data, instance_data, dir, ref] (rx_result&& deinit_result) mutable
 		{
@@ -1385,7 +1384,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 						if (item_result)
 						{
 							item_result.value()->delete_item();
-							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + meta_info.get_name());
+							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + meta_info.get_name());
 						}
 					}
 				}
@@ -1395,7 +1394,7 @@ rx_result runtime_model_algorithm<typeT>::update_runtime_sync (const meta_data& 
 			}
 			if (!ret)
 				callback(ret.errors());
-		}, ctx);
+		});
 
 	return result;
 }
@@ -1423,7 +1422,7 @@ rx_result runtime_model_algorithm<typeT>::helper_delete_runtime_sync (meta_data_
 				if (item_result)
 				{
 					item_result.value()->delete_item();
-					META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + info.get_name());
+					META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + info.get_name());
 				}
 			}
 		}
@@ -1444,8 +1443,6 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 	{
 		return obj_ptr.errors();
 	}
-
-	runtime::runtime_deinit_context ctx;
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value(), [info, callback](rx_result&& deinit_result)
 		{
 			auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(info.get_id());
@@ -1463,13 +1460,13 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (meta_data_t info,
 						if (item_result)
 						{
 							item_result.value()->delete_item();
-							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RType::type_id) + " "s + info.get_name());
+							META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + info.get_name());
 						}
 					}
 				}
 			}
 			callback(std::move(ret));
-		}, ctx);
+		});
 
 	return result;
 }

@@ -111,6 +111,9 @@ const rx_message_type_t rx_proto_runtime_response_id = 0x8015;
 const rx_message_type_t rx_code_request_id = 0x0016;
 const rx_message_type_t rx_code_response_id = 0x8016; 
 
+const rx_message_type_t rx_info_request_id = 0x0017;
+const rx_message_type_t rx_info_response_id = 0x8017;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;
@@ -260,6 +263,47 @@ class error_message : public rx_message_base
 
 
 
+class rx_connection_context_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+      rx_node_id application_id;
+
+      rx_node_id domain_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 
 class rx_request_message : public rx_message_base  
 {
@@ -324,47 +368,6 @@ class rx_connection_context_request : public rx_request_message
       string_type application;
 
       string_type domain;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_connection_context_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type directory;
-
-      string_type application;
-
-      string_type domain;
-
-      rx_node_id application_id;
-
-      rx_node_id domain_id;
 
 
   protected:

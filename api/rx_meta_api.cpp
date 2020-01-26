@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -81,19 +81,19 @@ rx_result rx_create_runtime(
 
 template rx_result rx_create_runtime<object_type>(
 	rx_platform::meta::meta_data& meta_info , data::runtime_values_data* init_data
-	, runtime::objects::object_instance_data instance_data
+	, runtime::items::object_instance_data instance_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<domain_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::domain_instance_data instance_data
+	, runtime::items::domain_instance_data instance_data
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<application_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::application_instance_data instance_data
+	, runtime::items::application_instance_data instance_data
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_create_runtime<port_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::port_instance_data instance_data
+	, runtime::items::port_instance_data instance_data
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
 
 
@@ -113,19 +113,19 @@ rx_result rx_update_runtime(
 
 template rx_result rx_update_runtime<object_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::object_instance_data instance_data, bool increment_version
+	, runtime::items::object_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<domain_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::domain_instance_data instance_data, bool increment_version
+	, runtime::items::domain_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<domain_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<application_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::application_instance_data instance_data, bool increment_version
+	, runtime::items::application_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<application_type::RTypePtr>&&)> callback, rx_context ctx);
 template rx_result rx_update_runtime<port_type>(
 	rx_platform::meta::meta_data& meta_info, data::runtime_values_data* init_data
-	, runtime::objects::port_instance_data instance_data, bool increment_version
+	, runtime::items::port_instance_data instance_data, bool increment_version
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback, rx_context ctx);
 
 
@@ -150,28 +150,28 @@ template rx_result rx_create_runtime_implicit<object_type>(
 	const string_type& name, const string_type& type_name
 	, namespace_item_attributes attributes // required attributes
 	, data::runtime_values_data* init_data  // initialization data
-	, runtime::objects::object_instance_data instance_data
+	, runtime::items::object_instance_data instance_data
 	, std::function<void(rx_result_with<rx_object_ptr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_runtime_implicit<domain_type>(
 	const string_type& name, const string_type& type_name
 	, namespace_item_attributes attributes // required attributes
 	, data::runtime_values_data* init_data  // initialization data
-	, runtime::objects::domain_instance_data instance_data
+	, runtime::items::domain_instance_data instance_data
 	, std::function<void(rx_result_with<rx_domain_ptr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_runtime_implicit<port_type>(
 	const string_type& name, const string_type& type_name
 	, namespace_item_attributes attributes // required attributes
 	, data::runtime_values_data* init_data  // initialization data
-	, runtime::objects::port_instance_data instance_data
+	, runtime::items::port_instance_data instance_data
 	, std::function<void(rx_result_with<port_type::RTypePtr>&&)> callback
 	, rx_context ctx);
 template rx_result rx_create_runtime_implicit<application_type>(
 	const string_type& name, const string_type& type_name
 	, namespace_item_attributes attributes // required attributes
 	, data::runtime_values_data* init_data  // initialization data
-	, runtime::objects::application_instance_data instance_data
+	, runtime::items::application_instance_data instance_data
 	, std::function<void(rx_result_with<rx_application_ptr>&&)> callback
 	, rx_context ctx);
 

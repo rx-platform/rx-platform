@@ -729,18 +729,17 @@ void rx_directory_resolver::add_paths (std::initializer_list<string_type> paths)
 // Class rx_platform::ns::rx_namespace_item 
 
 rx_namespace_item::rx_namespace_item()
-      : type_(rx_item_type::rx_invalid_type),
-        executer_(0)
+      : type_(rx_item_type::rx_invalid_type)
 {
 }
 
 rx_namespace_item::rx_namespace_item (const platform_item_ptr& who)
-      : type_(rx_item_type::rx_invalid_type),
-        executer_(0)
+      : type_(rx_item_type::rx_invalid_type)
 {
 	type_ = who->get_type_id();
 	meta_ = who->meta_info();
-	executer_ = who->get_executer();
+	//executer_ = who->get_executer();
+	value_.assign_static(meta_.get_version(), meta_.get_modified_time());
 }
 
 

@@ -115,13 +115,14 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 			}
 			if (domain_ptr)
 			{
-				what->connect_domain(std::move(domain_ptr.value()));
+				what->get_instance_data().connect_domain(std::move(domain_ptr.value()), what);
 			}
 			else
 			{
 				std::ostringstream message;
 				message << "Unable to connect to domain "
 					<< what->get_instance_data().domain_id ? what->get_instance_data().domain_id.to_string() : RX_NULL_ITEM_NAME;
+				message << domain_ptr.errors_line();
 				result = rx_result(message.str());
 			}
 		}
@@ -132,22 +133,22 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 			auto domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
 			if (domain_ptr)
 			{
-				what->connect_domain(std::move(domain_ptr));
+				what->get_instance_data().connect_domain(std::move(domain_ptr), what);
 			}
 			else
 			{
 				std::ostringstream message;
 				message << "Unable to connect to domain "
 					<< what->get_instance_data().domain_id ? what->get_instance_data().domain_id.to_string() : RX_NULL_ITEM_NAME;
-				result = rx_result(message.str());
+				return rx_result(message.str());
 			}
 		}
 		if (result)
 		{
 			rx_post_function<rx_object_ptr>([](rx_object_ptr whose)
 				{
-					runtime::runtime_start_context start_ctx;
-					auto result = start_runtime(whose, start_ctx);
+					auto ctx = whose->create_start_context();
+					auto result = start_runtime(whose, ctx);
 					if (result)
 					{
 						RUNTIME_LOG_TRACE("object_algorithms", 100, ("Started "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
@@ -165,7 +166,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 	{
 		for (const auto& error : result.errors())
 			RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
-		RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_name()).c_str());
+		RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_name()).c_str() + result.errors_line());
 
 	}
 	return result;
@@ -210,6 +211,9 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 
 rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
 {
+
+	platform_runtime_manager::instance().get_cache().remove_from_cache(what->meta_info().get_full_path());
+
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
@@ -239,13 +243,15 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 			}
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr.value()));
+				what->get_instance_data().connect_application(std::move(application_ptr.value()), what);
 			}
 			else
 			{
 				std::ostringstream message;
 				message << "Unable to connect to application "
 					<< what->get_instance_data().app_id ? what->get_instance_data().app_id.to_string() : RX_NULL_ITEM_NAME;
+					message << application_ptr.errors_line();
+
 				result = rx_result(message.str());
 			}
 		}
@@ -256,7 +262,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr));
+				what->get_instance_data().connect_application(std::move(application_ptr), what);
 			}
 			else
 			{
@@ -270,7 +276,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		{
 			rx_post_function<rx_domain_ptr>([](rx_domain_ptr whose)
 				{
-					runtime::runtime_start_context start_ctx;
+					runtime::runtime_start_context start_ctx = whose->create_start_context();
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
@@ -278,9 +284,8 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 					}
 					else
 					{
-						for (const auto& error : result.errors())
-							RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str());
+						RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
+						
 					}
 				}, what, what->get_executer());
 		}
@@ -357,12 +362,12 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 			{
 
 				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting port "s
-					+ what->meta_info().get_full_path() + " to unassigned application.");
+					+ what->meta_info().get_full_path() + " to unassigned application." + application_ptr.errors_line());
 				application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			}
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr.value()));
+				what->get_instance_data().connect_application(std::move(application_ptr.value()), what);
 			}
 			else
 			{
@@ -379,7 +384,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 			auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
 			if (application_ptr)
 			{
-				what->connect_application(std::move(application_ptr));
+				what->get_instance_data().connect_application(std::move(application_ptr), what);
 			}
 			else
 			{
@@ -391,11 +396,11 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		}
 		if (result)
 		{
-			runtime::objects::object_runtime_algorithms<port_type>::fire_job(*what);
+			runtime::algorithms::object_runtime_algorithms<port_type>::fire_job(*what);
 
 			rx_post_function<rx_port_ptr>([](rx_port_ptr whose)
 				{
-					runtime::runtime_start_context start_ctx;
+					runtime::runtime_start_context start_ctx = whose->create_start_context();
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
@@ -465,31 +470,39 @@ rx_result port_algorithms::stop_runtime (rx_port_ptr what, runtime::runtime_stop
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
-	auto ret = what->initialize_runtime(ctx);
-	if (ret)
+	rx_result ret;
+	auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().get_id());
+	if (it == platform_runtime_manager::instance().applications_.end())
 	{
-		RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
-
-		auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().get_id());
-		if (it == platform_runtime_manager::instance().applications_.end())
+		platform_runtime_manager::instance().applications_.emplace(what->meta_info().get_id(), what);
+		//what->executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
+		ret = what->initialize_runtime(ctx);
+		if (ret)
 		{
-			platform_runtime_manager::instance().applications_.emplace(what->meta_info().get_id(), what);
+			RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
+
+			rx_post_function<rx_application_ptr>([](rx_application_ptr whose)
+				{
+					runtime::runtime_start_context start_ctx = whose->create_start_context();
+					auto result = start_runtime(whose, start_ctx);
+					if (result)
+					{
+						RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
+					}
+					else
+					{
+						RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
+					}
+				}, what, what->get_executer());
 		}
-		rx_post_function<rx_application_ptr>([](rx_application_ptr whose)
-			{
-				runtime::runtime_start_context start_ctx;
-				auto result = start_runtime(whose, start_ctx);
-				if (result)
-				{
-					RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
-				}
-				else
-				{
-					for (const auto& error : result.errors())
-						RUNTIME_LOG_ERROR("application_algorithms", 800, error.c_str());
-					RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
-				}
-			}, what, what->get_executer());
+	}
+	else
+	{
+		ret = "Application with this node id is already registered";
+	}
+	if (!ret)
+	{
+		RUNTIME_LOG_CRITICAL("application_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path()).c_str() + ret.errors_line());
 	}
 	return ret;
 }

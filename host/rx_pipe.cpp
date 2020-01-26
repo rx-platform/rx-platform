@@ -103,7 +103,7 @@ bool rx_pipe_host::break_host (const string_type& msg)
 
 int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
-	
+
 	rx_platform::configuration_data_t config;
 	pipe_client_t pipes;
 	memzero(&pipes, sizeof(pipes));
@@ -233,16 +233,6 @@ bool rx_pipe_host::is_canceling () const
 	return false;
 }
 
-bool rx_pipe_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
-{
-	return false;
-}
-
-bool rx_pipe_host::write_stdout (const void* data, size_t size)
-{
-	return false;
-}
-
 bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes)
 {
 
@@ -250,15 +240,17 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 
 	intptr_t read_handle(0);
 	intptr_t write_handle(0);
+	bool use_std = false;
 
 	options.add_options()
 		("input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
 		("output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
+		("std", "Use stdin and stderr for communication", cxxopts::value<bool>(use_std))
 		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
 		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
 		("debug", "Wait keyboard hit on start", cxxopts::value<bool>(debug_stop_))
 		("trace", "Dump traces in standard output", cxxopts::value<bool>(stdout_log_->show_traces))
-		
+
 		;
 
 	add_command_line_options(options, config);
@@ -294,11 +286,18 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			// don't execute
 			return false;
 		}
+		else if (use_std)
+		{
+            sys_handle_t in, out, err;
+            get_stdio_handles(in,out,err);
+			read_handle = (intptr_t)in;
+			write_handle = (intptr_t)err;
+		}
 		else if (read_handle == 0 || write_handle == 0)
 		{
 			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
 				<< "\r\nUse --input and --output options to specify handles."
-				<< "\r\nUse --help for more datails"
+				<< "\r\nUse --help for more details"
 				<< "\r\nExiting...";
 
 			return false;
@@ -359,7 +358,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			std::cout << "Starting pipe communication...";
 
 			rx_protocol_result_t res = opcua_bin_init_pipe_transport(&transport_, 0x10000, 0x10);
-			
+
 			if (res == RX_PROTOCOL_OK)
 			{
 				result = pipe_port_->open();
@@ -367,7 +366,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 				{
 					res = rx_push_stack(pipe_port_->get_stack_entry(), &transport_.protocol_stack_entry);
 
-					
+
 					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
 
 					std::cout << "OK\r\n";
@@ -404,7 +403,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 					security::security_auto_context dummy(sec_ctx);
 
 					auto user = security::active_security()->get_full_name();
-								
+
 
 					pipe_port_->receive_loop();
 
@@ -426,7 +425,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 				std::cout << "ERROR\r\nError initializing transport protocol!\r\n";
 
 
-			
+
 			std::cout << "Stopping rx-platform...";
 			result = rx_platform::rx_gate::instance().stop();
 			if (result)
@@ -474,15 +473,6 @@ string_type rx_pipe_host::get_host_manual () const
 string_type rx_pipe_host::get_host_name ()
 {
 	return RX_PIPE_HOST;
-}
-
-rx_result rx_pipe_host::register_hosts ()
-{
-	auto result = rx_gate::instance().register_constructor<meta::object_types::port_type>(
-		rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2), [] {
-			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
-		});
-	return result;
 }
 
 

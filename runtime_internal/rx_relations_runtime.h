@@ -68,7 +68,7 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
       rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
@@ -100,7 +100,7 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
 
       rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 

@@ -33,8 +33,8 @@
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
+// rx_relations
+#include "system/runtime/rx_relations.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 
@@ -65,7 +65,7 @@ connected_tags::~connected_tags()
 
 
 
-rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
 	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_tags = referenced_tags_.find(path);
@@ -106,7 +106,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 	{// new one, connect item
 		rt_value_ref ref;
 
-		auto ref_result = item->get_value_ref(path, ref);
+		auto ref_result = item.get_value_ref(path, ref);
 		if (ref_result)
 		{
 			// fill out the data
@@ -159,7 +159,7 @@ rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback
 	return true;
 }
 
-bool connected_tags::process_runtime (runtime_process_context& ctx)
+bool connected_tags::process_runtime (algorithms::runtime_process_context& ctx)
 {
 	if (!next_send_.empty())
 	{
@@ -229,7 +229,7 @@ void connected_tags::binded_tags_change (structure::value_data* whose, const rx_
 				{
 					next_send_[one].emplace(handle, val);
 				}
-				state.object->tag_updates_pending();
+				state.context->tag_updates_pending();
 			}
 		}
 	}
@@ -250,7 +250,9 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(value), ctx);
 				if (result)
 				{
-					next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.value->get_value(state));
+					auto val = it->second.reference.ref_value_ptr.value->get_value(state);
+					for(const auto& one : it->second.monitors)
+						next_send_[one].emplace(item, val);
 				}
 				return result;
 			}
@@ -262,7 +264,9 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 				auto result = it->second.reference.ref_value_ptr.relation->value.write_value(std::move(value), ctx);
 				if (result)
 				{
-					next_send_[monitor].emplace(item, it->second.reference.ref_value_ptr.relation->value.get_value(state));
+					auto val = it->second.reference.ref_value_ptr.relation->value.get_value(state);
+					for (const auto& one : it->second.monitors)
+						next_send_[one].emplace(item, val);
 				}
 				return result;
 			}
@@ -288,7 +292,7 @@ void connected_tags::relation_tags_change (relations::relation_runtime* whose, c
 {
 }
 
-rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
 	string_type sub_path = path;
 	auto idx = path.find(RX_OBJECT_DELIMETER);
@@ -298,7 +302,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		auto it = mapped_relations_.find(path.substr(0, idx));
 		if (it == mapped_relations_.end())
 		{
-			auto relation = item->get_relation(path.substr(0, idx));
+			auto relation = state.get_relation(path.substr(0, idx));
 			if (relation)
 			{
 				auto result = mapped_relations_.emplace(path.substr(0, idx), relation.unsafe_ptr());
@@ -308,7 +312,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		}
 		if (it != mapped_relations_.end())
 		{
-			auto result = it->second->connect_tag(path.substr(idx + 1), item,monitor, state);
+			auto result = it->second->connect_tag(path.substr(idx + 1), monitor, state);
 			if (result)
 			{
 				relations_handles_map_.emplace(result.value(), it->second);
@@ -317,7 +321,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		}
 		else
 		{
-			return "Not a relation type path!";
+			return "Invalid path!";
 		}
 	}
 	else
@@ -325,7 +329,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		auto it = mapped_relations_.find(path);
 		if (it == mapped_relations_.end())
 		{
-			auto relation = item->get_relation(path);
+			auto relation = state.get_relation(path);
 			if (relation)
 			{
 				auto result = mapped_relations_.emplace(path, relation.unsafe_ptr());
@@ -352,7 +356,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		}
 		else
 		{
-			return "Not a relation type path!";
+			return "Invalid path!";
 		}
 	}
 }
@@ -518,7 +522,7 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	}
 	if (ref.ref_type == rt_value_ref_type::rt_null)
 	{
-		auto ref_result = ctx.structure.get_root()->get_value_ref(path, ref);
+		auto ref_result = ctx.structure.get_root().get_value_ref(path, ref);
 		if (!ref_result)
 			return ref_result.errors();
 		revisied_path = path;
@@ -567,7 +571,7 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 	}
 	if (ref.ref_type == rt_value_ref_type::rt_null)
 	{
-		auto ref_result = ctx.structure.get_root()->get_value_ref(path, ref);
+		auto ref_result = ctx.structure.get_root().get_value_ref(path, ref);
 		if (!ref_result)
 			return ref_result.errors();
 	}
@@ -576,7 +580,7 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 	case rt_value_ref_type::rt_const_value:
 		return ref.ref_value_ptr.const_value->set_value(std::move(what));
 	case rt_value_ref_type::rt_value:
-		ref.ref_value_ptr.value->set_value(std::move(what), structure::init_context::create_initialization_context(ctx.structure.get_root()));
+		ref.ref_value_ptr.value->set_value(std::move(what), rx_time::now());
 		return true;
 	default:
 		return "Unsupported type!.";

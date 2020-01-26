@@ -33,6 +33,7 @@
 
 
 #include "system/runtime/rx_objbase.h"
+#include "lib/rx_const_size_vector.h"
 
 
 

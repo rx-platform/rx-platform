@@ -35,23 +35,30 @@
 
 #include "system/server/rx_server.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
+// rx_security
+#include "lib/security/rx_security.h"
+// rx_thread
+#include "lib/rx_thread.h"
 // rx_console
 #include "terminal/rx_console.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
-// rx_security
-#include "lib/security/rx_security.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
+namespace host {
+namespace interactive {
+class interactive_console_port;
+class interactive_console_host;
+
+} // namespace interactive
+} // namespace host
 
 
 using namespace rx;
@@ -62,6 +69,75 @@ using namespace rx_platform;
 namespace host {
 
 namespace interactive {
+
+
+
+
+
+class interactive_console_host : public rx_platform::hosting::rx_platform_host  
+{
+
+  public:
+      interactive_console_host (hosting::rx_host_storages& storage);
+
+      ~interactive_console_host();
+
+
+      void get_host_info (string_array& hosts);
+
+      void server_started_event ();
+
+      bool shutdown (const string_type& msg);
+
+      bool exit () const;
+
+      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
+
+      std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      int console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
+
+      virtual rx_result setup_console (int argc, char* argv[]);
+
+      virtual void restore_console ();
+
+      static string_type get_interactive_info ();
+
+      rx_result build_host (rx_directory_ptr root);
+
+      string_type get_host_manual () const;
+
+      string_type get_host_name ();
+
+      virtual bool supports_ansi () const = 0;
+
+      virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
+
+      virtual bool write_stdout (const void* data, size_t size) = 0;
+
+      bool write_stdout (const string_type& lines);
+
+
+  protected:
+
+      rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
+
+      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
+
+
+  private:
+
+
+      rx_reference<interactive_console_port> interactive_port_;
+
+
+      bool exit_;
+
+
+};
+
 
 
 
@@ -85,7 +161,7 @@ class interactive_console_client : public terminal::console::console_runtime
   private:
 
 
-      rx_platform::hosting::rx_platform_host *host_;
+      interactive_console_host *host_;
 
       terminal::rx_vt100::vt100_transport vt100_transport_;
 
@@ -135,7 +211,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 {
 
   public:
-      interactive_console_endpoint (hosting::rx_platform_host* host);
+      interactive_console_endpoint (interactive_console_host* host);
 
 
       rx_result run_interactive (std::function<void(int64_t)> received_func);
@@ -153,7 +229,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
 
 
-      rx_platform::hosting::rx_platform_host *host_;
+      interactive_console_host *host_;
 
       rx::threads::physical_job_thread std_out_sender_;
 
@@ -177,7 +253,7 @@ Standard IO class. implementation of an standard IO console port");
 	DECLARE_REFERENCE_PTR(interactive_console_port);
 
   public:
-      interactive_console_port (hosting::rx_platform_host* host);
+      interactive_console_port (interactive_console_host* host);
 
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
@@ -190,7 +266,7 @@ Standard IO class. implementation of an standard IO console port");
 
       rx_protocol_stack_entry* get_stack_entry ();
 
-      rx_result run_interactive (hosting::rx_platform_host* host);
+      rx_result run_interactive (interactive_console_host* host);
 
 
   protected:
@@ -199,70 +275,6 @@ Standard IO class. implementation of an standard IO console port");
 
 
       interactive_console_endpoint endpoint_;
-
-
-};
-
-
-
-
-
-
-
-class interactive_console_host : public rx_platform::hosting::rx_platform_host  
-{
-
-  public:
-      interactive_console_host (hosting::rx_host_storages& storage);
-
-      ~interactive_console_host();
-
-
-      void get_host_info (string_array& hosts);
-
-      void server_started_event ();
-
-      bool shutdown (const string_type& msg);
-
-      bool exit () const;
-
-      bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx);
-
-      std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      int console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
-
-      virtual rx_result setup_console (int argc, char* argv[]);
-
-      virtual void restore_console ();
-
-      static string_type get_interactive_info ();
-
-      rx_result build_host (rx_directory_ptr root);
-
-      string_type get_host_manual () const;
-
-      string_type get_host_name ();
-
-      virtual bool supports_ansi () const = 0;
-
-
-  protected:
-
-      rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
-
-      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
-
-
-  private:
-
-
-      rx_reference<interactive_console_port> interactive_port_;
-
-
-      bool exit_;
 
 
 };

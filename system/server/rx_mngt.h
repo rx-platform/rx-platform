@@ -38,8 +38,6 @@
 #include "system/server/rx_platform_item.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 namespace terminal {
 namespace commands {
@@ -138,27 +136,34 @@ class server_manager
       }
 
 
-      rx_reference<runtime::objects::domain_runtime> get_unassigned_domain ()
+
+      rx_domain_ptr get_unassigned_domain () const
       {
         return unassigned_domain_;
       }
 
 
-      rx_reference<runtime::objects::application_runtime> get_unassigned_app ()
+      rx_domain_ptr get_system_domain () const
+      {
+        return system_domain_;
+      }
+
+
+      rx_application_ptr get_unassigned_app () const
       {
         return unassigned_app_;
       }
 
 
-      rx_reference<runtime::objects::application_runtime> get_system_app ()
+      rx_application_ptr get_system_app () const
       {
         return system_app_;
       }
 
 
-      rx_reference<runtime::objects::domain_runtime> get_system_domain ()
+      rx_port_ptr get_telnet_listener () const
       {
-        return system_domain_;
+        return telnet_listener_;
       }
 
 
@@ -168,20 +173,20 @@ class server_manager
   private:
 
 
-      rx_reference<runtime::objects::port_runtime> telnet_listener_;
-
       rx_object_ptr commands_manager_;
-
-      rx_reference<runtime::objects::domain_runtime> unassigned_domain_;
-
-      rx_reference<runtime::objects::application_runtime> unassigned_app_;
-
-      rx_reference<runtime::objects::application_runtime> system_app_;
-
-      rx_reference<runtime::objects::domain_runtime> system_domain_;
 
 
       uint16_t telnet_port_;
+
+      rx_domain_ptr unassigned_domain_;
+
+      rx_domain_ptr system_domain_;
+
+      rx_application_ptr unassigned_app_;
+
+      rx_application_ptr system_app_;
+
+      rx_port_ptr telnet_listener_;
 
 
 };

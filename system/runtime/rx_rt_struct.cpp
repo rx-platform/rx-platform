@@ -31,11 +31,14 @@
 #include "pch.h"
 
 
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
 #include "rx_blocks.h"
 #include "rx_objbase.h"
+#include "rx_relations.h"
 
 
 namespace rx_platform {
@@ -143,7 +146,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 			auto it = data.values.find(one.name);
 			if (it != data.values.end())
 			{
-				values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx);
+				values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx.now);
 			}
 		}
 		break;
@@ -943,7 +946,7 @@ void variable_data::set_value (rx_simple_value&& val, const init_context& ctx)
 
 rx_result variable_data::write_value (rx_simple_value&& val, const write_context& ctx)
 {
-	return "Not implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -1310,11 +1313,11 @@ rx_value value_data::get_value (const hosting_object_data& state) const
 	return ret;
 }
 
-void value_data::set_value (rx_simple_value&& val, const init_context& ctx)
+void value_data::set_value (rx_simple_value&& val, const rx_time& time)
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_timed_value::from_simple(std::move(val), ctx.now);
+		value = rx_timed_value::from_simple(std::move(val), time);
 	}
 }
 
@@ -1360,6 +1363,13 @@ rx_result value_data::simple_set_value (rx_simple_value&& val)
 
 // Class rx_platform::runtime::structure::hosting_object_data 
 
+hosting_object_data::hosting_object_data (const std::vector<relation_runtime_ptr>& relations, algorithms::runtime_process_context* ctx)
+      : context(ctx),
+        relations_(relations)
+{
+}
+
+
 
 rx_value hosting_object_data::adapt_value (const rx_value& from) const
 {
@@ -1368,6 +1378,18 @@ rx_value hosting_object_data::adapt_value (const rx_value& from) const
 	// Adapt value with hosting object data
 	// currently doing nothing!!!
 	return ret;
+}
+
+relation_runtime_ptr hosting_object_data::get_relation (const string_type& path) const
+{
+	for (auto& one : relations_)
+	{
+		if (one->name == path)
+		{
+			return one;
+		}
+	}
+	return relation_runtime_ptr::null_ptr;
 }
 
 
@@ -1396,32 +1418,13 @@ const runtime_item* runtime_item::get_child_item (const string_type& path) const
 // Class rx_platform::runtime::structure::init_context 
 
 
-init_context init_context::create_initialization_context (runtime_holder* whose)
-{
-	init_context ret;
-	ret.now = rx_time::now();
-	ret.object_data = whose->get_object_state();
-	return ret;
-}
-
-
 // Class rx_platform::runtime::structure::write_context 
 
-
-write_context write_context::create_write_context (runtime_holder* whose, bool internal_write)
-{
-	write_context ret;
-	ret.now = rx_time::now();
-	ret.object_data = whose->get_object_state();
-	ret.internal_ = internal_write;
-	return ret;
-}
 
 write_context write_context::create_write_context (const structure::hosting_object_data& state, bool internal_write)
 {
 	write_context ret;
 	ret.now = rx_time::now();
-	ret.object_data = state;
 	ret.internal_ = internal_write;
 	return ret;
 }

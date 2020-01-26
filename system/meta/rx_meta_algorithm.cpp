@@ -375,8 +375,36 @@ rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& who
 		return false;
 	if (!whose.mapping_data_.serialize_mapped_definition(stream, type))
 		return false;
-	if (!whose.object_data_.serialize_object_definition(stream, type))
+	//////////////////////////////////
+	// object data
+	if (!stream.write_bool("constructable", whose.object_data_.constructable_))
 		return false;
+	if (!stream.start_array("relations", whose.object_data_.relations_.size()))
+		return false;
+	for (const auto& one : whose.object_data_.relations_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		if (!one.serialize_definition(stream, type))
+			return false;
+
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	if (!stream.start_array("programs", whose.object_data_.programs_.size()))
+		return false;
+	for (const auto& one : whose.object_data_.programs_)
+	{
+		if (!one->save_program(stream, type))
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+	// end object data
+	//////////////////////////////////
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -391,8 +419,27 @@ rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, 
 		return false;
 	if (!whose.mapping_data_.deserialize_mapped_definition(stream, type, whose.complex_data_))
 		return false;
-	if (!whose.object_data_.deserialize_object_definition(stream, type))
+	// object data
+	if (!stream.read_bool("constructable", whose.object_data_.constructable_))
 		return false;
+	if (!stream.start_array("relations"))
+		return false;
+
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		relation_attribute one;
+		if (!one.deserialize_definition(stream, type))
+			return false;
+		whose.object_data_.relations_.emplace_back(one);
+
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
+	// end object data
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -416,9 +463,12 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 		ret = whose.mapping_data_.construct(whose.complex_data_.get_names_cache(), ctx);
 		if (ret)
 		{
-			ret = whose.object_data_.construct(what->runtime_, ctx);
-			if (ret)
+			for (const auto& one : whose.object_data_.relations_)
 			{
+				auto one_result = one.construct(ctx);
+				if (!one_result)
+					return one_result.errors();
+				what->relations_.emplace_back(one_result.value());
 			}
 		}
 	}

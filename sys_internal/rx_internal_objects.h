@@ -47,7 +47,7 @@ namespace sys_objects {
 
 
 
-class system_application : public rx_platform::runtime::objects::application_runtime  
+class system_application : public rx_platform::runtime::items::application_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,2, "\
 system application. contains system objects and internal system communication");
@@ -55,17 +55,19 @@ system application. contains system objects and internal system communication");
 	DECLARE_REFERENCE_PTR(system_application);
 
   public:
-      system_application();
-
       ~system_application();
 
 
       namespace_item_attributes get_attributes () const;
 
+      static system_application::smart_ptr instance ();
+
 
   protected:
 
   private:
+      system_application();
+
 
 
 };
@@ -75,24 +77,26 @@ system application. contains system objects and internal system communication");
 
 
 
-class system_domain : public rx_platform::runtime::objects::domain_runtime  
+class system_domain : public rx_platform::runtime::items::domain_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 this domain is used by system objects");
 	DECLARE_REFERENCE_PTR(system_domain);
 
   public:
-      system_domain();
-
       ~system_domain();
 
 
       namespace_item_attributes get_attributes () const;
 
+      static system_domain::smart_ptr instance ();
+
 
   protected:
 
   private:
+      system_domain();
+
 
 
 };
@@ -102,7 +106,7 @@ this domain is used by system objects");
 
 
 
-class unassigned_application : public rx_platform::runtime::objects::application_runtime  
+class unassigned_application : public rx_platform::runtime::items::application_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 this application is for unassigned domains.it allways has bad quality");
@@ -110,17 +114,19 @@ this application is for unassigned domains.it allways has bad quality");
 	DECLARE_REFERENCE_PTR(unassigned_application);
 
   public:
-      unassigned_application();
-
       ~unassigned_application();
 
 
       namespace_item_attributes get_attributes () const;
 
+      static unassigned_application::smart_ptr instance ();
+
 
   protected:
 
   private:
+      unassigned_application();
+
 
 
 };
@@ -130,25 +136,27 @@ this application is for unassigned domains.it allways has bad quality");
 
 
 
-class unssigned_domain : public rx_platform::runtime::objects::domain_runtime  
+class unassigned_domain : public rx_platform::runtime::items::domain_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
-this domain is for uassigned objects.it allways has bad quality");
+this domain is for unassigned objects.it always has bad quality");
 
-	DECLARE_REFERENCE_PTR(unssigned_domain);
+	DECLARE_REFERENCE_PTR(unassigned_domain);
 
   public:
-      unssigned_domain();
-
-      ~unssigned_domain();
+      ~unassigned_domain();
 
 
       namespace_item_attributes get_attributes () const;
+
+      static unassigned_domain::smart_ptr instance ();
 
 
   protected:
 
   private:
+      unassigned_domain();
+
 
 
 };

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  sys_internal\rx_directory_messages.h
+*  sys_internal\rx_general_messages.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,8 +28,8 @@
 ****************************************************************************/
 
 
-#ifndef rx_directory_messages_h
-#define rx_directory_messages_h 1
+#ifndef rx_general_messages_h
+#define rx_general_messages_h 1
 
 
 
@@ -44,13 +44,13 @@ namespace rx_protocol {
 
 namespace messages {
 
-namespace directory_messages {
+namespace general_messages {
 
 
 
 
 
-class rx_make_directory_request : public rx_request_message  
+class rx_system_info_request : public rx_request_message  
 {
 
   public:
@@ -70,8 +70,6 @@ class rx_make_directory_request : public rx_request_message
 
       static rx_message_type_t type_id;
 
-      string_type path;
-
 
   protected:
 
@@ -85,7 +83,7 @@ class rx_make_directory_request : public rx_request_message
 
 
 
-class rx_make_directory_response : public rx_message_base  
+class rx_system_info_response : public rx_message_base  
 {
 
   public:
@@ -103,36 +101,17 @@ class rx_make_directory_response : public rx_message_base
 
       static rx_message_type_t type_id;
 
+      string_type instance;
 
-  protected:
+      string_type node;
 
-  private:
+      string_type platform;
 
+      string_type library;
 
-};
+      string_type os_itf;
 
-
-
-
-
-
-class rx_remove_directory_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
+      string_type os;
 
 
   protected:
@@ -143,42 +122,7 @@ class rx_remove_directory_response : public rx_message_base
 };
 
 
-
-
-
-
-class rx_remove_directory_request : public rx_request_message  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type path;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace directory_messages
+} // namespace general_messages
 } // namespace messages
 } // namespace rx_protocol
 } // namespace sys_internal

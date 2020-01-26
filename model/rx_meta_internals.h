@@ -277,6 +277,8 @@ public:
 	typedef typename typeT::RTypePtr RTypePtr;
 	typedef typename typeT::smart_ptr Tptr;
 	typedef rx_result_with<Tptr> TdefRes;
+    typedef typename typeT::RImplType RImplType;
+    typedef typename typeT::RImplPtr RImplPtr;
 
 	enum class runtime_state
 	{
@@ -295,7 +297,7 @@ public:
 
 	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
-	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
+	typedef typename std::map<rx_node_id, std::function<RImplPtr()> > constructors_type;
 
   public:
       types_repository();
@@ -305,7 +307,7 @@ public:
 
       rx_result register_type (typename types_repository<typeT>::Tptr what);
 
-      rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
+      rx_result register_constructor (const rx_node_id& id, std::function<RImplPtr()> f);
 
       rx_result_with<typename types_repository<typeT>::RTypePtr> create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
@@ -348,7 +350,7 @@ public:
 
       constructors_type constructors_;
 
-	  std::function<RTypePtr()> default_constructor_;
+	  std::function<RImplPtr()> default_constructor_;
 };
 
 

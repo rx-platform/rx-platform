@@ -33,10 +33,12 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
+// rx_runtime_holder
+#include "system/runtime/rx_runtime_holder.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 
@@ -47,10 +49,17 @@ namespace rx_platform {
 
 namespace runtime {
 
-// Class rx_platform::runtime::runtime_deinit_context 
-
-
 // Class rx_platform::runtime::runtime_init_context 
+
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded)
+      : context(context),
+        next_handle_(0x80000000),
+        meta(meta)
+    , structure(root)
+    , tags(binded)
+{
+}
+
 
 
 runtime_handle_t runtime_init_context::get_new_handle ()
@@ -59,10 +68,27 @@ runtime_handle_t runtime_init_context::get_new_handle ()
 }
 
 
-// Class rx_platform::runtime::runtime_start_context 
+// Class rx_platform::runtime::variables_stack 
 
 
-// Class rx_platform::runtime::runtime_stop_context 
+void variables_stack::push_variable (rx_variable_ptr what)
+{
+	variables_.push(what);
+}
+
+void variables_stack::pop_variable ()
+{
+	if (!variables_.empty())
+		variables_.pop();
+}
+
+rx_variable_ptr variables_stack::get_current_variable () const
+{
+	if (!variables_.empty())
+		return variables_.top();
+	else
+		return rx_variable_ptr::null_ptr;
+}
 
 
 // Class rx_platform::runtime::runtime_path_resolver 
@@ -126,33 +152,10 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 }
 
 
-// Class rx_platform::runtime::variables_stack 
-
-
-void variables_stack::push_variable (rx_variable_ptr what)
-{
-	variables_.push(what);
-}
-
-void variables_stack::pop_variable ()
-{
-	if (!variables_.empty())
-		variables_.pop();
-}
-
-rx_variable_ptr variables_stack::get_current_variable () const
-{
-	if (!variables_.empty())
-		return variables_.top();
-	else
-		return rx_variable_ptr::null_ptr;
-}
-
-
 // Class rx_platform::runtime::runtime_structure_resolver 
 
-runtime_structure_resolver::runtime_structure_resolver()
-      : root_(nullptr)
+runtime_structure_resolver::runtime_structure_resolver (structure::runtime_item& root)
+      : root_(root)
 {
 }
 
@@ -180,21 +183,35 @@ structure::runtime_item& runtime_structure_resolver::get_current_item ()
 		return g_empty;
 }
 
-blocks::runtime_holder* runtime_structure_resolver::get_root ()
+structure::runtime_item& runtime_structure_resolver::get_root ()
 {
-	return root_;
-}
-
-void runtime_structure_resolver::set_root (blocks::runtime_holder* item)
-{
-	root_ = item;
+    return root_;
 }
 
 
-// Class rx_platform::runtime::runtime_process_context 
+// Class rx_platform::runtime::runtime_deinit_context 
 
-runtime_process_context::runtime_process_context()
-      : current_step_(runtime_process_idle),
+
+// Class rx_platform::runtime::runtime_start_context 
+
+runtime_start_context::runtime_start_context (structure::runtime_item& root)
+    : structure(root)
+{
+}
+
+
+
+// Class rx_platform::runtime::runtime_stop_context 
+
+
+namespace algorithms {
+
+// Class rx_platform::runtime::algorithms::runtime_process_context 
+
+runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags)
+      : tags_(tags),
+        binded_(binded),
+        current_step_(runtime_process_idle),
         process_all_(false),
         process_tag_connections_(false),
         process_tag_writes_(false)
@@ -211,7 +228,9 @@ bool runtime_process_context::should_repeat () const
 bool runtime_process_context::tag_updates_pending ()
 {
     if (process_tag_connections_)
+    {
         return false;
+    }
 	process_tag_connections_ = true;
     return current_step_ > runtime_process_tag_connections;
 }
@@ -263,7 +282,23 @@ bool runtime_process_context::should_process_writes ()
     }
 }
 
+rx_result runtime_process_context::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
+{
+    return binded_.get_value(handle, val);
+}
 
+rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
+{
+    return binded_.set_value(handle, std::move(val), tags_, *state_);
+}
+
+rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
+{
+    return binded_.set_item(path, std::move(what), ctx);
+}
+
+
+} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 

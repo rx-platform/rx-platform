@@ -63,7 +63,7 @@ rx_result local_relation_connector::write_tag (runtime_handle_t item, rx_simple_
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result_with<runtime_handle_t> local_relation_connector::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> local_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
     string_array paths{ path };
     auto result = item_ptr_->connect_items(paths, monitor);
@@ -95,7 +95,7 @@ rx_result remote_relation_connector::write_tag (runtime_handle_t item, rx_simple
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result_with<runtime_handle_t> remote_relation_connector::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> remote_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
     return RX_NOT_IMPLEMENTED;
 }

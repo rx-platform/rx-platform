@@ -42,6 +42,8 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_mngt
 #include "system/server/rx_mngt.h"
 // rx_cmds
@@ -50,8 +52,6 @@
 #include "system/server/rx_ns.h"
 // rx_inf
 #include "system/server/rx_inf.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 
 namespace interfaces {
 namespace io_endpoints {
@@ -211,7 +211,7 @@ class rx_gate
 
 
 	  template <class typeT>
-	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
+	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
   protected:
 
       void interface_bind ();

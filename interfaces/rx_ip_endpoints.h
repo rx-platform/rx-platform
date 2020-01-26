@@ -36,10 +36,10 @@
 
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 namespace interfaces {
 namespace ip_endpoints {

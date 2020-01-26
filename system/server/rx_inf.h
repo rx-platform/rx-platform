@@ -68,7 +68,7 @@ namespace infrastructure {
 
 
 
-class server_dispatcher_object : public runtime::objects::object_runtime  
+class server_dispatcher_object : public runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
@@ -134,7 +134,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 class domains_pool : public rx::threads::job_thread, 
-                     	public runtime::objects::object_runtime  
+                     	public runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 
@@ -200,7 +200,7 @@ struct runtime_data_t
 
 
 
-class server_rt : public runtime::objects::object_runtime  
+class server_rt : public runtime::items::object_runtime  
 {
 	DECLARE_CODE_INFO("rx",1,0,0, "\
 class managing runtime resources:\r\n\

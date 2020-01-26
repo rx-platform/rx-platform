@@ -48,7 +48,7 @@
 
 namespace rx_platform {
 template<typename typeT>
-rx_result register_plugin_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
+rx_result register_plugin_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
 
 namespace library {
 

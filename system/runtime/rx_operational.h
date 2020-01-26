@@ -40,10 +40,10 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace blocks {
-class runtime_holder;
+namespace relations {
+class relation_runtime;
 
-} // namespace blocks
+} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 
@@ -135,11 +135,11 @@ class connected_tags
       ~connected_tags();
 
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
-      bool process_runtime (runtime_process_context& ctx);
+      bool process_runtime (algorithms::runtime_process_context& ctx);
 
       rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
@@ -149,7 +149,7 @@ class connected_tags
 
       void relation_tags_change (relations::relation_runtime* whose, const rx_value& val, structure::hosting_object_data& state);
 
-      rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
       void runtime_stopped (const rx_time& now);
 

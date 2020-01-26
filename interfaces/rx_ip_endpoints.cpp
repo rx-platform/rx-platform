@@ -96,8 +96,8 @@ rx_result udp_port::start_runtime (runtime::runtime_start_context& ctx)
 	if (result)
 	{
 		udp_socket_ = rx_create_reference<socket_holder_t>(this);
-		string_type addr = ctx.structure.get_root()->get_local_as<string_type>("Bind.IPAddress", "");
-		uint16_t port = ctx.structure.get_root()->get_local_as<uint16_t>("Bind.IPPort", 0);
+		string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
+		uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
 		result = udp_socket_->bind_socket_udpip_4(port, addr, rx_gate::instance().get_infrastructure().get_io_pool()->get_pool());
 	}
 	return result;
@@ -133,12 +133,12 @@ rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ct
         if (bind_result)
             rx_recv_timeout_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+            RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
         bind_result = ctx.tags->bind_item("Timeouts.ReceiveTimeout", ctx);
         if (bind_result)
             rx_recv_timeout_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+            RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
     }
     return result;
 }
@@ -156,8 +156,8 @@ rx_result tcp_server_port::start_runtime (runtime::runtime_start_context& ctx)
     auto result = physical_port::start_runtime(ctx);
     if (result)
     {
-        string_type addr = ctx.structure.get_root()->get_local_as<string_type>("Bind.IPAddress", "");
-        uint16_t port = ctx.structure.get_root()->get_local_as<uint16_t>("Bind.IPPort", 0);
+        string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
+        uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
         listen_socket_ = rx_create_reference<io::tcp_listent_std_buffer>([this](sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_thread_handle_t thr)
             {
                 connection_endpoint new_endpoint;

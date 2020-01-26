@@ -38,8 +38,6 @@
 #include "terminal/rx_terminal_style.h"
 #include "system/hosting/rx_yaml.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_interactive
 #include "host/rx_interactive.h"
 
@@ -470,6 +468,11 @@ string_type interactive_console_host::get_host_name ()
 	return RX_INTERACTIVE_HOST;
 }
 
+bool interactive_console_host::write_stdout (const string_type& lines)
+{
+	return write_stdout(lines.c_str(), lines.size());
+}
+
 
 // Class host::interactive::interactive_console_client 
 
@@ -650,7 +653,7 @@ bool interactive_security_context::is_interactive () const
 
 // Class host::interactive::interactive_console_port 
 
-interactive_console_port::interactive_console_port (hosting::rx_platform_host* host)
+interactive_console_port::interactive_console_port (interactive_console_host* host)
       : endpoint_(host)
 {
 }
@@ -702,7 +705,7 @@ rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
 	return &endpoint_;
 }
 
-rx_result interactive_console_port::run_interactive (hosting::rx_platform_host* host)
+rx_result interactive_console_port::run_interactive (interactive_console_host* host)
 {
 
 	interactive_security_context::smart_ptr sec_ctx(pointers::_create_new);
@@ -728,7 +731,7 @@ rx_result interactive_console_port::run_interactive (hosting::rx_platform_host* 
 
 // Class host::interactive::interactive_console_endpoint 
 
-interactive_console_endpoint::interactive_console_endpoint (hosting::rx_platform_host* host)
+interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host)
       : host_(host)
 	, std_out_sender_("Standard Out Writer", RX_DOMAIN_EXTERN)
 {

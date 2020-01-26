@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
-// rx_anonymus_pipes
-#include "host/rx_anonymus_pipes.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_log
 #include "lib/rx_log.h"
+// rx_anonymus_pipes
+#include "host/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -116,10 +116,6 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool is_canceling () const;
 
-      bool read_stdin (std::array<char,0x100>& chars, size_t& count);
-
-      bool write_stdout (const void* data, size_t size);
-
       rx_result build_host (rx_directory_ptr root);
 
       string_type get_host_manual () const;
@@ -133,10 +129,11 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins);
 
-      rx_result register_hosts ();
-
 
   private:
+
+      virtual void get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err) = 0;
+
 
 
       rx_reference<rx_pipe_stdout_log_subscriber> stdout_log_;

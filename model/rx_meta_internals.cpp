@@ -296,7 +296,7 @@ types_repository<typeT>::types_repository()
 	{
 		default_constructor_ = []()
 		{
-			return rx_create_reference<RType>();
+			return rx_create_reference<RImplType>();
 		};
 	}
 }
@@ -342,7 +342,7 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
+rx_result types_repository<typeT>::register_constructor (const rx_node_id& id, std::function<RImplPtr()> f)
 {
 	constructors_.emplace(id, f);
 	return true;
@@ -364,6 +364,7 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	}
 
 	RTypePtr ret;
+	RImplPtr implementation_ptr;
 
 	rx_node_ids base;
 	std::vector<const data::runtime_values_data*> overrides;
@@ -395,15 +396,15 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 		auto it = constructors_.find(one);
 		if (it != constructors_.end())
 		{
-			ret = (it->second)();
+			implementation_ptr = (it->second)();
 			break;
 		}
 	}
-	if (!ret)
+	if (!implementation_ptr)
 	{
 		if constexpr (typeT::has_default_constructor)
 		{
-			ret = default_constructor_();
+			implementation_ptr = default_constructor_();
 		}
 		else
 		{
@@ -413,7 +414,8 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 
 	construct_context ctx;
 	ctx.get_directories().add_paths({meta.get_path()});
-	ret->meta_info() = meta;
+	ret = rx_create_reference<RType>(meta, std::move(type_data));
+	ret->implementation_ = implementation_ptr;
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -435,25 +437,24 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	rx_simple_value name_value;
 	name_value.assign_static<string_type>(string_type(meta.get_name()));
 	ctx.runtime_data.add_const_value("Name", name_value);
-	typeT::set_runtime_data(ctx.runtime_data, ret);
-	typeT::set_instance_data(std::move(type_data), ret);
+	ret->set_runtime_data(ctx.runtime_data);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)
 	{
 		if (*it)
-			ret->get_runtime().fill_data(*(*it));
+			ret->fill_data(*(*it));
 	}
 	if (init_data)
 	{
-		ret->get_runtime().fill_data(*init_data);
-		ret->get_runtime().get_overrides() = *init_data;
+		ret->fill_data(*init_data);
+		ret->get_overrides() = *init_data;
 	}
 	if (!prototype)
 	{
 		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state::runtime_state_created });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RType::type_id, meta);
+		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RImplType::type_id, meta);
 		RX_ASSERT(type_ret);// has to be, we checked earlier
 	}
 	return ret;
@@ -487,7 +488,7 @@ rx_result types_repository<typeT>::check_type (const rx_node_id& id, type_check_
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
-		return temp.value()->check_type(ctx);
+		return meta_algorithm::object_types_algorithm<typeT>::check_object_type(*temp.value(), ctx);
 	}
 	else
 	{
@@ -513,7 +514,7 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	}
 	else
 	{
-		return RTypePtr::null_ptr;
+		return "Runtime not registered";
 	}
 }
 
@@ -568,7 +569,7 @@ rx_result types_repository<typeT>::delete_type (rx_node_id id)
 	}
 	else
 	{
-		return "Node id not found";
+		return "Type not registered!";
 	}
 }
 
@@ -584,8 +585,7 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	for (auto& one : registered_objects_)
 	{
-		runtime::runtime_init_context ctx;
-		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target, ctx);
+		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target);
 		if (init_result)
 			one.second.state = runtime_state::runtime_state_running;
 	}
@@ -1279,7 +1279,7 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 	rx_node_id target_relation_type_id = type_id;
 	auto inv_ref = relation_type_ptr->get_inverse_reference();
 	if (!inv_ref.is_null())
-	{// this is symetrical reference
+	{// this is symmetrical reference
 		auto resolve_result = model::algorithms::resolve_relation_reference(inv_ref, dirs);
 		if (!resolve_result)
 			return resolve_result.errors();
@@ -1411,10 +1411,7 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	for (auto& one : registered_objects_)
 	{
-		runtime::runtime_init_context ctx;
-		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<relation_type>(one.second.target, ctx);
-		if (init_result)
-			one.second.state = runtime_state::runtime_state_running;
+		one.second.state = runtime_state::runtime_state_running;
 	}
 	return result;
 }

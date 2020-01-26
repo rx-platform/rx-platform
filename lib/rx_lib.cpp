@@ -423,6 +423,21 @@ rx_result::operator bool() const
 	return !result_value_;
 }
 
+string_type rx_result::errors_line(char delim) const
+{
+	if (*this)
+		return "";
+	else if (result_value_->empty())
+		return "No specific errors!";
+	std::ostringstream ss;
+	for (const auto& one : *result_value_)
+	{
+		if (!ss.eof())// using this as a bool!
+			ss << delim;
+		ss << one;
+	}
+	return ss.str();
+}
 rx_result rx_result::create_from_last_os_error(const string_type& text)
 {
 	char buffer[0x100];
@@ -1984,7 +1999,9 @@ public:
 		auto it = m_objects.find(handle);
 		if (it != m_objects.end())
 		{
-			it->second->pop();
+			RX_ASSERT(!it->second->empty());
+			if(!it->second->empty())
+				it->second->pop();
 			return true;
 		}
 		return false;

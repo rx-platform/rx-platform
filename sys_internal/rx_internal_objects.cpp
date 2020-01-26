@@ -59,6 +59,14 @@ namespace_item_attributes system_application::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
+system_application::smart_ptr system_application::instance ()
+{
+    static smart_ptr g_inst;
+    if (!g_inst)
+        g_inst = smart_ptr::create_from_pointer(new system_application());
+    return g_inst;
+}
+
 
 // Class sys_internal::sys_objects::system_domain 
 
@@ -76,6 +84,14 @@ system_domain::~system_domain()
 namespace_item_attributes system_domain::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+system_domain::smart_ptr system_domain::instance ()
+{
+    static smart_ptr g_inst;
+    if (!g_inst)
+        g_inst = smart_ptr::create_from_pointer(new system_domain());
+    return g_inst;
 }
 
 
@@ -97,23 +113,39 @@ namespace_item_attributes unassigned_application::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
+unassigned_application::smart_ptr unassigned_application::instance ()
+{
+    static smart_ptr g_inst;
+    if (!g_inst)
+        g_inst = smart_ptr::create_from_pointer(new unassigned_application());
+    return g_inst;
+}
 
-// Class sys_internal::sys_objects::unssigned_domain 
 
-unssigned_domain::unssigned_domain()
+// Class sys_internal::sys_objects::unassigned_domain 
+
+unassigned_domain::unassigned_domain()
 {
 }
 
 
-unssigned_domain::~unssigned_domain()
+unassigned_domain::~unassigned_domain()
 {
 }
 
 
 
-namespace_item_attributes unssigned_domain::get_attributes () const
+namespace_item_attributes unassigned_domain::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+unassigned_domain::smart_ptr unassigned_domain::instance ()
+{
+    static smart_ptr g_inst;
+    if (!g_inst)
+        g_inst = smart_ptr::create_from_pointer(new unassigned_domain());
+    return g_inst;
 }
 
 

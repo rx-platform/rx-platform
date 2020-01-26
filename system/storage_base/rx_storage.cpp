@@ -56,7 +56,7 @@ rx_platform_storage::~rx_platform_storage()
 
 rx_result rx_platform_storage::init_storage (const string_type& storage_reference)
 {
-	return "Not implemented!!!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 void rx_platform_storage::deinit_storage ()

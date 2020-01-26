@@ -47,14 +47,14 @@
 namespace rx_platform {
 
 template<typename typeT>
-rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
+rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {
 	return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
 }
-template rx_result register_host_constructor<meta::object_types::object_type>(const rx_node_id& id, std::function<rx_object_ptr()> f);
-template rx_result register_host_constructor<meta::object_types::domain_type>(const rx_node_id& id, std::function<rx_domain_ptr()> f);
-template rx_result register_host_constructor<meta::object_types::port_type>(const rx_node_id& id, std::function<rx_port_ptr()> f);
-template rx_result register_host_constructor<meta::object_types::application_type>(const rx_node_id& id, std::function<rx_application_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::object_type>(const rx_node_id& id, std::function<rx_object_impl_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::domain_type>(const rx_node_id& id, std::function<rx_domain_impl_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::port_type>(const rx_node_id& id, std::function<rx_port_impl_ptr()> f);
+template rx_result register_host_constructor<meta::object_types::application_type>(const rx_node_id& id, std::function<rx_application_impl_ptr()> f);
 
 namespace hosting {
 namespace
@@ -284,11 +284,6 @@ void rx_platform_host::deinitialize_storages ()
 	storages_.system_storage->deinit_storage();
 }
 
-bool rx_platform_host::write_stdout (const string_type& lines)
-{
-	return write_stdout(lines.c_str(), lines.size());
-}
-
 void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
 {
 	options.add_options()
@@ -367,11 +362,6 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 	std::cout << "\r\n";
 }
 
-rx_result rx_platform_host::register_hosts ()
-{
-	return true;
-}
-
 rx_result_with<rx_storage_ptr> rx_platform_host::get_system_storage (const string_type& name)
 {
 	return storages_.system_storage->get_storage(name);
@@ -429,3 +419,11 @@ bool host_security_context::is_system () const
 } // namespace hosting
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return true;
+
+#endif

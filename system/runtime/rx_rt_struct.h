@@ -38,6 +38,8 @@
 // rx_values
 #include "lib/rx_values.h"
 
+
+
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
@@ -58,11 +60,6 @@ namespace blocks
 	class mapper_runtime;
 	class filter_runtime;
 	class event_runtime;
-    class runtime_holder;
-}
-namespace objects
-{
-	class object_runtime;
 }
 namespace relations
 {
@@ -71,15 +68,12 @@ class relation_runtime;
 }
 
 
-using blocks::runtime_holder;
-
 typedef rx::pointers::reference<blocks::struct_runtime> struct_runtime_ptr;
 typedef rx::pointers::reference<blocks::variable_runtime> variable_runtime_ptr;
 typedef rx::pointers::reference<blocks::source_runtime> source_runtime_ptr;
 typedef rx::pointers::reference<blocks::mapper_runtime> mapper_runtime_ptr;
 typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
 typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
-typedef rx::pointers::reference<objects::object_runtime> object_runtime_ptr;
 typedef rx::pointers::reference<relations::relation_runtime> relation_runtime_ptr;
 
 namespace structure {
@@ -176,20 +170,28 @@ class hosting_object_data
 {
 
   public:
+      hosting_object_data (const std::vector<relation_runtime_ptr>& relations, algorithms::runtime_process_context* ctx);
+
 
       rx_value adapt_value (const rx_value& from) const;
+
+      relation_runtime_ptr get_relation (const string_type& path) const;
+
+
+      algorithms::runtime_process_context *context;
 
 
       rx_mode_type mode;
 
       rx_time time;
 
-      const runtime_holder* object;
-
 
   protected:
 
   private:
+
+
+      const std::vector<relation_runtime_ptr>& relations_;
 
 
 };
@@ -204,9 +206,6 @@ class init_context
 
   public:
 
-      static init_context create_initialization_context (runtime_holder* whose);
-
-
       const string_type& get_current_path () const
       {
         return current_path_;
@@ -214,7 +213,7 @@ class init_context
 
 
 
-      hosting_object_data object_data;
+      algorithms::runtime_process_context *context;
 
 
       rx_time now;
@@ -240,8 +239,6 @@ class write_context
 
   public:
 
-      static write_context create_write_context (runtime_holder* whose, bool internal_write);
-
       static write_context create_write_context (const structure::hosting_object_data& state, bool internal_write);
 
 
@@ -250,9 +247,6 @@ class write_context
         return internal_;
       }
 
-
-
-      hosting_object_data object_data;
 
 
       rx_time now;
@@ -312,7 +306,7 @@ class value_data
 
       rx_value get_value (const hosting_object_data& state) const;
 
-      void set_value (rx_simple_value&& val, const init_context& ctx);
+      void set_value (rx_simple_value&& val, const rx_time& time);
 
       void object_state_changed (const hosting_object_data& state);
 

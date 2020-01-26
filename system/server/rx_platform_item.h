@@ -78,7 +78,7 @@ private:
 
       virtual const meta_data_t& meta_info () const = 0;
 
-      virtual rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const = 0;
+      virtual rx_result read_value (const string_type& path, rx_value& value) const = 0;
 
       virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
 

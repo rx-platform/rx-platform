@@ -138,13 +138,15 @@ rx_item_type rx_item_implementation<TImpl>::get_type_id () const
 template <class TImpl>
 values::rx_value rx_item_implementation<TImpl>::get_value () const
 {
-	return impl_->get_value();
+    values::rx_value ret;
+    ret.assign_static(impl_->meta_info().get_version());
+	return ret;
 }
 
 template <class TImpl>
 string_type rx_item_implementation<TImpl>::get_name () const
 {
-	return impl_->get_name();
+	return impl_->meta_info().get_name();
 }
 
 template <class TImpl>
@@ -189,19 +191,19 @@ const meta_data_t& rx_item_implementation<TImpl>::meta_info () const
 template <class TImpl>
 void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
 {
-	impl_->fill_code_info(info, name);
+	impl_->get_implementation()->fill_code_info(info, name);
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
+rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
 {
-	return impl_->read_value(path, callback, ctx);
+	return impl_->read_value(path, value);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return impl_->write_value(path, std::move(val), std::move(callback), ctx);
+	return impl_->write_value(path, std::move(val), std::move(callback), ctx, rx_thread_context());
 }
 
 template <class TImpl>
@@ -219,13 +221,13 @@ rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, cons
 template <class TImpl>
 std::vector<rx_result_with<runtime_handle_t> > rx_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
 {
-	return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
+	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
-	return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
+	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -263,7 +265,7 @@ rx_thread_handle_t rx_item_implementation<TImpl>::get_executer () const
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
 {
-    return runtime::objects::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
+    return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
 }
 
 
@@ -329,21 +331,21 @@ const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
+rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t command_type)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
@@ -487,21 +489,21 @@ const meta_data_t& rx_other_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
+rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t command_type)
 {
-	return "Not Implemented!";
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>

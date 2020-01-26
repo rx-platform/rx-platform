@@ -31,8 +31,8 @@
 #include "pch.h"
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
+// rx_runtime_holder
+#include "system/runtime/rx_runtime_holder.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 
@@ -224,17 +224,17 @@ rx_result relation_runtime::write_tag (runtime_handle_t item, rx_simple_value&& 
 	}
 }
 
-rx_result_with<runtime_handle_t> relation_runtime::connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> relation_runtime::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
 	if (connector_)
 	{
-		auto result = connector_->connect_tag(path, item, monitor, state);
+		auto result = connector_->connect_tag(path, monitor, state);
 		return result;
 	}
 	else
 	{
 		return "Wrong object state!";
-	}	
+	}
 }
 
 rx_result relation_runtime::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
@@ -265,6 +265,4 @@ relation_connector::~relation_connector()
 } // namespace relations
 } // namespace runtime
 } // namespace rx_platform
-
-
 

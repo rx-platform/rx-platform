@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -48,7 +48,7 @@ namespace model {
 
 namespace meta_commands {
 
-// Class model::meta_commands::create_command
+// Class model::meta_commands::create_command 
 
 create_command::create_command()
 	: server_command("create")
@@ -76,25 +76,25 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 			{
 			case rx_item_type::rx_object:
 				{
-					runtime::objects::object_instance_data instance_data;
+					runtime::items::object_instance_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<object_type>());
 				}
 				break;
 			case rx_item_type::rx_domain:
 				{
-					runtime::objects::domain_instance_data instance_data;
+					runtime::items::domain_instance_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<domain_type>());
 				}
 				break;
 			case rx_item_type::rx_port:
 				{
-					runtime::objects::port_instance_data instance_data;
+					runtime::items::port_instance_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<port_type>());
 				}
 				break;
 			case rx_item_type::rx_application:
 				{
-					runtime::objects::application_instance_data instance_data;
+					runtime::items::application_instance_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<application_type>());
 				}
 				break;
@@ -200,7 +200,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	else
 	{
 		err << "Unknown base "
-			<< rx_item_type_name(T::RType::type_id)
+			<< rx_item_type_name(T::RImplType::type_id)
 			<< " specifier:"
 			<< from_command << "!";
 		return false;
@@ -225,12 +225,12 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
-								<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+								<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 							dump_error_result(ctx->get_stderr(), result);
 						}
 						else
 						{
-							ctx->get_stdout() << "Created " << rx_item_type_name(T::RType::type_id) << " "
+							ctx->get_stdout() << "Created " << rx_item_type_name(T::RImplType::type_id) << " "
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
@@ -239,7 +239,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
-						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 					dump_error_result(ctx->get_stderr(), result);
 				}
 				return result;
@@ -247,7 +247,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 			else
 			{
 				err << "Error deserialization of initialization data for "
-					<< rx_item_type_name(T::RType::type_id)
+					<< rx_item_type_name(T::RImplType::type_id)
 					<< " as " << def_command << "!";
 				return false;
 			}
@@ -255,7 +255,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 		else
 		{
 			err << "Unknown "
-				<< rx_item_type_name(T::RType::type_id)
+				<< rx_item_type_name(T::RImplType::type_id)
 				<< " definition specifier:"
 				<< def_command << "!";
 			return false;
@@ -274,13 +274,13 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
-						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 					dump_error_result(err, result);
 				}
 				else
 				{
 					auto& out = ctx->get_stdout();
-					out << "Created " << rx_item_type_name(T::RType::type_id) << " "
+					out << "Created " << rx_item_type_name(T::RImplType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
@@ -289,7 +289,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
-				<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+				<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 			dump_error_result(ctx->get_stderr(), result);
 		}
 		return result;
@@ -297,7 +297,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	else
 	{
 		err << "Unknown "
-			<< rx_item_type_name(T::RType::type_id)
+			<< rx_item_type_name(T::RImplType::type_id)
 			<< " creation type:"
 			<< as_command << "!";
 		return false;
@@ -354,7 +354,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
-								<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+								<< rx_item_type_name(T::type_id) << ":\r\n";
 							dump_error_result(ctx->get_stderr(), result);
 						}
 						else
@@ -368,7 +368,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
-						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+						<< rx_item_type_name(T::type_id) << ":\r\n";
 					dump_error_result(ctx->get_stderr(), result);
 				}
 				return result;
@@ -376,7 +376,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			else
 			{
 				err << "Error deserialization of initialization data for "
-					<< rx_item_type_name(T::RType::type_id)
+					<< rx_item_type_name(T::type_id)
 					<< " as " << def_command << "!";
 				return false;
 			}
@@ -384,7 +384,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		else
 		{
 			err << "Unknown "
-				<< rx_item_type_name(T::RType::type_id)
+				<< rx_item_type_name(T::type_id)
 				<< " definition specifier:"
 				<< def_command << "!";
 			return false;
@@ -418,7 +418,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
-				<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+				<< rx_item_type_name(T::type_id) << ":\r\n";
 			dump_error_result(ctx->get_stderr(), result);
 		}
 		return result;
@@ -562,7 +562,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
-// Class model::meta_commands::dump_types_command
+// Class model::meta_commands::dump_types_command 
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -631,7 +631,7 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	}
 	return true;
 }
-// Class model::meta_commands::delete_command
+// Class model::meta_commands::delete_command 
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -767,7 +767,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 			{
 				auto& err = ctx->get_stderr();
 				err << "Error deleting "
-					<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+					<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 				rx_dump_error_result(err, std::move(result));
 			}
 			else
@@ -783,7 +783,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	if (!result)
 	{
 		err << "Error deleting "
-			<< rx_item_type_name(T::type_id) << "\r\n";
+			<< rx_item_type_name(T::RImplType::type_id) << "\r\n";
 		for (const auto& one : result.errors())
 		{
 			err << one << "\r\n";
@@ -873,7 +873,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	ctx->set_waiting();
 	return true;
 }
-// Class model::meta_commands::rm_command
+// Class model::meta_commands::rm_command 
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -882,7 +882,7 @@ rm_command::rm_command()
 
 
 
-// Class model::meta_commands::del_command
+// Class model::meta_commands::del_command 
 
 del_command::del_command()
 	: delete_command("del")
@@ -891,7 +891,7 @@ del_command::del_command()
 
 
 
-// Class model::meta_commands::check_command
+// Class model::meta_commands::check_command 
 
 check_command::check_command()
 	: server_command("check")
@@ -1053,7 +1053,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class model::meta_commands::prototype_command
+// Class model::meta_commands::prototype_command 
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -1169,14 +1169,14 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error prototyping "
-						<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 					dump_error_result(err, result);
 				}
 				else
 				{
 					auto& out = ctx->get_stdout();
 
-					out << "Prototyped " << rx_item_type_name(T::RType::type_id) << " "
+					out << "Prototyped " << rx_item_type_name(T::RImplType::type_id) << " "
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 					out << result.value()->get_item_ptr()->get_definition_as_json();
@@ -1186,7 +1186,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 			if (!result)
 			{
 				ctx->get_stderr() << "Error creating "
-					<< rx_item_type_name(T::RType::type_id) << ":\r\n";
+					<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
 				dump_error_result(ctx->get_stderr(), result);
 			}
 			return result;
@@ -1194,7 +1194,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		else
 		{
 			err << "Unknown "
-				<< rx_item_type_name(T::RType::type_id)
+				<< rx_item_type_name(T::RImplType::type_id)
 				<< " target type!";
 			return false;
 		}
@@ -1202,12 +1202,12 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	else
 	{
 		err << "Unknown "
-			<< rx_item_type_name(T::RType::type_id)
+			<< rx_item_type_name(T::RImplType::type_id)
 			<< " target!";
 		return false;
 	}
 }
-// Class model::meta_commands::save_command
+// Class model::meta_commands::save_command 
 
 save_command::save_command()
 	: server_command("save")

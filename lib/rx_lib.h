@@ -129,6 +129,7 @@ public:
 	void register_errors(const rx_result_erros_t& errors);
 	operator bool() const;
 	const rx_result_erros_t& errors()const;
+	string_type errors_line(char delim = ',') const;
 	rx_result(const rx_result& right) = delete;// because of the unique_ptr!
 
 	rx_result() = default;
@@ -229,6 +230,22 @@ public:
 	const rx_result_erros_t& errors()const
 	{
 		return *errors_;
+	}
+
+	string_type errors_line(char delim = ',') const
+	{
+		if (*this)
+			return "";
+		else if (errors_->empty())
+			return "No specific errors, it's just empty.!";
+		std::ostringstream ss;
+		for (const auto& one : *errors_)
+		{
+			if (!ss.eof())// using this as a bool!
+				ss << delim;
+			ss << one;
+		}
+		return ss.str();
 	}
 	rx_result_with(const rx_result_with& right) = delete;// because of the unique_ptr!
 

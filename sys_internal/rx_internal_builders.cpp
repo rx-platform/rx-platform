@@ -111,12 +111,12 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, type
 	if (create_result)
 	{
 		auto rx_type_item = create_result.value()->get_item_ptr();
-		BUILD_LOG_TRACE("code_objects", 100, ("Created "s + rx_item_type_name(T::RType::type_id) + " "s + rx_type_item->get_name()).c_str());
+		BUILD_LOG_TRACE("code_objects", 100, ("Created "s + rx_item_type_name(T::RImplType::type_id) + " "s + rx_type_item->get_name()).c_str());
 		return true;
 	}
 	else
 	{
-		create_result.register_error("Error creating "s + rx_item_type_name(T::RType::type_id) + " " + meta.get_name());
+		create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_name());
 		for(const auto& one : create_result.errors())
 			BUILD_LOG_ERROR("code_objects", 900, one.c_str());
 		return create_result.errors();
@@ -302,7 +302,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 {
 	// system app
 	auto result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
-		RX_NS_SYSTEM_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_app(); } );
+		RX_NS_SYSTEM_APP_TYPE_ID, [] { return sys_internal::sys_objects::system_application::instance(); } );
 	if (!result)
 	{
 		result.register_error("Error registering constructor for system application!");
@@ -310,7 +310,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// system domain
 	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
-		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return rx_gate::instance().get_manager().get_system_domain(); });
+		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return sys_internal::sys_objects::system_domain::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for system domain!");
@@ -318,7 +318,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// unassigned app
 	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
-		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_app(); });
+		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return sys_internal::sys_objects::unassigned_application::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for unassigned application!");
@@ -326,7 +326,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// unassigned domain
 	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
-		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return rx_gate::instance().get_manager().get_unassigned_domain(); });
+		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return sys_internal::sys_objects::unassigned_domain::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for unassigned domain!");
@@ -342,7 +342,7 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
-		runtime::objects::domain_instance_data instance_data;
+		runtime::items::domain_instance_data instance_data;
 		instance_data.processor = 1;
 		instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
 		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
@@ -352,7 +352,7 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 			result.register_error("Unable to add unassigned application!");
 			return result;
 		}
-		runtime::objects::application_instance_data app_instance_data;
+		runtime::items::application_instance_data app_instance_data;
 		app_instance_data.processor = 1;
 		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
 		result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
@@ -880,14 +880,14 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
-		runtime::objects::application_instance_data app_instance_data;
+		runtime::items::application_instance_data app_instance_data;
 		app_instance_data.processor = 1;
 		meta_data meta(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
 		auto result = add_object_to_configuration(dir, std::move(meta), std::move(app_instance_data), tl::type2type<application_type>());
 
 		if (result)
 		{
-			runtime::objects::domain_instance_data domain_instance_data;
+			runtime::items::domain_instance_data domain_instance_data;
 			domain_instance_data.processor = 1;
 			domain_instance_data.app_id = RX_NS_SYSTEM_APP_ID;
 			meta = meta_data(RX_NS_SYSTEM_DOM_NAME, RX_NS_SYSTEM_DOM_ID, RX_NS_SYSTEM_DOM_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);

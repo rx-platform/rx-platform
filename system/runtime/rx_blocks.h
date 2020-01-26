@@ -33,28 +33,8 @@
 
 
 
-// rx_operational
-#include "system/runtime/rx_operational.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_rt_data
-#include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-
-namespace rx_platform {
-namespace runtime {
-namespace relations {
-class relation_runtime;
-
-} // namespace relations
-} // namespace runtime
-} // namespace rx_platform
-
 
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
@@ -226,6 +206,46 @@ struct runtime. basic implementation of an struct runtime");
 
 
 
+class event_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+event runtime. basic implementation of an event runtime");
+
+	DECLARE_REFERENCE_PTR(event_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_types::event_type;
+
+  public:
+      event_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class variable_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
@@ -326,189 +346,6 @@ source runtime. basic implementation of an source runtime");
       bool output_;
 
 
-};
-
-
-
-
-
-
-class event_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
-event runtime. basic implementation of an event runtime");
-
-	DECLARE_REFERENCE_PTR(event_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::event_type;
-
-  public:
-      event_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class runtime_holder 
-{
-	typedef std::vector<program_runtime_ptr> programs_type;
-	typedef std::vector<relation_runtime_ptr> relations_type;
-
-  public:
-
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx, rx_thread_handle_t whose) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, rx_thread_handle_t whose);
-
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx, std::function<void()> change_callback, runtime_process_context* context);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      rx_result connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result_with<runtime_handle_t> >& results, bool& has_errors);
-
-      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors);
-
-      rx_result do_command (rx_object_command_t command_type);
-
-      void set_runtime_data (meta::runtime_data_prototype& prototype);
-
-      structure::hosting_object_data get_object_state () const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      void collect_data (data::runtime_values_data& data) const;
-
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
-
-      bool process_runtime (runtime_process_context& ctx);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
-
-      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
-
-      void tag_updates_pending () const;
-
-      void tag_writes_pending () const;
-
-      relation_runtime_ptr get_relation (const string_type& path);
-
-
-      rx::data::runtime_values_data& get_overrides ()
-      {
-        return overrides_;
-      }
-
-
-	  template<typename valT>
-	  valT get_binded_as(runtime_handle_t handle, const valT& default_value)
-	  {
-		  values::rx_simple_value temp_val;
-		  auto result = binded_tags_.get_value(handle, temp_val);
-		  if (result)
-		  {
-			  return values::extract_value<valT>(temp_val.get_storage(), default_value);
-		  }
-		  return default_value;
-	  }
-	  template<typename valT>
-	  void set_binded_as(runtime_handle_t handle, valT&& value)
-	  {
-		  values::rx_simple_value temp_val;
-		  temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto status = this->get_object_state();
-		  auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_, status);
-	  }
-	  template<typename valT>
-	  valT get_local_as(const string_type& path, const valT& default_value)
-	  {
-		  return item_->get_local_as<valT>(path, default_value);
-	  }
-  protected:
-
-  private:
-
-      rx_mode_type get_mode () const
-      {
-        return mode_;
-      }
-
-
-      rx_time get_change_time () const
-      {
-        return change_time_;
-      }
-
-
-
-
-      operational::connected_tags connected_tags_;
-
-      operational::binded_tags binded_tags_;
-
-      programs_type programs_;
-
-      structure::runtime_item::smart_ptr item_;
-
-      relations_type relations_;
-
-      rx::data::runtime_values_data overrides_;
-
-
-      rx_mode_type mode_;
-
-      rx_time change_time_;
-
-      jobs::job_ptr process_job_;
-
-      runtime_handle_t scan_time_item_;
-
-      double last_scan_time_;
-
-      std::function<void()> fire_change_func_;
-
-      runtime_process_context* context_;
-
-      double max_scan_time_;
-
-      runtime_handle_t max_scan_time_item_;
-
-
-    friend class meta::object_types::object_data_type;
 };
 
 

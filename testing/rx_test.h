@@ -35,12 +35,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_console
 #include "terminal/rx_console.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace testing {
 class test_case;

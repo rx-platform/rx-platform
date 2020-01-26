@@ -44,12 +44,12 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -66,7 +66,7 @@ namespace io_endpoints {
 
 
 
-class rx_io_manager : public rx_platform::runtime::objects::object_runtime  
+class rx_io_manager : public rx_platform::runtime::items::object_runtime  
 {
 	typedef std::map<string_type, rx_protocol_stack_entry*> endpoints_type;
 	typedef std::map<string_type, runtime::io_types::physical_port::smart_ptr> physical_ports_type;

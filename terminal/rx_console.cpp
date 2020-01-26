@@ -294,7 +294,7 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 
 		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		out << "Version: " << get_console_terminal() << "\r\n";
-		fill_code_info(out, meta_info().get_full_path());
+		fill_code_info(out, "jebiga");
 		out << "\r\n";
 
 		ret = true;

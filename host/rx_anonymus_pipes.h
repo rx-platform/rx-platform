@@ -36,14 +36,14 @@
 
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
+// rx_endpoints
+#include "interfaces/rx_endpoints.h"
 
 namespace host {
 namespace pipe {

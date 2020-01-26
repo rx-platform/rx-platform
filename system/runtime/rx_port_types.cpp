@@ -68,31 +68,31 @@ rx_result physical_port::initialize_runtime (runtime::runtime_init_context& ctx)
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.Connected", ctx);
         if (bind_result)
             connected_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.Connected");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.Connected");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
@@ -103,9 +103,9 @@ void physical_port::update_received_counters (size_t count)
         {
             if (whose->rx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
         }, smart_this(), get_executer());
@@ -117,9 +117,9 @@ void physical_port::update_sent_counters (size_t count)
         {
             if (whose->tx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
         }, smart_this(), get_executer());
@@ -129,9 +129,9 @@ void physical_port::update_received_packets (size_t count)
 {
     if (rx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(rx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(rx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(rx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(rx_packets_item_, std::move(current));
     }
 }
 
@@ -139,9 +139,9 @@ void physical_port::update_sent_packets (size_t count)
 {
     if (tx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(tx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(tx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(tx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(tx_packets_item_, std::move(current));
     }
 }
 
@@ -149,7 +149,7 @@ void physical_port::update_connected_status (bool status)
 {
     rx_platform::rx_post_function<physical_port::smart_ptr>([status](physical_port::smart_ptr whose)
         {
-            whose->get_runtime().set_binded_as(whose->connected_item_, status);
+            whose->set_binded_as(whose->connected_item_, status);
         }, smart_this(), get_executer());
 }
 
@@ -159,19 +159,19 @@ bool physical_port::has_up_port () const
 
 }
 
-rx_port_ptr physical_port::up_stack () const
+rx_port_impl_ptr physical_port::up_stack () const
 {
     return next_up_;
 }
 
-rx_port_ptr physical_port::down_stack () const
+rx_port_impl_ptr physical_port::down_stack () const
 {
-    return rx_port_ptr::null_ptr;
+    return rx_port_impl_ptr::null_ptr;
 }
 
 void physical_port::process_stack ()
 {
-    rx_directory_resolver directories;
+    /*rx_directory_resolver directories;
     auto id = api::ns::rx_resolve_reference(get_instance_data().up_port, directories);
     if (id)
     {
@@ -189,7 +189,7 @@ void physical_port::process_stack ()
                 if (result)
                     this->next_up_ = result.move_value();
             }, smart_this(), rx_node_id(id.value()));
-    }
+    }*/
 }
 
 
@@ -214,25 +214,25 @@ rx_result protocol_port::initialize_runtime (runtime::runtime_init_context& ctx)
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
@@ -243,9 +243,9 @@ void protocol_port::update_received_counters (size_t count)
         {
             if (whose->rx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
         }, smart_this(), get_executer());
@@ -257,9 +257,9 @@ void protocol_port::update_sent_counters (size_t count)
         {
             if (whose->tx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
         }, smart_this(), get_executer());
@@ -269,9 +269,9 @@ void protocol_port::update_received_packets (size_t count)
 {
     if (rx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(rx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(rx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(rx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(rx_packets_item_, std::move(current));
     }
 }
 
@@ -279,9 +279,9 @@ void protocol_port::update_sent_packets (size_t count)
 {
     if (tx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(tx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(tx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(tx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(tx_packets_item_, std::move(current));
     }
 }
 
@@ -291,12 +291,12 @@ bool protocol_port::has_up_port () const
 
 }
 
-rx_port_ptr protocol_port::up_stack () const
+rx_port_impl_ptr protocol_port::up_stack () const
 {
-    return rx_port_ptr::null_ptr;
+    return rx_port_impl_ptr::null_ptr;
 }
 
-rx_port_ptr protocol_port::down_stack () const
+rx_port_impl_ptr protocol_port::down_stack () const
 {
     return next_down_;
 }
@@ -327,25 +327,25 @@ rx_result transport_port::initialize_runtime (runtime::runtime_init_context& ctx
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(meta_info().get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
@@ -356,9 +356,9 @@ void transport_port::update_received_counters (size_t count)
         {
             if (whose->rx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->rx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
         }, smart_this(), get_executer());
@@ -370,9 +370,9 @@ void transport_port::update_sent_counters (size_t count)
         {
             if (whose->tx_bytes_item_)
             {
-                auto current = whose->get_runtime().get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
+                auto current = whose->get_binded_as<int64_t>(whose->tx_bytes_item_, 0);
                 current += count;
-                whose->get_runtime().set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
+                whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
         }, smart_this(), get_executer());
@@ -382,9 +382,9 @@ void transport_port::update_received_packets (size_t count)
 {
     if (rx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(rx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(rx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(rx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(rx_packets_item_, std::move(current));
     }
 }
 
@@ -392,9 +392,9 @@ void transport_port::update_sent_packets (size_t count)
 {
     if (tx_packets_item_)
     {
-        auto current = get_runtime().get_binded_as<int64_t>(tx_packets_item_, 0);
+        auto current = get_binded_as<int64_t>(tx_packets_item_, 0);
         current += count;
-        get_runtime().set_binded_as<int64_t>(tx_packets_item_, std::move(current));
+        set_binded_as<int64_t>(tx_packets_item_, std::move(current));
     }
 }
 
@@ -404,12 +404,12 @@ bool transport_port::has_up_port () const
 
 }
 
-rx_port_ptr transport_port::up_stack () const
+rx_port_impl_ptr transport_port::up_stack () const
 {
     return next_up_;
 }
 
-rx_port_ptr transport_port::down_stack () const
+rx_port_impl_ptr transport_port::down_stack () const
 {
     return next_down_;
 }

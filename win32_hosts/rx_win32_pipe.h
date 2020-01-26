@@ -71,6 +71,9 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
 
   private:
 
+      void get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err);
+
+
 
 };
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -32,7 +32,7 @@
 #define rx_runtime_helpers_h 1
 
 
-
+#include "lib/rx_values.h"
 /////////////////////////////////////////////////////////////
 // logging macros for console library
 #define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,msg)
@@ -45,8 +45,11 @@
 
 namespace rx_platform {
 namespace runtime {
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
+
 namespace blocks {
-class runtime_holder;
 class variable_runtime;
 } // namespace blocks
 
@@ -56,6 +59,7 @@ class runtime_item;
 
 namespace operational {
 class binded_tags;
+class connected_tags;
 
 } // namespace operational
 } // namespace runtime
@@ -65,6 +69,61 @@ class binded_tags;
 
 
 namespace rx_platform {
+
+namespace api
+{
+struct query_result;
+}
+namespace meta
+{
+class meta_data;
+namespace object_types
+{
+class object_type;
+class application_type;
+class domain_type;
+class port_type;
+}
+namespace meta_algorithm
+{
+template <class typeT>
+class object_types_algorithm;
+}
+}
+namespace runtime {
+struct runtime_init_context;
+namespace relations
+{
+class relation_runtime;
+}
+namespace items {
+class port_runtime;
+class object_runtime;
+class application_runtime;
+class domain_runtime;
+
+} // namespace items
+namespace algorithms
+{
+template <class typeT>
+class runtime_holder;
+template <class typeT>
+class object_runtime_algorithms;
+}
+}
+typedef rx_reference<pointers::reference_object> rx_reference_ptr;
+typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::domain_type> > rx_domain_ptr;
+typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::port_type> > rx_port_ptr;
+typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::object_type> > rx_object_ptr;
+typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::application_type> > rx_application_ptr;
+typedef rx_reference<runtime::relations::relation_runtime> rx_relation_ptr;
+
+typedef rx_reference<runtime::items::object_runtime> rx_object_impl_ptr;
+typedef rx_reference<runtime::items::port_runtime> rx_port_impl_ptr;
+typedef rx_reference<runtime::items::application_runtime> rx_application_impl_ptr;
+typedef rx_reference<runtime::items::domain_runtime> rx_domain_impl_ptr;
+
+
 typedef uint32_t runtime_handle_t;
 typedef uint32_t runtime_transaction_id_t;
 
@@ -72,7 +131,7 @@ enum subscription_trigger_type
 {
 	subscription_trigger_periodic = 0,
 	subscription_trigger_critical = 1,
-	
+
 	max_trigger_type = 1
 };
 
@@ -91,6 +150,7 @@ namespace structure {
 class const_value_data;
 class value_data;
 class variable_data;
+class hosting_object_data;
 } // namespace structure
 union rt_value_ref_union
 {
@@ -121,7 +181,36 @@ typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
 
 
 
-class runtime_path_resolver 
+class variables_stack
+{
+	typedef std::stack<rx_variable_ptr, std::vector<rx_variable_ptr> > variables_type;
+
+  public:
+
+      void push_variable (rx_variable_ptr what);
+
+      void pop_variable ();
+
+      rx_variable_ptr get_current_variable () const;
+
+
+  protected:
+
+  private:
+
+
+      variables_type variables_;
+
+
+};
+
+
+
+
+
+
+
+class runtime_path_resolver
 {
 
   public:
@@ -151,81 +240,12 @@ class runtime_path_resolver
 
 
 
-class variables_stack 
-{
-	typedef std::stack<rx_variable_ptr, std::vector<rx_variable_ptr> > variables_type;
-
-  public:
-
-      void push_variable (rx_variable_ptr what);
-
-      void pop_variable ();
-
-      rx_variable_ptr get_current_variable () const;
-
-
-  protected:
-
-  private:
-
-
-      variables_type variables_;
-
-
-};
-
-
-
-
-
-
-struct runtime_deinit_context 
-{
-
-
-      variables_stack variables;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct runtime_stop_context 
-{
-
-
-      variables_stack variables;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class runtime_structure_resolver 
+class runtime_structure_resolver
 {
 	typedef std::stack<std::reference_wrapper<structure::runtime_item>, std::vector<std::reference_wrapper<structure::runtime_item> > > runtime_items_type;
 
   public:
-      runtime_structure_resolver();
+      runtime_structure_resolver (structure::runtime_item& root);
 
 
       void push_item (structure::runtime_item& item);
@@ -234,9 +254,7 @@ class runtime_structure_resolver
 
       structure::runtime_item& get_current_item ();
 
-      blocks::runtime_holder* get_root ();
-
-      void set_root (blocks::runtime_holder* item);
+      structure::runtime_item& get_root ();
 
 
   protected:
@@ -246,43 +264,7 @@ class runtime_structure_resolver
 
       runtime_items_type items_;
 
-      blocks::runtime_holder* root_;
-
-
-};
-
-
-typedef std::map<string_type, runtime_handle_t> binded_tags_type;
-
-
-
-
-struct runtime_init_context 
-{
-
-
-      runtime_handle_t get_new_handle ();
-
-
-      runtime_path_resolver path;
-
-      variables_stack variables;
-
-      runtime_structure_resolver structure;
-
-      operational::binded_tags *tags;
-
-
-      binded_tags_type binded_tags;
-
-  public:
-
-  protected:
-
-  private:
-
-
-      runtime_handle_t next_handle_;
+      std::reference_wrapper<structure::runtime_item> root_;
 
 
 };
@@ -292,17 +274,11 @@ struct runtime_init_context
 
 
 
-struct runtime_start_context 
+struct runtime_deinit_context
 {
 
 
-      runtime_path_resolver path;
-
       variables_stack variables;
-
-      runtime_structure_resolver structure;
-
-      operational::binded_tags *tags;
 
   public:
 
@@ -313,6 +289,54 @@ struct runtime_start_context
 
 };
 
+
+
+
+
+
+struct runtime_start_context
+{
+
+      runtime_start_context (structure::runtime_item& root);
+
+
+      runtime_path_resolver path;
+
+      variables_stack variables;
+
+      runtime_structure_resolver structure;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct runtime_stop_context
+{
+
+
+      variables_stack variables;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+namespace algorithms {
 
 enum runtime_process_step : int
 {
@@ -327,11 +351,11 @@ enum runtime_process_step : int
 
 
 
-class runtime_process_context 
+class runtime_process_context
 {
 
   public:
-      runtime_process_context();
+      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags);
 
 
       bool should_repeat () const;
@@ -346,13 +370,50 @@ class runtime_process_context
 
       bool should_process_writes ();
 
+      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
+
+      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
+
+      rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
+
 
       rx_time now;
 
+      template<typename T>
+      rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
+      {
+          values::rx_simple_value temp;
+          temp.assign_static<T>(std::forward<T>(value));
+          auto result = this->set_item(path, std::move(temp), ctx);
 
+          return result;
+      }
+      template<typename valT>
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      {
+            values::rx_simple_value temp_val;
+            auto result = this->get_value(handle, temp_val);
+            if (result)
+            {
+                return values::extract_value<valT>(temp_val.get_storage(), default_value);
+            }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          values::rx_simple_value temp_val;
+          temp_val.assign_static<valT>(std::forward<valT>(value));
+          auto result = this->set_value(handle, std::move(temp_val));
+      }
   protected:
 
   private:
+
+
+      operational::connected_tags& tags_;
+
+      operational::binded_tags& binded_;
 
 
       runtime_process_step current_step_;
@@ -362,6 +423,52 @@ class runtime_process_context
       bool process_tag_connections_;
 
       bool process_tag_writes_;
+
+      structure::hosting_object_data* state_;
+
+
+};
+
+
+} // namespace algorithms
+
+typedef std::map<string_type, runtime_handle_t> binded_tags_type;
+
+
+
+
+struct runtime_init_context
+{
+
+      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded);
+
+
+      runtime_handle_t get_new_handle ();
+
+
+      runtime_path_resolver path;
+
+      variables_stack variables;
+
+      runtime_structure_resolver structure;
+
+      algorithms::runtime_process_context *context;
+
+      operational::binded_tags *tags;
+
+
+      const meta::meta_data& meta;
+
+      binded_tags_type binded_tags;
+
+  public:
+
+  protected:
+
+  private:
+
+
+      runtime_handle_t next_handle_;
 
 
 };

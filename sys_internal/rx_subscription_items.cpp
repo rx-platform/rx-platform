@@ -170,12 +170,32 @@ rx_result remove_items_request::deserialize (base_meta_reader& stream)
 	if (!stream.read_uuid("id", temp))
 		return "error reading subscription id";
 	subscription_id = temp;
+	if (!stream.start_array("items"))
+		return "Unable to start items array";
+	while (!stream.array_end())
+	{
+		runtime_handle_t item;
+		if (!stream.read_uint("handle",item))
+			return "error reading handle for item";
+		items.emplace_back(item);
+	}
 	return true;
 }
 
 message_ptr remove_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	std::vector<rx_result> results;
+	auto result = port->remove_items(subscription_id, std::move(items), results);
+	if (result)
+	{
+		auto response = std::make_unique<remove_items_response>();
+		response->subscription_id = subscription_id;
+		response->request_id = request_id;
+		for (auto& one : results)
+			response->results.emplace_back(std::move(one));
+		return response;
+	}
+	return std::make_unique<error_message>(result, 9, request_id);
 }
 
 const string_type& remove_items_request::get_type_name ()
@@ -216,7 +236,7 @@ rx_result execute_item_request::deserialize (base_meta_reader& stream)
 
 message_ptr execute_item_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
 
 const string_type& execute_item_request::get_type_name ()
@@ -520,7 +540,7 @@ rx_result modify_items_request::deserialize (base_meta_reader& stream)
 
 message_ptr modify_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
 
 const string_type& modify_items_request::get_type_name ()
@@ -561,7 +581,7 @@ rx_result read_items_request::deserialize (base_meta_reader& stream)
 
 message_ptr read_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
 {
-	return std::make_unique<error_message>("Not implemented!!!"s, 9, request_id);
+	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
 
 const string_type& read_items_request::get_type_name ()

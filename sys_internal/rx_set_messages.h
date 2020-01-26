@@ -42,8 +42,8 @@ namespace sys_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_type_creator_base;
 class protocol_runtime_creator_base;
+class protocol_type_creator_base;
 
 } // namespace set_messages
 } // namespace messages

@@ -94,46 +94,6 @@ rx_message_type_t rx_make_directory_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::directory_messages::rx_remove_directory_request 
-
-string_type rx_remove_directory_request::type_name = "rmdirReq";
-
-rx_message_type_t rx_remove_directory_request::type_id = rx_remove_directory_request_id;
-
-
-rx_result rx_remove_directory_request::serialize (base_meta_writer& stream) const
-{
-	if (!stream.write_string("path", path.c_str()))
-		return "Error serializing path";
-	return true;
-}
-
-rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
-{
-	if (!stream.read_string("path", path))
-		return "Error reading path";
-	return true;
-}
-
-message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
-{
-	auto ret_value = std::make_unique<error_message>("Jebi ga nije jos gotovo!"s, 17, request_id);
-	return ret_value;
-}
-
-const string_type& rx_remove_directory_request::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_remove_directory_request::get_type_id ()
-{
-  return type_id;
-
-}
-
-
 // Class sys_internal::rx_protocol::messages::directory_messages::rx_make_directory_response 
 
 string_type rx_make_directory_response::type_name = "mkdirResp";
@@ -188,6 +148,46 @@ const string_type& rx_remove_directory_response::get_type_name ()
 }
 
 rx_message_type_t rx_remove_directory_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class sys_internal::rx_protocol::messages::directory_messages::rx_remove_directory_request 
+
+string_type rx_remove_directory_request::type_name = "rmdirReq";
+
+rx_message_type_t rx_remove_directory_request::type_id = rx_remove_directory_request_id;
+
+
+rx_result rx_remove_directory_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("path", path.c_str()))
+		return "Error serializing path";
+	return true;
+}
+
+rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("path", path))
+		return "Error reading path";
+	return true;
+}
+
+message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	auto ret_value = std::make_unique<error_message>("Jebi ga nije jos gotovo!"s, 17, request_id);
+	return ret_value;
+}
+
+const string_type& rx_remove_directory_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_remove_directory_request::get_type_id ()
 {
   return type_id;
 

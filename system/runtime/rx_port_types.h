@@ -33,10 +33,12 @@
 
 
 
-// dummy
-#include "dummy.h"
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
 
 #include "rx_runtime_helpers.h"
 
@@ -52,7 +54,7 @@ namespace io_types {
 
 
 
-class physical_port : public objects::port_runtime  
+class physical_port : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 2, "\
 physical port class. basic implementation of a physical port");
@@ -65,9 +67,9 @@ physical port class. basic implementation of a physical port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_port_ptr up_stack () const;
+      rx_port_impl_ptr up_stack () const;
 
-      rx_port_ptr down_stack () const;
+      rx_port_impl_ptr down_stack () const;
 
       void process_stack ();
 
@@ -93,7 +95,7 @@ physical port class. basic implementation of a physical port");
 
       rx_protocol_stack_entry *my_endpoints_;
 
-      rx_reference<objects::port_runtime> next_up_;
+      rx_reference<items::port_runtime> next_up_;
 
 
       runtime_handle_t rx_bytes_item_;
@@ -115,7 +117,7 @@ physical port class. basic implementation of a physical port");
 
 
 
-class protocol_port : public objects::port_runtime  
+class protocol_port : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 2, "\
 protocol port class. basic implementation of a protocol port");
@@ -128,9 +130,9 @@ protocol port class. basic implementation of a protocol port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_port_ptr up_stack () const;
+      rx_port_impl_ptr up_stack () const;
 
-      rx_port_ptr down_stack () const;
+      rx_port_impl_ptr down_stack () const;
 
       void process_stack ();
 
@@ -152,7 +154,7 @@ protocol port class. basic implementation of a protocol port");
 
 
 
-      rx_reference<objects::port_runtime> next_down_;
+      rx_reference<items::port_runtime> next_down_;
 
 
       runtime_handle_t rx_bytes_item_;
@@ -172,7 +174,7 @@ protocol port class. basic implementation of a protocol port");
 
 
 
-class transport_port : public objects::port_runtime  
+class transport_port : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 2, "\
 transport port class. basic implementation of a transport port");
@@ -185,9 +187,9 @@ transport port class. basic implementation of a transport port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_port_ptr up_stack () const;
+      rx_port_impl_ptr up_stack () const;
 
-      rx_port_ptr down_stack () const;
+      rx_port_impl_ptr down_stack () const;
 
       void process_stack ();
 
@@ -209,9 +211,9 @@ transport port class. basic implementation of a transport port");
 
 
 
-      rx_reference<objects::port_runtime> next_up_;
+      rx_reference<items::port_runtime> next_up_;
 
-      rx_reference<objects::port_runtime> next_down_;
+      rx_reference<items::port_runtime> next_down_;
 
 
       runtime_handle_t rx_bytes_item_;

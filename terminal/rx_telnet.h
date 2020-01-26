@@ -33,18 +33,18 @@
 
 
 
-// rx_console
-#include "terminal/rx_console.h"
-// rx_vt100
-#include "terminal/rx_vt100.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_security
 #include "lib/security/rx_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_console
+#include "terminal/rx_console.h"
+// rx_vt100
+#include "terminal/rx_vt100.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 
 

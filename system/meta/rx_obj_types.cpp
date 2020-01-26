@@ -31,6 +31,8 @@
 #include "pch.h"
 
 
+// rx_meta_algorithm
+#include "system/meta/rx_meta_algorithm.h"
 // rx_obj_types
 #include "system/meta/rx_obj_types.h"
 
@@ -107,19 +109,9 @@ def_blocks::mapped_data_type& application_type::mapping_data ()
 
 }
 
-rx_result application_type::check_type (type_check_context& ctx)
+bool application_type::check_type (type_check_context& ctx)
 {
-	return object_types_algorithm<application_type>::check_object_type(*this, ctx);
-}
-
-void application_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
-{
-	where->runtime_.set_runtime_data(prototype);
-}
-
-void application_type::set_instance_data (instance_data_t&& data, RTypePtr where)
-{
-	where->instance_data_ = std::move(data);
+    return object_types_algorithm<application_type>::check_object_type(*this, ctx);
 }
 
 
@@ -210,17 +202,7 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 
 bool domain_type::check_type (type_check_context& ctx)
 {
-	return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
-}
-
-void domain_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
-{
-	where->runtime_.set_runtime_data(prototype);
-}
-
-void domain_type::set_instance_data (instance_data_t&& data, RTypePtr where)
-{
-	where->instance_data_ = std::move(data);
+    return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
 }
 
 
@@ -269,7 +251,7 @@ void object_type::get_class_info (string_type& class_name, string_type& console,
 {
 }
 
-rx_result object_type::construct (runtime::object_runtime_ptr what, construct_context& ctx) const
+rx_result object_type::construct (rx_object_ptr what, construct_context& ctx) const
 {
 	auto result = object_types_algorithm<object_type>::construct_object(*this, what, ctx);
 	
@@ -304,11 +286,6 @@ def_blocks::complex_data_type& object_type::complex_data ()
 
 }
 
-void object_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
-{
-	where->runtime_.set_runtime_data(prototype);
-}
-
 def_blocks::mapped_data_type& object_type::mapping_data ()
 {
   return mapping_data_;
@@ -317,12 +294,7 @@ def_blocks::mapped_data_type& object_type::mapping_data ()
 
 bool object_type::check_type (type_check_context& ctx)
 {
-	return object_types_algorithm<object_type>::check_object_type(*this, ctx);
-}
-
-void object_type::set_instance_data (instance_data_t&& data, RTypePtr where)
-{
-	where->instance_data_ = std::move(data);
+    return object_types_algorithm<object_type>::check_object_type(*this, ctx);
 }
 
 
@@ -359,81 +331,15 @@ object_data_type::object_data_type (const string_type& name, const rx_node_id& i
 
 
 
-rx_result object_data_type::serialize_object_definition (base_meta_writer& stream, uint8_t type) const
+rx_result object_data_type::resolve (rx_directory_ptr dir)
 {
-	if (!stream.write_bool("constructable", constructable_))
-		return false;
-	if (!stream.start_array("relations", relations_.size()))
-		return false;
-	for (const auto& one : relations_)
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		if (!one.serialize_definition(stream, type))
-			return false;
-
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-	if (!stream.start_array("programs", relations_.size()))
-		return false;
-	for (const auto& one : programs_)
-	{
-		if (!one->save_program(stream, type))
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-	return true;
-}
-
-rx_result object_data_type::deserialize_object_definition (base_meta_reader& stream, uint8_t type)
-{
-	if (!stream.read_bool("constructable", constructable_))
-		return false;
-	if (!stream.start_array("relations"))
-		return false;
-
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		relation_attribute one;
-		if (!one.deserialize_definition(stream, type))
-			return false;
-		relations_.emplace_back(one);
-
-		if (!stream.end_object())
-			return false;
-	}
-	return true;
-}
-
-rx_result object_data_type::construct (runtime::blocks::runtime_holder& what, construct_context& ctx) const
-{
-	for (const auto& one : relations_)
-	{
-		auto one_result = one.construct(ctx);
-		if (!one_result)
-			return one_result.errors();
-		what.relations_.emplace_back(one_result.value());
-	}
+	// nothing yet to resolve here
 	return true;
 }
 
 bool object_data_type::check_type (type_check_context& ctx)
 {
-	return true;
-}
-
-rx_result object_data_type::resolve (rx_directory_ptr dir)
-{
-	// nothing yet to resolve here
-	return true;
+    return true;
 }
 
 
@@ -498,17 +404,7 @@ def_blocks::mapped_data_type& port_type::mapping_data ()
 
 bool port_type::check_type (type_check_context& ctx)
 {
-	return object_types_algorithm<port_type>::check_object_type(*this, ctx);
-}
-
-void port_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
-{
-	where->runtime_.set_runtime_data(prototype);
-}
-
-void port_type::set_instance_data (instance_data_t&& data, RTypePtr where)
-{
-	where->instance_data_ = std::move(data);
+    return object_types_algorithm<port_type>::check_object_type(*this, ctx);
 }
 
 

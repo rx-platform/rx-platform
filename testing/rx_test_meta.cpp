@@ -113,7 +113,7 @@ namespace meta_test {
 	 }
 	 if (object_type_id)
 	 {
-		 runtime::objects::object_instance_data instance_data;
+		 runtime::items::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 			 "test_object", "test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
@@ -129,9 +129,9 @@ namespace meta_test {
 				 out << json_str;
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
-				 test_object->get_runtime().collect_data(init_data);
+				 test_object->collect_data(init_data);
 				 init_data.children["structName"].values["structVal"].value.assign_static(113);
-				 test_object->get_runtime().fill_data(init_data);
+				 test_object->fill_data(init_data);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
 				 json_str = test_object->get_item_ptr()->get_definition_as_json();
@@ -399,7 +399,7 @@ namespace meta_test {
 
 	 if (object_type_id)
 	 {
-		 runtime::objects::object_instance_data instance_data;
+		 runtime::items::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto test_result = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 			 "inh_test_object", "derived_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
@@ -591,7 +591,7 @@ namespace meta_test {
 			 {
 				 out << one << "\r\n";
 			 }
-			 runtime::objects::object_instance_data instance_data;
+			 runtime::items::object_instance_data instance_data;
 			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
 				 "perica", "check_test_object_type", namespace_item_attributes::namespace_item_full_access, nullptr
 				 , std::move(instance_data), ctx->get_current_directory(), ctx->get_client());

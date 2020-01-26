@@ -33,12 +33,12 @@
 
 
 
-// rx_console
-#include "terminal/rx_console.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
@@ -149,7 +149,7 @@ class server_command : public rx_platform::logic::program_runtime
 
 
 
-class server_command_manager : public rx_platform::runtime::objects::object_runtime  
+class server_command_manager : public rx_platform::runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_command_manager);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\

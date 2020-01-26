@@ -291,7 +291,7 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 }
 
 template <class typeT>
-rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
+rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {
 	if (platform_status_ == rx_platform_status::initializing)
 		return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
@@ -299,9 +299,9 @@ rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<type
 		return "Wrong platform status for constructor registration!";
 }
 
-template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& id, std::function<object_type::RTypePtr()> f);
-template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RTypePtr()> f);
-template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RTypePtr()> f);
-template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RTypePtr()> f);
+template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& id, std::function<object_type::RImplPtr()> f);
+template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RImplPtr()> f);
+template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
+template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
 

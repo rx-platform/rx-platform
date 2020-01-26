@@ -42,7 +42,7 @@ const char* error_messages[] =
 	"Wrong protocol state",
 	"Protocol parsing error",
 	"Buffer size error",
-	"Not implemented",
+	"Not implemented in a \"C\" function",
 	"Out of memory",
 	"Invalid parsing sequence",
 	"Transport collecting state error",

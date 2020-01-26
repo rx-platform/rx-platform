@@ -38,17 +38,17 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace runtime {
-namespace objects {
+namespace items {
 class object_runtime;
 
-} // namespace objects
+} // namespace items
 } // namespace runtime
 } // namespace rx_platform
 
@@ -58,6 +58,16 @@ using namespace rx_platform;
 
 namespace rx_platform {
 
+
+enum class rx_object_command_t
+{
+    rx_turn_off = 0,
+    rx_turn_on,
+    rx_set_blocked,
+    rx_reset_blocked,
+    rx_set_test,
+    rx_reset_test
+};
 
 enum rx_attribute_type
 {

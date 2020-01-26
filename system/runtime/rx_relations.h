@@ -32,13 +32,16 @@
 #define rx_relations_h 1
 
 
+#include "rx_runtime_helpers.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 // rx_obj_types
 #include "system/meta/rx_obj_types.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_runtime_holder
+#include "system/runtime/rx_runtime_holder.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -83,7 +86,7 @@ class relation_instance_data
 class relation_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(relation_runtime);
-    friend class objects::object_runtime_algorithms<object_types::relation_type>;
+    friend class algorithms::object_runtime_algorithms<object_types::relation_type>;
 
 	enum relation_state
 	{
@@ -130,7 +133,7 @@ class relation_runtime : public rx::pointers::reference_object
 
       rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
@@ -212,7 +215,7 @@ class relation_connector
 
       virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
 
-      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, blocks::runtime_holder* item, tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
 
       virtual rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor) = 0;
 

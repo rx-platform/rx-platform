@@ -56,10 +56,10 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 
@@ -67,7 +67,7 @@ struct configuration_data_t;
 
 namespace rx_platform {
 template<typename typeT>
-rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
+rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
 
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,12 +199,6 @@ class rx_platform_host
 
       virtual bool is_canceling () const = 0;
 
-      virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
-
-      virtual bool write_stdout (const void* data, size_t size) = 0;
-
-      bool write_stdout (const string_type& lines);
-
       virtual bool exit () const = 0;
 
       virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
@@ -253,8 +247,6 @@ class rx_platform_host
       rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
 
       virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
-
-      virtual rx_result register_hosts ();
 
 
   private:

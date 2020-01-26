@@ -34,24 +34,32 @@
 
 // rx_logic
 #include "system/logic/rx_logic.h"
+#include "system/runtime/rx_runtime_instance.h"
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
-// rx_meta_algorithm
-#include "system/meta/rx_meta_algorithm.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+namespace rx_platform {
+namespace meta {
+namespace meta_algorithm {
+template <class typeT> class object_types_algorithm;
+
+} // namespace meta_algorithm
+} // namespace meta
+} // namespace rx_platform
+
+
 #include "system/runtime/rx_relations.h"
 #include "system/runtime//rx_rt_struct.h"
+#include "system/runtime/rx_objbase.h"
 using rx_platform::meta::construct_context;
 
 
@@ -156,6 +164,9 @@ class object_data_type
 {
 	typedef std::vector<program_runtime_ptr> programs_type;
 	typedef std::vector<relation_attribute> relations_type;
+
+    template<class typeT>
+    friend class meta_algorithm::object_types_algorithm;
 	//typedef std::vector<int> programs_type;
 
   public:
@@ -164,15 +175,9 @@ class object_data_type
       object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system = false, bool sealed = false, bool abstract = false);
 
 
-      rx_result serialize_object_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_object_definition (base_meta_reader& stream, uint8_t type);
-
-      rx_result construct (runtime::blocks::runtime_holder& what, construct_context& ctx) const;
+      rx_result resolve (rx_directory_ptr dir);
 
       bool check_type (type_check_context& ctx);
-
-      rx_result resolve (rx_directory_ptr dir);
 
 
       const bool is_constructable () const
@@ -210,9 +215,11 @@ class application_type : public rx::pointers::reference_object
 implementation of application type");
 public:
     static constexpr bool has_default_constructor = true;
-	typedef runtime::objects::application_runtime RType;
-	typedef runtime::objects::application_runtime::smart_ptr RTypePtr;
-	typedef runtime::objects::application_instance_data instance_data_t;
+	typedef typename runtime::algorithms::runtime_holder<application_type> RType;
+	typedef rx_reference<RType> RTypePtr;
+    typedef runtime::items::application_runtime RImplType;
+    typedef rx_reference<RImplType> RImplPtr;
+	typedef typename runtime::items::application_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -238,11 +245,7 @@ public:
 
       def_blocks::mapped_data_type& mapping_data ();
 
-      rx_result check_type (type_check_context& ctx);
-
-      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
-      static void set_instance_data (instance_data_t&& data, RTypePtr where);
+      bool check_type (type_check_context& ctx);
 
 
       const object_data_type& object_data () const;
@@ -293,9 +296,11 @@ class domain_type : public rx::pointers::reference_object
 implementation of domain type");
 public:
     static constexpr bool has_default_constructor = true;
-	typedef runtime::objects::domain_runtime RType;
-	typedef typename runtime::objects::domain_runtime::smart_ptr RTypePtr;
-	typedef runtime::objects::domain_instance_data instance_data_t;
+	typedef typename runtime::algorithms::runtime_holder<domain_type> RType;
+	typedef rx_reference<RType> RTypePtr;
+    typedef runtime::items::domain_runtime RImplType;
+    typedef rx_reference<RImplType> RImplPtr;
+	typedef runtime::items::domain_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -322,10 +327,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
-      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -376,9 +377,11 @@ class object_type : public rx::pointers::reference_object
 implementation of object type");
 public:
     static constexpr bool has_default_constructor = true;
-	typedef runtime::objects::object_runtime RType;
-	typedef runtime::object_runtime_ptr RTypePtr;
-	typedef runtime::objects::object_instance_data instance_data_t;
+	typedef typename runtime::algorithms::runtime_holder<object_type> RType;
+    typedef rx_reference<RType> RTypePtr;
+    typedef runtime::items::object_runtime RImplType;
+    typedef rx_reference<RImplType> RImplPtr;
+	typedef runtime::items::object_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -392,7 +395,7 @@ public:
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      rx_result construct (runtime::object_runtime_ptr what, construct_context& ctx) const;
+      rx_result construct (rx_object_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr () const;
 
@@ -404,13 +407,9 @@ public:
 
       def_blocks::complex_data_type& complex_data ();
 
-      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -461,9 +460,11 @@ class port_type : public rx::pointers::reference_object
 implementation of port type");
 public:
     static constexpr bool has_default_constructor = false;
-	typedef runtime::objects::port_runtime RType;
-	typedef runtime::objects::port_runtime::smart_ptr RTypePtr;
-	typedef runtime::objects::port_instance_data instance_data_t;
+    typedef typename runtime::algorithms::runtime_holder<port_type> RType;
+    typedef rx_reference<RType> RTypePtr;
+    typedef runtime::items::port_runtime RImplType;
+    typedef rx_reference<RImplType> RImplPtr;
+	typedef runtime::items::port_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -490,10 +491,6 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
-
-      static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
-      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const object_data_type& object_data () const;
@@ -565,7 +562,6 @@ public:
 	typedef runtime::relation_runtime_ptr RDataType;
 	typedef runtime::relations::relation_runtime RType;
 	typedef runtime::relations::relation_instance_data instance_data_t;
-	typedef runtime::objects::domain_instance_data domain_instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 	typedef runtime::relation_runtime_ptr RTypePtr;

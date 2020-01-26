@@ -33,10 +33,10 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_plugin
 #include "system/libraries/rx_plugin.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using terminal::console_context_ptr;
 

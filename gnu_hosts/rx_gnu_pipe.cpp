@@ -43,6 +43,7 @@ namespace gnu {
 // Class gnu::gnu_pipe_host 
 
 gnu_pipe_host::gnu_pipe_host (hosting::rx_host_storages& storage)
+  : rx_pipe_host(storage)
 {
 }
 
@@ -65,9 +66,10 @@ void gnu_pipe_host::get_host_info (string_array& hosts)
 
 string_type gnu_pipe_host::get_gnu_pipe_info ()
 {
+  static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_GNU_PIPE_HOST_NAME, RX_GNU_PIPE_HOST_MAJOR_VERSION, RX_GNU_PIPE_OST_MINOR_VERSION, RX_GNU_PIPE_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_GNU_PIPE_HOST_NAME, RX_GNU_PIPE_HOST_MAJOR_VERSION, RX_GNU_PIPE_HOST_MINOR_VERSION, RX_GNU_PIPE_HOST_BUILD_NUMBER);
 	}
 	return ret;
 }
@@ -75,6 +77,10 @@ string_type gnu_pipe_host::get_gnu_pipe_info ()
 rx_result gnu_pipe_host::fill_host_directories (hosting::rx_host_directories& data)
 {
 	return build_directories(data);
+}
+
+void gnu_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err)
+{
 }
 
 

@@ -34,10 +34,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_test
-#include "testing/rx_test.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_test
+#include "testing/rx_test.h"
 
 
 

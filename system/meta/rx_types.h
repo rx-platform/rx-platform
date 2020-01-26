@@ -33,14 +33,14 @@
 
 
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_meta_algorithm
 #include "system/meta/rx_meta_algorithm.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 

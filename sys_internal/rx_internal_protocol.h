@@ -35,10 +35,10 @@
 
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
@@ -168,6 +168,8 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
 
+      rx_result remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results);
+
 
   protected:
 
@@ -224,6 +226,8 @@ system protocol port class. basic implementation of a rx-platform protocol");
       rx_result add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
       rx_result write_items (const rx_uuid& id, runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
+
+      rx_result remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
 
 
       const string_type& get_current_directory_path () const

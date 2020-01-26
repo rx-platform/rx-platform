@@ -34,10 +34,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_test
-#include "testing/rx_test.h"
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
+// rx_test
+#include "testing/rx_test.h"
 
 #include "runtime_internal/rx_subscription.h"
 

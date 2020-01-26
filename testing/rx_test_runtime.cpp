@@ -69,7 +69,7 @@ bool runtime_structure_test::run_test (std::istream& in, std::ostream& out, std:
 {
 	 out << "Calculating runtime sizes:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 
-	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::objects::object_runtime) << ANSI_COLOR_RESET "\r\n";
+	 out << "object_runtime:" ANSI_RX_OBJECT_SIZE << sizeof(runtime::items::object_runtime) << ANSI_COLOR_RESET "\r\n";
 	 out << "variable_runtime:" ANSI_RX_OBJECT_SIZE  << sizeof(runtime::blocks::variable_runtime) << ANSI_COLOR_RESET << "\r\n";
 
 	 out << "\r\n" RX_CONSOLE_HEADER_LINE "\r\n";

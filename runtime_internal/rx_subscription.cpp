@@ -44,134 +44,11 @@ namespace sys_runtime {
 
 namespace subscriptions {
 
-// Class sys_runtime::subscriptions::rx_subscription_tag 
-
-
-// Class sys_runtime::subscriptions::rx_subscription_callback 
-
-rx_subscription_callback::~rx_subscription_callback()
-{
-}
-
-
-
-// Class sys_runtime::subscriptions::runtime_connection_data 
-
-
-rx_subscription_tag* runtime_connection_data::get_tag (runtime_handle_t handle)
-{
-	size_t idx = (handle & 0xffff) - 1;
-	if (idx < tags_.size() && !tags_[idx].path.empty())
-	{
-		return &tags_[idx];
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-bool runtime_connection_data::remove_tag (runtime_handle_t handle)
-{
-	// extract index from handle
-	size_t idx = (handle & 0xffff) - 1;
-	if (idx < tags_.size() && !tags_[idx].path.empty())
-	{
-		auto& tag = tags_[idx];
-		tag.ref_count--;
-		if (tag.ref_count < 1)
-		{
-			tags_[idx].path.clear();
-			empty_slots_.emplace_back(idx);
-		}
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, runtime_handle_t connection_handle)
-{
-	if (empty_slots_.empty())
-	{// this is new one
-		auto idx = tags_.size();
-		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
-		tag.mine_handle = ret;
-		tags_.emplace_back(std::move(tag));
-		to_connect_.emplace_back(idx);
-		return ret;
-	}
-	else
-	{
-		auto idx = empty_slots_.back();
-		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
-		tag.mine_handle = ret;
-		RX_ASSERT(tags_[idx].path.empty());
-		tags_[idx] = std::move(tag);
-		to_connect_.emplace_back(idx);
-		return ret;
-	}
-}
-
-bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscription_ptr whose)
-{
-	if (!connecting && !connected && item)
-	{
-		std::vector<size_t> connect_indexes;
-		string_array to_connect;
-		size_t count = tags_.size();
-		for (size_t idx=0; idx<count; idx++)
-		{
-			if (tags_[idx].target_handle == 0)
-			{
-				to_connect.emplace_back(tags_[idx].path);
-				connect_indexes.emplace_back(idx);
-			}
-		}
-		if (!to_connect.empty())
-		{
-			RX_ASSERT(to_connect.size() == connect_indexes.size());
-			auto result = item->connect_items(to_connect, whose);
-			RX_ASSERT(result.size() == to_connect.size());
-			count = result.size();
-			for (size_t idx = 0; idx < count; idx++)
-			{
-				if (result[idx])
-				{
-					tags_[connect_indexes[idx]].target_handle = result[idx].value();
-					whose->handles_[result[idx].value()].emplace_back(tags_[connect_indexes[idx]].mine_handle);
-				}
-				else
-				{
-					std::ostringstream ss;
-					ss << "Error connecting to "
-						<< path
-						<< RX_DIR_OBJECT_DELIMETER
-						<< tags_[connect_indexes[idx]].path
-						<< " :";
-					for (const auto& one : result[idx].errors())
-					{
-						ss << one
-							<< ", ";
-					}
-					RUNTIME_LOG_TRACE("runtime_connection_data", 10, ss.str());
-				}
-			}
-		}
-	}
-	return false;
-}
-
-
 // Class sys_runtime::subscriptions::rx_subscription 
 
 rx_subscription::rx_subscription (rx_subscription_callback* callback)
       : callback_(callback),
-        active_(false),
-        retrieve_items_(false),
-        connect_items_(false)
+        active_(false)
 {
 	target_ = rx_thread_context();
 }
@@ -209,6 +86,8 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 				tag.target_handle = 0;
 
 				new_id = connections_[it->second].add_tag(std::move(tag), new_id);
+
+				to_process_.emplace(it->second);
 			}
 			else
 			{
@@ -231,14 +110,14 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 				connections_.emplace_back(std::move(temp));
 				connection_paths_.emplace(object_path, idx);
-				if (new_id)
-					retrieve_items_ = true;
+				
+				to_retrieve_.emplace(idx);
+				to_process_.emplace(idx);
 			}
 			items_lock_.unlock();
 
 			if (new_id)
 			{
-				connect_items_ = true;
 				result.emplace_back(new_id);
 			}
 			else
@@ -293,9 +172,13 @@ rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>
 			if (result)
 			{
 				//!!!! TODO clean all stuff
-				connect_items_ = true;
+				to_process_.emplace(one >> 16);
+				results.emplace_back(true);
 			}
-			results.emplace_back(result);
+			else
+			{
+				results.emplace_back("Invalid handle value!");
+			}
 		}
 		else
 		{
@@ -305,30 +188,26 @@ rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>
 	return true;
 }
 
-rx_result rx_subscription::process_subscription (bool force_connect)
+void rx_subscription::process_subscription (bool posted)
 {
-	if (!active_)
-		return false;
-
-	///!!!!!WARNING THIS IS A MANUAL LOCK FUNCTION
-	///!!!!!IT HAS BEEN DONE ON PURPOSE
-	///!!!!!JUST BE CAREFUL
-
-	if (retrieve_items_)
+	rx_time now(rx_time::now());
+	auto current_context = rx_thread_context();
+	bool synchronized = (target_ == current_context);
+	items_lock_.lock();
+	if (!to_retrieve_.empty())
 	{
-		// we are multithreaded nay way so use the host's thread if needed!!!
-		retrieve_items_ = false;
-		items_lock_.lock();
-		// retreive unknown items
+		// we are multi-threaded nay way so use the host's thread if needed!!!
+		// retrieve unknown items
 		std::vector<string_type> to_query;
-		for (auto& one : connections_)
+		for (auto idx : to_retrieve_)
 		{
+			auto& one = connections_[idx];
 			if (!one.connected && !one.item)
 			{
+				one.last_checked = now;
 				to_query.emplace_back(one.path);
 			}
 		}
-		items_lock_.unlock();
 		// query for unknown items all at once to be faster
 		if (!to_query.empty())
 		{
@@ -336,46 +215,59 @@ rx_result rx_subscription::process_subscription (bool force_connect)
 			RX_ASSERT(items_result.size() == to_query.size());
 			size_t count = to_query.size();
 
-			locks::auto_lock_t<decltype(items_lock_)> _(&items_lock_);
 			for (size_t i = 0; i < count; i++)
 			{
+				auto connect_it = connection_paths_.find(to_query[i]);
 				if (items_result[i])
 				{
-					auto connect_it = connection_paths_.find(to_query[i]);
-
+					std::cout << "*****Found item with path " << to_query[i] << "\r\n";
 					RX_ASSERT(connect_it != connection_paths_.end());
 					RX_ASSERT(connect_it->second < connections_.size() && !connections_[connect_it->second].item);
 
 					connections_[connect_it->second].item = std::move(items_result[i]);
-					connect_items_ = true;
-
+					to_process_.emplace(connect_it->second);
+					to_retrieve_.erase(connect_it->second);
+				}
+				else
+				{
+					// delete processing just in case we're dead
+					to_process_.erase(connect_it->second);
+					std::cout << "*****Error querying item with path " << to_query[i] << "\r\n";
 				}
 			}
 		}
 	}
-
-	if (connect_items_ || force_connect)
+	if (!to_process_.empty())
 	{
-		connect_items_ = false;
-		// go thrugth and connect or execute in other thread
+		// go through and connect or execute in other thread
 		std::set<rx_thread_handle_t> to_send;
-		std::map<runtime_handle_t, runtime_handle_t> to_connect;
 		auto ts = rx_time::now();
-		items_lock_.lock();
-
-		for (size_t idx = 0; idx < connections_.size(); idx++)
+		
+		auto it_process = to_process_.begin();
+		while (it_process != to_process_.end())
 		{
-			if (connections_[idx].item)
+			if (connections_[*it_process].item)
 			{
-				auto executer = connections_[idx].item->get_executer();
-				if (executer == rx_thread_context())
+				auto executer = connections_[*it_process].item->get_executer();
+				if (executer == current_context)
 				{
-					connect_items_ = connections_[idx].process_connection(ts, smart_this());
+					std::cout << "*****Processing item with path " << connections_[*it_process].path << "\r\n";
+
+					connections_[*it_process].process_connection(ts, smart_this());
+					it_process = to_process_.erase(it_process);
 				}
-				else if (!force_connect && to_send.count(executer) == 0)
+				else
 				{
-					to_send.emplace(executer);
+					it_process++;
+					if (!posted && to_send.count(executer) == 0)
+					{
+						to_send.emplace(executer);
+					}
 				}
+			}
+			else
+			{
+				it_process++;
 			}
 		}
 		items_lock_.unlock();
@@ -390,7 +282,11 @@ rx_result rx_subscription::process_subscription (bool force_connect)
 			}
 		}
 	}
-	if (target_ == rx_thread_context())
+	else
+	{
+		items_lock_.unlock();
+	}
+	if (synchronized)
 	{
 		rx_subscription_callback* callback = nullptr;
 		std::vector<update_item> to_send;
@@ -405,7 +301,6 @@ rx_result rx_subscription::process_subscription (bool force_connect)
 		if (callback)
 			callback->items_changed(to_send);
 	}
-	return true;
 }
 
 void rx_subscription::activate ()
@@ -413,7 +308,12 @@ void rx_subscription::activate ()
 	if (!active_)
 	{
 		active_ = true;
-		std::function<bool(int)> func = [this] (int) -> bool { return process_subscription();  };
+		std::function<bool(int)> func = [this] (int) -> bool 
+			{ 
+				if(active_)
+					process_subscription();
+				return active_;
+			};
 		rx_create_periodic_function<smart_ptr, int>(100u, func, smart_this(), 5);
 	}
 }
@@ -431,13 +331,28 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 	if (!items.empty())
 	{
         locks::auto_lock_t<decltype(items_lock_)> _(&items_lock_);
+		std::vector<runtime_connection_data*> found_dead;
         for (const auto& one : items)
-        {			
+        {
 			auto it = handles_.find(one.handle);
-			if (it != handles_.end())
+			if (it != handles_.end() && !it->second.empty())
 			{
 				for (auto&& handle : it->second)
 					pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), one.value });
+
+				if (one.value.is_dead())
+				{
+					auto conn = get_connection(it->second.front());
+					if (conn)
+					{
+						if (conn->connection_dead())
+						{
+							to_retrieve_.emplace(it->second.front() >> 16);
+							to_process_.emplace(it->second.front() >> 16);
+							handles_.erase(it);
+						}
+					}
+				}
 			}
         }
 	}
@@ -526,7 +441,7 @@ rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id,
 	return true;
 }
 
-rx_result rx_subscription::process_writes (bool force_write)
+void rx_subscription::process_writes ()
 {
 	std::map<size_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > writes;
 	locks::auto_lock_t<decltype(items_lock_)> _(&items_lock_);
@@ -564,6 +479,150 @@ rx_result rx_subscription::process_writes (bool force_write)
 			auto& connection = connections_[writes_it.first];
 			auto write_result = connection.item->write_items(55, writes_it.second, smart_this());
 		}
+	}
+}
+
+
+// Class sys_runtime::subscriptions::rx_subscription_tag 
+
+
+// Class sys_runtime::subscriptions::rx_subscription_callback 
+
+rx_subscription_callback::~rx_subscription_callback()
+{
+}
+
+
+
+// Class sys_runtime::subscriptions::runtime_connection_data 
+
+
+rx_subscription_tag* runtime_connection_data::get_tag (runtime_handle_t handle)
+{
+	size_t idx = (handle & 0xffff) - 1;
+	if (idx < tags_.size() && !tags_[idx].path.empty())
+	{
+		return &tags_[idx];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+bool runtime_connection_data::remove_tag (runtime_handle_t handle)
+{
+	// extract index from handle
+	size_t idx = (handle & 0xffff) - 1;
+	if (idx < tags_.size() && !tags_[idx].path.empty() && !tags_[idx].path.empty())
+	{
+		auto& tag = tags_[idx];
+		tag.ref_count--;
+		if (tag.ref_count < 1)
+		{
+			tags_[idx].path.clear();
+			empty_slots_.emplace_back(idx);
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, runtime_handle_t connection_handle)
+{
+	if (empty_slots_.empty())
+	{// this is new one
+		auto idx = tags_.size();
+		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
+		tag.mine_handle = ret;
+		tags_.emplace_back(std::move(tag));
+		connect_indexes.emplace_back(idx);
+		return ret;
+	}
+	else
+	{
+		auto idx = empty_slots_.back();
+		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
+		tag.mine_handle = ret;
+		RX_ASSERT(tags_[idx].path.empty());
+		tags_[idx] = std::move(tag);
+		connect_indexes.emplace_back(idx);
+		return ret;
+	}
+}
+
+bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscription_ptr whose)
+{
+	if (!connecting && !connected && item)
+	{
+		connect_indexes.clear();
+		to_connect.clear();
+		size_t count = tags_.size();
+		for (size_t idx=0; idx<count; idx++)
+		{
+			if (tags_[idx].target_handle == 0)
+			{
+				to_connect.emplace_back(tags_[idx].path);
+				connect_indexes.emplace_back(idx);
+			}
+		}
+		if (!to_connect.empty())
+		{
+			RX_ASSERT(to_connect.size() == connect_indexes.size());
+			auto result = item->connect_items(to_connect, whose);
+			RX_ASSERT(result.size() == to_connect.size());
+			count = result.size();
+			bool had_good = false;
+			bool all_good = true;
+			for (size_t idx = 0; idx < count; idx++)
+			{
+				if (result[idx])
+				{
+					std::cout << "*****Connected to item with path " << tags_[connect_indexes[idx]].path << "\r\n";
+					had_good = true;
+					tags_[connect_indexes[idx]].target_handle = result[idx].value();
+					whose->handles_[result[idx].value()].emplace_back(tags_[connect_indexes[idx]].mine_handle);
+				}
+				else
+				{
+					all_good = false;
+					std::ostringstream ss;
+					ss << "Error connecting to "
+						<< path
+						<< RX_DIR_OBJECT_DELIMETER
+						<< tags_[connect_indexes[idx]].path
+						<< " :";
+					for (const auto& one : result[idx].errors())
+					{
+						ss << one
+							<< ", ";
+					}
+					std::cout << "*****Connected to item with path " << ss.str() << "\r\n";
+					RUNTIME_LOG_TRACE("runtime_connection_data", 10, ss.str());
+				}
+			}
+			if (!had_good)
+				connection_dead();
+			
+			return all_good;
+		}
+	}
+	return false;
+}
+
+bool runtime_connection_data::connection_dead ()
+{
+	if (!item)
+		return false;// probably already done!!!
+	connected = false;
+	connecting = false;
+	item.reset();
+	for (auto& one : tags_)
+	{
+		one.target_handle = 0;
 	}
 	return true;
 }
