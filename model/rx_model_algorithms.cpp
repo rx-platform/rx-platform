@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -462,8 +462,6 @@ rx_result_with<typeType> create_some_type(typeCache& cache, const string_type& n
 	}
 	else
 		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
-	
-	transaction.commit();
 
 	return prototype;
 }
@@ -610,6 +608,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_dir
 			transaction.push([dir, item]() mutable {
 				auto add_result = dir->add_item(item);
 				});
+
 			ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(id);
 			if (!ret)
 			{// error, didn't deleted runtime
@@ -679,7 +678,6 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		ret_value.register_error("Unable to create runtime in repository.");
 		return ret_value;
 	}
-
 	transaction.push([&cache, item_id]() mutable {
 		auto delete_result = cache.delete_runtime(item_id);
 		});
@@ -691,11 +689,13 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		result.register_error("Unable to add "s + runtime_name + " to directory!");
 		return result.errors();
 	}
-	else if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	transaction.push([=]() mutable {
+		auto remove_result = dir->delete_item(runtime_name);
+		});
+
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		transaction.push([=]() mutable {
-			auto remove_result = dir->delete_item(runtime_name);
-			});
+
 		// we have to do save, we are running
 		auto save_result = ret_value.value()->get_item_ptr()->save();
 		if (!save_result)
@@ -938,7 +938,7 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm 
+// Parameterized Class model::algorithms::types_model_algorithm
 
 
 template <class typeT>
@@ -1071,7 +1071,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm 
+// Parameterized Class model::algorithms::simple_types_model_algorithm
 
 
 template <class typeT>
@@ -1204,7 +1204,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm 
+// Parameterized Class model::algorithms::runtime_model_algorithm
 
 
 template <class typeT>
@@ -1509,7 +1509,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 
-// Class model::algorithms::relation_types_algorithm 
+// Class model::algorithms::relation_types_algorithm
 
 
 void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)

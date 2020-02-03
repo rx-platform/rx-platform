@@ -277,7 +277,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 	{
 	case rx_item_type::rx_application:
 		{
-			sys_runtime::platform_runtime_manager::instance().get_applications(result);
+			sys_runtime::platform_runtime_manager::instance().get_applications(result, subfolder);
 		}
 		break;
 	case rx_item_type::rx_port:

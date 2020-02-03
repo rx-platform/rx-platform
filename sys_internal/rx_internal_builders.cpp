@@ -158,14 +158,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	auto user_builders = get_user_builders(data, host);
 	auto test_builders = get_test_builders(data, host);
 	auto other_builders = get_other_builders(data, host);
-
-
-	errors = root->add_sub_directory(rx_create_reference<unassigned_directory>());
-	if (!errors)
-	{
-		errors.register_error("Unable to add directory " RX_NS_WORLD_NAME ".");
-		return errors;
-	}
+	
 
 	for (auto& one : sys_builders)
 	{
@@ -178,10 +171,16 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		}
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system!");
+	errors = root->add_sub_directory(rx_create_reference<unassigned_directory>());
+	if (!errors)
+	{
+		errors.register_error("Unable to add directory " RX_NS_UNASSIGNED_NAME ".");
+		return errors;
+	}
 	errors = buid_unassigned(root, host, data);
-	if(errors)
+	if (errors)
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built!");
-	// system is critical so an error in building system is fatal
+	// unassigned is critical so an error in building system is fatal
 	else
 		return errors;
 
@@ -341,21 +340,21 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 	string_type full_path = RX_DIR_DELIMETER + path;
 	auto dir = root->get_sub_directory(path);
 	if (dir)
-	{
-		runtime::items::domain_instance_data instance_data;
-		instance_data.processor = 1;
-		instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
-		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		auto result = add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
+	{		
+		runtime::items::application_instance_data app_instance_data;
+		app_instance_data.processor = 1;
+		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		auto result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned application!");
 			return result;
 		}
-		runtime::items::application_instance_data app_instance_data;
-		app_instance_data.processor = 1;
-		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
+		runtime::items::domain_instance_data instance_data;
+		instance_data.processor = 1;
+		instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
+		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		result = add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned domain!");
@@ -706,6 +705,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		obj->complex_data().register_struct("Pool", RX_POOL_DATA_TYPE_ID);
 		add_type_to_configuration(dir, obj, false);
 		// pool type
 		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
@@ -893,6 +893,12 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 			meta = meta_data(RX_NS_SYSTEM_DOM_NAME, RX_NS_SYSTEM_DOM_ID, RX_NS_SYSTEM_DOM_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
 			result = add_object_to_configuration(dir, std::move(meta), std::move(domain_instance_data), tl::type2type<domain_type>());
 		}
+		runtime::items::object_instance_data object_instance_data;
+		object_instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
+		meta = meta_data(RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID, RX_NS_SERVER_RT_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
+		result = add_object_to_configuration(dir, std::move(meta), std::move(object_instance_data), tl::type2type<object_type>());
+
+
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
@@ -964,6 +970,18 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		what->complex_data().register_simple_value_static<uint32_t>("ConnectTimeout", false, 5000);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = rx_create_reference<struct_type>(meta::type_creation_data{
+			RX_POOL_DATA_TYPE_NAME
+			, RX_POOL_DATA_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data().register_const_value_static<uint32_t>("Threads", 0);
+		what->complex_data().register_simple_value_static("LastProcessTime", true, 0.0);
+		what->complex_data().register_simple_value_static("MaxProcessTime", true, 0.0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 	}
 	return true;

@@ -272,6 +272,11 @@ void dispatcher_pool::append (job_ptr pjob)
 	rx_dispatch_function(dispatcher_,execute_job_c, job);
 }
 
+int dispatcher_pool::get_CPU (rx_thread_handle_t domain) const
+{
+	return (int)this->threads_.size();
+}
+
 
 // Class rx::threads::dispatcher_thread 
 

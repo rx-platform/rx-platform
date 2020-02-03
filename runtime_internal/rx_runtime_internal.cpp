@@ -123,12 +123,32 @@ rx_thread_handle_t platform_runtime_manager::resolve_processor_auto ()
 	return ret;
 }
 
-void platform_runtime_manager::get_applications (api::query_result& result)
+void platform_runtime_manager::get_applications (api::query_result& result, const string_type& path)
 {
+	//we are heavy and we're doing it fast
 	result.items.reserve(applications_.size());
+
+	string_type buffer;
+
 	for (const auto& one : applications_)
 	{
-		result.items.emplace_back(api::query_result_detail{ rx_application, one.second->meta_info() });
+		if (!path.empty())
+		{
+			one.second->meta_info().get_full_path_with_buffer(buffer);
+			if (path.size() <= buffer.size())
+			{
+				size_t size = std::min(path.size(), buffer.size());
+				// sorry guys i have to do it, i know i'm waisting a byte
+				if (0 == memcmp(buffer.c_str(), path.c_str(), size))
+				{
+					result.items.emplace_back(api::query_result_detail{ rx_application, one.second->meta_info() });
+				}
+			}
+		}
+		else // path.empty()
+		{
+			result.items.emplace_back(api::query_result_detail{ rx_application, one.second->meta_info() });
+		}
 	}
 }
 
@@ -197,11 +217,3 @@ void runtime_cache::remove_from_cache (const string_type& path)
 
 } // namespace sys_runtime
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return algorithms::relations_algorithms::init_runtime(what, ctx);
-
-#endif

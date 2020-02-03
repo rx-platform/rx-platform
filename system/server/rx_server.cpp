@@ -77,6 +77,7 @@ rx_gate::rx_gate()
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {
+	infrastructure_ = rx_create_reference<infrastructure::server_rt>();
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
 	os_info_ = buff;
@@ -132,7 +133,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
 
-	auto result = infrastructure_.initialize(host, data.processor, data.io);
+	auto result = infrastructure_->initialize(host, data.processor, data.io);
 	if (result)
 	{
 		result = manager_.initialize(host, data.management);
@@ -163,20 +164,20 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 				{
 					io_manager_->deinitialize();
 					manager_.deinitialize();
-					infrastructure_.deinitialize();
+					infrastructure_->deinitialize();
 					io_manager_->deinitialize();
 				}
 			}
 			else
 			{
 				manager_.deinitialize();
-				infrastructure_.deinitialize();
+				infrastructure_->deinitialize();
 				result.register_error("Error initializing I/O manager!");
 			}
 		}
 		else
 		{
-			infrastructure_.deinitialize();
+			infrastructure_->deinitialize();
 			result.register_error("Error initializing platform manager!");
 		}
 	}
@@ -199,13 +200,13 @@ rx_result rx_gate::deinitialize ()
 
 	io_manager_->deinitialize();
 	manager_.deinitialize();
-	infrastructure_.deinitialize();
+	infrastructure_->deinitialize();
 	return RX_OK;
 }
 
 rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	auto result = infrastructure_.start(host, data.processor, data.io);
+	auto result = infrastructure_->start(host, data.processor, data.io);
 	if (result)
 	{
 		result = manager_.start(host, data.management);
@@ -220,14 +221,14 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			}
 			else
 			{
-				infrastructure_.stop();
+				infrastructure_->stop();
 				manager_.stop();
 				result.register_error("Error starting platform types manager!");
 			}
 		}
 		else
 		{
-			infrastructure_.stop();
+			infrastructure_->stop();
 			result.register_error("Error starting platform manager!");
 		}
 	}
@@ -243,7 +244,7 @@ rx_result rx_gate::stop ()
 	platform_status_ = rx_platform_status::stopping;
 	model::platform_types_manager::instance().stop();
 	manager_.stop();
-	infrastructure_.stop();
+	infrastructure_->stop();
 	platform_status_ = rx_platform_status::deinitializing;
 	return true;
 }
@@ -288,6 +289,11 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 		err_buffer->push_line(ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET "\r\n");
 		return false;
 	}
+}
+
+infrastructure::server_rt& rx_gate::get_infrastructure ()
+{
+	return *infrastructure_;
 }
 
 template <class typeT>

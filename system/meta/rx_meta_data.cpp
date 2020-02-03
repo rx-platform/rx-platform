@@ -517,6 +517,24 @@ rx_item_reference meta_data::create_weak_item_reference (const string_array& dir
 	}
 }
 
+void meta_data::get_full_path_with_buffer (string_type& path) const
+{
+	if (!path_.empty() && *path_.rbegin() == RX_DIR_DELIMETER)
+	{
+		path = path_;
+		path += name_;
+
+	}
+	else
+	{
+		path = path_;
+		// we are not doing any memory stuff it's not our buffer
+		//path.reserve(ret.size() + name_.size() + 1);
+		path += RX_DIR_DELIMETER;
+		path += name_;
+	}
+}
+
 
 } // namespace meta
 } // namespace rx_platform

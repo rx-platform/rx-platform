@@ -88,6 +88,13 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 
 	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data);
 
+	// register I/O constructors
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_NS_SERVER_RT_TYPE_ID, [this] {
+			rx_object_impl_ptr ret = smart_this();
+			return ret;
+		});
+
 	return result;
 }
 
@@ -261,6 +268,14 @@ sys_runtime::data_source::data_controler* server_rt::get_data_controler (rx_thre
 	return workers_->get_data_controler(domain);
 }
 
+int server_rt::get_CPU (rx_thread_handle_t domain) const
+{
+	if (domain < RX_DOMAIN_UPPER_LIMIT && workers_)
+		return workers_->get_CPU(domain) + io_pool_ ? io_pool_->get_CPU(domain) : 0;
+	else
+		return 0;
+}
+
 
 // Class rx_platform::infrastructure::server_dispatcher_object 
 
@@ -276,6 +291,12 @@ server_dispatcher_object::~server_dispatcher_object()
 {
 }
 
+
+
+int server_dispatcher_object::get_CPU (rx_thread_handle_t domain) const
+{
+	return pool_.get_CPU(domain);
+}
 
 
 // Class rx_platform::infrastructure::dispatcher_subscribers_job 
@@ -386,6 +407,18 @@ sys_runtime::data_source::data_controler* domains_pool::get_data_controler (rx_t
 	{
 		uint32_t real_index = domain % size;
 		return data_controlers_[real_index];
+	}
+}
+
+int domains_pool::get_CPU (rx_thread_handle_t domain) const
+{
+	uint32_t size = pool_size_;
+	RX_ASSERT(size);
+	if (size == 0)
+		return 0;
+	else
+	{
+		return domain % size;
 	}
 }
 

@@ -62,12 +62,31 @@ class object_instance_data
 {
 
   public:
+      object_instance_data();
+
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
-      bool connect_domain (rx_domain_ptr&& domain, const rx_object_ptr& whose);
+      bool connect_domain (rx_domain_ptr&& domain, rx_object_ptr whose);
+
+      bool disconnect_domain (rx_object_ptr whose);
+
+      static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
 
 
       rx_node_id domain_id;
@@ -79,6 +98,9 @@ class object_instance_data
 
 
   private:
+
+
+      rx_thread_handle_t executer_;
 
 
 };
@@ -93,6 +115,8 @@ class domain_instance_data
     typedef std::map<rx_node_id, rx_object_ptr> objects_type;
 
   public:
+      domain_instance_data();
+
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
@@ -104,7 +128,24 @@ class domain_instance_data
 
       void remove_object (rx_object_ptr what);
 
-      bool connect_application (rx_application_ptr&& app, const rx_domain_ptr& whose);
+      bool connect_application (rx_application_ptr&& app, rx_domain_ptr whose);
+
+      bool disconnect_application (rx_domain_ptr whose);
+
+      static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
 
 
       rx_node_id app_id;
@@ -124,6 +165,9 @@ class domain_instance_data
       rx_application_ptr my_application_;
 
 
+      rx_thread_handle_t executer_;
+
+
 };
 
 
@@ -135,12 +179,31 @@ class port_instance_data
 {
 
   public:
+      port_instance_data();
+
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
-      void connect_application (rx_application_ptr&& app, const rx_port_ptr& whose);
+      bool connect_application (rx_application_ptr&& app, rx_port_ptr whose);
+
+      bool disconnect_application (rx_port_ptr whose);
+
+      static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
 
 
       rx_node_id app_id;
@@ -156,6 +219,9 @@ class port_instance_data
       rx_application_ptr my_application_;
 
 
+      rx_thread_handle_t executer_;
+
+
 };
 
 
@@ -165,10 +231,12 @@ class port_instance_data
 
 class application_instance_data 
 {
-    typedef std::vector<rx_domain_ptr> domains_type;
-    typedef std::vector<rx_port_ptr> ports_type;
+    typedef std::map<rx_node_id, rx_domain_ptr> domains_type;
+    typedef std::map<rx_node_id, rx_port_ptr> ports_type;
 
   public:
+      application_instance_data();
+
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
@@ -186,6 +254,21 @@ class application_instance_data
 
       void get_domains (api::query_result& result);
 
+      static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx);
+
+      static rx_result deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+
 
       int processor;
 
@@ -198,6 +281,11 @@ class application_instance_data
       domains_type domains_;
 
       ports_type ports_;
+
+
+      locks::slim_lock domains_lock_;
+
+      rx_thread_handle_t executer_;
 
 
 };

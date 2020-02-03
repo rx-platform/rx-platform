@@ -129,11 +129,7 @@ class rx_gate
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
-
-      infrastructure::server_rt& get_infrastructure ()
-      {
-        return infrastructure_;
-      }
+      infrastructure::server_rt& get_infrastructure ();
 
 
       mngt::server_manager& get_manager ()
@@ -226,7 +222,7 @@ class rx_gate
 
 
 
-      infrastructure::server_rt infrastructure_;
+      rx_reference<infrastructure::server_rt> infrastructure_;
 
       rx_directory_ptr root_;
 

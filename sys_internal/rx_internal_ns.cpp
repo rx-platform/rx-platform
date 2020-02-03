@@ -34,6 +34,7 @@
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
 
+#include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
 #include "sys_internal/rx_internal_builders.h"
 #include "sys_internal/rx_internal_ns.h"
@@ -637,15 +638,15 @@ template class sys_internal::internal_ns::rx_other_implementation<testing::test_
 template class sys_internal::internal_ns::rx_other_implementation<terminal::server_command_ptr>;
 template class sys_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::application_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::domain_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::port_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::object_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::relation_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<rx_application_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<rx_domain_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<rx_port_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<rx_object_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<relation_type_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::struct_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::mapper_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::variable_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::event_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::filter_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<meta::source_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<struct_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<mapper_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<variable_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<event_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<filter_type_ptr>;
+template class sys_internal::internal_ns::rx_meta_item_implementation<source_type_ptr>;

@@ -698,6 +698,15 @@ struct hash<rx::rx_node_id>
 		}
 	}
 };
+
+//very useful, maybe it exists in standard already still...
+struct null_deleter
+{
+	void operator()(void const*) const
+	{
+	}
+};
+
 }
 
 

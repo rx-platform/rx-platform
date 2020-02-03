@@ -314,7 +314,6 @@ rx_protocol_result_t rx_json_protocol::received_function (rx_protocol_stack_entr
 			{
 				if (self->my_port_)
 				{
-					std::cout << "******Port's executer = " << self->my_port_->get_executer() << "\r\n";
 					rx_post_function<decltype(my_port_)>([json](decltype(my_port_) whose) {
 							whose->data_received(json);
 						}

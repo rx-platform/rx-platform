@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 18
-#define RX_LIB_BUILD_NUMBER 7
+#define RX_LIB_BUILD_NUMBER 8
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -18,13 +18,14 @@
 // version 0.17.13 implemented dump_simple for log stream subscriber
 // version 0.17.14 added log_query_type::include_trace
 // version 0.17.15 added rx_result for io types
-// version 0.17.17 log_query_type revisied, enum classes fro log enums
+// version 0.17.17 log_query_type revised, enum classes fro log enums
 // version 0.18.0 added runtime_constructor stuff
 // version 0.18.2 rx_result_erros_t is now global typedef
 // version 0.18.3 rx_item_reference is part of lib and has specific serialization
 // version 0.18.4 read simple value is in serialization
 // version 0.18.5 added RX_DEAD_QUALITY
-// version 0.18.6 added rx_thread_data_object stack chacke before push
+// version 0.18.6 added rx_thread_data_object stack cache before push
 // version 0.18.7 added errors_line to rx_result types
+// version 0.18.8 added get_CPU() function, useful for monitoring
 
 

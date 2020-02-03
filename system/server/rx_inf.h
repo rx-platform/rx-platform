@@ -51,7 +51,9 @@ class data_controler;
 #include "system/hosting/rx_host.h"
 using rx_platform::namespace_item_attributes;
 
-#define RX_DOMAIN_EXTERN 0xffb
+#define RX_DOMAIN_UPPER_LIMIT 0xff00
+
+#define RX_DOMAIN_EXTERN 0xfffb
 #define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
@@ -81,6 +83,9 @@ and general usage thread pool resources\r\n\
       server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id);
 
       ~server_dispatcher_object();
+
+
+      int get_CPU (rx_thread_handle_t domain) const;
 
 
       rx::threads::dispatcher_pool& get_pool ()
@@ -138,7 +143,7 @@ class domains_pool : public rx::threads::job_thread,
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
 class managing execution domains \r\n\
 thread pool resources\r\n\
 ");
@@ -167,6 +172,8 @@ thread pool resources\r\n\
       rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
       sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
+
+      int get_CPU (rx_thread_handle_t domain) const;
 
 
   protected:
@@ -254,6 +261,8 @@ callculation ( normal priority)");
       rx_time get_created_time (values::rx_value& val) const;
 
       sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
+
+      int get_CPU (rx_thread_handle_t domain) const;
 
 
       rx_reference<server_dispatcher_object> get_io_pool ()

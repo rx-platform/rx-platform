@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -52,7 +52,7 @@ namespace sys_runtime {
 
 
 
-class runtime_cache
+class runtime_cache 
 {
     typedef std::map<string_type, platform_item_ptr> path_cache_type;
 
@@ -85,7 +85,7 @@ class runtime_cache
 
 
 
-class platform_runtime_manager
+class platform_runtime_manager 
 {
 	typedef std::map<rx_node_id, rx_application_ptr> applications_type;
 	typedef std::vector<int> coverage_type;
@@ -103,7 +103,7 @@ class platform_runtime_manager
 
       rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data);
 
-      void get_applications (api::query_result& result);
+      void get_applications (api::query_result& result, const string_type& path);
 
       static runtime_handle_t get_new_handle ();
 
@@ -117,15 +117,17 @@ class platform_runtime_manager
 	  template<class typeT>
 	  rx_result init_runtime(typename typeT::RTypePtr what)
 	  {
+          auto result = algorithms::create_runtime_structure<typeT>(what);
           auto ctx = what->create_init_context();
-		  auto result = algorithms::init_runtime<typeT>(what, ctx);
+		  result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }
 	  template<class typeT>
 	  rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result)> callback)
 	  {
+          auto result = algorithms::delete_runtime_structure<typeT>(what);
           runtime::runtime_deinit_context ctx;
-		  auto result = algorithms::deinit_runtime<typeT>(what, callback, ctx);
+		  result = algorithms::deinit_runtime<typeT>(what, callback, ctx);
 		  return result;
 	  }
   protected:

@@ -208,6 +208,10 @@
 #define RX_CLIENT_TIMEOUTS_TYPE_NAME "ClientTimeoutsData"
 #define RX_CLIENT_TIMEOUTS_TYPE_ID 0xc000025
 
+// runtime support structures
+#define RX_POOL_DATA_TYPE_NAME "PoolData"
+#define RX_POOL_DATA_TYPE_ID 0xc000026
+
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
 #define RX_CPP_OBJECT_TYPE_NAME "object"

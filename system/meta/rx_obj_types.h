@@ -381,7 +381,7 @@ public:
     typedef rx_reference<RType> RTypePtr;
     typedef runtime::items::object_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
-	typedef runtime::items::object_instance_data instance_data_t;
+    typedef runtime::items::object_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -640,16 +640,6 @@ public:
 
 namespace rx_platform
 {
-namespace meta
-{
-
-typedef pointers::reference<object_types::object_type> object_type_ptr;
-typedef pointers::reference<object_types::domain_type> domain_type_ptr;
-typedef pointers::reference<object_types::application_type> application_type_ptr;
-typedef pointers::reference<object_types::port_type> port_type_ptr;
-typedef pointers::reference<object_types::relation_type> relation_type_ptr;
-
-}
 
 typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
 typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;

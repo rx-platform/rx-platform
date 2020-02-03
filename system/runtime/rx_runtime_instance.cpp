@@ -37,6 +37,7 @@
 
 #include "rx_runtime_holder.h"
 #include "api/rx_platform_api.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -46,6 +47,12 @@ namespace runtime {
 namespace items {
 
 // Class rx_platform::runtime::items::object_instance_data 
+
+object_instance_data::object_instance_data()
+      : executer_(-1)
+{
+}
+
 
 
 bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -70,15 +77,62 @@ bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
     return true;
 }
 
-bool object_instance_data::connect_domain (rx_domain_ptr&& domain, const rx_object_ptr& whose)
+bool object_instance_data::connect_domain (rx_domain_ptr&& domain, rx_object_ptr whose)
 {
+    RX_ASSERT(!my_domain_);
     my_domain_ = std::move(domain);
     my_domain_->get_instance_data().add_object(whose);
     return true;
 }
 
+bool object_instance_data::disconnect_domain (rx_object_ptr whose)
+{
+    if (my_domain_)
+    {
+        auto temp = my_domain_;
+        my_domain_ = rx_domain_ptr::null_ptr;
+        temp->get_instance_data().remove_object(whose);
+    }
+    return true;
+}
+
+rx_result object_instance_data::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
+{
+    RX_ASSERT(what->get_instance_data().my_domain_);
+    if (what->get_instance_data().my_domain_)
+    {
+        what->get_instance_data().executer_ = what->get_instance_data().my_domain_->get_executer();
+    }
+    else
+    {
+
+    }
+    return true;
+}
+
+rx_result object_instance_data::start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result object_instance_data::deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result object_instance_data::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
 
 // Class rx_platform::runtime::items::domain_instance_data 
+
+domain_instance_data::domain_instance_data()
+      : executer_(-1)
+{
+}
+
 
 
 bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -149,15 +203,54 @@ void domain_instance_data::remove_object (rx_object_ptr what)
         objects_.erase(it);
 }
 
-bool domain_instance_data::connect_application (rx_application_ptr&& app, const rx_domain_ptr& whose)
+bool domain_instance_data::connect_application (rx_application_ptr&& app, rx_domain_ptr whose)
 {
+    RX_ASSERT(!my_application_);
     my_application_ = std::move(app);
     my_application_->get_instance_data().add_domain(whose);
     return true;
 }
 
+bool domain_instance_data::disconnect_application (rx_domain_ptr whose)
+{
+    if (my_application_)
+    {
+        auto temp = my_application_;
+        my_application_ = rx_application_ptr::null_ptr;
+        temp->get_instance_data().remove_domain(whose);
+    }
+    return true;
+}
+
+rx_result domain_instance_data::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
+{
+    what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
+    return true;
+}
+
+rx_result domain_instance_data::start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result domain_instance_data::deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result domain_instance_data::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
 
 // Class rx_platform::runtime::items::application_instance_data 
+
+application_instance_data::application_instance_data()
+      : executer_(-1)
+{
+}
+
 
 
 bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -187,59 +280,36 @@ void application_instance_data::get_ports (api::query_result& result)
     result.items.reserve(ports_.size());
     for (const auto& one : ports_)
     {
-        if (one)
-            result.items.emplace_back(api::query_result_detail{ rx_port, one->meta_info() });
+        result.items.emplace_back(api::query_result_detail{ rx_port, one.second->meta_info() });
     }
 }
 
 void application_instance_data::add_port (rx_port_ptr what)
 {
-    for (auto& one : ports_)
-    {
-        if (!one)
-        {
-            one = what;
-            return;
-        }
-    }
-    ports_.emplace_back(what);
+    ports_.emplace(what->meta_info().get_id(), what);
 }
 
 void application_instance_data::add_domain (rx_domain_ptr what)
 {
-    for (auto& one : domains_)
-    {
-        if (!one)
-        {
-            one = what;
-            return;
-        }
-    }
-    domains_.emplace_back(what);
+    // domains can be from other thread so do the locking
+    locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
+    domains_.emplace(what->meta_info().get_id(), what);
 }
 
 void application_instance_data::remove_port (rx_port_ptr what)
 {
-    for (auto& one : ports_)
-    {
-        if (one == what)
-        {
-            one = rx_port_ptr::null_ptr;
-            return;
-        }
-    }
+    auto it = ports_.find(what->meta_info().get_id());
+    if (it != ports_.end())
+        ports_.erase(it);
 }
 
 void application_instance_data::remove_domain (rx_domain_ptr what)
 {
-    for (auto& one : domains_)
-    {
-        if (one == what)
-        {
-            one = rx_domain_ptr::null_ptr;
-            return;
-        }
-    }
+    // domains can be from other thread so do the locking
+    locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
+    auto it = domains_.find(what->meta_info().get_id());
+    if (it != domains_.end())
+        domains_.erase(it);
 }
 
 void application_instance_data::get_domains (api::query_result& result)
@@ -247,13 +317,39 @@ void application_instance_data::get_domains (api::query_result& result)
     result.items.reserve(domains_.size());
     for (const auto& one : domains_)
     {
-        if (one)
-            result.items.emplace_back(api::query_result_detail{ rx_domain, one->meta_info() });
+        result.items.emplace_back(api::query_result_detail{ rx_domain, one.second->meta_info() });
     }
+}
+
+rx_result application_instance_data::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
+{
+    what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
+    return true;
+}
+
+rx_result application_instance_data::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result application_instance_data::deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result application_instance_data::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
+{
+    return true;
 }
 
 
 // Class rx_platform::runtime::items::port_instance_data 
+
+port_instance_data::port_instance_data()
+      : executer_(-1)
+{
+}
+
 
 
 bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
@@ -282,10 +378,52 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
     return true;
 }
 
-void port_instance_data::connect_application (rx_application_ptr&& app, const rx_port_ptr& whose)
+bool port_instance_data::connect_application (rx_application_ptr&& app, rx_port_ptr whose)
 {
+    RX_ASSERT(!my_application_);
     my_application_ = std::move(app);
     my_application_->get_instance_data().add_port(whose);
+    return true;
+}
+
+bool port_instance_data::disconnect_application (rx_port_ptr whose)
+{
+    if (my_application_)
+    {
+        auto temp = my_application_;
+        my_application_ = rx_application_ptr::null_ptr;
+        temp->get_instance_data().remove_port(whose);
+    }
+    return true;
+}
+
+rx_result port_instance_data::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
+{
+    RX_ASSERT(what->get_instance_data().my_application_);
+    if (what->get_instance_data().my_application_)
+    {
+        what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+    }
+    else
+    {
+
+    }
+    return true;
+}
+
+rx_result port_instance_data::start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result port_instance_data::deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result port_instance_data::stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
+{
+    return true;
 }
 
 

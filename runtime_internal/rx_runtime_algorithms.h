@@ -44,6 +44,10 @@ namespace sys_runtime {
 
 namespace algorithms {
 template<class typeT>
+rx_result create_runtime_structure(typename typeT::RTypePtr what);
+template<class typeT>
+rx_result delete_runtime_structure(typename typeT::RTypePtr what);
+template<class typeT>
 rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
 template<class typeT>
 rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
@@ -61,6 +65,10 @@ class object_algorithms
       static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
 
       static rx_result deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result connect_domain (rx_object_ptr what);
+
+      static rx_result disconnect_domain (rx_object_ptr what);
 
 
   protected:
@@ -89,6 +97,10 @@ class domain_algorithms
 
       static rx_result deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
 
+      static rx_result connect_application (rx_domain_ptr what);
+
+      static rx_result disconnect_application (rx_domain_ptr what);
+
 
   protected:
 
@@ -115,6 +127,10 @@ class port_algorithms
       static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
 
       static rx_result deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+
+      static rx_result connect_application (rx_port_ptr what);
+
+      static rx_result disconnect_application (rx_port_ptr what);
 
 
   protected:

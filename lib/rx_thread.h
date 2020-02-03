@@ -219,6 +219,8 @@ class dispatcher_pool : public job_thread
 
       void append (job_ptr pjob);
 
+      int get_CPU (rx_thread_handle_t domain) const;
+
 
       rx_kernel_dispather_t dispatcher_;
 

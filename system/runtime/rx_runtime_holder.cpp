@@ -40,6 +40,7 @@
 #include "api/rx_platform_api.h"
 #include "system/server/rx_async_functions.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "system/meta/rx_obj_types.h"
 
 
 namespace rx_platform {
@@ -60,6 +61,170 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
     }
 }
 
+// Parameterized Class rx_platform::runtime::algorithms::object_runtime_algorithms 
+
+
+template <class typeT>
+std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<typeT>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+    using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+
+    connect_result_t results;
+    bool has_errors = false;
+    bool had_good = false;
+    if (paths.empty())
+        return std::vector<rx_result_with<runtime_handle_t> >();
+    results.clear();// just in case
+    results.reserve(paths.size());
+
+    has_errors = false;
+    for (const auto& path : paths)
+    {
+        auto one_result = whose.connected_tags_.connect_tag(path, *whose.item_, monitor, whose.state_);
+        if (!has_errors && !one_result)
+            has_errors = true;
+        if (!had_good && one_result)
+            had_good = true;
+        results.emplace_back(std::move(one_result));
+    }
+    if (had_good)
+    {
+        whose.context_.tag_updates_pending();
+        object_runtime_algorithms<typeT>::fire_job(whose);
+    }
+    return results;
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& whose)
+{
+    whose.job_lock_.lock();
+    whose.job_pending_ = false;
+    whose.job_lock_.unlock();
+    whose.context_.init_context();
+    whose.process_runtime(whose.context_);
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+    std::vector<rx_result> results;
+    auto ret = whose.read_items(items, monitor, results);
+    if (ret)
+    {
+        whose.context_.tag_updates_pending();
+        object_runtime_algorithms<typeT>::fire_job(whose);
+    }
+    return ret;
+}
+
+template <class typeT>
+void object_runtime_algorithms<typeT>::fire_job (typename typeT::RType& whose)
+{
+    locks::auto_lock_t<decltype(whose.job_lock_)> _(&whose.job_lock_);
+    if (!whose.job_pending_)
+    {
+        whose.job_pending_ = true;
+        RX_ASSERT(whose.my_job_ptr_);
+        auto executer = rx_gate::instance().get_infrastructure().get_executer(whose.get_executer());
+        executer->append(whose.my_job_ptr_);
+    }
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+    std::vector<rx_result> results;
+    auto ret = whose.write_items(transaction_id, items, monitor, results);
+    if (ret)
+    {
+        whose.context_.tag_writes_pending();
+        object_runtime_algorithms<typeT>::fire_job(whose);
+    }
+    return ret;
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose)
+{
+    if (items.empty())
+        return true;
+    results.clear();// just in case
+    results.reserve(items.size());
+    has_errors = false;
+    for (const auto& handle : items)
+    {
+        auto one_result = whose.connected_tags_.disconnect_tag(handle, monitor);
+        if (!has_errors && !one_result)
+            has_errors = true;
+        results.emplace_back(std::move(one_result));
+    }
+    return true;
+}
+
+
+template <>
+void object_runtime_algorithms<object_types::port_type>::process_runtime(typename object_types::port_type::RType& whose)
+{
+    whose.job_lock_.lock();
+    whose.job_pending_ = false;
+    whose.job_lock_.unlock();
+    whose.context_.init_context();
+    whose.implementation_->process_stack();
+    whose.process_runtime(whose.context_);
+}
+
+template <>
+std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, runtime::operational::tags_callback_ptr monitor, object_types::relation_type::RType& whose)
+{
+    using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
+
+    connect_result_t result;
+    result.reserve(paths.size());
+
+    for (size_t i = 0; i < paths.size(); i++)
+    {
+        result.emplace_back(RX_NOT_IMPLEMENTED);
+    }
+
+    return result;
+
+    // OutputDebugStringA("****************Something to connect object runtime\r\n");
+
+    /*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
+    {
+
+        // OutputDebugStringA("****************Something to connect object runtime\r\n");
+        connect_result_t results;
+        bool has_errors = false;
+        auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
+        if (ret)
+        {
+            whose->runtime_context_.process_tag_connections = true;
+        }
+        else
+        {
+            auto size = paths.size();
+            results.reserve(size);
+            for (size_t i = 0; i < size; i++)
+                results.emplace_back(ret.errors());
+        }
+        if (whose->runtime_context_.process_tag_connections)
+        {
+            whose->fire_job();
+        }
+        return results;
+    };
+    auto ret_thread = whose->get_executer();
+    rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
+    return true;*/
+}
+
+template class object_runtime_algorithms<object_types::port_type>;
+template class object_runtime_algorithms<object_types::object_type>;
+template class object_runtime_algorithms<object_types::domain_type>;
+template class object_runtime_algorithms<object_types::application_type>;
+
 // Parameterized Class rx_platform::runtime::algorithms::runtime_holder 
 
 template <class typeT>
@@ -68,8 +233,7 @@ runtime_holder<typeT>::runtime_holder()
         last_scan_time_(-1),
         max_scan_time_(0),
         max_scan_time_item_(0),
-        job_pending_(false),
-        executer_(0)
+        job_pending_(false)
     , meta_info_(namespace_item_pull_access)
     , context_(binded_tags_, connected_tags_)
     , state_(relations_, &context_)
@@ -84,8 +248,7 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
         last_scan_time_(-1),
         max_scan_time_(0),
         max_scan_time_item_(0),
-        job_pending_(false),
-        executer_(0)
+        job_pending_(false)
     , meta_info_(meta)
     , instance_data_(instance)
     , context_(binded_tags_, connected_tags_)
@@ -198,7 +361,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     ctx.structure.push_item(*item_);
     ctx.context = &context_;
 
-    auto result = ctx.context->set_item_static("CPU", (int)executer_, ctx);
+    auto result = ctx.context->set_item_static("CPU",rx_gate::instance().get_infrastructure().get_CPU(instance_data_.get_executer()), ctx);
 
     result = item_->initialize_runtime(ctx);
     if (result)
@@ -522,8 +685,7 @@ meta::meta_data& runtime_holder<typeT>::meta_info ()
 template <class typeT>
 platform_item_ptr runtime_holder<typeT>::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
-
+    return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 template <class typeT>
@@ -544,174 +706,16 @@ typename runtime_holder<typeT>::ImplPtr runtime_holder<typeT>::get_implementatio
     return implementation_;
 }
 
+template <class typeT>
+rx_thread_handle_t runtime_holder<typeT>::get_executer () const
+{
+    return instance_data_.get_executer();
+}
+
 template class runtime_holder<object_types::object_type>;
 template class runtime_holder<object_types::domain_type>;
 template class runtime_holder<object_types::port_type>;
 template class runtime_holder<object_types::application_type>;
-// Parameterized Class rx_platform::runtime::algorithms::object_runtime_algorithms 
-
-
-template <class typeT>
-std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<typeT>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
-{
-    using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
-
-    connect_result_t results;
-    bool has_errors = false;
-    bool had_good = false;
-    if (paths.empty())
-        return std::vector<rx_result_with<runtime_handle_t> >();
-    results.clear();// just in case
-    results.reserve(paths.size());
-
-    has_errors = false;
-    for (const auto& path : paths)
-    {
-        auto one_result = whose.connected_tags_.connect_tag(path, *whose.item_, monitor, whose.state_);
-        if (!has_errors && !one_result)
-            has_errors = true;
-        if (!had_good && one_result)
-            had_good = true;
-        results.emplace_back(std::move(one_result));
-    }
-    if (had_good)
-    {
-        whose.context_.tag_updates_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
-    }
-    return results;
-}
-
-template <class typeT>
-void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& whose)
-{
-    whose.job_lock_.lock();
-    whose.job_pending_ = false;
-    whose.job_lock_.unlock();
-    whose.context_.init_context();
-    whose.process_runtime(whose.context_);
-}
-
-template <class typeT>
-rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
-{
-    std::vector<rx_result> results;
-    auto ret = whose.read_items(items, monitor, results);
-    if (ret)
-    {
-        whose.context_.tag_updates_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
-    }
-    return ret;
-}
-
-template <class typeT>
-void object_runtime_algorithms<typeT>::fire_job (typename typeT::RType& whose)
-{
-    locks::auto_lock_t<decltype(whose.job_lock_)> _(&whose.job_lock_);
-    if (!whose.job_pending_)
-    {
-        whose.job_pending_ = true;
-        RX_ASSERT(whose.my_job_ptr_);
-        auto executer = rx_gate::instance().get_infrastructure().get_executer(whose.get_executer());
-        executer->append(whose.my_job_ptr_);
-    }
-}
-
-template <class typeT>
-rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
-{
-    std::vector<rx_result> results;
-    auto ret = whose.write_items(transaction_id, items, monitor, results);
-    if (ret)
-    {
-        whose.context_.tag_writes_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
-    }
-    return ret;
-}
-
-template <class typeT>
-rx_result object_runtime_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose)
-{
-    if (items.empty())
-        return true;
-    results.clear();// just in case
-    results.reserve(items.size());
-    has_errors = false;
-    for (const auto& handle : items)
-    {
-        auto one_result = whose.connected_tags_.disconnect_tag(handle, monitor);
-        if (!has_errors && !one_result)
-            has_errors = true;
-        results.emplace_back(std::move(one_result));
-    }
-    return true;
-}
-
-
-template <>
-void object_runtime_algorithms<object_types::port_type>::process_runtime(typename object_types::port_type::RType& whose)
-{
-    whose.job_lock_.lock();
-    whose.job_pending_ = false;
-    whose.job_lock_.unlock();
-    whose.context_.init_context();
-    whose.implementation_->process_stack();
-    whose.process_runtime(whose.context_);
-}
-
-template <>
-std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, runtime::operational::tags_callback_ptr monitor, object_types::relation_type::RType& whose)
-{
-    using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
-
-    connect_result_t result;
-    result.reserve(paths.size());
-
-    for (size_t i = 0; i < paths.size(); i++)
-    {
-        result.emplace_back(RX_NOT_IMPLEMENTED);
-    }
-
-    return result;
-
-    // OutputDebugStringA("****************Something to connect object runtime\r\n");
-
-    /*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
-    {
-
-        // OutputDebugStringA("****************Something to connect object runtime\r\n");
-        connect_result_t results;
-        bool has_errors = false;
-        auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
-        if (ret)
-        {
-            whose->runtime_context_.process_tag_connections = true;
-        }
-        else
-        {
-            auto size = paths.size();
-            results.reserve(size);
-            for (size_t i = 0; i < size; i++)
-                results.emplace_back(ret.errors());
-        }
-        if (whose->runtime_context_.process_tag_connections)
-        {
-            whose->fire_job();
-        }
-        return results;
-    };
-    auto ret_thread = whose->get_executer();
-    rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
-    return true;*/
-}
-
-template class object_runtime_algorithms<object_types::port_type>;
-template class object_runtime_algorithms<object_types::object_type>;
-template class object_runtime_algorithms<object_types::domain_type>;
-template class object_runtime_algorithms<object_types::application_type>;
-
 // Parameterized Class rx_platform::runtime::algorithms::process_runtime_job 
 
 template <class typeT>
@@ -732,5 +736,4 @@ void process_runtime_job<typeT>::process ()
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
-
 
