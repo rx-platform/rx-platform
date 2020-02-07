@@ -493,13 +493,7 @@ bool json_reader::read_byte (const char* name, uint8_t& val)
 
 bool json_reader::read_value (const char* name, rx_value& val)
 {
-	if (!start_object(name))
-		return false;
-
-	if (!val.deserialize(*this))
-		return false;
-
-	if (!end_object())
+	if (!val.deserialize(name, *this))
 		return false;
 
 	return true;
@@ -516,7 +510,7 @@ bool json_reader::read_int64 (const char* name, int64_t& val)
 			Json::Value& temp = object[name];
 			if (temp.isIntegral())
 			{
-				val = temp.asInt();
+				val = temp.asInt64();
 				return true;
 			}
 		}
@@ -528,7 +522,7 @@ bool json_reader::read_int64 (const char* name, int64_t& val)
 			Json::Value& temp = object[idx];
 			if (temp.isIntegral())
 			{
-				val = temp.asInt();
+				val = temp.asInt64();
 				return true;
 			}
 		}
@@ -547,7 +541,7 @@ bool json_reader::read_uint64 (const string_type& name, uint64_t& val)
 			Json::Value& temp = object[name];
 			if (temp.isIntegral())
 			{
-				val = temp.asUInt();
+				val = temp.asUInt64();
 				return true;
 			}
 		}
@@ -559,7 +553,7 @@ bool json_reader::read_uint64 (const string_type& name, uint64_t& val)
 			Json::Value& temp = object[idx];
 			if (temp.isIntegral())
 			{
-				val = temp.asUInt();
+				val = temp.asUInt64();
 				return true;
 			}
 		}
@@ -839,13 +833,8 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 bool json_reader::read_value (const char* name, rx_simple_value& val)
 {
-	if (!start_object(name))
-		return false;
-
-	if (!val.deserialize(*this))
-		return false;
-
-	if (!end_object())
+	
+	if (!val.deserialize(name, *this))
 		return false;
 
 	return true;
@@ -1136,15 +1125,8 @@ bool json_writer::write_byte (const char* name, uint8_t val)
 
 bool json_writer::write_value (const char* name, const rx_value& val)
 {
-	if (!start_object(name))
+	if (!val.serialize(name, *this))
 		return false;
-
-	if (!val.serialize(*this))
-		return false;
-
-	if (!end_object())
-		return false;
-
 	return true;
 }
 
@@ -1258,7 +1240,7 @@ bool json_writer::write_init_values (const char* name, const data::runtime_value
 	}
 	for (const auto& one : values.values)
 	{
-		if (!one.second.value.get_storage().serialize_value(*this, one.first))
+		if (!one.second.value.get_storage().weak_serialize_value(one.first, *this))
 			return false;
 	}
 	if (!end_object())
@@ -1296,15 +1278,8 @@ bool json_writer::write_item_reference (const char* name, const rx_item_referenc
 
 bool json_writer::write_value (const char* name, const rx_simple_value& val)
 {
-	if (!start_object(name))
+	if (!val.serialize(name, *this))
 		return false;
-
-	if (!val.serialize(*this))
-		return false;
-
-	if (!end_object())
-		return false;
-
 	return true;
 }
 

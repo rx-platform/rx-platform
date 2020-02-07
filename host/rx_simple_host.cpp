@@ -163,8 +163,6 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 
 					if (!config_.management.telnet_port)// set to the last default if not set
 						config_.management.telnet_port = 12345;
-					if (config_.processor.genereal_pool_size < 0)
-						config_.processor.genereal_pool_size = 2;
 					if (config_.processor.io_pool_size <= 0)// has to have at least one
 						config_.processor.io_pool_size = 1;
 					if (config_.processor.workers_pool_size < 0)

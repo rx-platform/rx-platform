@@ -67,13 +67,14 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 {
 	// register protocol constructors
 	
-	if (data.io_pool_size > 0)
+	if (data.io_pool_size <= 0)
+		data.io_pool_size = 1;		
+	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
+	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
+
+	if (data.has_unassigned_pool)
 	{
-		io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO, IO_POOL_ID);
-	}
-	if (data.genereal_pool_size > 0)
-	{
-		general_pool_ = server_dispatcher_object::smart_ptr(data.genereal_pool_size, GENERAL_POOL_NAME, RX_DOMAIN_GENERAL, GENERAL_POOL_ID);
+		unassigned_pool_ = rx_create_reference<physical_thread_object>(UNASSIGNED_POOL_NAME, RX_DOMAIN_UNASSIGNED);
 	}
 	if (data.workers_pool_size > 0)
 	{
@@ -86,12 +87,36 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 
 	extern_executer_ = data.extern_executer;
 
+
+
 	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data);
 
 	// register I/O constructors
 	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
 		RX_NS_SERVER_RT_TYPE_ID, [this] {
 			rx_object_impl_ptr ret = smart_this();
+			return ret;
+		});
+
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_POOL_TYPE_ID, [this] {
+			rx_object_impl_ptr ret = io_pool_;
+			return ret;
+		});
+
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_UNASSIGNED_POOL_TYPE_ID, [this] {
+			rx_object_impl_ptr ret;
+			if (unassigned_pool_)
+				ret = unassigned_pool_;
+			else
+				ret = meta_pool_;
+			return ret;
+		});
+
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_META_POOL_TYPE_ID, [this] {
+			rx_object_impl_ptr ret = meta_pool_;
 			return ret;
 		});
 
@@ -105,8 +130,8 @@ void server_rt::deinitialize ()
 
 	if (io_pool_)
 		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
-	if (general_pool_)
-		general_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
+	if (unassigned_pool_)
+		unassigned_pool_ = physical_thread_object::smart_ptr::null_ptr;
 
 	if(workers_)
 		workers_->clear();
@@ -126,22 +151,22 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, 
 
 rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
 {
+	if (meta_pool_)
+		meta_pool_->get_pool().run(RX_PRIORITY_IDLE);
 	if (io_pool_)
 		io_pool_->get_pool().run(RX_PRIORITY_ABOVE_NORMAL);
-	if (general_pool_)
-		general_pool_->get_pool().run(RX_PRIORITY_NORMAL);
+	if (unassigned_pool_)
+		unassigned_pool_->get_pool().run(RX_PRIORITY_LOW);
 	if(workers_)
-		workers_->run();
+		workers_->run(RX_PRIORITY_NORMAL);
 	if (general_timer_)
-		general_timer_->start(RX_PRIORITY_HIGH);
+		general_timer_->start(RX_PRIORITY_REALTIME);
 	if (calculation_timer_)
 		calculation_timer_->start(RX_PRIORITY_NORMAL);
 
 	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
-	if (calculation_timer_)
-		calculation_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), io_data.io_timer_period);
 	if (general_timer_)
-		general_timer_->append_job(dispatcher_timer_, &general_pool_->get_pool(), io_data.io_timer_period);
+		general_timer_->append_job(dispatcher_timer_, &io_pool_->get_pool(), io_data.io_timer_period);
 
 	return true;
 }
@@ -155,8 +180,8 @@ void server_rt::stop ()
 	}
 	if (io_pool_)
 		io_pool_->get_pool().end();
-	if (general_pool_)
-		general_pool_->get_pool().end();
+	if (unassigned_pool_)
+		unassigned_pool_->get_pool().end();
 
 	if(workers_)
 		workers_->end();
@@ -171,6 +196,8 @@ void server_rt::stop ()
 		calculation_timer_->stop();
 		calculation_timer_->wait_handle();
 	}
+	if (meta_pool_)
+		meta_pool_->get_pool().end();
 }
 
 void server_rt::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -198,25 +225,33 @@ void server_rt::append_job (rx::jobs::job_ptr job)
 
 rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 {
-	switch (domain)
+	if (domain > RX_DOMAIN_UPPER_LIMIT)
 	{
-	case RX_DOMAIN_GENERAL:
-		if(general_pool_)
-			return &general_pool_->get_pool();
-		else
+		switch (domain)
+		{
+		case RX_DOMAIN_UNASSIGNED:
+			if (unassigned_pool_)
+				return &unassigned_pool_->get_pool();
+			else
+				return &meta_pool_->get_pool();
+		case RX_DOMAIN_IO:
 			return &io_pool_->get_pool();
-	case RX_DOMAIN_IO:
-		return &io_pool_->get_pool();
-	case RX_DOMAIN_META:
-		return &model::platform_types_manager::instance().get_worker();
-	case RX_DOMAIN_EXTERN:
-		if (extern_executer_)
-			return extern_executer_;
-	default:
+		case RX_DOMAIN_META:
+			return &meta_pool_->get_pool();
+		case RX_DOMAIN_EXTERN:
+			if (extern_executer_)
+				return extern_executer_;
+		default:
+			if (unassigned_pool_)
+				return &unassigned_pool_->get_pool();
+			else
+				return &meta_pool_->get_pool();
+		}
+	}
+	else
+	{
 		if(workers_)
 			return workers_->get_executer(domain);
-		else if(general_pool_)
-			return &general_pool_->get_pool();
 		else
 			return &io_pool_->get_pool();
 	}
@@ -234,22 +269,6 @@ void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t pe
 void server_rt::append_io_job (rx::jobs::job_ptr job)
 {
 	io_pool_->get_pool().append(job);
-}
-
-void server_rt::append_general_job (rx::jobs::job_ptr job)
-{
-	if (general_pool_)
-		return general_pool_->get_pool().append(job);
-	else
-		return io_pool_->get_pool().append(job);
-}
-
-void server_rt::append_slow_job (rx::jobs::job_ptr job)
-{
-	if (general_pool_)
-		return general_pool_->get_pool().append(job);
-	else
-		return io_pool_->get_pool().append(job);
 }
 
 void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
@@ -273,13 +292,25 @@ int server_rt::get_CPU (rx_thread_handle_t domain) const
 	if (domain < RX_DOMAIN_UPPER_LIMIT && workers_)
 		return workers_->get_CPU(domain) + io_pool_ ? io_pool_->get_CPU(domain) : 0;
 	else
-		return 0;
+		return -1;
+}
+
+rx_result server_rt::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = object_runtime::initialize_runtime(ctx);
+	if (result)
+	{
+		ctx.tags->set_item_static("Runtime.IOThreads", io_pool_->get_pool_size(), ctx);
+		ctx.tags->set_item_static("Runtime.Workers", workers_ ? workers_->get_pool_size() : (uint16_t)0, ctx);
+		ctx.tags->set_item_static("Runtime.CalcTimer", calculation_timer_.operator bool(), ctx);
+	}
+	return result;
 }
 
 
 // Class rx_platform::infrastructure::server_dispatcher_object 
 
-server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id)
+server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
       : threads_count_(count)
 	, pool_(count, name, rx_thread_id)
 {
@@ -296,6 +327,21 @@ server_dispatcher_object::~server_dispatcher_object()
 int server_dispatcher_object::get_CPU (rx_thread_handle_t domain) const
 {
 	return pool_.get_CPU(domain);
+}
+
+rx_result server_dispatcher_object::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = object_runtime::initialize_runtime(ctx);
+	if (result)
+	{
+		ctx.tags->set_item_static("Pool.Threads", get_pool_size(), ctx);
+	}
+	return result;
+}
+
+uint16_t server_dispatcher_object::get_pool_size () const
+{
+	return (uint16_t)threads_count_;
 }
 
 
@@ -420,6 +466,31 @@ int domains_pool::get_CPU (rx_thread_handle_t domain) const
 	{
 		return domain % size;
 	}
+}
+
+uint16_t domains_pool::get_pool_size () const
+{
+	return (uint16_t)pool_size_;
+}
+
+
+// Class rx_platform::infrastructure::physical_thread_object 
+
+physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
+	: pool_(name, rx_thread_id)
+{
+}
+
+
+
+rx_result physical_thread_object::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = object_runtime::initialize_runtime(ctx);
+	if (result)
+	{
+		ctx.tags->set_item_static("Pool.Threads", 1 , ctx);
+	}
+	return result;
 }
 
 

@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 18
-#define RX_LIB_BUILD_NUMBER 8
+#define RX_LIB_BUILD_NUMBER 9
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -27,5 +27,6 @@
 // version 0.18.6 added rx_thread_data_object stack cache before push
 // version 0.18.7 added errors_line to rx_result types
 // version 0.18.8 added get_CPU() function, useful for monitoring
+// version 0.18.9 simplified values serialization, corrected some errors in stream_chuks_decoder<>
 
 

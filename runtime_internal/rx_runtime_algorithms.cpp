@@ -474,7 +474,7 @@ rx_result port_algorithms::init_runtime(rx_port_ptr what, runtime::runtime_init_
 			rx_post_function<rx_port_ptr>([](rx_port_ptr whose)
 				{
 					runtime::runtime_start_context start_ctx = whose->create_start_context();
-					auto result = whose->start_runtime(start_ctx);
+					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
 						RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());

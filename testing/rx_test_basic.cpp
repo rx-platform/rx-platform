@@ -280,9 +280,9 @@ bool values_test::test_serialization (const string_type& name, std::vector<rx::v
 	writer.write_header(STREAMING_TYPE_VALUES, simples.size() + timed.size());
 
 	for (const auto& one : simples)
-		one.serialize(writer);
+		one.serialize("simple", writer);
 	for (const auto& one : timed)
-		one.serialize(writer);
+		one.serialize("timed", writer);
 
 	if (writer.write_footer())
 	{
@@ -317,7 +317,7 @@ bool values_test::test_deserialization (const string_type& name, std::vector<rx:
 					failed = true;
 					break;
 				}
-				if (!one.deserialize(reader))
+				if (!one.deserialize("simple", reader))
 				{
 					failed = true;
 					break;
@@ -330,7 +330,7 @@ bool values_test::test_deserialization (const string_type& name, std::vector<rx:
 					failed = true;
 					break;
 				}
-				if (!one.deserialize(reader))
+				if (!one.deserialize("timed", reader))
 				{
 					failed = true;
 					break;

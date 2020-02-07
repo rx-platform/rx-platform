@@ -73,6 +73,13 @@ class thread : public locks::waitable
       void start (int priority = RX_PRIORITY_NORMAL);
 
 
+      uint32_t get_thread_id () const
+      {
+        return thread_id_;
+      }
+
+
+
   protected:
 
       virtual uint32_t handler () = 0;
@@ -119,53 +126,6 @@ class job_thread
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class physical_job_thread : public thread, 
-                            	public job_thread  
-{
-	typedef std::queue<job_ptr> queue_type;
-
-  public:
-      physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id);
-
-      ~physical_job_thread();
-
-
-      void run (int priority = RX_PRIORITY_NORMAL);
-
-      void end (uint32_t timeout = RX_INFINITE);
-
-      void append (job_ptr pjob);
-
-
-  protected:
-
-      uint32_t handler ();
-
-      bool wait (std::vector<job_ptr>& queued, uint32_t timeout = RX_INFINITE);
-
-      void stop (uint32_t timeout = RX_INFINITE);
-
-
-  private:
-
-
-      queue_type queue_;
-
-      rx_reference<jobs::job> current_;
-
-
-      locks::event has_job_;
-
-      locks::lockable lock_;
 
 
 };
@@ -276,6 +236,53 @@ class timer : public thread
       locks::event wake_up_;
 
       bool should_exit_;
+
+      locks::lockable lock_;
+
+
+};
+
+
+
+
+
+
+class physical_job_thread : public thread, 
+                            	public job_thread  
+{
+	typedef std::queue<job_ptr> queue_type;
+
+  public:
+      physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id);
+
+      ~physical_job_thread();
+
+
+      void run (int priority = RX_PRIORITY_NORMAL);
+
+      void end (uint32_t timeout = RX_INFINITE);
+
+      void append (job_ptr pjob);
+
+
+  protected:
+
+      uint32_t handler ();
+
+      bool wait (std::vector<job_ptr>& queued, uint32_t timeout = RX_INFINITE);
+
+      void stop (uint32_t timeout = RX_INFINITE);
+
+
+  private:
+
+
+      queue_type queue_;
+
+      rx_reference<jobs::job> current_;
+
+
+      locks::event has_job_;
 
       locks::lockable lock_;
 

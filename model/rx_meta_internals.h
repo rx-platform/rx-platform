@@ -33,8 +33,6 @@
 
 
 
-// rx_thread
-#include "lib/rx_thread.h"
 
 #include "system/meta/rx_types.h"
 #include "system/meta/rx_obj_types.h"
@@ -652,12 +650,6 @@ class platform_types_manager
       void stop ();
 
 
-      rx::threads::physical_job_thread& get_worker ()
-      {
-        return worker_;
-      }
-
-
       types_resolver& get_types_resolver ()
       {
         return types_resolver_;
@@ -684,8 +676,6 @@ class platform_types_manager
       platform_types_manager();
 
 
-
-      rx::threads::physical_job_thread worker_;
 
       types_resolver types_resolver_;
 

@@ -84,8 +84,6 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 
 	if (!config.management.telnet_port)// set to the last default if not set
 		config.management.telnet_port = 12345;
-	if (config.processor.genereal_pool_size < 0)
-		config.processor.genereal_pool_size = 2;
 	if (config.processor.io_pool_size <= 0)// has to have at least one
 		config.processor.io_pool_size = 1;
 	if (config.processor.workers_pool_size < 0)

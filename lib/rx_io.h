@@ -1098,7 +1098,7 @@ stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<bool(
         collected_(0),
         expected_(0)
 {
-	temp_byte_header_ = (uint32_t*)&temp_header_;
+	temp_byte_header_ = (uint8_t*)&temp_header_;
 }
 
 
@@ -1106,7 +1106,7 @@ stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<bool(
 template <class headerT, class bufferT>
 bool stream_chuks_decoder<headerT,bufferT>::push_bytes (const void* data, size_t count)
 {
-	uint32_t* buffer = (uint32_t*)data;
+	uint8_t* buffer = (uint8_t*)data;
 	if (header_ == NULL)
 	{
 		int head_size = (collected_header_ + (int)count < (int)sizeof(headerT)) ? (int)count : (int)sizeof(headerT) - collected_header_;

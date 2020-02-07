@@ -57,7 +57,7 @@ using rx_platform::namespace_item_attributes;
 #define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
 #define RX_DOMAIN_IO 0xfffe
-#define RX_DOMAIN_GENERAL 0xffff
+#define RX_DOMAIN_UNASSIGNED 0xffff
 
 
 
@@ -74,18 +74,22 @@ class server_dispatcher_object : public runtime::items::object_runtime
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
-	DECLARE_CODE_INFO("rx",0,8,0, "\
-class managing io operation resources\r\n\
-and general usage thread pool resources\r\n\
+	DECLARE_CODE_INFO("rx",0,9,0, "\
+class managing kernel based pool \r\n\
+used for I/O pool and general pool\r\n\
 ");
 
   public:
-      server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, const rx_node_id& id);
+      server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id);
 
       ~server_dispatcher_object();
 
 
       int get_CPU (rx_thread_handle_t domain) const;
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      uint16_t get_pool_size () const;
 
 
       rx::threads::dispatcher_pool& get_pool ()
@@ -175,6 +179,8 @@ thread pool resources\r\n\
 
       int get_CPU (rx_thread_handle_t domain) const;
 
+      uint16_t get_pool_size () const;
+
 
   protected:
 
@@ -192,11 +198,49 @@ thread pool resources\r\n\
 };
 
 
+
+
+
+
+class physical_thread_object : public runtime::items::object_runtime  
+{
+    DECLARE_REFERENCE_PTR(physical_thread_object);
+
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+class managing physical thread as pool \r\n\
+used for special executer types\r\n\
+");
+
+  public:
+      physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id);
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+
+      rx::threads::physical_job_thread& get_pool ()
+      {
+        return pool_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      rx::threads::physical_job_thread pool_;
+
+
+};
+
+
 struct runtime_data_t
 {
 	bool real_time = false;
 	int io_pool_size = -1;
-	int genereal_pool_size = -1;
+	int has_unassigned_pool = true;
 	int workers_pool_size = -1;
 	int slow_pool_size = -1;
 	bool has_calculation_timer = false;
@@ -209,13 +253,13 @@ struct runtime_data_t
 
 class server_rt : public runtime::items::object_runtime  
 {
-	DECLARE_CODE_INFO("rx",1,0,0, "\
+	DECLARE_CODE_INFO("rx",1,1,0, "\
 class managing runtime resources:\r\n\
 i/o pool, general pool,\
 and thread pool for applications.\r\n\
 also contains 2 timers:\r\n\
 general ( high priority )\r\n\
-callculation ( normal priority)");
+calculation ( normal priority)");
 
 	DECLARE_REFERENCE_PTR(server_rt);
 	typedef std::vector<std::unique_ptr<rx::threads::physical_job_thread> > workers_type;
@@ -252,10 +296,6 @@ callculation ( normal priority)");
 
       void append_io_job (rx::jobs::job_ptr job);
 
-      void append_general_job (rx::jobs::job_ptr job);
-
-      void append_slow_job (rx::jobs::job_ptr job);
-
       void append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
 
       rx_time get_created_time (values::rx_value& val) const;
@@ -264,6 +304,8 @@ callculation ( normal priority)");
 
       int get_CPU (rx_thread_handle_t domain) const;
 
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
 
       rx_reference<server_dispatcher_object> get_io_pool ()
       {
@@ -271,9 +313,9 @@ callculation ( normal priority)");
       }
 
 
-      rx_reference<server_dispatcher_object> get_general_pool ()
+      rx_reference<physical_thread_object>& get_unassigned_pool ()
       {
-        return general_pool_;
+        return unassigned_pool_;
       }
 
 
@@ -295,11 +337,13 @@ callculation ( normal priority)");
 
       rx_reference<server_dispatcher_object> io_pool_;
 
-      rx_reference<server_dispatcher_object> general_pool_;
+      rx_reference<physical_thread_object> unassigned_pool_;
 
       rx_reference<dispatcher_subscribers_job> dispatcher_timer_;
 
       rx_reference<domains_pool> workers_;
+
+      rx_reference<physical_thread_object> meta_pool_;
 
 
       threads::job_thread* extern_executer_;

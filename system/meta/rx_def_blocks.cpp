@@ -481,11 +481,7 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream, uint8
 {
 	if (!stream.write_string("name", name_.c_str()))
 		return false;
-	if (!stream.start_object("value"))
-		return false;
-	if (!storage_.serialize(stream))
-		return false;
-	if (!stream.end_object())
+	if (!storage_.serialize("value", stream))
 		return false;
 	return true;
 }
@@ -494,11 +490,7 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream, uin
 {
 	if (!stream.read_string("name", name_))
 		return false;
-	if (!stream.start_object("value"))
-		return false;
-	if (!storage_.deserialize(stream))
-		return false;
-	if (!stream.end_object())
+	if (!storage_.deserialize("value", stream))
 		return false;
 	return true;
 }
@@ -746,11 +738,7 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream, uint
 		return false;
 	if (!stream.write_bool("ro", read_only_))
 		return false;
-	if (!stream.start_object("value"))
-		return false;
-	if (!storage_.serialize(stream))
-		return false;
-	if (!stream.end_object())
+	if (!storage_.serialize("value", stream))
 		return false;
 	return true;
 }
@@ -761,11 +749,7 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream, ui
 		return false;
 	if (!stream.read_bool("ro", read_only_))
 		return false;
-	if (!stream.start_object("value"))
-		return false;
-	if (!storage_.deserialize(stream))
-		return false;
-	if (!stream.end_object())
+	if (!storage_.deserialize("value", stream))
 		return false;
 	return true;
 }

@@ -89,8 +89,8 @@
 
 #define IO_POOL_NAME "IoPool"
 #define IO_POOL_ID 0x8000004
-#define GENERAL_POOL_NAME "GeneralPool"
-#define GENERAL_POOL_ID 0x8000005
+#define UNASSIGNED_POOL_NAME "UnassignedPool"
+#define UNASSIGNED_POOL_ID 0x8000005
 #define WORKER_POOL_NAME "WorkerPool"
 #define WORKER_POOL_ID 0x8000006
 #define IO_LOG_NAME "Log"
@@ -130,6 +130,10 @@
 #define RX_INTERACTIVE_NAME "Interactive"
 #define RX_INTERACTIVE_ID 0x8000018
 
+#define META_POOL_NAME "MetaPool"
+#define META_POOL_ID 0x8000019
+
+
 
 // system objects type stuff
 #define RX_NS_SYSTEM_APP_TYPE_NAME "SystemAppType"
@@ -149,7 +153,7 @@
 #define RX_IO_MANAGER_TYPE_NAME "IoManagerType"
 #define RX_IO_MANAGER_TYPE_ID 0xc000005
 
-#define RX_POOL_TYPE_NAME "PoolType"
+#define RX_POOL_TYPE_NAME "IoPoolType"
 #define RX_POOL_TYPE_ID 0xc000007
 #define RX_LOG_TYPE_NAME "LogType"
 #define RX_LOG_TYPE_ID 0xc000009
@@ -211,6 +215,21 @@
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
 #define RX_POOL_DATA_TYPE_ID 0xc000026
+#define RX_RT_DATA_TYPE_NAME "RuntimeData"
+#define RX_RT_DATA_TYPE_ID 0xc000027
+
+
+#define RX_UNASSIGNED_POOL_TYPE_NAME "UnassignedThreadType"
+#define RX_UNASSIGNED_POOL_TYPE_ID 0xc000028
+#define RX_META_POOL_TYPE_NAME "MetaThreadType"
+#define RX_META_POOL_TYPE_ID 0xc000029
+
+#define RX_THREAD_DATA_TYPE_NAME "ThreadData"
+#define RX_THREAD_DATA_TYPE_ID 0xc000030
+#define RX_PHYSICAL_THREAD_TYPE_NAME "PhysicalThread"
+#define RX_PHYSICAL_THREAD_TYPE_ID 0xc000031
+
+
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

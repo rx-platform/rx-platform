@@ -860,6 +860,8 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 	}
 
 	pthread_create(&chunk->thr, &chunk->attr, do_stuff, chunk);
+    *thread_id = chunk->thr;
+
 
     int ret = pthread_setschedparam(chunk->thr,SCHED_RR,&sp);
     if(ret==-1)

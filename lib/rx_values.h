@@ -324,10 +324,6 @@ public:
 
       bool exact_equality (const rx_value_storage& right) const;
 
-      bool serialize_value (base_meta_writer& writer, const string_type& name) const;
-
-      bool deserialize_value (base_meta_reader& reader, const string_type& name);
-
       bool convert_to (rx_value_t type);
 
       bool is_complex () const;
@@ -369,6 +365,10 @@ public:
       rx_node_id get_id_value () const;
 
       string_type get_string_value () const;
+
+      bool weak_serialize_value (const string_type& name, base_meta_writer& writer) const;
+
+      bool weak_deserialize_value (const string_type& name, base_meta_reader& reader);
 
 	  template<typename T>
 	  void assign_static(T&& right)
@@ -487,9 +487,9 @@ class rx_simple_value
 
       bool can_operate (bool test_mode) const;
 
-      bool serialize (base_meta_writer& writter) const;
+      bool serialize (const string_type& name, base_meta_writer& writter) const;
 
-      bool deserialize (base_meta_reader& reader);
+      bool deserialize (const string_type& name, base_meta_reader& reader);
 
       void dump_to_stream (std::ostream& out) const;
 
@@ -597,9 +597,9 @@ public:
 
       void set_test ();
 
-      bool serialize (base_meta_writer& stream) const;
+      bool serialize (const string_type& name, base_meta_writer& stream) const;
 
-      bool deserialize (base_meta_reader& stream);
+      bool deserialize (const string_type& name, base_meta_reader& stream);
 
       bool adapt_quality_to_mode (const rx_mode_type& mode);
 
@@ -755,9 +755,9 @@ public:
 
       void get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const;
 
-      bool serialize (base_meta_writer& writter) const;
+      bool serialize (const string_type& name, base_meta_writer& writter) const;
 
-      bool deserialize (base_meta_reader& reader);
+      bool deserialize (const string_type& name, base_meta_reader& reader);
 
       void dump_to_stream (std::ostream& out) const;
 

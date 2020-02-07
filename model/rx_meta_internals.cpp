@@ -44,7 +44,6 @@ namespace model {
 // Class model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
-	: worker_("config", RX_DOMAIN_META)
 {
 }
 
@@ -103,13 +102,11 @@ void platform_types_manager::deinitialize ()
 
 rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
 {
-	worker_.start(RX_PRIORITY_IDLE);
 	return true;
 }
 
 void platform_types_manager::stop ()
 {
-	worker_.end();
 }
 
 
