@@ -41,6 +41,12 @@ rx_result build_directories(rx_host_directories& data)
 {
 	char buff[MAX_PATH];
 	DWORD size = sizeof(buff);
+#ifdef _DEBUG
+	data.local_folder = get_full_path("");
+#else
+	GetCurrentDirectoryA(MAX_PATH, buff);
+	data.local_folder = buff;
+#endif
 	if (GetEnvironmentVariableA("ProgramData", buff, size))
 	{
 		if (buff[0] == '"')
@@ -67,7 +73,6 @@ rx_result build_directories(rx_host_directories& data)
 				data.user_config = rx::rx_combine_paths(buff, "rx-platform/config");
 				data.user_storage = rx::rx_combine_paths(buff, "rx-platform/storage/default");
 			}
-			data.local_folder = get_full_path("");
 		}
 		else
 		{
@@ -106,7 +111,7 @@ string_type get_full_path(const string_type& base)
 		size_t j = strlen(buff);
 		for (size_t i = j - 1; i > 0; i--)
 		{
-			if (buff[i] == L'\\')
+			if (buff[i] == L'\\' || buff[i]==L'/')
 			{
 				found++;
 #ifndef _DEBUG

@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 11
-#define RX_HAL_BUILD_NUMBER 2
+#define RX_HAL_BUILD_NUMBER 3
 
 /*********************************************************************************
 
@@ -29,5 +29,6 @@
 0.11.0. added os errors support
 0.11.1. resolved all of "WSAGetLastError" issues for last os error support
 0.11.2. rx_msleep => rx_ms_sleep
+0.11.3. corrected rx_thread_create, skips priority
 
 *********************************************************************************/

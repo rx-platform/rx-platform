@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -45,10 +45,6 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-
 namespace blocks {
 class variable_runtime;
 } // namespace blocks
@@ -60,8 +56,12 @@ class runtime_item;
 namespace operational {
 class binded_tags;
 class connected_tags;
-
 } // namespace operational
+
+namespace algorithms {
+template <class typeT> class runtime_holder;
+
+} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
@@ -176,166 +176,6 @@ struct rt_value_ref
 typedef rx_reference<blocks::variable_runtime> rx_variable_ptr;
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
 
-
-
-
-
-
-class variables_stack
-{
-	typedef std::stack<rx_variable_ptr, std::vector<rx_variable_ptr> > variables_type;
-
-  public:
-
-      void push_variable (rx_variable_ptr what);
-
-      void pop_variable ();
-
-      rx_variable_ptr get_current_variable () const;
-
-
-  protected:
-
-  private:
-
-
-      variables_type variables_;
-
-
-};
-
-
-
-
-
-
-
-class runtime_path_resolver
-{
-
-  public:
-
-      void push_to_path (const string_type& name);
-
-      void pop_from_path ();
-
-      const string_type& get_current_path () const;
-
-      string_type get_parent_path (size_t level) const;
-
-
-  protected:
-
-  private:
-
-
-      string_type path_;
-
-
-};
-
-
-
-
-
-
-
-class runtime_structure_resolver
-{
-	typedef std::stack<std::reference_wrapper<structure::runtime_item>, std::vector<std::reference_wrapper<structure::runtime_item> > > runtime_items_type;
-
-  public:
-      runtime_structure_resolver (structure::runtime_item& root);
-
-
-      void push_item (structure::runtime_item& item);
-
-      void pop_item ();
-
-      structure::runtime_item& get_current_item ();
-
-      structure::runtime_item& get_root ();
-
-
-  protected:
-
-  private:
-
-
-      runtime_items_type items_;
-
-      std::reference_wrapper<structure::runtime_item> root_;
-
-
-};
-
-
-
-
-
-
-struct runtime_deinit_context
-{
-
-
-      variables_stack variables;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct runtime_start_context
-{
-
-      runtime_start_context (structure::runtime_item& root);
-
-
-      runtime_path_resolver path;
-
-      variables_stack variables;
-
-      runtime_structure_resolver structure;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct runtime_stop_context
-{
-
-
-      variables_stack variables;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
 namespace algorithms {
 
 enum runtime_process_step : int
@@ -351,7 +191,7 @@ enum runtime_process_step : int
 
 
 
-class runtime_process_context
+class runtime_process_context 
 {
 
   public:
@@ -432,12 +272,126 @@ class runtime_process_context
 
 } // namespace algorithms
 
+
+
+
+
+
+class runtime_path_resolver 
+{
+
+  public:
+
+      void push_to_path (const string_type& name);
+
+      void pop_from_path ();
+
+      const string_type& get_current_path () const;
+
+      string_type get_parent_path (size_t level) const;
+
+
+  protected:
+
+  private:
+
+
+      string_type path_;
+
+
+};
+
+
+
+
+
+
+
+class runtime_structure_resolver 
+{
+	typedef std::stack<std::reference_wrapper<structure::runtime_item>, std::vector<std::reference_wrapper<structure::runtime_item> > > runtime_items_type;
+
+  public:
+      runtime_structure_resolver (structure::runtime_item& root);
+
+
+      void push_item (structure::runtime_item& item);
+
+      void pop_item ();
+
+      structure::runtime_item& get_current_item ();
+
+      structure::runtime_item& get_root ();
+
+
+  protected:
+
+  private:
+
+
+      runtime_items_type items_;
+
+      std::reference_wrapper<structure::runtime_item> root_;
+
+
+};
+
+
+
+
+
+
+
+class variables_stack 
+{
+	typedef std::stack<rx_variable_ptr, std::vector<rx_variable_ptr> > variables_type;
+
+  public:
+
+      void push_variable (rx_variable_ptr what);
+
+      void pop_variable ();
+
+      rx_variable_ptr get_current_variable () const;
+
+
+  protected:
+
+  private:
+
+
+      variables_type variables_;
+
+
+};
+
+
+
+
+
+
+struct runtime_deinit_context 
+{
+
+
+      variables_stack variables;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
 typedef std::map<string_type, runtime_handle_t> binded_tags_type;
 
 
 
 
-struct runtime_init_context
+struct runtime_init_context 
 {
 
       runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded);
@@ -469,6 +423,54 @@ struct runtime_init_context
 
 
       runtime_handle_t next_handle_;
+
+
+};
+
+
+
+
+
+
+struct runtime_start_context 
+{
+
+      runtime_start_context (structure::runtime_item& root, algorithms::runtime_process_context* context);
+
+
+      runtime_path_resolver path;
+
+      variables_stack variables;
+
+      runtime_structure_resolver structure;
+
+      algorithms::runtime_process_context *context;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct runtime_stop_context 
+{
+
+
+      variables_stack variables;
+
+  public:
+
+  protected:
+
+  private:
 
 
 };

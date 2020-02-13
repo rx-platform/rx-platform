@@ -126,7 +126,7 @@ application_runtime::~application_runtime()
 
 rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
 {
-	return true;
+    return true;
 }
 
 rx_result application_runtime::deinitialize_runtime (runtime_deinit_context& ctx)

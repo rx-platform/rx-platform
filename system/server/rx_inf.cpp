@@ -68,7 +68,7 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 	// register protocol constructors
 	
 	if (data.io_pool_size <= 0)
-		data.io_pool_size = 1;		
+		data.io_pool_size = 1;
 	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
 	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
 
@@ -78,8 +78,11 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 	}
 	if (data.workers_pool_size > 0)
 	{
-		workers_ = domains_pool::smart_ptr(data.workers_pool_size);
-		workers_->reserve();
+		for (auto& one : workers_)
+		{
+			one = domains_pool::smart_ptr(data.workers_pool_size);
+			one->reserve();
+		}
 	}
 	general_timer_ = std::make_unique<rx::threads::timer>("Timer", 0);
 	if (data.has_calculation_timer)
@@ -133,8 +136,11 @@ void server_rt::deinitialize ()
 	if (unassigned_pool_)
 		unassigned_pool_ = physical_thread_object::smart_ptr::null_ptr;
 
-	if(workers_)
-		workers_->clear();
+	for (auto& one : workers_)
+	{
+		if(one)
+			one->clear();
+	}
 
 	if (general_timer_)
 		general_timer_.release();
@@ -151,14 +157,26 @@ void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, 
 
 rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
 {
+	RX_ASSERT(general_timer_);
+	RX_ASSERT(meta_pool_);
+	RX_ASSERT(io_pool_);
+
 	if (meta_pool_)
 		meta_pool_->get_pool().run(RX_PRIORITY_IDLE);
 	if (io_pool_)
-		io_pool_->get_pool().run(RX_PRIORITY_ABOVE_NORMAL);
+		io_pool_->get_pool().run(RX_PRIORITY_HIGH);
 	if (unassigned_pool_)
 		unassigned_pool_->get_pool().run(RX_PRIORITY_LOW);
-	if(workers_)
-		workers_->run(RX_PRIORITY_NORMAL);
+	
+	if(workers_[(uint8_t)rx_domain_priority::low])
+		workers_[(uint8_t)rx_domain_priority::low]->run(RX_PRIORITY_LOW);
+	if (workers_[(uint8_t)rx_domain_priority::normal])
+		workers_[(uint8_t)rx_domain_priority::normal]->run(RX_PRIORITY_NORMAL);
+	if (workers_[(uint8_t)rx_domain_priority::high])
+		workers_[(uint8_t)rx_domain_priority::high]->run(RX_PRIORITY_HIGH);
+	if (workers_[(uint8_t)rx_domain_priority::realtime])
+		workers_[(uint8_t)rx_domain_priority::realtime]->run(RX_PRIORITY_REALTIME);
+	
 	if (general_timer_)
 		general_timer_->start(RX_PRIORITY_REALTIME);
 	if (calculation_timer_)
@@ -183,8 +201,11 @@ void server_rt::stop ()
 	if (unassigned_pool_)
 		unassigned_pool_->get_pool().end();
 
-	if(workers_)
-		workers_->end();
+	for (auto& one : workers_)
+	{
+		if (one)
+			one->end();
+	}
 
 	if (general_timer_)
 	{
@@ -225,8 +246,11 @@ void server_rt::append_job (rx::jobs::job_ptr job)
 
 rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 {
+	uint8_t priority = RX_PRIORITY_FROM_DOMAIN(domain);
+	domain = (domain & RX_DOMAIN_TYPE_MASK);
 	if (domain > RX_DOMAIN_UPPER_LIMIT)
 	{
+		RX_ASSERT(priority == 0);
 		switch (domain)
 		{
 		case RX_DOMAIN_UNASSIGNED:
@@ -250,8 +274,9 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 	}
 	else
 	{
-		if(workers_)
-			return workers_->get_executer(domain);
+		RX_ASSERT(priority < (uint8_t)rx_domain_priority::priority_count);
+		if(priority < (uint8_t)rx_domain_priority::priority_count && workers_[priority])
+			return workers_[priority]->get_executer(domain);
 		else
 			return &io_pool_->get_pool();
 	}
@@ -284,13 +309,39 @@ rx_time server_rt::get_created_time (values::rx_value& val) const
 
 sys_runtime::data_source::data_controler* server_rt::get_data_controler (rx_thread_handle_t domain)
 {
-	return workers_->get_data_controler(domain);
+	uint8_t priority = RX_PRIORITY_FROM_DOMAIN(domain);
+	domain = (domain & RX_DOMAIN_TYPE_MASK);
+	if (domain > RX_DOMAIN_UPPER_LIMIT)
+	{
+		RX_ASSERT(priority == 0);
+		switch (domain)
+		{
+		case RX_DOMAIN_UNASSIGNED:
+			if (unassigned_pool_)
+				return unassigned_pool_->get_data_controler();
+			else
+				return meta_pool_->get_data_controler();
+		case RX_DOMAIN_META:
+			return meta_pool_->get_data_controler();
+		}
+	}
+	else
+	{
+		RX_ASSERT(priority < (uint8_t)rx_domain_priority::priority_count);
+		if (priority < (uint8_t)rx_domain_priority::priority_count && workers_[priority])
+			return workers_[priority]->get_data_controler(domain);			
+	}
+	return nullptr;
 }
 
 int server_rt::get_CPU (rx_thread_handle_t domain) const
 {
-	if (domain < RX_DOMAIN_UPPER_LIMIT && workers_)
-		return workers_->get_CPU(domain) + io_pool_ ? io_pool_->get_CPU(domain) : 0;
+	if (domain < RX_DOMAIN_UPPER_LIMIT && workers_[0])
+	{
+		domain = (domain & RX_DOMAIN_TYPE_MASK);
+		int jebiga = workers_[0]->get_CPU(domain) + (io_pool_ ? io_pool_->get_CPU(domain) : 0);
+		return jebiga;
+	}
 	else
 		return -1;
 }
@@ -301,7 +352,7 @@ rx_result server_rt::initialize_runtime (runtime::runtime_init_context& ctx)
 	if (result)
 	{
 		ctx.tags->set_item_static("Runtime.IOThreads", io_pool_->get_pool_size(), ctx);
-		ctx.tags->set_item_static("Runtime.Workers", workers_ ? workers_->get_pool_size() : (uint16_t)0, ctx);
+		ctx.tags->set_item_static("Runtime.Workers", workers_[0] ? workers_[0]->get_pool_size() : (uint16_t)0, ctx);
 		ctx.tags->set_item_static("Runtime.CalcTimer", calculation_timer_.operator bool(), ctx);
 	}
 	return result;
@@ -369,11 +420,6 @@ void dispatcher_subscribers_job::process ()
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
 {
-	size_t count = workers_.size();
-	for (size_t i = 0; i < count; i++)
-	{
-
-	}
 }
 
 
@@ -479,6 +525,13 @@ uint16_t domains_pool::get_pool_size () const
 physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
 	: pool_(name, rx_thread_id)
 {
+	data_controler_ = new sys_runtime::data_source::data_controler(&pool_);
+}
+
+
+physical_thread_object::~physical_thread_object()
+{
+	delete data_controler_;
 }
 
 

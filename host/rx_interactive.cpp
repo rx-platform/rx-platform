@@ -87,7 +87,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	if (config.processor.io_pool_size <= 0)// has to have at least one
 		config.processor.io_pool_size = 1;
 	if (config.processor.workers_pool_size < 0)
-		config.processor.workers_pool_size = 2;
+		config.processor.workers_pool_size = 7;
 
 	auto result = rx_platform::register_host_constructor<object_types::port_type>(rx_node_id(RX_STD_IO_TYPE_ID, 3), [this] {
 		return interactive_port_;

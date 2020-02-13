@@ -65,7 +65,7 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 	string_type host_file_name(host_name + ".yml");
 	rx_result ret = false;
 	bool one_success = false;
-
+	
 	string_array paths{
 			rx_combine_paths(host_directories.local_folder, host_file_name),
 			rx_combine_paths(host_directories.local_folder, platform_file_name),

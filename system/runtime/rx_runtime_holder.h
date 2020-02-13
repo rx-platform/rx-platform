@@ -68,6 +68,11 @@ namespace model
 {
 template<class typeT>
 class types_repository;
+namespace algorithms
+{
+template<class typeT>
+class runtime_model_algorithm;
+}
 }
 
 
@@ -151,6 +156,7 @@ class runtime_holder : public rx::pointers::reference_object
 
     friend class object_runtime_algorithms<typeT>;
     friend class meta::meta_algorithm::object_types_algorithm<typeT>;
+    friend class model::algorithms::runtime_model_algorithm<typeT>;
     friend class model::types_repository<typeT>;
 public:
     typedef typeT DefType;

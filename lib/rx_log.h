@@ -52,10 +52,11 @@
 #define LOG_CODE_POSTFIX 
 #endif
 
+typedef std::function<void(void)> log_callback_func_t;
 
-#define RX_LOG_TEST(msg,ev)\
+#define RX_LOG_TEST(msg,cb)\
  LOG_CODE_PREFIX\
- rx::log::log_object::instance().log_event_fast(rx::log::log_event_type::trace, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, 0,LOG_CODE_INFO,ev, msg)\
+ rx::log::log_object::instance().log_event_fast(rx::log::log_event_type::trace, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, 0,LOG_CODE_INFO,cb,msg)\
  LOG_CODE_POSTFIX
 #define RX_LOG_INFO(lib,src,lvl,msg)\
  LOG_CODE_PREFIX\
@@ -244,9 +245,9 @@ class log_object : public locks::lockable
 
       static log_object& instance ();
 
-      void log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const string_type& message);
+      void log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, log_callback_func_t callback, const string_type& message);
 
-      void log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message, ... );
+      void log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, log_callback_func_t callback, const char* message, ... );
 
       void register_subscriber (log_subscriber::smart_ptr who);
 
@@ -271,7 +272,7 @@ class log_object : public locks::lockable
       log_object & operator=(const log_object &right);
 
 
-      void sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, locks::event* sync_event, rx_time when);
+      void sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, log_callback_func_t callback, rx_time when);
 
 
 
@@ -298,7 +299,7 @@ class log_event_job : public jobs::job
 	DECLARE_REFERENCE_PTR(log_event_job);
 
   public:
-      log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when = rx_time::now());
+      log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, log_callback_func_t callback, rx_time when = rx_time::now());
 
       ~log_event_job();
 
@@ -309,9 +310,6 @@ class log_event_job : public jobs::job
   protected:
 
   private:
-
-
-      locks::event *sync_event_;
 
 
       log_event_type event_type_;
@@ -327,6 +325,8 @@ class log_event_job : public jobs::job
       string_type message_;
 
       rx_time when_;
+
+      log_callback_func_t callback_;
 
 
 };

@@ -361,9 +361,8 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     ctx.structure.push_item(*item_);
     ctx.context = &context_;
 
-    auto result = ctx.context->set_item_static("CPU",rx_gate::instance().get_infrastructure().get_CPU(instance_data_.get_executer()), ctx);
-
-    result = item_->initialize_runtime(ctx);
+   
+    auto result = item_->initialize_runtime(ctx);
     if (result)
     {
         auto bind_result = ctx.tags->bind_item("Object.LastScanTime", ctx);
@@ -389,8 +388,10 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
             }
         }
     }
-    if(result)
+    if (result)
+    {
         implementation_->initialize_runtime(ctx);
+    }
     ctx.structure.pop_item();
     return result;
 }
@@ -697,7 +698,7 @@ runtime_init_context runtime_holder<typeT>::create_init_context ()
 template <class typeT>
 runtime_start_context runtime_holder<typeT>::create_start_context ()
 {
-    return runtime_start_context(*item_);
+    return runtime_start_context(*item_, &context_);
 }
 
 template <class typeT>

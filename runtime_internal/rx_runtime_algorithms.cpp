@@ -146,9 +146,9 @@ rx_result deinit_runtime<meta::object_types::relation_type>(rx_relation_ptr what
 // Class sys_runtime::algorithms::object_algorithms 
 
 
-rx_result object_algorithms::init_runtime(rx_object_ptr what, runtime::runtime_init_context& ctx)
+rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
 {
-	auto result = what->get_instance_data().init_runtime(what, ctx);
+	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
 		result = what->initialize_runtime(ctx);
@@ -191,7 +191,7 @@ rx_result object_algorithms::init_runtime(rx_object_ptr what, runtime::runtime_i
 	return result;
 }
 
-rx_result object_algorithms::start_runtime(rx_object_ptr what, runtime::runtime_start_context& ctx)
+rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx)
 {
 	auto ret = what->start_runtime(ctx);
 	if (ret)
@@ -201,7 +201,7 @@ rx_result object_algorithms::start_runtime(rx_object_ptr what, runtime::runtime_
 	return ret;
 }
 
-rx_result object_algorithms::deinit_runtime(rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
 	rx_post_function<rx_object_ptr>([callback](rx_object_ptr whose)
 		{
@@ -228,7 +228,7 @@ rx_result object_algorithms::deinit_runtime(rx_object_ptr what, std::function<vo
 	return true;
 }
 
-rx_result object_algorithms::stop_runtime(rx_object_ptr what, runtime::runtime_stop_context& ctx)
+rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
 {
 
 	platform_runtime_manager::instance().get_cache().remove_from_cache(what->meta_info().get_full_path());
@@ -236,11 +236,12 @@ rx_result object_algorithms::stop_runtime(rx_object_ptr what, runtime::runtime_s
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
+		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
 	return ret;
 }
 
-rx_result object_algorithms::connect_domain(rx_object_ptr what)
+rx_result object_algorithms::connect_domain (rx_object_ptr what)
 {
 	if (what->get_instance_data().domain_id)
 	{
@@ -290,7 +291,7 @@ rx_result object_algorithms::connect_domain(rx_object_ptr what)
 	return true;
 }
 
-rx_result object_algorithms::disconnect_domain(rx_object_ptr what)
+rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 {
 	if (what->get_instance_data().disconnect_domain(what))
 		RUNTIME_LOG_TRACE("object_algorithms", 100, what->meta_info().get_full_path()
@@ -302,9 +303,9 @@ rx_result object_algorithms::disconnect_domain(rx_object_ptr what)
 // Class sys_runtime::algorithms::domain_algorithms 
 
 
-rx_result domain_algorithms::init_runtime(rx_domain_ptr what, runtime::runtime_init_context& ctx)
+rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
-	auto result = what->get_instance_data().init_runtime(what, ctx);
+	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
 		result = what->initialize_runtime(ctx);
@@ -345,7 +346,7 @@ rx_result domain_algorithms::init_runtime(rx_domain_ptr what, runtime::runtime_i
 	return result;
 }
 
-rx_result domain_algorithms::start_runtime(rx_domain_ptr what, runtime::runtime_start_context& ctx)
+rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx)
 {
 	auto ret = what->start_runtime(ctx);
 	if (ret)
@@ -355,7 +356,7 @@ rx_result domain_algorithms::start_runtime(rx_domain_ptr what, runtime::runtime_
 	return ret;
 }
 
-rx_result domain_algorithms::deinit_runtime(rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
 {
 	rx_post_function<rx_domain_ptr>([callback](rx_domain_ptr whose)
 		{
@@ -368,6 +369,10 @@ rx_result domain_algorithms::deinit_runtime(rx_domain_ptr what, std::function<vo
 					{
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
+						if (result)
+						{
+							whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
+						}
 						/*auto erase_result = platform_runtime_manager::instance().applications_.erase(whose->meta_info().get_id());
 						if (erase_result == 0)
 						{
@@ -387,16 +392,17 @@ rx_result domain_algorithms::deinit_runtime(rx_domain_ptr what, std::function<vo
 	return true;
 }
 
-rx_result domain_algorithms::stop_runtime(rx_domain_ptr what, runtime::runtime_stop_context& ctx)
+rx_result domain_algorithms::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
 {
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
+		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
 	return ret;
 }
 
-rx_result domain_algorithms::connect_application(rx_domain_ptr what)
+rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 {
 	if (what->get_instance_data().app_id)
 	{
@@ -446,7 +452,7 @@ rx_result domain_algorithms::connect_application(rx_domain_ptr what)
 	return true;
 }
 
-rx_result domain_algorithms::disconnect_application(rx_domain_ptr what)
+rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 {
 	if (what->get_instance_data().disconnect_application(what))
 		RUNTIME_LOG_TRACE("domain_algorithms", 100, what->meta_info().get_full_path()
@@ -458,9 +464,9 @@ rx_result domain_algorithms::disconnect_application(rx_domain_ptr what)
 // Class sys_runtime::algorithms::port_algorithms 
 
 
-rx_result port_algorithms::init_runtime(rx_port_ptr what, runtime::runtime_init_context& ctx)
+rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
 {
-	auto result = what->get_instance_data().init_runtime(what, ctx);
+	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
 		result = what->initialize_runtime(ctx);
@@ -542,6 +548,7 @@ rx_result port_algorithms::stop_runtime (rx_port_ptr what, runtime::runtime_stop
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
+		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
 	return ret;
 }
@@ -615,7 +622,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	if (it == platform_runtime_manager::instance().applications_.end())
 	{
 		platform_runtime_manager::instance().applications_.emplace(what->meta_info().get_id(), what);
-		ret = what->get_instance_data().init_runtime(what, ctx);
+		ret = what->get_instance_data().before_init_runtime(what, ctx);
 		if (ret)
 		{
 			ret = what->initialize_runtime(ctx);
@@ -623,10 +630,11 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 			{
 				RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
 
-				rx_post_function<rx_application_ptr>([](rx_application_ptr whose)
+				runtime::operational::binded_tags* binded = ctx.tags;
+				rx_post_function<rx_application_ptr>([binded](rx_application_ptr whose)
 					{
 						runtime::runtime_start_context start_ctx = whose->create_start_context();
-						auto result = start_runtime(whose, start_ctx);
+						auto result = start_runtime(whose, start_ctx, binded);
 						if (result)
 						{
 							RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
@@ -658,9 +666,10 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	return ret;
 }
 
-rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)
+rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::operational::binded_tags* binded)
 {
-	auto ret = what->start_runtime(ctx);
+	auto ret = what->get_instance_data().before_start_runtime(what, ctx, binded);
+	ret = what->start_runtime(ctx);
 	if (ret)
 	{
 		platform_runtime_manager::instance().get_cache().add_to_cache(what->get_item_ptr());
@@ -682,6 +691,10 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
+						if (result)
+						{
+							whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
+						}
 						auto erase_result = platform_runtime_manager::instance().applications_.erase(whose->meta_info().get_id());
 						if (erase_result == 0)
 						{
@@ -704,6 +717,10 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
 	auto ret = what->stop_runtime(ctx);
+	if (ret)
+	{
+		what->get_instance_data().after_stop_runtime(what, ctx);
+	}
 	return ret;
 }
 

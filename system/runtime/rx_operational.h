@@ -215,6 +215,8 @@ class binded_tags
 
       void connected_tags_change (structure::value_data* whose, const rx_value& val);
 
+      rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx);
+
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
 	  {
@@ -224,9 +226,21 @@ class binded_tags
 		  
 		  return result;
 	  }
+      template<typename T>
+      rx_result set_item_static(const string_type& path, T&& value, runtime_start_context& ctx)
+      {
+          rx_simple_value temp;
+          temp.assign_static<T>(std::forward<T>(value));
+          auto result = set_item(path, std::move(temp), ctx);
+
+          return result;
+      }
   protected:
 
   private:
+
+      rx_result internal_set_item (const string_type& path, rx_simple_value&& what, runtime_structure_resolver& structure);
+
 
 
       const_values_type const_values_;

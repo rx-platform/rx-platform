@@ -154,14 +154,14 @@ log_object& log_object::instance ()
 	return *g_object;
 }
 
-void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const string_type& message)
+void log_object::log_event_fast (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, log_callback_func_t callback, const string_type& message)
 {
 	// just fire the job and let worker take care of it!
-	auto my_job = rx_create_reference<log_event_job>(event_type, library, source, level, code, message,sync_event);
+	auto my_job = rx_create_reference<log_event_job>(event_type, library, source, level, code, message,callback);
 	worker_.append(my_job);
 }
 
-void log_object::log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, locks::event* sync_event, const char* message, ... )
+void log_object::log_event (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const char* code, log_callback_func_t callback, const char* message, ... )
 {
 	char buff[STACK_LOG_SIZE];
 	va_list args;
@@ -169,7 +169,7 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 
 	int ret=vsnprintf(buff, STACK_LOG_SIZE, message, args);
 	if (ret < STACK_LOG_SIZE)
-		log_event_fast(event_type, library, source, level, code, sync_event,buff);
+		log_event_fast(event_type, library, source, level, code, callback,buff);
 	else
 	{
 		RX_ASSERT(false);
@@ -177,7 +177,7 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 	va_end(args);
 }
 
-void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, locks::event* sync_event, rx_time when)
+void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, log_callback_func_t callback, rx_time when)
 {
 	std::vector<log_subscriber::smart_ptr> temp_array;
 	temp_array.reserve(0x10);
@@ -187,8 +187,8 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 	unlock();
 	for (auto one : temp_array)
 		one->log_event(event_type, library, source, level, code, message,when);
-	if (sync_event)
-		sync_event->set();
+	if (callback)
+		callback();
 }
 
 void log_object::register_subscriber (log_subscriber::smart_ptr who)
@@ -240,14 +240,18 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 		line = "Performing initial log test...";
 		LOG_SELF_INFO(line);
 
-		double spans[4];
+		locks::event ev(false);
+
+		std::array<double, 4> spans;
+		log_callback_func_t callback = [&ev] {
+			ev.set();
+		};
 
 		for (size_t i = 0; i < sizeof(spans) / sizeof(spans[0]); i++)
 		{
 			snprintf(buffer, sizeof(buffer), "Initial log test pass %d...", (int)i);
-			rx::locks::event ev(false);
 			uint64_t first_tick = rx_get_us_ticks();
-			RX_LOG_TEST(buffer, &ev);
+			RX_LOG_TEST(buffer, callback);
 			ev.wait_handle();
 			uint64_t second_tick = rx_get_us_ticks();
 			double ms = (double)(second_tick - first_tick) / 1000.0;
@@ -301,15 +305,15 @@ log_subscriber::~log_subscriber()
 
 // Class rx::log::log_event_job 
 
-log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, locks::event* sync_event, rx_time when)
-      : sync_event_(sync_event),
-        event_type_(event_type),
+log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, log_callback_func_t callback, rx_time when)
+      : event_type_(event_type),
         library_(library),
         source_(source),
         code_(code),
         level_(level),
         message_(message),
-        when_(when)
+        when_(when),
+        callback_(callback)
 {
 }
 
@@ -322,7 +326,7 @@ log_event_job::~log_event_job()
 
 void log_event_job::process ()
 {
-	log_object::instance().sync_log_event(event_type_, library_.c_str(), source_.c_str(), level_, code_.c_str(), message_.c_str(),sync_event_, when_);
+	log_object::instance().sync_log_event(event_type_, library_.c_str(), source_.c_str(), level_, code_.c_str(), message_.c_str(), callback_, when_);
 }
 
 

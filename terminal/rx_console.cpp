@@ -622,6 +622,11 @@ bool console_program_context::should_next_line ()
 	return true;
 }
 
+rx_thread_handle_t console_program_context::get_executer () const
+{
+	return client_->get_executer();
+}
+
 
 // Class terminal::console::console_program 
 

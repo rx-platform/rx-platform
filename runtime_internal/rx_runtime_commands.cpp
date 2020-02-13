@@ -58,8 +58,22 @@ read_command::~read_command()
 
 bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err)
 {
-	err << RX_NOT_IMPLEMENTED;
-	return false;
+	rx_value value;
+	auto result = rt_item->read_value(sub_item, value);
+	if (result)
+	{
+		out << sub_item << " = ";
+		value.dump_to_stream(out);
+		return true;
+	}
+	else
+	{
+		out << "Error reading item "
+			<< sub_item;
+		for (const auto& one : result.errors())
+			out << "\r\n" << one;
+		return false;
+	}
 }
 
 

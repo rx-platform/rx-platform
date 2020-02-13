@@ -33,12 +33,12 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 
@@ -48,161 +48,6 @@
 namespace rx_platform {
 
 namespace runtime {
-
-// Class rx_platform::runtime::runtime_init_context 
-
-runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded)
-      : context(context),
-        next_handle_(0x80000000),
-        meta(meta)
-    , structure(root)
-    , tags(binded)
-{
-}
-
-
-
-runtime_handle_t runtime_init_context::get_new_handle ()
-{
-	return next_handle_++;
-}
-
-
-// Class rx_platform::runtime::variables_stack 
-
-
-void variables_stack::push_variable (rx_variable_ptr what)
-{
-	variables_.push(what);
-}
-
-void variables_stack::pop_variable ()
-{
-	if (!variables_.empty())
-		variables_.pop();
-}
-
-rx_variable_ptr variables_stack::get_current_variable () const
-{
-	if (!variables_.empty())
-		return variables_.top();
-	else
-		return rx_variable_ptr::null_ptr;
-}
-
-
-// Class rx_platform::runtime::runtime_path_resolver 
-
-
-void runtime_path_resolver::push_to_path (const string_type& name)
-{
-	if (!path_.empty())
-		path_ += RX_OBJECT_DELIMETER;
-	path_ += name;
-}
-
-void runtime_path_resolver::pop_from_path ()
-{
-	RX_ASSERT(!path_.empty());
-	if (!path_.empty())
-	{
-		size_t idx = path_.rfind(RX_OBJECT_DELIMETER);
-		if (idx == string_type::npos)
-		{
-			path_.clear();
-		}
-		else
-		{
-			path_.resize(idx);
-		}
-	}
-}
-
-const string_type& runtime_path_resolver::get_current_path () const
-{
-	return path_;
-}
-
-string_type runtime_path_resolver::get_parent_path (size_t level) const
-{
-	if (!path_.empty() && level > 0)
-	{
-		size_t idx = path_.rfind(RX_OBJECT_DELIMETER);
-		if (idx == string_type::npos)
-		{
-			return "";
-		}
-		else
-		{
-			string_type ret(path_.substr(idx));
-			level--;
-			size_t off_idx = string_type::npos;
-			while (!ret.empty() && level > 0 && off_idx > 0)
-			{
-				off_idx = path_.rfind(RX_OBJECT_DELIMETER, off_idx - 1);
-				if (off_idx == string_type::npos)
-					return "";
-				else
-					ret.resize(off_idx);
-			}
-			return ret;
-		}
-	}
-	return "";
-}
-
-
-// Class rx_platform::runtime::runtime_structure_resolver 
-
-runtime_structure_resolver::runtime_structure_resolver (structure::runtime_item& root)
-      : root_(root)
-{
-}
-
-
-
-void runtime_structure_resolver::push_item (structure::runtime_item& item)
-{
-	items_.push(item);
-}
-
-void runtime_structure_resolver::pop_item ()
-{
-	RX_ASSERT(!items_.empty());
-	if (!items_.empty())
-		items_.pop();
-}
-
-structure::runtime_item& runtime_structure_resolver::get_current_item ()
-{
-	RX_ASSERT(!items_.empty());
-	static structure::empty_item_data g_empty;
-	if (!items_.empty())
-		return items_.top();
-	else
-		return g_empty;
-}
-
-structure::runtime_item& runtime_structure_resolver::get_root ()
-{
-    return root_;
-}
-
-
-// Class rx_platform::runtime::runtime_deinit_context 
-
-
-// Class rx_platform::runtime::runtime_start_context 
-
-runtime_start_context::runtime_start_context (structure::runtime_item& root)
-    : structure(root)
-{
-}
-
-
-
-// Class rx_platform::runtime::runtime_stop_context 
-
 
 namespace algorithms {
 
@@ -299,6 +144,163 @@ rx_result runtime_process_context::set_item (const string_type& path, values::rx
 
 
 } // namespace algorithms
+
+// Class rx_platform::runtime::runtime_deinit_context 
+
+
+// Class rx_platform::runtime::runtime_init_context 
+
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded)
+      : context(context),
+        next_handle_(0x80000000),
+        meta(meta)
+    , structure(root)
+    , tags(binded)
+{
+}
+
+
+
+runtime_handle_t runtime_init_context::get_new_handle ()
+{
+	return next_handle_++;
+}
+
+
+// Class rx_platform::runtime::runtime_path_resolver 
+
+
+void runtime_path_resolver::push_to_path (const string_type& name)
+{
+	if (!path_.empty())
+		path_ += RX_OBJECT_DELIMETER;
+	path_ += name;
+}
+
+void runtime_path_resolver::pop_from_path ()
+{
+	RX_ASSERT(!path_.empty());
+	if (!path_.empty())
+	{
+		size_t idx = path_.rfind(RX_OBJECT_DELIMETER);
+		if (idx == string_type::npos)
+		{
+			path_.clear();
+		}
+		else
+		{
+			path_.resize(idx);
+		}
+	}
+}
+
+const string_type& runtime_path_resolver::get_current_path () const
+{
+	return path_;
+}
+
+string_type runtime_path_resolver::get_parent_path (size_t level) const
+{
+	if (!path_.empty() && level > 0)
+	{
+		size_t idx = path_.rfind(RX_OBJECT_DELIMETER);
+		if (idx == string_type::npos)
+		{
+			return "";
+		}
+		else
+		{
+			string_type ret(path_.substr(idx));
+			level--;
+			size_t off_idx = string_type::npos;
+			while (!ret.empty() && level > 0 && off_idx > 0)
+			{
+				off_idx = path_.rfind(RX_OBJECT_DELIMETER, off_idx - 1);
+				if (off_idx == string_type::npos)
+					return "";
+				else
+					ret.resize(off_idx);
+			}
+			return ret;
+		}
+	}
+	return "";
+}
+
+
+// Class rx_platform::runtime::runtime_start_context 
+
+runtime_start_context::runtime_start_context (structure::runtime_item& root, algorithms::runtime_process_context* context)
+      : context(context)
+    , structure(root)
+{
+}
+
+
+
+// Class rx_platform::runtime::runtime_stop_context 
+
+
+// Class rx_platform::runtime::runtime_structure_resolver 
+
+runtime_structure_resolver::runtime_structure_resolver (structure::runtime_item& root)
+      : root_(root)
+{
+}
+
+
+
+void runtime_structure_resolver::push_item (structure::runtime_item& item)
+{
+	items_.push(item);
+}
+
+void runtime_structure_resolver::pop_item ()
+{
+	RX_ASSERT(!items_.empty());
+	if (!items_.empty())
+		items_.pop();
+}
+
+structure::runtime_item& runtime_structure_resolver::get_current_item ()
+{
+	RX_ASSERT(!items_.empty());
+	static structure::empty_item_data g_empty;
+	if (!items_.empty())
+		return items_.top();
+	else
+		return g_empty;
+}
+
+structure::runtime_item& runtime_structure_resolver::get_root ()
+{
+    return root_;
+}
+
+
+// Class rx_platform::runtime::variables_stack 
+
+
+void variables_stack::push_variable (rx_variable_ptr what)
+{
+	variables_.push(what);
+}
+
+void variables_stack::pop_variable ()
+{
+	if (!variables_.empty())
+		variables_.pop();
+}
+
+rx_variable_ptr variables_stack::get_current_variable () const
+{
+	if (!variables_.empty())
+		return variables_.top();
+	else
+		return rx_variable_ptr::null_ptr;
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
 

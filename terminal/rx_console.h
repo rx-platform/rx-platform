@@ -35,22 +35,22 @@
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "interfaces/rx_endpoints.h"
 
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 // dummy
 #include "dummy.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
 namespace terminal {
 namespace console {
+class server_console_program;
 class console_program_context;
 class console_runtime;
-class server_console_program;
 
 } // namespace console
 } // namespace terminal
@@ -221,6 +221,8 @@ public:
       bool one_more_time ();
 
       bool should_next_line ();
+
+      rx_thread_handle_t get_executer () const;
 
 
       rx_reference<console_runtime> get_client ()

@@ -35,6 +35,7 @@
 #include "rx_runtime_helpers.h"
 
 
+
 namespace rx_platform {
 namespace runtime {
 namespace items {
@@ -49,6 +50,17 @@ class domain_instance_data;
 
 
 namespace rx_platform {
+enum class rx_domain_priority : uint8_t
+{
+    low = 0,
+    normal = 1,
+    high = 2,
+    realtime = 3,
+    // default value
+    standard = 1,
+    priority_count = 4
+};
+
 
 namespace runtime {
 
@@ -73,13 +85,13 @@ class object_instance_data
 
       bool disconnect_domain (rx_object_ptr whose);
 
-      static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
+      static rx_result before_init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx);
+      static rx_result before_start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded);
 
-      static rx_result deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result after_deinit_runtime (rx_object_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
+      static rx_result after_stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
 
 
       rx_thread_handle_t get_executer () const
@@ -132,13 +144,13 @@ class domain_instance_data
 
       bool disconnect_application (rx_domain_ptr whose);
 
-      static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
+      static rx_result before_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx);
+      static rx_result before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded);
 
-      static rx_result deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result after_deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
+      static rx_result after_stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
 
 
       rx_thread_handle_t get_executer () const
@@ -153,6 +165,8 @@ class domain_instance_data
       int processor;
 
       rx_node_ids objects;
+
+      rx_domain_priority priority;
 
 
   protected:
@@ -190,13 +204,13 @@ class port_instance_data
 
       bool disconnect_application (rx_port_ptr whose);
 
-      static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
+      static rx_result before_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx);
+      static rx_result before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded);
 
-      static rx_result deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
+      static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
 
       rx_thread_handle_t get_executer () const
@@ -254,13 +268,13 @@ class application_instance_data
 
       void get_domains (api::query_result& result);
 
-      static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
+      static rx_result before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx);
+      static rx_result before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded);
 
-      static rx_result deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result after_deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx);
 
-      static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
+      static rx_result after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
 
       rx_thread_handle_t get_executer () const
@@ -271,6 +285,8 @@ class application_instance_data
 
 
       int processor;
+
+      rx_domain_priority priority;
 
 
   protected:

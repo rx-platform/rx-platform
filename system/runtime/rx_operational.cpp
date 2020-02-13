@@ -542,6 +542,25 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 
 rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx)
 {
+	return internal_set_item(path, std::move(what), ctx.structure);
+}
+
+rx_result binded_tags::pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void binded_tags::connected_tags_change (structure::value_data* whose, const rx_value& val)
+{
+}
+
+rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx)
+{
+	return internal_set_item(path, std::move(what), ctx.structure);
+}
+
+rx_result binded_tags::internal_set_item (const string_type& path, rx_simple_value&& what, runtime_structure_resolver& structure)
+{
 	string_type revisied_path;
 	rt_value_ref ref;
 	ref.ref_type = rt_value_ref_type::rt_null;
@@ -552,7 +571,7 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 		{
 		case RX_PATH_CURRENT:
 			{
-				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				auto ref_result = structure.get_current_item().get_value_ref(path, ref);
 				if (!ref_result)
 					return ref_result.errors();
 			}
@@ -562,7 +581,7 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 				size_t idx = 1;
 				while (idx < path.size() && path[idx] == RX_PATH_PARENT)
 					idx++;
-				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				auto ref_result = structure.get_current_item().get_value_ref(path, ref);
 				if (!ref_result)
 					return ref_result.errors();
 			}
@@ -571,7 +590,7 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 	}
 	if (ref.ref_type == rt_value_ref_type::rt_null)
 	{
-		auto ref_result = ctx.structure.get_root().get_value_ref(path, ref);
+		auto ref_result = structure.get_root().get_value_ref(path, ref);
 		if (!ref_result)
 			return ref_result.errors();
 	}
@@ -585,15 +604,6 @@ rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what
 	default:
 		return "Unsupported type!.";
 	}
-}
-
-rx_result binded_tags::pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-void binded_tags::connected_tags_change (structure::value_data* whose, const rx_value& val)
-{
 }
 
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -103,7 +103,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class terminal::console::console_commands::info_command 
+// Class terminal::console::console_commands::info_command
 
 info_command::info_command()
   : server_command("info")
@@ -183,7 +183,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 }
 
 
-// Class terminal::console::console_commands::code_command 
+// Class terminal::console::console_commands::code_command
 
 code_command::code_command()
   : item_query_command("code")
@@ -205,7 +205,7 @@ bool code_command::do_with_item (platform_item_ptr&& item, std::ostream& out, st
 }
 
 
-// Class terminal::console::console_commands::rx_name_command 
+// Class terminal::console::console_commands::rx_name_command
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -249,7 +249,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 		<< (int)(total / 1048576ull)
 		<< "MiB / Free "
 		<< (int)(free / 1048576ull)
-		<< "MiB / Process " 
+		<< "MiB / Process "
 		<< (int)(process / 1024ull)
 		<< "KiB \r\n";
 	/////////////////////////////////////////////////////////////////////////
@@ -259,7 +259,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::cls_command 
+// Class terminal::console::console_commands::cls_command
 
 cls_command::cls_command()
   : server_command("cls")
@@ -280,7 +280,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class terminal::console::console_commands::shutdown_command 
+// Class terminal::console::console_commands::shutdown_command
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -300,13 +300,13 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 	std::string msg(begin, end);
 	if (msg.empty())
 		msg = RX_NULL_ITEM_NAME;
-	if(!rx_gate::instance().shutdown(msg))
+	if (!rx_gate::instance().shutdown(msg))
 		err << ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET;
 	return false;
 }
 
 
-// Class terminal::console::console_commands::log_command 
+// Class terminal::console::console_commands::log_command
 
 log_command::log_command()
 	: server_command("log")
@@ -343,7 +343,7 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	else
 	{
 		err << sub_command
-			<< " is unkonwn command type.";
+			<< " is unknown command type.";
 		return false;
 	}
 	return true;
@@ -358,50 +358,76 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 		, security::active_security()->get_full_name().c_str());
 
 	const char* line = buffer;
-	CONSOLE_LOG_INFO("log", 900,line);
+	CONSOLE_LOG_INFO("log", 900, line);
 	out << line << "\r\n";
 
-	double spans[4];
+	size_t spans_count = 4;
 
-	for (size_t i = 0; i < sizeof(spans) / sizeof(spans[0]); i++)
-	{
-		snprintf(buffer, sizeof(buffer), "Console log test pass %d...", (int)i);
-		rx::locks::event ev(false);
-		uint64_t first_tick = rx_get_us_ticks();
-		RX_LOG_TEST(buffer, &ev);
-		ev.wait_handle();
-		uint64_t second_tick = rx_get_us_ticks();
-		double ms = (double)(second_tick - first_tick) / 1000.0;
-		snprintf(buffer, sizeof(buffer), "Console log test %d passed. Delay time: %g ms...", (int)i, ms);
-		CONSOLE_LOG_TRACE("log",0,buffer);
-		out << buffer << "\r\n";
-		spans[i] = ms;
-		rx_ms_sleep(10);
-	}
+	spans_.assign(spans_count, 0.0);
 
-	double val = 0.0;
-	size_t count = sizeof(spans) / sizeof(spans[0]);
-	if (count > 1)
-	{
-		for (size_t i = 1; i < count; i++)
-		{
-			val += spans[i];
-		}
-		val = val / (double(count - 1));
-	}
-	else
-		val = spans[0];
-	snprintf(buffer, sizeof(buffer), "Average response time: %g ms...", val);
-	line = buffer;
-	CONSOLE_LOG_INFO("log", 900,line);
-	out << line << "\r\n";
+	smart_ptr hold_ref = smart_this();
 
-	snprintf(buffer, sizeof(buffer), "User %s log test completed."
-		, security::active_security()->get_full_name().c_str());
+	callback_ = [spans_count, this, ctx] {
+		auto api_ctx = ctx->create_api_context();
+		std::function<void(console_context_ptr)> func = [spans_count, this](console_context_ptr ctx)
+			{
+				int pass = 0;
+				for (auto& one : spans_)
+				{
+					if (one == 0.)
+					{
+						char buffer[0x100];
+						const char* line = buffer;
+						uint64_t second_tick = rx_get_us_ticks();
+						double ms = (double)(second_tick - last_tick_) / 1000.0;
+						one = ms;
+						snprintf(buffer, sizeof(buffer), "Console log test %d passed. Delay time: %g ms...", pass, ms);
+						ctx->get_stdout() << buffer << "\r\n";
+						CONSOLE_LOG_INFO("log", 900, line);
+						snprintf(buffer, sizeof(buffer), "Console log test pass %d...", 0);
+						ctx->get_stdout() << buffer << "\r\n";
+						last_tick_ = rx_get_us_ticks();
+						RX_LOG_TEST(buffer, callback_);
+						return;
+					}
+					pass++;
+				}
+				char buffer[0x100];
+				const char* line = buffer;
+				double val = 0.0;
+				size_t count = spans_.size();
+				if (count > 1)
+				{
+					for (size_t i = 1; i < count; i++)
+					{
+						val += spans_[i];
+					}
+					val = val / (double(count - 1));
+				}
+				else
+					val = spans_[0];
+				snprintf(buffer, sizeof(buffer), "Average response time: %g ms...", val);
+				line = buffer;
+				CONSOLE_LOG_INFO("log", 900, line);
+				ctx->get_stdout() << line << "\r\n";
 
-	line = buffer;
-	CONSOLE_LOG_INFO("log", 900,line);
-	out << line << "\r\n";
+				snprintf(buffer, sizeof(buffer), "User %s log test completed."
+					, security::active_security()->get_full_name().c_str());
+
+				line = buffer;
+				CONSOLE_LOG_INFO("log", 900, line);
+				ctx->get_stdout() << line << "\r\n";
+				ctx->send_results(true);
+			};
+		rx_post_function_to<rx_reference_ptr, console_context_ptr>(ctx->get_executer(), func, api_ctx.object, ctx);
+	};
+
+
+	snprintf(buffer, sizeof(buffer), "Console log test pass %d...", 0);
+	last_tick_ = rx_get_us_ticks();
+	RX_LOG_TEST(buffer, callback_);
+
+	ctx->set_waiting();
 
 	return true;
 }
@@ -457,7 +483,7 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 	for (const auto& one : items)
 	{
 		table[idx].emplace_back(one.when.get_string(options.list_dates));
-		
+
 		table[idx].emplace_back(create_log_type_cell(one.event_type));
 		if (options.list_source)
 			table[idx].emplace_back(one.source);
@@ -495,8 +521,12 @@ rx_table_cell_struct log_command::create_log_type_cell (log::log_event_type type
 	}
 }
 
+void log_command::log_fired (console_context_ptr ctx)
+{
+}
 
-// Class terminal::console::console_commands::sec_command 
+
+// Class terminal::console::console_commands::sec_command
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -591,7 +621,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class terminal::console::console_commands::time_command 
+// Class terminal::console::console_commands::time_command
 
 time_command::time_command()
 	: server_command("time")
@@ -613,7 +643,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class terminal::console::console_commands::sleep_command 
+// Class terminal::console::console_commands::sleep_command
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -670,7 +700,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::def_command 
+// Class terminal::console::console_commands::def_command
 
 def_command::def_command()
 	: item_query_command("def")
@@ -686,8 +716,8 @@ def_command::~def_command()
 
 bool def_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std::ostream& err)
 {
-	out << "Definition of " ANSI_RX_OBJECT_COLOR 
-		<< item->meta_info().get_full_path() 
+	out << "Definition of " ANSI_RX_OBJECT_COLOR
+		<< item->meta_info().get_full_path()
 		<< ANSI_COLOR_RESET ":\r\n";
 	auto def = item->get_definition_as_json();
 	out << def;
@@ -695,7 +725,7 @@ bool def_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std
 }
 
 
-// Class terminal::console::console_commands::item_query_command 
+// Class terminal::console::console_commands::item_query_command
 
 item_query_command::item_query_command (const string_type& console_name)
 	: server_command(console_name)
@@ -763,7 +793,7 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 }
 
 
-// Class terminal::console::console_commands::phyton_command 
+// Class terminal::console::console_commands::phyton_command
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -806,7 +836,7 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 }
 
 
-// Class terminal::console::console_commands::license_command 
+// Class terminal::console::console_commands::license_command
 
 license_command::license_command()
 	: server_command("license")
@@ -845,7 +875,7 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class terminal::console::console_commands::help_command 
+// Class terminal::console::console_commands::help_command
 
 help_command::help_command()
 	: server_command("help")
@@ -908,7 +938,7 @@ string_type help_command::get_help () const
 				names.emplace_back(one->get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
 
 			rx_dump_large_row(names, out, RX_CONSOLE_WIDTH);
-			
+
 			out << "\r\nchoose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
 			out << "\r\n\r\n" ANSI_COLOR_MAGENTA "Maybe this is final help implementation...\r\n" ANSI_COLOR_RESET;
 			out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET

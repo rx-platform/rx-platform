@@ -21,7 +21,7 @@
 #define RX_NS_TEST_NAME "test"
 #define RX_NS_UNASSIGNED_NAME "unassigned"
 #define RX_NS_BIN_NAME "bin"
-#define RX_NS_OBJ_NAME "objects"
+#define RX_NS_OBJ_NAME "runtime"
 #define RX_NS_SYSTEM_OBJ_NAME "system"
 #define RX_NS_PORT_OBJ_NAME "ports"
 #define RX_NS_RELATIONS_NAME "relations"

@@ -1214,7 +1214,7 @@ sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priori
 
 	//SetThreadDescription(handle, buff);
 	
-	SetThreadPriority(handle, priority);
+	SetThreadPriority(handle, wpriority);
 	ResumeThread(handle);
 
 	return handle;

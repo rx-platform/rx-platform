@@ -55,8 +55,7 @@ rx_thread_handle_t platform_runtime_manager::resolve_app_processor (const applic
 	rx_thread_handle_t this_cpu = data.processor;
 	if (this_cpu < 0)
 		this_cpu = resolve_processor_auto();
-	else
-		this_cpu = this_cpu % cpu_coverage_.size();
+	this_cpu = this_cpu % cpu_coverage_.size();
 	cpu_coverage_[this_cpu]++;
 	return this_cpu;
 }

@@ -216,6 +216,15 @@ all about doing stuff with log");
 
       static rx_table_cell_struct create_log_type_cell (log::log_event_type type);
 
+      void log_fired (console_context_ptr ctx);
+
+
+
+      std::vector<double> spans_;
+
+      uint64_t last_tick_;
+
+      log_callback_func_t callback_;
 
 
 };

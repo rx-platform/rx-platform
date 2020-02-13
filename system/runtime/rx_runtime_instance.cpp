@@ -38,6 +38,7 @@
 #include "rx_runtime_holder.h"
 #include "api/rx_platform_api.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/server/rx_server.h"
 
 
 namespace rx_platform {
@@ -96,7 +97,7 @@ bool object_instance_data::disconnect_domain (rx_object_ptr whose)
     return true;
 }
 
-rx_result object_instance_data::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
+rx_result object_instance_data::before_init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
 {
     RX_ASSERT(what->get_instance_data().my_domain_);
     if (what->get_instance_data().my_domain_)
@@ -110,17 +111,17 @@ rx_result object_instance_data::init_runtime (rx_object_ptr what, runtime::runti
     return true;
 }
 
-rx_result object_instance_data::start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx)
+rx_result object_instance_data::before_start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
 {
     return true;
 }
 
-rx_result object_instance_data::deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+rx_result object_instance_data::after_deinit_runtime (rx_object_ptr what, runtime::runtime_deinit_context& ctx)
 {
     return true;
 }
 
-rx_result object_instance_data::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
+rx_result object_instance_data::after_stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
 {
     return true;
 }
@@ -129,7 +130,9 @@ rx_result object_instance_data::stop_runtime (rx_object_ptr what, runtime::runti
 // Class rx_platform::runtime::items::domain_instance_data 
 
 domain_instance_data::domain_instance_data()
-      : executer_(-1)
+      : processor(-1),
+        executer_(-1),
+        priority(rx_domain_priority::standard)
 {
 }
 
@@ -141,19 +144,10 @@ bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) co
         return false;
     if (!stream.write_int("processor", processor))
         return false;
+    if (!stream.write_byte("priority", (uint8_t)priority))
+        return false;
     if (!stream.write_id("app", app_id))
         return false;
-
-    if (!stream.start_array("objects", objects.size()))
-        return false;
-    for (const auto& one : objects)
-    {
-        if (!stream.write_id("id", one))
-            return false;
-    }
-    if (!stream.end_array())
-        return false;
-
     if (!stream.end_object())
         return false;
     return true;
@@ -165,17 +159,12 @@ bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
         return false;
     if (!stream.read_int("processor", processor))
         return false;
+    uint8_t temp;
+    if (!stream.read_byte("priority", temp) || temp>(uint8_t)rx_domain_priority::priority_count)
+        return false;
+    priority = (rx_domain_priority)temp;
     if (!stream.read_id("app", app_id))
         return false;
-
-    if (!stream.start_array("objects"))
-        return false;
-    while (!stream.array_end())
-    {
-        rx_node_id one;
-        if (!stream.read_id("id", one))
-            return false;
-    }
     if (!stream.end_object())
         return false;
     return true;
@@ -222,23 +211,23 @@ bool domain_instance_data::disconnect_application (rx_domain_ptr whose)
     return true;
 }
 
-rx_result domain_instance_data::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
+rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
     what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
     return true;
 }
 
-rx_result domain_instance_data::start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx)
+rx_result domain_instance_data::before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
 {
     return true;
 }
 
-rx_result domain_instance_data::deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+rx_result domain_instance_data::after_deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx)
 {
     return true;
 }
 
-rx_result domain_instance_data::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
+rx_result domain_instance_data::after_stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
 {
     return true;
 }
@@ -247,7 +236,9 @@ rx_result domain_instance_data::stop_runtime (rx_domain_ptr what, runtime::runti
 // Class rx_platform::runtime::items::application_instance_data 
 
 application_instance_data::application_instance_data()
-      : executer_(-1)
+      : processor(-1),
+        executer_(-1),
+        priority(rx_domain_priority::standard)
 {
 }
 
@@ -258,6 +249,8 @@ bool application_instance_data::serialize (base_meta_writer& stream, uint8_t typ
     if (!stream.start_object("instance"))
         return false;
     if (!stream.write_int("processor", processor))
+        return false;
+    if(!stream.write_byte("priority", (uint8_t)priority))
         return false;
     if (!stream.end_object())
         return false;
@@ -270,6 +263,10 @@ bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t t
         return false;
     if (!stream.read_int("processor", processor))
         return false;
+    uint8_t temp;
+    if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
+        return false;
+    priority = (rx_domain_priority)temp;
     if (!stream.end_object())
         return false;
     return true;
@@ -321,23 +318,24 @@ void application_instance_data::get_domains (api::query_result& result)
     }
 }
 
-rx_result application_instance_data::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
+rx_result application_instance_data::before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
     what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     return true;
 }
 
-rx_result application_instance_data::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)
+rx_result application_instance_data::before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
+{
+    auto result = binded->set_item_static<int>("CPU", (int)rx_gate::instance().get_infrastructure().get_CPU(what->get_instance_data().executer_), ctx);
+    return true;
+}
+
+rx_result application_instance_data::after_deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx)
 {
     return true;
 }
 
-rx_result application_instance_data::deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
-{
-    return true;
-}
-
-rx_result application_instance_data::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
+rx_result application_instance_data::after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
     return true;
 }
@@ -397,7 +395,7 @@ bool port_instance_data::disconnect_application (rx_port_ptr whose)
     return true;
 }
 
-rx_result port_instance_data::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
+rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
 {
     RX_ASSERT(what->get_instance_data().my_application_);
     if (what->get_instance_data().my_application_)
@@ -411,17 +409,17 @@ rx_result port_instance_data::init_runtime (rx_port_ptr what, runtime::runtime_i
     return true;
 }
 
-rx_result port_instance_data::start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx)
+rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
 {
     return true;
 }
 
-rx_result port_instance_data::deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx)
+rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
 {
     return true;
 }
 
-rx_result port_instance_data::stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
+rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
     return true;
 }

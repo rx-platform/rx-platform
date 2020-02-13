@@ -51,6 +51,9 @@ class data_controler;
 #include "system/hosting/rx_host.h"
 using rx_platform::namespace_item_attributes;
 
+#define RX_PRIORITY_FROM_DOMAIN(d) ((uint8_t)(((d)>>16)&0xff))
+#define RX_ADD_PRIORITY_TO_DOMAIN(p) ((rx_thread_handle_t)(p<<16))
+#define RX_DOMAIN_TYPE_MASK 0xffff
 #define RX_DOMAIN_UPPER_LIMIT 0xff00
 
 #define RX_DOMAIN_EXTERN 0xfffb
@@ -63,6 +66,7 @@ using rx_platform::namespace_item_attributes;
 
 namespace rx_platform {
 struct io_manager_data_t;
+
 
 namespace infrastructure {
 
@@ -214,6 +218,8 @@ used for special executer types\r\n\
   public:
       physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id);
 
+      ~physical_thread_object();
+
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -224,6 +230,12 @@ used for special executer types\r\n\
       }
 
 
+      sys_runtime::data_source::data_controler * get_data_controler ()
+      {
+        return data_controler_;
+      }
+
+
 
   protected:
 
@@ -231,6 +243,8 @@ used for special executer types\r\n\
 
 
       rx::threads::physical_job_thread pool_;
+
+      sys_runtime::data_source::data_controler *data_controler_;
 
 
 };
@@ -262,7 +276,7 @@ general ( high priority )\r\n\
 calculation ( normal priority)");
 
 	DECLARE_REFERENCE_PTR(server_rt);
-	typedef std::vector<std::unique_ptr<rx::threads::physical_job_thread> > workers_type;
+	typedef std::array<rx_reference<domains_pool>, (size_t)rx_domain_priority::priority_count> workers_type;
 
 	friend void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
@@ -319,12 +333,6 @@ calculation ( normal priority)");
       }
 
 
-      rx_reference<domains_pool> get_workers () const
-      {
-        return workers_;
-      }
-
-
 
   protected:
 
@@ -341,7 +349,7 @@ calculation ( normal priority)");
 
       rx_reference<dispatcher_subscribers_job> dispatcher_timer_;
 
-      rx_reference<domains_pool> workers_;
+      workers_type workers_;
 
       rx_reference<physical_thread_object> meta_pool_;
 
