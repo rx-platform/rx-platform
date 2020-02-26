@@ -64,12 +64,21 @@ class vt100_transport : public rx_protocol_stack_entry
 		parser_had_bracket,
 		parser_had_bracket_number
 	};
+    enum telnet_parser_state
+    {
+        telnet_parser_idle,
+        telnet_parser_had_escape,
+        telnet_parser_had_will,
+        telnet_parser_had_wont,
+        telnet_parser_had_do,
+        telnet_parser_had_dont,
+        telnet_parser_had_sb,
+        telnet_parser_had_sb2
+    };
 	typedef std::list<string_type> history_type;
 
   public:
       vt100_transport();
-
-      ~vt100_transport();
 
 
       bool char_received (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
@@ -112,6 +121,8 @@ class vt100_transport : public rx_protocol_stack_entry
 
       static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
+      bool handle_telnet (const char ch, string_type& to_echo);
+
 
 
       parser_state state_;
@@ -133,6 +144,10 @@ class vt100_transport : public rx_protocol_stack_entry
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
+
+      bool send_echo_;
+
+      telnet_parser_state telnet_state_;
 
 
 };
@@ -175,8 +190,8 @@ class dummy_transport
 
 class vt100_transport_port : public rx_platform::runtime::io_types::transport_port  
 {
-	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-VT100 terminal. implementation of an VT100 transport protocol port");
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 
 	DECLARE_REFERENCE_PTR(vt100_transport_port);
 
@@ -184,7 +199,7 @@ VT100 terminal. implementation of an VT100 transport protocol port");
       vt100_transport_port();
 
 
-      rx_protocol_stack_entry* get_stack_entry ();
+      rx_protocol_stack_entry* create_stack_entry ();
 
       void bind_port ();
 

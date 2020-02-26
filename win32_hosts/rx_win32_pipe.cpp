@@ -89,6 +89,11 @@ void win32_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sy
     err = GetStdHandle(STD_ERROR_HANDLE);
 }
 
+string_type win32_pipe_host::get_full_path (const string_type& path)
+{
+    return get_full_path_from_relative(path);
+}
+
 
 } // namespace win32
 

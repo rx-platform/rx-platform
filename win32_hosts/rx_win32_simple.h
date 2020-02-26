@@ -35,10 +35,13 @@
 
 // rx_simple_host
 #include "host/rx_simple_host.h"
+// rx_win32_file_sys
+#include "win32_hosts/rx_win32_file_sys.h"
 
 
 
 namespace win32 {
+
 
 
 
@@ -56,6 +59,8 @@ class win32_simple_host : public host::simple::simple_platform_host
       string_type get_default_name () const;
 
       void get_host_info (string_array& hosts);
+
+      string_type get_full_path (const string_type& path);
 
 
   protected:

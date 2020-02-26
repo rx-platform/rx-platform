@@ -30,238 +30,21 @@
 
 #include "pch.h"
 
+#define RX_JSON_FILE_EXTENSION "json"
+#define RX_BINARY_FILE_EXTENSION "rxbin"
 
 // rx_file_storage
 #include "storage/rx_file_storage.h"
 
 #include "rx_configuration.h"
 #include "rx_file_storage_version.h"
+#include "system/hosting/rx_host.h"
 
 
 namespace storage {
 
 namespace files {
 
-// Parameterized Class storage::files::file_system_storage 
-
-template <class policyT>
-file_system_storage<policyT>::file_system_storage()
-{
-}
-
-
-template <class policyT>
-file_system_storage<policyT>::~file_system_storage()
-{
-}
-
-
-
-template <class policyT>
-string_type file_system_storage<policyT>::get_storage_info ()
-{
-	// this function is moved there because of the template nature of file storage!!!
-	return rx_file_item::get_file_storage_info();
-}
-
-template <class policyT>
-sys_handle_t file_system_storage<policyT>::get_host_test_file (const string_type& path)
-{
-	string_type full_path = rx_combine_paths(root_ + "_test/", path);
-	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	return file;
-}
-
-template <class policyT>
-sys_handle_t file_system_storage<policyT>::get_host_console_script_file (const string_type& path)
-{
-	string_type full_path = rx_combine_paths(root_ + "_script/", path);
-	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	return file;
-}
-
-template <class policyT>
-const string_type& file_system_storage<policyT>::get_license ()
-{
-	static string_type lic_cached;
-	static bool tried_get = false;
-	if (!tried_get)
-	{
-		tried_get = true;
-		string_type lic_path = rx_combine_paths(root_, "rx-system-storage/LICENSE");
-		sys_handle_t file = rx_file(lic_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-		if (file)
-		{
-			uint64_t size = 0;
-			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
-			{
-				lic_cached.assign(size, ' ');
-				if (RX_OK != rx_file_read(file, &lic_cached[0], (uint32_t)size, nullptr))
-				{
-					lic_cached.clear();
-				}
-			}
-			rx_file_close(file);
-		}
-	}
-	return lic_cached;
-}
-
-template <class policyT>
-rx_result file_system_storage<policyT>::init_storage (const string_type& storage_reference)
-{
-	root_ = storage_reference;
-	string_array files, directories;
-	auto result = rx_list_files(root_, "*", files, directories);
-	if(!result)
-	{
-		result.register_error("error reading storage directory at: "s + storage_reference);
-	}
-	return result;
-}
-
-template <class policyT>
-void file_system_storage<policyT>::deinit_storage ()
-{
-}
-
-template <class policyT>
-rx_result file_system_storage<policyT>::list_storage (std::vector<rx_storage_item_ptr>& items)
-{
-	return recursive_list_storage("/", root_, items);
-}
-
-template <class policyT>
-rx_result file_system_storage<policyT>::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
-{
-	string_type result_path;
-	string_array file_names, directory_names;
-	auto result = rx_list_files(file_path, "*", file_names, directory_names);
-	if (result)
-	{
-		for (auto& one : directory_names)
-		{
-			if (one == ".git")
-				continue;// skip git's folder
-			result_path = rx_combine_paths(file_path, one);
-			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
-			if (!ret)
-				return ret;
-		}
-		for (auto& one : file_names)
-		{
-			result_path = rx_combine_paths(file_path, one);
-			auto storage_item = get_storage_item_from_file_path(result_path);
-			if(storage_item)
-				items.emplace_back(std::move(storage_item));
-		}
-	}
-	return result;
-}
-
-template <class policyT>
-string_type file_system_storage<policyT>::get_storage_reference ()
-{
-    return root_;
-}
-
-template <class policyT>
-bool file_system_storage<policyT>::is_valid_storage () const
-{
-	return !root_.empty();
-}
-
-template <class policyT>
-std::unique_ptr<rx_file_item> file_system_storage<policyT>::get_storage_item_from_file_path (const string_type& path)
-{
-	string_type ext = rx_get_extension(path);
-
-	if (ext == RX_JSON_FILE_EXTESION)
-	{
-		return std::make_unique<rx_json_file>(path);
-
-	}
-	else if (ext == RX_BINARY_FILE_EXTESION)
-	{
-		return std::make_unique<rx_binary_file>(path);
-	}
-	else
-	{
-		return std::unique_ptr<rx_file_item>();
-	}
-}
-
-template <class policyT>
-rx_result file_system_storage<policyT>::ensure_path_exsistence (const string_type& path)
-{
-	if (!rx_file_exsist(path.c_str()))
-	{
-		string_type sub_path;
-		size_t idx = path.find_last_of("\\/");
-		if (idx == string_type::npos)
-			return "Something wrong with the path "s + path;
-		sub_path = path.substr(0, idx);
-		auto result = recursive_create_directory(sub_path);
-
-		return result;
-	}
-	else
-		return true;
-}
-
-template <class policyT>
-rx_result file_system_storage<policyT>::recursive_create_directory (const string_type& path)
-{
-	if (!rx_file_exsist(path.c_str()))
-	{
-		string_type sub_path;
-		size_t idx = path.find_last_of("\\/");
-		if (idx == string_type::npos)
-			return "Something wrong with the path "s + path;
-		sub_path = path.substr(0, idx);
-		auto result = recursive_create_directory(sub_path);
-		if (result)
-		{// now create our directory
-			auto result = rx_create_directory(path.c_str(), false);
-			if (result == RX_OK)
-			{
-				return true;
-			}
-			else
-			{
-				return "Error creating directory "s + sub_path;
-			}
-		}
-		else
-			return result;
-	}
-	else
-		return true;
-}
-
-template <class policyT>
-rx_result_with<rx_storage_item_ptr> file_system_storage<policyT>::get_item_storage (const meta::meta_data& data)
-{
-	string_type path = cache_.get_file_path(data, root_, get_base_path());
-	if (path.empty())
-		return "Unable to get file path for the file storage item!";
-	auto result = ensure_path_exsistence(path);
-	if (result)
-	{
-		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path);
-		if (storage_item)
-			return storage_item;
-		else
-			return "Unable to get storage item for file " + path;
-	}
-	else
-	{
-		result.register_error("Unable to create needed directories!");
-		return result.errors();
-	}
-}
-
-template file_system_storage<storage::storage_policy::file_path_addresing_policy>::file_system_storage();
 // Class storage::files::rx_file_item 
 
 rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path)
@@ -460,19 +243,17 @@ void rx_binary_file::close ()
 }
 
 
-// Parameterized Class storage::files::file_system_storage_holder 
+// Class storage::files::file_system_storage_holder 
 
 
-template <class storageT>
-string_type file_system_storage_holder<storageT>::get_storage_info ()
+string_type file_system_storage_holder::get_storage_info ()
 {
 	return rx_file_item::get_file_storage_info();
 }
 
-template <class storageT>
-rx_result file_system_storage_holder<storageT>::init_storage (const string_type& storage_reference)
+rx_result file_system_storage_holder::init_storage (const string_type& storage_reference, hosting::rx_platform_host* host)
 {
-	root_path_ = storage_reference;
+	root_path_ = host->get_full_path(storage_reference);
 	string_array files, directories;
 	auto result = rx_list_files(root_path_, "*", files, directories);
 	if (!result)
@@ -482,27 +263,261 @@ rx_result file_system_storage_holder<storageT>::init_storage (const string_type&
 	return result;
 }
 
-template <class storageT>
-rx_result_with<rx_storage_ptr> file_system_storage_holder<storageT>::get_and_init_storage (const string_type& name)
+rx_result_with<rx_storage_ptr> file_system_storage_holder::get_and_init_storage (const string_type& name, hosting::rx_platform_host* host)
 {
 	string_type sub_path = rx_combine_paths(root_path_, name);
-	rx_storage_ptr result_ptr = rx_create_reference< storageT>();
-	auto result = result_ptr->init_storage(sub_path);
+	rx_storage_ptr result_ptr = rx_create_reference<file_system_storage>();
+	auto result = result_ptr->init_storage(sub_path, host);
 	if (result)
 		return result_ptr;
 	else
 		return result.errors();
 }
 
-template <class storageT>
-string_type file_system_storage_holder<storageT>::get_storage_reference ()
+string_type file_system_storage_holder::get_storage_reference ()
 {
 	return root_path_;
 }
 
-// explicit instanation
-template class file_system_storage< storage_policy::file_path_addresing_policy>;
-template class file_system_storage_holder<file_system_path_storage>;
+
+// Class storage::files::file_system_storage 
+
+file_system_storage::file_system_storage()
+{
+}
+
+
+file_system_storage::~file_system_storage()
+{
+}
+
+
+
+string_type file_system_storage::get_storage_info ()
+{
+	// this function is moved there because of the template nature of file storage!!!
+	return rx_file_item::get_file_storage_info();
+}
+
+sys_handle_t file_system_storage::get_host_test_file (const string_type& path)
+{
+	string_type full_path = rx_combine_paths(root_ + "_test/", path);
+	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+	return file;
+}
+
+sys_handle_t file_system_storage::get_host_console_script_file (const string_type& path)
+{
+	string_type full_path = rx_combine_paths(root_ + "_script/", path);
+	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+	return file;
+}
+
+const string_type& file_system_storage::get_license ()
+{
+	static string_type lic_cached;
+	static bool tried_get = false;
+	if (!tried_get)
+	{
+		tried_get = true;
+		string_type lic_path = rx_combine_paths(root_, "rx-system-storage/LICENSE");
+		sys_handle_t file = rx_file(lic_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			uint64_t size = 0;
+			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
+			{
+				lic_cached.assign(size, ' ');
+				if (RX_OK != rx_file_read(file, &lic_cached[0], (uint32_t)size, nullptr))
+				{
+					lic_cached.clear();
+				}
+			}
+			rx_file_close(file);
+		}
+	}
+	return lic_cached;
+}
+
+rx_result file_system_storage::init_storage (const string_type& storage_reference, hosting::rx_platform_host* host)
+{
+	root_ = storage_reference;
+	string_array files, directories;
+	auto result = rx_list_files(root_, "*", files, directories);
+	if(!result)
+	{
+		result.register_error("error reading storage directory at: "s + storage_reference);
+	}
+	return result;
+}
+
+void file_system_storage::deinit_storage ()
+{
+}
+
+rx_result file_system_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
+{
+	return recursive_list_storage("/", root_, items);
+}
+
+rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
+{
+	string_type result_path;
+	string_array file_names, directory_names;
+	auto result = rx_list_files(file_path, "*", file_names, directory_names);
+	if (result)
+	{
+		for (auto& one : directory_names)
+		{
+			if (one == ".git")
+				continue;// skip git's folder
+			result_path = rx_combine_paths(file_path, one);
+			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
+			if (!ret)
+				return ret;
+		}
+		for (auto& one : file_names)
+		{
+			result_path = rx_combine_paths(file_path, one);
+			auto storage_item = get_storage_item_from_file_path(result_path);
+			if(storage_item)
+				items.emplace_back(std::move(storage_item));
+		}
+	}
+	return result;
+}
+
+string_type file_system_storage::get_storage_reference ()
+{
+    return root_;
+}
+
+bool file_system_storage::is_valid_storage () const
+{
+	return !root_.empty();
+}
+
+std::unique_ptr<rx_file_item> file_system_storage::get_storage_item_from_file_path (const string_type& path)
+{
+	string_type ext = rx_get_extension(path);
+
+	if (ext == RX_JSON_FILE_EXTENSION)
+	{
+		return std::make_unique<rx_json_file>(path);
+
+	}
+	else if (ext == RX_BINARY_FILE_EXTENSION)
+	{
+		return std::make_unique<rx_binary_file>(path);
+	}
+	else
+	{
+		return std::unique_ptr<rx_file_item>();
+	}
+}
+
+rx_result file_system_storage::ensure_path_exsistence (const string_type& path)
+{
+	if (!rx_file_exsist(path.c_str()))
+	{
+		string_type sub_path;
+		size_t idx = path.find_last_of("\\/");
+		if (idx == string_type::npos)
+			return "Something wrong with the path "s + path;
+		sub_path = path.substr(0, idx);
+		auto result = recursive_create_directory(sub_path);
+
+		return result;
+	}
+	else
+		return true;
+}
+
+rx_result file_system_storage::recursive_create_directory (const string_type& path)
+{
+	if (!rx_file_exsist(path.c_str()))
+	{
+		string_type sub_path;
+		size_t idx = path.find_last_of("\\/");
+		if (idx == string_type::npos)
+			return "Something wrong with the path "s + path;
+		sub_path = path.substr(0, idx);
+		auto result = recursive_create_directory(sub_path);
+		if (result)
+		{// now create our directory
+			auto result = rx_create_directory(path.c_str(), false);
+			if (result == RX_OK)
+			{
+				return true;
+			}
+			else
+			{
+				return "Error creating directory "s + sub_path;
+			}
+		}
+		else
+			return result;
+	}
+	else
+		return true;
+}
+
+rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const meta::meta_data& data)
+{
+	string_type path = get_file_path(data, root_, get_base_path());
+	if (path.empty())
+		return "Unable to get file path for the file storage item!";
+	auto result = ensure_path_exsistence(path);
+	if (result)
+	{
+		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path);
+		if (storage_item)
+			return storage_item;
+		else
+			return "Unable to get storage item for file " + path;
+	}
+	else
+	{
+		result.register_error("Unable to create needed directories!");
+		return result.errors();
+	}
+}
+
+string_type file_system_storage::get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base)
+{
+	if (data.get_path().empty())
+		return "";
+
+	locks::const_auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
+	auto it = items_cache_.find(data.get_full_path());
+	if (it == items_cache_.end())
+	{// we don't have this one yet
+		size_t idx;
+		idx = data.get_path().find(base);
+		if (idx != 0)
+			return "";
+		idx = base.size();
+		idx = data.get_path().find(RX_DIR_DELIMETER, idx);
+		string_type file_path;
+		if (idx != string_type::npos)
+			file_path = rx_combine_paths(root, data.get_path().substr(idx + 1));
+		else
+			file_path = root;
+		file_path = rx_combine_paths(file_path, data.get_name() + "." + RX_JSON_FILE_EXTENSION);
+		items_cache_.emplace(data.get_full_path(), file_path);
+		return file_path;
+	}
+	else
+		return it->second;
+}
+
+void file_system_storage::add_file_path (const meta::meta_data& data, const string_type& path)
+{
+	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
+	items_cache_[data.get_full_path()] = path;
+}
+
+
 } // namespace files
 } // namespace storage
 

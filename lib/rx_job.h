@@ -155,6 +155,7 @@ class timer_job : public job
 
       void unlock ();
 
+      static constexpr uint64_t max_sleep_period = 200;
 
   protected:
 

@@ -108,6 +108,11 @@ void script_program_context::stop_execution ()
 	run_again_ = false;
 }
 
+bool script_program_context::get_result () const
+{
+    return !error_;
+}
+
 
 // Class sl_runtime::sl_script::sl_script_program 
 
@@ -177,6 +182,11 @@ void sl_script_program::load (string_type&& line)
 void sl_script_program::load (const string_type& line)
 {
 	lines_.emplace_back(line);
+}
+
+void sl_script_program::clear ()
+{
+    lines_.clear();
 }
 
 

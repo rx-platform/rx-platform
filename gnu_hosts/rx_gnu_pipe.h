@@ -62,6 +62,8 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
 
       static string_type get_gnu_pipe_info ();
 
+      string_type get_full_path (const string_type& path);
+
 
   protected:
 

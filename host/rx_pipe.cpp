@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace host {
 
 namespace pipe {
 
-// Class host::pipe::rx_pipe_host 
+// Class host::pipe::rx_pipe_host
 
 rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
       : exit_(false),
@@ -296,9 +296,9 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		else if (read_handle == 0 || write_handle == 0)
 		{
 			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
-				<< "\r\nUse --input and --output options to specify handles."
+				<< "\r\nUse --input and --output or --std options to specify handles."
 				<< "\r\nUse --help for more details"
-				<< "\r\nExiting...";
+				<< "\r\n\r\nExiting...\r\n";
 
 			return false;
 		}
@@ -343,9 +343,6 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (result)
 	{
-		auto json = rx_create_reference< sys_internal::rx_protocol::rx_protocol_port>();
-
-
 		std::cout << "OK\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
@@ -355,82 +352,68 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			std::cout << "OK\r\n";
 			std::cout << "Starting pipe communication...";
 
-			rx_protocol_result_t res = opcua_bin_init_pipe_transport(&transport_, 0x10000, 0x10);
-
-			if (res == RX_PROTOCOL_OK)
+			result = pipe_port_->open();
+			if (result)
 			{
-				result = pipe_port_->open();
-				if (result)
+				std::cout << "OK\r\n";
+
+				if (dump_storage_references_)
 				{
-					res = rx_push_stack(pipe_port_->get_stack_entry(), &transport_.protocol_stack_entry);
+					string_type sys_info = get_storages().system_storage->get_storage_info();
+					string_type sys_ref = get_storages().system_storage->get_storage_reference();
+					string_type user_info = get_storages().user_storage->get_storage_info();
+					string_type user_ref = get_storages().user_storage->get_storage_reference();
 
-
-					res = rx_push_stack(&transport_.protocol_stack_entry, json->get_stack_entry());
-
-					std::cout << "OK\r\n";
-
-					if (dump_storage_references_)
+					std::cout << "\r\nStorage Information:\r\n============================\r\n";
+					std::cout << "System Storage: " << sys_info << "\r\n";
+					std::cout << "System Reference: " << sys_ref << "\r\n";
+					std::cout << "User Storage: " << user_info << "\r\n";
+					std::cout << "User Reference: " << user_ref << "\r\n";
+					if (get_storages().test_storage)
 					{
-						string_type sys_info = get_storages().system_storage->get_storage_info();
-						string_type sys_ref = get_storages().system_storage->get_storage_reference();
-						string_type user_info = get_storages().user_storage->get_storage_info();
-						string_type user_ref = get_storages().user_storage->get_storage_reference();
-
-						std::cout << "\r\nStorage Information:\r\n============================\r\n";
-						std::cout << "System Storage: " << sys_info << "\r\n";
-						std::cout << "System Reference: " << sys_ref << "\r\n";
-						std::cout << "User Storage: " << user_info << "\r\n";
-						std::cout << "User Reference: " << user_ref << "\r\n";
-						if (get_storages().test_storage)
-						{
-							string_type test_info = get_storages().test_storage->get_storage_info();
-							string_type test_ref = get_storages().test_storage->get_storage_reference();
-							std::cout << "Test Storage: " << test_info << "\r\n";
-							std::cout << "Test Reference: " << test_ref << "\r\n";
-						}
+						string_type test_info = get_storages().test_storage->get_storage_info();
+						string_type test_ref = get_storages().test_storage->get_storage_reference();
+						std::cout << "Test Storage: " << test_info << "\r\n";
+						std::cout << "Test Reference: " << test_ref << "\r\n";
 					}
-					std::cout << "\r\n";
-					stdout_log_->release_log(dump_start_log_);
-					if(dump_start_log_)
-						std::cout << "\r\nStartup log:\r\n============================\r\n";
-
-
-					local_pipe_security_context::smart_ptr sec_ctx(pointers::_create_new);
-					rx_result login_result = sec_ctx->login();
-
-					security::security_auto_context dummy(sec_ctx);
-
-					auto user = security::active_security()->get_full_name();
-
-
-					pipe_port_->receive_loop();
-
-					stdout_log_->suspend_log();
-
-					std::cout << "Exited loop....\r\n";
-
-					pipe_port_->close();
-
-					opcua_bin_deinit_transport(&transport_);
 				}
+				std::cout << "\r\n";
+				stdout_log_->release_log(dump_start_log_);
+				if (dump_start_log_)
+					std::cout << "\r\nStartup log:\r\n============================\r\n";
+
+
+				local_pipe_security_context::smart_ptr sec_ctx(pointers::_create_new);
+				rx_result login_result = sec_ctx->login();
+
+				security::security_auto_context dummy(sec_ctx);
+
+				auto user = security::active_security()->get_full_name();
+
+				rx_ms_sleep(100);
+
+				pipe_port_->receive_loop();
+
+				stdout_log_->suspend_log();
+
+				std::cout << "Exited loop....\r\n";
+
+				pipe_port_->close();
+
+				std::cout << "Stopping rx-platform...";
+				result = rx_platform::rx_gate::instance().stop();
+				if (result)
+					std::cout << "OK\r\n";
 				else
 				{
-					std::cout << "ERROR\r\nError initializing pipe endpoint!\r\n";
+					std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
 					rx_dump_error_result(std::cout, result);
 				}
+
 			}
 			else
-				std::cout << "ERROR\r\nError initializing transport protocol!\r\n";
-
-
-
-			std::cout << "Stopping rx-platform...";
-			result = rx_platform::rx_gate::instance().stop();
-			if (result)
-				std::cout << "OK\r\n";
-			else
 			{
-				std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+				std::cout << "ERROR\r\nError initializing pipe endpoint!\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 		}
@@ -454,7 +437,6 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 		std::cout << "ERROR\r\nError initializing rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
-
 	HOST_LOG_INFO("Main", 999, "Closing console...");
 }
 
@@ -474,7 +456,7 @@ string_type rx_pipe_host::get_host_name ()
 }
 
 
-// Class host::pipe::rx_pipe_stdout_log_subscriber 
+// Class host::pipe::rx_pipe_stdout_log_subscriber
 
 rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber()
       : running_(false),

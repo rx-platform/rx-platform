@@ -41,6 +41,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
+#include "system/runtime/rx_io_relations.h"
 using namespace rx_platform::meta::meta_algorithm;
 
 

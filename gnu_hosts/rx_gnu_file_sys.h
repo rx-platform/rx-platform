@@ -44,15 +44,10 @@ namespace gnu {
 
 
 
-template <class policyT>
-class gnu_file_system_storage : public storage::files::file_system_storage<policyT>  
+class gnu_file_system_storage : public storage::files::file_system_storage  
 {
 
   public:
-      gnu_file_system_storage();
-
-      ~gnu_file_system_storage();
-
 
   protected:
 

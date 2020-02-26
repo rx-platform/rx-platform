@@ -401,6 +401,13 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     if (what->get_instance_data().my_application_)
     {
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+        // for port we have to have executer cached value
+        auto rt_ptr = what->get_implementation();
+        RX_ASSERT(rt_ptr);
+        if (rt_ptr)
+        {
+            rt_ptr->set_executer(what->get_instance_data().executer_);
+        }
     }
     else
     {
@@ -422,6 +429,12 @@ rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::r
 rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
     return true;
+}
+
+
+const rx_application_ptr port_instance_data::get_my_application () const
+{
+  return my_application_;
 }
 
 

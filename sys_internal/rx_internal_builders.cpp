@@ -873,6 +873,16 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
+				
+		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
+			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
+			, RX_PROTOCOL_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
 		// protocol ports
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_PROTOCOL_PORT_TYPE_NAME
@@ -892,6 +902,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
+
 	}
 	BUILD_LOG_INFO("port_classes_builder", 900, "Port types built.");
 	return true;

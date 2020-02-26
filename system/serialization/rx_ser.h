@@ -776,7 +776,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 {
 	switch (id.get_node_type())
 	{
-	case numeric_rx_node_id:
+	case rx_node_id_type::numeric:
 	{
 		uint16_t namesp = id.get_namespace();
 		uint32_t val = 0;
@@ -804,7 +804,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 		}
 	}
 	break;
-	case string_rx_node_id:
+	case rx_node_id_type::string:
 	{
 		uint16_t namesp = id.get_namespace();
 		string_type val;
@@ -815,7 +815,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 		buffer_.push_data(val);
 	}
 	break;
-	case uuid_rx_node_id:
+	case rx_node_id_type::uuid:
 	{
 		uint16_t namesp = id.get_namespace();
 		rx_uuid_t val;
@@ -826,7 +826,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 		buffer_.push_data(val);
 	}
 	break;
-	case bytes_rx_node_id:
+	case rx_node_id_type::bytes:
 	{
 		return false;// not implemented yet!!!
 	}

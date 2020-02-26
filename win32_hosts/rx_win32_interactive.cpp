@@ -574,6 +574,11 @@ void win32_console_host::add_command_line_options (hosting::command_line_options
 		("no-ansi", "Force not to use the ANSI escape sequences even when these are supported.", cxxopts::value<bool>(no_ansi_));
 }
 
+string_type win32_console_host::get_full_path (const string_type& path)
+{
+	return get_full_path_from_relative(path);
+}
+
 
 } // namespace win32
 

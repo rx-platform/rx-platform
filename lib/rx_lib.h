@@ -399,12 +399,12 @@ union rx_node_id_union
 
 
 
-enum rx_node_id_type
+enum class rx_node_id_type
 {
-	numeric_rx_node_id = 0,
-	string_rx_node_id = 1,
-	uuid_rx_node_id = 2,
-	bytes_rx_node_id = 3
+	numeric = 0,
+	string = 1,
+	uuid = 2,
+	bytes = 3
 };
 
 
@@ -672,17 +672,17 @@ struct hash<rx::rx_node_id>
 	{
 		switch (id.node_type_)
 		{
-		case rx::numeric_rx_node_id:
+		case rx::rx_node_id_type::numeric:
 			return (hash<int32_t>()(id.value_.int_value)
 				^ (hash<uint16_t>()(id.namespace_) << 1));
-		case rx::string_rx_node_id:
+		case rx::rx_node_id_type::string:
 			return (hash<string_type>()(*id.value_.string_value)
 				^ (hash<uint16_t>()(id.namespace_) << 1));
-		case rx::uuid_rx_node_id:
+		case rx::rx_node_id_type::uuid:
 			return (hash<uint64_t>()(*((int64_t*)(&id.value_.uuid_value))))
 				^ (hash<uint64_t>()(((int64_t*)(&id.value_.uuid_value))[1] << 1))
 				^ (hash<uint16_t>()(id.namespace_) << 2);
-		case rx::bytes_rx_node_id:
+		case rx::rx_node_id_type::bytes:
 		{
 			size_t ret = 0;
 			size_t count = id.value_.bstring_value->size();

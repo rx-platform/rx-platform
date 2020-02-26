@@ -164,6 +164,7 @@ console_runtime::console_runtime()
 #else
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif
+	bind_port();
 }
 
 
@@ -205,14 +206,6 @@ void console_runtime::get_wellcome (string_type& wellcome)
 	wellcome += "\r\n";
 	wellcome += "";
 	wellcome += RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
-}
-
-bool console_runtime::is_postponed () const
-{
-	if (current_program_)
-		return true;
-	else
-		return false;
 }
 
 const string_type& console_runtime::get_console_terminal ()
@@ -261,14 +254,22 @@ void console_runtime::process_result (bool result, memory::buffer_ptr out_buffer
 
 void console_runtime::synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
+	if (line == "\003")
+	{// this is cancel
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "\r\nCanceling...\r\n";
+		synchronized_cancel_command(out_buffer, err_buffer, ctx);
+		return;
+	}
+
 	bool ret = false;
-	RX_ASSERT(!current_program_);
+	
+	RX_ASSERT(!current_context_);
 	if (line.empty())
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
 		out << "\r\n";
 		ret = true;
-
 	}
 	else if (line[0] == '@')
 	{// this is console command
@@ -327,12 +328,15 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 		string_type sys_ref = rx_gate::instance().get_host()->get_storages().system_storage->get_storage_reference();
 		string_type user_info = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_info();
 		string_type user_ref = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_reference();
-		string_type test_info = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_info();
-		string_type test_ref = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_reference();
 		out << ANSI_COLOR_GREEN "System Storage" ANSI_COLOR_RESET "\r\nReference: " << sys_ref << "\r\nVersion: " << sys_info << "\r\n\r\n";
 		out << ANSI_COLOR_GREEN "User Storage" ANSI_COLOR_RESET "\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n\r\n";
-		out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
 
+		if (rx_gate::instance().get_host()->get_storages().test_storage)
+		{
+			string_type test_info = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_info();
+			string_type test_ref = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_reference();
+			out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
+		}
 		ret = true;
 	}
 	else if (line == "welcome")
@@ -349,23 +353,20 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 	}
 	else
 	{
-		rx_uuid id = rx_uuid::create_new();
-		server_console_program::smart_ptr prog(smart_this(), id.to_string(), rx_node_id(id.uuid()), true);
 		// create main program
-		console_program* temp_prog = new console_program;
-		auto context = new console_program_context(nullptr, &prog->my_program(), current_directory_, out_buffer, err_buffer, smart_this());
-		temp_prog->load(line);
-		prog->my_program().set_main_program(temp_prog, context);
+		program_.clear();
+		program_.load(line);
+		auto context = new console_program_context(nullptr, &program_holder_, current_directory_, out_buffer, err_buffer, smart_this());
+		program_holder_.set_main_program(&program_, context);
 		// set security context
 		security::security_auto_context dummy(ctx);
 
-		prog->my_program().process_program(context, rx_time::now(), false);
+		program_holder_.process_program(context, rx_time::now(), false);
 		ret = !context->has_error();
 		if (ret)
 		{
 			if (context->is_postponed())
 			{
-				current_program_ = prog;
 				current_context_ = context;
 			}
 			else
@@ -374,22 +375,21 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 			}
 		}
 	}
-	if (!is_postponed())
+	if (!current_context_)
 		process_result(ret, out_buffer, err_buffer);
 }
 
 void console_runtime::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	if (current_program_)
+	if (current_context_)
 	{
 		current_context_->postpone_done();
 		auto context = current_context_;
-		auto program = current_program_;
-		program->my_program().process_program(current_context_, rx_time::now(), false);
+		program_.process_program(current_context_, rx_time::now(), false);
 		if (!context->is_postponed())
 		{
+			result = current_context_->get_result();
 			current_context_ = nullptr;
-			current_program_ = server_console_program::smart_ptr::null_ptr;
 			process_result(result, out_buffer, err_buffer);
 		}
 	}
@@ -410,10 +410,10 @@ bool console_runtime::cancel_command (memory::buffer_ptr out_buffer, memory::buf
 
 void console_runtime::synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (current_program_)
+	if (current_context_)
 	{// we are in a command
 		current_context_->cancel_execution();
-		process_event(true, out_buffer, err_buffer, true);
+		process_event(false, out_buffer, err_buffer, true);
 	}
 	else
 	{// nothing to cancel!!!
@@ -476,14 +476,9 @@ void console_runtime::bind_port ()
 		});
 }
 
-rx_protocol_stack_entry* console_runtime::get_stack_entry ()
+rx_protocol_stack_entry* console_runtime::create_stack_entry ()
 {
 	return &endpoint_;
-}
-
-rx_result console_runtime::start_console ()
-{
-	return true;
 }
 
 
@@ -498,7 +493,6 @@ console_program_context::console_program_context (program_context* parent, sl_ru
         err_(err),
         postponed_(0),
         canceled_(false),
-        result_(false),
         one_more_time_(false)
 	, sl_runtime::sl_script::script_program_context(parent, holder, out.unsafe_ptr(), err.unsafe_ptr())
 {
@@ -647,6 +641,11 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 	std::istringstream in(line);
 	string_type first;
 	in >> first;
+	if (ctx->is_canceled())
+	{
+		err << "Canceled execution!\r\n";
+		return false;
+	}
 	if (!first.empty())
 	{
 		server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
@@ -662,17 +661,10 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 			return false;
 		}
 	}
-	if (ctx->is_canceled())
-	{
-		err << "Pending cancel for the current command:\r\n";
-		err << line;
-		return false;
-	}
 	if (ctx->should_next_line())
 	{
 		ctx->next_line();
 	}
-
 	return true;
 }
 
@@ -682,21 +674,6 @@ sl_runtime::program_context* console_program::create_program_context (sl_runtime
 		, rx_directory_ptr::null_ptr, buffer_ptr::null_ptr
 		, buffer_ptr::null_ptr, console_runtime::smart_ptr::null_ptr);
 }
-
-
-// Class terminal::console::server_console_program 
-
-server_console_program::server_console_program (console_runtime::smart_ptr client, const string_type& name, const rx_node_id& id, bool system)
-	: program_runtime(name, id, system)
-	, console_(client)
-{
-}
-
-
-server_console_program::~server_console_program()
-{
-}
-
 
 
 } // namespace console

@@ -34,22 +34,77 @@
 // rx_opcua_mapping
 #include "protocols/opcua/rx_opcua_mapping.h"
 
+#include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
 
 namespace protocols {
 
-namespace opc_ua {
+namespace opcua {
 
-// Class protocols::opc_ua::opc_ua_trasport 
+// Class protocols::opcua::opcua_transport_endpoint 
 
-
-rx_protocol_result_t opc_ua_trasport::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+opcua_transport_endpoint::opcua_transport_endpoint()
 {
-    return RX_PROTOCOL_NOT_IMPLEMENTED;
+
+    opcua_transport_protocol_type* mine_entry = this;
+    rx_protocol_result_t res = opcua_bin_init_pipe_transport(mine_entry, 0x10000, 0x10);
+    if (res == RX_PROTOCOL_OK)
+    {
+        mine_entry->protocol_stack_entry.received_function = &opcua_transport_endpoint::received_function;
+        mine_entry->protocol_stack_entry.send_function = &opcua_transport_endpoint::send_function;
+    }
 }
 
 
-opc_ua_endpoint test;
-} // namespace opc_ua
+
+rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+{
+    opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
+    self->received_func_((int64_t)rx_get_packet_available_data(buffer));
+    return opcua_bin_bytes_received(reference, end_point, buffer);
+}
+
+void opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+{
+    sent_func_ = sent_func;
+    received_func_ = received_func;
+}
+
+rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+{
+    opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
+    self->sent_func_((int64_t)rx_get_packet_usable_data(buffer));
+    return opcua_bin_bytes_send(reference, end_point, buffer);
+}
+
+
+// Class protocols::opcua::opcua_transport_port 
+
+opcua_transport_port::opcua_transport_port()
+{
+    bind_port();
+}
+
+
+
+rx_protocol_stack_entry* opcua_transport_port::create_stack_entry ()
+{
+    return &endpoint_.protocol_stack_entry;
+}
+
+void opcua_transport_port::bind_port ()
+{
+    endpoint_.bind([this](int64_t count)
+        {
+            update_sent_counters(count);
+        },
+        [this](int64_t count)
+        {
+            update_received_counters(count);
+        });
+}
+
+
+} // namespace opcua
 } // namespace protocols
 

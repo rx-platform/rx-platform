@@ -228,29 +228,29 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	if (config.storage.system_storage_reference.empty())
 		ret = "No valid system storage reference!";
 	else
-		ret = storages_.system_storage->init_storage(config.storage.system_storage_reference);
+		ret = storages_.system_storage->init_storage(config.storage.system_storage_reference, this);
 	if (ret)
 	{
 		if (config.storage.user_storage_reference.empty())
 			ret = "No valid user storage reference!";
 		else
-			ret = storages_.user_storage->init_storage(config.storage.user_storage_reference);
+			ret = storages_.user_storage->init_storage(config.storage.user_storage_reference, this);
 		if (ret)
 		{
-			if (!config.storage.test_storage_reference.empty())
+			if (storages_.test_storage && !config.storage.test_storage_reference.empty())
 			{
-				ret = storages_.test_storage->init_storage(config.storage.test_storage_reference);
+				ret = storages_.test_storage->init_storage(config.storage.test_storage_reference, this);
 				if (!ret)
 				{
 					ret.register_error("Error initializing test storage!");
 				}
 			}
-			auto add_result = storages_.system_storage->get_storage(get_host_name());
+			auto add_result = storages_.system_storage->get_storage(get_host_name(), this);
 			if (add_result)
 			{
 				for (const auto& one : plugins)
 				{
-					add_result = storages_.system_storage->get_storage(get_host_name());
+					add_result = storages_.system_storage->get_storage(get_host_name(), this);
 					if (!add_result)
 					{
 						ret.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");
@@ -279,7 +279,8 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 
 void rx_platform_host::deinitialize_storages ()
 {
-	storages_.test_storage->deinit_storage();
+	if(storages_.test_storage)
+		storages_.test_storage->deinit_storage();
 	storages_.user_storage->deinit_storage();
 	storages_.system_storage->deinit_storage();
 }
@@ -364,17 +365,20 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_system_storage (const string_type& name)
 {
-	return storages_.system_storage->get_storage(name);
+	return storages_.system_storage->get_storage(name, this);
 }
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_user_storage (const string_type& name)
 {
-	return storages_.user_storage->get_storage(name);
+	return storages_.user_storage->get_storage(name, this);
 }
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_test_storage (const string_type& name)
 {
-	return storages_.test_storage->get_storage(name);
+	if (storages_.test_storage)
+		return storages_.test_storage->get_storage(name, this);
+	else
+		return "Test storage not active.";
 }
 
 void rx_platform_host::dump_log_items (const log::log_events_type& items, std::ostream& out)

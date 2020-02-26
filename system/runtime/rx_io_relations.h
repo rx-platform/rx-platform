@@ -53,6 +53,8 @@ class port_up_relation : public relation_runtime
     DECLARE_REFERENCE_PTR(port_up_relation);
 
   public:
+      port_up_relation (rx_port_ptr my_port);
+
 
       void process_stack ();
 
@@ -68,6 +70,18 @@ class port_up_relation : public relation_runtime
   protected:
 
   private:
+
+      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
+
+      void relation_connected ();
+
+      void relation_disconnected ();
+
+
+
+      rx_port_ptr from_;
+
+      rx_port_ptr to_;
 
 
 };

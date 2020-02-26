@@ -38,8 +38,6 @@
 // rx_win32_file_sys
 #include "win32_hosts/rx_win32_file_sys.h"
 
-#include "storage/rx_storage_policy.h"
-
 using rx_platform::hosting::rx_host_directories;
 
 
@@ -85,6 +83,8 @@ class win32_console_host : public host::interactive::interactive_console_host
       bool supports_ansi () const;
 
       void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
+
+      string_type get_full_path (const string_type& path);
 
 	  template<class tupleType>
 	  auto register_types(tupleType before)

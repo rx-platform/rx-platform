@@ -33,12 +33,12 @@
 
 
 
+// rx_console
+#include "terminal/rx_console.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
-// rx_console
-#include "terminal/rx_console.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
@@ -189,7 +189,7 @@ bin folder in file hierarcyh\
 
       locks::lockable lock_;
 
-
+      registered_commands_type other_commands_;
 };
 
 

@@ -89,6 +89,10 @@ rx_result local_pipe_port::stop_runtime (runtime::runtime_stop_context& ctx)
 
 void local_pipe_port::receive_loop ()
 {
+
+	rx_protocol_result_t res = rx_push_stack(&pipes_, up_stack()->create_stack_entry());
+
+
 	pipes_.receive_loop([this] (size_t count)
 		{
 			update_received_counters(count);
@@ -109,11 +113,6 @@ void local_pipe_port::close ()
 {
 	pipes_.close();
 	update_connected_status(false);
-}
-
-rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
-{
-	return &pipes_;
 }
 
 
@@ -171,6 +170,24 @@ void anonymus_pipe_client::close_pipe ()
 anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 	: pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
 {
+	rx_protocol_stack_entry* mine_entry = this;
+
+	mine_entry->downward = nullptr;
+	mine_entry->upward = nullptr;
+
+	mine_entry->send_function = &anonymus_pipe_endpoint::send_function;
+	mine_entry->sent_function = nullptr;
+
+	mine_entry->received_function = nullptr;
+
+	mine_entry->connected_function = nullptr;
+
+	mine_entry->close_function = nullptr;
+	mine_entry->closed_function = nullptr;
+
+	mine_entry->allocate_packet_function = nullptr;
+	mine_entry->free_packet_function = nullptr;
+
 }
 
 
@@ -178,7 +195,7 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received_func)
 {
 	rx_result result;
-
+	
 	while (true)
 	{
 		rx_const_packet_buffer buffer{};
@@ -204,26 +221,10 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 
 rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::function<void(int64_t)> sent_func)
 {
-	rx_protocol_stack_entry* mine_entry = this;
 
 	pipes_ = std::make_unique<anonymus_pipe_client>(pipes);
 	sent_func_ = sent_func;
 	pipe_sender_.start();
-	mine_entry->downward = nullptr;
-	mine_entry->upward = nullptr;
-
-	mine_entry->send_function = &anonymus_pipe_endpoint::send_function;
-	mine_entry->sent_function = nullptr;
-
-	mine_entry->received_function = nullptr;
-
-	mine_entry->connected_function = nullptr;
-
-	mine_entry->close_function = nullptr;
-	mine_entry->closed_function = nullptr;
-	
-	mine_entry->allocate_packet_function = nullptr;
-	mine_entry->free_packet_function = nullptr;
 
 	return true;
 }
@@ -290,4 +291,5 @@ bool local_pipe_security_context::is_system () const
 
 } // namespace pipe
 } // namespace host
+
 

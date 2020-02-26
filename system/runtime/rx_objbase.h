@@ -146,6 +146,8 @@ system application class. basic implementation of a application");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
+      virtual int get_executer ();
+
 
       static rx_item_type get_type_id ()
       {
@@ -192,6 +194,8 @@ system domain class. basic implementation of a domain");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
+      virtual int get_executer ();
+
 
       static rx_item_type get_type_id ()
       {
@@ -233,7 +237,7 @@ system port class. basic implementation of a port");
 
       bool write (buffer_ptr what);
 
-      virtual rx_protocol_stack_entry* get_stack_entry ();
+      virtual rx_protocol_stack_entry* create_stack_entry ();
 
       rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
 
@@ -249,7 +253,9 @@ system port class. basic implementation of a port");
 
       virtual rx_port_impl_ptr down_stack () const = 0;
 
-      virtual void process_stack () = 0;
+      virtual void connect_up_stack (rx_port_impl_ptr who) = 0;
+
+      virtual void connect_down_stack (rx_port_impl_ptr who) = 0;
 
 
       static rx_item_type get_type_id ()
@@ -261,6 +267,11 @@ system port class. basic implementation of a port");
       rx_thread_handle_t get_executer () const
       {
         return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 

@@ -38,6 +38,12 @@
 #define RX_STD_IO_TYPE_NAME "StdIO"
 #define RX_STD_IO_TYPE_ID 0x00001
 
+#define RX_STD_IO_NAME "stdIO"
+#define RX_STD_IO_ID 0x00002
+
+#define RX_STD_VT100_NAME "stdVT100"
+#define RX_STD_VT100_ID 0x00003
+
 
 
 

@@ -34,12 +34,12 @@
 
 #include "rx_runtime_helpers.h"
 
-// rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
 // rx_obj_types
 #include "system/meta/rx_obj_types.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 
@@ -88,16 +88,16 @@ class relation_runtime : public rx::pointers::reference_object
 	DECLARE_REFERENCE_PTR(relation_runtime);
     friend class algorithms::object_runtime_algorithms<object_types::relation_type>;
 
-	enum relation_state
+	enum class relation_state
 	{
-		relation_state_idle = 0,
-		relation_state_querying = 1,
-		relation_state_same_domain = 2,
-		relation_state_local_domain = 3,
-		relation_state_remote = 4,
-		relation_state_stopping = 5,
+		idle = 0,
+		querying = 1,
+		same_domain = 2,
+		local_domain = 3,
+		remote = 4,
+		stopping = 5,
 	};
-	relation_state my_state_ = relation_state::relation_state_idle;
+	relation_state my_state_ = relation_state::idle;
 
   public:
       relation_runtime();
@@ -184,6 +184,12 @@ class relation_runtime : public rx::pointers::reference_object
   private:
 
       void try_resolve ();
+
+      virtual rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
+
+      virtual void relation_connected ();
+
+      virtual void relation_disconnected ();
 
 
 

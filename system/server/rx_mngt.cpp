@@ -38,12 +38,13 @@
 
 #include "lib/rx_lib.h"
 #include "system/server/rx_server.h"
-#include "terminal/rx_telnet.h"
+#include "terminal/rx_vt100.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_objects.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
 #include "sys_internal/rx_internal_protocol.h"
+#include "protocols/opcua/rx_opcua_mapping.h"
 
 using namespace rx_platform;
 using namespace terminal::commands;
@@ -76,7 +77,7 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 	server_command_manager::instance()->register_internal_commands();
     // register constructors
     auto result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
-        RX_RX_JSON_TYPE_ID, [] {
+        RX_COMMANDS_MANAGER_TYPE_ID, [] {
             return server_command_manager::instance();
         });
 	// handle rx_protocol stuff!
@@ -86,10 +87,18 @@ rx_result server_manager::initialize (hosting::rx_platform_host* host, managemen
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
 		});
+    result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+        RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
+            return rx_create_reference<protocols::opcua::opcua_transport_port>();
+        });
 	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
 			return rx_create_reference<terminal::rx_vt100::vt100_transport_port>();
 		});
+    result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+        RX_CONSOLE_TYPE_ID, [] {
+            return rx_create_reference<terminal::console::console_runtime>();
+        });
 	return result;
 }
 

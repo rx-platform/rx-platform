@@ -5,6 +5,9 @@
 #define RX_PIPE_HOST "rx-pipe"
 #define RX_PIPE_HOST_NAME "RX Pipe Child"
 #define RX_PIPE_HOST_MAJOR_VERSION 0
-#define RX_PIPE_HOST_MINOR_VERSION 4
-#define RX_PIPE_HOST_BUILD_NUMBER 3
+#define RX_PIPE_HOST_MINOR_VERSION 5
+#define RX_PIPE_HOST_BUILD_NUMBER 0
+
+
+// version 0.5 structure fully created in configuration
 

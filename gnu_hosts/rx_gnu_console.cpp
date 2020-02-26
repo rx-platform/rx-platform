@@ -219,6 +219,11 @@ bool gnu_console_host::supports_ansi () const
 
 }
 
+string_type gnu_console_host::get_full_path (const string_type& path)
+{
+    return get_full_path_from_relative(path);
+}
+
 
 } // namespace gnu
 

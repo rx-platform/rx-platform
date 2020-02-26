@@ -169,11 +169,11 @@ using namespace rx;
 
 
 namespace rx {
-enum time_compare_type
+enum class time_compare_type
 {
-	time_compare_skip,
-	time_compare_ms_accurate,
-	time_compare_exact,
+	skip,
+	ms_accurate,
+	exact,
 };
 
 namespace values {
@@ -312,7 +312,7 @@ public:
 
       bool deserialize (base_meta_reader& reader);
 
-      string_type to_string () const;
+      string_type to_string (bool simple = true) const;
 
       void parse (const string_type& str);
 
@@ -513,6 +513,8 @@ class rx_simple_value
 
       bool is_float () const;
 
+      rx_value_storage&& move_storage ();
+
 
       const rx_value_storage& get_storage () const
       {
@@ -613,7 +615,7 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -656,6 +658,8 @@ public:
       rx_value operator % (const rx_value& right) const;
 
       bool is_dead () const;
+
+      rx_value_storage&& move_storage ();
 
 
       const rx_value_storage& get_storage () const
@@ -771,7 +775,7 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -786,6 +790,8 @@ public:
       bool is_integer () const;
 
       bool is_float () const;
+
+      rx_value_storage&& move_storage ();
 
 
       const rx_value_storage& get_storage () const

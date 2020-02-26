@@ -35,32 +35,31 @@
 
 // dummy
 #include "dummy.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
+#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
 
 namespace protocols {
 
-namespace opc_ua {
+namespace opcua {
 
 constexpr size_t opc_ua_endpoint_name_len = 0x100;
 
 
 
 
-typedef interfaces::io_endpoints::rx_io_address< std::array<char, opc_ua_endpoint_name_len>  > opc_ua_endpoint;
-
-
-
-
-
-
-
-class opc_ua_trasport : public rx_protocol_stack_entry  
+class opcua_transport_endpoint : public opcua_transport_protocol_type  
 {
 
   public:
+      opcua_transport_endpoint();
+
+
+      void bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
 
   protected:
 
@@ -68,12 +67,50 @@ class opc_ua_trasport : public rx_protocol_stack_entry
 
       static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+
+
+
+      std::function<void(int64_t)> sent_func_;
+
+      std::function<void(int64_t)> received_func_;
 
 
 };
 
 
-} // namespace opc_ua
+
+
+
+
+class opcua_transport_port : public rx_platform::runtime::io_types::transport_port  
+{
+    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+OPC-UA transport port. Implementation of binary OPC-UA transport and simplified local pipe version without secure channel.");
+
+    DECLARE_REFERENCE_PTR(opcua_transport_port);
+
+  public:
+      opcua_transport_port();
+
+
+      rx_protocol_stack_entry* create_stack_entry ();
+
+      void bind_port ();
+
+
+  protected:
+
+  private:
+
+
+      opcua_transport_endpoint endpoint_;
+
+
+};
+
+
+} // namespace opcua
 } // namespace protocols
 
 

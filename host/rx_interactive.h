@@ -39,23 +39,18 @@
 #include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_console
-#include "terminal/rx_console.h"
-// rx_vt100
-#include "terminal/rx_vt100.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 namespace host {
 namespace interactive {
 class interactive_console_port;
-class interactive_console_host;
 
 } // namespace interactive
 } // namespace host
@@ -131,39 +126,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
       rx_reference<interactive_console_port> interactive_port_;
-
-
-      bool exit_;
-
-
-};
-
-
-
-
-
-
-class interactive_console_client : public terminal::console::console_runtime  
-{
-	DECLARE_REFERENCE_PTR(interactive_console_client);
-
-
-  public:
-
-      rx_result run_interactive (configuration_data_t& config);
-
-
-  protected:
-
-      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
-
-
-  private:
-
-
-      interactive_console_host *host_;
-
-      terminal::rx_vt100::vt100_transport vt100_transport_;
 
 
       bool exit_;
@@ -263,8 +225,6 @@ Standard IO class. implementation of an standard IO console port");
       rx_result start_runtime (runtime::runtime_start_context& ctx);
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      rx_protocol_stack_entry* get_stack_entry ();
 
       rx_result run_interactive (interactive_console_host* host);
 

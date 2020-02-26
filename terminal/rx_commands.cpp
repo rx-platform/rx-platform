@@ -48,6 +48,7 @@
 namespace terminal {
 
 namespace commands {
+#include "others/others.h"
 namespace
 {
 void read_to_eol(string_type::const_iterator& it, const string_type& data, std::ostringstream& out)
@@ -98,6 +99,7 @@ string_type parse_man_file(const string_type& data)
 
 server_command_manager::server_command_manager()
 {
+	register_others(other_commands_);
 }
 
 
@@ -164,6 +166,11 @@ server_command_base_ptr server_command_manager::get_command_by_name (const strin
 	locks::auto_lock dummy(&lock_);
 	auto it = registered_commands_.find(name);
 	if (it != registered_commands_.end())
+	{
+		return it->second;
+	}
+	it = other_commands_.find(name);
+	if (it != other_commands_.end())
 	{
 		return it->second;
 	}

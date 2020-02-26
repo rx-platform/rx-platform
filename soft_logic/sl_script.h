@@ -71,6 +71,8 @@ class script_program_context : public program_context
 
       void stop_execution ();
 
+      bool get_result () const;
+
 
       const size_t get_current_line () const
       {
@@ -132,6 +134,8 @@ class sl_script_program : public sl_program
       void load (string_type&& line);
 
       void load (const string_type& line);
+
+      void clear ();
 
 
   protected:

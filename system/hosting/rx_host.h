@@ -221,6 +221,8 @@ class rx_platform_host
 
       static void dump_log_items (const log::log_events_type& items, std::ostream& out);
 
+      virtual string_type get_full_path (const string_type& path) = 0;
+
 
       rx_platform_host * get_parent ()
       {

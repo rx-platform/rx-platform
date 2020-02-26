@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  storage\rx_storage_policy.h
+*  terminal\others\others.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,51 +28,24 @@
 ****************************************************************************/
 
 
-#ifndef rx_storage_policy_h
-#define rx_storage_policy_h 1
+#ifndef others_h
+#define others_h 1
 
 
 
 
-#include "system/storage_base/rx_storage.h"
-#define RX_JSON_FILE_EXTESION "json"
-#define RX_BINARY_FILE_EXTESION "rxbin"
+#include "asteroid.h"
 
-
-namespace storage {
-
-namespace storage_policy {
-
-
-
-
-
-class file_path_addresing_policy 
+void register_other(server_command_base_ptr cmd, std::map<string_type, server_command_base_ptr>& where_to)
 {
-	typedef std::map<string_type, string_type> items_cache_type;
+	string_type con_name = cmd->get_console_name();
+	where_to.emplace(con_name, cmd);
+}
+void register_others(std::map<string_type, server_command_base_ptr>& where_to)
+{
+	register_other(rx_create_reference<terminal::commands::asteroid_command>(), where_to);
+}
 
-  public:
-
-      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base);
-
-      void add_file_path (const meta::meta_data& data, const string_type& path);
-
-
-  protected:
-
-  private:
-
-
-      locks::slim_lock cache_lock_;
-
-      items_cache_type items_cache_;
-
-
-};
-
-
-} // namespace storage_policy
-} // namespace storage
 
 
 

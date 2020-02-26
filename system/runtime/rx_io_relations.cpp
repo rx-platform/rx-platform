@@ -34,6 +34,7 @@
 // rx_io_relations
 #include "system/runtime/rx_io_relations.h"
 
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_platform {
@@ -44,6 +45,12 @@ namespace relations {
 
 // Class rx_platform::runtime::relations::port_up_relation 
 
+port_up_relation::port_up_relation (rx_port_ptr my_port)
+    : from_(my_port)
+{
+}
+
+
 
 void port_up_relation::process_stack ()
 {
@@ -51,22 +58,55 @@ void port_up_relation::process_stack ()
 
 rx_result port_up_relation::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    return true;
+    auto ret = relation_runtime::initialize_runtime(ctx);
+    return ret;
 }
 
 rx_result port_up_relation::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-    return true;
+    auto ret = relation_runtime::deinitialize_runtime(ctx);
+    return ret;
 }
 
 rx_result port_up_relation::start_runtime (runtime::runtime_start_context& ctx)
 {
-    return true;
+    auto ret = relation_runtime::start_runtime(ctx);
+    return ret;
 }
 
 rx_result port_up_relation::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-    return true;
+    auto ret = relation_runtime::stop_runtime(ctx);
+    return ret;
+}
+
+rx_result_with<platform_item_ptr> port_up_relation::resolve_runtime_sync (const rx_node_id& id)
+{
+    auto port_ptr = model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
+    if (!port_ptr)
+    {
+        return port_ptr.errors();
+    }
+    else
+    {
+        if (port_ptr.value()->get_instance_data().get_my_application() != from_->get_instance_data().get_my_application())
+            return "I/O stack relation ports must be in the same application";
+        auto ret = port_ptr.value()->get_item_ptr();
+        to_ = port_ptr.move_value();
+        return ret;
+    }
+}
+
+void port_up_relation::relation_connected ()
+{
+    if (from_ && to_)
+    {
+        from_->get_implementation()->connect_up_stack(to_->get_implementation());
+    }
+}
+
+void port_up_relation::relation_disconnected ()
+{
 }
 
 

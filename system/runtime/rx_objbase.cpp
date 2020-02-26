@@ -144,6 +144,12 @@ rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+int application_runtime::get_executer ()
+{
+  return -1;
+
+}
+
 
 // Class rx_platform::runtime::items::domain_runtime 
 
@@ -180,6 +186,12 @@ rx_result domain_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+int domain_runtime::get_executer ()
+{
+  return -1;
+
+}
+
 // has to be before call
 
 // Class rx_platform::runtime::items::port_runtime 
@@ -188,7 +200,7 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
       : context_(nullptr),
-        executer_(0)
+        executer_(-1)
 {
 }
 
@@ -209,7 +221,7 @@ bool port_runtime::readed (buffer_ptr what, rx_thread_handle_t destination)
 	return true;
 }
 
-rx_protocol_stack_entry* port_runtime::get_stack_entry ()
+rx_protocol_stack_entry* port_runtime::create_stack_entry ()
 {
 	RX_ASSERT(false);
 	return nullptr;
@@ -218,7 +230,7 @@ rx_protocol_stack_entry* port_runtime::get_stack_entry ()
 rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t initial_capacity)
 {
 	io_types::rx_io_buffer ret;
-	auto result = rx_init_packet_buffer(&ret, initial_capacity, get_stack_entry());
+	auto result = rx_init_packet_buffer(&ret, initial_capacity, create_stack_entry());
 	if (result == RX_PROTOCOL_OK)
 		return ret;
 	else
@@ -227,6 +239,7 @@ rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t 
 
 rx_result port_runtime::initialize_runtime (runtime_init_context& ctx)
 {
+    context_ = ctx.context;
 	return true;
 }
 

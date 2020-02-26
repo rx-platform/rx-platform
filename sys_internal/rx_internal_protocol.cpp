@@ -105,7 +105,7 @@ void rx_protocol_port::data_received (const string_type& data)
 				writter.get_string(ret_data, true);
 				result = buff_result.value().write_string(ret_data);
 
-				auto protocol_res = rx_move_packet_down(get_stack_entry(), nullptr, &buff_result.value());
+				auto protocol_res = rx_move_packet_down(&stack_entry_, nullptr, &buff_result.value());
 				if (protocol_res != RX_PROTOCOL_OK)
 				{
 					std::cout << "Error returned from move_down:"
@@ -131,7 +131,7 @@ void rx_protocol_port::data_received (const string_type& data)
 			writter.get_string(ret_data, true);
 			auto ret = buff_result.value().write_string(ret_data);
 
-			auto protocol_res = rx_move_packet_down(get_stack_entry(), nullptr, &buff_result.value());
+			auto protocol_res = rx_move_packet_down(&stack_entry_, nullptr, &buff_result.value());
 			if (protocol_res != RX_PROTOCOL_OK)
 			{
 				std::cout << "Error returned from move_down:"
@@ -144,7 +144,7 @@ void rx_protocol_port::data_received (const string_type& data)
 	}
 }
 
-rx_protocol_stack_entry* rx_protocol_port::get_stack_entry ()
+rx_protocol_stack_entry* rx_protocol_port::create_stack_entry ()
 {
 	return &stack_entry_;
 }
@@ -161,7 +161,7 @@ void rx_protocol_port::data_processed (message_ptr result)
 		writter.get_string(ret_data, true);
 		auto ret = buff_result.value().write_string(ret_data);
 
-		auto protocol_res = rx_move_packet_down(get_stack_entry(), nullptr, &buff_result.value());
+		auto protocol_res = rx_move_packet_down(&stack_entry_, nullptr, &buff_result.value());
 		if (protocol_res != RX_PROTOCOL_OK)
 		{
 			std::cout << "Error returned from move_down:"
@@ -299,6 +299,9 @@ rx_protocol_result_t rx_json_protocol::received_function (rx_protocol_stack_entr
 	rx_json_protocol* self = reinterpret_cast<rx_json_protocol*>(reference);
 
 	runtime::io_types::rx_const_io_buffer received(buffer);
+
+
+	self->my_port_->update_received_counters((int64_t)rx_get_packet_available_data(buffer));
 
 	uint8_t type;
 	auto result = received.read_from_buffer(type);

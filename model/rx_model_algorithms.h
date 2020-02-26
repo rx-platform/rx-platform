@@ -153,6 +153,10 @@ rx_result do_with_items(
 	, rx_platform::api::rx_context ctx);
 
 
+template<typename typeT>
+rx_result register_runtime_relations(typename typeT::RTypePtr what, construct_context& ctx);
+
+
 
 
 

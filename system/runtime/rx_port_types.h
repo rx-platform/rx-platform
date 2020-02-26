@@ -33,12 +33,12 @@
 
 
 
-// rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 
 #include "rx_runtime_helpers.h"
 
@@ -71,7 +71,9 @@ physical port class. basic implementation of a physical port");
 
       rx_port_impl_ptr down_stack () const;
 
-      void process_stack ();
+      void connect_up_stack (rx_port_impl_ptr who);
+
+      void connect_down_stack (rx_port_impl_ptr who);
 
 
   protected:
@@ -130,18 +132,20 @@ protocol port class. basic implementation of a protocol port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
+      void update_received_counters (size_t count);
+
+      void update_sent_counters (size_t count);
+
       rx_port_impl_ptr up_stack () const;
 
       rx_port_impl_ptr down_stack () const;
 
-      void process_stack ();
+      void connect_up_stack (rx_port_impl_ptr who);
+
+      void connect_down_stack (rx_port_impl_ptr who);
 
 
   protected:
-
-      void update_received_counters (size_t count);
-
-      void update_sent_counters (size_t count);
 
       void update_received_packets (size_t count);
 
@@ -191,7 +195,9 @@ transport port class. basic implementation of a transport port");
 
       rx_port_impl_ptr down_stack () const;
 
-      void process_stack ();
+      void connect_up_stack (rx_port_impl_ptr who);
+
+      void connect_down_stack (rx_port_impl_ptr who);
 
 
   protected:

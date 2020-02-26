@@ -36,6 +36,16 @@
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
+namespace rx_platform {
+namespace runtime {
+namespace relations {
+class relation_runtime;
+
+} // namespace relations
+} // namespace runtime
+} // namespace rx_platform
+
+
 #include "system/server/rx_ns.h"
 
 
@@ -109,6 +119,7 @@ class runtime_data_prototype
 	typedef std::vector<runtime::structure::mapper_data> mappers_type;
 	typedef std::vector<runtime::structure::filter_data> filters_type;
 	typedef std::vector<runtime::structure::event_data> events_type;
+    typedef std::vector<pointers::reference<runtime::relations::relation_runtime> > additional_relations_type;
 
 	typedef std::vector<runtime::structure::index_data> items_type;
 
@@ -129,6 +140,9 @@ class runtime_data_prototype
       void add (const string_type& name, runtime::structure::filter_data&& value);
 
       void add (const string_type& name, runtime::structure::event_data&& value);
+
+
+      additional_relations_type additional_relations;
 
 
       items_type items;

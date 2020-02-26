@@ -166,6 +166,10 @@ rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type
 	, size_t queue_size);
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
 
+rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference
+	, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference
+	, protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@
 #include "system/server/rx_async_functions.h"
 #include "lib/rx_lib.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "system/runtime/rx_io_relations.h"
 
 
 namespace model {
@@ -934,6 +935,36 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes_sync(const 
 	return return_value;
 }
 
+
+template<>
+rx_result register_runtime_relations<port_type>(typename port_type::RTypePtr what, construct_context& ctx)
+{
+	rx_relation_ptr port_up_ptr = rx_create_reference<runtime::relations::port_up_relation>(what);
+	port_up_ptr->name = "portUp";
+	port_up_ptr->object_directory = what->meta_info().get_path();
+	if (what->get_instance_data().up_port.is_node_id())
+		port_up_ptr->target_id = what->get_instance_data().up_port.get_node_id();
+	else
+		port_up_ptr->target = what->get_instance_data().up_port.get_path();
+	ctx.runtime_data.additional_relations.emplace_back(port_up_ptr);
+	return true;
+}
+
+template<>
+rx_result register_runtime_relations<domain_type>(typename domain_type::RTypePtr what, construct_context& ctx)
+{
+	return true;
+}
+template<>
+rx_result register_runtime_relations<object_type>(typename object_type::RTypePtr what, construct_context& ctx)
+{
+	return true;
+}
+template<>
+rx_result register_runtime_relations<application_type>(typename application_type::RTypePtr what, construct_context& ctx)
+{
+	return true;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////

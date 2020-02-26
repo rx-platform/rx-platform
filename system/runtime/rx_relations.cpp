@@ -101,7 +101,7 @@ rx_result relation_runtime::start_runtime (runtime::runtime_start_context& ctx)
 
 rx_result relation_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	my_state_ = relation_state::relation_state_stopping;
+	my_state_ = relation_state::stopping;
 	return true;
 }
 
@@ -143,37 +143,41 @@ meta::meta_data& relation_runtime::meta_info ()
 
 void relation_runtime::try_resolve ()
 {
-	if (my_state_ != relation_state::relation_state_idle)
+	if (my_state_ != relation_state::idle)
 		return;// not in right state
-	if (target.empty())
-		return;// do nothing it's blank
-	rx_directory_resolver dirs;
-	dirs.add_paths({object_directory});
-	auto resolve_result = model::algorithms::resolve_reference(target, dirs);
-	if (!resolve_result)
+	if (!target.empty())
 	{
-		RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + target);
-		return;
+		rx_directory_resolver dirs;
+		dirs.add_paths({ object_directory });
+		auto resolve_result = model::algorithms::resolve_reference(target, dirs);
+		if (!resolve_result)
+		{
+			RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + target);
+			return;
+		}
+		target_id = resolve_result.move_value();
 	}
-	rx_node_id id = resolve_result.move_value();
-	my_state_ = relation_state::relation_state_querying;
-	std::function<rx_result_with<platform_item_ptr>()> func = [id]
+	if (target_id.is_null())
+		return;
+	rx_node_id id = target_id;
+	my_state_ = relation_state::querying;
+	std::function<rx_result_with<platform_item_ptr>()> func = [id, this]
 	{
-		auto result = model::algorithms::get_working_runtime_sync(id);
-		return result;
+		return resolve_runtime_sync(id);
 	};
 	rx_do_with_callback<rx_result_with<platform_item_ptr>, rx_reference_ptr>(
 		func, RX_DOMAIN_META, [this](rx_result_with<platform_item_ptr>&& result)
 		{
-			if (my_state_ != relation_state::relation_state_querying)
+			if (my_state_ != relation_state::querying)
 				return;
 			if (result)
 			{
 				auto&& item_ptr = result.move_value();
 				if (item_ptr->get_executer() == executer_)
 				{
-					my_state_ = relation_state::relation_state_same_domain;
+					my_state_ = relation_state::same_domain;
 					connector_ = std::make_unique<local_relation_connector>(std::move(item_ptr));
+					relation_connected();
 					return;
 				}
 				else
@@ -181,7 +185,7 @@ void relation_runtime::try_resolve ()
 					RUNTIME_LOG_ERROR("relation_runtime", 999, "Not supported type, local domain for "s + target);
 				}
 			}
-			my_state_ = relation_state::relation_state_idle;
+			my_state_ = relation_state::idle;
 		}, smart_this());
 }
 
@@ -248,6 +252,20 @@ rx_result relation_runtime::disconnect_tag (runtime_handle_t handle, tags_callba
 	{
 		return "Wrong object state!";
 	}
+}
+
+rx_result_with<platform_item_ptr> relation_runtime::resolve_runtime_sync (const rx_node_id& id)
+{
+	auto result = model::algorithms::get_working_runtime_sync(id);
+	return result;
+}
+
+void relation_runtime::relation_connected ()
+{
+}
+
+void relation_runtime::relation_disconnected ()
+{
 }
 
 

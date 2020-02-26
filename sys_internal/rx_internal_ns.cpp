@@ -88,8 +88,15 @@ user_directory::~user_directory()
 // Class sys_internal::internal_ns::unassigned_directory 
 
 unassigned_directory::unassigned_directory()
-	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access)
+	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access, rx_create_reference<storage_base::rx_code_storage>())
 {
+    auto storage = resolve_storage();
+    if (storage)
+    {
+        string_type base(RX_DIR_DELIMETER_STR);
+        base += RX_NS_UNASSIGNED_NAME;
+        storage.value()->set_base_path(base);
+    }
 }
 
 

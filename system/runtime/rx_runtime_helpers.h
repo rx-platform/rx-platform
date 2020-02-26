@@ -193,6 +193,7 @@ enum runtime_process_step : int
 
 class runtime_process_context 
 {
+    typedef std::function<void()> fire_callback_func_t;
 
   public:
       runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags);
@@ -215,6 +216,8 @@ class runtime_process_context
       rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
+
+      void init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback);
 
 
       rx_time now;
@@ -265,6 +268,8 @@ class runtime_process_context
       bool process_tag_writes_;
 
       structure::hosting_object_data* state_;
+
+      fire_callback_func_t fire_callback_;
 
 
 };

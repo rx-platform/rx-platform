@@ -36,6 +36,14 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+namespace rx_platform {
+namespace hosting {
+class rx_platform_host;
+
+} // namespace hosting
+} // namespace rx_platform
+
+
 #include "lib/rx_ser_lib.h"
 
 namespace terminal
@@ -165,7 +173,7 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual string_type get_storage_info () = 0;
 
-      virtual rx_result init_storage (const string_type& storage_reference);
+      virtual rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
 
       virtual void deinit_storage ();
 
@@ -217,24 +225,89 @@ class rx_platform_storage_holder
 
       virtual string_type get_storage_info () = 0;
 
-      virtual rx_result init_storage (const string_type& storage_reference) = 0;
+      virtual rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host) = 0;
 
       void deinit_storage ();
 
       virtual string_type get_storage_reference () = 0;
 
-      rx_result_with<rx_storage_ptr> get_storage (const string_type& name);
+      rx_result_with<rx_storage_ptr> get_storage (const string_type& name, hosting::rx_platform_host* host);
 
 
   protected:
 
-      virtual rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name) = 0;
+      virtual rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name, hosting::rx_platform_host* host) = 0;
 
 
   private:
 
 
       initialized_storages_type initialized_storages_;
+
+
+};
+
+
+
+
+
+
+class rx_code_storage_item : public rx_storage_item  
+{
+
+  public:
+      rx_code_storage_item();
+
+
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      void close ();
+
+      const string_type& get_item_reference () const;
+
+      rx_result delete_item ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_code_storage : public rx_platform_storage  
+{
+    DECLARE_REFERENCE_PTR(rx_code_storage);
+
+  public:
+      rx_code_storage();
+
+
+      string_type get_storage_info ();
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      bool is_valid_storage () const;
+
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data);
+
+      string_type get_storage_reference ();
+
+
+  protected:
+
+  private:
 
 
 };

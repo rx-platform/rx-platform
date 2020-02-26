@@ -35,20 +35,17 @@
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "interfaces/rx_endpoints.h"
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
 // dummy
 #include "dummy.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
 namespace terminal {
 namespace console {
-class server_console_program;
 class console_program_context;
 class console_runtime;
 
@@ -94,84 +91,6 @@ class console_endpoint : public rx_protocol_stack_entry
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
-
-
-};
-
-
-
-
-
-
-class console_runtime : public rx_platform::runtime::io_types::protocol_port  
-{
-	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-Console port. implementation of an console port");
-
-	DECLARE_REFERENCE_PTR(console_runtime);
-	friend class console_endpoint;
-
-  public:
-      console_runtime();
-
-      ~console_runtime();
-
-
-      bool is_postponed () const;
-
-      const string_type& get_console_terminal ();
-
-      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
-
-      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
-
-      static string_type get_terminal_info ();
-
-      rx_result check_validity ();
-
-      void bind_port ();
-
-      rx_protocol_stack_entry* get_stack_entry ();
-
-      rx_result start_console ();
-
-
-  protected:
-
-      bool do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void get_prompt (string_type& prompt);
-
-      void get_wellcome (string_type& wellcome);
-
-      bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void get_security_error (string_type& txt, sec_error_num_t err_number);
-
-      bool do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-
-  private:
-
-      void synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-
-      rx_directory_ptr current_directory_;
-
-
-
-      rx_reference<server_console_program> current_program_;
-
-      console_program_context *current_context_;
-
-      console_endpoint endpoint_;
-
-
-      string_type line_;
-
-      string_type name_;
 
 
 };
@@ -255,12 +174,6 @@ public:
       }
 
 
-      bool get_result () const
-      {
-        return result_;
-      }
-
-
 	  template<typename T>
 	  pointers::reference<T> get_instruction_data()
 	  {
@@ -301,8 +214,6 @@ public:
 
       std::atomic_bool canceled_;
 
-      bool result_;
-
       bool one_more_time_;
 
 
@@ -342,29 +253,73 @@ class console_program : public sl_runtime::sl_script::sl_script_program
 
 
 
-
-class server_console_program : public rx_platform::logic::program_runtime  
+class console_runtime : public rx_platform::runtime::io_types::protocol_port  
 {
-	DECLARE_REFERENCE_PTR(server_console_program);
-	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+Console port. implementation of an console port");
+
+	DECLARE_REFERENCE_PTR(console_runtime);
+	friend class console_endpoint;
 
   public:
-      server_console_program (console_runtime::smart_ptr client, const string_type& name, const rx_node_id& id, bool system = false);
+      console_runtime();
 
-      ~server_console_program();
+      ~console_runtime();
+
+
+      const string_type& get_console_terminal ();
+
+      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
+
+      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
+
+      static string_type get_terminal_info ();
+
+      rx_result check_validity ();
+
+      void bind_port ();
+
+      rx_protocol_stack_entry* create_stack_entry ();
 
 
   protected:
 
+      bool do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void get_prompt (string_type& prompt);
+
+      void get_wellcome (string_type& wellcome);
+
+      bool cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void get_security_error (string_type& txt, sec_error_num_t err_number);
+
+      bool do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+
   private:
 
+      void synchronized_do_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+
+      rx_directory_ptr current_directory_;
+
+
+
+      console_program_context *current_context_;
+
+      console_endpoint endpoint_;
 
       console_program program_;
 
-      rx_reference<console_runtime> console_;
 
+      string_type line_;
 
-      string_vector lines_;
+      string_type name_;
+
+      sl_runtime::sl_program_holder program_holder_;
 
 
 };

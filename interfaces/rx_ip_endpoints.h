@@ -187,7 +187,7 @@ class connection_endpoint : public rx_protocol_stack_entry
             , rx::io::tcp_socket_std_buffer(handle, addr, local_addr, rx_gate::instance().get_infrastructure().get_io_pool()->get_pool())
         {
         }
-        socket_holder_t(socket_holder_t&& right)
+        socket_holder_t(socket_holder_t&& right) noexcept
         {
             whose = right.whose;
             right.whose = nullptr;
@@ -219,7 +219,7 @@ class connection_endpoint : public rx_protocol_stack_entry
 
 
       connection_endpoint(const connection_endpoint&) = delete;
-      connection_endpoint(connection_endpoint&& right)
+      connection_endpoint(connection_endpoint&& right) noexcept
       {
           local_port_ = std::move(right.local_port_);
           remote_port_ = std::move(right.remote_port_);

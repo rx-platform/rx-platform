@@ -132,7 +132,7 @@ rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& rem
 		return 0;// return for how long
 	}
 	else
-		return next_ - current_tick;// not jet so send how mutch more to timer
+		return std::min(max_sleep_period, next_ - current_tick);// not jet so send how much more to timer
 }
 
 

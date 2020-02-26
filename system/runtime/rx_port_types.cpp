@@ -169,27 +169,13 @@ rx_port_impl_ptr physical_port::down_stack () const
     return rx_port_impl_ptr::null_ptr;
 }
 
-void physical_port::process_stack ()
+void physical_port::connect_up_stack (rx_port_impl_ptr who)
 {
-    /*rx_directory_resolver directories;
-    auto id = api::ns::rx_resolve_reference(get_instance_data().up_port, directories);
-    if (id)
-    {
-        api::rx_context ctx;
-        ctx.object = smart_this();
+    next_up_ = who;
+}
 
-        std::function<rx_result_with<rx_port_ptr>(rx_node_id)> func = [](rx_node_id id)
-        {
-            return model::platform_types_manager::instance().get_type_repository<meta::object_types::port_type>().get_runtime(id);
-
-        };
-        rx_do_with_callback<rx_result_with<rx_port_ptr>, rx_reference<port_runtime>, rx_node_id>(
-            func, RX_DOMAIN_META, [this](rx_result_with<rx_port_ptr>&& result) mutable
-            {
-                if (result)
-                    this->next_up_ = result.move_value();
-            }, smart_this(), rx_node_id(id.value()));
-    }*/
+void physical_port::connect_down_stack (rx_port_impl_ptr who)
+{
 }
 
 
@@ -301,7 +287,11 @@ rx_port_impl_ptr protocol_port::down_stack () const
     return next_down_;
 }
 
-void protocol_port::process_stack ()
+void protocol_port::connect_up_stack (rx_port_impl_ptr who)
+{
+}
+
+void protocol_port::connect_down_stack (rx_port_impl_ptr who)
 {
 }
 
@@ -414,7 +404,13 @@ rx_port_impl_ptr transport_port::down_stack () const
     return next_down_;
 }
 
-void transport_port::process_stack ()
+void transport_port::connect_up_stack (rx_port_impl_ptr who)
+{
+    next_up_ = who;
+    rx_protocol_result_t res = rx_push_stack(create_stack_entry(), who->create_stack_entry());
+}
+
+void transport_port::connect_down_stack (rx_port_impl_ptr who)
 {
 }
 

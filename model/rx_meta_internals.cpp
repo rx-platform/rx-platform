@@ -434,6 +434,7 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	rx_simple_value name_value;
 	name_value.assign_static<string_type>(string_type(meta.get_name()));
 	ctx.runtime_data.add_const_value("Name", name_value);
+	algorithms::register_runtime_relations<typeT>(ret, ctx);
 	ret->set_runtime_data(ctx.runtime_data);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)

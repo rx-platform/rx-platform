@@ -79,6 +79,10 @@ void get_gnu_host_name(std::string& name)
 	gethostname(buff, sizeof(buff));
 	name = buff;
 }
+std::string get_full_path_from_relative(const std::string& path)
+{
+	return path;
+}
 rx_result build_directories(hosting::rx_host_directories& data)
 {
 	char buff[PATH_MAX];

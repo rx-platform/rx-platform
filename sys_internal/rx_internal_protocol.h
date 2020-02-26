@@ -211,7 +211,7 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
       void data_received (const string_type& data);
 
-      rx_protocol_stack_entry* get_stack_entry ();
+      rx_protocol_stack_entry* create_stack_entry ();
 
       void data_processed (message_ptr result);
 

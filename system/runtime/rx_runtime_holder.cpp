@@ -90,7 +90,6 @@ std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<typeT>:
     if (had_good)
     {
         whose.context_.tag_updates_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
     }
     return results;
 }
@@ -113,7 +112,6 @@ rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtim
     if (ret)
     {
         whose.context_.tag_updates_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
     }
     return ret;
 }
@@ -139,7 +137,6 @@ rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_
     if (ret)
     {
         whose.context_.tag_writes_pending();
-        object_runtime_algorithms<typeT>::fire_job(whose);
     }
     return ret;
 }
@@ -170,7 +167,6 @@ void object_runtime_algorithms<object_types::port_type>::process_runtime(typenam
     whose.job_pending_ = false;
     whose.job_lock_.unlock();
     whose.context_.init_context();
-    whose.implementation_->process_stack();
     whose.process_runtime(whose.context_);
 }
 
@@ -239,7 +235,6 @@ runtime_holder<typeT>::runtime_holder()
     , state_(relations_, &context_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
-    //state_.context = &context_;
 }
 
 template <class typeT>
@@ -255,7 +250,6 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
     , state_(relations_, &context_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
-   // state_.context = &context_;
 }
 
 
@@ -358,9 +352,12 @@ bool runtime_holder<typeT>::deserialize (base_meta_reader& stream, uint8_t type)
 template <class typeT>
 rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
+    context_.init_state(&state_, [this]
+        {
+            object_runtime_algorithms<typeT>::fire_job(*this);
+        });
     ctx.structure.push_item(*item_);
     ctx.context = &context_;
-
    
     auto result = item_->initialize_runtime(ctx);
     if (result)
@@ -390,7 +387,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     }
     if (result)
     {
-        implementation_->initialize_runtime(ctx);
+        result = implementation_->initialize_runtime(ctx);
     }
     ctx.structure.pop_item();
     return result;
@@ -447,7 +444,9 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
         }
     }
     if (result)
-        implementation_->start_runtime(ctx);
+    {
+        result = implementation_->start_runtime(ctx);
+    }
     ctx.structure.pop_item();
     return result;
 }
@@ -548,6 +547,10 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
 template <class typeT>
 void runtime_holder<typeT>::set_runtime_data (meta::runtime_data_prototype& prototype)
 {
+    for (auto one : prototype.additional_relations)
+    {
+        relations_.emplace_back(one);
+    }
     item_ = std::move(create_runtime_data(prototype));
 }
 

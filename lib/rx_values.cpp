@@ -275,7 +275,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -283,15 +283,15 @@ rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 	return ret;
 }
 
-rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
-	ret.storage_ = std::move(value.get_storage());
+	ret.storage_ = value.move_storage();
 	ret.time_ = ts;
 	return ret;
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -387,7 +387,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx_value rx_value::operator + (const rx_value& right) const
+rx::values::rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -396,7 +396,7 @@ rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator - (const rx_value& right) const
+rx::values::rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -405,7 +405,7 @@ rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator * (const rx_value& right) const
+rx::values::rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = quality_;
@@ -414,7 +414,7 @@ rx_value rx_value::operator * (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator / (const rx_value& right) const
+rx::values::rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -423,7 +423,7 @@ rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator % (const rx_value& right) const
+rx::values::rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -441,9 +441,14 @@ bool rx_value::is_dead () const
 	return ((quality_ & RX_QUALITY_MASK) == RX_DEAD_QUALITY);
 }
 
+rx_value_storage&& rx_value::move_storage ()
+{
+	return std::move(storage_);
+}
+
 
 rx_value::rx_value()
-	: default_time_compare_(time_compare_skip)
+	: default_time_compare_(time_compare_type::skip)
 	, quality_(RX_DEFAULT_VALUE_QUALITY)
 	, origin_(RX_DEFUALT_ORIGIN)
 {
@@ -453,7 +458,7 @@ rx_value::rx_value()
 rx_value::rx_value(rx_value&& right) noexcept
 	: storage_(std::move(right.storage_))
 	, time_(std::move(right.time_))
-	, default_time_compare_(time_compare_skip)
+	, default_time_compare_(time_compare_type::skip)
 	, quality_(right.quality_)
 	, origin_(right.origin_)
 {
@@ -470,7 +475,7 @@ rx_value& rx_value::operator=(rx_value&& right) noexcept
 rx_value::rx_value(const rx_value &right)
 	: storage_(right.storage_)
 	, time_(right.time_)
-	, default_time_compare_(time_compare_skip)
+	, default_time_compare_(time_compare_type::skip)
 	, quality_(right.quality_)
 	, origin_(right.origin_)
 {
@@ -629,6 +634,11 @@ bool rx_simple_value::is_float () const
 {
   return storage_.is_float();
 
+}
+
+rx_value_storage&& rx_simple_value::move_storage ()
+{
+	return std::move(storage_);
 }
 
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
@@ -914,10 +924,9 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 	return true;
 }
 
-string_type rx_value_storage::to_string () const
+string_type rx_value_storage::to_string (bool simple) const
 {
-    //GCC <charconv> missing
-	//char buff[0x20];
+	char buff[0x20];
 	switch (value_type_)
 	{
 	case RX_NULL_TYPE:
@@ -925,119 +934,113 @@ string_type rx_value_storage::to_string () const
 	case RX_BOOL_TYPE:
 		return (value_.bool_value ? "true" : "false");
 	case RX_INT8_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int8_value);
 			if(ret.ec== std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "b";
+			if(!simple)
+				ret_str += "b";
 			return ret_str;
-		}*/
-		return std::to_string(value_.int8_value) + "b";
+		}
 	case RX_UINT8_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint8_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "ub";
+			if (!simple)
+				ret_str += "ub";
 			return ret_str;
-		}*/
-		return std::to_string(value_.uint8_value) + "ub";
+		}
 	case RX_INT16_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int16_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "s";
+			if (!simple)
+				ret_str += "s";
 			return ret_str;
-		}*/
-		return std::to_string(value_.int16_value) + "s";
+		}
 	case RX_UINT16_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint16_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "us";
+			if (!simple)
+				ret_str += "us";
 			return ret_str;
-		}*/
-		return std::to_string(value_.uint16_value) + "us";
+		}
 	case RX_INT32_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int32_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "i";
+			if (!simple)
+				ret_str += "i";
 			return ret_str;
-		}*/
-		return std::to_string(value_.int32_value) + "i";
+		}
 	case RX_UINT32_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint32_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "ui";
+			if (!simple)
+				ret_str += "ui";
 			return ret_str;
-		}*/
-		return std::to_string(value_.uint32_value) + "ui";
+		}
 	case RX_INT64_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int64_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "l";
+			if (!simple)
+				ret_str += "l";
 			return ret_str;
-		}*/
-		return std::to_string(value_.int64_value) + "l";
+		}
 	case RX_UINT64_TYPE:
-        //GCC <charconv> missing
-		/*{
+		{
 			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint64_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
-			ret_str += "ul";
+			if (!simple)
+				ret_str += "ul";
 			return ret_str;
-		}*/
-		return std::to_string(value_.uint64_value) + "ul";
+		}
 	case RX_FLOAT_TYPE:
-        //GCC <charconv> missing
-		/*{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.float_value);
+		{
+			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.float_value, std::chars_format::general);
 			if (ret.ec == std::errc())
-				*ret.ptr = '\0';
+				*ret.ptr = '\0';*/
+			sprintf(buff, "%g", (double)value_.float_value);
 			string_type ret_str(buff);
-			ret_str += "f";
+			if (!simple)
+				ret_str += "f";
 			return ret_str;
-		}*/
-		return std::to_string(value_.float_value) + "f";
+		}
 	case RX_DOUBLE_TYPE:
-        //GCC <charconv> missing
-		/*{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.double_value);
+		{
+			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.double_value);
 			if (ret.ec == std::errc())
-				*ret.ptr = '\0';
+				*ret.ptr = '\0';*/
+			sprintf(buff, "%g", value_.double_value);
 			string_type ret_str(buff);
-			ret_str += "d";
+			if (!simple)
+				ret_str += "d";
 			return ret_str;
-		}*/
-		return std::to_string(value_.double_value) + "d";
+		}
 	case RX_STRING_TYPE:
 		return "\""s + *value_.string_value + "\"";
+	case RX_UUID_TYPE:
+		return value_.uuid_value->to_string();
 	default:
-		return "not valid";
+		return "not valid jet";
 	}
 }
 
@@ -1738,7 +1741,7 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
@@ -1826,7 +1829,7 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1857,7 +1860,7 @@ rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1884,7 +1887,7 @@ rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1896,7 +1899,7 @@ rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storag
 			if (temp != 0)
 				result.set_from_integer(get_integer_value() / temp, ret_type);
 		}
-		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_FLOAT_TYPE)
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
 		{// floating point stuff
 			auto temp = right.get_float_value();
 			if (temp != 0)
@@ -1915,7 +1918,7 @@ rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -4147,12 +4150,12 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 {
 	switch (time_compare)
 	{
-	case time_compare_skip:
+	case time_compare_type::skip:
 		return storage_.exact_equality(right.storage_);
-	case time_compare_ms_accurate:
+	case time_compare_type::ms_accurate:
 		return storage_.exact_equality(right.storage_)
 				&& (time_.get_longlong_miliseconds() == right.time_.get_longlong_miliseconds());
-	case time_compare_exact:
+	case time_compare_type::exact:
 		return storage_.exact_equality(right.storage_)
 				&& time_ == right.time_;
 	default:
@@ -4160,7 +4163,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = value.get_storage();
@@ -4168,7 +4171,7 @@ rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_tim
 	return ret;
 }
 
-rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -4176,7 +4179,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -4221,15 +4224,20 @@ bool rx_timed_value::is_float () const
 
 }
 
+rx_value_storage&& rx_timed_value::move_storage ()
+{
+	return std::move(storage_);
+}
+
 
 rx_timed_value::rx_timed_value()
-	: default_time_compare_(time_compare_skip)
+	: default_time_compare_(time_compare_type::skip)
 {
 }
 rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
 	: storage_(std::move(right.storage_))
 	, time_(std::move(right.time_))
-	, default_time_compare_(time_compare_skip)
+	, default_time_compare_(time_compare_type::skip)
 {
 }
 
@@ -4242,7 +4250,7 @@ rx_timed_value& rx_timed_value::operator=(rx_timed_value&& right) noexcept
 rx_timed_value::rx_timed_value(const rx_timed_value &right)
 	: storage_(right.storage_)
 	, time_(right.time_)
-	, default_time_compare_(time_compare_skip)
+	, default_time_compare_(time_compare_type::skip)
 {
 }
 rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)

@@ -44,16 +44,11 @@ namespace win32 {
 
 
 
-template <class policyT>
-class win32_file_system_storage : public storage::files::file_system_storage<policyT>  
+class win32_file_system_storage : public storage::files::file_system_storage  
 {
-	DECLARE_REFERENCE_PTR(win32_file_system_storage);
+    DECLARE_REFERENCE_PTR(win32_file_system_storage);
 
   public:
-      win32_file_system_storage();
-
-      ~win32_file_system_storage();
-
 
   protected:
 
@@ -68,3 +63,4 @@ class win32_file_system_storage : public storage::files::file_system_storage<pol
 
 
 #endif
+

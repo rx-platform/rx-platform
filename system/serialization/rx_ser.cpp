@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -48,7 +48,7 @@ namespace rx_platform {
 
 namespace serialization {
 
-// Class rx_platform::serialization::json_reader 
+// Class rx_platform::serialization::json_reader
 
 json_reader::json_reader()
 {
@@ -833,7 +833,7 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 bool json_reader::read_value (const char* name, rx_simple_value& val)
 {
-	
+
 	if (!val.deserialize(name, *this))
 		return false;
 
@@ -841,7 +841,7 @@ bool json_reader::read_value (const char* name, rx_simple_value& val)
 }
 
 
-// Class rx_platform::serialization::json_writer 
+// Class rx_platform::serialization::json_writer
 
 json_writer::json_writer (int version)
 	: base_meta_writer(version)
@@ -861,7 +861,7 @@ bool json_writer::write_id (const char* name, const rx_node_id& id)
 	string_type buff;
 	id.to_string(buff);
 
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(buff);
@@ -873,7 +873,7 @@ bool json_writer::write_id (const char* name, const rx_node_id& id)
 
 bool json_writer::write_string (const char* name, const string_type& str)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(str);
@@ -885,7 +885,7 @@ bool json_writer::write_string (const char* name, const string_type& str)
 
 bool json_writer::write_bool (const char* name, bool val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(val);
@@ -897,7 +897,7 @@ bool json_writer::write_bool (const char* name, bool val)
 
 bool json_writer::write_double (const char* name, double val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(val);
@@ -912,7 +912,7 @@ bool json_writer::write_time (const char* name, const rx_time_struct_t& val)
 	rx_time tval(val);
 	string_type str = tval.get_IEC_string();
 
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(str.c_str());
@@ -928,7 +928,7 @@ bool json_writer::write_uuid (const char* name, const rx_uuid_t& val)
 	rx_uuid vval(val);
 	vval.to_string(buff);
 
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(buff);
@@ -940,7 +940,7 @@ bool json_writer::write_uuid (const char* name, const rx_uuid_t& val)
 
 bool json_writer::write_int (const char* name, int val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(val);
@@ -952,7 +952,7 @@ bool json_writer::write_int (const char* name, int val)
 
 bool json_writer::write_uint (const char* name, uint32_t val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append(val);
@@ -984,7 +984,7 @@ bool json_writer::end_array ()
 
 	stack_.pop();
 
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 
 	if (is_array)
@@ -1100,7 +1100,7 @@ bool json_writer::end_object ()
 
 	stack_.pop();
 
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 
 	if (is_array)
@@ -1113,7 +1113,7 @@ bool json_writer::end_object ()
 
 bool json_writer::write_byte (const char* name, uint8_t val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append((uint32_t)val);
@@ -1132,7 +1132,7 @@ bool json_writer::write_value (const char* name, const rx_value& val)
 
 bool json_writer::write_int64 (const char* name, int64_t val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append((double)val);
@@ -1144,7 +1144,7 @@ bool json_writer::write_int64 (const char* name, int64_t val)
 
 bool json_writer::write_uint64 (const char* name, uint64_t val)
 {
-	bool is_array;
+	bool is_array = false;
 	Json::Value& value = get_current_value(is_array);
 	if (is_array)
 		value.append((double)val);

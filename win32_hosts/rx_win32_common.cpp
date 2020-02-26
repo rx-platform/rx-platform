@@ -37,6 +37,19 @@
 namespace win32
 {
 
+string_type get_full_path_from_relative(const string_type& path)
+{
+	char buff[MAX_PATH];
+	if (GetFullPathNameA(path.c_str(), MAX_PATH, buff, NULL))
+	{
+		return buff;
+	}
+	else
+	{
+		return path;
+	}
+}
+
 rx_result build_directories(rx_host_directories& data)
 {
 	char buff[MAX_PATH];
@@ -76,12 +89,12 @@ rx_result build_directories(rx_host_directories& data)
 		}
 		else
 		{
-			return rx_result::create_from_last_os_error("Uable to read env %LocalAppData%");
+			return rx_result::create_from_last_os_error("Unable to read ENV %LocalAppData%");
 		}
 	}
 	else
 	{
-		return rx_result::create_from_last_os_error("Uable to read env %ProgramData%");
+		return rx_result::create_from_last_os_error("Unable to read ENV %ProgramData%");
 	}
 	return true;
 }

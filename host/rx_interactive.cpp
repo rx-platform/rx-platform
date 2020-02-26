@@ -94,9 +94,8 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 		});
 	if (!result)
 		HOST_LOG_WARNING("Main", 999, "Error registering standard console port constructor:"s + result.errors()[0]);
-
+	
 	interactive_port_ = rx_create_reference<interactive_console_port>(this);
-
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";
@@ -110,16 +109,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 		if (result)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-			terminal::rx_vt100::vt100_transport_port vt100_port;
-			vt100_port.bind_port();
-
-			terminal::console::console_runtime console;
-			console.bind_port();
-
-			rx_protocol_result_t res = rx_push_stack(interactive_port_->get_stack_entry(), vt100_port.get_stack_entry());
-			res = rx_push_stack(vt100_port.get_stack_entry(), console.get_stack_entry());
-
+			
 			std::cout << "Starting interactive console...";
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			result = interactive_port_->run_interactive(this);
@@ -198,7 +188,6 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 	std::ostream out(out_buffer.unsafe_ptr());
 	std::stringstream in(line);
 	std::ostream err(err_buffer.unsafe_ptr());
-
 	bool ret = false;
 
 	string_type command;
@@ -472,147 +461,6 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 }
 
 
-// Class host::interactive::interactive_console_client 
-
-
-rx_result interactive_console_client::run_interactive (configuration_data_t& config)
-{
-
-	auto result = check_validity();
-	if (!result)
-		return result;
-
-
-
-	string_type temp_script(config.management.startup_script);
-	if(!temp_script.empty())
-		temp_script += "\r\n";
-	
-	string_type temp;
-	get_wellcome(temp);
-	temp += "\r\n";
-	host_->write_stdout(temp);
-
-	temp.clear();
-	get_prompt(temp);
-	host_->write_stdout(temp);
-	
-	std::array<char, 0x100> buffer;
-
-	size_t count;
-	
-	while (!exit_ && !host_->exit())
-	{
-		if (temp_script.empty())
-		{
-			count = 0;
-			host_->read_stdin(buffer, count);
-
-			if (count == 1 && buffer[0] == 3)
-			{
-				memory::buffer_ptr out_buffer(pointers::_create_new);
-				memory::buffer_ptr err_buffer(pointers::_create_new);
-
-				//cancel_command(out_buffer, err_buffer, security_context_);
-
-				continue;
-			}
-
-			if (std::cin.fail())
-			{
-				std::cin.clear();
-				if (host_->is_canceling())
-				{
-					memory::buffer_ptr out_buffer(pointers::_create_new);
-					memory::buffer_ptr err_buffer(pointers::_create_new);
-
-					//cancel_command(out_buffer, err_buffer, security_context_);
-				}
-				if (rx_gate::instance().is_shutting_down())
-					break;
-
-				continue;
-			}
-		}
-		else
-		{
-			count = temp_script.size();
-			if (count > buffer.size())
-			{
-				memcpy(&buffer[0], temp_script.c_str(), buffer.size());
-				count = buffer.size();
-				temp_script = temp_script.substr(count);
-			}
-			else
-			{
-				memcpy(&buffer[0], temp_script.c_str(), count);
-				temp_script.clear();
-			}
-		}
-
-		if (is_postponed())
-			continue;
-
-		temp.clear();
-		string_array lines;
-		for (size_t i = 0; i < count; i++)
-		{
-
-			vt100_transport_.char_received(buffer[i], false, temp, [&lines, this](const string_type& line)
-			{
-				lines.push_back(line);
-			});
-		}
-		if (!temp.empty() && 
-			!rx_platform::rx_gate::instance().is_shutting_down())
-			host_->write_stdout(temp);
-
-		if (!lines.empty())
-		{
-
-			memory::buffer_ptr out_buffer(pointers::_create_new);
-			memory::buffer_ptr err_buffer(pointers::_create_new);
-
-			//do_commands(std::move(lines), out_buffer, err_buffer, security_context_);
-		}
-
-	}
-	//security_context_->logout();
-
-	return true;
-}
-
-void interactive_console_client::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
-{
-	if (!result)
-	{
-		if (!out_buffer->empty())
-			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
-		if (!exit_ && !host_->exit())
-		{
-			host_->write_stdout(
-				"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
-			);
-		}
-		if (!err_buffer->empty())
-			host_->write_stdout(err_buffer->pbase(), err_buffer->get_size());
-	}
-	else
-	{
-		if (!out_buffer->empty())
-			host_->write_stdout(out_buffer->pbase(), out_buffer->get_size());
-	}
-
-	if (!rx_gate::instance().is_shutting_down())
-	{
-		string_type temp;
-		get_prompt(temp);
-		host_->write_stdout(temp);
-	}
-	//rx_gate::instance().get_host()->break_host("");
-}
-
-
 // Class host::interactive::interactive_security_context 
 
 interactive_security_context::interactive_security_context()
@@ -698,11 +546,6 @@ rx_result interactive_console_port::stop_runtime (runtime::runtime_stop_context&
 	return result;
 }
 
-rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
-{
-	return &endpoint_;
-}
-
 rx_result interactive_console_port::run_interactive (interactive_console_host* host)
 {
 
@@ -713,6 +556,9 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 	security::security_auto_context dummy(sec_ctx);
 
 	host->write_stdout(RX_LICENSE_MESSAGE);
+
+
+	rx_protocol_result_t res = rx_push_stack(&endpoint_, up_stack()->create_stack_entry());
 
 	auto result = endpoint_.run_interactive([this](size_t count)
 		{
@@ -751,7 +597,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		bool result = host_->read_stdin(in_buffer, count);
 		if (!result)
 		{
-			ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading stdin, exiting!");
+			ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
 			break;
 		}
 		if (count > 0)
@@ -766,7 +612,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 				std::cout << ss.str();
 
 				ITF_LOG_ERROR("interactive_console_endpoint", 900, ss.str());
-				ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading stdin, exiting!");
+				ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
 				break;
 			}
 		}
@@ -835,4 +681,5 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 
 } // namespace interactive
 } // namespace host
+
 

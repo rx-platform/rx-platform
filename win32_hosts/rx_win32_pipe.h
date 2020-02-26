@@ -38,7 +38,6 @@
 // rx_win32_file_sys
 #include "win32_hosts/rx_win32_file_sys.h"
 
-#include "storage/rx_storage_policy.h"
 
 
 namespace win32 {
@@ -62,6 +61,8 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
       void get_host_info (string_array& hosts);
 
       static string_type get_win32_pipe_info ();
+
+      string_type get_full_path (const string_type& path);
 
 
   protected:

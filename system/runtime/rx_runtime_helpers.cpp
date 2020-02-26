@@ -72,12 +72,19 @@ bool runtime_process_context::should_repeat () const
 
 bool runtime_process_context::tag_updates_pending ()
 {
-    if (process_tag_connections_)
+    bool should_fire=false;
+    if (!process_tag_connections_)
     {
-        return false;
+        process_tag_connections_ = true;
+        should_fire = current_step_ > runtime_process_tag_connections;
     }
-	process_tag_connections_ = true;
-    return current_step_ > runtime_process_tag_connections;
+    // i know that this doesn't make sense but this is
+    // the end of some potentially larger function!
+    if (should_fire)
+    {
+        fire_callback_();
+    }
+    return should_fire;
 }
 
 rx_result runtime_process_context::init_context ()
@@ -89,10 +96,18 @@ rx_result runtime_process_context::init_context ()
 
 bool runtime_process_context::tag_writes_pending ()
 {
-    if (process_tag_writes_)
-        return false;
-    process_tag_writes_ = true;
-    return current_step_ > runtime_process_tag_writes;
+    bool should_fire = false;
+    if (!process_tag_writes_)
+    {
+        process_tag_writes_ = true;
+        should_fire = current_step_ > runtime_process_tag_writes;
+    }
+    // see above at tag_updates_pending function!
+    if (should_fire)
+    {
+        fire_callback_();
+    }
+    return should_fire;
 }
 
 bool runtime_process_context::should_process_tags ()
@@ -140,6 +155,13 @@ rx_result runtime_process_context::set_value (runtime_handle_t handle, values::r
 rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
 {
     return binded_.set_item(path, std::move(what), ctx);
+}
+
+void runtime_process_context::init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback)
+{
+    RX_ASSERT(state_ == nullptr);
+    state_ = state;
+    fire_callback_ = fire_callback;
 }
 
 

@@ -38,19 +38,7 @@
 
 namespace win32 {
 
-// Parameterized Class win32::win32_file_system_storage 
-
-template <class policyT>
-win32_file_system_storage<policyT>::win32_file_system_storage()
-{
-}
-
-
-template <class policyT>
-win32_file_system_storage<policyT>::~win32_file_system_storage()
-{
-}
-
+// Class win32::win32_file_system_storage 
 
 
 } // namespace win32

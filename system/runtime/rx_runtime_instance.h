@@ -61,7 +61,6 @@ enum class rx_domain_priority : uint8_t
     priority_count = 4
 };
 
-
 namespace runtime {
 
 namespace items {
@@ -211,6 +210,9 @@ class port_instance_data
       static rx_result after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx);
 
       static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
+
+
+      const rx_application_ptr get_my_application () const;
 
 
       rx_thread_handle_t get_executer () const

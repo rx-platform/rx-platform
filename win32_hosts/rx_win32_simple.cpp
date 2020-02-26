@@ -82,6 +82,11 @@ rx_result win32_simple_host::fill_host_directories (rx_host_directories& data)
 	return build_directories(data);
 }
 
+string_type win32_simple_host::get_full_path (const string_type& path)
+{
+    return get_full_path_from_relative(path);
+}
+
 
 } // namespace win32
 
