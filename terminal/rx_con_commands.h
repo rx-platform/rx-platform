@@ -51,6 +51,8 @@ using namespace rx_platform;
 using namespace rx_platform::ns;
 
 
+namespace rx_internal {
+
 namespace terminal {
 
 namespace console {
@@ -493,6 +495,7 @@ This is ugly code comment, type help in console for more details.");
 } // namespace console_commands
 } // namespace console
 } // namespace terminal
+} // namespace rx_internal
 
 
 

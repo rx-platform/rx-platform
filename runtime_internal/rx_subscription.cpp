@@ -35,16 +35,18 @@
 #include "runtime_internal/rx_subscription.h"
 
 #include "rx_runtime_internal.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "system/server/rx_platform_item.h"
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
 namespace subscriptions {
 
-// Class sys_runtime::subscriptions::rx_subscription 
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription 
 
 rx_subscription::rx_subscription (rx_subscription_callback* callback)
       : callback_(callback),
@@ -483,10 +485,10 @@ void rx_subscription::process_writes ()
 }
 
 
-// Class sys_runtime::subscriptions::rx_subscription_tag 
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription_tag 
 
 
-// Class sys_runtime::subscriptions::rx_subscription_callback 
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription_callback 
 
 rx_subscription_callback::~rx_subscription_callback()
 {
@@ -494,7 +496,7 @@ rx_subscription_callback::~rx_subscription_callback()
 
 
 
-// Class sys_runtime::subscriptions::runtime_connection_data 
+// Class rx_internal::sys_runtime::subscriptions::runtime_connection_data 
 
 
 rx_subscription_tag* runtime_connection_data::get_tag (runtime_handle_t handle)
@@ -630,4 +632,5 @@ bool runtime_connection_data::connection_dead ()
 
 } // namespace subscriptions
 } // namespace sys_runtime
+} // namespace rx_internal
 

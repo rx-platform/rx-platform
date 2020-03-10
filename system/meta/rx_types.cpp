@@ -62,7 +62,7 @@ event_type::event_type (const type_creation_data& data)
 
 platform_item_ptr event_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -127,7 +127,7 @@ filter_type::filter_type (const type_creation_data& data)
 
 platform_item_ptr filter_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -192,7 +192,7 @@ mapper_type::mapper_type (const type_creation_data& data)
 
 platform_item_ptr mapper_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -257,7 +257,7 @@ source_type::source_type (const type_creation_data& data)
 
 platform_item_ptr source_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -327,7 +327,7 @@ rx_result struct_type::construct (RTypePtr& what, construct_context& ctx) const
 
 platform_item_ptr struct_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -413,7 +413,7 @@ rx_result variable_type::deserialize_definition (base_meta_reader& stream, uint8
 
 platform_item_ptr variable_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 

@@ -63,4 +63,3 @@ class win32_file_system_storage : public storage::files::file_system_storage
 
 
 #endif
-

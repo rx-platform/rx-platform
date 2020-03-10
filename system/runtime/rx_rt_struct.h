@@ -205,6 +205,8 @@ class init_context
 {
 
   public:
+      init_context (const std::vector<relation_runtime_ptr>& relations, algorithms::runtime_process_context* ctx);
+
 
       const string_type& get_current_path () const
       {

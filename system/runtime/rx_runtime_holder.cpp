@@ -38,7 +38,7 @@
 #include "system/runtime/rx_runtime_holder.h"
 
 #include "api/rx_platform_api.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_obj_types.h"
 
@@ -124,7 +124,7 @@ void object_runtime_algorithms<typeT>::fire_job (typename typeT::RType& whose)
     {
         whose.job_pending_ = true;
         RX_ASSERT(whose.my_job_ptr_);
-        auto executer = rx_gate::instance().get_infrastructure().get_executer(whose.get_executer());
+        auto executer = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.get_executer());
         executer->append(whose.my_job_ptr_);
     }
 }
@@ -557,7 +557,7 @@ void runtime_holder<typeT>::set_runtime_data (meta::runtime_data_prototype& prot
 template <class typeT>
 void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
 {
-    structure::init_context ctx;
+    structure::init_context ctx(relations_, &context_);
     ctx.context = &context_;
     item_->fill_data(data, ctx);
     // now do the relations
@@ -689,7 +689,7 @@ meta::meta_data& runtime_holder<typeT>::meta_info ()
 template <class typeT>
 platform_item_ptr runtime_holder<typeT>::get_item_ptr () const
 {
-    return std::make_unique<sys_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
+    return std::make_unique<rx_internal::internal_ns::rx_item_implementation<smart_ptr> >(smart_this());
 }
 
 template <class typeT>

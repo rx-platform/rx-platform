@@ -45,8 +45,8 @@
 
 const uint32_t invalid_sequence_id = (uint32_t)(-1);
 
-rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference, protocol_endpoint* end_point,rx_packet_buffer* buffer);
-rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_protocol_result_t result);
+rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference,const protocol_endpoint* end_point,rx_packet_buffer* buffer);
+rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_protocol_result_t result);
 
 
 
@@ -71,7 +71,7 @@ rx_protocol_result_t opcua_check_header(opcua_transport_protocol_type* transport
 
 const size_t opcua_regular_headers_size = sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header) + sizeof(opcua_sequence_header);
 
-rx_protocol_result_t opcua_parse_regular_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_regular_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
 	opcua_security_simetric_header* sec_header;
@@ -95,12 +95,12 @@ rx_protocol_result_t opcua_parse_regular_message(opcua_transport_protocol_type* 
 	return result;
 }
 
-rx_protocol_result_t opcua_parse_error_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_error_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
 
-rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
 	opcua_security_simetric_header* sec_header;
@@ -197,7 +197,7 @@ rx_protocol_result_t opcua_parse_pipe_message(opcua_transport_protocol_type* tra
 }
 
 
-rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	size_t available_data;
 	rx_protocol_result_t result;
@@ -419,7 +419,7 @@ rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* t
 }
 rx_protocol_result_t opcua_bin_bytes_send(
 	struct rx_protocol_stack_entry* reference
-	, protocol_endpoint* end_point
+	,const protocol_endpoint* end_point
 	, rx_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
@@ -469,7 +469,7 @@ rx_protocol_result_t opcua_bin_bytes_send(
 }
 rx_protocol_result_t opcua_bin_bytes_sent(
 	struct rx_protocol_stack_entry* reference
-	, protocol_endpoint* end_point
+	,const protocol_endpoint* end_point
 	, rx_protocol_result_t result)
 {
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference;

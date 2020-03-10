@@ -33,26 +33,26 @@
 
 
 
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
-namespace sys_internal {
+namespace rx_internal {
 namespace rx_protocol {
 class rx_protocol_port;
 
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -75,7 +75,7 @@ class rx_json_protocol : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
 
 
@@ -256,7 +256,7 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
 
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

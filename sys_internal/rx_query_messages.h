@@ -42,7 +42,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -533,7 +533,7 @@ class get_code_info_response_message : public rx_message_base
 } // namespace query_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

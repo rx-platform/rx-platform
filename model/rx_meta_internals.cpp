@@ -39,9 +39,11 @@
 using namespace rx;
 
 
+namespace rx_internal {
+
 namespace model {
 
-// Class model::platform_types_manager 
+// Class rx_internal::model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 {
@@ -110,7 +112,7 @@ void platform_types_manager::stop ()
 }
 
 
-// Class model::relations_hash_data 
+// Class rx_internal::model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -284,7 +286,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class model::types_repository 
+// Parameterized Class rx_internal::model::types_repository 
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -706,7 +708,7 @@ rx_result types_repository<typeT>::type_exists (rx_node_id id) const
 }
 
 
-// Class model::inheritance_hash 
+// Class rx_internal::model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -875,7 +877,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class model::instance_hash 
+// Class rx_internal::model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -942,7 +944,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class model::simple_types_repository 
+// Parameterized Class rx_internal::model::simple_types_repository 
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1173,7 +1175,7 @@ rx_result simple_types_repository<typeT>::update_type (typename simple_types_rep
 }
 
 
-// Class model::types_resolver 
+// Class rx_internal::model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1221,7 +1223,7 @@ rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& dat
 }
 
 
-// Class model::relations_type_repository 
+// Class rx_internal::model::relations_type_repository 
 
 relations_type_repository::relations_type_repository()
 {
@@ -1457,16 +1459,17 @@ rx_result relations_type_repository::type_exists (rx_node_id id) const
 
 
 } // namespace model
+} // namespace rx_internal
 
 // explicit template instantiation here!!!
-template class model::types_repository<object_type>;
-template class model::types_repository<application_type>;
-template class model::types_repository<domain_type>;
-template class model::types_repository<port_type>;
+template class rx_internal::model::types_repository<object_type>;
+template class rx_internal::model::types_repository<application_type>;
+template class rx_internal::model::types_repository<domain_type>;
+template class rx_internal::model::types_repository<port_type>;
 
-template class model::simple_types_repository<struct_type>;
-template class model::simple_types_repository<variable_type>;
-template class model::simple_types_repository<mapper_type>;
-template class model::simple_types_repository<filter_type>;
-template class model::simple_types_repository<event_type>;
-template class model::simple_types_repository<source_type>;
+template class rx_internal::model::simple_types_repository<struct_type>;
+template class rx_internal::model::simple_types_repository<variable_type>;
+template class rx_internal::model::simple_types_repository<mapper_type>;
+template class rx_internal::model::simple_types_repository<filter_type>;
+template class rx_internal::model::simple_types_repository<event_type>;
+template class rx_internal::model::simple_types_repository<source_type>;

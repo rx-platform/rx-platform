@@ -59,7 +59,7 @@ using namespace rx;
 using namespace rx::values;
 using namespace rx_platform;
 
-namespace sys_internal
+namespace rx_internal
 {
 namespace internal_ns
 {
@@ -260,7 +260,7 @@ class rx_platform_directory : public rx::pointers::reference_object
       reserved_type reserved_;
 
 
-    friend class sys_internal::internal_ns::namespace_algorithms;
+    friend class rx_internal::internal_ns::namespace_algorithms;
 };
 
 

@@ -45,12 +45,14 @@ class rx_platform_host;
 
 
 #include "lib/rx_ser_lib.h"
-
+namespace rx_internal
+{
 namespace terminal
 {
 namespace commands
 {
 class server_command;
+}
 }
 }
 
@@ -90,7 +92,7 @@ namespace ns
 class rx_platform_directory;
 }
 
-typedef rx::pointers::reference<terminal::commands::server_command> server_command_base_ptr;
+typedef rx::pointers::reference<rx_internal::terminal::commands::server_command> server_command_base_ptr;
 typedef std::unique_ptr<rx_platform::ns::rx_platform_item> platform_item_ptr;
 typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
 typedef std::vector<rx_directory_ptr> platform_directories_type;

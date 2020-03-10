@@ -368,48 +368,6 @@ private:
 
 
 
-struct struct_reference 
-{
-	DECLARE_REFERENCE_PTR(struct_reference);
-
-public:
-	// nothing special here
-	struct_reference()
-		: ref_count_(1)
-	{
-	}
-	// it's not virtual!!!
-	~struct_reference() = default;
-	// reference based object no copying
-	struct_reference(const struct_reference &right) = delete;
-	struct_reference & operator=(const struct_reference &right) = delete;
-	// don't use '&&' to move object around
-	struct_reference(struct_reference &&right) = delete;
-	struct_reference & operator=(struct_reference &&right) = delete;
-
-  public:
-
-  protected:
-
-      void bind ();
-
-      void release ();
-
-
-  private:
-
-
-      std::atomic<ref_counting_type> ref_count_;
-
-
-};
-
-
-
-
-
-
-
 class reference_object 
 {
 
@@ -457,6 +415,48 @@ class reference_object
       std::atomic<ref_counting_type> ref_count_;
 
       static std::atomic<ref_counting_type> g_objects_count;
+
+
+};
+
+
+
+
+
+
+
+struct struct_reference 
+{
+	DECLARE_REFERENCE_PTR(struct_reference);
+
+public:
+	// nothing special here
+	struct_reference()
+		: ref_count_(1)
+	{
+	}
+	// it's not virtual!!!
+	~struct_reference() = default;
+	// reference based object no copying
+	struct_reference(const struct_reference &right) = delete;
+	struct_reference & operator=(const struct_reference &right) = delete;
+	// don't use '&&' to move object around
+	struct_reference(struct_reference &&right) = delete;
+	struct_reference & operator=(struct_reference &&right) = delete;
+
+  public:
+
+  protected:
+
+      void bind ();
+
+      void release ();
+
+
+  private:
+
+
+      std::atomic<ref_counting_type> ref_count_;
 
 
 };

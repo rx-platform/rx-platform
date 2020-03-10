@@ -38,7 +38,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
@@ -61,7 +61,7 @@ class namespace_algorithms
 
 
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

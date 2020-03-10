@@ -46,6 +46,8 @@ using namespace rx::values;
 using namespace rx_platform::runtime::operational;
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace subscriptions {
@@ -245,6 +247,7 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 
 } // namespace subscriptions
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

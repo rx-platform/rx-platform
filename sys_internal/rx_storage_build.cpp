@@ -38,13 +38,13 @@
 #include "model/rx_model_algorithms.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace builders {
 
 namespace storage {
 
-// Class sys_internal::builders::storage::configuration_storage_builder 
+// Class rx_internal::builders::storage::configuration_storage_builder 
 
 configuration_storage_builder::configuration_storage_builder (rx_storage_ptr storage)
       : storage_(storage)
@@ -381,7 +381,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		return "Error reading initialize values for "s + meta.get_full_path();
 }
 
-// Class sys_internal::builders::storage::directory_creator 
+// Class rx_internal::builders::storage::directory_creator 
 
 
 rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_directory_ptr from, const string_type& path)
@@ -429,5 +429,5 @@ rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_
 
 } // namespace storage
 } // namespace builders
-} // namespace sys_internal
+} // namespace rx_internal
 

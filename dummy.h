@@ -118,6 +118,31 @@ class rx_packet_buffer
 };
 
 
+
+
+
+
+class opcua_transport_protocol_type 
+{
+
+  public:
+      opcua_transport_protocol_type();
+
+      opcua_transport_protocol_type(const opcua_transport_protocol_type &right);
+
+      virtual ~opcua_transport_protocol_type();
+
+      opcua_transport_protocol_type & operator=(const opcua_transport_protocol_type &right);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 */
 
 

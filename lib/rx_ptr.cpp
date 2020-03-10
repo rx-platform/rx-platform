@@ -44,24 +44,6 @@ _create_new_type _create_new;
 // Parameterized Class rx::pointers::reference 
 
 
-// Class rx::pointers::struct_reference 
-
-
-void struct_reference::bind ()
-{
-	ref_count_++;
-}
-
-void struct_reference::release ()
-{
-	if (0 == --ref_count_)
-		delete this;
-}
-
-
-// Parameterized Class rx::pointers::basic_smart_ptr 
-
-
 // Class rx::pointers::reference_object 
 
 std::atomic<ref_counting_type> reference_object::g_objects_count;
@@ -99,6 +81,24 @@ size_t reference_object::get_objects_count ()
 void reference_object::fill_code_info (std::ostream& info, const string_type& name)
 {
 }
+
+
+// Class rx::pointers::struct_reference 
+
+
+void struct_reference::bind ()
+{
+	ref_count_++;
+}
+
+void struct_reference::release ()
+{
+	if (0 == --ref_count_)
+		delete this;
+}
+
+
+// Parameterized Class rx::pointers::basic_smart_ptr 
 
 
 } // namespace pointers

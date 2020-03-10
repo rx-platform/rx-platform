@@ -34,13 +34,13 @@
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
 
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
 #include "rx_internal_subscription.h"
 #include "rx_subscription_items.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 // serializing messages
@@ -72,7 +72,7 @@ rx_result serialize_message(base_meta_writer& stream, int requestId, messages::r
 	return true;
 }
 
-// Class sys_internal::rx_protocol::rx_protocol_port 
+// Class rx_internal::rx_protocol::rx_protocol_port 
 
 rx_protocol_port::rx_protocol_port()
       : current_directory_path_("/world")
@@ -270,7 +270,7 @@ rx_result rx_protocol_port::remove_items (const rx_uuid& id, std::vector<runtime
 }
 
 
-// Class sys_internal::rx_protocol::rx_json_protocol 
+// Class rx_internal::rx_protocol::rx_json_protocol 
 
 rx_json_protocol::rx_json_protocol()
 {
@@ -294,7 +294,7 @@ rx_json_protocol::rx_json_protocol()
 
 
 
-rx_protocol_result_t rx_json_protocol::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t rx_json_protocol::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	rx_json_protocol* self = reinterpret_cast<rx_json_protocol*>(reference);
 
@@ -340,7 +340,7 @@ rx_result rx_json_protocol::send_string (const string_type& what)
 }
 
 
-// Class sys_internal::rx_protocol::rx_protocol_subscription 
+// Class rx_internal::rx_protocol::rx_protocol_subscription 
 
 rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_reference<rx_protocol_port> port)
       : data_(data),
@@ -453,12 +453,12 @@ rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >
 }
 
 
-// Class sys_internal::rx_protocol::subscription_data 
+// Class rx_internal::rx_protocol::subscription_data 
 
 
-// Class sys_internal::rx_protocol::subscription_item_data 
+// Class rx_internal::rx_protocol::subscription_item_data 
 
 
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

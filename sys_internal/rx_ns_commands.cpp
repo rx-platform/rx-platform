@@ -36,7 +36,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
@@ -127,7 +127,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 
 }
 
-// Class sys_internal::internal_ns::namespace_commands::cd_command 
+// Class rx_internal::internal_ns::namespace_commands::cd_command 
 
 cd_command::cd_command()
 	: server_command("cd")
@@ -164,7 +164,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class sys_internal::internal_ns::namespace_commands::dir_command 
+// Class rx_internal::internal_ns::namespace_commands::dir_command 
 
 dir_command::dir_command()
 	: list_command("dir")
@@ -178,7 +178,7 @@ dir_command::~dir_command()
 
 
 
-// Class sys_internal::internal_ns::namespace_commands::ls_command 
+// Class rx_internal::internal_ns::namespace_commands::ls_command 
 
 ls_command::ls_command()
 	: list_command("ls")
@@ -233,7 +233,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class sys_internal::internal_ns::namespace_commands::list_command 
+// Class rx_internal::internal_ns::namespace_commands::list_command 
 
 list_command::list_command (const string_type& console_name)
 	: server_command(console_name)
@@ -326,7 +326,7 @@ bool list_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class sys_internal::internal_ns::namespace_commands::mkdir_command 
+// Class rx_internal::internal_ns::namespace_commands::mkdir_command 
 
 mkdir_command::mkdir_command()
 	: server_command("mkdir")
@@ -356,7 +356,7 @@ bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class sys_internal::internal_ns::namespace_commands::rmdir_command 
+// Class rx_internal::internal_ns::namespace_commands::rmdir_command 
 
 rmdir_command::rmdir_command()
 	: server_command("rmdir")
@@ -386,7 +386,7 @@ bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class sys_internal::internal_ns::namespace_commands::clone_system_command 
+// Class rx_internal::internal_ns::namespace_commands::clone_system_command 
 
 clone_system_command::clone_system_command()
 	: server_command("clone-system")
@@ -410,5 +410,5 @@ bool clone_system_command::do_console_command (std::istream& in, std::ostream& o
 
 } // namespace namespace_commands
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 

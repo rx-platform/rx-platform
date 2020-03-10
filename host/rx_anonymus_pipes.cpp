@@ -90,9 +90,6 @@ rx_result local_pipe_port::stop_runtime (runtime::runtime_stop_context& ctx)
 void local_pipe_port::receive_loop ()
 {
 
-	rx_protocol_result_t res = rx_push_stack(&pipes_, up_stack()->create_stack_entry());
-
-
 	pipes_.receive_loop([this] (size_t count)
 		{
 			update_received_counters(count);
@@ -113,6 +110,11 @@ void local_pipe_port::close ()
 {
 	pipes_.close();
 	update_connected_status(false);
+}
+
+rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
+{
+	return &pipes_;
 }
 
 
@@ -229,7 +231,7 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 	return true;
 }
 
-rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference);
 
@@ -291,5 +293,4 @@ bool local_pipe_security_context::is_system () const
 
 } // namespace pipe
 } // namespace host
-
 

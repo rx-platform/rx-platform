@@ -36,11 +36,11 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace plugins {
 
-// Class sys_internal::plugins::plugins_manager 
+// Class rx_internal::plugins::plugins_manager 
 
 plugins_manager::plugins_manager()
 {
@@ -95,7 +95,7 @@ rx_result plugins_manager::register_plugin (rx_platform::library::rx_plugin_base
 }
 
 
-// Class sys_internal::plugins::plugin_command 
+// Class rx_internal::plugins::plugin_command 
 
 plugin_command::plugin_command()
 	: terminal::commands::server_command("plugin")
@@ -135,5 +135,5 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 
 
 } // namespace plugins
-} // namespace sys_internal
+} // namespace rx_internal
 

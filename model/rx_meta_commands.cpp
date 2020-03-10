@@ -44,11 +44,13 @@ using namespace rx_platform::api;
 using namespace rx_platform::api::meta;
 
 
+namespace rx_internal {
+
 namespace model {
 
 namespace meta_commands {
 
-// Class model::meta_commands::create_command 
+// Class rx_internal::model::meta_commands::create_command 
 
 create_command::create_command()
 	: server_command("create")
@@ -562,7 +564,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
-// Class model::meta_commands::dump_types_command 
+// Class rx_internal::model::meta_commands::dump_types_command 
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -631,7 +633,7 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	}
 	return true;
 }
-// Class model::meta_commands::delete_command 
+// Class rx_internal::model::meta_commands::delete_command 
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -873,7 +875,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	ctx->set_waiting();
 	return true;
 }
-// Class model::meta_commands::rm_command 
+// Class rx_internal::model::meta_commands::rm_command 
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -882,7 +884,7 @@ rm_command::rm_command()
 
 
 
-// Class model::meta_commands::del_command 
+// Class rx_internal::model::meta_commands::del_command 
 
 del_command::del_command()
 	: delete_command("del")
@@ -891,7 +893,7 @@ del_command::del_command()
 
 
 
-// Class model::meta_commands::check_command 
+// Class rx_internal::model::meta_commands::check_command 
 
 check_command::check_command()
 	: server_command("check")
@@ -1053,7 +1055,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class model::meta_commands::prototype_command 
+// Class rx_internal::model::meta_commands::prototype_command 
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -1207,7 +1209,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
-// Class model::meta_commands::save_command 
+// Class rx_internal::model::meta_commands::save_command 
 
 save_command::save_command()
 	: server_command("save")
@@ -1271,4 +1273,5 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 
 } // namespace meta_commands
 } // namespace model
+} // namespace rx_internal
 

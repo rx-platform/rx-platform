@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_inf.cpp
+*  sys_internal\rx_inf.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -36,34 +36,34 @@
 // rx_data_source
 #include "runtime_internal/rx_data_source.h"
 // rx_inf
-#include "system/server/rx_inf.h"
+#include "sys_internal/rx_inf.h"
 
-#include "rx_server.h"
+#include "system/server/rx_server.h"
 #include "lib/rx_io.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
 namespace infrastructure {
 
-// Class rx_platform::infrastructure::server_rt 
+// Class rx_internal::infrastructure::server_runtime 
 
-server_rt::server_rt()
+server_runtime::server_runtime()
       : extern_executer_(nullptr)
 {
 }
 
 
-server_rt::~server_rt()
+server_runtime::~server_runtime()
 {
 }
 
 
 
-rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
+rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
 {
 	// register protocol constructors
 	
@@ -126,7 +126,7 @@ rx_result server_rt::initialize (hosting::rx_platform_host* host, runtime_data_t
 	return result;
 }
 
-void server_rt::deinitialize ()
+void server_runtime::deinitialize ()
 {
 	if (extern_executer_)
 		extern_executer_ = nullptr;
@@ -148,14 +148,14 @@ void server_rt::deinitialize ()
 		calculation_timer_.release();
 }
 
-void server_rt::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	rx::threads::job_thread* executer = get_executer(rx_thread_context());
 	if (general_timer_)
 		general_timer_->append_job(job,executer,period, now);
 }
 
-rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
+rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
 {
 	RX_ASSERT(general_timer_);
 	RX_ASSERT(meta_pool_);
@@ -189,7 +189,7 @@ rx_result server_rt::start (hosting::rx_platform_host* host, const runtime_data_
 	return true;
 }
 
-void server_rt::stop ()
+void server_runtime::stop ()
 {
 	if (dispatcher_timer_)
 	{
@@ -221,22 +221,22 @@ void server_rt::stop ()
 		meta_pool_->get_pool().end();
 }
 
-void server_rt::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
+void server_runtime::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
 {
 	class_name = "_Runtime";
 	has_own_code_info = true;
 }
 
-void server_rt::get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const
+void server_runtime::get_value (values::rx_value& val, const rx_time& ts, const rx_mode_type& mode) const
 {
 }
 
-namespace_item_attributes server_rt::get_attributes () const
+namespace_item_attributes server_runtime::get_attributes () const
 {
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
-void server_rt::append_job (rx::jobs::job_ptr job)
+void server_runtime::append_job (rx::jobs::job_ptr job)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
 	RX_ASSERT(executer);
@@ -244,7 +244,7 @@ void server_rt::append_job (rx::jobs::job_ptr job)
 		executer->append(job);
 }
 
-rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
+rx::threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
 {
 	uint8_t priority = RX_PRIORITY_FROM_DOMAIN(domain);
 	domain = (domain & RX_DOMAIN_TYPE_MASK);
@@ -282,7 +282,7 @@ rx::threads::job_thread* server_rt::get_executer (rx_thread_handle_t domain)
 	}
 }
 
-void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
 	if(calculation_timer_)
@@ -291,23 +291,23 @@ void server_rt::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t pe
 		general_timer_->append_job(job, executer, period, now);
 }
 
-void server_rt::append_io_job (rx::jobs::job_ptr job)
+void server_runtime::append_io_job (rx::jobs::job_ptr job)
 {
 	io_pool_->get_pool().append(job);
 }
 
-void server_rt::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
 {
 	if (general_timer_)
 		general_timer_->append_job(job, &io_pool_->get_pool(), period, now);
 }
 
-rx_time server_rt::get_created_time (values::rx_value& val) const
+rx_time server_runtime::get_created_time (values::rx_value& val) const
 {
 	return rx_gate::instance().get_started();
 }
 
-sys_runtime::data_source::data_controler* server_rt::get_data_controler (rx_thread_handle_t domain)
+rx_internal::sys_runtime::data_source::data_controler* server_runtime::get_data_controler (rx_thread_handle_t domain)
 {
 	uint8_t priority = RX_PRIORITY_FROM_DOMAIN(domain);
 	domain = (domain & RX_DOMAIN_TYPE_MASK);
@@ -334,7 +334,7 @@ sys_runtime::data_source::data_controler* server_rt::get_data_controler (rx_thre
 	return nullptr;
 }
 
-int server_rt::get_CPU (rx_thread_handle_t domain) const
+int server_runtime::get_CPU (rx_thread_handle_t domain) const
 {
 	if (domain < RX_DOMAIN_UPPER_LIMIT && workers_[0])
 	{
@@ -346,7 +346,7 @@ int server_rt::get_CPU (rx_thread_handle_t domain) const
 		return -1;
 }
 
-rx_result server_rt::initialize_runtime (runtime::runtime_init_context& ctx)
+rx_result server_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	auto result = object_runtime::initialize_runtime(ctx);
 	if (result)
@@ -358,8 +358,14 @@ rx_result server_rt::initialize_runtime (runtime::runtime_init_context& ctx)
 	return result;
 }
 
+server_runtime& server_runtime::instance ()
+{
+	static server_runtime g_object;
+	return g_object;
+}
 
-// Class rx_platform::infrastructure::server_dispatcher_object 
+
+// Class rx_internal::infrastructure::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
       : threads_count_(count)
@@ -396,7 +402,7 @@ uint16_t server_dispatcher_object::get_pool_size () const
 }
 
 
-// Class rx_platform::infrastructure::dispatcher_subscribers_job 
+// Class rx_internal::infrastructure::dispatcher_subscribers_job 
 
 dispatcher_subscribers_job::dispatcher_subscribers_job()
 {
@@ -415,7 +421,7 @@ void dispatcher_subscribers_job::process ()
 }
 
 
-// Class rx_platform::infrastructure::domains_pool 
+// Class rx_internal::infrastructure::domains_pool 
 
 domains_pool::domains_pool (uint32_t pool_size)
       : pool_size_(pool_size)
@@ -489,7 +495,7 @@ rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 	}
 }
 
-sys_runtime::data_source::data_controler* domains_pool::get_data_controler (rx_thread_handle_t domain)
+rx_internal::sys_runtime::data_source::data_controler* domains_pool::get_data_controler (rx_thread_handle_t domain)
 {
 	uint32_t size = pool_size_;
 	RX_ASSERT(size);
@@ -520,7 +526,7 @@ uint16_t domains_pool::get_pool_size () const
 }
 
 
-// Class rx_platform::infrastructure::physical_thread_object 
+// Class rx_internal::infrastructure::physical_thread_object 
 
 physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
 	: pool_(name, rx_thread_id)
@@ -548,5 +554,5 @@ rx_result physical_thread_object::initialize_runtime (runtime::runtime_init_cont
 
 
 } // namespace infrastructure
-} // namespace rx_platform
+} // namespace rx_internal
 

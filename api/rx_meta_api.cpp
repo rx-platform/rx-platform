@@ -38,7 +38,7 @@
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "sys_internal/rx_internal_ns.h"
 
 namespace rx_platform
@@ -52,7 +52,7 @@ template<class typeT>
 rx_result rx_delete_runtime(const rx_item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<typeT>::delete_runtime(
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::delete_runtime(
 		ref, ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -74,7 +74,7 @@ rx_result rx_create_runtime(
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::algorithms::runtime_model_algorithm<typeT>::create_runtime(
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime(
 		meta_info, ptr_copy, instance_data, ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -106,7 +106,7 @@ rx_result rx_update_runtime(
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::algorithms::runtime_model_algorithm<typeT>::update_runtime(
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::update_runtime(
 		meta_info, ptr_copy, instance_data, increment_version, ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -141,7 +141,7 @@ rx_result rx_create_runtime_implicit(
 	data::runtime_values_data* ptr_copy = nullptr;
 	if (init_data)// copy values to resolve lifetime
 		ptr_copy = new data::runtime_values_data(std::move(*init_data));
-	model::algorithms::runtime_model_algorithm<typeT>::create_runtime_implicit(name, type_name, attributes
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime_implicit(name, type_name, attributes
 		,ptr_copy, instance_data, ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -179,7 +179,7 @@ template<class typeT>
 rx_result rx_create_prototype(rx_platform::meta::meta_data& meta_info, typename typeT::instance_data_t instance_data
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<typeT>::create_prototype(meta_info, instance_data, ctx.safe_directory(), callback, ctx.object);
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_prototype(meta_info, instance_data, ctx.safe_directory(), callback, ctx.object);
 	return true;
 }
 template rx_result rx_create_prototype<object_type>(rx_platform::meta::meta_data& meta_info, object_type::instance_data_t instance_data
@@ -196,7 +196,7 @@ template<class typeT>
 rx_result rx_get_runtime(const rx_item_reference& ref
 	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::runtime_model_algorithm<typeT>::get_runtime(ref,
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::get_runtime(ref,
 		ctx.safe_directory(), callback, ctx.object);
 	return true;
 }
@@ -219,7 +219,7 @@ rx_result rx_create_type(const string_type& name
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::types_model_algorithm<typeT>::create_type(
+	rx_internal::model::algorithms::types_model_algorithm<typeT>::create_type(
 		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
@@ -253,7 +253,7 @@ rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_ver
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::types_model_algorithm<typeT>::update_type(
+	rx_internal::model::algorithms::types_model_algorithm<typeT>::update_type(
 		prototype, ctx.directory, increment_version, callback, ctx.object);
 	return true;
 }
@@ -279,7 +279,7 @@ rx_result rx_create_simple_type(const string_type& name
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::simple_types_model_algorithm<typeT>::create_type(
+	rx_internal::model::algorithms::simple_types_model_algorithm<typeT>::create_type(
 		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
@@ -329,7 +329,7 @@ rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increm
 	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::simple_types_model_algorithm<typeT>::update_type(
+	rx_internal::model::algorithms::simple_types_model_algorithm<typeT>::update_type(
 		prototype, ctx.directory, increment_version, callback, ctx.object);
 	return true;
 }
@@ -364,7 +364,7 @@ rx_result rx_create_relation_type(
 	, std::function<void(rx_result_with<typename relation_type::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::relation_types_algorithm::create_type(
+	rx_internal::model::algorithms::relation_types_algorithm::create_type(
 		name, base_reference, prototype, ctx.directory, attributes | namespace_item_attributes::namespace_item_full_type_access, callback, ctx.object);
 	return true;
 }
@@ -373,7 +373,7 @@ rx_result rx_update_relation_type(typename relation_type::smart_ptr prototype, b
 	, std::function<void(rx_result_with<typename relation_type::smart_ptr>&&)> callback
 	, rx_context ctx)
 {
-	model::algorithms::relation_types_algorithm::update_type(
+	rx_internal::model::algorithms::relation_types_algorithm::update_type(
 		prototype, ctx.directory, increment_version, callback, ctx.object);
 	return true;
 }
@@ -393,9 +393,9 @@ rx_result recursive_save_directory(rx_directory_ptr dir)
 	}
 	for (auto& item : items)
 	{
-		auto temp_result = model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
+		auto temp_result = rx_internal::model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
 		if (!temp_result)
-			return "Error retriveing "s + item.get_meta().get_full_path() + " from it's parnt's directory.";
+			return "Error retrieving "s + item.get_meta().get_full_path() + " from it's parent's directory.";
 		auto result = temp_result.value()->save();
 		if (!result)
 			return result;
@@ -418,9 +418,9 @@ rx_result save_item_helper(const string_type& name, rx_directory_ptr dir)
 		{
 			return name + " does not exists!";
 		}
-		auto temp_result = model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
+		auto temp_result = rx_internal::model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().get_id());
 		if (!temp_result)
-			return "Error retriveing "s + item.get_meta().get_full_path() + " from it's parnt's directory.";
+			return "Error retrieving "s + item.get_meta().get_full_path() + " from it's parnt's directory.";
 		auto result = temp_result.value()->save();
 		return result;
 	}
@@ -441,7 +441,7 @@ template<class T>
 rx_result rx_get_type(const rx_item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::types_model_algorithm<T>::get_type(ref,
+	rx_internal::model::algorithms::types_model_algorithm<T>::get_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -461,7 +461,7 @@ template<class T>
 rx_result rx_get_simple_type(const rx_item_reference& ref
 	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::simple_types_model_algorithm<T>::get_type(ref,
+	rx_internal::model::algorithms::simple_types_model_algorithm<T>::get_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -483,7 +483,7 @@ template rx_result rx_get_simple_type<mapper_type>(const rx_item_reference& ref
 rx_result rx_get_relation_type(const rx_item_reference& ref
 	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback, rx_context ctx)
 {
-	model::algorithms::relation_types_algorithm::get_type(ref,
+	rx_internal::model::algorithms::relation_types_algorithm::get_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -492,7 +492,7 @@ template<class T>
 rx_result rx_delete_type(const rx_item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::algorithms::types_model_algorithm<T>::delete_type(ref,
+	rx_internal::model::algorithms::types_model_algorithm<T>::delete_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -512,7 +512,7 @@ template<class T>
 rx_result rx_delete_simple_type(const rx_item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::algorithms::simple_types_model_algorithm<T>::delete_type(ref,
+	rx_internal::model::algorithms::simple_types_model_algorithm<T>::delete_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }
@@ -536,7 +536,7 @@ template<class T>
 rx_result rx_delete_relation_type(const rx_item_reference& ref
 	, std::function<void(rx_result&&)> callback, rx_context ctx)
 {
-	model::algorithms::relation_types_algorithm::delete_type(ref,
+	rx_internal::model::algorithms::relation_types_algorithm::delete_type(ref,
 		ctx.directory, callback, ctx.object);
 	return true;
 }

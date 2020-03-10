@@ -243,6 +243,68 @@ int dispatcher_subscriber::_internal_connect_callback (uint32_t status)
 }
 
 
+// Class rx::io::tcp4_endpoint 
+
+tcp4_endpoint::tcp4_endpoint (const protocol_endpoint* ep)
+{
+}
+
+
+
+bool tcp4_endpoint::is_valid () const
+{
+	return addr_.sin_family != AF_INET;
+}
+
+string_type tcp4_endpoint::to_string () const
+{
+	if (is_valid())
+		return get_ip4_addr_string(&addr_);
+	else
+		return "<null>";
+}
+
+rx_result tcp4_endpoint::parse (const string_type& what)
+{
+	auto idx = what.rfind(':');
+	uint16_t port = 0;
+	if (idx != string_type::npos && idx!=what.size())
+	{
+		auto result = std::from_chars(&what[idx + 1], &what[what.size()-1], port);
+		if (result.ec != std::errc())
+		{
+			std::ostringstream ss;
+			ss
+				<< "Error parsing port at char "
+				<< idx
+				<< ","
+				<< std::make_error_code(result.ec).message()
+				<< "!";
+			return ss.str();
+		}
+	}
+	sockaddr_in temp;
+	auto ret = fill_ip4_addr(what.substr(0, idx), port, &temp);
+	if (!ret)
+	{
+		std::ostringstream ss;
+		ss
+			<< "Error parsing ip address "
+			<< idx
+			<< ","
+			<< ret.errors()[0]
+			<< "!";
+		return ss.str();
+	}
+	return false;
+}
+
+const protocol_endpoint* tcp4_endpoint::to_endpoint () const
+{
+	return reinterpret_cast<const protocol_endpoint*>(&addr_);
+}
+
+
 } // namespace io
 } // namespace rx
 

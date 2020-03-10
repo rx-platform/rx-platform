@@ -35,15 +35,19 @@
 #include "system/server/rx_server.h"
 
 
+namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
 class data_controler;
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -146,6 +150,7 @@ class value_point
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

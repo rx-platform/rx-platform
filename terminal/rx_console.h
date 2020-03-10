@@ -35,15 +35,16 @@
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "interfaces/rx_endpoints.h"
 
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
+namespace rx_internal {
 namespace terminal {
 namespace console {
 class console_program_context;
@@ -51,9 +52,12 @@ class console_runtime;
 
 } // namespace console
 } // namespace terminal
+} // namespace rx_internal
 
 
 
+
+namespace rx_internal {
 
 namespace terminal {
 
@@ -81,7 +85,7 @@ class console_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
 
 
@@ -327,6 +331,7 @@ Console port. implementation of an console port");
 
 } // namespace console
 } // namespace terminal
+} // namespace rx_internal
 
 
 

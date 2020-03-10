@@ -110,7 +110,7 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 		case mapper_attribute_type:
 			return RX_CPP_MAPPER_TYPE_NAME;
 		case const_attribute_type:
-			return RX_CPP_MAPPER_TYPE_NAME;
+			return RX_CONST_VALUE_TYPE_NAME;
 		case value_attribute_type:
 			return RX_VALUE_TYPE_NAME;
 		case relation_attribute_type:

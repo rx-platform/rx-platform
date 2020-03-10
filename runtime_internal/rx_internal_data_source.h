@@ -40,6 +40,8 @@
 
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace data_source {
@@ -132,6 +134,7 @@ class internal_data_source : public data_source
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

@@ -55,6 +55,8 @@ using namespace rx_platform::meta::object_types;
 #define META_LOG_TRACE(src,lvl,msg) RX_TRACE("Meta",src,lvl,msg)
 
 
+namespace rx_internal {
+
 namespace model {
 
 namespace algorithms
@@ -687,6 +689,7 @@ class platform_types_manager
 
 
 } // namespace model
+} // namespace rx_internal
 
 
 

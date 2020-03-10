@@ -211,16 +211,6 @@ port_runtime::~port_runtime()
 
 
 
-bool port_runtime::write (buffer_ptr what)
-{
-	return false;
-}
-
-bool port_runtime::readed (buffer_ptr what, rx_thread_handle_t destination)
-{
-	return true;
-}
-
 rx_protocol_stack_entry* port_runtime::create_stack_entry ()
 {
 	RX_ASSERT(false);
@@ -255,7 +245,7 @@ rx_result port_runtime::start_runtime (runtime_start_context& ctx)
 
 rx_result port_runtime::stop_runtime (runtime_stop_context& ctx)
 {
-	return true;
+	return true; 
 }
 
 

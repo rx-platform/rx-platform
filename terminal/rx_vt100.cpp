@@ -134,11 +134,13 @@ IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 
 
 
+namespace rx_internal {
+
 namespace terminal {
 
 namespace rx_vt100 {
 
-// Class terminal::rx_vt100::vt100_transport 
+// Class rx_internal::terminal::rx_vt100::vt100_transport 
 
 vt100_transport::vt100_transport()
       : state_(parser_normal),
@@ -438,13 +440,13 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
-rx_protocol_result_t vt100_transport::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t vt100_transport::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	// just pass through
 	return rx_move_packet_down(reference, end_point, buffer);
 }
 
-rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference);
 	string_type to_echo;
@@ -618,7 +620,7 @@ bool vt100_transport::handle_telnet (const char ch, string_type& to_echo)
 }
 
 
-// Class terminal::rx_vt100::dummy_transport 
+// Class rx_internal::terminal::rx_vt100::dummy_transport 
 
 dummy_transport::dummy_transport()
 {
@@ -640,33 +642,37 @@ void dummy_transport::do_stuff ()
 }
 
 
-// Class terminal::rx_vt100::vt100_transport_port 
+// Class rx_internal::terminal::rx_vt100::vt100_transport_port 
 
 vt100_transport_port::vt100_transport_port()
 {
-	bind_port();
 }
 
 
 
 rx_protocol_stack_entry* vt100_transport_port::create_stack_entry ()
 {
-	return &endpoint_;
-}
-
-void vt100_transport_port::bind_port ()
-{
-	endpoint_.bind([this](int64_t count)
-		{
-			update_sent_counters(count);
-		},
-		[this](int64_t count)
-		{
-			update_received_counters(count);
-		});
+	if (endpoints_.empty())
+	{
+		auto transport_ptr = std::make_unique<vt100_transport>();
+		transport_ptr->bind([this](int64_t count)
+			{
+				update_sent_counters(count);
+			},
+			[this](int64_t count)
+			{
+				update_received_counters(count);
+			});
+		rx_protocol_stack_entry* entry = transport_ptr.get();
+		endpoints_.emplace(entry, std::move(transport_ptr));
+		return entry;
+	}
+	else
+		return endpoints_.begin()->first;
 }
 
 
 } // namespace rx_vt100
 } // namespace terminal
+} // namespace rx_internal
 

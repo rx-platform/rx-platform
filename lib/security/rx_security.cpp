@@ -163,7 +163,7 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 	SECURITY_LOG_INFO("manager", 900, buff);
 	locks::auto_lock dummy(&active_lock_);
 	
-	uint64_t new_id;
+	intptr_t new_id;
 	do
 	{
 		if (RX_OK == rx_crypt_gen_random(&new_id, sizeof(new_id)))

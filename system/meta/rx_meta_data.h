@@ -38,10 +38,10 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -87,6 +87,7 @@ struct runtime_item_attribute
 	rx_attribute_type type;
 	string_type name;
 	string_type full_path;
+    rx_value value;
     bool is_complex() const
     {
         return type != const_attribute_type && type != value_attribute_type;

@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
+// dummy
+#include "dummy.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -65,9 +65,9 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
 
 

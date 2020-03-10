@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_async_functions.h
+*  sys_internal\rx_async_functions.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,7 +32,11 @@
 #define rx_async_functions_h 1
 
 
-#include "rx_server.h"
+#include "system/server/rx_server.h"
+#include "sys_internal/rx_inf.h"
+#include "system/storage_base/rx_storage.h"
+
+using namespace rx_platform;
 
 
 namespace rx_platform
@@ -41,7 +45,7 @@ namespace rx_platform
 template<class refT, class Arg>
 void rx_post_result_to(rx_thread_handle_t target, std::function<void(rx_result_with<Arg>&&)> what, refT ref, rx_result_with<Arg>&& arg)
 {
-	auto et = rx_gate::instance().get_infrastructure().get_executer(target);
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(target);
 
 	et->append(rx_create_reference<jobs::result_lambda_job<Arg, refT> >(what, std::move(arg), ref));
 }
@@ -50,7 +54,7 @@ void rx_post_result_to(rx_thread_handle_t target, std::function<void(rx_result_w
 template<class refT>
 void rx_post_platform_item_to(rx_thread_handle_t target, std::function<void(platform_item_ptr&&)> what, refT ref, platform_item_ptr&& arg)
 {
-	auto et = rx_gate::instance().get_infrastructure().get_executer(target);
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(target);
 
 	et->append(rx_create_reference<jobs::result_lambda_job<platform_item_ptr, refT> >(what, std::move(arg), ref));
 }
@@ -58,7 +62,7 @@ void rx_post_platform_item_to(rx_thread_handle_t target, std::function<void(plat
 template<class refT, class... Args>
 void rx_post_function_to(rx_thread_handle_t target, std::function<void(Args...)> what, refT ref, Args... args)
 {
-	auto et = rx_gate::instance().get_infrastructure().get_executer(target);
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(target);
 
 	et->append(rx_create_reference<jobs::lambda_job<refT> >(
 		[=](refT&&) mutable
@@ -69,7 +73,7 @@ void rx_post_function_to(rx_thread_handle_t target, std::function<void(Args...)>
 template<class refT, class... Args>
 void rx_post_function(std::function<void(Args...)> what, refT ref, Args... args)
 {
-	auto et = rx_gate::instance().get_infrastructure().get_executer(rx_thread_context());
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(rx_thread_context());
 
 	et->append(rx_create_reference<jobs::lambda_job<refT> >(
 		[=](refT) mutable
@@ -80,7 +84,7 @@ void rx_post_function(std::function<void(Args...)> what, refT ref, Args... args)
 template<class refT, class... Args>
 void rx_post_delayed_function(uint32_t period, std::function<void(Args...)> what, refT ref, Args... args)
 {
-	rx_gate::instance().get_infrastructure().append_timer_job(rx_create_reference<jobs::lambda_period_job<refT> >(
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(rx_create_reference<jobs::lambda_period_job<refT> >(
 		[=](refT) mutable
 		{
 			what(args...);
@@ -90,7 +94,7 @@ void rx_post_delayed_function(uint32_t period, std::function<void(Args...)> what
 template<class refT, class... Args>
 void rx_create_periodic_function(uint32_t period, std::function<bool(Args...)> what, refT ref, Args... args)
 {
-	rx_gate::instance().get_infrastructure().append_timer_job(rx_create_reference<jobs::lambda_timer_job<refT> >(
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(rx_create_reference<jobs::lambda_timer_job<refT> >(
 		[=](refT) mutable
 		{
 			return what(args...);
@@ -100,13 +104,13 @@ template<typename argT>
 void rx_post_function(std::function<void(argT)> f, argT arg, rx_thread_handle_t whome)
 {
 	typedef jobs::lambda_job<argT, argT> lambda_t;
-	rx_gate::instance().get_infrastructure().get_executer(whome)->append(typename lambda_t::smart_ptr(f, arg));
+	rx_internal::infrastructure::server_runtime::instance().get_executer(whome)->append(typename lambda_t::smart_ptr(f, arg));
 }
 template<typename argT>
 void rx_post_delayed_function(std::function<void(argT)> f, uint32_t interval, argT arg, rx_thread_handle_t whome)
 {
 	typedef jobs::lambda_period_job<argT> lambda_t;
-	rx_gate::instance().get_infrastructure().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(typename lambda_t::smart_ptr(f, arg), interval);
 }
 template<class resultT, class... Args>
 struct rx_transaction_slot
@@ -145,7 +149,7 @@ void tracnsaction_recursive_function(rx_transaction_state<resultT, Args...>* sta
 			}
 			else
 			{
-				auto jt = rx_gate::instance().get_infrastructure().get_executer(state->ret_thread);
+				auto jt = rx_internal::infrastructure::server_runtime::instance().get_executer(state->ret_thread);
 				jt->append(
 					rx_create_reference<jobs::lambda_job<resultT, refT> >(
 						[=](resultT&& ret_val) mutable
@@ -162,7 +166,7 @@ void tracnsaction_recursive_function(rx_transaction_state<resultT, Args...>* sta
 	if (state->current < state->count)
 	{// we're not done here
 		auto next_thread = state->items[state->current].whose;
-		auto et = rx_gate::instance().get_infrastructure().get_executer(next_thread);
+		auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(next_thread);
 		et->append(
 			rx_create_reference<jobs::lambda_job<state_type*, refT> >(
 				[=](state_type* state) mutable
@@ -179,7 +183,7 @@ void tracnsaction_recursive_function(rx_transaction_state<resultT, Args...>* sta
 		}
 		else
 		{
-			auto jt = rx_gate::instance().get_infrastructure().get_executer(state->ret_thread);
+			auto jt = rx_internal::infrastructure::server_runtime::instance().get_executer(state->ret_thread);
 			jt->append(
 				rx_create_reference<jobs::lambda_job<resultT, refT> >(
 					[=](resultT&& ret_val) mutable
@@ -211,7 +215,7 @@ void rx_do_transaction_with_callback(std::vector<rx_transaction_slot<resultT, Ar
 	state->callback = callback;
 
 	auto next_thread = state->items[state->current].whose;
-	auto et = rx_gate::instance().get_infrastructure().get_executer(next_thread);
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(next_thread);
 	et->append(
 		rx_create_reference<jobs::lambda_job<state_type*, refT> >(
 			[=](state_type* state) mutable
@@ -223,7 +227,7 @@ void rx_do_transaction_with_callback(std::vector<rx_transaction_slot<resultT, Ar
 template<class resultT, class refT, class... Args>
 void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_t where, std::function<void(resultT)> callback, refT ref, Args... args)
 {
-	auto et = rx_gate::instance().get_infrastructure().get_executer(where);
+	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(where);
 	auto ret_thread = rx_thread_context();
 	if (where == ret_thread)
 	{
@@ -242,7 +246,7 @@ void rx_do_with_callback(std::function<resultT(Args...)> what, rx_thread_handle_
 				[=](decltype(ret_thread) ret_thread) mutable
 				{
 					resultT ret = what(args...);
-					auto jt = rx_gate::instance().get_infrastructure().get_executer(ret_thread);
+					auto jt = rx_internal::infrastructure::server_runtime::instance().get_executer(ret_thread);
 					jt->append(
 						rx_create_reference<jobs::lambda_job<resultT, refT> >(
 							[=](resultT&& ret_val) mutable

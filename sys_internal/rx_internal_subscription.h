@@ -40,7 +40,7 @@
 using rx_platform::runtime::operational::update_item;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -314,7 +314,7 @@ class subscription_items_change : public rx_message_base
 } // namespace subscription_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

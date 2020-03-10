@@ -39,7 +39,7 @@
 #include "system/storage_base/rx_storage.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace builders {
 
@@ -110,7 +110,7 @@ class directory_creator
 
 } // namespace storage
 } // namespace builders
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

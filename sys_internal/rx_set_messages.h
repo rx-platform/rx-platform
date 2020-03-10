@@ -38,22 +38,22 @@
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 
-namespace sys_internal {
+namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_runtime_creator_base;
 class protocol_type_creator_base;
+class protocol_runtime_creator_base;
 
 } // namespace set_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -701,7 +701,7 @@ class prototype_runtime_request : public rx_request_message
 } // namespace set_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

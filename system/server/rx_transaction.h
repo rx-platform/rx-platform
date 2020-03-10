@@ -38,7 +38,7 @@
 
 
 
-namespace rx_platform {
+namespace rx_internal {
 
 namespace infrastructure {
 
@@ -95,7 +95,7 @@ class rx_transaction
 
 
 } // namespace infrastructure
-} // namespace rx_platform
+} // namespace rx_internal
 
 
 

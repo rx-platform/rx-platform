@@ -35,9 +35,9 @@
 
 
 
-rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
-rx_protocol_result_t opcua_parse_reverse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
-rx_protocol_result_t opcua_parse_ack_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+rx_protocol_result_t opcua_parse_reverse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+rx_protocol_result_t opcua_parse_ack_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
 
 

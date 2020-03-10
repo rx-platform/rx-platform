@@ -90,6 +90,71 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
 
 
+
+class file_system_storage : public rx_platform::storage_base::rx_platform_storage  
+{
+	DECLARE_REFERENCE_PTR(file_system_storage);
+    typedef std::map<string_type, string_type> items_cache_type;
+
+  public:
+      file_system_storage();
+
+      ~file_system_storage();
+
+
+      string_type get_storage_info ();
+
+      sys_handle_t get_host_test_file (const string_type& path);
+
+      sys_handle_t get_host_console_script_file (const string_type& path);
+
+      const string_type& get_license ();
+
+      rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
+
+      void deinit_storage ();
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      string_type get_storage_reference ();
+
+      bool is_valid_storage () const;
+
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data);
+
+
+  protected:
+
+  private:
+
+      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
+
+      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path);
+
+      rx_result ensure_path_exsistence (const string_type& path);
+
+      rx_result recursive_create_directory (const string_type& path);
+
+      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base);
+
+      void add_file_path (const meta::meta_data& data, const string_type& path);
+
+
+
+      string_type root_;
+
+      locks::slim_lock cache_lock_;
+
+      items_cache_type items_cache_;
+
+
+};
+
+
+
+
+
+
 class rx_json_file : public rx_file_item  
 {
 
@@ -155,71 +220,6 @@ class rx_binary_file : public rx_file_item
       std::unique_ptr<rx_platform::serialization::std_buffer_reader> reader_;
 
       std::unique_ptr<rx_platform::serialization::std_buffer_writer> writer_;
-
-
-};
-
-
-
-
-
-
-
-class file_system_storage : public rx_platform::storage_base::rx_platform_storage  
-{
-	DECLARE_REFERENCE_PTR(file_system_storage);
-    typedef std::map<string_type, string_type> items_cache_type;
-
-  public:
-      file_system_storage();
-
-      ~file_system_storage();
-
-
-      string_type get_storage_info ();
-
-      sys_handle_t get_host_test_file (const string_type& path);
-
-      sys_handle_t get_host_console_script_file (const string_type& path);
-
-      const string_type& get_license ();
-
-      rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
-
-      void deinit_storage ();
-
-      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
-
-      string_type get_storage_reference ();
-
-      bool is_valid_storage () const;
-
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data);
-
-
-  protected:
-
-  private:
-
-      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
-
-      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path);
-
-      rx_result ensure_path_exsistence (const string_type& path);
-
-      rx_result recursive_create_directory (const string_type& path);
-
-      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base);
-
-      void add_file_path (const meta::meta_data& data, const string_type& path);
-
-
-
-      string_type root_;
-
-      locks::slim_lock cache_lock_;
-
-      items_cache_type items_cache_;
 
 
 };

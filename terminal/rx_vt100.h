@@ -33,12 +33,14 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
+// dummy
+#include "dummy.h"
 
 
+
+namespace rx_internal {
 
 namespace terminal {
 
@@ -117,9 +119,9 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool move_history_down (string_type& to_echo);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
 
       bool handle_telnet (const char ch, string_type& to_echo);
 
@@ -195,13 +197,13 @@ VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 
 	DECLARE_REFERENCE_PTR(vt100_transport_port);
 
+    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<vt100_transport> > endpoints_type;
+
   public:
       vt100_transport_port();
 
 
       rx_protocol_stack_entry* create_stack_entry ();
-
-      void bind_port ();
 
 
   protected:
@@ -209,7 +211,7 @@ VT100 terminal. implementation of telnet and VT100 transport protocol port.");
   private:
 
 
-      vt100_transport endpoint_;
+      endpoints_type endpoints_;
 
 
 };
@@ -217,6 +219,7 @@ VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 
 } // namespace rx_vt100
 } // namespace terminal
+} // namespace rx_internal
 
 
 

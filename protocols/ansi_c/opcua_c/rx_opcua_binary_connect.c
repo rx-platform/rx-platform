@@ -40,7 +40,7 @@ const size_t opcua_hello_min_size = sizeof(opcua_transport_header) + sizeof(opcu
 const size_t opcua_hello_max_size = sizeof(opcua_transport_header) + sizeof(opcua_hello_message) + 4096;
 
 
-rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
 	opcua_hello_message* message;
@@ -103,11 +103,11 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 	}
 	return result;
 }
-rx_protocol_result_t opcua_parse_reverse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_reverse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
-rx_protocol_result_t opcua_parse_ack_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_ack_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }

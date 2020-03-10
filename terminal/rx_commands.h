@@ -33,12 +33,12 @@
 
 
 
-// rx_console
-#include "terminal/rx_console.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 // adding command line parsing library
 // see <https://github.com/jarro2783/cxxopts>
@@ -48,6 +48,8 @@ using namespace rx_platform;
 using namespace rx_platform::ns;
 using namespace rx;
 
+
+namespace rx_internal {
 
 namespace terminal {
 namespace commands
@@ -223,6 +225,7 @@ acctualiy first command class good for testing.)");
 
 } // namespace commands
 } // namespace terminal
+} // namespace rx_internal
 
 
 

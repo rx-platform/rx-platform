@@ -557,9 +557,6 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 
 	host->write_stdout(RX_LICENSE_MESSAGE);
 
-
-	rx_protocol_result_t res = rx_push_stack(&endpoint_, up_stack()->create_stack_entry());
-
 	auto result = endpoint_.run_interactive([this](size_t count)
 		{
 			update_received_counters(count);
@@ -570,6 +567,11 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 	sec_ctx->logout();
 
 	return result;
+}
+
+rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
+{
+	return &endpoint_;
 }
 
 
@@ -620,7 +622,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 	return true;
 }
 
-rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference);
 
@@ -681,5 +683,4 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 
 } // namespace interactive
 } // namespace host
-
 

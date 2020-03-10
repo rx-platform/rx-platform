@@ -35,11 +35,13 @@
 #include "terminal/rx_console.h"
 
 #include "protocols/ansi_c/internal_c/rx_internal_impl.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "rx_terminal_style.h"
 #include "rx_terminal_version.h"
 #include "rx_commands.h"
 
+
+namespace rx_internal {
 
 namespace terminal {
 
@@ -72,7 +74,7 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 
 char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
 
-// Class terminal::console::console_endpoint 
+// Class rx_internal::terminal::console::console_endpoint 
 
 
 rx_result console_endpoint::open (const string_type& addr, uint16_t port)
@@ -102,7 +104,7 @@ rx_result console_endpoint::close ()
 	return true;
 }
 
-rx_protocol_result_t console_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t console_endpoint::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	console_endpoint* self = reinterpret_cast<console_endpoint*>(reference);
 	if (self->my_console_)
@@ -154,7 +156,7 @@ rx_result console_endpoint::write (runtime::io_types::rx_io_buffer& what)
 }
 
 
-// Class terminal::console::console_runtime 
+// Class rx_internal::terminal::console::console_runtime 
 
 console_runtime::console_runtime()
       : current_context_(nullptr)
@@ -482,7 +484,7 @@ rx_protocol_stack_entry* console_runtime::create_stack_entry ()
 }
 
 
-// Class terminal::console::console_program_context 
+// Class rx_internal::terminal::console::console_program_context 
 
 console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> client)
       : client_(client),
@@ -622,7 +624,7 @@ rx_thread_handle_t console_program_context::get_executer () const
 }
 
 
-// Class terminal::console::console_program 
+// Class rx_internal::terminal::console::console_program 
 
 console_program::console_program()
 {
@@ -678,4 +680,5 @@ sl_runtime::program_context* console_program::create_program_context (sl_runtime
 
 } // namespace console
 } // namespace terminal
+} // namespace rx_internal
 

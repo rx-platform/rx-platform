@@ -33,6 +33,11 @@
 
 
 
+#define RX_DOMAIN_EXTERN 0xfffb
+#define RX_DOMAIN_META 0xfffc
+#define RX_DOMAIN_SLOW 0xfffd
+#define RX_DOMAIN_IO 0xfffe
+#define RX_DOMAIN_UNASSIGNED 0xffff
 
 #include "version/rx_version.h"
 
@@ -50,15 +55,15 @@
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_inf
-#include "system/server/rx_inf.h"
 
+namespace rx_internal {
 namespace interfaces {
 namespace io_endpoints {
 class rx_io_manager;
 
 } // namespace io_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 
 
 
@@ -78,10 +83,20 @@ struct general_data_t
 {
 	string_type manuals_path;
 };
+struct runtime_data_t
+{
+    bool real_time = false;
+    int io_pool_size = -1;
+    int has_unassigned_pool = true;
+    int workers_pool_size = -1;
+    int slow_pool_size = -1;
+    bool has_calculation_timer = false;
+    threads::job_thread* extern_executer = nullptr;
+};
 
 struct configuration_data_t
 {
-	infrastructure::runtime_data_t processor;
+	runtime_data_t processor;
 	mngt::management_data_t management;
 	ns::namespace_data_t storage;
 	meta::meta_configuration_data_t meta_configuration;
@@ -127,8 +142,6 @@ class rx_gate
       bool read_log (const log::log_query_type& query, log::log_events_type& result);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      infrastructure::server_rt& get_infrastructure ();
 
 
       mngt::server_manager& get_manager ()
@@ -221,8 +234,6 @@ class rx_gate
 
 
 
-      rx_reference<infrastructure::server_rt> infrastructure_;
-
       rx_directory_ptr root_;
 
       mngt::server_manager manager_;
@@ -231,7 +242,7 @@ class rx_gate
 
       scripts_type scripts_;
 
-      std::unique_ptr<interfaces::io_endpoints::rx_io_manager> io_manager_;
+      std::unique_ptr<rx_internal::interfaces::io_endpoints::rx_io_manager> io_manager_;
 
 
       static rx_gate* g_instance;

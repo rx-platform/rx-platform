@@ -36,19 +36,30 @@
 
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
-// rx_inf
-#include "system/server/rx_inf.h"
 
+namespace rx_internal {
 namespace terminal {
 namespace commands {
 class server_command;
-
 } // namespace commands
 } // namespace terminal
+
+namespace infrastructure {
+class server_runtime;
+
+} // namespace infrastructure
+} // namespace rx_internal
 
 
 #include "lib/rx_io.h"
 #include "system/meta/rx_types.h"
+namespace rx_internal
+{
+namespace builders
+{
+class rx_platform_builder;
+}
+}
 
 
 namespace rx_platform {
@@ -112,6 +123,7 @@ struct management_data_t
 
 class server_manager 
 {
+    friend class rx_internal::builders::rx_platform_builder;
 
   public:
       server_manager();

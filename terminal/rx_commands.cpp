@@ -45,6 +45,8 @@
 #include "sys_internal/rx_internal_ns.h"
 
 
+namespace rx_internal {
+
 namespace terminal {
 
 namespace commands {
@@ -95,7 +97,7 @@ string_type parse_man_file(const string_type& data)
 }
 }
 
-// Class terminal::commands::server_command_manager 
+// Class rx_internal::terminal::commands::server_command_manager 
 
 server_command_manager::server_command_manager()
 {
@@ -134,12 +136,12 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::license_command>());
 	register_command(rx_create_reference<console::console_commands::help_command>());
 	// namespace commands
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::dir_command>());
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::ls_command>());
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::cd_command>());
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::mkdir_command>());
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::rmdir_command>());
-	register_command(rx_create_reference<sys_internal::internal_ns::namespace_commands::clone_system_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::dir_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::ls_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::cd_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::rmdir_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
 	// test command
 	register_command(rx_create_reference<testing::test_command>());
 	// meta commands
@@ -158,7 +160,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_off_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
 	// plug-ins commands
-	register_command(rx_create_reference<sys_internal::plugins::plugin_command>());
+	register_command(rx_create_reference<rx_internal::plugins::plugin_command>());
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
@@ -207,7 +209,7 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 }
 
 
-// Class terminal::commands::echo_server_command 
+// Class rx_internal::terminal::commands::echo_server_command 
 
 echo_server_command::echo_server_command()
   : server_command("echo")
@@ -236,7 +238,7 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 }
 
 
-// Class terminal::commands::server_command 
+// Class rx_internal::terminal::commands::server_command 
 
 server_command::server_command (const string_type& name)
       : time_stamp_(rx_time::now()),
@@ -302,7 +304,7 @@ bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 
 platform_item_ptr server_command::get_item_ptr () const
 {
-	return std::make_unique<sys_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
+	return std::make_unique<rx_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 string_type server_command::get_name () const
@@ -345,4 +347,5 @@ void server_command::dump_error_result (std::ostream& err, const rx_result& resu
 
 } // namespace commands
 } // namespace terminal
+} // namespace rx_internal
 

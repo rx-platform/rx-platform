@@ -82,7 +82,7 @@ rx_result port_up_relation::stop_runtime (runtime::runtime_stop_context& ctx)
 
 rx_result_with<platform_item_ptr> port_up_relation::resolve_runtime_sync (const rx_node_id& id)
 {
-    auto port_ptr = model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
+    auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
     if (!port_ptr)
     {
         return port_ptr.errors();
@@ -90,7 +90,7 @@ rx_result_with<platform_item_ptr> port_up_relation::resolve_runtime_sync (const 
     else
     {
         if (port_ptr.value()->get_instance_data().get_my_application() != from_->get_instance_data().get_my_application())
-            return "I/O stack relation ports must be in the same application";
+            return "Connected I/O ports must be in the same application.";
         auto ret = port_ptr.value()->get_item_ptr();
         to_ = port_ptr.move_value();
         return ret;

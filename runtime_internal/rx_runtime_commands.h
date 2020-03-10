@@ -36,8 +36,10 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-using terminal::console_context_ptr;
+using rx_internal::terminal::console_context_ptr;
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -233,6 +235,7 @@ command for browsing inside of object, domain, port or application");
 
 } // namespace runtime_commands
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

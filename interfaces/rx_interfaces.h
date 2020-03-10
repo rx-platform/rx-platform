@@ -39,6 +39,8 @@
 
 
 
+namespace rx_internal {
+
 namespace interfaces {
 
 namespace ip_endpoints {
@@ -100,6 +102,7 @@ class rx_ethernet_card
 
 } // namespace ip_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 
 
 

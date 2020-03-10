@@ -213,7 +213,7 @@ bool domain_instance_data::disconnect_application (rx_domain_ptr whose)
 
 rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
-    what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
+    what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
     return true;
 }
 
@@ -320,13 +320,13 @@ void application_instance_data::get_domains (api::query_result& result)
 
 rx_result application_instance_data::before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
-    what->get_instance_data().executer_ = sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
+    what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     return true;
 }
 
 rx_result application_instance_data::before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
 {
-    auto result = binded->set_item_static<int>("CPU", (int)rx_gate::instance().get_infrastructure().get_CPU(what->get_instance_data().executer_), ctx);
+    auto result = binded->set_item_static<int>("CPU", (int)rx_internal::infrastructure::server_runtime::instance().get_CPU(what->get_instance_data().executer_), ctx);
     return true;
 }
 

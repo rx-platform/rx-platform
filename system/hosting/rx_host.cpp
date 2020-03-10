@@ -49,7 +49,7 @@ namespace rx_platform {
 template<typename typeT>
 rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {
-	return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
+	return rx_internal::model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
 }
 template rx_result register_host_constructor<meta::object_types::object_type>(const rx_node_id& id, std::function<rx_object_impl_ptr()> f);
 template rx_result register_host_constructor<meta::object_types::domain_type>(const rx_node_id& id, std::function<rx_domain_impl_ptr()> f);
@@ -307,7 +307,7 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 	rx_result ret;
 	for (auto one : plugins)
 	{
-		ret = sys_internal::plugins::plugins_manager::instance().register_plugin(one);
+		ret = rx_internal::plugins::plugins_manager::instance().register_plugin(one);
 	}
 	return ret;
 }
@@ -383,13 +383,13 @@ rx_result_with<rx_storage_ptr> rx_platform_host::get_test_storage (const string_
 
 void rx_platform_host::dump_log_items (const log::log_events_type& items, std::ostream& out)
 {
-	terminal::console::console_commands::list_log_options options;
+	rx_internal::terminal::console::console_commands::list_log_options options;
 	options.list_level = false;
 	options.list_code = false;
 	options.list_library = false;
 	options.list_source = false;
 	options.list_dates = false;
-	terminal::console::console_commands::log_command::dump_log_items(items, options, out);
+	rx_internal::terminal::console::console_commands::log_command::dump_log_items(items, options, out);
 }
 
 
@@ -423,11 +423,3 @@ bool host_security_context::is_system () const
 } // namespace hosting
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return true;
-
-#endif

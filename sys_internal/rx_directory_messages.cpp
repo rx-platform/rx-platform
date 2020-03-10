@@ -37,7 +37,7 @@
 #include "sys_internal/rx_internal_protocol.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -45,7 +45,7 @@ namespace messages {
 
 namespace directory_messages {
 
-// Class sys_internal::rx_protocol::messages::directory_messages::rx_make_directory_request 
+// Class rx_internal::rx_protocol::messages::directory_messages::rx_make_directory_request 
 
 string_type rx_make_directory_request::type_name = "mkdirReq";
 
@@ -94,67 +94,7 @@ rx_message_type_t rx_make_directory_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::directory_messages::rx_make_directory_response 
-
-string_type rx_make_directory_response::type_name = "mkdirResp";
-
-rx_message_type_t rx_make_directory_response::type_id = rx_make_directory_response_id;
-
-
-rx_result rx_make_directory_response::serialize (base_meta_writer& stream) const
-{
-	return true;
-}
-
-rx_result rx_make_directory_response::deserialize (base_meta_reader& stream)
-{
-	return true;
-}
-
-const string_type& rx_make_directory_response::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_make_directory_response::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::directory_messages::rx_remove_directory_response 
-
-string_type rx_remove_directory_response::type_name = "rmdirResp";
-
-rx_message_type_t rx_remove_directory_response::type_id = rx_remove_directory_response_id;
-
-
-rx_result rx_remove_directory_response::serialize (base_meta_writer& stream) const
-{
-	return true;
-}
-
-rx_result rx_remove_directory_response::deserialize (base_meta_reader& stream)
-{
-	return true;
-}
-
-const string_type& rx_remove_directory_response::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_remove_directory_response::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::directory_messages::rx_remove_directory_request 
+// Class rx_internal::rx_protocol::messages::directory_messages::rx_remove_directory_request 
 
 string_type rx_remove_directory_request::type_name = "rmdirReq";
 
@@ -194,8 +134,68 @@ rx_message_type_t rx_remove_directory_request::get_type_id ()
 }
 
 
+// Class rx_internal::rx_protocol::messages::directory_messages::rx_make_directory_response 
+
+string_type rx_make_directory_response::type_name = "mkdirResp";
+
+rx_message_type_t rx_make_directory_response::type_id = rx_make_directory_response_id;
+
+
+rx_result rx_make_directory_response::serialize (base_meta_writer& stream) const
+{
+	return true;
+}
+
+rx_result rx_make_directory_response::deserialize (base_meta_reader& stream)
+{
+	return true;
+}
+
+const string_type& rx_make_directory_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_make_directory_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::directory_messages::rx_remove_directory_response 
+
+string_type rx_remove_directory_response::type_name = "rmdirResp";
+
+rx_message_type_t rx_remove_directory_response::type_id = rx_remove_directory_response_id;
+
+
+rx_result rx_remove_directory_response::serialize (base_meta_writer& stream) const
+{
+	return true;
+}
+
+rx_result rx_remove_directory_response::deserialize (base_meta_reader& stream)
+{
+	return true;
+}
+
+const string_type& rx_remove_directory_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_remove_directory_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
 } // namespace directory_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

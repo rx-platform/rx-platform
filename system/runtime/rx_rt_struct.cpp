@@ -1417,6 +1417,11 @@ const runtime_item* runtime_item::get_child_item (const string_type& path) const
 
 // Class rx_platform::runtime::structure::init_context 
 
+init_context::init_context (const std::vector<relation_runtime_ptr>& relations, algorithms::runtime_process_context* ctx)
+{
+}
+
+
 
 // Class rx_platform::runtime::structure::write_context 
 

@@ -38,11 +38,13 @@
 #include "model/rx_model_algorithms.h"
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace runtime_commands {
 
-// Class sys_runtime::runtime_commands::read_command 
+// Class rx_internal::sys_runtime::runtime_commands::read_command 
 
 read_command::read_command()
 	: runtime_command_base("read")
@@ -77,7 +79,7 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 }
 
 
-// Class sys_runtime::runtime_commands::pull_command 
+// Class rx_internal::sys_runtime::runtime_commands::pull_command 
 
 pull_command::pull_command()
 	: terminal::commands::server_command("pull")
@@ -99,7 +101,7 @@ bool pull_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class sys_runtime::runtime_commands::write_command 
+// Class rx_internal::sys_runtime::runtime_commands::write_command 
 
 write_command::write_command()
 	: terminal::commands::server_command("write")
@@ -182,7 +184,7 @@ bool write_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class sys_runtime::runtime_commands::turn_on_command 
+// Class rx_internal::sys_runtime::runtime_commands::turn_on_command 
 
 turn_on_command::turn_on_command()
 	: terminal::commands::server_command("turn-on")
@@ -224,7 +226,7 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class sys_runtime::runtime_commands::turn_off_command 
+// Class rx_internal::sys_runtime::runtime_commands::turn_off_command 
 
 turn_off_command::turn_off_command()
 	: terminal::commands::server_command("turn-off")
@@ -266,7 +268,7 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class sys_runtime::runtime_commands::browse_command 
+// Class rx_internal::sys_runtime::runtime_commands::browse_command 
 
 browse_command::browse_command()
 	: runtime_command_base("brw")
@@ -310,7 +312,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 }
 
 
-// Class sys_runtime::runtime_commands::runtime_command_base 
+// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base 
 
 runtime_command_base::runtime_command_base (const string_type& name)
 	: server_command(name)
@@ -382,4 +384,5 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 
 } // namespace runtime_commands
 } // namespace sys_runtime
+} // namespace rx_internal
 

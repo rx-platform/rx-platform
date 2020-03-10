@@ -40,11 +40,13 @@
 using namespace rx_platform::runtime;
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace relations_runtime {
 
-// Class sys_runtime::relations_runtime::local_relation_connector 
+// Class rx_internal::sys_runtime::relations_runtime::local_relation_connector 
 
 local_relation_connector::local_relation_connector (platform_item_ptr&& item)
       : item_ptr_(std::move(item))
@@ -82,7 +84,7 @@ rx_result local_relation_connector::browse (const string_type& prefix, const str
 }
 
 
-// Class sys_runtime::relations_runtime::remote_relation_connector 
+// Class rx_internal::sys_runtime::relations_runtime::remote_relation_connector 
 
 
 rx_result remote_relation_connector::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
@@ -113,4 +115,5 @@ rx_result remote_relation_connector::browse (const string_type& prefix, const st
 
 } // namespace relations_runtime
 } // namespace sys_runtime
+} // namespace rx_internal
 

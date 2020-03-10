@@ -36,13 +36,13 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
-// Class sys_internal::internal_ns::namespace_algorithms 
+// Class rx_internal::internal_ns::namespace_algorithms 
 
 
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 

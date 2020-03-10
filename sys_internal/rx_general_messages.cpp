@@ -38,7 +38,7 @@
 #include "system//server/rx_server.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -46,48 +46,7 @@ namespace messages {
 
 namespace general_messages {
 
-// Class sys_internal::rx_protocol::messages::general_messages::rx_system_info_request 
-
-string_type rx_system_info_request::type_name = "infoReq";
-
-rx_message_type_t rx_system_info_request::type_id = rx_info_request_id;
-
-
-rx_result rx_system_info_request::serialize (base_meta_writer& stream) const
-{
-    return true;
-}
-
-rx_result rx_system_info_request::deserialize (base_meta_reader& stream)
-{
-    return true;
-}
-
-message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
-{
-    auto response = std::make_unique<rx_system_info_response>();
-    response->request_id = request_id;
-    response->platform = rx_gate::instance().get_rx_version();
-    response->library = rx_gate::instance().get_lib_version();
-    response->os_itf = rx_gate::instance().get_hal_version();
-    response->os = rx_gate::instance().get_os_info();
-    return response;
-}
-
-const string_type& rx_system_info_request::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_system_info_request::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::general_messages::rx_system_info_response 
+// Class rx_internal::rx_protocol::messages::general_messages::rx_system_info_response 
 
 string_type rx_system_info_response::type_name = "infoResp";
 
@@ -149,8 +108,49 @@ rx_message_type_t rx_system_info_response::get_type_id ()
 }
 
 
+// Class rx_internal::rx_protocol::messages::general_messages::rx_system_info_request 
+
+string_type rx_system_info_request::type_name = "infoReq";
+
+rx_message_type_t rx_system_info_request::type_id = rx_info_request_id;
+
+
+rx_result rx_system_info_request::serialize (base_meta_writer& stream) const
+{
+    return true;
+}
+
+rx_result rx_system_info_request::deserialize (base_meta_reader& stream)
+{
+    return true;
+}
+
+message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+    auto response = std::make_unique<rx_system_info_response>();
+    response->request_id = request_id;
+    response->platform = rx_gate::instance().get_rx_version();
+    response->library = rx_gate::instance().get_lib_version();
+    response->os_itf = rx_gate::instance().get_hal_version();
+    response->os = rx_gate::instance().get_os_info();
+    return response;
+}
+
+const string_type& rx_system_info_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_system_info_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
 } // namespace general_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

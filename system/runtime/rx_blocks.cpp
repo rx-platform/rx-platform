@@ -226,43 +226,6 @@ rx_result struct_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 }
 
 
-// Class rx_platform::runtime::blocks::event_runtime 
-
-string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
-
-event_runtime::event_runtime()
-{
-}
-
-
-
-string_type event_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_result event_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
-{
-	return true;
-}
-
-rx_result event_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-rx_result event_runtime::start_runtime (runtime::runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-	return true;
-}
-
-
 // Class rx_platform::runtime::blocks::variable_runtime 
 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
@@ -304,6 +267,43 @@ rx_result variable_runtime::start_runtime (runtime::runtime_start_context& ctx)
 }
 
 rx_result variable_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
+
+// Class rx_platform::runtime::blocks::event_runtime 
+
+string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
+
+event_runtime::event_runtime()
+{
+}
+
+
+
+string_type event_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_result event_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result event_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
 	return true;
 }

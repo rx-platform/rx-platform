@@ -36,13 +36,13 @@
 
 
 
-namespace rx_platform {
+namespace rx_internal {
 
 namespace infrastructure {
 
-// Parameterized Class rx_platform::infrastructure::rx_transaction 
+// Parameterized Class rx_internal::infrastructure::rx_transaction 
 
 
 } // namespace infrastructure
-} // namespace rx_platform
+} // namespace rx_internal
 

@@ -34,7 +34,7 @@
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
 
@@ -171,11 +171,23 @@ rx_port_impl_ptr physical_port::down_stack () const
 
 void physical_port::connect_up_stack (rx_port_impl_ptr who)
 {
-    next_up_ = who;
+    if (who != next_up_)
+    {
+        next_up_ = who;
+        structure_changed();
+    }
 }
 
 void physical_port::connect_down_stack (rx_port_impl_ptr who)
 {
+}
+
+void physical_port::structure_changed ()
+{
+    auto up = up_stack();
+    auto my_entry = get_stack_entry();
+    if (up && my_entry)
+        rx_protocol_result_t res = rx_push_stack(my_entry, up->create_stack_entry());
 }
 
 
@@ -295,6 +307,13 @@ void protocol_port::connect_down_stack (rx_port_impl_ptr who)
 {
 }
 
+void protocol_port::structure_changed ()
+{
+    auto up = up_stack();
+    if (up)
+        rx_protocol_result_t res = rx_push_stack(create_stack_entry(), up->create_stack_entry());
+}
+
 
 // Class rx_platform::runtime::io_types::transport_port 
 
@@ -406,12 +425,22 @@ rx_port_impl_ptr transport_port::down_stack () const
 
 void transport_port::connect_up_stack (rx_port_impl_ptr who)
 {
-    next_up_ = who;
-    rx_protocol_result_t res = rx_push_stack(create_stack_entry(), who->create_stack_entry());
+    if (who != next_up_)
+    {
+        next_up_ = who;
+        structure_changed();
+    }
 }
 
 void transport_port::connect_down_stack (rx_port_impl_ptr who)
 {
+}
+
+void transport_port::structure_changed ()
+{
+    auto up = up_stack();
+    if (up)
+        rx_protocol_result_t res = rx_push_stack(create_stack_entry(), up->create_stack_entry());
 }
 
 

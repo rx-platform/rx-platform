@@ -40,14 +40,16 @@
 #include "system/runtime/rx_blocks.h"
 #include "model/rx_meta_internals.h"
 #include "rx_ip_endpoints.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 
+
+namespace rx_internal {
 
 namespace interfaces {
 
 namespace io_endpoints {
 
-// Class interfaces::io_endpoints::rx_io_manager 
+// Class rx_internal::interfaces::io_endpoints::rx_io_manager 
 
 rx_io_manager::rx_io_manager()
 {
@@ -99,7 +101,7 @@ void rx_io_manager::stop ()
 }
 
 
-// Class interfaces::io_endpoints::rx_io_endpoint 
+// Class rx_internal::interfaces::io_endpoints::rx_io_endpoint 
 
 rx_io_endpoint::rx_io_endpoint()
 {
@@ -114,4 +116,5 @@ rx_io_endpoint::~rx_io_endpoint()
 
 } // namespace io_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 

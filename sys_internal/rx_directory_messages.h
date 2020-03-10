@@ -38,7 +38,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -51,6 +51,41 @@ namespace directory_messages {
 
 
 class rx_make_directory_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type path;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_remove_directory_request : public rx_request_message  
 {
 
   public:
@@ -143,45 +178,10 @@ class rx_remove_directory_response : public rx_message_base
 };
 
 
-
-
-
-
-class rx_remove_directory_request : public rx_request_message  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type path;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
 } // namespace directory_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

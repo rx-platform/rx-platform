@@ -34,14 +34,14 @@
 
 #include "rx_runtime_helpers.h"
 
-// rx_obj_types
-#include "system/meta/rx_obj_types.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_runtime_instance
 #include "system/runtime/rx_runtime_instance.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
+// rx_obj_types
+#include "system/meta/rx_obj_types.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {

@@ -44,12 +44,12 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -57,6 +57,8 @@
 using namespace rx_platform;
 using namespace rx_platform::runtime;
 
+
+namespace rx_internal {
 
 namespace interfaces {
 
@@ -156,7 +158,7 @@ class rx_io_address
 };
 
 
-// Parameterized Class interfaces::io_endpoints::rx_io_address 
+// Parameterized Class rx_internal::interfaces::io_endpoints::rx_io_address 
 
 template <typename defT>
 rx_io_address<defT>::rx_io_address()
@@ -186,6 +188,7 @@ const protocol_endpoint* rx_io_address<defT>::get_endpoint () const
 
 } // namespace io_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 
 
 

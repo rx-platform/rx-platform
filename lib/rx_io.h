@@ -32,6 +32,7 @@
 #define rx_io_h 1
 
 
+#include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
 // rx_ptr
 #include "lib/rx_ptr.h"
@@ -153,6 +154,7 @@ class full_duplex_comm : public dispatcher_subscriber
 public:
 
 	typedef typename buffT::smart_ptr buffer_ptr;
+    typedef buffT buffer_t;
 
 protected:
 	typedef std::function<bool(const void*, size_t, rx_thread_handle_t)> readed_function_t;
@@ -473,6 +475,37 @@ class udp_socket : public full_duplex_comm<buffT>
 
 
 typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
+
+
+
+
+
+
+class tcp4_endpoint 
+{
+
+  public:
+      tcp4_endpoint (const protocol_endpoint* ep);
+
+
+      bool is_valid () const;
+
+      string_type to_string () const;
+
+      rx_result parse (const string_type& what);
+
+      const protocol_endpoint* to_endpoint () const;
+
+
+  protected:
+
+  private:
+
+
+      sockaddr_in addr_;
+
+
+};
 
 
 // Parameterized Class rx::io::full_duplex_comm 

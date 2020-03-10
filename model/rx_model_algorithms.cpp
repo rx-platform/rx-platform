@@ -35,11 +35,13 @@
 #include "model/rx_model_algorithms.h"
 
 #include "runtime_internal/rx_runtime_internal.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "lib/rx_lib.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "system/runtime/rx_io_relations.h"
 
+
+namespace rx_internal {
 
 namespace model {
 
@@ -969,7 +971,7 @@ rx_result register_runtime_relations<application_type>(typename application_type
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class model::algorithms::types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::types_model_algorithm
 
 
 template <class typeT>
@@ -1102,7 +1104,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 }
 
 
-// Parameterized Class model::algorithms::simple_types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm
 
 
 template <class typeT>
@@ -1235,7 +1237,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 }
 
 
-// Parameterized Class model::algorithms::runtime_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm
 
 
 template <class typeT>
@@ -1247,7 +1249,7 @@ void runtime_model_algorithm<typeT>::delete_runtime (const rx_item_reference& it
 			auto res = delete_runtime_sync(item_reference, dir, result_target, callback, ref);
 			if (!res)
 			{
-				auto jt = rx_gate::instance().get_infrastructure().get_executer(result_target);
+				auto jt = rx_internal::infrastructure::server_runtime::instance().get_executer(result_target);
 				jt->append(
 					rx_create_reference<jobs::lambda_job<rx_result, rx_reference_ptr> >(
 						[=](rx_result&& ret_val) mutable
@@ -1540,7 +1542,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 
-// Class model::algorithms::relation_types_algorithm
+// Class rx_internal::model::algorithms::relation_types_algorithm
 
 
 void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref)
@@ -1665,4 +1667,5 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync
 
 } // namespace algorithms
 } // namespace model
+} // namespace rx_internal
 

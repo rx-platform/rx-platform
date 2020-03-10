@@ -47,6 +47,8 @@ class test_case;
 
 } // namespace testing
 
+using namespace rx_internal;
+
 
 using namespace rx;
 
@@ -67,7 +69,7 @@ typedef uint_fast8_t test_status_t;
 
 
 
-class test_command : public terminal::commands::server_command  
+class test_command : public rx_internal::terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(test_command);
 	DECLARE_CONSOLE_CODE_INFO(0,1,0, "\
@@ -110,7 +112,7 @@ struct test_context_data
 
 
 
-class test_program_context : public terminal::console::console_program_context  
+class test_program_context : public rx_internal::terminal::console::console_program_context  
 {
   public:
 	typedef test_program_context* smart_ptr;

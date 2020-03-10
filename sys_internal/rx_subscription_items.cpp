@@ -38,7 +38,7 @@
 #include "system/serialization/rx_ser.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -46,7 +46,7 @@ namespace messages {
 
 namespace items_messages {
 
-// Class sys_internal::rx_protocol::messages::items_messages::add_items_request 
+// Class rx_internal::rx_protocol::messages::items_messages::add_items_request 
 
 string_type add_items_request::type_name = "addItemsReq";
 
@@ -150,7 +150,7 @@ rx_message_type_t add_items_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::remove_items_request 
+// Class rx_internal::rx_protocol::messages::items_messages::remove_items_request 
 
 string_type remove_items_request::type_name = "removeItemsReq";
 
@@ -211,7 +211,7 @@ rx_message_type_t remove_items_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::execute_item_request 
+// Class rx_internal::rx_protocol::messages::items_messages::execute_item_request 
 
 string_type execute_item_request::type_name = "execItemReq";
 
@@ -252,7 +252,7 @@ rx_message_type_t execute_item_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::add_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::add_items_response 
 
 string_type add_items_response::type_name = "addItemsResp";
 
@@ -322,7 +322,7 @@ rx_result add_items_response::deserialize (base_meta_reader& stream)
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::remove_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::remove_items_response 
 
 string_type remove_items_response::type_name = "removeItemsResp";
 
@@ -342,7 +342,7 @@ rx_message_type_t remove_items_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::write_items_request 
+// Class rx_internal::rx_protocol::messages::items_messages::write_items_request 
 
 string_type write_items_request::type_name = "writeItemsReq";
 
@@ -439,7 +439,7 @@ rx_message_type_t write_items_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::write_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::write_items_response 
 
 string_type write_items_response::type_name = "writeItemsResp";
 
@@ -459,7 +459,7 @@ rx_message_type_t write_items_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::execute_item_response 
+// Class rx_internal::rx_protocol::messages::items_messages::execute_item_response 
 
 string_type execute_item_response::type_name = "execItemResp";
 
@@ -495,7 +495,7 @@ rx_message_type_t execute_item_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::modify_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::modify_items_response 
 
 string_type modify_items_response::type_name = "modifyItemsResp";
 
@@ -515,7 +515,7 @@ rx_message_type_t modify_items_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::modify_items_request 
+// Class rx_internal::rx_protocol::messages::items_messages::modify_items_request 
 
 string_type modify_items_request::type_name = "modifyItemsReq";
 
@@ -556,7 +556,7 @@ rx_message_type_t modify_items_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::read_items_request 
+// Class rx_internal::rx_protocol::messages::items_messages::read_items_request 
 
 string_type read_items_request::type_name = "readItemsReq";
 
@@ -597,7 +597,7 @@ rx_message_type_t read_items_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::read_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::read_items_response 
 
 string_type read_items_response::type_name = "readItemsResp";
 
@@ -617,7 +617,7 @@ rx_message_type_t read_items_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::subscription_items_response 
+// Class rx_internal::rx_protocol::messages::items_messages::subscription_items_response 
 
 
 rx_result subscription_items_response::serialize (base_meta_writer& stream) const
@@ -671,7 +671,7 @@ rx_result subscription_items_response::deserialize (base_meta_reader& stream)
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::add_item_data 
+// Class rx_internal::rx_protocol::messages::items_messages::add_item_data 
 
 
 rx_result add_item_data::serialize (base_meta_writer& stream) const
@@ -705,10 +705,10 @@ rx_result add_item_data::deserialize (base_meta_reader& stream)
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::modify_item_data 
+// Class rx_internal::rx_protocol::messages::items_messages::modify_item_data 
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::add_item_result_data 
+// Class rx_internal::rx_protocol::messages::items_messages::add_item_result_data 
 
 add_item_result_data::add_item_result_data (rx_result_with<runtime_handle_t>&& result)
 {
@@ -758,7 +758,7 @@ rx_result add_item_result_data::deserialize (base_meta_reader& stream)
 }
 
 
-// Class sys_internal::rx_protocol::messages::items_messages::item_result_data 
+// Class rx_internal::rx_protocol::messages::items_messages::item_result_data 
 
 item_result_data::item_result_data (rx_result&& result)
 {
@@ -805,5 +805,5 @@ rx_result item_result_data::deserialize (base_meta_reader& stream)
 } // namespace items_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

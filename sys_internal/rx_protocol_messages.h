@@ -34,19 +34,19 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 namespace rx_protocol {
 class rx_protocol_port;
 
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 #include "api/rx_namespace_api.h"
 using namespace rx;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 namespace messages
@@ -263,47 +263,6 @@ class error_message : public rx_message_base
 
 
 
-class rx_connection_context_response : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-      string_type directory;
-
-      string_type application;
-
-      string_type domain;
-
-      rx_node_id application_id;
-
-      rx_node_id domain_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class rx_request_message : public rx_message_base  
 {
@@ -378,9 +337,50 @@ class rx_connection_context_request : public rx_request_message
 };
 
 
+
+
+
+
+class rx_connection_context_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      string_type directory;
+
+      string_type application;
+
+      string_type domain;
+
+      rx_node_id application_id;
+
+      rx_node_id domain_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

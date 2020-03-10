@@ -51,13 +51,36 @@
 using namespace rx_platform;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
 namespace messages {
 
-// Class sys_internal::rx_protocol::messages::error_message 
+// Class rx_internal::rx_protocol::messages::rx_message_base 
+
+rx_message_base::rx_message_base()
+{
+}
+
+
+rx_message_base::~rx_message_base()
+{
+}
+
+
+
+rx_result rx_message_base::init_messages ()
+{
+	auto result = rx_request_message::init_request_messages();
+	if (!result)
+		return result;
+
+	return result;
+}
+
+
+// Class rx_internal::rx_protocol::messages::error_message 
 
 string_type error_message::type_name = "error";
 
@@ -95,139 +118,7 @@ rx_message_type_t error_message::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::rx_connection_context_request 
-
-string_type rx_connection_context_request::type_name = "connCtxReq";
-
-rx_message_type_t rx_connection_context_request::type_id = rx_connection_context_request_id;
-
-
-rx_result rx_connection_context_request::serialize (base_meta_writer& stream) const
-{
-	if (!stream.write_string("dir", directory))
-		return "Error writing directory";
-	if (!stream.write_string("app", application))
-		return "Error writing application";
-	if (!stream.write_string("domain", domain))
-		return "Error writing domain";
-	return true;
-}
-
-rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
-{
-	if (!stream.read_string("dir", directory))
-		return "Error reading directory";
-	if (!stream.read_string("app", application))
-		return "Error reading application";
-	if (!stream.read_string("domain", domain))
-		return "Error reading domain";
-	return true;
-}
-
-message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
-{
-	auto request_id = this->request_id;
-	if (!directory.empty())
-	{
-		auto result = port->set_current_directory(directory);
-		if (!result)
-		{
-			auto ret_value = std::make_unique<error_message>(result, 13, request_id);
-			return ret_value;
-		}
-	}
-	auto response = std::make_unique<rx_connection_context_response>();
-	response->directory = port->get_current_directory_path();
-	return response;
-}
-
-const string_type& rx_connection_context_request::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_connection_context_request::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::rx_connection_context_response 
-
-string_type rx_connection_context_response::type_name = "connCtxResp";
-
-rx_message_type_t rx_connection_context_response::type_id = rx_connection_context_response_id;
-
-
-rx_result rx_connection_context_response::serialize (base_meta_writer& stream) const
-{
-	if (!stream.write_string("dir", directory))
-		return "Error writing directory";
-	if (!stream.write_string("app", application))
-		return "Error writing application";
-	if (!stream.write_string("domain", domain))
-		return "Error writing domain";
-	if (!stream.write_id("appid", application_id))
-		return "Error writing application id";
-	if (!stream.write_id("domainid", domain_id))
-		return "Error writing domain id";
-	return true;
-}
-
-rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
-{
-	if (!stream.read_string("dir", directory))
-		return "Error reading directory";
-	if (!stream.read_string("app", application))
-		return "Error reading application";
-	if (!stream.read_string("domain", domain))
-		return "Error reading domain";
-	if (!stream.read_id("appid", application_id))
-		return "Error reading application";
-	if (!stream.read_id("domainid", domain_id))
-		return "Error reading domain id";
-	return true;
-}
-
-const string_type& rx_connection_context_response::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t rx_connection_context_response::get_type_id ()
-{
-  return type_id;
-
-}
-
-
-// Class sys_internal::rx_protocol::messages::rx_message_base 
-
-rx_message_base::rx_message_base()
-{
-}
-
-
-rx_message_base::~rx_message_base()
-{
-}
-
-
-
-rx_result rx_message_base::init_messages ()
-{
-	auto result = rx_request_message::init_request_messages();
-	if (!result)
-		return result;
-
-	return result;
-}
-
-
-// Class sys_internal::rx_protocol::messages::rx_request_message 
+// Class rx_internal::rx_protocol::messages::rx_request_message 
 
 rx_request_message::registered_string_messages_type rx_request_message::registered_string_messages_;
 
@@ -357,7 +248,116 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_message (
 }
 
 
+// Class rx_internal::rx_protocol::messages::rx_connection_context_request 
+
+string_type rx_connection_context_request::type_name = "connCtxReq";
+
+rx_message_type_t rx_connection_context_request::type_id = rx_connection_context_request_id;
+
+
+rx_result rx_connection_context_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("dir", directory))
+		return "Error writing directory";
+	if (!stream.write_string("app", application))
+		return "Error writing application";
+	if (!stream.write_string("domain", domain))
+		return "Error writing domain";
+	return true;
+}
+
+rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("dir", directory))
+		return "Error reading directory";
+	if (!stream.read_string("app", application))
+		return "Error reading application";
+	if (!stream.read_string("domain", domain))
+		return "Error reading domain";
+	return true;
+}
+
+message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+{
+	auto request_id = this->request_id;
+	if (!directory.empty())
+	{
+		auto result = port->set_current_directory(directory);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+			return ret_value;
+		}
+	}
+	auto response = std::make_unique<rx_connection_context_response>();
+	response->directory = port->get_current_directory_path();
+	return response;
+}
+
+const string_type& rx_connection_context_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_connection_context_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::rx_connection_context_response 
+
+string_type rx_connection_context_response::type_name = "connCtxResp";
+
+rx_message_type_t rx_connection_context_response::type_id = rx_connection_context_response_id;
+
+
+rx_result rx_connection_context_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("dir", directory))
+		return "Error writing directory";
+	if (!stream.write_string("app", application))
+		return "Error writing application";
+	if (!stream.write_string("domain", domain))
+		return "Error writing domain";
+	if (!stream.write_id("appid", application_id))
+		return "Error writing application id";
+	if (!stream.write_id("domainid", domain_id))
+		return "Error writing domain id";
+	return true;
+}
+
+rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("dir", directory))
+		return "Error reading directory";
+	if (!stream.read_string("app", application))
+		return "Error reading application";
+	if (!stream.read_string("domain", domain))
+		return "Error reading domain";
+	if (!stream.read_id("appid", application_id))
+		return "Error reading application";
+	if (!stream.read_id("domainid", domain_id))
+		return "Error reading domain id";
+	return true;
+}
+
+const string_type& rx_connection_context_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_connection_context_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

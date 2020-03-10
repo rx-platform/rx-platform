@@ -36,10 +36,10 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-using terminal::console_context_ptr;
+using rx_internal::terminal::console_context_ptr;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
@@ -247,7 +247,7 @@ command for cloning system types and objects of this rx-platform instance\r\n\
 
 } // namespace namespace_commands
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

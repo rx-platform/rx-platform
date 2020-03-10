@@ -32,13 +32,15 @@
 #define rx_model_algorithms_h 1
 
 
-#include "system/server/rx_async_functions.h"
 
 // rx_meta_internals
 #include "model/rx_meta_internals.h"
 
 #include "system/server/rx_platform_item.h"
+#include "sys_internal/rx_async_functions.h"
 
+
+namespace rx_internal {
 
 namespace model {
 
@@ -328,6 +330,7 @@ class relation_types_algorithm
 
 } // namespace algorithms
 } // namespace model
+} // namespace rx_internal
 
 
 

@@ -48,10 +48,10 @@
 
 
 #include "sys_internal/rx_internal_ns.h"
-using namespace sys_internal::internal_ns;
+using namespace rx_internal::internal_ns;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace builders {
 
@@ -69,7 +69,7 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, sys_internal::internal_ns::platform_root::smart_ptr root);
+      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root);
 
       virtual rx_result do_build (rx_directory_ptr root) = 0;
 
@@ -253,7 +253,7 @@ class relation_types_builder : public rx_platform_builder
 
 
 } // namespace builders
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

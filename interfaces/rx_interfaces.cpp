@@ -36,11 +36,13 @@
 
 
 
+namespace rx_internal {
+
 namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class interfaces::ip_endpoints::rx_ethernet_card 
+// Class rx_internal::interfaces::ip_endpoints::rx_ethernet_card 
 
 rx_ethernet_card::rx_ethernet_card()
 {
@@ -68,7 +70,7 @@ rx_ethernet_card & rx_ethernet_card::operator=(rx_ethernet_card &&right)
 	assert(false);
 	return *this;
 }
-// Class interfaces::ip_endpoints::rx_ip_address 
+// Class rx_internal::interfaces::ip_endpoints::rx_ip_address 
 
 rx_ip_address::rx_ip_address()
 {
@@ -100,4 +102,5 @@ rx_ip_address & rx_ip_address::operator=(rx_ip_address &&right)
 }
 } // namespace ip_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 

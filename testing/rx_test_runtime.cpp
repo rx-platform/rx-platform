@@ -40,7 +40,7 @@
 #include "lib/rx_rt_data.h"
 #include <valarray>
 #include "lib/rx_const_size_vector.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #define ANSI_RX_OBJECT_SIZE ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 #define ANSI_RX_OBJECT_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 

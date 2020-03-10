@@ -335,7 +335,7 @@ rx_result rx_platform_directory::add_item (platform_item_ptr&& who)
 	structure_unlock();
 	if (ret && rx_names_cache::should_cache(who))
 	{
-		auto cache_result = sys_internal::internal_ns::platform_root::insert_cached_item(name, who);
+		auto cache_result = rx_internal::internal_ns::platform_root::insert_cached_item(name, who);
 		if (!cache_result)
 		{
 			std::ostringstream stream;
@@ -428,7 +428,7 @@ rx_result_with<rx_directory_ptr> rx_platform_directory::add_sub_directory (const
 	{
 		return "Invalid directory name:"s + path;
 	}
-	rx_directory_ptr new_dir = rx_create_reference<sys_internal::internal_ns::user_directory>(path);
+	rx_directory_ptr new_dir = rx_create_reference<rx_internal::internal_ns::user_directory>(path);
 	auto result = add_sub_directory(new_dir);
 	if (result)
 		return new_dir;
@@ -537,7 +537,7 @@ rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path)
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
 	{// plain item
-		auto ret_item = sys_internal::internal_ns::platform_root::get_cached_item(path);
+		auto ret_item = rx_internal::internal_ns::platform_root::get_cached_item(path);
 		if (ret_item)
 		{// found it in cache, return!
 			return ret_item;
@@ -586,7 +586,7 @@ rx_result rx_platform_directory::add_item (const rx_namespace_item& what)
 	structure_unlock();
 	if (ret && rx_names_cache::should_cache(what))
 	{
-		auto cache_result = sys_internal::internal_ns::platform_root::insert_cached_item(name, what);
+		auto cache_result = rx_internal::internal_ns::platform_root::insert_cached_item(name, what);
 		if (!cache_result)
 		{
 			std::ostringstream stream;
@@ -621,7 +621,7 @@ rx_result rx_platform_directory::add_item (const rx_namespace_item& what)
 template<class TImpl>
 rx_result rx_platform_directory::add_item(TImpl who)
 {
-	return add_item(sys_internal::internal_ns::rx_item_implementation<TImpl>());
+	return add_item(rx_internal::internal_ns::rx_item_implementation<TImpl>());
 }
 // Class rx_platform::ns::rx_names_cache 
 

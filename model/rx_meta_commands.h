@@ -37,8 +37,10 @@
 #include "terminal/rx_commands.h"
 
 #include "api/rx_meta_api.h"
-using terminal::console_context_ptr;
+using rx_internal::terminal::console_context_ptr;
 
+
+namespace rx_internal {
 
 namespace model {
 
@@ -280,6 +282,7 @@ command for saving items to storage\r\n\
 
 } // namespace meta_commands
 } // namespace model
+} // namespace rx_internal
 
 
 

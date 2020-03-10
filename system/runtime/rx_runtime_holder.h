@@ -64,6 +64,8 @@ class relation_runtime;
 
 
 #include "system/meta/rx_obj_types.h"
+namespace rx_internal
+{
 namespace model
 {
 template<class typeT>
@@ -73,7 +75,8 @@ namespace algorithms
 template<class typeT>
 class runtime_model_algorithm;
 }
-}
+} // model
+} // rx_internal
 
 
 namespace rx_platform {
@@ -156,8 +159,8 @@ class runtime_holder : public rx::pointers::reference_object
 
     friend class object_runtime_algorithms<typeT>;
     friend class meta::meta_algorithm::object_types_algorithm<typeT>;
-    friend class model::algorithms::runtime_model_algorithm<typeT>;
-    friend class model::types_repository<typeT>;
+    friend class rx_internal::model::algorithms::runtime_model_algorithm<typeT>;
+    friend class rx_internal::model::types_repository<typeT>;
 public:
     typedef typeT DefType;
     typedef typename typeT::RImplPtr ImplPtr;

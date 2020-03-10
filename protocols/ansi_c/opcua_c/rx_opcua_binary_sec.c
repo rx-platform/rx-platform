@@ -35,12 +35,12 @@
 // rx_opcua_binary_sec
 #include "protocols/ansi_c/opcua_c/rx_opcua_binary_sec.h"
 
-rx_protocol_result_t opcua_parse_open_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_open_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
 
-rx_protocol_result_t opcua_parse_close_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_parse_close_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }

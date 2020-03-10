@@ -38,16 +38,20 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+namespace rx_internal {
 namespace sys_runtime {
 namespace subscriptions {
 class rx_subscription;
 
 } // namespace subscriptions
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 using namespace rx_platform::runtime;
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -122,6 +126,7 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
 
 } // namespace relations_runtime
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

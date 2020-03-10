@@ -49,11 +49,14 @@ using namespace rx;
 using namespace rx_platform::ns;
 using rx::values::rx_value;
 using rx::values::rx_simple_value;
+namespace rx_internal
+{
 namespace sys_runtime
 {
 namespace algorithms
 {
 class application_algorithms;
+}
 }
 }
 
@@ -235,8 +238,6 @@ system port class. basic implementation of a port");
       ~port_runtime();
 
 
-      bool write (buffer_ptr what);
-
       virtual rx_protocol_stack_entry* create_stack_entry ();
 
       rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
@@ -304,7 +305,7 @@ system port class. basic implementation of a port");
       }
   protected:
 
-      virtual bool readed (buffer_ptr what, rx_thread_handle_t destination);
+      virtual void structure_changed () = 0;
 
 
       algorithms::runtime_process_context * get_context ()

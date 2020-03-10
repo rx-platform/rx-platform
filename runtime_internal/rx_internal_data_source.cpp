@@ -34,15 +34,17 @@
 // rx_internal_data_source
 #include "runtime_internal/rx_internal_data_source.h"
 
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
 namespace data_source {
 
-// Class sys_runtime::data_source::internal_data_source 
+// Class rx_internal::sys_runtime::data_source::internal_data_source 
 
 internal_data_source::internal_data_source (const string_type& path)
       : next_subscription_id_(0)
@@ -86,7 +88,7 @@ bool internal_data_source::is_empty () const
 }
 
 
-// Class sys_runtime::data_source::internal_data_subscription 
+// Class rx_internal::sys_runtime::data_source::internal_data_subscription 
 
 internal_data_subscription::internal_data_subscription (value_handle_extended handles, data_controler* controler)
       : controler_(controler),
@@ -139,4 +141,5 @@ bool internal_data_subscription::is_empty () const
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 

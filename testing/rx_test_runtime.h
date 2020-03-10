@@ -166,7 +166,7 @@ basic testing subscription connect/disconnect.");
   private:
 
 
-      sys_runtime::data_source::value_point my_value_;
+      rx_internal::sys_runtime::data_source::value_point my_value_;
 
 
       internal_callback callback_;

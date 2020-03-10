@@ -33,12 +33,12 @@
 
 
 
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
-// rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
 
 #include "rx_runtime_helpers.h"
 
@@ -88,10 +88,14 @@ physical port class. basic implementation of a physical port");
 
       void update_connected_status (bool status);
 
+      void structure_changed ();
+
 
   private:
 
       bool has_up_port () const;
+
+      virtual rx_protocol_stack_entry* get_stack_entry () = 0;
 
 
 
@@ -151,6 +155,8 @@ protocol port class. basic implementation of a protocol port");
 
       void update_sent_packets (size_t count);
 
+      void structure_changed ();
+
 
   private:
 
@@ -209,6 +215,8 @@ transport port class. basic implementation of a transport port");
       void update_received_packets (size_t count);
 
       void update_sent_packets (size_t count);
+
+      void structure_changed ();
 
 
   private:

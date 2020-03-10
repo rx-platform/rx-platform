@@ -78,7 +78,7 @@ rx_result application_type::construct (rx_application_ptr& what, construct_conte
 
 platform_item_ptr application_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -169,7 +169,7 @@ rx_result domain_type::construct (rx_domain_ptr what, construct_context& ctx) co
 
 platform_item_ptr domain_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -261,7 +261,7 @@ rx_result object_type::construct (rx_object_ptr what, construct_context& ctx) co
 
 platform_item_ptr object_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -371,7 +371,7 @@ rx_result port_type::construct (rx_port_ptr what, construct_context& ctx) const
 
 platform_item_ptr port_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 
@@ -484,7 +484,7 @@ relation_type::relation_type (const object_type_creation_data& data)
 
 platform_item_ptr relation_type::get_item_ptr () const
 {
-  return std::make_unique<sys_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
 }
 

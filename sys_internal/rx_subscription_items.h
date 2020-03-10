@@ -38,7 +38,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 enum subscription_trigger_type
@@ -602,7 +602,7 @@ class read_items_response : public subscription_items_response
 } // namespace items_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

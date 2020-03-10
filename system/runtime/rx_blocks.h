@@ -206,46 +206,6 @@ struct runtime. basic implementation of an struct runtime");
 
 
 
-class event_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
-event runtime. basic implementation of an event runtime");
-
-	DECLARE_REFERENCE_PTR(event_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::event_type;
-
-  public:
-      event_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-
-      static string_type type_name;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class variable_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
@@ -344,6 +304,46 @@ source runtime. basic implementation of an source runtime");
       bool input_;
 
       bool output_;
+
+
+};
+
+
+
+
+
+
+class event_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+event runtime. basic implementation of an event runtime");
+
+	DECLARE_REFERENCE_PTR(event_runtime);
+
+	friend class meta::def_blocks::complex_data_type;
+	friend class meta::basic_types::event_type;
+
+  public:
+      event_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
 
 
 };

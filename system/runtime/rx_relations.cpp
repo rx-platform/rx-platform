@@ -40,9 +40,9 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "rx_objbase.h"
 #include "model/rx_model_algorithms.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "runtime_internal/rx_relations_runtime.h"
-using namespace sys_runtime::relations_runtime;
+using namespace rx_internal::sys_runtime::relations_runtime;
 
 
 namespace rx_platform {
@@ -107,7 +107,6 @@ rx_result relation_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 void relation_runtime::fill_data (const data::runtime_values_data& data)
 {
-	structure::init_context ctx;
 	auto it = data.values.find(name);
 	if (it != data.values.end())
 	{
@@ -149,7 +148,7 @@ void relation_runtime::try_resolve ()
 	{
 		rx_directory_resolver dirs;
 		dirs.add_paths({ object_directory });
-		auto resolve_result = model::algorithms::resolve_reference(target, dirs);
+		auto resolve_result = rx_internal::model::algorithms::resolve_reference(target, dirs);
 		if (!resolve_result)
 		{
 			RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + target);
@@ -256,7 +255,7 @@ rx_result relation_runtime::disconnect_tag (runtime_handle_t handle, tags_callba
 
 rx_result_with<platform_item_ptr> relation_runtime::resolve_runtime_sync (const rx_node_id& id)
 {
-	auto result = model::algorithms::get_working_runtime_sync(id);
+	auto result = rx_internal::model::algorithms::get_working_runtime_sync(id);
 	return result;
 }
 

@@ -37,7 +37,7 @@
 #include "rx_internal_protocol.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -45,7 +45,7 @@ namespace messages {
 
 namespace subscription_messages {
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
 
 string_type create_subscription_request::type_name = "createSubsReq";
 
@@ -121,7 +121,7 @@ rx_message_type_t create_subscription_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response 
 
 string_type create_subscriptions_response::type_name = "createSubsResp";
 
@@ -165,7 +165,7 @@ rx_message_type_t create_subscriptions_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
 
 string_type delete_subscription_request::type_name = "delSubsReq";
 
@@ -217,7 +217,7 @@ rx_message_type_t delete_subscription_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::update_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_request 
 
 string_type update_subscription_request::type_name = "updSubsReq";
 
@@ -274,7 +274,7 @@ rx_message_type_t update_subscription_request::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
 
 string_type delete_subscription_response::type_name = "delSubsResp";
 
@@ -310,7 +310,7 @@ rx_message_type_t delete_subscription_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
 
 string_type update_subscription_response::type_name = "updSubsResp";
 
@@ -354,7 +354,7 @@ rx_message_type_t update_subscription_response::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::subscription_messages::subscription_items_change 
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_items_change 
 
 string_type subscription_items_change::type_name = "subsItemsNotif";
 
@@ -427,5 +427,5 @@ rx_message_type_t subscription_items_change::get_type_id ()
 } // namespace subscription_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

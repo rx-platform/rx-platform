@@ -40,6 +40,8 @@
 #include "system/runtime/rx_objbase.h"
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace algorithms {
@@ -202,6 +204,7 @@ class relations_algorithms
 
 } // namespace algorithms
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

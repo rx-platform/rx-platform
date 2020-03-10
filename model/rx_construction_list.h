@@ -36,6 +36,8 @@
 
 
 
+namespace rx_internal {
+
 namespace model {
 
 namespace construction {
@@ -213,6 +215,7 @@ public:
 
 } // namespace construction
 } // namespace model
+} // namespace rx_internal
 
 
 

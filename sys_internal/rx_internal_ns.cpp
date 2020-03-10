@@ -40,11 +40,11 @@
 #include "sys_internal/rx_internal_ns.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
-// Class sys_internal::internal_ns::platform_root 
+// Class rx_internal::internal_ns::platform_root 
 
 rx_platform::ns::rx_names_cache platform_root::cache_;
 
@@ -71,7 +71,7 @@ rx_result platform_root::insert_cached_item (const string_type& name, const rx_n
 }
 
 
-// Class sys_internal::internal_ns::user_directory 
+// Class rx_internal::internal_ns::user_directory 
 
 user_directory::user_directory (const string_type& name)
 	: rx_platform_directory(name, namespace_item_read_access | namespace_item_write_access | namespace_item_delete_access)
@@ -85,7 +85,7 @@ user_directory::~user_directory()
 
 
 
-// Class sys_internal::internal_ns::unassigned_directory 
+// Class rx_internal::internal_ns::unassigned_directory 
 
 unassigned_directory::unassigned_directory()
 	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access, rx_create_reference<storage_base::rx_code_storage>())
@@ -106,7 +106,7 @@ unassigned_directory::~unassigned_directory()
 
 
 
-// Class sys_internal::internal_ns::world_directory 
+// Class rx_internal::internal_ns::world_directory 
 
 world_directory::world_directory()
 	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage().value())
@@ -127,7 +127,7 @@ world_directory::~world_directory()
 
 
 
-// Parameterized Class sys_internal::internal_ns::rx_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_item_implementation 
 
 template <class TImpl>
 rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
@@ -277,7 +277,7 @@ rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t t
 }
 
 
-// Parameterized Class sys_internal::internal_ns::rx_meta_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
 template <class TImpl>
 rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
@@ -424,7 +424,7 @@ rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_i
 }
 
 
-// Class sys_internal::internal_ns::internal_directory 
+// Class rx_internal::internal_ns::internal_directory 
 
 internal_directory::internal_directory (const string_type& name)
 	: rx_platform_directory(name, namespace_item_internal_access)
@@ -438,7 +438,7 @@ internal_directory::~internal_directory()
 
 
 
-// Parameterized Class sys_internal::internal_ns::rx_other_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_other_implementation 
 
 template <class TImpl>
 rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
@@ -563,7 +563,7 @@ rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t 
 }
 
 
-// Class sys_internal::internal_ns::system_directory 
+// Class rx_internal::internal_ns::system_directory 
 
 system_directory::system_directory()
 	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys").value())
@@ -584,7 +584,7 @@ system_directory::~system_directory()
 
 
 
-// Class sys_internal::internal_ns::host_directory 
+// Class rx_internal::internal_ns::host_directory 
 
 host_directory::host_directory()
 	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
@@ -608,7 +608,7 @@ host_directory::~host_directory()
 
 
 
-// Class sys_internal::internal_ns::plugin_directory 
+// Class rx_internal::internal_ns::plugin_directory 
 
 plugin_directory::plugin_directory (rx_plugin_ptr plugin)
 	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access
@@ -635,25 +635,25 @@ plugin_directory::~plugin_directory()
 
 
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 
-template class sys_internal::internal_ns::rx_item_implementation<rx_domain_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<rx_application_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
-template class sys_internal::internal_ns::rx_item_implementation<rx_port_ptr>;
-template class sys_internal::internal_ns::rx_other_implementation<testing::test_case::smart_ptr>;
-template class sys_internal::internal_ns::rx_other_implementation<terminal::server_command_ptr>;
-template class sys_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
+template class rx_internal::internal_ns::rx_item_implementation<rx_domain_ptr>;
+template class rx_internal::internal_ns::rx_item_implementation<rx_application_ptr>;
+template class rx_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
+template class rx_internal::internal_ns::rx_item_implementation<rx_port_ptr>;
+template class rx_internal::internal_ns::rx_other_implementation<testing::test_case::smart_ptr>;
+template class rx_internal::internal_ns::rx_other_implementation<terminal::server_command_ptr>;
+template class rx_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<rx_application_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<rx_domain_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<rx_port_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<rx_object_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<relation_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<rx_application_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<rx_domain_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<rx_port_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<rx_object_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<relation_type_ptr>;
 
-template class sys_internal::internal_ns::rx_meta_item_implementation<struct_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<mapper_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<variable_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<event_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<filter_type_ptr>;
-template class sys_internal::internal_ns::rx_meta_item_implementation<source_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<struct_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<mapper_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<variable_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<event_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<filter_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<source_type_ptr>;

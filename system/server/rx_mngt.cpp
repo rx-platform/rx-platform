@@ -31,6 +31,8 @@
 #include "pch.h"
 
 
+// rx_inf
+#include "sys_internal/rx_inf.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_mngt
@@ -47,7 +49,7 @@
 #include "protocols/opcua/rx_opcua_mapping.h"
 
 using namespace rx_platform;
-using namespace terminal::commands;
+using namespace rx_internal::terminal::commands;
 using namespace rx;
 
 
@@ -71,33 +73,37 @@ server_manager::~server_manager()
 
 rx_result server_manager::initialize (hosting::rx_platform_host* host, management_data_t& data)
 {
-	data.manager_internal_data = new mngt::manager_initialization_context;
-	telnet_port_ = data.telnet_port;
+    // call up the singletons before start
+    /*unassigned_domain_ = ns_data.unassigned_domain;
+    system_domain_ = ns_data.system_domain;
+    unassigned_app_ = ns_data.unassigned_application;
+    system_app_ = ns_data.system_application*/
+    
     // handle command stuff!
 	server_command_manager::instance()->register_internal_commands();
     // register constructors
-    auto result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
         RX_COMMANDS_MANAGER_TYPE_ID, [] {
             return server_command_manager::instance();
         });
 	// handle rx_protocol stuff!
-	result = sys_internal::rx_protocol::messages::rx_message_base::init_messages();
+	result = rx_internal::rx_protocol::messages::rx_message_base::init_messages();
 	// register protocol constructors
-	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_RX_JSON_TYPE_ID, [] {
-			return rx_create_reference<sys_internal::rx_protocol::rx_protocol_port>();
+			return rx_create_reference<rx_internal::rx_protocol::rx_protocol_port>();
 		});
-    result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+    result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
         RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
             return rx_create_reference<protocols::opcua::opcua_transport_port>();
         });
-	result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
-			return rx_create_reference<terminal::rx_vt100::vt100_transport_port>();
+			return rx_create_reference<rx_internal::terminal::rx_vt100::vt100_transport_port>();
 		});
-    result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+    result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
         RX_CONSOLE_TYPE_ID, [] {
-            return rx_create_reference<terminal::console::console_runtime>();
+            return rx_create_reference<rx_internal::terminal::console::console_runtime>();
         });
 	return result;
 }
@@ -114,10 +120,13 @@ rx_result server_manager::start (hosting::rx_platform_host* host, const manageme
 		//telnet_listener_ = rx_create_reference<runtime::io_types::transport_port>();
 		//telnet_listener_->start_tcpip_4(rx_gate::instance().get_runtime().get_io_pool()->get_pool(), telnet_port_);
 	}
-	for (auto& one : data.manager_internal_data->get_to_register())
-	{
-		server_command_manager::instance()->register_command(one);
-	}
+    if (data.manager_internal_data)
+    {
+        for (auto& one : data.manager_internal_data->get_to_register())
+        {
+            server_command_manager::instance()->register_command(one);
+        }
+    }
 	return true;
 }
 

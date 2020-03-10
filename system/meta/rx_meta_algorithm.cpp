@@ -77,7 +77,7 @@ template <class typeT>
 bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_check_context& ctx)
 {
 	rx_node_id target_id;
-	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -85,7 +85,7 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 		return ret;
 	}
 	target_id = resolve_result.value();
-	auto target = model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
+	auto target = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
 	if (!target)
 	{
 		std::ostringstream ss;
@@ -107,7 +107,7 @@ template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
 {
 	rx_node_id target;
-	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -115,7 +115,7 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
@@ -158,7 +158,7 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_complex_attribute(const def_blocks::variable_attribute& whose, construct_context& ctx)
 {
 	rx_node_id target;
-	auto resolve_result = model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::variable_attribute::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::variable_attribute::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -166,7 +166,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
 		temp.value().set_value(whose.get_value(ctx.now));
@@ -505,12 +505,12 @@ rx_result object_types_algorithm<relation_type>::deserialize_object_type(relatio
 template <>
 bool object_types_algorithm<relation_type>::check_object_type(relation_type& whose, type_check_context& ctx)
 {
-	// if there is no inverse refernce then nothing to check
+	// if there is no inverse reference then nothing to check
 	if (whose.inverse_reference_.is_null())
 		return true;
 
 	rx_node_id target_id;
-	auto resolve_result = model::algorithms::resolve_relation_reference(whose.inverse_reference_, ctx.get_directories());
+	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.inverse_reference_, ctx.get_directories());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -518,7 +518,7 @@ bool object_types_algorithm<relation_type>::check_object_type(relation_type& who
 		return ret;
 	}
 	target_id = resolve_result.value();
-	auto target = model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
+	auto target = rx_internal::model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
 	if (!target)
 	{
 		std::ostringstream ss;
@@ -576,7 +576,7 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 bool relation_blocks_algorithm::check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx)
 {
 	rx_node_id target_id;
-	auto resolve_result = model::algorithms::resolve_relation_reference(whose.target_, ctx.get_directories());
+	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.target_, ctx.get_directories());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -584,7 +584,7 @@ bool relation_blocks_algorithm::check_relation_attribute (object_types::relation
 		return ret;
 	}
 	target_id = resolve_result.value();
-	auto target = model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
+	auto target = rx_internal::model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
 	if (!target)
 	{
 		std::ostringstream ss;
@@ -604,7 +604,7 @@ bool relation_blocks_algorithm::check_relation_attribute (object_types::relation
 
 rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx)
 {
-	auto resolve_result = model::algorithms::resolve_relation_reference(whose.relation_type_, ctx.get_directories());
+	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.relation_type_, ctx.get_directories());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -612,7 +612,7 @@ rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::constru
 		return ret.errors();
 	}
 	auto relation_type_id = resolve_result.value();
-	resolve_result = model::algorithms::resolve_reference(whose.target_, ctx.get_directories());
+	resolve_result = rx_internal::model::algorithms::resolve_reference(whose.target_, ctx.get_directories());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -622,7 +622,7 @@ rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::constru
 	auto target_base_id = resolve_result.value();
 	runtime::relations::relation_instance_data data;
 
-	auto ret_val = model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, std::move(data), ctx.get_directories());
+	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, std::move(data), ctx.get_directories());
 	if (ret_val)
 	{
 		ret_val.value()->name = whose.name_;

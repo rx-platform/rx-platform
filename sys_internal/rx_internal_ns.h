@@ -50,7 +50,7 @@
 using namespace rx_platform::ns;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace internal_ns {
 
@@ -453,7 +453,7 @@ used to hold specific plugin folders...\
 
 
 } // namespace internal_ns
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

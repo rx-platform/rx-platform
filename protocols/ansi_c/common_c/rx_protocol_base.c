@@ -90,7 +90,7 @@ rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_entry* what)
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	while (stack->downward != NULL)
 	{
@@ -102,7 +102,7 @@ rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, 
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
 	while (stack->upward != NULL)
 	{
@@ -114,7 +114,7 @@ rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, pr
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_protocol_result_t result)
+rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_protocol_result_t result)
 {
 	while (stack->upward != NULL)
 	{

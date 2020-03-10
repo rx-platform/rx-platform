@@ -36,9 +36,11 @@
 
 #include "system/meta/rx_obj_types.h"
 #include "rx_runtime_internal.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 #include "model/rx_meta_internals.h"
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -143,7 +145,7 @@ rx_result deinit_runtime<meta::object_types::relation_type>(rx_relation_ptr what
 	return relations_algorithms::deinit_runtime(what, callback, ctx);
 }
 
-// Class sys_runtime::algorithms::object_algorithms 
+// Class rx_internal::sys_runtime::algorithms::object_algorithms 
 
 
 rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
@@ -257,7 +259,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 			auto temp_ptr = domain_ptr.value();
 			if (what->get_instance_data().connect_domain(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("object_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to domain " + domain_ptr.value()->meta_info().get_full_path());
+					+ " connected to domain " + domain_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{
@@ -278,7 +280,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 			auto temp_ptr = domain_ptr;
 			if (what->get_instance_data().connect_domain(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("object_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to domain " + domain_ptr->meta_info().get_full_path());
+					+ " connected to domain " + domain_ptr->meta_info().get_full_path());
 		}
 		else
 		{
@@ -295,12 +297,12 @@ rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 {
 	if (what->get_instance_data().disconnect_domain(what))
 		RUNTIME_LOG_TRACE("object_algorithms", 100, what->meta_info().get_full_path()
-			+ "disconnected from domain");
+			+ " disconnected from domain");
 	return true;
 }
 
 
-// Class sys_runtime::algorithms::domain_algorithms 
+// Class rx_internal::sys_runtime::algorithms::domain_algorithms 
 
 
 rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
@@ -418,7 +420,7 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 			auto temp_ptr = application_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("domain_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to application " + application_ptr.value()->meta_info().get_full_path());
+					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{
@@ -439,7 +441,7 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 			auto temp_ptr = application_ptr;
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("domain_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to application " + application_ptr->meta_info().get_full_path());
+					+ " connected to application " + application_ptr->meta_info().get_full_path());
 		}
 		else
 		{
@@ -456,12 +458,12 @@ rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 {
 	if (what->get_instance_data().disconnect_application(what))
 		RUNTIME_LOG_TRACE("domain_algorithms", 100, what->meta_info().get_full_path()
-			+ "disconnected from application");
+			+ " disconnected from application");
 	return true;
 }
 
 
-// Class sys_runtime::algorithms::port_algorithms 
+// Class rx_internal::sys_runtime::algorithms::port_algorithms 
 
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
@@ -569,7 +571,7 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 			auto temp_ptr = application_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("port_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to application " + application_ptr.value()->meta_info().get_full_path());
+					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{
@@ -590,7 +592,7 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 			auto temp_ptr = application_ptr;
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("port_algorithms", 100, what->meta_info().get_full_path()
-					+ "connected to application " + application_ptr->meta_info().get_full_path());
+					+ " connected to application " + application_ptr->meta_info().get_full_path());
 		}
 		else
 		{
@@ -607,12 +609,12 @@ rx_result port_algorithms::disconnect_application (rx_port_ptr what)
 {
 	if (what->get_instance_data().disconnect_application(what))
 		RUNTIME_LOG_TRACE("port_algorithms", 100, what->meta_info().get_full_path()
-			+ "disconnected from application");
+			+ " disconnected from application");
 	return true;
 }
 
 
-// Class sys_runtime::algorithms::application_algorithms 
+// Class rx_internal::sys_runtime::algorithms::application_algorithms 
 
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
@@ -725,7 +727,7 @@ rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime
 }
 
 
-// Class sys_runtime::algorithms::relations_algorithms 
+// Class rx_internal::sys_runtime::algorithms::relations_algorithms 
 
 
 rx_result relations_algorithms::init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx)
@@ -751,4 +753,5 @@ rx_result relations_algorithms::stop_runtime (rx_relation_ptr what, runtime::run
 
 } // namespace algorithms
 } // namespace sys_runtime
+} // namespace rx_internal
 

@@ -39,7 +39,7 @@
 
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace sys_objects {
 
@@ -163,7 +163,7 @@ this domain is for unassigned objects.it always has bad quality");
 
 
 } // namespace sys_objects
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

@@ -34,22 +34,27 @@
 
 #include "interfaces/rx_endpoints.h"
 
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_io
 #include "lib/rx_io.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 
+namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
 class tcp_server_port;
 
 } // namespace ip_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 
 
+#include "sys_internal/rx_inf.h"
 
+
+namespace rx_internal {
 
 namespace interfaces {
 
@@ -76,7 +81,7 @@ class rx_udp_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
 
 
@@ -139,6 +144,8 @@ UDP port class. implementation of an UDP/IP4 port");
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
+      rx_protocol_stack_entry* get_stack_entry ();
+
 
   protected:
 
@@ -184,7 +191,7 @@ class connection_endpoint : public rx_protocol_stack_entry
     public:
         socket_holder_t(connection_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr)
             : whose(whose)
-            , rx::io::tcp_socket_std_buffer(handle, addr, local_addr, rx_gate::instance().get_infrastructure().get_io_pool()->get_pool())
+            , rx::io::tcp_socket_std_buffer(handle, addr, local_addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool())
         {
         }
         socket_holder_t(socket_holder_t&& right) noexcept
@@ -199,7 +206,8 @@ class connection_endpoint : public rx_protocol_stack_entry
     };
     friend struct socket_holder_t;
   public:
-    typedef connection_endpoint::socket_holder_t::smart_ptr endpoint_ptr;
+    typedef std::unique_ptr<connection_endpoint> endpoint_ptr;
+    typedef rx_reference<socket_holder_t> socket_ptr;
 
   public:
       connection_endpoint();
@@ -207,7 +215,7 @@ class connection_endpoint : public rx_protocol_stack_entry
       connection_endpoint (const string_type& remote_port, const string_type& local_port);
 
 
-      rx_result_with<connection_endpoint::endpoint_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher);
+      rx_result_with<connection_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher);
 
       rx_result close ();
 
@@ -219,25 +227,22 @@ class connection_endpoint : public rx_protocol_stack_entry
 
 
       connection_endpoint(const connection_endpoint&) = delete;
-      connection_endpoint(connection_endpoint&& right) noexcept
-      {
-          local_port_ = std::move(right.local_port_);
-          remote_port_ = std::move(right.remote_port_);
-          tcp_socket_ = std::move(right.tcp_socket_);
-          tcp_socket_->whose = this;
-          my_port_ = std::move(right.my_port_);
-      }
+      connection_endpoint(connection_endpoint&& right) noexcept;
       connection_endpoint& operator=(const connection_endpoint&) = delete;
       connection_endpoint& operator=(connection_endpoint&&) = delete;
   protected:
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
       void disconnected ();
 
       bool readed (const void* data, size_t count);
+
+      void bind ();
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
 
 
 
@@ -265,7 +270,7 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
     DECLARE_REFERENCE_PTR(tcp_server_port);
 
-    typedef std::map<connection_endpoint::endpoint_ptr, connection_endpoint> connections_type;
+    typedef std::set<connection_endpoint::endpoint_ptr> connections_type;
 
   public:
       tcp_server_port();
@@ -284,6 +289,8 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
       void update_sent_counters (size_t count);
 
       void remove_connection (const connection_endpoint& what);
+
+      rx_protocol_stack_entry* get_stack_entry ();
 
 
   protected:
@@ -306,6 +313,7 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
 } // namespace ip_endpoints
 } // namespace interfaces
+} // namespace rx_internal
 
 
 

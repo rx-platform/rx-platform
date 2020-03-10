@@ -39,12 +39,14 @@
 #include "system/runtime/rx_objbase.h"
 
 #include "rx_runtime_algorithms.h"
-#include "system/server/rx_inf.h"
+#include "sys_internal/rx_inf.h"
 #include "api/rx_platform_api.h"
 using rx_platform::runtime::items::application_instance_data;
 using rx_platform::runtime::items::domain_instance_data;
-using rx_platform::infrastructure::runtime_data_t;
+using rx_platform::runtime_data_t;
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -154,6 +156,7 @@ class platform_runtime_manager
 
 
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

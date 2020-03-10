@@ -39,9 +39,11 @@
 #include "runtime_internal/rx_data_source.h"
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
-// Class sys_runtime::platform_runtime_manager 
+// Class rx_internal::sys_runtime::platform_runtime_manager 
 
 
 platform_runtime_manager& platform_runtime_manager::instance ()
@@ -162,7 +164,7 @@ runtime_handle_t platform_runtime_manager::get_new_handle ()
 }
 
 
-// Class sys_runtime::runtime_cache 
+// Class rx_internal::sys_runtime::runtime_cache 
 
 
 void runtime_cache::add_to_cache (platform_item_ptr&& item)
@@ -215,4 +217,5 @@ void runtime_cache::remove_from_cache (const string_type& path)
 
 
 } // namespace sys_runtime
+} // namespace rx_internal
 

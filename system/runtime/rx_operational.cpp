@@ -40,7 +40,7 @@
 
 #include "system/runtime/rx_blocks.h"
 #include "runtime_internal/rx_runtime_internal.h"
-#include "system/server/rx_async_functions.h"
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -110,7 +110,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 		if (ref_result)
 		{
 			// fill out the data
-			auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
+			auto handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
 			switch (ref.ref_type)
 			{
 			case rt_value_ref_type::rt_const_value:
@@ -341,7 +341,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		{
 			if (it->second->runtime_handle == 0)
 			{
-				auto handle = sys_runtime::platform_runtime_manager::get_new_handle();
+				auto handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
 
 				rt_value_ref reference;
 				reference.ref_type = rt_value_ref_type::rt_relation;

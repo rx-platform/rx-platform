@@ -38,6 +38,8 @@
 
 
 
+namespace rx_internal {
+
 namespace sys_runtime {
 
 namespace data_source {
@@ -145,7 +147,7 @@ int isdelim(char c)
 	return 0;
 }
 
-// Class sys_runtime::data_source::value_point 
+// Class rx_internal::sys_runtime::data_source::value_point 
 
 
 void value_point::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler, char* buffer)
@@ -1055,4 +1057,5 @@ void value_point::value_changed (value_handle_type handle, const rx_value& val)
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 

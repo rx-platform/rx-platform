@@ -41,7 +41,7 @@
 #include "system/server/rx_server.h"
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace rx_protocol {
 
@@ -49,7 +49,7 @@ namespace messages {
 
 namespace set_messages {
 
-// Class sys_internal::rx_protocol::messages::set_messages::delete_type_request 
+// Class rx_internal::rx_protocol::messages::set_messages::delete_type_request 
 
 string_type delete_type_request::type_name = "delTypeReq";
 
@@ -218,7 +218,7 @@ message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_
 		return message_ptr();
 	}
 }
-// Class sys_internal::rx_protocol::messages::set_messages::delete_type_response 
+// Class rx_internal::rx_protocol::messages::set_messages::delete_type_response 
 
 string_type delete_type_response::type_name = "delTypeResp";
 
@@ -248,7 +248,7 @@ rx_message_type_t delete_type_response::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::protocol_type_creator 
 
 
 template <class itemT>
@@ -321,7 +321,7 @@ rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, c
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_type_creator_base 
+// Class rx_internal::rx_protocol::messages::set_messages::protocol_type_creator_base 
 
 protocol_type_creator_base::~protocol_type_creator_base()
 {
@@ -329,7 +329,7 @@ protocol_type_creator_base::~protocol_type_creator_base()
 
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::set_type_request 
+// Class rx_internal::rx_protocol::messages::set_messages::set_type_request 
 
 string_type set_type_request::type_name = "setTypeReq";
 
@@ -444,7 +444,7 @@ rx_message_type_t set_type_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_type_response 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::set_type_response 
 
 template <class itemT>
 string_type set_type_response<itemT>::type_name = "setTypeResp";
@@ -468,7 +468,7 @@ rx_message_type_t set_type_response<itemT>::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::update_type_request 
+// Class rx_internal::rx_protocol::messages::set_messages::update_type_request 
 
 string_type update_type_request::type_name = "updateTypeReq";
 
@@ -578,7 +578,7 @@ rx_message_type_t update_type_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::update_type_response 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::update_type_response 
 
 template <class itemT>
 string_type update_type_response<itemT>::type_name = "updateTypeResp";
@@ -602,7 +602,7 @@ rx_message_type_t update_type_response<itemT>::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_simple_type_creator 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::protocol_simple_type_creator 
 
 
 template <class itemT>
@@ -675,7 +675,7 @@ rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& st
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_relation_type_creator 
+// Class rx_internal::rx_protocol::messages::set_messages::protocol_relation_type_creator 
 
 
 message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create)
@@ -745,7 +745,7 @@ rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream,
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::delete_runtime_request 
+// Class rx_internal::rx_protocol::messages::set_messages::delete_runtime_request 
 
 string_type delete_runtime_request::type_name = "delRuntimeReq";
 
@@ -866,7 +866,7 @@ message_ptr delete_runtime_request::do_job(api::rx_context ctx, rx_protocol_port
 		return message_ptr();
 	}
 }
-// Class sys_internal::rx_protocol::messages::set_messages::delete_runtime_response 
+// Class rx_internal::rx_protocol::messages::set_messages::delete_runtime_response 
 
 string_type delete_runtime_response::type_name = "delRuntimeResp";
 
@@ -896,7 +896,7 @@ rx_message_type_t delete_runtime_response::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::protocol_runtime_creator 
 
 
 template <class itemT>
@@ -999,10 +999,10 @@ rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::protocol_runtime_creator_base 
+// Class rx_internal::rx_protocol::messages::set_messages::protocol_runtime_creator_base 
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::set_runtime_request 
+// Class rx_internal::rx_protocol::messages::set_messages::set_runtime_request 
 
 string_type set_runtime_request::type_name = "setRuntimeReq";
 
@@ -1091,7 +1091,7 @@ rx_message_type_t set_runtime_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::set_runtime_response 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::set_runtime_response 
 
 template <class itemT>
 string_type set_runtime_response<itemT>::type_name = "setRuntimeResp";
@@ -1115,7 +1115,7 @@ rx_message_type_t set_runtime_response<itemT>::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::update_runtime_request 
+// Class rx_internal::rx_protocol::messages::set_messages::update_runtime_request 
 
 string_type update_runtime_request::type_name = "updateRuntimeReq";
 
@@ -1204,7 +1204,7 @@ rx_message_type_t update_runtime_request::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::update_runtime_response 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::update_runtime_response 
 
 template <class itemT>
 string_type update_runtime_response<itemT>::type_name = "updateRuntimeResp";
@@ -1228,7 +1228,7 @@ rx_message_type_t update_runtime_response<itemT>::get_type_id ()
 }
 
 
-// Parameterized Class sys_internal::rx_protocol::messages::set_messages::prototype_runtime_response 
+// Parameterized Class rx_internal::rx_protocol::messages::set_messages::prototype_runtime_response 
 
 template <class itemT>
 string_type prototype_runtime_response<itemT>::type_name = "protoRuntimeResp";
@@ -1252,7 +1252,7 @@ rx_message_type_t prototype_runtime_response<itemT>::get_type_id ()
 }
 
 
-// Class sys_internal::rx_protocol::messages::set_messages::prototype_runtime_request 
+// Class rx_internal::rx_protocol::messages::set_messages::prototype_runtime_request 
 
 string_type prototype_runtime_request::type_name = "protoRuntimeReq";
 
@@ -1344,5 +1344,5 @@ rx_message_type_t prototype_runtime_request::get_type_id ()
 } // namespace set_messages
 } // namespace messages
 } // namespace rx_protocol
-} // namespace sys_internal
+} // namespace rx_internal
 

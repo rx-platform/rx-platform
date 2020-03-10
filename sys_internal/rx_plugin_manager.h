@@ -38,10 +38,10 @@
 // rx_commands
 #include "terminal/rx_commands.h"
 
-using terminal::console_context_ptr;
+using rx_internal::terminal::console_context_ptr;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace plugins {
 
@@ -136,7 +136,7 @@ command for working with platform plug-ins");
 
 
 } // namespace plugins
-} // namespace sys_internal
+} // namespace rx_internal
 
 
 

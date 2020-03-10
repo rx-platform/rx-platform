@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_inf.h
+*  sys_internal\rx_inf.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -40,33 +40,31 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
+namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
 class data_controler;
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 #include "system/hosting/rx_host.h"
+#include "system/server/rx_server.h"
+
 using rx_platform::namespace_item_attributes;
+using namespace rx_platform;
 
 #define RX_PRIORITY_FROM_DOMAIN(d) ((uint8_t)(((d)>>16)&0xff))
 #define RX_ADD_PRIORITY_TO_DOMAIN(p) ((rx_thread_handle_t)(p<<16))
 #define RX_DOMAIN_TYPE_MASK 0xffff
 #define RX_DOMAIN_UPPER_LIMIT 0xff00
 
-#define RX_DOMAIN_EXTERN 0xfffb
-#define RX_DOMAIN_META 0xfffc
-#define RX_DOMAIN_SLOW 0xfffd
-#define RX_DOMAIN_IO 0xfffe
-#define RX_DOMAIN_UNASSIGNED 0xffff
 
 
 
-namespace rx_platform {
-struct io_manager_data_t;
-
+namespace rx_internal {
 
 namespace infrastructure {
 
@@ -74,7 +72,7 @@ namespace infrastructure {
 
 
 
-class server_dispatcher_object : public runtime::items::object_runtime  
+class server_dispatcher_object : public rx_platform::runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_dispatcher_object);
 	
@@ -147,7 +145,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 class domains_pool : public rx::threads::job_thread, 
-                     	public runtime::items::object_runtime  
+                     	public rx_platform::runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
 
@@ -157,7 +155,7 @@ thread pool resources\r\n\
 ");
 
 	typedef std::vector<threads::physical_job_thread*> workers_type;
-	typedef std::vector<sys_runtime::data_source::data_controler*> data_controlers_type;
+	typedef std::vector<rx_internal::sys_runtime::data_source::data_controler*> data_controlers_type;
 
   public:
       domains_pool (uint32_t pool_size);
@@ -179,7 +177,7 @@ thread pool resources\r\n\
 
       rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
-      sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
+      rx_internal::sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
 
       int get_CPU (rx_thread_handle_t domain) const;
 
@@ -206,7 +204,7 @@ thread pool resources\r\n\
 
 
 
-class physical_thread_object : public runtime::items::object_runtime  
+class physical_thread_object : public rx_platform::runtime::items::object_runtime  
 {
     DECLARE_REFERENCE_PTR(physical_thread_object);
 
@@ -250,24 +248,14 @@ used for special executer types\r\n\
 };
 
 
-struct runtime_data_t
+
+
+
+
+
+class server_runtime : public rx_platform::runtime::items::object_runtime  
 {
-	bool real_time = false;
-	int io_pool_size = -1;
-	int has_unassigned_pool = true;
-	int workers_pool_size = -1;
-	int slow_pool_size = -1;
-	bool has_calculation_timer = false;
-	threads::job_thread* extern_executer = nullptr;
-};
-
-
-
-
-
-class server_rt : public runtime::items::object_runtime  
-{
-	DECLARE_CODE_INFO("rx",1,1,0, "\
+	DECLARE_CODE_INFO("rx",2,0,0, "\
 class managing runtime resources:\r\n\
 i/o pool, general pool,\
 and thread pool for applications.\r\n\
@@ -275,15 +263,13 @@ also contains 2 timers:\r\n\
 general ( high priority )\r\n\
 calculation ( normal priority)");
 
-	DECLARE_REFERENCE_PTR(server_rt);
+	DECLARE_REFERENCE_PTR(server_runtime);
 	typedef std::array<rx_reference<domains_pool>, (size_t)rx_domain_priority::priority_count> workers_type;
 
 	friend void rx_post_function(std::function<void(void)> f, rx_thread_handle_t whome);
 
   public:
-      server_rt();
-
-      ~server_rt();
+      ~server_runtime();
 
 
       rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data);
@@ -314,11 +300,13 @@ calculation ( normal priority)");
 
       rx_time get_created_time (values::rx_value& val) const;
 
-      sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
+      rx_internal::sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
 
       int get_CPU (rx_thread_handle_t domain) const;
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      static server_runtime& instance ();
 
 
       rx_reference<server_dispatcher_object> get_io_pool ()
@@ -337,6 +325,8 @@ calculation ( normal priority)");
   protected:
 
   private:
+      server_runtime();
+
 
 
       std::unique_ptr<rx::threads::timer> general_timer_;
@@ -361,7 +351,7 @@ calculation ( normal priority)");
 
 
 } // namespace infrastructure
-} // namespace rx_platform
+} // namespace rx_internal
 
 
 

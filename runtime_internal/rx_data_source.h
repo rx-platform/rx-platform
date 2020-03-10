@@ -38,15 +38,19 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
 class data_controler;
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -184,6 +188,7 @@ class data_controler
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 
 
 

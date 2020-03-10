@@ -35,7 +35,10 @@
 #include "runtime_internal/rx_data_source.h"
 
 #include "runtime_internal/rx_internal_data_source.h"
+#include "sys_internal/rx_inf.h"
 
+
+namespace rx_internal {
 
 namespace sys_runtime {
 
@@ -55,7 +58,7 @@ value_handle_extended value_handle_extended::fill_from_handle(value_handle_type 
 	return ret;
 }
 
-// Class sys_runtime::data_source::data_controler 
+// Class rx_internal::sys_runtime::data_source::data_controler 
 
 data_controler::data_controler (rx::threads::physical_job_thread* worker)
       : my_worker_(worker),
@@ -149,7 +152,7 @@ void data_controler::remove_item (value_handle_type handle)
 
 data_controler* data_controler::get_controler ()
 {
-	return rx_platform::rx_gate::instance().get_infrastructure().get_data_controler(rx_thread_context());
+	return rx_internal::infrastructure::server_runtime::instance().get_data_controler(rx_thread_context());
 }
 
 void data_controler::items_changed (const std::vector<std::pair<value_handle_type, rx_value> >& values)
@@ -175,7 +178,7 @@ void data_controler::items_changed (const std::vector<std::pair<value_handle_typ
 }
 
 
-// Class sys_runtime::data_source::data_source 
+// Class rx_internal::sys_runtime::data_source::data_source 
 
 data_source::~data_source()
 {
@@ -183,7 +186,7 @@ data_source::~data_source()
 
 
 
-// Class sys_runtime::data_source::data_source_factory 
+// Class rx_internal::sys_runtime::data_source::data_source_factory 
 
 data_source_factory::data_source_factory()
 {
@@ -237,4 +240,5 @@ rx_result_with<std::unique_ptr<data_source> > data_source_factory::create_data_s
 
 } // namespace data_source
 } // namespace sys_runtime
+} // namespace rx_internal
 

@@ -39,11 +39,13 @@
 #include "system/runtime/rx_port_types.h"
 
 
+namespace rx_internal {
+
 namespace model {
 
 namespace construction {
 
-// Parameterized Class model::construction::construction_list_dummy 
+// Parameterized Class rx_internal::model::construction::construction_list_dummy 
 
 
 
@@ -72,4 +74,5 @@ auto dummy = { 0, do_types_testing(), 0 };
 
 } // namespace construction
 } // namespace model
+} // namespace rx_internal
 

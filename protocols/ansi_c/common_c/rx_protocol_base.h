@@ -44,17 +44,17 @@ extern "C" {
 
 typedef rx_protocol_result_t(*rx_send_function_type)(
 	struct rx_protocol_stack_entry* reference
-	, protocol_endpoint* end_point
+	,const protocol_endpoint* end_point
 	, rx_packet_buffer* buffer);
 
 typedef rx_protocol_result_t(*rx_sent_function_type)(
 	struct rx_protocol_stack_entry* reference
-	, protocol_endpoint* end_point
+	,const protocol_endpoint* end_point
 	, rx_protocol_result_t result);
 
 typedef rx_protocol_result_t(*rx_received_function_type)(
 	struct rx_protocol_stack_entry* reference
-	, protocol_endpoint* end_point
+	,const protocol_endpoint* end_point
 	, rx_const_packet_buffer* buffer);
 
 
@@ -108,9 +108,9 @@ struct rx_protocol_stack_entry
 };
 
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_packet_buffer* buffer);
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
-rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, protocol_endpoint* end_point, rx_protocol_result_t result);
+rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_packet_buffer* buffer);
+rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_protocol_result_t result);
 
 
 typedef rx_protocol_result_t(*rx_alloc_buffer_type)(void** buffer, size_t buffer_size);

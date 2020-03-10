@@ -8,7 +8,7 @@
 #include "lib/rx_std.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
-#include "system/server/rx_inf.h"
+#include "sys_internal/rx_inf.h"
 #include "lib/rx_log.h"
 #include "system/server/rx_server.h"
 #include "lib/rx_ptr.h"

@@ -37,7 +37,7 @@
 #include "rx_storage_build.h"
 #include "system/server/rx_server.h"
 #include "terminal/rx_commands.h"
-#include "system/server/rx_inf.h"
+#include "sys_internal/rx_inf.h"
 #include "testing/rx_test.h"
 #include "api/rx_meta_api.h"
 #include "rx_configuration.h"
@@ -47,7 +47,7 @@
 using namespace rx_platform::meta::object_types;
 
 
-namespace sys_internal {
+namespace rx_internal {
 
 namespace builders {
 
@@ -103,13 +103,16 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 
 
 template<class T>
-rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, typename T::instance_data_t data, tl::type2type<T>)
+rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, typename T::instance_data_t data, tl::type2type<T>
+, std::function<void(typename T::RTypePtr)> result_f = std::function<void(typename T::RTypePtr)>())
 {
 	meta.resolve();
 	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
 		meta, nullptr, std::move(data), dir, rx_object_ptr::null_ptr);
 	if (create_result)
 	{
+		if (result_f)
+			result_f(create_result.value());
 		auto rx_type_item = create_result.value()->get_item_ptr();
 		BUILD_LOG_TRACE("code_objects", 100, ("Created "s + rx_item_type_name(T::RImplType::type_id) + " "s + rx_type_item->get_name()).c_str());
 		return true;
@@ -124,7 +127,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, type
 }
 
 
-// Class sys_internal::builders::rx_platform_builder 
+// Class rx_internal::builders::rx_platform_builder 
 
 rx_platform_builder::rx_platform_builder()
 {
@@ -148,7 +151,7 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, sys_internal::internal_ns::platform_root::smart_ptr root)
+rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root)
 {
 	rx_result errors = register_system_constructors();
 	if (!errors)
@@ -199,7 +202,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
 
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
-	for (auto one : sys_internal::plugins::plugins_manager::instance().get_plugins())
+	for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
 	{
 		BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
 		auto storage_ptr = host->get_system_storage(one->get_plugin_name());
@@ -301,7 +304,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 {
 	// system app
 	auto result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
-		RX_NS_SYSTEM_APP_TYPE_ID, [] { return sys_internal::sys_objects::system_application::instance(); } );
+		RX_NS_SYSTEM_APP_TYPE_ID, [] { return rx_internal::sys_objects::system_application::instance(); } );
 	if (!result)
 	{
 		result.register_error("Error registering constructor for system application!");
@@ -309,7 +312,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// system domain
 	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
-		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return sys_internal::sys_objects::system_domain::instance(); });
+		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return rx_internal::sys_objects::system_domain::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for system domain!");
@@ -317,7 +320,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// unassigned app
 	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
-		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return sys_internal::sys_objects::unassigned_application::instance(); });
+		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_internal::sys_objects::unassigned_application::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for unassigned application!");
@@ -325,7 +328,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	}
 	// unassigned domain
 	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
-		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return sys_internal::sys_objects::unassigned_domain::instance(); });
+		RX_NS_SYSTEM_UNASS_TYPE_ID, [] { return rx_internal::sys_objects::unassigned_domain::instance(); });
 	if (!result)
 	{
 		result.register_error("Error registering constructor for unassigned domain!");
@@ -344,7 +347,11 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 		runtime::items::application_instance_data app_instance_data;
 		app_instance_data.processor = 1;
 		meta_data app_meta(RX_NS_SYSTEM_UNASS_APP_NAME, RX_NS_SYSTEM_UNASS_APP_ID, RX_NS_SYSTEM_UNASS_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		auto result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>());
+		auto result = add_object_to_configuration(dir, std::move(app_meta), std::move(app_instance_data), tl::type2type<application_type>()
+			, [](rx_application_ptr sys)
+			{
+				rx_gate::instance().get_manager().unassigned_app_ = sys;
+			});
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned application!");
@@ -354,7 +361,11 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 		instance_data.processor = 1;
 		instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
 		meta_data meta(RX_NS_SYSTEM_UNASS_NAME, RX_NS_SYSTEM_UNASS_ID, RX_NS_SYSTEM_UNASS_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>());
+		result = add_object_to_configuration(dir, std::move(meta), std::move(instance_data), tl::type2type<domain_type>()
+			, [](rx_domain_ptr sys)
+			{
+				rx_gate::instance().get_manager().unassigned_domain_ = sys;
+			});
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned domain!");
@@ -371,7 +382,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_plug
 }
 
 
-// Class sys_internal::builders::root_folder_builder 
+// Class rx_internal::builders::root_folder_builder 
 
 
 rx_result root_folder_builder::do_build (rx_directory_ptr root)
@@ -484,7 +495,7 @@ rx_result root_folder_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class sys_internal::builders::basic_types_builder 
+// Class rx_internal::builders::basic_types_builder 
 
 
 rx_result basic_types_builder::do_build (rx_directory_ptr root)
@@ -645,7 +656,7 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T>
 	model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
-// Class sys_internal::builders::system_types_builder 
+// Class rx_internal::builders::system_types_builder 
 
 
 rx_result system_types_builder::do_build (rx_directory_ptr root)
@@ -780,7 +791,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class sys_internal::builders::port_types_builder 
+// Class rx_internal::builders::port_types_builder 
 
 
 rx_result port_types_builder::do_build (rx_directory_ptr root)
@@ -909,7 +920,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class sys_internal::builders::system_objects_builder 
+// Class rx_internal::builders::system_objects_builder 
 
 
 rx_result system_objects_builder::do_build (rx_directory_ptr root)
@@ -958,7 +969,7 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class sys_internal::builders::support_types_builder 
+// Class rx_internal::builders::support_types_builder 
 
 
 rx_result support_types_builder::do_build (rx_directory_ptr root)
@@ -1062,7 +1073,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class sys_internal::builders::relation_types_builder 
+// Class rx_internal::builders::relation_types_builder 
 
 
 rx_result relation_types_builder::do_build (rx_directory_ptr root)
@@ -1140,5 +1151,5 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 
 
 } // namespace builders
-} // namespace sys_internal
+} // namespace rx_internal
 

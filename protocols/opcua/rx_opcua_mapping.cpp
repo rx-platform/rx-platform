@@ -57,7 +57,7 @@ opcua_transport_endpoint::opcua_transport_endpoint()
 
 
 
-rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->received_func_((int64_t)rx_get_packet_available_data(buffer));
@@ -70,7 +70,7 @@ void opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std
     received_func_ = received_func;
 }
 
-rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->sent_func_((int64_t)rx_get_packet_usable_data(buffer));

@@ -43,6 +43,7 @@
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
 #include "interfaces/rx_endpoints.h"
+#include "sys_internal/rx_inf.h"
 
 
 namespace rx_platform {
@@ -77,7 +78,6 @@ rx_gate::rx_gate()
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {
-	infrastructure_ = rx_create_reference<infrastructure::server_rt>();
 	char buff[0x100];
 	rx_collect_system_info(buff, 0x100);
 	os_info_ = buff;
@@ -100,7 +100,7 @@ rx_gate::rx_gate()
 	comp_version_ = buff;
 
 	// create io manager instance
-	io_manager_ = std::make_unique<interfaces::io_endpoints::rx_io_manager>();
+	io_manager_ = std::make_unique<rx_internal::interfaces::io_endpoints::rx_io_manager>();
 }
 
 
@@ -133,7 +133,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
 
-	auto result = infrastructure_->initialize(host, data.processor, data.io);
+	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
 	if (result)
 	{
 		result = manager_.initialize(host, data.management);
@@ -142,16 +142,16 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 			result = io_manager_->initialize(host, data.io);
 			if (result)
 			{
-				auto root = rx_create_reference<sys_internal::internal_ns::platform_root>();
+				auto root = rx_create_reference<rx_internal::internal_ns::platform_root>();
 				root_ = root;
-				auto build_result =	sys_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration, root);
+				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration, root);
 
 				if (build_result)
 				{
 					for (auto one : scripts_)
 						one.second->initialize();
 
-					result = model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+					result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
 					if(!result)
 						result.register_error("Error initializing platform types manager!");
 				}
@@ -164,20 +164,20 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 				{
 					io_manager_->deinitialize();
 					manager_.deinitialize();
-					infrastructure_->deinitialize();
+					rx_internal::infrastructure::server_runtime::instance().deinitialize();
 					io_manager_->deinitialize();
 				}
 			}
 			else
 			{
 				manager_.deinitialize();
-				infrastructure_->deinitialize();
+				rx_internal::infrastructure::server_runtime::instance().deinitialize();
 				result.register_error("Error initializing I/O manager!");
 			}
 		}
 		else
 		{
-			infrastructure_->deinitialize();
+			rx_internal::infrastructure::server_runtime::instance().deinitialize();
 			result.register_error("Error initializing platform manager!");
 		}
 	}
@@ -196,23 +196,23 @@ rx_result rx_gate::deinitialize ()
 	for (auto one : scripts_)
 		one.second->deinitialize();
 
-	model::platform_types_manager::instance().deinitialize();
+	rx_internal::model::platform_types_manager::instance().deinitialize();
 
 	io_manager_->deinitialize();
 	manager_.deinitialize();
-	infrastructure_->deinitialize();
+	rx_internal::infrastructure::server_runtime::instance().deinitialize();
 	return RX_OK;
 }
 
 rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-	auto result = infrastructure_->start(host, data.processor, data.io);
+	auto result = rx_internal::infrastructure::server_runtime::instance().start(host, data.processor, data.io);
 	if (result)
 	{
 		result = manager_.start(host, data.management);
 		if (result)
 		{
-			result = model::platform_types_manager::instance().start(host, data.meta_configuration);
+			result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
 			if (result)
 			{
 				platform_status_ = rx_platform_status::running;
@@ -221,14 +221,14 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			}
 			else
 			{
-				infrastructure_->stop();
+				rx_internal::infrastructure::server_runtime::instance().stop();
 				manager_.stop();
 				result.register_error("Error starting platform types manager!");
 			}
 		}
 		else
 		{
-			infrastructure_->stop();
+			rx_internal::infrastructure::server_runtime::instance().stop();
 			result.register_error("Error starting platform manager!");
 		}
 	}
@@ -242,9 +242,9 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 rx_result rx_gate::stop ()
 {
 	platform_status_ = rx_platform_status::stopping;
-	model::platform_types_manager::instance().stop();
+	rx_internal::model::platform_types_manager::instance().stop();
 	manager_.stop();
-	infrastructure_->stop();
+	rx_internal::infrastructure::server_runtime::instance().stop();
 	platform_status_ = rx_platform_status::deinitializing;
 	return true;
 }
@@ -291,16 +291,11 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 	}
 }
 
-infrastructure::server_rt& rx_gate::get_infrastructure ()
-{
-	return *infrastructure_;
-}
-
 template <class typeT>
 rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {
 	if (platform_status_ == rx_platform_status::initializing)
-		return model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
+		return rx_internal::model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
 	else
 		return "Wrong platform status for constructor registration!";
 }
@@ -310,4 +305,6 @@ template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id
 template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
+
+
 
