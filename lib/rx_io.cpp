@@ -118,9 +118,9 @@ time_aware_subscribers_type dispatcher_subscriber::time_aware_subscribers_;
 
 locks::lockable dispatcher_subscriber::time_aware_subscribers_lock_;
 
-dispatcher_subscriber::dispatcher_subscriber (rx_thread_handle_t destination)
+dispatcher_subscriber::dispatcher_subscriber (rx_security_handle_t identity)
       : dispatcher_handle_(0),
-        destination_context_(destination)
+        identity_(identity)
 {
 	memzero(&dispatcher_data_, sizeof(dispatcher_data_));
 
@@ -240,6 +240,11 @@ int dispatcher_subscriber::internal_connect_callback (uint32_t status)
 int dispatcher_subscriber::_internal_connect_callback (uint32_t status)
 {
 	return internal_connect_callback(status);
+}
+
+void dispatcher_subscriber::set_identity (rx_security_handle_t identity)
+{
+	identity_ = identity;
 }
 
 

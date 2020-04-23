@@ -35,6 +35,8 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_security
+#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -153,7 +155,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
 
 
-      rx_reference<rx_platform::hosting::host_security_context> host_security_context_;
+      rx_reference<rx::security::security_context> host_security_context_;
 
       rx_thread_synchronizer thread_synchronizer_;
 

@@ -90,37 +90,37 @@ rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_entry* what)
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer)
 {
 	while (stack->downward != NULL)
 	{
 		if (stack->downward->send_function)
 		{
-			return stack->downward->send_function(stack->downward, end_point, buffer);
+			return stack->downward->send_function(stack->downward, buffer);
 		}
 		stack = stack->downward;
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, rx_const_packet_buffer* buffer)
 {
 	while (stack->upward != NULL)
 	{
 		if (stack->upward->received_function)
 		{
-			return stack->upward->received_function(stack->upward, end_point, buffer);
+			return stack->upward->received_function(stack->upward, buffer);
 		}
 		stack = stack->upward;
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, const protocol_endpoint* end_point, rx_protocol_result_t result)
+rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, rx_protocol_result_t result)
 {
 	while (stack->upward != NULL)
 	{
 		if (stack->upward->sent_function)
 		{
-			return stack->upward->sent_function(stack->upward, end_point, result);
+			return stack->upward->sent_function(stack->upward, result);
 		}
 		stack = stack->upward;
 	}
@@ -133,6 +133,18 @@ void rx_send_connected(struct rx_protocol_stack_entry* stack)
 		if (stack->upward->connected_function)
 		{
 			stack->upward->connected_function(stack->upward);
+			return;
+		}
+		stack = stack->upward;
+	}
+}
+void rx_send_close(struct rx_protocol_stack_entry* stack)
+{
+	while (stack->downward != NULL)
+	{
+		if (stack->downward->close_function)
+		{
+			stack->downward->close_function(stack->downward);
 			return;
 		}
 		stack = stack->upward;

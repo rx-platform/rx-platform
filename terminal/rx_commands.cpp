@@ -43,6 +43,11 @@
 #include "sys_internal/rx_plugin_manager.h"
 #include "rx_console.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "model/rx_meta_internals.h"
+#include "sys_internal/rx_internal_protocol.h"
+#include "terminal/rx_vt100.h"
+#include "terminal/rx_telnet.h"
+#include "protocols/opcua/rx_opcua_mapping.h"
 
 
 namespace rx_internal {
@@ -161,6 +166,35 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
 	// plug-ins commands
 	register_command(rx_create_reference<rx_internal::plugins::plugin_command>());
+
+	// register constructors
+	auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_COMMANDS_MANAGER_TYPE_ID, [] {
+			return server_command_manager::instance();
+		});
+	// handle rx_protocol stuff!
+	result = rx_internal::rx_protocol::messages::rx_message_base::init_messages();
+	// register protocol constructors
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_RX_JSON_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::rx_protocol::rx_protocol_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_VT00_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::terminal::term_transport::vt100_transport_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_TELNET_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::terminal::term_transport::telnet_transport_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_CONSOLE_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::terminal::console::console_port>();
+		});
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)

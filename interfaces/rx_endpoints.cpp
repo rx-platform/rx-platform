@@ -41,6 +41,7 @@
 #include "model/rx_meta_internals.h"
 #include "rx_ip_endpoints.h"
 #include "sys_internal/rx_async_functions.h"
+#include "terminal/rx_commands.h"
 
 
 namespace rx_internal {
@@ -82,6 +83,8 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_server_port>();
             });
+
+        rx_internal::terminal::commands::server_command_manager::instance()->register_internal_commands();
 	}
 	return result;
 }

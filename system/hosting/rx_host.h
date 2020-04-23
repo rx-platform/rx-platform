@@ -56,11 +56,15 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
+namespace rx {
+namespace security {
+class security_context;
+
+} // namespace security
+} // namespace rx
 
 
 
@@ -75,31 +79,6 @@ namespace hosting {
 int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
 int rx_remove_ip_address(ip_addr_ctx_t ctx);
 int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
-
-
-
-
-
-class host_security_context : public rx::security::built_in_security_context  
-{
-	DECLARE_REFERENCE_PTR(host_security_context);
-
-  public:
-      host_security_context();
-
-      ~host_security_context();
-
-
-      bool is_system () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
 
 
 

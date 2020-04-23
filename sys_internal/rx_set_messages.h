@@ -68,9 +68,9 @@ namespace set_messages {
 class delete_type_request : public rx_request_message  
 {
 	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>);
 	template<typename T>
-	message_ptr do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_simple_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>);
 
   public:
 
@@ -78,7 +78,7 @@ class delete_type_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -144,7 +144,7 @@ class protocol_type_creator_base
       virtual ~protocol_type_creator_base();
 
 
-      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create) = 0;
+      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create) = 0;
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
@@ -169,7 +169,7 @@ class protocol_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -200,7 +200,7 @@ class set_type_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -264,7 +264,7 @@ class update_type_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -325,7 +325,7 @@ class protocol_simple_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -352,7 +352,7 @@ class protocol_relation_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -377,7 +377,7 @@ class protocol_relation_type_creator : public protocol_type_creator_base
 class delete_runtime_request : public rx_request_message  
 {
 	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>);
 
   public:
 
@@ -385,7 +385,7 @@ class delete_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -453,7 +453,7 @@ class protocol_runtime_creator_base
       //	0 - prototype runtime
       //	1 - create runtime
       //	2 - update runtime
-      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, int create_type) = 0;
+      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type) = 0;
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
@@ -478,7 +478,7 @@ class protocol_runtime_creator : public protocol_runtime_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port, rx_request_id_t request, int create_type);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -513,7 +513,7 @@ class set_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -577,7 +577,7 @@ class update_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -663,7 +663,7 @@ class prototype_runtime_response : public query_messages::runtime_response_messa
 class prototype_runtime_request : public rx_request_message  
 {
 	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>);
 
   public:
 
@@ -671,7 +671,7 @@ class prototype_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 

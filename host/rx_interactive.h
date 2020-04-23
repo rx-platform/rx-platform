@@ -35,18 +35,16 @@
 
 #include "system/server/rx_server.h"
 
+// dummy
+#include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// dummy
-#include "dummy.h"
-// rx_security
-#include "lib/security/rx_security.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 namespace host {
 namespace interactive {
@@ -138,36 +136,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
 
-class interactive_security_context : public rx::security::built_in_security_context  
-{
-	DECLARE_REFERENCE_PTR(interactive_security_context);
-
-
-  public:
-      interactive_security_context();
-
-      ~interactive_security_context();
-
-
-      bool has_console () const;
-
-      bool is_system () const;
-
-      bool is_interactive () const;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class interactive_console_endpoint : public rx_protocol_stack_entry  
 {
@@ -187,7 +155,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
 
 
 
@@ -207,7 +175,14 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
 
 
-class interactive_console_port : public rx_platform::runtime::io_types::physical_port  
+typedef rx_platform::runtime::io_types::physical_single_port_impl< interactive_console_endpoint  > interactive_console_base;
+
+
+
+
+
+
+class interactive_console_port : public interactive_console_base  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 Standard IO class. implementation of an standard IO console port");
@@ -249,3 +224,4 @@ Standard IO class. implementation of an standard IO console port");
 
 
 #endif
+

@@ -33,10 +33,10 @@
 
 
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
 
 
 
@@ -44,7 +44,7 @@ namespace rx_internal {
 
 namespace terminal {
 
-namespace rx_vt100 {
+namespace term_transport {
 
 
 
@@ -66,28 +66,19 @@ class vt100_transport : public rx_protocol_stack_entry
 		parser_had_bracket,
 		parser_had_bracket_number
 	};
-    enum telnet_parser_state
-    {
-        telnet_parser_idle,
-        telnet_parser_had_escape,
-        telnet_parser_had_will,
-        telnet_parser_had_wont,
-        telnet_parser_had_do,
-        telnet_parser_had_dont,
-        telnet_parser_had_sb,
-        telnet_parser_had_sb2
-    };
 	typedef std::list<string_type> history_type;
 
   public:
-      vt100_transport();
+      vt100_transport (bool to_echo = true);
 
 
-      bool char_received (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
+      bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
 
       void add_to_history (const string_type& line);
 
-      void bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_entry* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+      void set_echo (bool val);
 
 
       void set_password_mode (bool value)
@@ -105,9 +96,9 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool move_cursor_right ();
 
-      bool char_received_normal (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback);
+      bool char_received_normal (const char ch, bool eof, string_type& to_echo, string_type& line);
 
-      bool char_received_in_end_line (char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback);
+      bool char_received_in_end_line (char ch, string_type& to_echo, string_type& line);
 
       bool char_received_had_escape (const char ch, string_type& to_echo);
 
@@ -119,11 +110,7 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool move_history_down (string_type& to_echo);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer);
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
-
-      bool handle_telnet (const char ch, string_type& to_echo);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
 
 
 
@@ -149,8 +136,6 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool send_echo_;
 
-      telnet_parser_state telnet_state_;
-
 
 };
 
@@ -160,64 +145,33 @@ class vt100_transport : public rx_protocol_stack_entry
 
 
 
-class dummy_transport 
-{
-  public:
-	typedef std::unique_ptr<dummy_transport> smart_ptr;
-
-	vt100_transport trying_;
-
-  public:
-      dummy_transport();
-
-      ~dummy_transport();
-
-
-      void line_received (const string_type& line);
-
-      void do_stuff ();
-
-
-  protected:
-
-  private:
-
-
-};
+typedef rx_platform::runtime::io_types::std_transport_impl< rx_internal::terminal::term_transport::vt100_transport  > vt100_std_transport;
 
 
 
 
 
 
-class vt100_transport_port : public rx_platform::runtime::io_types::transport_port  
+class vt100_transport_port : public vt100_std_transport  
 {
 	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-VT100 terminal. implementation of telnet and VT100 transport protocol port.");
+VT100 terminal. implementation of VT100 transport protocol port.");
 
 	DECLARE_REFERENCE_PTR(vt100_transport_port);
-
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<vt100_transport> > endpoints_type;
 
   public:
       vt100_transport_port();
 
 
-      rx_protocol_stack_entry* create_stack_entry ();
-
-
   protected:
 
   private:
 
 
-      endpoints_type endpoints_;
-
-
 };
 
 
-} // namespace rx_vt100
+} // namespace term_transport
 } // namespace terminal
 } // namespace rx_internal
 

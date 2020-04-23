@@ -35,6 +35,7 @@
 #include "system/runtime/rx_io_relations.h"
 
 #include "model/rx_meta_internals.h"
+#include "system/server/rx_platform_item.h"
 
 
 namespace rx_platform {

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -53,7 +53,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host
 
 interactive_console_host::interactive_console_host (hosting::rx_host_storages& storage)
       : exit_(false)
@@ -72,15 +72,6 @@ interactive_console_host::~interactive_console_host()
 
 rx_result interactive_console_host::console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins)
 {
-	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	rx_result login_result = sec_ctx->login();
-	if (!login_result)
-	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError while trying to login as a host:\r\n";
-		rx_dump_error_result(std::cout, login_result);
-	}
-
-	security::security_auto_context dummy(sec_ctx);
 
 	if (!config.management.telnet_port)// set to the last default if not set
 		config.management.telnet_port = 12345;
@@ -94,14 +85,15 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 		});
 	if (!result)
 		HOST_LOG_WARNING("Main", 999, "Error registering standard console port constructor:"s + result.errors()[0]);
-	
+
 	interactive_port_ = rx_create_reference<interactive_console_port>(this);
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";
-	result = rx_platform::rx_gate::instance().initialize(this, config);
-	if (result)	
+	auto init_result = rx_platform::rx_gate::instance().initialize(this, config);
+	if (init_result)
 	{
+		security::secured_scope _(init_result.value());
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
@@ -109,7 +101,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 		if (result)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			
+
 			std::cout << "Starting interactive console...";
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			result = interactive_port_->run_interactive(this);
@@ -135,7 +127,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing rx-platform...";
-		result = rx_platform::rx_gate::instance().deinitialize();
+		result = rx_platform::rx_gate::instance().deinitialize(init_result.value());
 		if (result)
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
@@ -147,7 +139,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	else
 	{
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
-		rx_dump_error_result(std::cout, result);
+		rx_dump_error_result(std::cout, init_result);
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
@@ -254,7 +246,7 @@ std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const str
 
 bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
 {
-	
+
 	cxxopts::Options options("rx-interactive", "");
 
 	add_command_line_options(options, config);
@@ -275,7 +267,7 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 				std::cout << "\r\nERROR\r\n";
 			}
 			rx_platform_host::print_offline_manual(RX_INTERACTIVE_HOST, host_directories);
-			
+
 			std::cout << options.help({ "" });
 			std::cout << "\r\n\r\n";
 
@@ -289,9 +281,9 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 
 			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 				<< version << ANSI_COLOR_RESET "\r\n\r\n";
-			
+
 			restore_console();
-			
+
 			// don't execute
 			return false;
 		}
@@ -313,14 +305,14 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 	rx_result ret = setup_console(argc, argv);
 
 	rx_platform::configuration_data_t config;
-	ret = parse_command_line(argc, argv, config); 
+	ret = parse_command_line(argc, argv, config);
 	if (ret)
-	{		
+	{
 		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
 		ret = read_config_file(reader, config);
 		if (ret)
-		{			
+		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
@@ -328,7 +320,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			
+
 			std::cout << "\r\n";
 			if(supports_ansi())
 				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
@@ -337,7 +329,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
 			std::cout << "\r\n\r\n";;
-				
+
 			string_array hosts;
 			get_host_info(hosts);
 			bool first = true;
@@ -395,7 +387,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 						log::log_events_type events;
 						query.type = log::rx_log_query_type::error_level;
 						rx::log::log_object::instance().read_cache(query, events);
-						
+
 						hosting::rx_platform_host::dump_log_items(events, std::cout);
 
 					}
@@ -461,43 +453,7 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 }
 
 
-// Class host::interactive::interactive_security_context 
-
-interactive_security_context::interactive_security_context()
-{
-	user_name_ = "interactive";
-	full_name_ = user_name_ + "@";
-	full_name_ += location_;
-	port_ = "internal";
-}
-
-
-interactive_security_context::~interactive_security_context()
-{
-}
-
-
-
-bool interactive_security_context::has_console () const
-{
-  return true;
-
-}
-
-bool interactive_security_context::is_system () const
-{
-  return true;
-
-}
-
-bool interactive_security_context::is_interactive () const
-{
-  return true;
-
-}
-
-
-// Class host::interactive::interactive_console_port 
+// Class host::interactive::interactive_console_port
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
       : endpoint_(host)
@@ -549,12 +505,6 @@ rx_result interactive_console_port::stop_runtime (runtime::runtime_stop_context&
 rx_result interactive_console_port::run_interactive (interactive_console_host* host)
 {
 
-	interactive_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	rx_result login_result = sec_ctx->login();
-
-
-	security::security_auto_context dummy(sec_ctx);
-
 	host->write_stdout(RX_LICENSE_MESSAGE);
 
 	auto result = endpoint_.run_interactive([this](size_t count)
@@ -562,9 +512,6 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 			update_received_counters(count);
 
 		});
-
-
-	sec_ctx->logout();
 
 	return result;
 }
@@ -575,7 +522,7 @@ rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
 }
 
 
-// Class host::interactive::interactive_console_endpoint 
+// Class host::interactive::interactive_console_endpoint
 
 interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host)
       : host_(host)
@@ -606,7 +553,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		{
 			rx_init_const_packet_buffer(&buffer, &in_buffer[0], count);
 			received_func(buffer.size);
-			auto res = rx_move_packet_up(this, nullptr, &buffer);
+			auto res = rx_move_packet_up(this, &buffer);
 			if (res != RX_PROTOCOL_OK)
 			{
 				std::ostringstream ss;
@@ -622,7 +569,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 	return true;
 }
 
-rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference);
 
@@ -634,7 +581,7 @@ rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_st
 				if (result)
 				{
 					self->sent_func_(buffer.size);
-					rx_move_result_up(self, NULL, RX_PROTOCOL_OK);
+					rx_move_result_up(self, RX_PROTOCOL_OK);
 				}
 				else
 				{
@@ -642,9 +589,8 @@ rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_st
 				}
 				rx_deinit_packet_buffer(&buffer);
 			},
-			*buffer
-				)
-	);
+			*buffer)
+		);
 
 	return RX_PROTOCOL_OK;
 }
@@ -683,4 +629,6 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 
 } // namespace interactive
 } // namespace host
+
+
 

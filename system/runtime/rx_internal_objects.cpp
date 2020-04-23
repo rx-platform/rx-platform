@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  sys_internal\rx_internal_objects.cpp
+*  system\runtime\rx_internal_objects.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,16 +32,16 @@
 
 
 // rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
+#include "system/runtime/rx_internal_objects.h"
 
 #include "system/server/rx_server.h"
 
 
-namespace rx_internal {
+namespace rx_platform {
 
 namespace sys_objects {
 
-// Class rx_internal::sys_objects::system_application 
+// Class rx_platform::sys_objects::system_application 
 
 system_application::system_application()
 {
@@ -68,7 +68,7 @@ system_application::smart_ptr system_application::instance ()
 }
 
 
-// Class rx_internal::sys_objects::system_domain 
+// Class rx_platform::sys_objects::system_domain 
 
 system_domain::system_domain()
 {
@@ -95,7 +95,7 @@ system_domain::smart_ptr system_domain::instance ()
 }
 
 
-// Class rx_internal::sys_objects::unassigned_application 
+// Class rx_platform::sys_objects::unassigned_application 
 
 unassigned_application::unassigned_application()
 {
@@ -122,7 +122,7 @@ unassigned_application::smart_ptr unassigned_application::instance ()
 }
 
 
-// Class rx_internal::sys_objects::unassigned_domain 
+// Class rx_platform::sys_objects::unassigned_domain 
 
 unassigned_domain::unassigned_domain()
 {
@@ -150,16 +150,5 @@ unassigned_domain::smart_ptr unassigned_domain::instance ()
 
 
 } // namespace sys_objects
-} // namespace rx_internal
+} // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new system_application());
-    return g_inst;
-
-#endif

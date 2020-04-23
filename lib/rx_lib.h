@@ -144,7 +144,12 @@ public:
 
 typedef std::vector<rx_result> results_array;
 
-void rx_dump_error_result(std::ostream& err, const rx_result& result);
+template<class T>
+void rx_dump_error_result(std::ostream& err, const T& result)
+{
+	for (const auto& one : result.errors())
+		err << one << "\r\n";
+}
 
 template<class T>
 class rx_result_with

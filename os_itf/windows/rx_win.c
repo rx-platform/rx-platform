@@ -1031,7 +1031,7 @@ void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// handles apstractions ( wait and the rest of the stuff
+// handles abstractions ( wait and the rest of the stuff
 uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 {
 	DWORD ret = WaitForSingleObject(what, timeout);
@@ -1068,7 +1068,7 @@ uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// mutex apstractions ( wait and the rest of the stuff
+// mutex abstractions ( wait and the rest of the stuff
 sys_handle_t rx_mutex_create(int initialy_owned)
 {
 	return CreateMutex(NULL, initialy_owned, NULL);
@@ -1090,7 +1090,7 @@ int rx_mutex_release(sys_handle_t hndl)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// event apstractions ( wait and the rest of the stuff
+// event abstractions ( wait and the rest of the stuff
 sys_handle_t rx_event_create(int initialy_set)
 {
 	return CreateEvent(NULL, FALSE, initialy_set, NULL);
@@ -1107,7 +1107,7 @@ int rx_event_set(sys_handle_t hndl)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// thread apstractions
+// thread abstractions
 
 
 struct _thread_start_arg_t
@@ -1235,7 +1235,7 @@ sys_handle_t rx_current_thread()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// basic apstractions
+// basic abstractions
 void rx_ms_sleep(uint32_t timeout)
 {
 	Sleep(timeout);

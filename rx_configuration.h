@@ -158,6 +158,9 @@
 #define RX_VT00_TYPE_NAME "VT100Port"
 #define RX_VT00_TYPE_ID 0xc000017
 
+#define RX_TELNET_TYPE_NAME "TelnetPort"
+#define RX_TELNET_TYPE_ID 0xc000018
+
 
 #define RX_PORT_STATUS_TYPE_NAME "PortStatusData"
 #define RX_PORT_STATUS_TYPE_ID 0xc000019
@@ -169,9 +172,6 @@
 
 #define RX_RX_JSON_TYPE_NAME "RxJsonProtocol"
 #define RX_RX_JSON_TYPE_ID 0xc000022
-
-#define RX_TELNET_TYPE_NAME "TelnetPort"
-#define RX_TELNET_TYPE_ID 0xc000023
 
 #define RX_TIMEOUTS_TYPE_NAME "TimeoutsData"
 #define RX_TIMEOUTS_TYPE_ID 0xc000024

@@ -34,6 +34,7 @@
 // rx_job
 #include "lib/rx_job.h"
 
+#include "security/rx_security.h"
 
 
 namespace rx {
@@ -82,6 +83,12 @@ job* job::get_unsafe_ptr ()
 void job::release_unsafe_ptr ()
 {
 	release();
+}
+
+void job::process_wrapper ()
+{
+    security::secured_scope _(security_context_);
+    process();
 }
 
 

@@ -43,6 +43,7 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+#include "lib/security/rx_security.h"
 #include "system/callbacks/rx_callback.h"
 #include "rx_runtime_helpers.h"
 using namespace rx;
@@ -74,6 +75,8 @@ typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 namespace runtime {
 
 namespace items {
+// instance data forwards
+class port_instance_data;
 
 
 
@@ -231,6 +234,7 @@ system port class. basic implementation of a port");
 	DECLARE_REFERENCE_PTR(port_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::port_type>;
+    friend class port_instance_data;
 
   public:
       port_runtime();
@@ -239,8 +243,6 @@ system port class. basic implementation of a port");
 
 
       virtual rx_protocol_stack_entry* create_stack_entry ();
-
-      rx_result_with<io_types::rx_io_buffer> allocate_io_buffer (size_t initial_capacity = 0);
 
       virtual rx_result initialize_runtime (runtime_init_context& ctx);
 
@@ -315,6 +317,13 @@ system port class. basic implementation of a port");
 
 
 
+      rx_security_handle_t get_identity () const
+      {
+        return identity_;
+      }
+
+
+
   private:
 
       virtual bool has_up_port () const = 0;
@@ -325,6 +334,8 @@ system port class. basic implementation of a port");
 
 
       rx_thread_handle_t executer_;
+
+      rx_security_handle_t identity_;
 
 
 };

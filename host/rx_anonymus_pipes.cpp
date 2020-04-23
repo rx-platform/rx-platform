@@ -51,7 +51,7 @@ local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
 
 rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = physical_port::initialize_runtime(ctx);
+	auto result = local_pipe_port_type::initialize_runtime(ctx);
 	if (result)
 	{
 		ctx.tags->set_item_static("Pipe.InPipe"s, (uint64_t)(pipe_handles_.client_read), ctx);
@@ -62,7 +62,7 @@ rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ct
 
 rx_result local_pipe_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	auto result = physical_port::deinitialize_runtime(ctx);
+	auto result = local_pipe_port_type::deinitialize_runtime(ctx);
 	if (result)
 	{
 	}
@@ -71,7 +71,7 @@ rx_result local_pipe_port::deinitialize_runtime (runtime::runtime_deinit_context
 
 rx_result local_pipe_port::start_runtime (runtime::runtime_start_context& ctx)
 {
-	auto result = physical_port::start_runtime(ctx);
+	auto result = local_pipe_port_type::start_runtime(ctx);
 	if (result)
 	{
 	}
@@ -80,7 +80,7 @@ rx_result local_pipe_port::start_runtime (runtime::runtime_start_context& ctx)
 
 rx_result local_pipe_port::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	auto result = physical_port::stop_runtime(ctx);
+	auto result = local_pipe_port_type::stop_runtime(ctx);
 	if (result)
 	{
 	}
@@ -102,14 +102,12 @@ rx_result local_pipe_port::open ()
 		{
 			update_sent_counters(count);
 		});
-	update_connected_status(result);
 	return result;
 }
 
 void local_pipe_port::close ()
 {
 	pipes_.close();
-	update_connected_status(false);
 }
 
 rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
@@ -197,7 +195,7 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received_func)
 {
 	rx_result result;
-	
+
 	while (true)
 	{
 		rx_const_packet_buffer buffer{};
@@ -208,7 +206,7 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 			break;
 		}
 		received_func(buffer.size);
-		auto res = rx_move_packet_up(this, nullptr, &buffer);
+		auto res = rx_move_packet_up(this, &buffer);
 		if (res != RX_PROTOCOL_OK)
 		{
 			std::ostringstream ss;
@@ -231,7 +229,7 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 	return true;
 }
 
-rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
 	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference);
 
@@ -243,7 +241,7 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 				if (result)
 				{
 					self->sent_func_(buffer.size);
-					rx_move_result_up(self, NULL, RX_PROTOCOL_OK);
+					rx_move_result_up(self, RX_PROTOCOL_OK);
 				}
 				else
 				{
@@ -264,30 +262,6 @@ void anonymus_pipe_endpoint::close ()
 	pipe_sender_.end();
 	pipes_->close_pipe();
 	pipes_.release();
-}
-
-
-// Class host::pipe::local_pipe_security_context 
-
-local_pipe_security_context::local_pipe_security_context()
-{
-	user_name_ = "pipe";
-	full_name_ = user_name_ + "@";
-	full_name_ += location_;
-	port_ = "internal";
-}
-
-
-local_pipe_security_context::~local_pipe_security_context()
-{
-}
-
-
-
-bool local_pipe_security_context::is_system () const
-{
-  return true;
-
 }
 
 

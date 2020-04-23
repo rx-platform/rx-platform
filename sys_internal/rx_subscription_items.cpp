@@ -103,7 +103,7 @@ rx_result add_items_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr add_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr add_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	std::vector<subscription_item_data> subs_items;
 	subs_items.reserve(items.size());
@@ -118,7 +118,7 @@ message_ptr add_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr
 		subs_items.emplace_back(std::move(temp));
 	}
 	std::vector<rx_result_with<runtime_handle_t> > results;
-	auto result = port->add_items(subscription_id, subs_items, results);
+	auto result = conn->add_items(subscription_id, subs_items, results);
 	if (result)
 	{
 		auto response = std::make_unique<add_items_response>();
@@ -182,10 +182,10 @@ rx_result remove_items_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr remove_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr remove_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	std::vector<rx_result> results;
-	auto result = port->remove_items(subscription_id, std::move(items), results);
+	auto result = conn->remove_items(subscription_id, std::move(items), results);
 	if (result)
 	{
 		auto response = std::make_unique<remove_items_response>();
@@ -234,7 +234,7 @@ rx_result execute_item_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr execute_item_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr execute_item_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
@@ -399,7 +399,19 @@ rx_result write_items_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+const string_type& write_items_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t write_items_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	if (values.empty())
 	{
@@ -407,7 +419,7 @@ message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_port_p
 	}
 	std::vector<rx_result> results;
 	results.reserve(values.size());
-	auto result = port->write_items(subscription_id, transaction_id, std::move(values), results);
+	auto result = conn->write_items(subscription_id, transaction_id, std::move(values), results);
 	if (result)
 	{
 		auto response = std::make_unique<write_items_response>();
@@ -424,18 +436,6 @@ message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_port_p
 		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
 		return ret_value;
 	}
-}
-
-const string_type& write_items_request::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t write_items_request::get_type_id ()
-{
-  return type_id;
-
 }
 
 
@@ -538,7 +538,7 @@ rx_result modify_items_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr modify_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr modify_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
@@ -579,7 +579,7 @@ rx_result read_items_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr read_items_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr read_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
@@ -806,4 +806,5 @@ rx_result item_result_data::deserialize (base_meta_reader& stream)
 } // namespace messages
 } // namespace rx_protocol
 } // namespace rx_internal
+
 

@@ -60,6 +60,9 @@ typedef std::uint_fast16_t sec_error_num_t;
 namespace security {
 class security_context;
 
+typedef pointers::reference<security_context> security_context_ptr;
+typedef pointers::reference<security_context> execute_context_ptr;
+
 
 
 
@@ -90,20 +93,10 @@ class security_context : public pointers::reference_object
 
       virtual bool is_interactive () const;
 
-      rx_result impersonate ();
-
-      void revert ();
-
 
       const rx_security_handle_t get_handle () const
       {
         return handle_;
-      }
-
-
-      const string_type& get_location () const
-      {
-        return location_;
       }
 
 
@@ -119,22 +112,20 @@ class security_context : public pointers::reference_object
       }
 
 
-      const string_type& get_port () const
+      const string_type& get_location () const
       {
-        return port_;
+        return location_;
       }
 
 
 
   protected:
 
-      string_type location_;
-
       string_type full_name_;
 
       string_type user_name_;
 
-      string_type port_;
+      string_type location_;
 
 
   private:
@@ -145,8 +136,6 @@ class security_context : public pointers::reference_object
 
 };
 
-typedef pointers::reference<security_context> security_context_ptr;
-typedef pointers::reference<security_context> execute_context_ptr;
 
 
 security_context_ptr active_security();
@@ -252,13 +241,15 @@ typedef security_guard::smart_ptr security_guard_ptr;
 
 
 
-class security_auto_context 
+class secured_scope 
 {
 
   public:
-      security_auto_context (security_context_ptr ctx);
+      secured_scope (const security_context_ptr& ctx);
 
-      ~security_auto_context();
+      secured_scope (rx_security_handle_t ctx);
+
+      ~secured_scope();
 
 
   protected:
@@ -267,28 +258,6 @@ class security_auto_context
 
 
       rx_security_handle_t ctx_;
-
-
-};
-
-
-
-
-
-
-class built_in_security_context : public security_context  
-{
-	DECLARE_REFERENCE_PTR(built_in_security_context);
-
-  public:
-      built_in_security_context();
-
-      ~built_in_security_context();
-
-
-  protected:
-
-  private:
 
 
 };

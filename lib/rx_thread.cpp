@@ -55,12 +55,7 @@ void execute_job(void* arg)
 	job* pjob = (job*)arg;
 	if (!pjob->is_canceled())
 	{
-		rx_security_handle_t sec = pjob->get_security_context();
-		if (sec)
-			rx_push_security_context(sec);
-		pjob->process();
-		if (sec)
-			rx_pop_security_context();
+		pjob->process_wrapper();
 	}
 	pjob->release_unsafe_ptr();
 }
@@ -160,14 +155,8 @@ uint32_t physical_job_thread::handler ()
 
 				if (!obj->is_canceled())
 				{
-					rx_security_handle_t sec = obj->get_security_context();
-					if (sec)
-						rx_push_security_context(sec);
 					current_ = obj;
-					obj->process();
-					current_ = job_ptr::null_ptr;
-					if (sec)
-						rx_pop_security_context();
+					obj->process_wrapper();
 				}
 			}
 		}

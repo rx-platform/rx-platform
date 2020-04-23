@@ -57,24 +57,25 @@ opcua_transport_endpoint::opcua_transport_endpoint()
 
 
 
-rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->received_func_((int64_t)rx_get_packet_available_data(buffer));
-    return opcua_bin_bytes_received(reference, end_point, buffer);
+    return opcua_bin_bytes_received(reference, buffer);
 }
 
-void opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_entry* opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
     sent_func_ = sent_func;
     received_func_ = received_func;
+    return &protocol_stack_entry;
 }
 
-rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->sent_func_((int64_t)rx_get_packet_usable_data(buffer));
-    return opcua_bin_bytes_send(reference, end_point, buffer);
+    return opcua_bin_bytes_send(reference, buffer);
 }
 
 
@@ -82,27 +83,8 @@ rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_
 
 opcua_transport_port::opcua_transport_port()
 {
-    bind_port();
 }
 
-
-
-rx_protocol_stack_entry* opcua_transport_port::create_stack_entry ()
-{
-    return &endpoint_.protocol_stack_entry;
-}
-
-void opcua_transport_port::bind_port ()
-{
-    endpoint_.bind([this](int64_t count)
-        {
-            update_sent_counters(count);
-        },
-        [this](int64_t count)
-        {
-            update_received_counters(count);
-        });
-}
 
 
 } // namespace opcua

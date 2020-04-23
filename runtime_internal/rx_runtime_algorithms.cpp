@@ -38,6 +38,7 @@
 #include "rx_runtime_internal.h"
 #include "sys_internal/rx_async_functions.h"
 #include "model/rx_meta_internals.h"
+#include "system/server/rx_platform_item.h"
 
 
 namespace rx_internal {
@@ -252,7 +253,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 		{
 			RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object "s
 				+ what->meta_info().get_full_path() + " to unassigned domain.");
-			domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
+			domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(RX_NS_SYSTEM_UNASS_ID);
 		}
 		if (domain_ptr)
 		{
@@ -274,13 +275,13 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 	{
 		RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is " RX_NULL_ITEM_NAME ", connecting object "s
 			+ what->meta_info().get_full_path() + " to unassigned domain.");
-		auto domain_ptr = rx_gate::instance().get_manager().get_unassigned_domain();
+		auto domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(RX_NS_SYSTEM_UNASS_ID);
 		if (domain_ptr)
 		{
-			auto temp_ptr = domain_ptr;
+			auto temp_ptr = domain_ptr.value();
 			if (what->get_instance_data().connect_domain(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("object_algorithms", 100, what->meta_info().get_full_path()
-					+ " connected to domain " + domain_ptr->meta_info().get_full_path());
+					+ " connected to domain " + domain_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{
@@ -413,7 +414,7 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 		{
 			RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain "s
 				+ what->meta_info().get_full_path() + " to unassigned application.");
-			application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+			application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_DOM_ID);
 		}
 		if (application_ptr)
 		{
@@ -435,13 +436,13 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 	{
 		RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting object "s
 			+ what->meta_info().get_full_path() + " to unassigned application.");
-		auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+		auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
 		if (application_ptr)
 		{
-			auto temp_ptr = application_ptr;
+			auto temp_ptr = application_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("domain_algorithms", 100, what->meta_info().get_full_path()
-					+ " connected to application " + application_ptr->meta_info().get_full_path());
+					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{
@@ -564,7 +565,7 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 		{
 			RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting port "s
 				+ what->meta_info().get_full_path() + " to unassigned domain.");
-			application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+			application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
 		}
 		if (application_ptr)
 		{
@@ -586,13 +587,13 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 	{
 		RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting object "s
 			+ what->meta_info().get_full_path() + " to unassigned application.");
-		auto application_ptr = rx_gate::instance().get_manager().get_unassigned_app();
+		auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
 		if (application_ptr)
 		{
-			auto temp_ptr = application_ptr;
+			auto temp_ptr = application_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_TRACE("port_algorithms", 100, what->meta_info().get_full_path()
-					+ " connected to application " + application_ptr->meta_info().get_full_path());
+					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
 		}
 		else
 		{

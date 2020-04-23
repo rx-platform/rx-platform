@@ -35,6 +35,8 @@
 #include "rx_runtime_helpers.h"
 
 
+// rx_identity
+#include "system/server/rx_identity.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -91,6 +93,8 @@ class object_instance_data
       static rx_result after_deinit_runtime (rx_object_ptr what, runtime::runtime_deinit_context& ctx);
 
       static rx_result after_stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
+
+      const security::security_context_ptr& get_security_context () const;
 
 
       rx_thread_handle_t get_executer () const
@@ -150,6 +154,8 @@ class domain_instance_data
       static rx_result after_deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx);
 
       static rx_result after_stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
+
+      const security::security_context_ptr& get_security_context () const;
 
 
       rx_thread_handle_t get_executer () const
@@ -211,6 +217,8 @@ class port_instance_data
 
       static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
+      const security::security_context_ptr& get_security_context () const;
+
 
       const rx_application_ptr get_my_application () const;
 
@@ -226,13 +234,17 @@ class port_instance_data
 
       rx_item_reference up_port;
 
-
+      ~port_instance_data() = default;
+      port_instance_data(port_instance_data&& right);
+      port_instance_data(const port_instance_data& right);
   protected:
 
   private:
 
 
       rx_application_ptr my_application_;
+
+      security_context_holder identity_;
 
 
       rx_thread_handle_t executer_;
@@ -278,6 +290,8 @@ class application_instance_data
 
       static rx_result after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
+      const security::security_context_ptr& get_security_context () const;
+
 
       rx_thread_handle_t get_executer () const
       {
@@ -290,7 +304,9 @@ class application_instance_data
 
       rx_domain_priority priority;
 
-
+      ~application_instance_data() = default;
+      application_instance_data(application_instance_data&& right);
+      application_instance_data(const application_instance_data& right);
   protected:
 
   private:
@@ -299,6 +315,8 @@ class application_instance_data
       domains_type domains_;
 
       ports_type ports_;
+
+      security_context_holder identity_;
 
 
       locks::slim_lock domains_lock_;

@@ -35,6 +35,7 @@
 #include "system/runtime/rx_objbase.h"
 
 #include "rx_configuration.h"
+#include "rx_runtime_instance.h"
 
 
 namespace rx_platform {
@@ -200,7 +201,8 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
       : context_(nullptr),
-        executer_(-1)
+        executer_(-1),
+        identity_(0)
 {
 }
 
@@ -215,16 +217,6 @@ rx_protocol_stack_entry* port_runtime::create_stack_entry ()
 {
 	RX_ASSERT(false);
 	return nullptr;
-}
-
-rx_result_with<io_types::rx_io_buffer> port_runtime::allocate_io_buffer (size_t initial_capacity)
-{
-	io_types::rx_io_buffer ret;
-	auto result = rx_init_packet_buffer(&ret, initial_capacity, create_stack_entry());
-	if (result == RX_PROTOCOL_OK)
-		return ret;
-	else
-		return rx_protocol_error_message(result);
 }
 
 rx_result port_runtime::initialize_runtime (runtime_init_context& ctx)

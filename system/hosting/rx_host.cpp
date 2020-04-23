@@ -393,33 +393,10 @@ void rx_platform_host::dump_log_items (const log::log_events_type& items, std::o
 }
 
 
-// Class rx_platform::hosting::host_security_context 
-
-host_security_context::host_security_context()
-{
-	user_name_ = "host";
-	full_name_ = user_name_ + "@";
-	full_name_ += location_;
-	port_ = "internal";
-}
-
-
-host_security_context::~host_security_context()
-{
-}
-
-
-
-bool host_security_context::is_system () const
-{
-  return true;
-
-}
-
-
 // Class rx_platform::hosting::configuration_reader 
 
 
 } // namespace hosting
 } // namespace rx_platform
+
 

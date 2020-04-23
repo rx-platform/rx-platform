@@ -257,12 +257,33 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
 template <class typeT>
 rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& value) const
 {
+    rx_result result;
     if (path.empty())
     {// our value
-        value.assign_static(meta_info_.get_version(), meta_info_.get_modified_time());
-        return true;
+        if (!json_cache_.empty())
+        {
+            value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+        }
+        else
+        {
+            serialization::json_writer writer;
+            writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+            result = serialize_value(writer, runtime_value_type::simple_runtime_value);
+            if (result)
+            {
+#ifdef _DEBUG
+                writer.get_string(const_cast<string_type&>(json_cache_), true);
+#else
+                writer.get_string(const_cast<runtime_holder<typeT>* >(this)->json_cache_, false);
+#endif
+                value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+            }
+        }
     }
-    auto result = item_->get_value(state_, path, value);
+    else
+    {
+        result = item_->get_value(state_, path, value);
+    }
     return result;
 }
 
@@ -569,12 +590,12 @@ void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
 }
 
 template <class typeT>
-void runtime_holder<typeT>::collect_data (data::runtime_values_data& data) const
+void runtime_holder<typeT>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    item_->collect_data(data);
+    item_->collect_data(data, type);
     for (auto& one : relations_)
     {
-        one->collect_data(data);
+        one->collect_data(data, type);
     }
 }
 
@@ -587,6 +608,7 @@ rx_result runtime_holder<typeT>::get_value_ref (const string_type& path, rt_valu
 template <class typeT>
 bool runtime_holder<typeT>::process_runtime (runtime_process_context& ctx)
 {
+    security::secured_scope _(instance_data_.get_security_context());
     bool ret = false;
     if (scan_time_item_)
         set_binded_as(scan_time_item_, last_scan_time_);
@@ -714,6 +736,29 @@ template <class typeT>
 rx_thread_handle_t runtime_holder<typeT>::get_executer () const
 {
     return instance_data_.get_executer();
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
+{
+    data::runtime_values_data data;
+    collect_data(data, type);
+    if (!stream.write_init_values(nullptr, data))
+        return "Error writing values to the stream";
+    else
+        return true;
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+template <class typeT>
+const typename typeT::instance_data_t& runtime_holder<typeT>::get_instance_data () const
+{
+    return instance_data_;
 }
 
 template class runtime_holder<object_types::object_type>;

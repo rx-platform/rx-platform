@@ -125,7 +125,7 @@ rx_result rx_system_info_request::deserialize (base_meta_reader& stream)
     return true;
 }
 
-message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
     auto response = std::make_unique<rx_system_info_response>();
     response->request_id = request_id;

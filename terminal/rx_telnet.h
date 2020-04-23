@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\opcua\rx_opcua_mapping.h
+*  terminal\rx_telnet.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,37 +28,57 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_mapping_h
-#define rx_opcua_mapping_h 1
+#ifndef rx_telnet_h
+#define rx_telnet_h 1
 
 
 
 // dummy
 #include "dummy.h"
+// rx_vt100
+#include "terminal/rx_vt100.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
-#include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
 
-namespace protocols {
+namespace rx_internal {
 
-namespace opcua {
+namespace terminal {
 
-constexpr size_t opc_ua_endpoint_name_len = 0x100;
-
+namespace term_transport {
 
 
 
-class opcua_transport_endpoint : public opcua_transport_protocol_type  
+
+
+class telnet_transport : public rx_protocol_stack_entry  
 {
+public:
+    telnet_transport(const telnet_transport& right) = delete;
+    telnet_transport& operator=(const telnet_transport& right) = delete;
+    telnet_transport(telnet_transport&& right) = delete;
+    telnet_transport& operator=(telnet_transport&& right) = delete;
+private:
+    enum telnet_parser_state
+    {
+        telnet_parser_idle,
+        telnet_parser_had_escape,
+        telnet_parser_had_will,
+        telnet_parser_had_wont,
+        telnet_parser_had_do,
+        telnet_parser_had_dont,
+        telnet_parser_had_sb,
+        telnet_parser_had_sb2
+    };
 
   public:
-      opcua_transport_endpoint();
+      telnet_transport();
 
 
       rx_protocol_stack_entry* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+      bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
 
 
   protected:
@@ -67,13 +87,20 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
       static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+      bool handle_telnet (const char ch, string_type& to_echo);
 
+
+
+      vt100_transport vt100_;
 
 
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
+
+      bool send_echo_;
+
+      telnet_parser_state telnet_state_;
 
 
 };
@@ -84,22 +111,22 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::std_transport_impl< protocols::opcua::opcua_transport_endpoint  > opcua_std_transport;
+typedef rx_platform::runtime::io_types::std_transport_impl< rx_internal::terminal::term_transport::telnet_transport  > telnet_std_transport;
 
 
 
 
 
 
-class opcua_transport_port : public opcua_std_transport  
+class telnet_transport_port : public telnet_std_transport  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-OPC-UA transport port. Implementation of binary OPC-UA transport and simplified local pipe version without secure channel.");
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 
-    DECLARE_REFERENCE_PTR(opcua_transport_port);
+    DECLARE_REFERENCE_PTR(telnet_transport_port);
 
   public:
-      opcua_transport_port();
+      telnet_transport_port();
 
 
   protected:
@@ -110,8 +137,9 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
 };
 
 
-} // namespace opcua
-} // namespace protocols
+} // namespace term_transport
+} // namespace terminal
+} // namespace rx_internal
 
 
 

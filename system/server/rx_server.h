@@ -47,14 +47,12 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
-// rx_mngt
-#include "system/server/rx_mngt.h"
 // rx_cmds
 #include "system/server/rx_cmds.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -94,10 +92,19 @@ struct runtime_data_t
     threads::job_thread* extern_executer = nullptr;
 };
 
+struct management_data_t
+{
+    string_type telnet_addr = "127.0.0.1";
+    uint16_t telnet_port = 0;
+    string_type logs_directory;
+    bool test_log = false;
+    string_type startup_script;
+};
+
 struct configuration_data_t
 {
 	runtime_data_t processor;
-	mngt::management_data_t management;
+	management_data_t management;
 	ns::namespace_data_t storage;
 	meta::meta_configuration_data_t meta_configuration;
 	io_manager_data_t io;
@@ -127,9 +134,9 @@ class rx_gate
 
       void cleanup ();
 
-      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+      rx_result_with<security::security_context_ptr> initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
-      rx_result deinitialize ();
+      rx_result deinitialize (security::security_context_ptr sec_ctx);
 
       rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
@@ -142,12 +149,6 @@ class rx_gate
       bool read_log (const log::log_query_type& query, log::log_events_type& result);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-
-      mngt::server_manager& get_manager ()
-      {
-        return manager_;
-      }
 
 
       hosting::rx_platform_host * get_host ()
@@ -222,21 +223,16 @@ class rx_gate
 	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
   protected:
 
-      void interface_bind ();
-
-      void interface_release ();
-
-
   private:
       rx_gate();
 
       ~rx_gate();
 
+      template <class typeT>
+      rx_result register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
 
 
       rx_directory_ptr root_;
-
-      mngt::server_manager manager_;
 
       hosting::rx_platform_host *host_;
 
@@ -272,11 +268,6 @@ class rx_gate
 
 };
 
-rx_domain_ptr rx_system_domain();
-rx_application_ptr rx_system_application();
-
-rx_domain_ptr rx_unassigned_domain();
-rx_application_ptr rx_unassigned_application();
 
 } // namespace rx_platform
 

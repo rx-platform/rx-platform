@@ -117,7 +117,7 @@ void relation_runtime::fill_data (const data::runtime_values_data& data)
 	value.simple_set_value(std::move(val));
 }
 
-void relation_runtime::collect_data (data::runtime_values_data& data) const
+void relation_runtime::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	rx_simple_value temp;
 	temp.assign_static<string_type>(string_type(target));

@@ -63,7 +63,7 @@ class browse_request_message : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -129,10 +129,10 @@ class browse_response_message : public rx_message_base
 class get_type_request : public rx_request_message  
 {
 	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_job(api::rx_context ctx, rx_protocol_connection_ptr port, tl::type2type<T>);
 	template<typename T>
-	message_ptr do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
-	message_ptr do_relation_job(api::rx_context ctx, rx_protocol_port_ptr port);
+	message_ptr do_simple_job(api::rx_context ctx, rx_protocol_connection_ptr port, tl::type2type<T>);
+	message_ptr do_relation_job(api::rx_context ctx, rx_protocol_connection_ptr port);
 
   public:
 
@@ -140,7 +140,7 @@ class get_type_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -178,7 +178,7 @@ class query_request_message : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -299,7 +299,7 @@ class get_type_response : public type_response_message<itemT>
 class get_runtime_request : public rx_request_message  
 {
 	template<typename T>
-	message_ptr do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>);
+	message_ptr do_job(api::rx_context ctx, rx_protocol_connection_ptr port, tl::type2type<T>);
 
   public:
 
@@ -307,7 +307,7 @@ class get_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -398,7 +398,7 @@ class browse_runtime_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -422,7 +422,7 @@ class browse_runtime_request : public rx_request_message
 
   private:
 	  template<typename typeT>
-	  message_ptr do_concrete_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<typeT>);
+	  message_ptr do_concrete_job(api::rx_context ctx, rx_protocol_connection_ptr port, tl::type2type<typeT>);
 
 };
 
@@ -473,7 +473,7 @@ class get_code_info_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 

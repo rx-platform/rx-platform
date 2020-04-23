@@ -44,6 +44,7 @@
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
 #include "system/meta/rx_meta_data.h"
+#include "system/server/rx_platform_item.h"
 using namespace rx;
 using namespace rx::values;
 using rx_platform::runtime_item_attribute;
@@ -347,7 +348,7 @@ class runtime_item
 
   public:
 
-      virtual void collect_data (data::runtime_values_data& data) const = 0;
+      virtual void collect_data (data::runtime_values_data& data, runtime_value_type type) const = 0;
 
       virtual void fill_data (const data::runtime_values_data& data, init_context& ctx) = 0;
 
@@ -418,7 +419,7 @@ class variable_data
       variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
 
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -480,7 +481,7 @@ class struct_data
       struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var);
 
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -529,7 +530,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -578,7 +579,7 @@ class source_data
 
   public:
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -627,7 +628,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -676,7 +677,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 
@@ -750,7 +751,7 @@ class runtime_data : public runtime_item
 
   public:
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data, init_context& ctx);
 

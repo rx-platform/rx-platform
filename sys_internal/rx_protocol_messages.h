@@ -36,7 +36,7 @@
 
 namespace rx_internal {
 namespace rx_protocol {
-class rx_protocol_port;
+class rx_protocol_connection;
 
 } // namespace rx_protocol
 } // namespace rx_internal
@@ -49,6 +49,7 @@ using namespace rx;
 namespace rx_internal {
 
 namespace rx_protocol {
+typedef rx_reference<rx_protocol_connection> rx_protocol_connection_ptr;
 namespace messages
 {
 class rx_request_message;
@@ -56,7 +57,6 @@ class rx_message_base;
 }
 typedef std::unique_ptr<messages::rx_request_message> request_message_ptr;
 typedef std::unique_ptr<messages::rx_message_base> message_ptr;
-typedef reference<rx_protocol::rx_protocol_port> rx_protocol_port_ptr;
 
 namespace messages {
 
@@ -271,7 +271,7 @@ class rx_request_message : public rx_message_base
 
   public:
 
-      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port) = 0;
+      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn) = 0;
 
       static rx_result_with<request_message_ptr> create_request_from_json (const string_type& data, rx_request_id_t& request_id);
 
@@ -309,7 +309,7 @@ class rx_connection_context_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 

@@ -277,12 +277,12 @@ rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
 	if (!directory.empty())
 	{
-		auto result = port->set_current_directory(directory);
+		auto result = conn->set_current_directory(directory);
 		if (!result)
 		{
 			auto ret_value = std::make_unique<error_message>(result, 13, request_id);
@@ -290,7 +290,7 @@ message_ptr rx_connection_context_request::do_job (api::rx_context ctx, rx_proto
 		}
 	}
 	auto response = std::make_unique<rx_connection_context_response>();
-	response->directory = port->get_current_directory_path();
+	response->directory = conn->get_current_directory_path();
 	return response;
 }
 

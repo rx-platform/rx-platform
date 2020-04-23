@@ -276,6 +276,18 @@ rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t t
     return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
 }
 
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
+{
+    return impl_->serialize_value(stream, type);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
+{
+    return impl_->deserialize_value(stream, type);
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
@@ -423,6 +435,18 @@ rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_i
     return RX_NOT_IMPLEMENTED;
 }
 
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
+{
+    return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
+{
+    return "Not valid for this type!";
+}
+
 
 // Class rx_internal::internal_ns::internal_directory 
 
@@ -560,6 +584,18 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
 {
     return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
+{
+    return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
+{
+    return "Not valid for this type!";
 }
 
 

@@ -66,7 +66,7 @@ rx_result rx_make_directory_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr rx_make_directory_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr rx_make_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto ret = ctx.safe_directory()->add_sub_directory(path);
 	if (!ret)
@@ -115,7 +115,7 @@ rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto ret_value = std::make_unique<error_message>("Jebi ga nije jos gotovo!"s, 17, request_id);
 	return ret_value;

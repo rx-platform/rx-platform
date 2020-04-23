@@ -657,7 +657,6 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 			return sub_dir + " is invalid path!";
 		}
 	}
-
 	string_type path;
 	auto result = dir->reserve_name(runtime_name, path);
 	if (!result)
@@ -670,7 +669,6 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 
 	if (!item_id)
 		item_id = rx_node_id::generate_new();
-
 
 	meta_data meta(info);
 	meta.construct(runtime_name, item_id, base_id, attributes, path);

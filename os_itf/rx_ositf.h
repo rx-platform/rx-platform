@@ -47,6 +47,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 	// match pattern function
 	int match_pattern(const char *string, const char *Pattern, int bCaseSensitive);
 
@@ -236,7 +238,7 @@ extern "C" {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	// completition ports
+	// completion ports
 
 	typedef void(*rx_callback)(void*);
 

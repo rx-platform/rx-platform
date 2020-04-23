@@ -33,6 +33,7 @@
 
 
 #include "system/meta/rx_meta_support.h"
+#include "system/server/rx_platform_item.h"
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
@@ -194,7 +195,7 @@ public:
 
       void fill_data (const data::runtime_values_data& data);
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
@@ -217,6 +218,12 @@ public:
       typename runtime_holder<typeT>::ImplPtr get_implementation ();
 
       rx_thread_handle_t get_executer () const;
+
+      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
+
+      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
+      const typename typeT::instance_data_t& get_instance_data () const;
 
 
       rx::data::runtime_values_data& get_overrides ()
@@ -306,6 +313,8 @@ public:
       typename typeT::instance_data_t instance_data_;
 
       structure::hosting_object_data state_;
+
+      string_type json_cache_;
 
 
 };

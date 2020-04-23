@@ -41,6 +41,24 @@
 
 
 namespace rx_platform {
+enum class runtime_value_type
+{
+    simple_runtime_value    = 0x00,
+
+    ref_runtime_value       = 0x01,
+    
+    sources_runtime_value   = 0x02,
+    filters_runtime_value   = 0x04,
+    events_runtime_value    = 0x08,
+
+    extended_runtime_value  = 0x0e,
+
+    mappers_runtime_value   = 0x10,
+
+    full_runtime_value      = 0x1f,
+
+    resolved_runtime_value  = 0x20,
+};
 
 namespace ns {
 
@@ -101,6 +119,10 @@ private:
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
 
       virtual rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor) = 0;
+
+      virtual rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const = 0;
+
+      virtual rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type) = 0;
 
 
   protected:

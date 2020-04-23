@@ -34,12 +34,12 @@
 
 #include "rx_runtime_helpers.h"
 
+// rx_obj_types
+#include "system/meta/rx_obj_types.h"
 // rx_runtime_instance
 #include "system/runtime/rx_runtime_instance.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
-// rx_obj_types
-#include "system/meta/rx_obj_types.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -119,7 +119,7 @@ class relation_runtime : public rx::pointers::reference_object
 
       void fill_data (const data::runtime_values_data& data);
 
-      void collect_data (data::runtime_values_data& data) const;
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
 

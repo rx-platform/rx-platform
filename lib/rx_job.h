@@ -73,11 +73,7 @@ class job : private pointers::reference_object
 
       virtual void process () = 0;
 
-
-      const rx_security_handle_t get_security_context () const
-      {
-        return security_context_;
-      }
+      void process_wrapper ();
 
 
       const rx_criticalness get_criticalness () const

@@ -156,10 +156,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 					HOST_LOG_INFO("Main", 999, "Starting Simple Host...");
 
 
-					host_security_context_ = rx_create_reference<rx_platform::hosting::host_security_context>();
-					host_security_context_->login();
-
-					host_security_context_->impersonate();
+					
 
 					if (!config_.management.telnet_port)// set to the last default if not set
 						config_.management.telnet_port = 12345;
@@ -168,7 +165,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 					if (config_.processor.workers_pool_size < 0)
 						config_.processor.workers_pool_size = 2;
 
-					// init exter ui thread
+					// initialize extern ui thread
 					thread_synchronizer_.init_callback(sync_callback);
 					config_.processor.extern_executer = &thread_synchronizer_;
 
@@ -178,6 +175,8 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 					auto result = rx_platform::rx_gate::instance().initialize(this, config_);
 					if (result)
 					{
+						host_security_context_ = result.value();
+
 						std::cout << "OK\r\n";
 						return 1;
 					}
@@ -327,7 +326,8 @@ int simple_platform_host::start_platform ()
 		rx_dump_error_result(std::cout, result);
 	}
 	std::cout << "De-initializing rx-platform...";
-	result = rx_platform::rx_gate::instance().deinitialize();
+	if(host_security_context_)
+		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
 		std::cout << "OK\r\n";
 	else
@@ -341,7 +341,9 @@ int simple_platform_host::start_platform ()
 int simple_platform_host::stop_platform ()
 {
 	std::cout << "De-initializing rx-platform...";
-	auto result = rx_platform::rx_gate::instance().deinitialize();
+	rx_result result;
+	if (host_security_context_)
+		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
 		std::cout << "OK\r\n";
 	else
@@ -352,8 +354,6 @@ int simple_platform_host::stop_platform ()
 	thread_synchronizer_.deinit_callback();
 
 	HOST_LOG_INFO("Main", 999, "Console Host exited.");
-
-	host_security_context_->revert();
 
 	deinitialize_storages();
 	rx_deinitialize_os();

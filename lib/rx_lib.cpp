@@ -454,11 +454,6 @@ rx_result rx_result::create_from_c_error(const string_type& text)
 	return rx_result(text);
 }
 
-void rx_dump_error_result(std::ostream& err, const rx_result& result)
-{
-	for (const auto& one : result.errors())
-		err <<  one << "\r\n";
-}
 
 
 rx_item_reference::rx_item_reference()

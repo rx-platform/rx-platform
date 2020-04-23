@@ -70,7 +70,7 @@ class dispatcher_subscriber : public pointers::reference_object
 	DECLARE_REFERENCE_PTR(dispatcher_subscriber);
 
   public:
-      dispatcher_subscriber (rx_thread_handle_t destination = RX_THREAD_NULL);
+      dispatcher_subscriber (rx_security_handle_t identity = 0);
 
       ~dispatcher_subscriber();
 
@@ -79,10 +79,12 @@ class dispatcher_subscriber : public pointers::reference_object
 
       virtual void timer_tick (uint32_t tick);
 
+      void set_identity (rx_security_handle_t identity);
 
-      const rx_thread_handle_t get_destination_context () const
+
+      const rx_security_handle_t get_identity () const
       {
-        return destination_context_;
+        return identity_;
       }
 
 
@@ -132,7 +134,7 @@ class dispatcher_subscriber : public pointers::reference_object
 
       rx_kernel_dispather_t dispatcher_handle_;
 
-      rx_thread_handle_t destination_context_;
+      rx_security_handle_t identity_;
 
 	  friend int dispatcher_read_callback(void* data, uint32_t status, size_t size);
 	  friend int dispatcher_write_callback(void* data, uint32_t status);
@@ -170,7 +172,7 @@ protected:
 
       virtual bool on_startup (rx_thread_handle_t destination);
 
-      virtual void on_shutdown (rx_thread_handle_t destination);
+      virtual void on_shutdown (rx_security_handle_t identity);
 
       void initiate_shutdown ();
 
@@ -192,7 +194,7 @@ protected:
 
       virtual void release_buffer (buffer_ptr what) = 0;
 
-      virtual bool readed (const void* data, size_t count, rx_thread_handle_t destination) = 0;
+      virtual bool readed (const void* data, size_t count, rx_security_handle_t identity) = 0;
 
 
       bool sending_;
@@ -277,7 +279,7 @@ class tcp_listen_socket : public dispatcher_subscriber
 protected:
 	typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
 public:
-	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, rx_thread_handle_t)> make_function_t;
+	typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, rx_security_handle_t)> make_function_t;
 
   public:
       tcp_listen_socket (make_function_t make_function);
@@ -544,7 +546,7 @@ int full_duplex_comm<buffT>::internal_read_callback (size_t count, uint32_t stat
 
 	if (status == 0 && count != 0)
 	{
-		if (readed(dispatcher_data_.read_buffer, count,get_destination_context()))
+		if (readed(dispatcher_data_.read_buffer, count, get_identity()))
 		{
 			ret = read_loop();
 			if(!ret)
@@ -599,7 +601,7 @@ int full_duplex_comm<buffT>::internal_shutdown_callback (uint32_t status)
 	shutdown_called_ = true;
 	write_lock_.unlock();
 	read_lock_.unlock();
-	on_shutdown(get_destination_context());
+	on_shutdown(get_identity());
 	unregister_timed();
 	return 1;
 }
@@ -753,7 +755,7 @@ bool full_duplex_comm<buffT>::read_loop ()
                     ret=false;
                     break;
                 }
-				if (!readed(dispatcher_data_.read_buffer, bytes, get_destination_context()))
+				if (!readed(dispatcher_data_.read_buffer, bytes, get_identity()))
 				{
 					ret = false;
 					break;
@@ -780,7 +782,7 @@ bool full_duplex_comm<buffT>::on_startup (rx_thread_handle_t destination)
 }
 
 template <class buffT>
-void full_duplex_comm<buffT>::on_shutdown (rx_thread_handle_t destination)
+void full_duplex_comm<buffT>::on_shutdown (rx_security_handle_t identity)
 {
 }
 
@@ -880,12 +882,12 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 	if (!connected_)
 		return 0;
     typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
-	target_ptr created = make_function_(handle, addr, local_addr, get_destination_context());
+	target_ptr created = make_function_(handle, addr, local_addr, get_identity());
 	if (created)
 	{
 		if (created->start_loops())
 		{
-			created->on_startup(get_destination_context());
+			created->on_startup(get_identity());
 		}
 	}
 	else

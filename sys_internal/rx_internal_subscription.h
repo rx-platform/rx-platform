@@ -61,7 +61,7 @@ class create_subscription_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -141,7 +141,7 @@ class delete_subscription_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 
@@ -176,7 +176,7 @@ class update_subscription_request : public rx_request_message
 
       rx_result deserialize (base_meta_reader& stream);
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_port_ptr port);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
 
       const string_type& get_type_name ();
 

@@ -126,6 +126,19 @@ rx_result object_instance_data::after_stop_runtime (rx_object_ptr what, runtime:
     return true;
 }
 
+const security::security_context_ptr& object_instance_data::get_security_context () const
+{
+    if (my_domain_)
+    {
+        return my_domain_->get_instance_data().get_security_context();
+    }
+    else
+    {
+        static security::security_context_ptr g_dummy;
+        return g_dummy;
+    }
+}
+
 
 // Class rx_platform::runtime::items::domain_instance_data 
 
@@ -232,6 +245,19 @@ rx_result domain_instance_data::after_stop_runtime (rx_domain_ptr what, runtime:
     return true;
 }
 
+const security::security_context_ptr& domain_instance_data::get_security_context () const
+{
+    if (my_application_)
+    {
+        return my_application_->get_instance_data().get_security_context();
+    }
+    else
+    {
+        static security::security_context_ptr g_dummy;
+        return g_dummy;
+    }
+}
+
 
 // Class rx_platform::runtime::items::application_instance_data 
 
@@ -252,6 +278,8 @@ bool application_instance_data::serialize (base_meta_writer& stream, uint8_t typ
         return false;
     if(!stream.write_byte("priority", (uint8_t)priority))
         return false;
+    if (!identity_.serialize("identity", stream))
+        return false;
     if (!stream.end_object())
         return false;
     return true;
@@ -265,6 +293,8 @@ bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t t
         return false;
     uint8_t temp;
     if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
+        return false;
+    if (!identity_.deserialize("identity", stream))
         return false;
     priority = (rx_domain_priority)temp;
     if (!stream.end_object())
@@ -340,7 +370,25 @@ rx_result application_instance_data::after_stop_runtime (rx_application_ptr what
     return true;
 }
 
+const security::security_context_ptr& application_instance_data::get_security_context () const
+{
+    return identity_.get_context();
+}
 
+application_instance_data::application_instance_data(application_instance_data&& right)
+{
+    domains_ = std::move(right.domains_);
+    ports_ = std::move(right.ports_);
+    executer_ = std::move(right.executer_);
+    identity_ = std::move(right.identity_);
+}
+application_instance_data::application_instance_data(const application_instance_data& right)
+{
+    domains_ = right.domains_;
+    ports_ = right.ports_;
+    executer_ = right.executer_;
+    identity_ = right.identity_;
+}
 // Class rx_platform::runtime::items::port_instance_data 
 
 port_instance_data::port_instance_data()
@@ -358,6 +406,8 @@ bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) cons
         return false;
     if (!stream.write_item_reference("next_up", up_port))
         return false;
+    if (!identity_.serialize("identity", stream))
+        return false;
     if (!stream.end_object())
         return false;
     return true;
@@ -370,6 +420,8 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
     if (!stream.read_id("app", app_id))
         return false;
     if (!stream.read_item_reference("next_up", up_port))
+        return false;
+    if (!identity_.deserialize("identity", stream))
         return false;
     if (!stream.end_object())
         return false;
@@ -401,12 +453,15 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     if (what->get_instance_data().my_application_)
     {
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+        auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path());
         // for port we have to have executer cached value
         auto rt_ptr = what->get_implementation();
         RX_ASSERT(rt_ptr);
         if (rt_ptr)
         {
-            rt_ptr->set_executer(what->get_instance_data().executer_);
+            rt_ptr->executer_ = what->get_instance_data().executer_;
+            if(what->get_instance_data().identity_.get_context())
+                rt_ptr->identity_ = what->get_instance_data().identity_.get_context()->get_handle();
         }
     }
     else
@@ -423,6 +478,7 @@ rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::r
 
 rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
 {
+    what->get_instance_data().identity_.destory_context();
     return true;
 }
 
@@ -431,13 +487,31 @@ rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::run
     return true;
 }
 
+const security::security_context_ptr& port_instance_data::get_security_context () const
+{
+    return identity_.get_context();
+}
+
 
 const rx_application_ptr port_instance_data::get_my_application () const
 {
   return my_application_;
 }
 
-
+port_instance_data::port_instance_data(port_instance_data&& right)
+{
+    app_id = std::move(right.app_id);
+    up_port = std::move(right.up_port);
+    executer_ = std::move(right.executer_);
+    identity_ = std::move(right.identity_);
+}
+port_instance_data::port_instance_data(const port_instance_data& right)
+{
+    app_id = right.app_id;
+    up_port = right.up_port;
+    executer_ = right.executer_;
+    identity_ = right.identity_;
+}
 } // namespace items
 } // namespace runtime
 } // namespace rx_platform

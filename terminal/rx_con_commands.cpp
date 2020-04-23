@@ -615,7 +615,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 			table[i + 1].emplace_back(RX_CONSOLE_CHECKED);
 		else
 			table[i + 1].emplace_back(RX_CONSOLE_UNCHECKED);
-		table[i + 1].emplace_back(ctxs[i]->get_port());
+		table[i + 1].emplace_back(ctxs[i]->get_location());
 	}
 	rx_dump_table(table, out,true,true);
 

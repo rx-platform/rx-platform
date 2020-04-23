@@ -33,18 +33,20 @@
 
 
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_port_types
+#include "system/runtime/rx_port_types.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
 namespace rx_internal {
 namespace rx_protocol {
-class rx_protocol_port;
+class rx_protocol_connection;
 
 } // namespace rx_protocol
 } // namespace rx_internal
@@ -60,26 +62,34 @@ namespace rx_protocol {
 
 
 
-class rx_json_protocol : public rx_protocol_stack_entry  
+
+class rx_json_endpoint : public rx_protocol_stack_entry  
 {
-	friend class rx_protocol_port;
+	friend class rx_protocol_connection;
 
   public:
-      rx_json_protocol();
+      rx_json_endpoint();
 
 
       rx_result send_string (const string_type& what);
+
+      void bind (rx_protocol_connection_ptr conn, std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
 
   protected:
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
 
 
 
-      rx_reference<rx_protocol_port> my_port_;
+      rx_reference<rx_protocol_connection> connection_;
+
+
+      std::function<void(int64_t)> sent_func_;
+
+      std::function<void(int64_t)> received_func_;
 
 
 };
@@ -151,7 +161,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
     typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;
 
   public:
-      rx_protocol_subscription (subscription_data& data, rx_reference<rx_protocol_port> port);
+      rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn);
 
       ~rx_protocol_subscription();
 
@@ -180,9 +190,9 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       subscription_data data_;
 
-      rx_reference<rx_protocol_port> my_port_;
-
       items_type items_;
+
+      rx_reference<rx_protocol_connection> connection_;
 
 
       handles_type handles_;
@@ -195,23 +205,18 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
 
 
-
-class rx_protocol_port : public rx_platform::runtime::io_types::protocol_port  
+class rx_protocol_connection : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-system protocol port class. basic implementation of a rx-platform protocol");
+    DECLARE_REFERENCE_PTR(rx_protocol_connection);
 
-	DECLARE_REFERENCE_PTR(rx_protocol_port);
 
-	typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
+    typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
-      rx_protocol_port();
+      rx_protocol_connection();
 
 
       void data_received (const string_type& data);
-
-      rx_protocol_stack_entry* create_stack_entry ();
 
       void data_processed (message_ptr result);
 
@@ -229,10 +234,23 @@ system protocol port class. basic implementation of a rx-platform protocol");
 
       rx_result remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
 
+      rx_protocol_stack_entry* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
 
       const string_type& get_current_directory_path () const
       {
         return current_directory_path_;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 
@@ -242,14 +260,50 @@ system protocol port class. basic implementation of a rx-platform protocol");
   private:
 
 
-      rx_json_protocol stack_entry_;
-
       subscriptions_type subscriptions_;
+
+      rx_json_endpoint endpoint_;
 
 
       rx_directory_ptr current_directory_;
 
       string_type current_directory_path_;
+
+      rx_thread_handle_t executer_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::std_protocol_impl< rx_protocol_connection::smart_ptr  > rx_json_protocol_impl;
+
+
+
+
+
+
+class rx_protocol_port : public rx_json_protocol_impl  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+System protocol port class. Implementation of a rx-platform protocol");
+
+	DECLARE_REFERENCE_PTR(rx_protocol_port);
+
+  public:
+      rx_protocol_port();
+
+
+  protected:
+
+  private:
+
+      rx_protocol_connection_ptr create_endpoint ();
+
 
 
 };

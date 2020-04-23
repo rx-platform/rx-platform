@@ -37,120 +37,22 @@
 #define VT100_CURCOR_UP ""
 
 
-#define IAC             ((char)0xff)
-#define DONT            ((char)0xfe)
-#define DO            ((char)0xfd)
-#define WONT              ((char)0xfc)
-#define WILL            ((char)0xfb)
-
-#define SE	((char)240)//	End of sub-negotiation parameters.
-#define NOP	((char)241)//	No operation
-#define DM	((char)242)//	Data mark.Indicates the position of
-#define LINEMODE  ((char)34)
-/*					a Sync event within the data stream.This
-					should always be accompanied by a TCP
-					urgent notification.*/
-#define BRK	((char)243)//	Break.Indicates that the "break"
-					//or "attention" key was hit.
-#define IP	((char)244)//	Suspend, interrupt or abort the process
-							//to which the NVT is connected.
-#define AO	((char)245)//	Abort output.Allows the current process
-							/*to run to completion but do not send
-							its output to the user.*/
-#define AYT	((char)246)//	Are you there ? Send back to the NVT some
-							//visible evidence that the AYT was received.
-#define EC	((char)247)//	Erase character.The receiver should delete
-							/*the last preceding undeleted
-							character from the data stream.*/
-#define EL	((char)248)//	Erase line.Delete characters from the data
-							//stream back to but not including the previous CRLF.
-#define GA	((char)249)//	Go ahead.Used, under certain circumstances,
-							/*to tell the other end that it can transmit.*/
-#define SB	((char)250)//	Sub-negotiation of the indicated option follows.
-
-
-#define TELNET_ECHO            ((char)0x01)
-#define SUPPRESS_GO_AHEAD ((char)0x03)
-#define TERMINAL_TYPE ((char)24)
-#define NAWS ((char)31)
-#define TERMINAL_SPEED ((char)32)
-#define NEW_ENVIRON ((char)39)
-#define SLE ((char)45)
-
-
-const char* get_IAC_name(char code)
-{
-	static char buffer[0x20];
-	switch (code)
-	{
-	case TELNET_ECHO:
-		return "ECHO";
-	case SUPPRESS_GO_AHEAD:
-		return "SUPPRESS_GO_AHEAD";
-	case TERMINAL_TYPE:
-		return "TERMINAL_TYPE";
-	case TERMINAL_SPEED:
-		return "TERMINAL_SPEED";
-	case NEW_ENVIRON:
-		return "NEW_ENVIRON";
-	default:
-		{
-			snprintf(buffer, 0x20, "%d", (int)(uint8_t)code);
-			return buffer;
-		}
-	}
-}
-
-const char* get_IAC_what(char code)
-{
-	static char buffer[0x20];
-	switch (code)
-	{
-	case DONT:
-		return "DONT";
-	case DO:
-		return "DO";
-	case WONT:
-		return "WONT";
-	case WILL:
-		return "WILL";
-	default:
-		{
-			snprintf(buffer, 0x20, "%d", (int)(uint8_t)code);
-			return buffer;
-		}
-	}
-}
-
-char g_password_prompt[] = "Enter Password:";
-
-
-char g_server_telnet_idetification[] = { IAC, WILL, TELNET_ECHO,
-IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
-//IAC, SB, LINEMODE, 1, 0, IAC, SE /* IAC SB LINEMODE MODE 0 IAC SE */};
-#define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
-#define TELENET_RECIVE_TIMEOUT 600000
-
-
-
-
 namespace rx_internal {
 
 namespace terminal {
 
-namespace rx_vt100 {
+namespace term_transport {
 
-// Class rx_internal::terminal::rx_vt100::vt100_transport 
+// Class rx_internal::terminal::term_transport::vt100_transport 
 
-vt100_transport::vt100_transport()
+vt100_transport::vt100_transport (bool to_echo)
       : state_(parser_normal),
         current_idx_(string_type::npos),
         password_mode_(false),
         history_it_(history_.begin()),
         had_first_(false),
         opened_brackets_(0),
-        send_echo_(true),
-        telnet_state_(telnet_parser_idle)
+        send_echo_(to_echo)
 {
 	rx_protocol_stack_entry* mine_entry = this;
 
@@ -199,24 +101,20 @@ bool vt100_transport::move_cursor_right ()
 	return false;
 }
 
-bool vt100_transport::char_received (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback)
+bool vt100_transport::char_received (const char ch, bool eof, string_type& to_echo, string_type& line)
 {
-	if (telnet_state_ != telnet_parser_idle || ch == IAC)
-	{// handle telnet
-		return handle_telnet(ch, to_echo);
-	}
 	if (ch == '\003')
 	{// this is cancel
 		state_ = parser_normal;
-		received_line_callback("\003");
+		line = "\003";
 		return false;
 	}
 	switch (state_)
 	{
 	case parser_normal:
-		return char_received_normal(ch, eof, to_echo,received_line_callback);
+		return char_received_normal(ch, eof, to_echo,line);
 	case parser_in_end_line:
-		return char_received_in_end_line(ch, to_echo,received_line_callback);
+		return char_received_in_end_line(ch, to_echo,line);
 	case parser_had_escape:
 		return char_received_had_escape(ch, to_echo);
 	case parser_had_bracket:
@@ -227,7 +125,7 @@ bool vt100_transport::char_received (const char ch, bool eof, string_type& to_ec
 	return false;
 }
 
-bool vt100_transport::char_received_normal (const char ch, bool eof, string_type& to_echo, std::function<void(string_type)> received_line_callback)
+bool vt100_transport::char_received_normal (const char ch, bool eof, string_type& to_echo, string_type& line)
 {
 	switch (ch)
 	{
@@ -258,7 +156,7 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 		if (opened_brackets_ <= 0)
 		{
 			opened_brackets_ = 0;
-			received_line_callback(current_line_);
+			line = current_line_;
 
 			current_line_.clear();
 			current_idx_ = string_type::npos;
@@ -310,7 +208,7 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 	return true;
 }
 
-bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, std::function<void(string_type)> received_line_callback)
+bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, string_type& line)
 {
 	state_ = parser_normal;
 	switch (ch)
@@ -321,7 +219,7 @@ bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, 
 	default:
 		current_line_.clear();
 		current_idx_ = string_type::npos;
-		return char_received_normal(ch, true, to_echo, received_line_callback);
+		return char_received_normal(ch, true, to_echo, line);
 	}
 	return true;
 }
@@ -440,13 +338,7 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
-rx_protocol_result_t vt100_transport::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
-{
-	// just pass through
-	return rx_move_packet_down(reference, end_point, buffer);
-}
-
-rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_const_packet_buffer* buffer)
+rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
 {
 	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference);
 	string_type to_echo;
@@ -455,10 +347,10 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 
 	for (; i < buffer->size; i++)
 	{
-		self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, [&lines](string_type line)
-			{
-				lines.emplace_back(line);
-			});
+		string_type line;
+		self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
+		if (!line.empty())
+			lines.emplace_back(std::move(line));
 	}
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
 	if (self->send_echo_ && !to_echo.empty())
@@ -468,7 +360,7 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 		if (!temp)
 			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
 		else
-			result = rx_move_packet_down(reference, end_point, &send_buffer);
+			result = rx_move_packet_down(reference, &send_buffer);
 		if (result == RX_PROTOCOL_OK)
 			send_buffer.detach(nullptr);
 	}
@@ -478,7 +370,7 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 		{
 			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
 			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
-			result = rx_move_packet_up(reference, NULL, &up_buffer);
+			result = rx_move_packet_up(reference, &up_buffer);
 			if (result != RX_PROTOCOL_OK)
 				break;
 		}
@@ -486,163 +378,19 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 	return result;
 }
 
-void vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_entry* vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
 	sent_func_ = sent_func;
 	received_func_ = received_func;
+	return this;
 }
 
-bool vt100_transport::handle_telnet (const char ch, string_type& to_echo)
-{
-	switch (telnet_state_)
-	{
-	case telnet_parser_idle:
-		if (ch == IAC)
-		{
-			telnet_state_ = telnet_parser_had_escape;
-			return true;
-		}
-		break;
-	case telnet_parser_had_escape:
-		{
-			switch (ch)
-			{
-			case WILL:
-				telnet_state_ = telnet_parser_had_will;
-				return true;
-			case WONT:
-				telnet_state_ = telnet_parser_had_wont;
-				return true;
-			case DO:
-				telnet_state_ = telnet_parser_had_do;
-				return true;
-			case DONT:
-				telnet_state_ = telnet_parser_had_dont;
-				return true;
-			}
-		}
-		break;
-	case telnet_parser_had_will:
-		switch (ch)
-		{
-		case TELNET_ECHO:
-			to_echo = { IAC, DONT, TELNET_ECHO };
-			return true;
-		}
-		break;
-	case telnet_parser_had_wont:
-		switch (ch)
-		{
-		case TELNET_ECHO:
-			to_echo = { IAC, DONT, TELNET_ECHO };
-			return true;
-		}
-		break;
-	case telnet_parser_had_do:
-		switch (ch)
-		{
-		case TELNET_ECHO:
-			send_echo_ = true;
-			to_echo = { IAC, WILL, TELNET_ECHO };
-			return true;
-		}
-		break;
-	case telnet_parser_had_dont:
-		switch (ch)
-		{
-		case TELNET_ECHO:
-			send_echo_ = false;
-			to_echo = { IAC, WONT, TELNET_ECHO };
-			return true;
-		}
-		break;
-	case telnet_parser_had_sb:
-		break;
-	case telnet_parser_had_sb2:
-		break;
-	};
-	return false;
-	size_t idx = 0;
-	char* buff = NULL;
-	if (buff[0] == IAC)
-	{
-		if (buff[1] >= WILL)
-		{
-			if (buff[2] == TELNET_ECHO)
-			{
-				if (buff[1] == DONT)
-				{
-					if (send_echo_)
-					{
-						send_echo_ = false;
-						to_echo = { IAC, WONT, TELNET_ECHO };
-					}
-				}
-				else if (buff[1] == DO)
-				{
-					if (!send_echo_)
-					{
-						send_echo_ = true;
-						to_echo = { IAC, WILL, TELNET_ECHO };
-					}
-				}
-			}
-			idx += 3;
-		}
-		else if (buff[1] == SB)
-		{
-			idx += 2;
-			int i = 2;
-			while (buff[i] != SE)
-			{
-				i++;
-				idx++;
-			}
-		}
-		else
-		{
-			switch (buff[1])
-			{
-			case BRK:
-			case IP:
-			case EL:
-				/*cancel_current_ = true;
-				send_string_response("\r\nCanceling...\r\n", false);*/
-				break;
-			case AYT:
-				//cancel_current_ = true;
-				to_echo = "\r\nHello!\r\n";
-				break;
-			}
-			idx += 2;
-		}
-	}
-}
-
-
-// Class rx_internal::terminal::rx_vt100::dummy_transport 
-
-dummy_transport::dummy_transport()
+void vt100_transport::set_echo (bool val)
 {
 }
 
 
-dummy_transport::~dummy_transport()
-{
-}
-
-
-
-void dummy_transport::line_received (const string_type& line)
-{
-}
-
-void dummy_transport::do_stuff ()
-{
-}
-
-
-// Class rx_internal::terminal::rx_vt100::vt100_transport_port 
+// Class rx_internal::terminal::term_transport::vt100_transport_port 
 
 vt100_transport_port::vt100_transport_port()
 {
@@ -650,29 +398,7 @@ vt100_transport_port::vt100_transport_port()
 
 
 
-rx_protocol_stack_entry* vt100_transport_port::create_stack_entry ()
-{
-	if (endpoints_.empty())
-	{
-		auto transport_ptr = std::make_unique<vt100_transport>();
-		transport_ptr->bind([this](int64_t count)
-			{
-				update_sent_counters(count);
-			},
-			[this](int64_t count)
-			{
-				update_received_counters(count);
-			});
-		rx_protocol_stack_entry* entry = transport_ptr.get();
-		endpoints_.emplace(entry, std::move(transport_ptr));
-		return entry;
-	}
-	else
-		return endpoints_.begin()->first;
-}
-
-
-} // namespace rx_vt100
+} // namespace term_transport
 } // namespace terminal
 } // namespace rx_internal
 

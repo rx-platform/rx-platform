@@ -101,29 +101,6 @@ bool security_context::is_interactive () const
 
 }
 
-rx_result security_context::impersonate ()
-{
-	auto ctx = get_handle();
-	if (ctx)
-	{
-		if (!rx_push_security_context(ctx))
-			return "Internal error while activating security context!";
-		else
-			return true;
-	}
-	else
-	{
-		return "Impersonation error, context not logged in!";
-	}
-}
-
-void security_context::revert ()
-{
-	auto ctx = get_handle();
-	if (ctx)
-		rx_pop_security_context();
-}
-
 
 // Class rx::security::security_manager 
 
@@ -192,7 +169,7 @@ rx_security_handle_t security_manager::context_deactivated (security_context::sm
 	}
 	else
 	{
-		SECURITY_LOG_DEBUG("manager", 900, "Shouldnt be here!!!");
+		SECURITY_LOG_DEBUG("manager", 900, "Shouldn't be here!!!");
 		return who->get_handle();
 	}
 }
@@ -289,34 +266,27 @@ bool security_guard::check_premissions (security_mask_t mask, extended_security_
 }
 
 
-// Class rx::security::security_auto_context 
+// Class rx::security::secured_scope 
 
-security_auto_context::security_auto_context (security_context_ptr ctx)
-	: ctx_(ctx->get_handle())
+secured_scope::secured_scope (const security_context_ptr& ctx)
+	: ctx_(ctx ? ctx->get_handle() : 0)
+{
+	if (ctx_)
+		rx_push_security_context(ctx_);
+}
+
+secured_scope::secured_scope (rx_security_handle_t ctx)
+    : ctx_(ctx)
 {
 	if (ctx_)
 		rx_push_security_context(ctx_);
 }
 
 
-security_auto_context::~security_auto_context()
+secured_scope::~secured_scope()
 {
 	if (ctx_)
 		rx_pop_security_context();
-}
-
-
-
-// Class rx::security::built_in_security_context 
-
-built_in_security_context::built_in_security_context()
-{
-	location_ = rx_get_server_name();
-}
-
-
-built_in_security_context::~built_in_security_context()
-{
 }
 
 
@@ -325,11 +295,10 @@ built_in_security_context::~built_in_security_context()
 
 unathorized_security_context::unathorized_security_context()
 {
-	user_name_ = "unathorized";
+	user_name_ = "unauthorized";
 	full_name_ = user_name_ + "@";
 	location_ = rx_get_server_name();
 	full_name_ += location_;
-	port_ = "host";
 }
 
 

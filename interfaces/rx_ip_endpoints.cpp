@@ -35,6 +35,7 @@
 #include "interfaces/rx_ip_endpoints.h"
 
 #include "system/server/rx_server.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
 
 
 namespace rx_internal {
@@ -56,7 +57,7 @@ rx_result rx_udp_endpoint::open (const string_type& addr, uint16_t port)
 	return "Nisam jos implementirao";
 }
 
-rx_protocol_result_t rx_udp_endpoint::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_udp_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
@@ -100,6 +101,7 @@ rx_result udp_port::start_runtime (runtime::runtime_start_context& ctx)
 		udp_socket_ = rx_create_reference<socket_holder_t>(this);
 		string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
 		uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
+        udp_socket_->set_identity(get_identity());
 		result = udp_socket_->bind_socket_udpip_4(port, addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
 	}
 	return result;
@@ -133,7 +135,7 @@ tcp_server_port::tcp_server_port()
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto result = physical_port::initialize_runtime(ctx);
+    auto result = tcp_server_base::initialize_runtime(ctx);
     if (result)
     {
         auto bind_result = ctx.tags->bind_item("Timeouts.ReceiveTimeout", ctx);
@@ -154,35 +156,35 @@ rx_result tcp_server_port::deinitialize_runtime (runtime::runtime_deinit_context
 {
     rx_result result;
 
-    result = physical_port::deinitialize_runtime(ctx);
+    result = tcp_server_base::deinitialize_runtime(ctx);
     return result;
 }
 
 rx_result tcp_server_port::start_runtime (runtime::runtime_start_context& ctx)
 {
-    auto result = physical_port::start_runtime(ctx);
+    auto result = tcp_server_base::start_runtime(ctx);
     if (result)
     {
         string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
         uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
         listen_socket_ = rx_create_reference<io::tcp_listent_std_buffer>(
-            [this] (sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_thread_handle_t thr) -> io::tcp_socket_std_buffer::smart_ptr 
+            [this] (sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> io::tcp_socket_std_buffer::smart_ptr
             {
                 auto up = up_stack();
                 if (up)
                 {
                     auto new_endpoint = std::make_unique<connection_endpoint>();
-                    auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+                    auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), identity);
                     if (ret_ptr)
                     {
-                        auto ret = rx_push_stack(new_endpoint.get(), up->create_stack_entry());
-                        connections_.emplace(std::move(new_endpoint));
+                        register_stack_entry(std::move(new_endpoint));
                     }
                     return ret_ptr.value();
                 }
                 else
                     return io::tcp_socket_std_buffer::smart_ptr::null_ptr;
             });
+        listen_socket_->set_identity(get_identity());
         result = listen_socket_->start_tcpip_4(port, addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
 
         //ctx.structure.get_root()->get_binded_as
@@ -193,13 +195,8 @@ rx_result tcp_server_port::start_runtime (runtime::runtime_start_context& ctx)
 rx_result tcp_server_port::stop_runtime (runtime::runtime_stop_context& ctx)
 {
     listen_socket_->stop();
-    for (auto& one : connections_)
-    {
-        one->close();
-    }
-    connections_.clear();
-
-    auto result = physical_port::stop_runtime(ctx);
+    
+    auto result = tcp_server_base::stop_runtime(ctx);
     return result;
 }
 
@@ -209,20 +206,6 @@ void tcp_server_port::update_received_counters (size_t count)
 
 void tcp_server_port::update_sent_counters (size_t count)
 {
-}
-
-void tcp_server_port::remove_connection (const connection_endpoint& what)
-{
-    /*auto it = connections_.find(&what);
-    if(it != connections_.end())
-    {
-        connections_.erase(it);
-    }*/
-}
-
-rx_protocol_stack_entry* tcp_server_port::get_stack_entry ()
-{
-    return nullptr;
 }
 
 
@@ -242,16 +225,16 @@ connection_endpoint::connection_endpoint (const string_type& remote_port, const 
 
 
 
-rx_protocol_result_t connection_endpoint::received_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t connection_endpoint::received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
     return true;
 }
 
-rx_result_with<connection_endpoint::socket_ptr> connection_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher)
+rx_result_with<connection_endpoint::socket_ptr> connection_endpoint::open (tcp_server_base* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, rx_security_handle_t identity)
 {
     my_port_ = my_port;
     tcp_socket_ = rx_create_reference<socket_holder_t>(this, handle, addr, local_addr);
-
+    tcp_socket_->set_identity(identity);
     remote_port_ = io::get_ip4_addr_string(addr);
     local_port_ = io::get_ip4_addr_string(local_addr);
     std::ostringstream ss;
@@ -272,7 +255,7 @@ rx_result connection_endpoint::close ()
     return true;
 }
 
-void connection_endpoint::disconnected ()
+void connection_endpoint::disconnected (rx_security_handle_t identity)
 {
     std::ostringstream ss;
     ss << "Client from IP4:"
@@ -282,13 +265,16 @@ void connection_endpoint::disconnected ()
         << ".";
     ITF_LOG_TRACE("tcp_server_port", 500, ss.str());
     if (my_port_)
-        my_port_->remove_connection(*this);
+        my_port_->remove_connection(this);
 }
 
-bool connection_endpoint::readed (const void* data, size_t count)
+bool connection_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
 {
     rx_const_packet_buffer buffer{ (const uint8_t*)data, count, 0 };
-    auto res = rx_move_packet_up(this, nullptr, &buffer);
+    {
+        security::secured_scope ctx(identity);
+        auto res = rx_move_packet_up(this, &buffer);
+    }
     return true;
 }
 
@@ -311,9 +297,11 @@ void connection_endpoint::bind ()
 
     mine_entry->allocate_packet_function = nullptr;
     mine_entry->free_packet_function = nullptr;
+
+    mine_entry->identity = 0;
 }
 
-rx_protocol_result_t connection_endpoint::send_function (rx_protocol_stack_entry* reference,const protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t connection_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
 {
     connection_endpoint* self = reinterpret_cast<connection_endpoint*>(reference);
     auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();

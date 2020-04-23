@@ -317,10 +317,6 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 
 void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins)
 {
-	rx_platform::hosting::host_security_context::smart_ptr sec_ctx(pointers::_create_new);
-	auto result = sec_ctx->login();
-
-	security::security_auto_context dummy(sec_ctx);
 
 	if (!config.management.telnet_port)// set to the last default if not set
 		config.management.telnet_port = 12345;
@@ -330,7 +326,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 		config.processor.workers_pool_size = 2;
 
 
-	result = rx_platform::register_host_constructor<object_types::port_type>(rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2), [this] {
+	rx_result result = rx_platform::register_host_constructor<object_types::port_type>(rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2), [this] {
 		return pipe_port_;
 		});
 	if (!result)
@@ -340,9 +336,10 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";
-	result = rx_platform::rx_gate::instance().initialize(this, config);
-	if (result)
+	auto sec_result = rx_platform::rx_gate::instance().initialize(this, config);
+	if (sec_result)
 	{
+		security::secured_scope _(sec_result.value());
 		std::cout << "OK\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
@@ -382,15 +379,9 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 				if (dump_start_log_)
 					std::cout << "\r\nStartup log:\r\n============================\r\n";
 
-
-				local_pipe_security_context::smart_ptr sec_ctx(pointers::_create_new);
-				rx_result login_result = sec_ctx->login();
-
-				security::security_auto_context dummy(sec_ctx);
-
 				auto user = security::active_security()->get_full_name();
 
-				rx_ms_sleep(100);
+				rx_ms_sleep(200);
 
 				pipe_port_->receive_loop();
 
@@ -423,7 +414,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing rx-platform...";
-		result = rx_platform::rx_gate::instance().deinitialize();
+		result = rx_platform::rx_gate::instance().deinitialize(sec_result.value());
 		if (result)
 			std::cout << "OK\r\n";
 		else

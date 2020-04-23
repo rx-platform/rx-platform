@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  sys_internal\rx_internal_objects.h
+*  system\runtime\rx_internal_objects.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -39,7 +39,7 @@
 
 
 
-namespace rx_internal {
+namespace rx_platform {
 
 namespace sys_objects {
 
@@ -47,7 +47,7 @@ namespace sys_objects {
 
 
 
-class system_application : public rx_platform::runtime::items::application_runtime  
+class system_application : public runtime::items::application_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,2, "\
 system application. contains system objects and internal system communication");
@@ -77,7 +77,7 @@ system application. contains system objects and internal system communication");
 
 
 
-class system_domain : public rx_platform::runtime::items::domain_runtime  
+class system_domain : public runtime::items::domain_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 this domain is used by system objects");
@@ -106,7 +106,7 @@ this domain is used by system objects");
 
 
 
-class unassigned_application : public rx_platform::runtime::items::application_runtime  
+class unassigned_application : public runtime::items::application_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 this application is for unassigned domains.it allways has bad quality");
@@ -136,7 +136,7 @@ this application is for unassigned domains.it allways has bad quality");
 
 
 
-class unassigned_domain : public rx_platform::runtime::items::domain_runtime  
+class unassigned_domain : public runtime::items::domain_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
 this domain is for unassigned objects.it always has bad quality");
@@ -163,7 +163,7 @@ this domain is for unassigned objects.it always has bad quality");
 
 
 } // namespace sys_objects
-} // namespace rx_internal
+} // namespace rx_platform
 
 
 

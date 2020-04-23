@@ -33,14 +33,14 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_internal_objects
-#include "sys_internal/rx_internal_objects.h"
+#include "system/runtime/rx_internal_objects.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
@@ -216,6 +216,10 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
 
+      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
+
+      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
 	  ~rx_item_implementation() = default;
   protected:
 
@@ -275,6 +279,10 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_thread_handle_t get_executer () const;
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
+
+      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
+
+      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
 
   protected:
@@ -361,6 +369,10 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_thread_handle_t get_executer () const;
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
+
+      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
+
+      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
 
   protected:

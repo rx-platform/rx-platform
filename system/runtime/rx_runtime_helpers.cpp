@@ -60,6 +60,7 @@ runtime_process_context::runtime_process_context (operational::binded_tags& bind
         process_all_(false),
         process_tag_connections_(false),
         process_tag_writes_(false)
+    , state_(nullptr)
 {
 }
 

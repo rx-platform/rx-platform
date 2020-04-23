@@ -129,7 +129,7 @@ namespace meta_test {
 				 out << json_str;
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
-				 test_object->collect_data(init_data);
+				 test_object->collect_data(init_data, runtime_value_type::simple_runtime_value);
 				 init_data.children["structName"].values["structVal"].value.assign_static(113);
 				 test_object->fill_data(init_data);
 

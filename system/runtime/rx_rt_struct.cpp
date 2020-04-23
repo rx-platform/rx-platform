@@ -65,11 +65,12 @@ template class runtime_data<
 	empty<event_data>, 0x00>;
 
 
+
 // Parameterized Class rx_platform::runtime::structure::runtime_data 
 
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::collect_data (data::runtime_values_data& data) const
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	for (const auto& one : items)
 	{
@@ -84,39 +85,51 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 			data.add_value(one.name, values[(one.index >> rt_type_shift)].value.to_simple());
 			break;
 		case rt_variable_index_type:
-		{// simple value
+		{
 			auto& result = data.add_child(one.name);
-			variables.collection[(one.index >> rt_type_shift)].collect_data(result);
+			variables.collection[(one.index >> rt_type_shift)].collect_data(result, type);
 		}
 		break;
 		case rt_struct_index_type:
-		{// simple value
+		{
 			auto& result = data.add_child(one.name);
-			structs.collection[(one.index >> rt_type_shift)].collect_data(result);
+			structs.collection[(one.index >> rt_type_shift)].collect_data(result, type);
 		}
 		break;
 		case rt_source_index_type:
-		{// simple value
-			auto& result = data.add_child(one.name);
-			sources.collection[(one.index >> rt_type_shift)].collect_data(result);
+		{
+			if ((type & runtime_value_type::sources_runtime_value) == runtime_value_type::sources_runtime_value)
+			{
+				auto& result = data.add_child(one.name);
+				sources.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+			}
 		}
 		break;
 		case rt_mapper_index_type:
-		{// simple value
-			auto& result = data.add_child(one.name);
-			mappers.collection[(one.index >> rt_type_shift)].collect_data(result);
+		{
+			if ((type & runtime_value_type::mappers_runtime_value) == runtime_value_type::mappers_runtime_value)
+			{
+				auto& result = data.add_child(one.name);
+				mappers.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+			}
 		}
 		break;
 		case rt_filter_index_type:
-		{// simple value
-			auto& result = data.add_child(one.name);
-			filters.collection[(one.index >> rt_type_shift)].collect_data(result);
+		{
+			if ((type & runtime_value_type::filters_runtime_value) == runtime_value_type::filters_runtime_value)
+			{
+				auto& result = data.add_child(one.name);
+				filters.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+			}
 		}
 		break;
 		case rt_event_index_type:
-		{// simple value
-			auto& result = data.add_child(one.name);
-			events.collection[(one.index >> rt_type_shift)].collect_data(result);
+		{
+			if ((type & runtime_value_type::events_runtime_value) == runtime_value_type::events_runtime_value)
+			{
+				auto& result = data.add_child(one.name);
+				events.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+			}
 		}
 		break;
 		default:
@@ -909,10 +922,10 @@ variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr
 
 
 
-void variable_data::collect_data (data::runtime_values_data& data) const
+void variable_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void variable_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
@@ -1006,9 +1019,9 @@ struct_data::struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var
 
 
 
-void struct_data::collect_data (data::runtime_values_data& data) const
+void struct_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void struct_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
@@ -1058,9 +1071,9 @@ rx_result struct_data::stop_runtime (runtime::runtime_stop_context& ctx)
 string_type mapper_data::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
 
-void mapper_data::collect_data (data::runtime_values_data& data) const
+void mapper_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void mapper_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
@@ -1110,9 +1123,9 @@ rx_result mapper_data::stop_runtime (runtime::runtime_stop_context& ctx)
 string_type source_data::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
 
-void source_data::collect_data (data::runtime_values_data& data) const
+void source_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void source_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
@@ -1162,9 +1175,9 @@ rx_result source_data::stop_runtime (runtime::runtime_stop_context& ctx)
 string_type event_data::type_name = RX_CPP_EVENT_TYPE_NAME;
 
 
-void event_data::collect_data (data::runtime_values_data& data) const
+void event_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void event_data::fill_data (const data::runtime_values_data& data, init_context& ctx)
@@ -1214,9 +1227,9 @@ rx_result event_data::stop_runtime (runtime::runtime_stop_context& ctx)
 string_type filter_data::type_name = RX_CPP_FILTER_TYPE_NAME;
 
 
-void filter_data::collect_data (data::runtime_values_data& data) const
+void filter_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data);
+	item->collect_data(data, type);
 }
 
 void filter_data::fill_data (const data::runtime_values_data& data, init_context& ctx)

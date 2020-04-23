@@ -84,7 +84,7 @@ rx_result create_subscription_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	subscription_data data;
 	data.active = active;
@@ -92,7 +92,7 @@ message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protoco
 	data.keep_alive_period = keep_alive_period;
 	data.publish_rate = publish_rate;
 	data.priority = priority;
-	auto result = port->connect_subscription(data);
+	auto result = conn->connect_subscription(data);
 	if (result)
 	{
 		auto response = std::make_unique<create_subscriptions_response>();
@@ -188,9 +188,9 @@ rx_result delete_subscription_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr delete_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr delete_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
-	auto result = port->delete_subscription(subscription_id);
+	auto result = conn->delete_subscription(subscription_id);
 	if (result)
 	{
 		auto response = std::make_unique<delete_subscription_response>();
@@ -256,7 +256,7 @@ rx_result update_subscription_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr update_subscription_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr update_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }

@@ -184,10 +184,6 @@ void physical_port::connect_down_stack (rx_port_impl_ptr who)
 
 void physical_port::structure_changed ()
 {
-    auto up = up_stack();
-    auto my_entry = get_stack_entry();
-    if (up && my_entry)
-        rx_protocol_result_t res = rx_push_stack(my_entry, up->create_stack_entry());
 }
 
 
@@ -438,9 +434,6 @@ void transport_port::connect_down_stack (rx_port_impl_ptr who)
 
 void transport_port::structure_changed ()
 {
-    auto up = up_stack();
-    if (up)
-        rx_protocol_result_t res = rx_push_stack(create_stack_entry(), up->create_stack_entry());
 }
 
 

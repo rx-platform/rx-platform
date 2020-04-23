@@ -35,6 +35,11 @@
 #include "system/serialization/rx_ser.h"
 
 
+#include "third-party/cpp-base64/base64.h"
+#include "third-party/cpp-base64/base64.cpp"
+
+#include "base64.h"
+
 
 #ifdef _DEBUG
 typedef Json::StyledWriter json_writer_type;
@@ -569,29 +574,10 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 
 	if (safe_read_string(index, name, sstr, jval))
 	{
-		byte_string temp_val;
-		char buff[8];
-		buff[2] = L'\0';
-		size_t count = sstr.size();
-		if (count > 1)
-		{
-			temp_val.reserve(count / 2 + 1);
-			for (size_t i = 0; i < count; i += 2)
-			{
-				buff[0] = sstr[i];
-				if (i + 1 < count)
-					buff[1] = sstr[i + 1];
-				else
-					buff[1] = L'\0';
-				char* endptr = NULL;
-				unsigned long one = strtoul(buff, &endptr, 16);
-				temp_val.push_back((uint8_t)one);
-			}
-			val = temp_val;
-		}
-		else
-			val = byte_string();
-
+		string_type temp_val = base64_decode(sstr);
+		val.assign(temp_val.size(), 0);
+		temp_val.copy((char*)&val[0], val.size());
+		//val = urke::get_data(sstr);
 		return true;
 	}
 	return false;
@@ -1156,13 +1142,9 @@ bool json_writer::write_uint64 (const char* name, uint64_t val)
 
 bool json_writer::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
-	char buff[8];
-	string_type temp;
-	for (size_t i = 0; i < size; i++)
-	{
-		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "%02x", (int)val[i]);
-		temp += buff;
-	}
+	//string_type temp = base64_encode(val, size);
+	string_type temp = urke::get_base64(val, size);
+
 	return write_string(name, temp.c_str());
 }
 
@@ -1231,8 +1213,11 @@ bool json_writer::get_version_string (string_type& result, uint32_t version)
 
 bool json_writer::write_init_values (const char* name, const data::runtime_values_data& values)
 {
-	if (!start_object(name))
-		return false;
+	if (name)
+	{
+		if (!start_object(name))
+			return false;
+	}
 	for (const auto& one : values.children)
 	{
 		if (!write_init_values(one.first.c_str(), one.second))
@@ -1243,8 +1228,11 @@ bool json_writer::write_init_values (const char* name, const data::runtime_value
 		if (!one.second.value.get_storage().weak_serialize_value(one.first, *this))
 			return false;
 	}
-	if (!end_object())
-		return false;
+	if (name)
+	{
+		if (!end_object())
+			return false;
+	}
 	return true;
 }
 

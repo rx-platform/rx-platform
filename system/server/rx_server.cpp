@@ -44,27 +44,10 @@
 #include "model/rx_meta_internals.h"
 #include "interfaces/rx_endpoints.h"
 #include "sys_internal/rx_inf.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
 
 
 namespace rx_platform {
-
-rx_domain_ptr rx_system_domain()
-{
-	return rx_gate::instance().get_manager().get_system_domain();
-}
-rx_application_ptr rx_system_application()
-{
-	return rx_gate::instance().get_manager().get_system_app();
-}
-
-rx_domain_ptr rx_unassigned_domain()
-{
-	return rx_gate::instance().get_manager().get_unassigned_domain();
-}
-rx_application_ptr rx_unassigned_application()
-{
-	return rx_gate::instance().get_manager().get_unassigned_app();
-}
 
 // Class rx_platform::rx_gate 
 
@@ -124,7 +107,7 @@ void rx_gate::cleanup ()
 	g_instance = nullptr;
 }
 
-rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
+rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
@@ -133,10 +116,11 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
 
-	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
+	security::security_context_ptr host_ctx = rx_create_reference<rx_internal::rx_security::host_security_context>(host_->get_host_name(), rx_name_);
+	auto result = host_ctx->login();
 	if (result)
 	{
-		result = manager_.initialize(host, data.management);
+		result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
 		if (result)
 		{
 			result = io_manager_->initialize(host, data.io);
@@ -152,7 +136,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 						one.second->initialize();
 
 					result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
-					if(!result)
+					if (!result)
 						result.register_error("Error initializing platform types manager!");
 				}
 				else
@@ -160,37 +144,40 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 					result = build_result.errors();
 					result.register_error("Error building platform!");
 				}
-				if(!result)
+				if (!result)
 				{
 					io_manager_->deinitialize();
-					manager_.deinitialize();
 					rx_internal::infrastructure::server_runtime::instance().deinitialize();
 					io_manager_->deinitialize();
 				}
 			}
 			else
 			{
-				manager_.deinitialize();
 				rx_internal::infrastructure::server_runtime::instance().deinitialize();
 				result.register_error("Error initializing I/O manager!");
 			}
 		}
 		else
 		{
-			rx_internal::infrastructure::server_runtime::instance().deinitialize();
-			result.register_error("Error initializing platform manager!");
+			result.register_error("Error initializing platform runtime!");
 		}
 	}
 	else
 	{
-		result.register_error("Error initializing platform runtime!");
+		result.register_error("Error impersonating host!");
 	}
 	if (result)
+	{
 		platform_status_ = rx_platform_status::starting;
-	return result;
+		return host_ctx;
+	}
+	else
+	{
+		return result.errors();
+	}
 }
 
-rx_result rx_gate::deinitialize ()
+rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
 {
 	
 	for (auto one : scripts_)
@@ -199,8 +186,10 @@ rx_result rx_gate::deinitialize ()
 	rx_internal::model::platform_types_manager::instance().deinitialize();
 
 	io_manager_->deinitialize();
-	manager_.deinitialize();
 	rx_internal::infrastructure::server_runtime::instance().deinitialize();
+
+	sec_ctx->logout();
+
 	return RX_OK;
 }
 
@@ -209,27 +198,17 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 	auto result = rx_internal::infrastructure::server_runtime::instance().start(host, data.processor, data.io);
 	if (result)
 	{
-		result = manager_.start(host, data.management);
+		result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
 		if (result)
 		{
-			result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
-			if (result)
-			{
-				platform_status_ = rx_platform_status::running;
-				host->server_started_event();
-				return true;
-			}
-			else
-			{
-				rx_internal::infrastructure::server_runtime::instance().stop();
-				manager_.stop();
-				result.register_error("Error starting platform types manager!");
-			}
+			platform_status_ = rx_platform_status::running;
+			host->server_started_event();
+			return true;
 		}
 		else
 		{
 			rx_internal::infrastructure::server_runtime::instance().stop();
-			result.register_error("Error starting platform manager!");
+			result.register_error("Error starting platform types manager!");
 		}
 	}
 	else
@@ -243,7 +222,6 @@ rx_result rx_gate::stop ()
 {
 	platform_status_ = rx_platform_status::stopping;
 	rx_internal::model::platform_types_manager::instance().stop();
-	manager_.stop();
 	rx_internal::infrastructure::server_runtime::instance().stop();
 	platform_status_ = rx_platform_status::deinitializing;
 	return true;
@@ -263,14 +241,6 @@ bool rx_gate::shutdown (const string_type& msg)
 	shutting_down_ = true;
 	host_->shutdown(msg);
 	return true;
-}
-
-void rx_gate::interface_bind ()
-{
-}
-
-void rx_gate::interface_release ()
-{
 }
 
 bool rx_gate::read_log (const log::log_query_type& query, log::log_events_type& result)
@@ -300,11 +270,18 @@ rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<type
 		return "Wrong platform status for constructor registration!";
 }
 
+template <class typeT>
+rx_result rx_gate::register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
+{
+	if (platform_status_ == rx_platform_status::initializing)
+		return rx_internal::model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
+	else
+		return "Wrong platform status for constructor registration!";
+}
+
 template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& id, std::function<object_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
-
-
 

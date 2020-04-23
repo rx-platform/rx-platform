@@ -76,7 +76,7 @@ rx_result browse_request_message::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr browse_request_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
 	auto result = api::ns::rx_list_directory(path, filter, ctx);
@@ -228,33 +228,33 @@ rx_result get_type_request::deserialize (base_meta_reader& stream)
 	return result;
 }
 
-message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	switch (item_type)
 	{
 	case rx_item_type::rx_object_type:
-		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::object_type>());
 	case rx_item_type::rx_domain_type:
-		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::domain_type>());
 	case rx_item_type::rx_port_type:
-		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::port_type>());
 	case rx_item_type::rx_application_type:
-		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::application_type>());
 	case rx_item_type::rx_relation_type:
-		return do_relation_job(ctx, port);
+		return do_relation_job(ctx, conn);
 
 	case rx_item_type::rx_struct_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::struct_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::struct_type>());
 	case rx_item_type::rx_variable_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::variable_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::variable_type>());
 	case rx_item_type::rx_source_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::source_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::source_type>());
 	case rx_item_type::rx_filter_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::filter_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::filter_type>());
 	case rx_item_type::rx_event_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::event_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::event_type>());
 	case rx_item_type::rx_mapper_type:
-		return do_simple_job(ctx, port, tl::type2type<basic_types::mapper_type>());
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::mapper_type>());
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
@@ -276,25 +276,25 @@ rx_message_type_t get_type_request::get_type_id ()
 }
 
 template<typename T>
-message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
+	auto callback = [request_id, conn](rx_result_with<typename T::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
 			auto response = std::make_unique<get_type_response<T> >();
 			response->item = result.value();
 			response->request_id = request_id;
-			port->data_processed(std::move(response));
+			conn->data_processed(std::move(response));
 
 		}
 		else
 		{
 			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
+			conn->data_processed(std::move(ret_value));
 		}
 
 	};
@@ -312,25 +312,25 @@ message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_port_ptr p
 	}
 }
 template<typename T>
-message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, port](rx_result_with<typename T::smart_ptr>&& result) mutable
+	auto callback = [request_id, conn](rx_result_with<typename T::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
 			auto response = std::make_unique<get_type_response<T> >();
 			response->item = result.value();
 			response->request_id = request_id;
-			port->data_processed(std::move(response));
+			conn->data_processed(std::move(response));
 
 		}
 		else
 		{
 			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
+			conn->data_processed(std::move(ret_value));
 		}
 
 	};
@@ -348,25 +348,25 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_por
 		return message_ptr();
 	}
 }
-message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, port](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
+	auto callback = [request_id, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
 			auto response = std::make_unique<get_type_response<object_types::relation_type> >();
 			response->item = result.value();
 			response->request_id = request_id;
-			port->data_processed(std::move(response));
+			conn->data_processed(std::move(response));
 
 		}
 		else
 		{
 			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
+			conn->data_processed(std::move(ret_value));
 		}
 
 	};
@@ -452,12 +452,12 @@ rx_result query_request_message::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, port](rx_result_with<api::query_result>&& result) mutable
+	auto callback = [request_id, conn](rx_result_with<api::query_result>&& result) mutable
 	{
 		if (result)
 		{
@@ -468,12 +468,12 @@ message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_port
 				response->items.emplace_back(one.type, one.data);
 			}
 			response->request_id = request_id;
-			port->data_processed(std::move(response));
+			conn->data_processed(std::move(response));
 		}
 		else
 		{
 			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
+			conn->data_processed(std::move(ret_value));
 		}
 
 	};
@@ -654,18 +654,18 @@ rx_result get_runtime_request::deserialize (base_meta_reader& stream)
 	return result;
 }
 
-message_ptr get_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr get_runtime_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	switch (item_type)
 	{
 	case rx_item_type::rx_object:
-		return do_job(ctx, port, tl::type2type<object_types::object_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::object_type>());
 	case rx_item_type::rx_domain:
-		return do_job(ctx, port, tl::type2type<object_types::domain_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::domain_type>());
 	case rx_item_type::rx_port:
-		return do_job(ctx, port, tl::type2type<object_types::port_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::port_type>());
 	case rx_item_type::rx_application:
-		return do_job(ctx, port, tl::type2type<object_types::application_type>());
+		return do_job(ctx, conn, tl::type2type<object_types::application_type>());
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
@@ -688,25 +688,25 @@ rx_message_type_t get_runtime_request::get_type_id ()
 
 
 template<typename T>
-message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<T>)
+message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, port](rx_result_with<typename T::RTypePtr>&& result) mutable
+	auto callback = [request_id, conn](rx_result_with<typename T::RTypePtr>&& result) mutable
 	{
 		if (result)
 		{
 			auto response = std::make_unique<get_runtime_response<T> >();
 			response->item = result.value();
 			response->request_id = request_id;
-			port->data_processed(std::move(response));
+			conn->data_processed(std::move(response));
 
 		}
 		else
 		{
 			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			port->data_processed(std::move(ret_value));
+			conn->data_processed(std::move(ret_value));
 		}
 
 	};
@@ -841,18 +841,18 @@ rx_result browse_runtime_request::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-message_ptr browse_runtime_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr browse_runtime_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	switch (item_type)
 	{
 	case rx_item_type::rx_application:
-		return do_concrete_job(ctx, port, tl::type2type<meta::object_types::application_type>());
+		return do_concrete_job(ctx, conn, tl::type2type<meta::object_types::application_type>());
 	case rx_item_type::rx_domain:
-		return do_concrete_job(ctx, port, tl::type2type<meta::object_types::domain_type>());
+		return do_concrete_job(ctx, conn, tl::type2type<meta::object_types::domain_type>());
 	case rx_item_type::rx_port:
-		return do_concrete_job(ctx, port, tl::type2type<meta::object_types::port_type>());
+		return do_concrete_job(ctx, conn, tl::type2type<meta::object_types::port_type>());
 	case rx_item_type::rx_object:
-		return do_concrete_job(ctx, port, tl::type2type<meta::object_types::object_type>());
+		return do_concrete_job(ctx, conn, tl::type2type<meta::object_types::object_type>());
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>("Browse not valid for this type of item!"s, 14, request_id);
@@ -874,24 +874,24 @@ rx_message_type_t browse_runtime_request::get_type_id ()
 }
 
 template<typename typeT>
-message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_protocol_port_ptr port, tl::type2type<typeT>)
+message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<typeT>)
 {
 	auto request_id = this->request_id;
 	auto result = api::ns::rx_list_runtime(id, path, filter,
-		[request_id, port](rx_result_with<api::runtime_browse_result>&& result) mutable
+		[request_id, conn](rx_result_with<api::runtime_browse_result>&& result) mutable
 		{
 			if (result)
 			{
 				auto response = std::make_unique<browse_runtime_response_message>();
 				response->items = std::move(result.value().items);
 				response->request_id = request_id;
-				port->data_processed(std::move(response));
+				conn->data_processed(std::move(response));
 
 			}
 			else
 			{
 				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-				port->data_processed(std::move(ret_value));
+				conn->data_processed(std::move(ret_value));
 			}
 
 		}, ctx, tl::type2type<typeT>());
@@ -1034,7 +1034,7 @@ rx_result get_code_info_request::deserialize (base_meta_reader& stream)
 	return result;
 }
 
-message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_port_ptr port)
+message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	rx_directory_resolver directories{};
 	rx_request_id_t request = request_id;
@@ -1063,12 +1063,12 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_port
 				}
 				return ss.str();
 			}
-		}, [request, port]  (string_type&& result) mutable
+		}, [request, conn]  (string_type&& result) mutable
 		{
 			auto ret_msg = std::make_unique<get_code_info_response_message>();
 			ret_msg->request_id = request;
 			ret_msg->code_info = result;
-			port->data_processed(std::move(ret_msg));
+			conn->data_processed(std::move(ret_msg));
 		}, ctx);
 
 

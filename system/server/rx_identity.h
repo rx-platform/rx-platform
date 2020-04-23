@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\opcua_c\rx_opcua_binary_sec.h
+*  system\server\rx_identity.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,16 +28,66 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_binary_sec_h
-#define rx_opcua_binary_sec_h 1
+#ifndef rx_identity_h
+#define rx_identity_h 1
+
+
+
+// rx_security
+#include "lib/security/rx_security.h"
+
+
+
+namespace rx_platform {
+
+namespace runtime {
+
+namespace items {
 
 
 
 
 
-rx_protocol_result_t opcua_parse_open_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer);
-rx_protocol_result_t opcua_parse_close_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer);
+class security_context_holder 
+{
 
+  public:
+
+      bool serialize (const string_type& name, base_meta_writer& stream) const;
+
+      bool deserialize (const string_type& name, base_meta_reader& stream);
+
+      rx_result create_context (const string_type& port, const string_type& location);
+
+      void destory_context ();
+
+
+      const rx_reference<rx::security::security_context>& get_context () const
+      {
+        return context_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<rx::security::security_context> context_;
+
+
+      uint8_t type_;
+
+      byte_string data_;
+
+
+};
+
+
+} // namespace items
+} // namespace runtime
+} // namespace rx_platform
 
 
 
