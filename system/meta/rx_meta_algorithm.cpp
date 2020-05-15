@@ -82,7 +82,11 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 	{
 		rx_result ret(resolve_result.errors());
 		ret.register_error("Unable to resolve attribute");
-		return ret;
+		for (const auto& one : resolve_result.errors())
+		{
+			ctx.add_error(one);
+		}
+		return false;
 	}
 	target_id = resolve_result.value();
 	auto target = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
@@ -171,6 +175,164 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 	{
 		temp.value().set_value(whose.get_value(ctx.now));
 		ctx.runtime_data.add_variable(whose.name_, std::move(temp.value()), whose.get_value(ctx.now));
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
+}
+
+template<>
+rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex_attribute(const def_blocks::source_attribute& whose, base_meta_writer& stream)
+{
+	if (!stream.write_string("name", whose.name_.c_str()))
+		return false;
+	if (!stream.write_item_reference("target", whose.target_))
+		return false;
+	if (!stream.write_bool("input", whose.io_.input))
+		return false;
+	if (!stream.write_bool("output", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_complex_attribute(def_blocks::source_attribute& whose, base_meta_reader& stream)
+{
+	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!stream.read_item_reference("target", whose.target_))
+		return false;
+	if (!stream.read_bool("input", whose.io_.input))
+		return false;
+	if (!stream.read_bool("output", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex_attribute(const def_blocks::source_attribute& whose, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::source_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target);
+	if (temp)
+	{
+		temp.value().source_ptr->io_.set_input(whose.io_.input);
+		temp.value().source_ptr->io_.set_output(whose.io_.output);
+		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
+}
+
+
+template<>
+rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex_attribute(const def_blocks::mapper_attribute& whose, base_meta_writer& stream)
+{
+	if (!stream.write_string("name", whose.name_.c_str()))
+		return false;
+	if (!stream.write_item_reference("target", whose.target_))
+		return false;
+	if (!stream.write_bool("read", whose.io_.input))
+		return false;
+	if (!stream.write_bool("write", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_complex_attribute(def_blocks::mapper_attribute& whose, base_meta_reader& stream)
+{
+	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!stream.read_item_reference("target", whose.target_))
+		return false;
+	if (!stream.read_bool("read", whose.io_.input))
+		return false;
+	if (!stream.read_bool("write", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex_attribute(const def_blocks::mapper_attribute& whose, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::mapper_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target);
+	if (temp)
+	{
+		temp.value().mapper_ptr->io_.set_input(whose.io_.input);
+		temp.value().mapper_ptr->io_.set_output(whose.io_.output);
+		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
+}
+
+
+template<>
+rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::serialize_complex_attribute(const def_blocks::filter_attribute& whose, base_meta_writer& stream)
+{
+	if (!stream.write_string("name", whose.name_.c_str()))
+		return false;
+	if (!stream.write_item_reference("target", whose.target_))
+		return false;
+	if (!stream.write_bool("input", whose.io_.input))
+		return false;
+	if (!stream.write_bool("output", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::deserialize_complex_attribute(def_blocks::filter_attribute& whose, base_meta_reader& stream)
+{
+	if (!stream.read_string("name", whose.name_))
+		return false;
+	if (!stream.read_item_reference("target", whose.target_))
+		return false;
+	if (!stream.read_bool("input", whose.io_.input))
+		return false;
+	if (!stream.read_bool("output", whose.io_.output))
+		return false;
+	return true;
+}
+template<>
+rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex_attribute(const def_blocks::filter_attribute& whose, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::filter_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target);
+	if (temp)
+	{
+		temp.value().filter_ptr->io_.set_input(whose.io_.input);
+		temp.value().filter_ptr->io_.set_output(whose.io_.output);
+		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else

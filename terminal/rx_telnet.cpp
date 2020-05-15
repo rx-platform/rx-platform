@@ -151,25 +151,13 @@ telnet_transport::telnet_transport()
 {
 	rx_protocol_stack_entry* mine_entry = this;
 
-	mine_entry->downward = nullptr;
-	mine_entry->upward = nullptr;
-
-	mine_entry->send_function = nullptr;
-	mine_entry->sent_function = nullptr;
+	rx_init_stack_entry(mine_entry);
 	mine_entry->received_function = &telnet_transport::received_function;
-
-	mine_entry->connected_function = nullptr;
-
-	mine_entry->close_function = nullptr;
-	mine_entry->closed_function = nullptr;
-
-	mine_entry->allocate_packet_function = nullptr;
-	mine_entry->free_packet_function = nullptr;
 }
 
 
 
-rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
+rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	telnet_transport* self = reinterpret_cast<telnet_transport*>(reference);
 	string_type to_echo;
@@ -191,7 +179,7 @@ rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entr
 		if (!temp)
 			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
 		else
-			result = rx_move_packet_down(reference, &send_buffer);
+			result = rx_move_packet_down(reference, &send_buffer, packet_id);
 		if (result == RX_PROTOCOL_OK)
 			send_buffer.detach(nullptr);
 	}
@@ -201,7 +189,7 @@ rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entr
 		{
 			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
 			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
-			result = rx_move_packet_up(reference, &up_buffer);
+			result = rx_move_packet_up(reference, &up_buffer, 0);
 			if (result != RX_PROTOCOL_OK)
 				break;
 		}

@@ -166,10 +166,10 @@ rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type
 	, size_t queue_size);
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
 
-rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference
-	, rx_const_packet_buffer* buffer);
-rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference
-	, rx_packet_buffer* buffer);
+rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type id);
+rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_entry* reference, rx_protocol_result_t result);
+rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+
 
 
 #ifdef __cplusplus

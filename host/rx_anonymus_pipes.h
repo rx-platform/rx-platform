@@ -118,7 +118,7 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
 
 
 
@@ -193,4 +193,3 @@ Local Pipe class. implementation of an local pipe port port");
 
 
 #endif
-

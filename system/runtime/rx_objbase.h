@@ -45,7 +45,7 @@
 
 #include "lib/security/rx_security.h"
 #include "system/callbacks/rx_callback.h"
-#include "rx_runtime_helpers.h"
+#include "rx_process_context.h"
 using namespace rx;
 using namespace rx_platform::ns;
 using rx::values::rx_value;
@@ -116,10 +116,36 @@ object class. basic implementation of an object");
 
       static rx_item_type type_id;
 
-
+      template<typename valT>
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              auto result = context_->get_value(handle, temp_val);
+              if (result)
+              {
+                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              }
+          }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              temp_val.assign_static<valT>(std::forward<valT>(value));
+              auto result = context_->set_value(handle, std::move(temp_val));
+          }
+      }
   protected:
 
   private:
+
+
+      algorithms::runtime_process_context *context_;
 
 
 };
@@ -164,10 +190,36 @@ system application class. basic implementation of a application");
 
       static rx_item_type type_id;
 
-
+      template<typename valT>
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              auto result = context_->get_value(handle, temp_val);
+              if (result)
+              {
+                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              }
+          }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              temp_val.assign_static<valT>(std::forward<valT>(value));
+              auto result = context_->set_value(handle, std::move(temp_val));
+          }
+      }
   protected:
 
   private:
+
+
+      algorithms::runtime_process_context *context_;
 
 
 };
@@ -212,10 +264,36 @@ system domain class. basic implementation of a domain");
 
       static rx_item_type type_id;
 
-
+      template<typename valT>
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              auto result = context_->get_value(handle, temp_val);
+              if (result)
+              {
+                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              }
+          }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              temp_val.assign_static<valT>(std::forward<valT>(value));
+              auto result = context_->set_value(handle, std::move(temp_val));
+          }
+      }
   protected:
 
   private:
+
+
+      algorithms::runtime_process_context *context_;
 
 
 };

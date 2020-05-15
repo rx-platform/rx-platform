@@ -204,7 +204,7 @@ void rx_subscription::process_subscription (bool posted)
 		for (auto idx : to_retrieve_)
 		{
 			auto& one = connections_[idx];
-			if (!one.connected && !one.item)
+			if (!one.connected && !one.item && one.last_checked + 1000 < now)
 			{
 				one.last_checked = now;
 				to_query.emplace_back(one.path);
@@ -222,7 +222,6 @@ void rx_subscription::process_subscription (bool posted)
 				auto connect_it = connection_paths_.find(to_query[i]);
 				if (items_result[i])
 				{
-					std::cout << "*****Found item with path " << to_query[i] << "\r\n";
 					RX_ASSERT(connect_it != connection_paths_.end());
 					RX_ASSERT(connect_it->second < connections_.size() && !connections_[connect_it->second].item);
 
@@ -234,7 +233,6 @@ void rx_subscription::process_subscription (bool posted)
 				{
 					// delete processing just in case we're dead
 					to_process_.erase(connect_it->second);
-					std::cout << "*****Error querying item with path " << to_query[i] << "\r\n";
 				}
 			}
 		}
@@ -253,8 +251,6 @@ void rx_subscription::process_subscription (bool posted)
 				auto executer = connections_[*it_process].item->get_executer();
 				if (executer == current_context)
 				{
-					std::cout << "*****Processing item with path " << connections_[*it_process].path << "\r\n";
-
 					connections_[*it_process].process_connection(ts, smart_this());
 					it_process = to_process_.erase(it_process);
 				}
@@ -583,7 +579,6 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 			{
 				if (result[idx])
 				{
-					std::cout << "*****Connected to item with path " << tags_[connect_indexes[idx]].path << "\r\n";
 					had_good = true;
 					tags_[connect_indexes[idx]].target_handle = result[idx].value();
 					whose->handles_[result[idx].value()].emplace_back(tags_[connect_indexes[idx]].mine_handle);
@@ -602,7 +597,6 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 						ss << one
 							<< ", ";
 					}
-					std::cout << "*****Connected to item with path " << ss.str() << "\r\n";
 					RUNTIME_LOG_TRACE("runtime_connection_data", 10, ss.str());
 				}
 			}

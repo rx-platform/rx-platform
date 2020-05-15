@@ -42,9 +42,14 @@ extern "C" {
 #endif
 
 
+
+typedef uint32_t rx_packet_id_type;
+
+
 typedef rx_protocol_result_t(*rx_send_function_type)(
 	struct rx_protocol_stack_entry* reference
-	, rx_packet_buffer* buffer);
+	, rx_packet_buffer* buffer
+	, rx_packet_id_type id);
 
 typedef rx_protocol_result_t(*rx_sent_function_type)(
 	struct rx_protocol_stack_entry* reference
@@ -52,7 +57,8 @@ typedef rx_protocol_result_t(*rx_sent_function_type)(
 
 typedef rx_protocol_result_t(*rx_received_function_type)(
 	struct rx_protocol_stack_entry* reference
-	, rx_const_packet_buffer* buffer);
+	, rx_const_packet_buffer* buffer
+	, rx_packet_id_type id);
 
 
 typedef rx_protocol_result_t(*rx_close_function_type)(
@@ -108,9 +114,10 @@ struct rx_protocol_stack_entry
 
 };
 
+void rx_init_stack_entry(struct rx_protocol_stack_entry* stack);
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer);
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, rx_const_packet_buffer* buffer);
+rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer, rx_packet_id_type id);
+rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, rx_const_packet_buffer* buffer, rx_packet_id_type id);
 rx_protocol_result_t rx_move_result_up(struct rx_protocol_stack_entry* stack, rx_protocol_result_t result);
 
 void rx_send_connected(struct rx_protocol_stack_entry* stack);

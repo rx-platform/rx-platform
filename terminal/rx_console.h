@@ -83,7 +83,7 @@ class console_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
 
       static rx_protocol_result_t connected_function (rx_protocol_stack_entry* reference);
 

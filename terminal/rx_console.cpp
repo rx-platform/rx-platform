@@ -77,7 +77,7 @@ char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLO
 // Class rx_internal::terminal::console::console_endpoint 
 
 
-rx_protocol_result_t console_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
+rx_protocol_result_t console_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	console_endpoint* self = reinterpret_cast<console_endpoint*>(reference);
 	if (self->my_console_)
@@ -101,27 +101,16 @@ void console_endpoint::bind (console_runtime_ptr console, std::function<void(int
 	received_func_ = received_func;
 	rx_protocol_stack_entry* mine_entry = this;
 
-	mine_entry->downward = nullptr;
-	mine_entry->upward = nullptr;
-
-	mine_entry->send_function = nullptr;
-	mine_entry->sent_function = nullptr;
+	rx_init_stack_entry(mine_entry);
 	mine_entry->received_function = &console_endpoint::received_function;
-
-	mine_entry->connected_function = &console_endpoint::connected_function;;
-
-	mine_entry->close_function = nullptr;
-	mine_entry->closed_function = nullptr;
-
-	mine_entry->allocate_packet_function = nullptr;
-	mine_entry->free_packet_function = nullptr;
+	mine_entry->connected_function = &console_endpoint::connected_function;
 }
 
 rx_result console_endpoint::write (runtime::io_types::rx_io_buffer& what)
 {
 	rx_packet_buffer buff;
 	what.detach(&buff);
-	auto result = rx_move_packet_down(this, &buff);
+	auto result = rx_move_packet_down(this, &buff, 0);
 	if (result == RX_PROTOCOL_OK)
 		return true;
 	else

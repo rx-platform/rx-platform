@@ -38,6 +38,7 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "runtime_internal/rx_data_source.h"
 #include "system/server/rx_platform_item.h"
+#include "rx_simulation.h"
 
 
 namespace rx_internal {
@@ -111,6 +112,10 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 	last_cpu_ = first_cpu_ + data.workers_pool_size;
 	cpu_coverage_.assign(last_cpu_ - first_cpu_, 0);
 	rx_result result = data_source::data_source_factory::instance().register_internal_sources();
+	if (result)
+	{
+		result = simulation::register_simulation_constructors();
+	}
 	return result;
 }
 

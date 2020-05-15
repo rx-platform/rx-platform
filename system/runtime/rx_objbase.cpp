@@ -79,6 +79,7 @@ namespace items {
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
 object_runtime::object_runtime()
+      : context_(nullptr)
 {
 }
 
@@ -91,6 +92,7 @@ object_runtime::~object_runtime()
 
 rx_result object_runtime::initialize_runtime (runtime_init_context& ctx)
 {
+    context_ = ctx.context;
 	return true;
 }
 
@@ -115,6 +117,7 @@ rx_result object_runtime::stop_runtime (runtime_stop_context& ctx)
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
 application_runtime::application_runtime()
+      : context_(nullptr)
 {
 }
 
@@ -127,6 +130,7 @@ application_runtime::~application_runtime()
 
 rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
 {
+    context_ = ctx.context;
     return true;
 }
 
@@ -157,6 +161,7 @@ int application_runtime::get_executer ()
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
 domain_runtime::domain_runtime()
+      : context_(nullptr)
 {
 }
 
@@ -169,6 +174,7 @@ domain_runtime::~domain_runtime()
 
 rx_result domain_runtime::initialize_runtime (runtime_init_context& ctx)
 {
+    context_ = ctx.context;
 	return true;
 }
 

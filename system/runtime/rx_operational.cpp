@@ -67,7 +67,6 @@ connected_tags::~connected_tags()
 
 rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor, const structure::hosting_object_data& state)
 {
-	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_tags = referenced_tags_.find(path);
 	if (it_tags != referenced_tags_.end())
 	{// not new one, just add reference
@@ -150,7 +149,6 @@ rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback
 {
 	if (!handle)
 		return true;
-	locks::auto_lock_t<decltype(lock_)> _(&lock_);
 	auto it_handles = handles_map_.find(handle);
 	if (it_handles == handles_map_.end() || it_handles->second.reference_count == 0)
 		return "Invalid item handle";
@@ -164,7 +162,12 @@ bool connected_tags::process_runtime (algorithms::runtime_process_context& ctx)
 	if (!next_send_.empty())
 	{
 		std::vector<update_item> update_data;
-		for (auto one : next_send_)
+		next_send_type next_send;
+		{
+			next_send = next_send_;
+			next_send_.clear();			
+		}
+		for (auto one : next_send)
 		{
 			auto monitor = one.first;
 			update_data.clear();
@@ -172,7 +175,6 @@ bool connected_tags::process_runtime (algorithms::runtime_process_context& ctx)
 				update_data.emplace_back(update_item{ item.first, item.second });
 			monitor->items_changed(update_data);
 		}
-		next_send_.clear();
 	}
 	return false;
 }
@@ -257,8 +259,10 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 				return result;
 			}
 		case rt_value_ref_type::rt_variable:
-			return "Wow";
-			break;
+			{
+				auto result = it->second.reference.ref_value_ptr.variable->write_value(std::move(value), ctx, state.context);
+				return result;
+			}
 		case rt_value_ref_type::rt_relation:
 			{
 				auto result = it->second.reference.ref_value_ptr.relation->value.write_value(std::move(value), ctx);
@@ -383,6 +387,27 @@ void connected_tags::runtime_stopped (const rx_time& now)
 		monitor->items_changed(update_data);
 	}
 	next_send_.clear();
+}
+
+void connected_tags::variable_change (structure::variable_data* whose, const rx_value& val, structure::hosting_object_data& state)
+{
+	auto it = variables_.find(whose);
+	if (it != variables_.end())
+	{
+		auto handle = it->second;
+		auto it_data = handles_map_.find(handle);
+		if (it_data != handles_map_.end())
+		{
+			if (!it_data->second.monitors.empty())
+			{
+				for (auto& one : it_data->second.monitors)
+				{
+					next_send_[one].emplace(handle, val);
+				}
+				state.context->tag_updates_pending();
+			}
+		}
+	}
 }
 
 

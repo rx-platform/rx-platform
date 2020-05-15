@@ -101,7 +101,52 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     whose.job_pending_ = false;
     whose.job_lock_.unlock();
     whose.context_.init_context();
-    whose.process_runtime(whose.context_);
+
+    security::secured_scope _(whose.instance_data_.get_security_context());
+    if (whose.scan_time_item_)
+        whose.set_binded_as(whose.scan_time_item_, whose.last_scan_time_);
+    auto old_tick = rx_get_us_ticks();
+
+    do
+    {
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        // STATUS
+        whose.process_status_change(whose.context_);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        // INPUTS
+        whose.process_source_inputs(whose.context_);
+        whose.process_mapper_inputs(whose.context_);
+        whose.process_subscription_inputs(whose.context_);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        // PROCESS
+        whose.process_variables(whose.context_);
+        whose.process_programs(whose.context_);
+        whose.process_events(whose.context_);
+        whose.process_filters(whose.context_);
+        whose.process_structs(whose.context_);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        // OUTPUTS
+        whose.process_subscription_outputs(whose.context_);
+        whose.process_mapper_outputs(whose.context_);
+        whose.process_source_outputs(whose.context_);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+
+    } while (whose.context_.should_repeat());
+
+    auto diff = rx_get_us_ticks() - old_tick;
+    whose.last_scan_time_ = (double)diff / 1000.0;
+    if (whose.max_scan_time_ < whose.last_scan_time_)
+    {
+        whose.max_scan_time_ = whose.last_scan_time_;
+        if (whose.max_scan_time_item_)
+            whose.set_binded_as(whose.max_scan_time_item_, whose.max_scan_time_);
+    }
 }
 
 template <class typeT>
@@ -160,15 +205,6 @@ rx_result object_runtime_algorithms<typeT>::disconnect_items (const std::vector<
 }
 
 
-template <>
-void object_runtime_algorithms<object_types::port_type>::process_runtime(typename object_types::port_type::RType& whose)
-{
-    whose.job_lock_.lock();
-    whose.job_pending_ = false;
-    whose.job_lock_.unlock();
-    whose.context_.init_context();
-    whose.process_runtime(whose.context_);
-}
 
 template <>
 std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<object_types::relation_type>::connect_items(const string_array& paths, runtime::operational::tags_callback_ptr monitor, object_types::relation_type::RType& whose)
@@ -260,6 +296,7 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
     rx_result result;
     if (path.empty())
     {// our value
+#ifdef RX_MIN_MEMORY
         if (!json_cache_.empty())
         {
             value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
@@ -272,18 +309,34 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
             if (result)
             {
 #ifdef _DEBUG
-                writer.get_string(const_cast<string_type&>(json_cache_), true);
+                if (writer.get_string(const_cast<string_type&>(json_cache_), true))
+                {
 #else
-                writer.get_string(const_cast<runtime_holder<typeT>* >(this)->json_cache_, false);
+                writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false);
 #endif
                 value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+                }
             }
         }
+#else
+        serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        result = serialize_value(writer, runtime_value_type::simple_runtime_value);
+        if (result)
+        {
+            string_type temp_str;
+            if (writer.get_string(const_cast<string_type&>(temp_str), true))
+            {
+                value.assign_static<string_type>(string_type(temp_str), meta_info_.get_modified_time());
+            }
+        }
+#endif
     }
     else
     {
         result = item_->get_value(state_, path, value);
     }
+    
     return result;
 }
 
@@ -297,7 +350,7 @@ rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple
     std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
     {
         structure::write_context my_ctx = structure::write_context::create_write_context(state_, false);
-        return item_->write_value(path, std::move(val), my_ctx);
+        return item_->write_value(path, std::move(val), my_ctx, &context_);
     };
     auto current_thread = rx_thread_context();
     if (current_thread == whose)
@@ -509,7 +562,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.turn_off())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
         }
         break;
@@ -518,7 +571,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.turn_on())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
         }
         break;
@@ -527,7 +580,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.set_blocked())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
         }
         break;
@@ -536,7 +589,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.reset_blocked())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
 
         }
@@ -546,7 +599,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.set_test())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
         }
         break;
@@ -555,7 +608,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
             if (state_.mode.reset_test())
             {
                 state_.time = rx_time::now();
-                item_->object_state_changed(state_);
+                context_.status_change_pending();
             }
         }
         break;
@@ -603,33 +656,6 @@ template <class typeT>
 rx_result runtime_holder<typeT>::get_value_ref (const string_type& path, rt_value_ref& ref)
 {
     return item_->get_value_ref(path, ref);
-}
-
-template <class typeT>
-bool runtime_holder<typeT>::process_runtime (runtime_process_context& ctx)
-{
-    security::secured_scope _(instance_data_.get_security_context());
-    bool ret = false;
-    if (scan_time_item_)
-        set_binded_as(scan_time_item_, last_scan_time_);
-    auto old_tick = rx_get_us_ticks();
-    do
-    {
-        if (ctx.should_process_writes())
-            ret = ret | connected_tags_.process_runtime(ctx);
-        if (ctx.should_process_tags())
-            ret = ret | connected_tags_.process_runtime(ctx);
-
-    } while (ctx.should_repeat());
-    auto diff = rx_get_us_ticks() - old_tick;
-    last_scan_time_ = (double)diff / 1000.0;
-    if (max_scan_time_ < last_scan_time_)
-    {
-        max_scan_time_ = last_scan_time_;
-        if (max_scan_time_item_)
-            set_binded_as(max_scan_time_item_, max_scan_time_);
-    }
-    return ret;
 }
 
 template <class typeT>
@@ -759,6 +785,136 @@ template <class typeT>
 const typename typeT::instance_data_t& runtime_holder<typeT>::get_instance_data () const
 {
     return instance_data_;
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_status_change (runtime_process_context& ctx)
+{
+    while (ctx.should_process_status_change())
+        item_->object_state_changed(state_);
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_source_inputs (runtime_process_context& ctx)
+{
+    auto& source_updates = ctx.get_source_updates();
+    while (!source_updates.empty())
+    {
+        for (auto& one : source_updates)
+            one.whose->process_update(std::move(one.value));
+        source_updates = ctx.get_source_updates();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_mapper_inputs (runtime_process_context& ctx)
+{
+    auto& mapper_writes = ctx.get_mapper_writes();
+    while (!mapper_writes.empty())
+    {
+        for (auto& one : mapper_writes)
+            one.whose->process_write(std::move(one.value), one.transaction_id);
+        mapper_writes = ctx.get_mapper_writes();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_subscription_inputs (runtime_process_context& ctx)
+{
+    while (ctx.should_process_tag_writes())
+        connected_tags_.process_runtime(ctx);
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_variables (runtime_process_context& ctx)
+{
+    auto& variables = ctx.get_variables_for_process();
+    while (!variables.empty())
+    {
+        for (auto& one : variables)
+            one->process_runtime(&ctx);
+        variables = ctx.get_variables_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_programs (runtime_process_context& ctx)
+{
+    auto& programs = ctx.get_programs_for_process();
+    while (!programs.empty())
+    {
+        // TODO!!!
+        /*for (auto& one : programs)
+            one->process_runtime(&ctx);*/
+        programs = ctx.get_programs_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_filters (runtime_process_context& ctx)
+{
+    auto& filters = ctx.get_filters_for_process();
+    while (!filters.empty())
+    {
+        for (auto& one : filters)
+            one->process_runtime(&ctx);
+        filters = ctx.get_filters_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_subscription_outputs (runtime_process_context& ctx)
+{
+    while (ctx.should_process_tag_updates())
+        connected_tags_.process_runtime(ctx);
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_mapper_outputs (runtime_process_context& ctx)
+{
+    auto& mapper_updates = ctx.get_mapper_updates();
+    while (!mapper_updates.empty())
+    {
+        for (auto& one : mapper_updates)
+            one.whose->process_update(std::move(one.value));
+        mapper_updates = ctx.get_mapper_updates();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_source_outputs (runtime_process_context& ctx)
+{
+    auto& source_writes = ctx.get_source_writes();
+    while (!source_writes.empty())
+    {
+        for (auto& one : source_writes)
+            one.whose->process_write(std::move(one.value), one.transaction_id);
+        source_writes = ctx.get_source_writes();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_events (runtime_process_context& ctx)
+{
+    auto& events = ctx.get_events_for_process();
+    while (!events.empty())
+    {
+        for (auto& one : events)
+            one->process_runtime(&ctx);
+        events = ctx.get_events_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_structs (runtime_process_context& ctx)
+{
+    auto& structs = ctx.get_structs_for_process();
+    while (!structs.empty())
+    {
+        for (auto& one : structs)
+            one->process_runtime(&ctx);
+        structs = ctx.get_structs_for_process();
+    }
 }
 
 template class runtime_holder<object_types::object_type>;

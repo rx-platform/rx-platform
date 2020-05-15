@@ -31,14 +31,14 @@
 #include "pch.h"
 
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 
@@ -48,125 +48,6 @@
 namespace rx_platform {
 
 namespace runtime {
-
-namespace algorithms {
-
-// Class rx_platform::runtime::algorithms::runtime_process_context 
-
-runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags)
-      : tags_(tags),
-        binded_(binded),
-        current_step_(runtime_process_idle),
-        process_all_(false),
-        process_tag_connections_(false),
-        process_tag_writes_(false)
-    , state_(nullptr)
-{
-}
-
-
-
-bool runtime_process_context::should_repeat () const
-{
-	return current_step_!=runtime_process_over;
-}
-
-bool runtime_process_context::tag_updates_pending ()
-{
-    bool should_fire=false;
-    if (!process_tag_connections_)
-    {
-        process_tag_connections_ = true;
-        should_fire = current_step_ > runtime_process_tag_connections;
-    }
-    // i know that this doesn't make sense but this is
-    // the end of some potentially larger function!
-    if (should_fire)
-    {
-        fire_callback_();
-    }
-    return should_fire;
-}
-
-rx_result runtime_process_context::init_context ()
-{
-	now = rx_time::now();
-    current_step_ = runtime_process_tag_writes;
-	return true;
-}
-
-bool runtime_process_context::tag_writes_pending ()
-{
-    bool should_fire = false;
-    if (!process_tag_writes_)
-    {
-        process_tag_writes_ = true;
-        should_fire = current_step_ > runtime_process_tag_writes;
-    }
-    // see above at tag_updates_pending function!
-    if (should_fire)
-    {
-        fire_callback_();
-    }
-    return should_fire;
-}
-
-bool runtime_process_context::should_process_tags ()
-{
-    if (current_step_ == runtime_process_tag_connections)
-    {
-        current_step_ = runtime_process_over;
-        auto temp = process_tag_connections_;
-        if (temp)
-            process_tag_connections_ = false;
-        return temp;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool runtime_process_context::should_process_writes ()
-{
-    if (current_step_ == runtime_process_tag_writes)
-    {
-        current_step_ = runtime_process_tag_connections;
-        auto temp = process_tag_writes_;
-        if (temp)
-            process_tag_writes_ = false;
-        return temp;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-rx_result runtime_process_context::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
-{
-    return binded_.get_value(handle, val);
-}
-
-rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
-{
-    return binded_.set_value(handle, std::move(val), tags_, *state_);
-}
-
-rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
-{
-    return binded_.set_item(path, std::move(what), ctx);
-}
-
-void runtime_process_context::init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback)
-{
-    RX_ASSERT(state_ == nullptr);
-    state_ = state;
-    fire_callback_ = fire_callback;
-}
-
-
-} // namespace algorithms
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
@@ -304,7 +185,7 @@ structure::runtime_item& runtime_structure_resolver::get_root ()
 // Class rx_platform::runtime::variables_stack 
 
 
-void variables_stack::push_variable (rx_variable_ptr what)
+void variables_stack::push_variable (structure::variable_data* what)
 {
 	variables_.push(what);
 }
@@ -315,12 +196,36 @@ void variables_stack::pop_variable ()
 		variables_.pop();
 }
 
-rx_variable_ptr variables_stack::get_current_variable () const
+structure::variable_data* variables_stack::get_current_variable () const
 {
 	if (!variables_.empty())
 		return variables_.top();
 	else
-		return rx_variable_ptr::null_ptr;
+		return nullptr;
+}
+
+
+// Class rx_platform::runtime::io_capabilities 
+
+
+void io_capabilities::set_input (bool val)
+{
+    settings_[0] = val;
+}
+
+void io_capabilities::set_output (bool val)
+{
+    settings_[1] = val;
+}
+
+bool io_capabilities::get_input () const
+{
+    return settings_.test(0);
+}
+
+bool io_capabilities::get_output () const
+{
+    return settings_.test(1);
 }
 
 

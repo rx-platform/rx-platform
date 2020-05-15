@@ -225,7 +225,7 @@ connection_endpoint::connection_endpoint (const string_type& remote_port, const 
 
 
 
-rx_protocol_result_t connection_endpoint::received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
+rx_protocol_result_t connection_endpoint::received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
     return true;
 }
@@ -273,7 +273,7 @@ bool connection_endpoint::readed (const void* data, size_t count, rx_security_ha
     rx_const_packet_buffer buffer{ (const uint8_t*)data, count, 0 };
     {
         security::secured_scope ctx(identity);
-        auto res = rx_move_packet_up(this, &buffer);
+        auto res = rx_move_packet_up(this, &buffer, 0);
     }
     return true;
 }
@@ -281,27 +281,13 @@ bool connection_endpoint::readed (const void* data, size_t count, rx_security_ha
 void connection_endpoint::bind ()
 {
     rx_protocol_stack_entry* mine_entry = this;
+    rx_init_stack_entry(mine_entry);
 
-    mine_entry->downward = nullptr;
-    mine_entry->upward = nullptr;
 
     mine_entry->send_function = &connection_endpoint::send_function;
-    mine_entry->sent_function = nullptr;
-
-    mine_entry->received_function = nullptr;
-
-    mine_entry->connected_function = nullptr;
-
-    mine_entry->close_function = nullptr;
-    mine_entry->closed_function = nullptr;
-
-    mine_entry->allocate_packet_function = nullptr;
-    mine_entry->free_packet_function = nullptr;
-
-    mine_entry->identity = 0;
 }
 
-rx_protocol_result_t connection_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
+rx_protocol_result_t connection_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
     connection_endpoint* self = reinterpret_cast<connection_endpoint*>(reference);
     auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();

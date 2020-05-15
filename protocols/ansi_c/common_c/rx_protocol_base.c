@@ -64,6 +64,12 @@ rx_protocol_result_t rx_deinit_protocols()
 	return RX_PROTOCOL_OK;
 }
 
+
+void rx_init_stack_entry(struct rx_protocol_stack_entry* stack)
+{
+	memset(stack, 0, sizeof(struct rx_protocol_stack_entry));
+}
+
 rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_entry* where_to, struct rx_protocol_stack_entry* what)
 {
 	if (where_to->upward || what->downward)
@@ -90,25 +96,25 @@ rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_entry* what)
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_entry* stack, rx_packet_buffer* buffer, rx_packet_id_type id)
 {
 	while (stack->downward != NULL)
 	{
 		if (stack->downward->send_function)
 		{
-			return stack->downward->send_function(stack->downward, buffer);
+			return stack->downward->send_function(stack->downward, buffer, id);
 		}
 		stack = stack->downward;
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, rx_const_packet_buffer* buffer)
+rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_entry* stack, rx_const_packet_buffer* buffer, rx_packet_id_type id)
 {
 	while (stack->upward != NULL)
 	{
 		if (stack->upward->received_function)
 		{
-			return stack->upward->received_function(stack->upward, buffer);
+			return stack->upward->received_function(stack->upward, buffer, id);
 		}
 		stack = stack->upward;
 	}

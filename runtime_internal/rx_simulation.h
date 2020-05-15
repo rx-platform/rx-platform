@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\opcua_c\rx_opcua_binary_sec.h
+*  runtime_internal\rx_simulation.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,16 +28,55 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_binary_sec_h
-#define rx_opcua_binary_sec_h 1
+#ifndef rx_simulation_h
+#define rx_simulation_h 1
+
+
+
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
+
+using namespace rx_platform::runtime;
+
+
+namespace rx_internal {
+
+namespace sys_runtime {
+
+namespace simulation {
+
+rx_result register_simulation_constructors();
 
 
 
 
+class local_register_source : public rx_platform::runtime::blocks::source_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+Local Register Source. Source implementation for register.");
 
-rx_protocol_result_t opcua_parse_open_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
-rx_protocol_result_t opcua_parse_close_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+    DECLARE_REFERENCE_PTR(local_register_source);
 
+  public:
+      local_register_source();
+
+
+      rx_result write_value (rx_simple_value&& val, const structure::write_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace simulation
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 

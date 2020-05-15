@@ -200,6 +200,16 @@
 #define RX_OPCUA_TRANSPORT_PORT_TYPE_ID 0xc000032
 
 
+#define RX_EXTERN_MAPPER_TYPE_NAME "ExternMapper"
+#define RX_EXTERN_MAPPER_TYPE_ID 0xc000033
+#define RX_EXTERN_SOURCE_TYPE_NAME "ExternSource"
+#define RX_EXTERN_SOURCE_TYPE_ID 0xc000034
+#define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
+#define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
+
+
+
+
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

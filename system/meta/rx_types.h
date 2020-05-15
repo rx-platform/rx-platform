@@ -208,7 +208,7 @@ implementation of mapper type");
 public:
 	typedef runtime::structure::mapper_data RDataType;
 	typedef runtime::blocks::mapper_runtime RType;
-	typedef runtime::mapper_runtime_ptr RTypePtr;
+	typedef rx_reference<RType> RTypePtr;
 	template<class typeT>
 	friend class meta_algorithm::basic_types_algorithm;
 

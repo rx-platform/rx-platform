@@ -1102,6 +1102,9 @@ bool variable_data_type::check_type (type_check_context& ctx)
 }
 
 
+// Class rx_platform::meta::def_blocks::io_attribute 
+
+
 } // namespace def_blocks
 } // namespace meta
 } // namespace rx_platform

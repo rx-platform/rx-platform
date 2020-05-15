@@ -35,10 +35,10 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_objbase
@@ -154,7 +154,6 @@ class runtime_holder : public rx::pointers::reference_object
 {
     DECLARE_REFERENCE_PTR(runtime_holder);
 
-    typedef std::vector<program_runtime_ptr> programs_type;
     typedef std::vector<relation_runtime_ptr> relations_type;
     typedef typename typeT::instance_data_t instance_data_t;
 
@@ -198,8 +197,6 @@ public:
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
-
-      bool process_runtime (runtime_process_context& ctx);
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
@@ -275,6 +272,31 @@ public:
   protected:
 
   private:
+
+      void process_status_change (runtime_process_context& ctx);
+
+      void process_source_inputs (runtime_process_context& ctx);
+
+      void process_mapper_inputs (runtime_process_context& ctx);
+
+      void process_subscription_inputs (runtime_process_context& ctx);
+
+      void process_variables (runtime_process_context& ctx);
+
+      void process_programs (runtime_process_context& ctx);
+
+      void process_filters (runtime_process_context& ctx);
+
+      void process_subscription_outputs (runtime_process_context& ctx);
+
+      void process_mapper_outputs (runtime_process_context& ctx);
+
+      void process_source_outputs (runtime_process_context& ctx);
+
+      void process_events (runtime_process_context& ctx);
+
+      void process_structs (runtime_process_context& ctx);
+
 
 
       operational::connected_tags connected_tags_;

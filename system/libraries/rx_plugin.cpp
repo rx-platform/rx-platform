@@ -48,6 +48,19 @@ template rx_result register_plugin_constructor<domain_type>(const rx_node_id& id
 template rx_result register_plugin_constructor<port_type>(const rx_node_id& id, std::function<rx_port_impl_ptr()> f);
 template rx_result register_plugin_constructor<application_type>(const rx_node_id& id, std::function<rx_application_impl_ptr()> f);
 
+template<typename typeT>
+rx_result register_plugin_simple_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f)
+{
+    return rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typeT>().register_constructor(id, f);
+}
+template rx_result register_plugin_simple_constructor<mapper_type>(const rx_node_id& id, std::function<runtime::mapper_runtime_ptr()> f);
+template rx_result register_plugin_simple_constructor<source_type>(const rx_node_id& id, std::function<runtime::source_runtime_ptr()> f);
+template rx_result register_plugin_simple_constructor<filter_type>(const rx_node_id& id, std::function<runtime::filter_runtime_ptr()> f);
+template rx_result register_plugin_simple_constructor<variable_type>(const rx_node_id& id, std::function<runtime::variable_runtime_ptr()> f);
+template rx_result register_plugin_simple_constructor<event_type>(const rx_node_id& id, std::function<runtime::event_runtime_ptr()> f);
+template rx_result register_plugin_simple_constructor<struct_type>(const rx_node_id& id, std::function<runtime::struct_runtime_ptr()> f);
+
+
 namespace library {
 
 // Class rx_platform::library::rx_plugin_base 

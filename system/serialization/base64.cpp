@@ -117,8 +117,11 @@ namespace urke
 
 		vector<unsigned char> converted;
 
-		int bonus = 0;
+		if (rez.empty())
+			return converted;
 
+		int bonus = 0;
+		size_t len = rez.length();
 		
 		for (size_t i = 0; i < rez.length(); i++)
 		{
@@ -126,11 +129,11 @@ namespace urke
 				converted.push_back(getFrom(rez[i]));
 		}
 
-		if (rez[rez.length() - 2] == '=')
+		if (rez[len - 2] == '=')
 		{
 			bonus=2;
 		}
-		else if (rez[rez.length() - 1] == '=')
+		else if (rez[len - 1] == '=')
 		{
 			bonus = 1;
 		}

@@ -574,10 +574,10 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 
 	if (safe_read_string(index, name, sstr, jval))
 	{
-		string_type temp_val = base64_decode(sstr);
+		/*string_type temp_val = base64_decode(sstr);
 		val.assign(temp_val.size(), 0);
-		temp_val.copy((char*)&val[0], val.size());
-		//val = urke::get_data(sstr);
+		temp_val.copy((char*)&val[0], val.size());*/
+		val = urke::get_data(sstr);
 		return true;
 	}
 	return false;

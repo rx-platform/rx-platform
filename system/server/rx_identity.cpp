@@ -107,17 +107,24 @@ rx_result security_context_holder::create_context (const string_type& port, cons
         {
         case BUILTIN_ACCOUNT:
             {
+                rx_internal::rx_security::built_in_security_context::smart_ptr ptr;
                 switch (type_ & ACCOUNT_SUBTYPE_MASK)
                 {
                 case MAINTENANCE_PORT:
                     {
-                        auto ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>(port, location);
-                        context_ = ptr;
+                        ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>(port, location);
+                    }
+                    break;
+                case PROCESS_PORT:
+                    {
+                        ptr = rx_create_reference<rx_internal::rx_security::process_context>(port, location);
                     }
                     break;
                 default:
                     return false;// wrong type!?!
                 }
+                ptr->deserialize(reader);
+                context_ = ptr;
             }
             break;
         case USER_ACCOUNT:

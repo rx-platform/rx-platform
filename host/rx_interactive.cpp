@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -53,7 +53,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host (hosting::rx_host_storages& storage)
       : exit_(false)
@@ -453,10 +453,10 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 }
 
 
-// Class host::interactive::interactive_console_port
+// Class host::interactive::interactive_console_port 
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
-      : endpoint_(host)
+	: endpoint_(host)
 {
 }
 
@@ -522,7 +522,7 @@ rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
 }
 
 
-// Class host::interactive::interactive_console_endpoint
+// Class host::interactive::interactive_console_endpoint 
 
 interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host)
       : host_(host)
@@ -553,7 +553,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		{
 			rx_init_const_packet_buffer(&buffer, &in_buffer[0], count);
 			received_func(buffer.size);
-			auto res = rx_move_packet_up(this, &buffer);
+			auto res = rx_move_packet_up(this, &buffer, 0);
 			if (res != RX_PROTOCOL_OK)
 			{
 				std::ostringstream ss;
@@ -569,7 +569,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 	return true;
 }
 
-rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
+rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference);
 
@@ -603,32 +603,16 @@ void interactive_console_endpoint::close ()
 rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_func)
 {
 	rx_protocol_stack_entry* mine_entry = this;
+	rx_init_stack_entry(mine_entry);
 
 	sent_func_ = sent_func;
 	std_out_sender_.start();
-	mine_entry->downward = nullptr;
-	mine_entry->upward = nullptr;
 
 	mine_entry->send_function = &interactive_console_endpoint::send_function;
-	mine_entry->sent_function = nullptr;
-
-	mine_entry->received_function = nullptr;
-
-	mine_entry->connected_function = nullptr;
-
-	mine_entry->close_function = nullptr;
-	mine_entry->closed_function = nullptr;
-
-
-	mine_entry->allocate_packet_function = nullptr;
-	mine_entry->free_packet_function = nullptr;
-
 	return true;
 }
 
 
 } // namespace interactive
 } // namespace host
-
-
 

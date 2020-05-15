@@ -2468,7 +2468,7 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			what.bool_value = what.float_value != 0;
 			return true;
 		case RX_DOUBLE_TYPE:
-			what.bool_value = what.float_value != 0;
+			what.bool_value = what.double_value != 0;
 			return true;
 		case RX_TIME_TYPE:
 			what.bool_value = what.time_value.t_value != 0;

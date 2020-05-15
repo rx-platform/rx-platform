@@ -896,7 +896,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
 			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
-			, RX_PROTOCOL_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -987,6 +987,36 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
+		// base mappers and sources
+		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{
+			RX_EXTERN_MAPPER_TYPE_NAME
+			, RX_EXTERN_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data().register_const_value_static("Port", ""s);
+		add_simple_type_to_configuration<mapper_type>(dir, map, false);
+
+		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+			RX_EXTERN_SOURCE_TYPE_NAME
+			, RX_EXTERN_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data().register_const_value_static("Port", ""s);
+		add_simple_type_to_configuration<source_type>(dir, src, false);
+
+		src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+			RX_REGISTER_SOURCE_TYPE_NAME
+			, RX_REGISTER_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<source_type>(dir, src, false);
+
 		// port related helper structures
 		auto what = rx_create_reference<struct_type>(meta::type_creation_data{
 			RX_PORT_STATUS_TYPE_NAME

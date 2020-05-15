@@ -110,7 +110,7 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool move_history_down (string_type& to_echo);
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
 
 
 

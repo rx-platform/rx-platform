@@ -130,6 +130,7 @@ bool built_in_security_context::deserialize (base_meta_reader& stream)
         return false;
     if (!stream.read_string("description", description_))
         return false;
+    full_name_ = user_name_ + '@' + location_;
     return true;
 }
 

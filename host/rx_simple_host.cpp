@@ -146,52 +146,72 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 			if (ret)
 			{
 				std::cout << "OK\r\n";
+				char buff[0x20];
+				sprintf(buff, "%d", rx_gate::instance().get_pid());
+				HOST_LOG_INFO("Main", 900, "rx-platform running on PID "s + buff);
 
-				std::cout << "Initializing storages...";
-				ret = initialize_storages(config_, plugins);
+				std::cout << "Registering plug-ins...";
+				ret = register_plugins(plugins);
 				if (ret)
 				{
 					std::cout << "OK\r\n";
 
-					HOST_LOG_INFO("Main", 999, "Starting Simple Host...");
-
-
-					
-
-					if (!config_.management.telnet_port)// set to the last default if not set
-						config_.management.telnet_port = 12345;
-					if (config_.processor.io_pool_size <= 0)// has to have at least one
-						config_.processor.io_pool_size = 1;
-					if (config_.processor.workers_pool_size < 0)
-						config_.processor.workers_pool_size = 2;
-
-					// initialize extern ui thread
-					thread_synchronizer_.init_callback(sync_callback);
-					config_.processor.extern_executer = &thread_synchronizer_;
-
-
-					HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-					std::cout << "Initializing rx-platform...";
-					auto result = rx_platform::rx_gate::instance().initialize(this, config_);
-					if (result)
+					std::cout << "Initializing storages...";
+					ret = initialize_storages(config_, plugins);
+					if (ret)
 					{
-						host_security_context_ = result.value();
-
 						std::cout << "OK\r\n";
-						return 1;
+
+						HOST_LOG_INFO("Main", 999, "Starting Simple Host...");
+
+						if (!config_.management.telnet_port)// set to the last default if not set
+							config_.management.telnet_port = 12345;
+						if (config_.processor.io_pool_size <= 0)// has to have at least one
+							config_.processor.io_pool_size = 1;
+						if (config_.processor.workers_pool_size < 0)
+							config_.processor.workers_pool_size = 2;
+
+						// initialize extern ui thread
+						thread_synchronizer_.init_callback(sync_callback);
+						config_.processor.extern_executer = &thread_synchronizer_;
+
+						ret = register_constructors();
+						if (ret)
+						{
+							HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
+							std::cout << "Initializing rx-platform...";
+							auto result = rx_platform::rx_gate::instance().initialize(this, config_);
+							if (result)
+							{
+								host_security_context_ = result.value();
+
+								std::cout << "OK\r\n";
+								return 1;
+							}
+							else
+							{
+								std::cout << "ERROR\r\nError initializing rx-platform:\r\n";
+								rx_dump_error_result(std::cout, result);
+							}
+						}
+						else
+						{
+							HOST_LOG_WARNING("Main", 999, "Error registering standard console port constructor:"s + ret.errors()[0]);
+						}
 					}
 					else
 					{
-						std::cout << "ERROR\r\nError initializing rx-platform:\r\n";
-						rx_dump_error_result(std::cout, result);
+						std::cout << "ERROR\r\nError initializing storages\r\n";
+						rx_dump_error_result(std::cout, ret);
 					}
 				}
 				else
 				{
-					std::cout << "ERROR\r\nError initializing storages\r\n";
+					std::cout << "ERROR\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
+				
 			}
 
 			rx_deinitialize_os();
@@ -313,6 +333,28 @@ int simple_platform_host::start_platform ()
 		if (result)
 		{
 			std::cout << "OK\r\n";
+
+			//if (dump_storage_references_)
+			{
+				string_type sys_info = get_storages().system_storage->get_storage_info();
+				string_type sys_ref = get_storages().system_storage->get_storage_reference();
+				string_type user_info = get_storages().user_storage->get_storage_info();
+				string_type user_ref = get_storages().user_storage->get_storage_reference();
+
+				std::cout << "\r\nStorage Information:\r\n============================\r\n";
+				std::cout << "System Storage: " << sys_info << "\r\n";
+				std::cout << "System Reference: " << sys_ref << "\r\n";
+				std::cout << "User Storage: " << user_info << "\r\n";
+				std::cout << "User Reference: " << user_ref << "\r\n";
+				if (get_storages().test_storage)
+				{
+					string_type test_info = get_storages().test_storage->get_storage_info();
+					string_type test_ref = get_storages().test_storage->get_storage_reference();
+					std::cout << "Test Storage: " << test_info << "\r\n";
+					std::cout << "Test Reference: " << test_ref << "\r\n";
+				}
+			}
+
 			std::cout << "\r\nrx-platform Comm Module is running.";
 			std::cout << "\r\n=================================\r\n";
 			return 1;
@@ -364,6 +406,11 @@ int simple_platform_host::stop_platform ()
 string_type simple_platform_host::get_host_name ()
 {
 	return RX_SIMPLE_HOST;
+}
+
+rx_result simple_platform_host::register_constructors ()
+{
+	return true;
 }
 
 

@@ -141,6 +141,8 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
       string_type get_host_name ();
 
+      virtual rx_result register_constructors ();
+
 
   protected:
 

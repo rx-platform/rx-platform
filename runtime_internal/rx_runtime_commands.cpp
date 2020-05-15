@@ -64,7 +64,13 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 	auto result = rt_item->read_value(sub_item, value);
 	if (result)
 	{
-		out << sub_item << " = ";
+		out << rt_item->get_name();
+		if (!sub_item.empty())
+		{
+			out << ".";
+			out << sub_item;
+		}
+		out << " = ";
 		value.dump_to_stream(out);
 		return true;
 	}

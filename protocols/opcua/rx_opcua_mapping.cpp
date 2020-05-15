@@ -47,6 +47,7 @@ opcua_transport_endpoint::opcua_transport_endpoint()
 {
 
     opcua_transport_protocol_type* mine_entry = this;
+    rx_init_stack_entry(&mine_entry->protocol_stack_entry);
     rx_protocol_result_t res = opcua_bin_init_pipe_transport(mine_entry, 0x10000, 0x10);
     if (res == RX_PROTOCOL_OK)
     {
@@ -57,11 +58,11 @@ opcua_transport_endpoint::opcua_transport_endpoint()
 
 
 
-rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->received_func_((int64_t)rx_get_packet_available_data(buffer));
-    return opcua_bin_bytes_received(reference, buffer);
+    return opcua_bin_bytes_received(reference, buffer, packet_id);
 }
 
 rx_protocol_stack_entry* opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
@@ -71,11 +72,11 @@ rx_protocol_stack_entry* opcua_transport_endpoint::bind (std::function<void(int6
     return &protocol_stack_entry;
 }
 
-rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
+rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference);
     self->sent_func_((int64_t)rx_get_packet_usable_data(buffer));
-    return opcua_bin_bytes_send(reference, buffer);
+    return opcua_bin_bytes_send(reference, buffer, packet_id);
 }
 
 

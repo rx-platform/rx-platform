@@ -155,7 +155,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
 
 
 
@@ -224,4 +224,3 @@ Standard IO class. implementation of an standard IO console port");
 
 
 #endif
-

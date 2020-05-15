@@ -114,7 +114,7 @@ UDP port class. implementation of an UDP/IP4 port");
 				whose->update_received_counters(count);
 				rx_const_packet_buffer buff{};
 				rx_init_const_packet_buffer(&buff, data, count);
-				auto result = rx_move_packet_up(&whose->udp_endpoint_, &buff);
+				auto result = rx_move_packet_up(&whose->udp_endpoint_, &buff, 0);
 				if(result!=RX_PROTOCOL_OK)
                     return false;
 			}
@@ -244,7 +244,7 @@ class connection_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
 
       void disconnected (rx_security_handle_t identity);
 
@@ -252,7 +252,7 @@ class connection_endpoint : public rx_protocol_stack_entry
 
       void bind ();
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer);
+      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
 
 
 

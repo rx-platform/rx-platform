@@ -120,7 +120,7 @@ rx_json_endpoint::rx_json_endpoint()
 
 
 
-rx_protocol_result_t rx_json_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer)
+rx_protocol_result_t rx_json_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	rx_json_endpoint* self = reinterpret_cast<rx_json_endpoint*>(reference);
 
@@ -143,8 +143,8 @@ rx_protocol_result_t rx_json_endpoint::received_function (rx_protocol_stack_entr
 			{
 				if (self->connection_)
 				{
-					rx_post_function<decltype(connection_)>([json](decltype(connection_) whose) {
-							whose->data_received(json);
+					rx_post_function<decltype(connection_)>([json, packet_id](decltype(connection_) whose) {
+							whose->data_received(json, packet_id);
 						}
 						, self->connection_
 						, self->connection_->get_executer());
@@ -303,7 +303,7 @@ rx_protocol_connection::rx_protocol_connection()
 
 
 
-void rx_protocol_connection::data_received (const string_type& data)
+void rx_protocol_connection::data_received (const string_type& data, rx_packet_id_type packet_id)
 {
 
 	messages::rx_request_id_t request_id = 0;
@@ -326,7 +326,7 @@ void rx_protocol_connection::data_received (const string_type& data)
 				writter.get_string(ret_data, true);
 				result = buff_result.value().write_string(ret_data);
 
-				auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value());
+				auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value(), packet_id);
 				if (protocol_res != RX_PROTOCOL_OK)
 				{
 					std::cout << "Error returned from move_down:"
@@ -352,7 +352,7 @@ void rx_protocol_connection::data_received (const string_type& data)
 			writter.get_string(ret_data, true);
 			auto ret = buff_result.value().write_string(ret_data);
 
-			auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value());
+			auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value(), packet_id);
 			if (protocol_res != RX_PROTOCOL_OK)
 			{
 				std::cout << "Error returned from move_down:"
@@ -377,7 +377,7 @@ void rx_protocol_connection::data_processed (message_ptr result)
 		writter.get_string(ret_data, true);
 		auto ret = buff_result.value().write_string(ret_data);
 
-		auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value());
+		auto protocol_res = rx_move_packet_down(&endpoint_, &buff_result.value(), 0);
 		if (protocol_res != RX_PROTOCOL_OK)
 		{
 			std::cout << "Error returned from move_down:"

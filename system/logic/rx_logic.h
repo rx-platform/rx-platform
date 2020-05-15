@@ -165,10 +165,6 @@ ladder program class.");
 } // namespace logic
 } // namespace rx_platform
 
-namespace rx_platform
-{
-typedef logic::program_runtime::smart_ptr program_runtime_ptr;
-}
 
 
 #endif

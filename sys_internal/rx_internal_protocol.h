@@ -80,7 +80,7 @@ class rx_json_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
 
 
 
@@ -216,7 +216,7 @@ class rx_protocol_connection : public rx::pointers::reference_object
       rx_protocol_connection();
 
 
-      void data_received (const string_type& data);
+      void data_received (const string_type& data, rx_packet_id_type packet_id);
 
       void data_processed (message_ptr result);
 

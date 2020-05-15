@@ -558,11 +558,11 @@ public:
 
 	bool operator==(const rx_value& right) const
 	{
-		return storage_ == right.storage_;
+        return quality_ == right.quality_ && storage_ == right.storage_;
 	}
 	bool operator!=(const rx_value& right) const
 	{
-		return storage_ != right.storage_;
+		return !operator==(right);
 	}
 	bool operator>(const rx_value& right) const
 	{

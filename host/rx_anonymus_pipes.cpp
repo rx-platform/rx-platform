@@ -172,21 +172,9 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 {
 	rx_protocol_stack_entry* mine_entry = this;
 
-	mine_entry->downward = nullptr;
-	mine_entry->upward = nullptr;
+	rx_init_stack_entry(mine_entry);
 
 	mine_entry->send_function = &anonymus_pipe_endpoint::send_function;
-	mine_entry->sent_function = nullptr;
-
-	mine_entry->received_function = nullptr;
-
-	mine_entry->connected_function = nullptr;
-
-	mine_entry->close_function = nullptr;
-	mine_entry->closed_function = nullptr;
-
-	mine_entry->allocate_packet_function = nullptr;
-	mine_entry->free_packet_function = nullptr;
 
 }
 
@@ -206,7 +194,7 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 			break;
 		}
 		received_func(buffer.size);
-		auto res = rx_move_packet_up(this, &buffer);
+		auto res = rx_move_packet_up(this, &buffer, 0);
 		if (res != RX_PROTOCOL_OK)
 		{
 			std::ostringstream ss;
@@ -229,7 +217,7 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 	return true;
 }
 
-rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer)
+rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference);
 

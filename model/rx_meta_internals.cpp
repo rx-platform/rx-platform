@@ -1060,7 +1060,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 			return my_class.errors();
 	}
 
-	return RDataType{ std::move(create_runtime_data(ctx.runtime_data)), std::move(ret) };
+	return RDataType(std::move(create_runtime_data(ctx.runtime_data)), std::move(ret));
 }
 
 template <class typeT>

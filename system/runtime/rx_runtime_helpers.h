@@ -45,17 +45,17 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace blocks {
-class variable_runtime;
-} // namespace blocks
-
 namespace structure {
 class runtime_item;
+class variable_data;
 } // namespace structure
+
+namespace algorithms {
+class runtime_process_context;
+} // namespace algorithms
 
 namespace operational {
 class binded_tags;
-class connected_tags;
 } // namespace operational
 
 namespace algorithms {
@@ -66,9 +66,16 @@ template <class typeT> class runtime_holder;
 } // namespace rx_platform
 
 
+#include "lib/rx_const_size_vector.h"
 
 
 namespace rx_platform {
+
+namespace logic
+{
+class program_runtime;
+}
+typedef rx_reference<logic::program_runtime> program_runtime_ptr;
 
 namespace api
 {
@@ -88,6 +95,8 @@ namespace meta_algorithm
 {
 template <class typeT>
 class object_types_algorithm;
+template <class typeT>
+class meta_blocks_algorithm;
 }
 }
 namespace runtime {
@@ -136,10 +145,30 @@ enum subscription_trigger_type
 };
 
 namespace runtime {
+namespace blocks
+{
+class variable_runtime;
+class struct_runtime;
+class source_runtime;
+class mapper_runtime;
+class filter_runtime;
+class event_runtime;
+}
 namespace relations
 {
+
 class relation_runtime;
 }
+
+
+typedef rx::pointers::reference<blocks::struct_runtime> struct_runtime_ptr;
+typedef rx::pointers::reference<blocks::variable_runtime> variable_runtime_ptr;
+typedef rx::pointers::reference<blocks::source_runtime> source_runtime_ptr;
+typedef rx::pointers::reference<blocks::mapper_runtime> mapper_runtime_ptr;
+typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
+typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
+typedef rx::pointers::reference<relations::relation_runtime> relation_runtime_ptr;
+
 namespace operational
 {
 class rx_tags_callback;
@@ -149,9 +178,24 @@ using operational::tags_callback_ptr;
 namespace structure {
 class const_value_data;
 class value_data;
+class struct_data;
 class variable_data;
+class event_data;
+class filter_data;
+class source_data;
+class mapper_data;
 class hosting_object_data;
+class write_context;
 } // namespace structure
+
+
+typedef rx::const_size_vector<structure::variable_data> runtime_variables_type;
+typedef rx::const_size_vector<structure::struct_data> runtime_structs_type;
+typedef rx::const_size_vector<structure::event_data> runtime_events_type;
+typedef rx::const_size_vector<structure::filter_data> runtime_filters_type;
+typedef rx::const_size_vector<structure::source_data> runtime_sources_type; 
+typedef rx::const_size_vector<structure::mapper_data> runtime_mappers_type;
+
 union rt_value_ref_union
 {
 	structure::const_value_data* const_value;
@@ -165,7 +209,7 @@ enum class rt_value_ref_type
 	rt_const_value = 1,
 	rt_value = 2,
 	rt_variable = 3,
-    rt_relation = 4/// !!!!!!/// CHECK shwitches
+    rt_relation = 4/// !!!!!!/// CHECK switches
 };
 struct rt_value_ref
 {
@@ -173,109 +217,7 @@ struct rt_value_ref
 	rt_value_ref_union ref_value_ptr;
 };
 
-typedef rx_reference<blocks::variable_runtime> rx_variable_ptr;
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
-
-namespace algorithms {
-
-enum runtime_process_step : int
-{
-	runtime_process_idle = 0,
-	runtime_process_scheduled = 1,
-    runtime_process_tag_writes = 2,
-	runtime_process_tag_connections = 3,
-
-    runtime_process_over = 4
-};
-
-
-
-
-class runtime_process_context 
-{
-    typedef std::function<void()> fire_callback_func_t;
-
-  public:
-      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags);
-
-
-      bool should_repeat () const;
-
-      bool tag_updates_pending ();
-
-      rx_result init_context ();
-
-      bool tag_writes_pending ();
-
-      bool should_process_tags ();
-
-      bool should_process_writes ();
-
-      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
-
-      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
-
-      rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
-
-      void init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback);
-
-
-      rx_time now;
-
-      template<typename T>
-      rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
-      {
-          values::rx_simple_value temp;
-          temp.assign_static<T>(std::forward<T>(value));
-          auto result = this->set_item(path, std::move(temp), ctx);
-
-          return result;
-      }
-      template<typename valT>
-      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
-      {
-            values::rx_simple_value temp_val;
-            auto result = this->get_value(handle, temp_val);
-            if (result)
-            {
-                return values::extract_value<valT>(temp_val.get_storage(), default_value);
-            }
-          return default_value;
-      }
-      template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
-      {
-          values::rx_simple_value temp_val;
-          temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto result = this->set_value(handle, std::move(temp_val));
-      }
-  protected:
-
-  private:
-
-
-      operational::connected_tags& tags_;
-
-      operational::binded_tags& binded_;
-
-
-      runtime_process_step current_step_;
-
-      bool process_all_;
-
-      bool process_tag_connections_;
-
-      bool process_tag_writes_;
-
-      structure::hosting_object_data* state_;
-
-      fire_callback_func_t fire_callback_;
-
-
-};
-
-
-} // namespace algorithms
 
 
 
@@ -349,15 +291,15 @@ class runtime_structure_resolver
 
 class variables_stack 
 {
-	typedef std::stack<rx_variable_ptr, std::vector<rx_variable_ptr> > variables_type;
+	typedef std::stack<structure::variable_data*, std::vector<structure::variable_data*> > variables_type;
 
   public:
 
-      void push_variable (rx_variable_ptr what);
+      void push_variable (structure::variable_data* what);
 
       void pop_variable ();
 
-      rx_variable_ptr get_current_variable () const;
+      structure::variable_data* get_current_variable () const;
 
 
   protected:
@@ -476,6 +418,35 @@ struct runtime_stop_context
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class io_capabilities 
+{
+
+  public:
+
+      void set_input (bool val);
+
+      void set_output (bool val);
+
+      bool get_input () const;
+
+      bool get_output () const;
+
+
+  protected:
+
+  private:
+
+
+      std::bitset<2> settings_;
 
 
 };

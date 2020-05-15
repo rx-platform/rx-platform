@@ -153,6 +153,8 @@ class connected_tags
 
       void runtime_stopped (const rx_time& now);
 
+      void variable_change (structure::variable_data* whose, const rx_value& val, structure::hosting_object_data& state);
+
 
   protected:
 
@@ -171,8 +173,6 @@ class connected_tags
       handles_map_type handles_map_;
 
       referenced_tags_type referenced_tags_;
-
-      locks::slim_lock lock_;
 
       next_send_type next_send_;
 
