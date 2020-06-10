@@ -153,35 +153,6 @@ void physical_port::update_connected_status (bool status)
         }, smart_this(), get_executer());
 }
 
-bool physical_port::has_up_port () const
-{
-  return true;
-
-}
-
-rx_port_impl_ptr physical_port::up_stack () const
-{
-    return next_up_;
-}
-
-rx_port_impl_ptr physical_port::down_stack () const
-{
-    return rx_port_impl_ptr::null_ptr;
-}
-
-void physical_port::connect_up_stack (rx_port_impl_ptr who)
-{
-    if (who != next_up_)
-    {
-        next_up_ = who;
-        structure_changed();
-    }
-}
-
-void physical_port::connect_down_stack (rx_port_impl_ptr who)
-{
-}
-
 void physical_port::structure_changed ()
 {
 }
@@ -279,37 +250,6 @@ void protocol_port::update_sent_packets (size_t count)
     }
 }
 
-bool protocol_port::has_up_port () const
-{
-  return true;
-
-}
-
-rx_port_impl_ptr protocol_port::up_stack () const
-{
-    return rx_port_impl_ptr::null_ptr;
-}
-
-rx_port_impl_ptr protocol_port::down_stack () const
-{
-    return next_down_;
-}
-
-void protocol_port::connect_up_stack (rx_port_impl_ptr who)
-{
-}
-
-void protocol_port::connect_down_stack (rx_port_impl_ptr who)
-{
-}
-
-void protocol_port::structure_changed ()
-{
-    auto up = up_stack();
-    if (up)
-        rx_protocol_result_t res = rx_push_stack(create_stack_entry(), up->create_stack_entry());
-}
-
 
 // Class rx_platform::runtime::io_types::transport_port 
 
@@ -401,39 +341,6 @@ void transport_port::update_sent_packets (size_t count)
         current += count;
         set_binded_as<int64_t>(tx_packets_item_, std::move(current));
     }
-}
-
-bool transport_port::has_up_port () const
-{
-  return true;
-
-}
-
-rx_port_impl_ptr transport_port::up_stack () const
-{
-    return next_up_;
-}
-
-rx_port_impl_ptr transport_port::down_stack () const
-{
-    return next_down_;
-}
-
-void transport_port::connect_up_stack (rx_port_impl_ptr who)
-{
-    if (who != next_up_)
-    {
-        next_up_ = who;
-        structure_changed();
-    }
-}
-
-void transport_port::connect_down_stack (rx_port_impl_ptr who)
-{
-}
-
-void transport_port::structure_changed ()
-{
 }
 
 

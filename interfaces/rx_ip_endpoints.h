@@ -34,12 +34,14 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
+// dummy
+#include "dummy.h"
 // rx_io
 #include "lib/rx_io.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -80,7 +82,7 @@ class rx_udp_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer);
+      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type id);
 
 
 
@@ -165,7 +167,7 @@ UDP port class. implementation of an UDP/IP4 port");
 
 
 
-typedef rx_platform::runtime::io_types::physical_multiple_port_impl< rx_internal::interfaces::ip_endpoints::connection_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::physical_multiple_port_impl< rx_internal::interfaces::ip_endpoints::connection_endpoint , io::ip4_address  > tcp_server_base;
 
 
 

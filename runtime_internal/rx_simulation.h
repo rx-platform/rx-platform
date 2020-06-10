@@ -61,14 +61,15 @@ Local Register Source. Source implementation for register.");
       local_register_source();
 
 
-      rx_result write_value (rx_simple_value&& val, const structure::write_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
+      rx_result start_source (runtime::runtime_start_context& ctx);
 
 
   protected:
 
   private:
+
+      rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+
 
 
 };

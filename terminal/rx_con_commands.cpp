@@ -369,7 +369,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 
 	smart_ptr hold_ref = smart_this();
 
-	callback_ = [spans_count, this, ctx] {
+	callback_ = [spans_count, this, ctx] () mutable {
 		auto api_ctx = ctx->create_api_context();
 		std::function<void(console_context_ptr)> func = [spans_count, this](console_context_ptr ctx)
 			{
@@ -439,9 +439,14 @@ bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ost
 	log::log_query_type query;
 	query.type = log::rx_log_query_type::normal_level;
 	string_type options;
+	int count = 20;
 	in >> options;
 	if (!options.empty())
 	{
+		auto temp = atoi(options.c_str());
+		if (temp > 0)
+			count = temp;
+		in >> options;
 		if (options == "-t")
 			query.type = log::rx_log_query_type::trace_level;
 		if (options == "-d")
@@ -461,14 +466,22 @@ bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ost
 		options.list_library = false;
 		options.list_source = false;
 		options.list_dates = false;
-		dump_log_items(result, options, out);
+		dump_log_items(result, options, out, count);
 	}
 	return true;
 }
 
-void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out)
+void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count)
 {
-	rx_table_type table(items.size() + 1);
+	size_t first_index = 0;
+	size_t full_count = items.size();
+	size_t rows_count = full_count;
+	if (count > 0 && (size_t)count + 1 < full_count)
+	{
+		first_index = full_count - (size_t)count - 1;
+		rows_count = full_count - first_index + 1;
+	}
+	rx_table_type table(rows_count + 1);
 	table[0].emplace_back("Time");
 	table[0].emplace_back("Type");
 	if (options.list_source)
@@ -482,8 +495,10 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 		table[0].emplace_back("Source Code");
 
 	size_t idx = 1;
-	for (const auto& one : items)
+	
+	for (auto i = first_index; i < full_count; i++)
 	{
+		auto& one = items[i];
 		table[idx].emplace_back(one.when.get_string(options.list_dates));
 
 		table[idx].emplace_back(create_log_type_cell(one.event_type));

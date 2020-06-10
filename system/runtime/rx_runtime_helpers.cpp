@@ -31,6 +31,8 @@
 #include "pch.h"
 
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_operational
@@ -54,10 +56,11 @@ namespace runtime {
 
 // Class rx_platform::runtime::runtime_init_context 
 
-runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded)
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories)
       : context(context),
         next_handle_(0x80000000),
-        meta(meta)
+        meta(meta),
+        directories(directories)
     , structure(root)
     , tags(binded)
 {
@@ -134,8 +137,9 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 
 // Class rx_platform::runtime::runtime_start_context 
 
-runtime_start_context::runtime_start_context (structure::runtime_item& root, algorithms::runtime_process_context* context)
-      : context(context)
+runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories)
+      : context(context),
+        directories(directories)
     , structure(root)
 {
 }

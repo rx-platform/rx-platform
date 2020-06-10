@@ -410,6 +410,8 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		restore_console();
 	}
 	std::cout << "\r\n";
+	if (!ret)
+		std::cout << "\r\nE jebi ga meho 2:)\r\n";
 	return ret ? 0 : -1;
 }
 

@@ -35,8 +35,6 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
@@ -47,17 +45,21 @@
 #include "system/logic/rx_logic.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
+// rx_ns
+#include "system/server/rx_ns.h"
+// rx_job
+#include "lib/rx_job.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_job
-#include "lib/rx_job.h"
 
 namespace rx_platform {
 namespace runtime {
 namespace relations {
-class relation_runtime;
+class relation_data;
 
 } // namespace relations
 } // namespace runtime
@@ -154,7 +156,7 @@ class runtime_holder : public rx::pointers::reference_object
 {
     DECLARE_REFERENCE_PTR(runtime_holder);
 
-    typedef std::vector<relation_runtime_ptr> relations_type;
+    typedef std::vector<relations::relation_data> relations_type;
     typedef typename typeT::instance_data_t instance_data_t;
 
     friend class object_runtime_algorithms<typeT>;
@@ -229,6 +231,12 @@ public:
       }
 
 
+      const ns::rx_directory_resolver& get_directories () const
+      {
+        return directories_;
+      }
+
+
 
       const meta::meta_data& meta_info () const
       {
@@ -258,7 +266,7 @@ public:
       {
           values::rx_simple_value temp_val;
           temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_, state_);
+          auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_, &context_);
       }
       template<typename valT>
       valT get_local_as(const string_type& path, const valT& default_value)
@@ -315,6 +323,8 @@ public:
 
       runtime_process_context context_;
 
+      ns::rx_directory_resolver directories_;
+
 
       runtime_handle_t scan_time_item_;
 
@@ -334,9 +344,11 @@ public:
 
       typename typeT::instance_data_t instance_data_;
 
-      structure::hosting_object_data state_;
-
       string_type json_cache_;
+
+      size_t loop_count_;
+
+      runtime_handle_t loop_count_item_;
 
 
 };

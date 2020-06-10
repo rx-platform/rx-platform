@@ -35,8 +35,8 @@
 
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -84,7 +84,7 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::std_transport_impl< protocols::opcua::opcua_transport_endpoint  > opcua_std_transport;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_std_transport;
 
 
 
@@ -100,6 +100,9 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
 
   public:
       opcua_transport_port();
+
+
+      static std::map<rx_node_id, opcua_transport_port::smart_ptr> runtime_instances;
 
 
   protected:

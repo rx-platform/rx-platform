@@ -101,6 +101,28 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 	}
 }
 
+void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::smart_ptr what)
+{
+	what->meta_info().resolve();
+	auto result = model::platform_types_manager::instance().get_relations_repository().register_type(what);
+	if (!result)
+	{
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info().get_full_path());
+	}
+	result = dir->add_item(what->get_item_ptr());
+	if (!result)
+	{
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info().get_full_path() + " to directory.");
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+	}
+}
 
 template<class T>
 rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, typename T::instance_data_t&& data, tl::type2type<T>
@@ -539,6 +561,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		map->complex_data().register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::mapper_type>(dir, map);
 		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
@@ -563,6 +586,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		src->complex_data().register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::source_type>(dir, src);
 
 		//build general data for runtime objects
@@ -583,6 +607,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		obj->object_data().register_relation("Domain", RX_NS_DOMAIN_RELATION_ID, RX_CLASS_DOMAIN_BASE_ID, obj->complex_data());
 		build_basic_object_type<object_type>(dir, obj);
 
 		//build derived object types
@@ -601,6 +626,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		domain->object_data().register_relation("App", RX_NS_APPLICATION_RELATION_ID, RX_CLASS_APPLICATION_BASE_ID, domain->complex_data());
 		build_basic_domain_type<domain_type>(dir, domain);
 		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
 			RX_CLASS_PORT_BASE_NAME
@@ -609,6 +635,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->object_data().register_relation("App", RX_NS_PORT_APPLICATION_RELATION_ID, RX_CLASS_APPLICATION_BASE_ID, port->complex_data());
 		build_basic_port_type<port_type>(dir, port);
 		// build relations
 		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
@@ -632,6 +659,7 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data().register_const_value_static("Description", ""s);
 	what->complex_data().register_simple_value_static("Note", false, ""s);
 	what->complex_data().register_simple_value_static("LastScanTime", true, 0.0);
+	what->complex_data().register_simple_value_static<uint32_t>("LoopCount", true, 0);
 	what->complex_data().register_simple_value_static("MaxScanTime", true, 0.0);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
@@ -873,6 +901,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		port->complex_data().register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		port->object_data().register_relation("StackTop", RX_NS_PORT_STACK_ID, RX_CLASS_PORT_BASE_ID, port->complex_data());
 		add_type_to_configuration(dir, port, true);
 
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
@@ -911,6 +940,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		port->complex_data().register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		port->object_data().register_relation("StackTop", RX_NS_PORT_STACK_ID, RX_CLASS_PORT_BASE_ID, port->complex_data());
 		add_type_to_configuration(dir, port, true);
 
 		port = rx_create_reference<port_type>(meta::object_type_creation_data{
@@ -1128,61 +1158,34 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		relation->meta_info().resolve();
-		auto type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		if (!type_result)
-		{
-			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
-			return type_result.errors();
-		}
-		auto simple_result = dir->add_item(relation->get_item_ptr());
-		if (!simple_result)
-		{
-			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
-			return simple_result;
-		}
+		add_relation_type_to_configuration(dir, relation);
 
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
-			RX_NS_UP_STACK_NAME
-			, RX_NS_UP_STACK_ID
-			, RX_NS_PORT_STACK_ID
+			RX_NS_APPLICATION_RELATION_NAME
+			, RX_NS_APPLICATION_RELATION_ID
+			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		relation->meta_info().resolve();
-		type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		if (!type_result)
-		{
-			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
-			return type_result.errors();
-		}
-		simple_result = dir->add_item(relation->get_item_ptr());
-		if (!simple_result)
-		{
-			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
-			return simple_result;
-		}
+		add_relation_type_to_configuration(dir, relation);
 
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
-			RX_NS_DOWN_STACK_NAME
-			, RX_NS_DOWN_STACK_ID
-			, RX_NS_PORT_STACK_ID
+			RX_NS_PORT_APPLICATION_RELATION_NAME
+			, RX_NS_PORT_APPLICATION_RELATION_ID
+			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		relation->meta_info().resolve();
-		type_result = model::platform_types_manager::instance().get_relations_repository().register_type(relation);
-		if (!type_result)
-		{
-			type_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in repository");
-			return type_result.errors();
-		}
-		simple_result = dir->add_item(relation->get_item_ptr());
-		if (!simple_result)
-		{
-			simple_result.register_error("Unable to register " RX_NS_PORT_STACK_NAME " in direcotry");
-			return simple_result;
-		}
+		add_relation_type_to_configuration(dir, relation);
+
+		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+			RX_NS_DOMAIN_RELATION_NAME
+			, RX_NS_DOMAIN_RELATION_ID
+			, RX_NS_RELATION_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_relation_type_to_configuration(dir, relation);
 	}
 	return true;
 }

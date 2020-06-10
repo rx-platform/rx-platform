@@ -35,8 +35,8 @@
 
 // dummy
 #include "dummy.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 
 
 
@@ -145,7 +145,7 @@ class vt100_transport : public rx_protocol_stack_entry
 
 
 
-typedef rx_platform::runtime::io_types::std_transport_impl< rx_internal::terminal::term_transport::vt100_transport  > vt100_std_transport;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport  > vt100_std_transport;
 
 
 

@@ -43,8 +43,6 @@
 namespace rx_platform {
 
 namespace runtime {
-
-namespace algorithms {
 template<runtime_process_step step>
 void runtime_process_context::turn_on_pending()
 {
@@ -71,13 +69,12 @@ bool runtime_process_context::should_do_step()
     }
 }
 
-// Class rx_platform::runtime::algorithms::runtime_process_context 
+// Class rx_platform::runtime::runtime_process_context 
 
 runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags)
       : tags_(tags),
         binded_(binded),
-        current_step_(runtime_process_step::idle),
-        state_(nullptr)
+        current_step_(runtime_process_step::idle)
 {
 }
 
@@ -128,7 +125,7 @@ rx_result runtime_process_context::get_value (runtime_handle_t handle, values::r
 
 rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
 {
-    return binded_.set_value(handle, std::move(val), tags_, *state_);
+    return binded_.set_value(handle, std::move(val), tags_, this);
 }
 
 rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
@@ -136,10 +133,8 @@ rx_result runtime_process_context::set_item (const string_type& path, values::rx
     return binded_.set_item(path, std::move(what), ctx);
 }
 
-void runtime_process_context::init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback)
+void runtime_process_context::init_state (fire_callback_func_t fire_callback)
 {
-    RX_ASSERT(state_ == nullptr);
-    state_ = state;
     fire_callback_ = fire_callback;
 }
 
@@ -156,11 +151,6 @@ mapper_writes_type& runtime_process_context::get_mapper_writes ()
         return mapper_inputs_.get_and_swap();
     else
         return empty;
-}
-
-structure::hosting_object_data* runtime_process_context::get_object_state () const
-{
-    return state_;
 }
 
 void runtime_process_context::status_change_pending ()
@@ -265,7 +255,7 @@ filters_type& runtime_process_context::get_filters_for_process ()
 
 void runtime_process_context::variable_value_changed (structure::variable_data* whose, const values::rx_value& val)
 {
-    tags_.variable_change(whose, val, *state_);
+    tags_.variable_change(whose, val);
 }
 
 void runtime_process_context::event_pending (structure::event_data* whose)
@@ -294,8 +284,100 @@ structs_type& runtime_process_context::get_structs_for_process ()
         return empty;
 }
 
+rx_value runtime_process_context::adapt_value (const rx_value& from) const
+{
+    rx_value ret;
+    ret = from;
+    return ret;
+}
 
-} // namespace algorithms
+rx_value runtime_process_context::adapt_value (const rx_timed_value& from) const
+{
+    rx_value ret;
+    from.get_value(ret, mode_time_, mode_);
+    return ret;
+}
+
+rx_value runtime_process_context::adapt_value (const rx_simple_value& from) const
+{
+    rx_value ret;
+    from.get_value(ret, mode_time_, mode_);
+    return ret;
+}
+
+rx_result runtime_process_context::do_command (rx_object_command_t command_type)
+{
+    switch (command_type)
+    {
+    case rx_object_command_t::rx_turn_off:
+        {
+            if (mode_.turn_off())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    case rx_object_command_t::rx_turn_on:
+        {
+            if (mode_.turn_on())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    case rx_object_command_t::rx_set_blocked:
+        {
+            if (mode_.set_blocked())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    case rx_object_command_t::rx_reset_blocked:
+        {
+            if (mode_.reset_blocked())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    case rx_object_command_t::rx_set_test:
+        {
+            if (mode_.set_test())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    case rx_object_command_t::rx_reset_test:
+        {
+            if (mode_.reset_test())
+            {
+                mode_time_ = rx_time::now();
+                status_change_pending();
+                return true;
+            }
+        }
+        break;
+    default:
+        return "Unsupported command type!";
+    }
+    return "Error executing command!";
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
+
+
 

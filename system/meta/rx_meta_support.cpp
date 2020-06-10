@@ -31,8 +31,6 @@
 #include "pch.h"
 
 
-// rx_relations
-#include "system/runtime/rx_relations.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
@@ -47,33 +45,102 @@ namespace meta {
 
 // Class rx_platform::meta::type_check_context 
 
+type_check_context::type_check_context ()
+{
+}
+
+
 
 bool type_check_context::is_check_ok () const
 {
-	return errors_.empty();
+	return records_.empty();
 }
 
-void type_check_context::add_error (const string_type& error)
+void type_check_context::add_error (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity)
 {
-	errors_.emplace_back(error);
+	records_.push_back({ check_record_type::error, code, severity, current_source(), msg });
 }
 
 void type_check_context::reinit ()
 {
-	errors_.clear();
+	records_.clear();
 }
 
-void type_check_context::add_error (const string_type& msg, const rx_result& error)
+void type_check_context::add_error (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity, const rx_result& error)
 {
-	errors_.emplace_back(msg);
+	std::ostringstream ss;
+	ss << msg << "\r\n";
 	for (const auto& one : error.errors())
-		errors_.emplace_back(one);
+		ss << one << "\r\n";
+	records_.push_back({ check_record_type::error, code, severity, current_source() , ss.str() });
+}
+
+const check_records_type& type_check_context::get_records () const
+{
+	return records_;
+}
+
+check_records_type&& type_check_context::move_records ()
+{
+	return std::move(records_);
+}
+
+void type_check_context::push_source (const string_type& source)
+{
+	sources_stack_.push(source);
+}
+
+void type_check_context::pop_source ()
+{
+	if (!sources_stack_.empty())
+		sources_stack_.pop();
+	else
+		RX_ASSERT(false);
+}
+
+const string_type& type_check_context::current_source () const
+{
+	static string_type g_empty;
+	if (!sources_stack_.empty())
+		return sources_stack_.top();
+	else
+		RX_ASSERT(false);
+	return g_empty;
+}
+
+void type_check_context::add_warning (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity)
+{
+	records_.push_back({ check_record_type::warning, code, severity, current_source(), msg });
+}
+
+void type_check_context::add_warning (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity, const rx_result& error)
+{
+	std::ostringstream ss;
+	ss << msg << "\r\n";
+	for (const auto& one : error.errors())
+		ss << one << "\r\n";
+	records_.push_back({ check_record_type::warning, code, severity, current_source() , ss.str() });
+}
+
+void type_check_context::add_info (const string_type& msg)
+{
+	records_.push_back({ check_record_type::error, 0, 0, current_source(), msg });
+}
+
+rx_result_erros_t type_check_context::get_errors () const
+{
+	rx_result_erros_t errors;
+	for (const auto& one : records_)
+	{
+		errors.emplace_back(one.text);
+	}
+	return errors;
 }
 
 
 // Class rx_platform::meta::construct_context 
 
-construct_context::construct_context()
+construct_context::construct_context ()
       : now(rx_time::now())
 {
 }
@@ -138,12 +205,11 @@ void runtime_data_prototype::add (const string_type& name, runtime::structure::s
 	}
 }
 
-void runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_value val)
+void runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value)
 {
 	if (check_name(name))
 	{
 		members_index_type new_idx = static_cast<members_index_type>(variables.size());
-		value.set_value(std::move(val));
 		variables.emplace_back(std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
 	}
@@ -357,6 +423,11 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 
 // Class rx_platform::meta::type_create_context 
 
+type_create_context::type_create_context ()
+{
+}
+
+
 
 bool type_create_context::created () const
 {
@@ -372,6 +443,25 @@ void type_create_context::reinit ()
 {
 	errors_.clear();
 }
+
+
+// Class rx_platform::meta::check_record 
+
+
+// Class rx_platform::meta::type_check_source 
+
+type_check_source::type_check_source (const string_type& source, type_check_context* ctx)
+      : ctx_(ctx)
+{
+	ctx_->push_source(source);
+}
+
+
+type_check_source::~type_check_source()
+{
+	ctx_->pop_source();
+}
+
 
 
 } // namespace meta

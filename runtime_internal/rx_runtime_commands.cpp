@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace sys_runtime {
 
 namespace runtime_commands {
 
-// Class rx_internal::sys_runtime::runtime_commands::read_command 
+// Class rx_internal::sys_runtime::runtime_commands::read_command
 
 read_command::read_command()
 	: runtime_command_base("read")
@@ -58,10 +58,10 @@ read_command::~read_command()
 
 
 
-bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err)
+bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
 {
-	rx_value value;
-	auto result = rt_item->read_value(sub_item, value);
+	rx_value my_value;
+	auto result = rt_item->read_value(sub_item, my_value);
 	if (result)
 	{
 		out << rt_item->get_name();
@@ -71,7 +71,7 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 			out << sub_item;
 		}
 		out << " = ";
-		value.dump_to_stream(out);
+		rx_dump_value(my_value, out, false);
 		return true;
 	}
 	else
@@ -85,7 +85,7 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::pull_command 
+// Class rx_internal::sys_runtime::runtime_commands::pull_command
 
 pull_command::pull_command()
 	: terminal::commands::server_command("pull")
@@ -107,10 +107,10 @@ bool pull_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::write_command 
+// Class rx_internal::sys_runtime::runtime_commands::write_command
 
 write_command::write_command()
-	: terminal::commands::server_command("write")
+	: runtime_command_base("write")
 {
 }
 
@@ -121,76 +121,61 @@ write_command::~write_command()
 
 
 
-bool write_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
 {
+	rx_simple_value my_copy;
+	auto now = rx_time::now();
+	out << "Write prepared. \r\n";
+	out << sub_item << " <= "
+		<< ANSI_RX_GOOD_COLOR;
+	rx_dump_value(value, out, true);
+	out << ANSI_COLOR_RESET "\r\n";
+	out << "Start time: " << now.get_string() << "\r\n";
+	uint64_t us1 = rx_get_us_ticks();
+	auto result = rt_item->write_value(sub_item, std::move(value), [ctx, this, sub_item, value, my_copy, us1](rx_result result)
+		{
+		///////////////////////////////////////////////
+			std::function<void(rx_result , string_type, rx_simple_value, console_context_ptr)> send_func =
+				[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
+				{
+					uint64_t us2 = rx_get_us_ticks() - us1;
+					auto& out = ctx->get_stdout();
+					auto& err = ctx->get_stderr();
+					if (result)
+					{
+						out << "Write to "
+							<< full_path 
+							<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+						out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
+					}
+					else
+					{
+						out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_GREEN "failed" ANSI_COLOR_RESET ". \r\n";
+						dump_error_result(err, result);
+					}
+					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+				};
+			rx_post_function_to(ctx->get_executer()
+                ,send_func , smart_this(), std::move(result), sub_item, my_copy, ctx);
+        //////////////////////////////////////////////
 
-	string_type full_path;
-	string_type val_str;
-	in >> full_path;
-	in >> val_str;
-	if (full_path.empty())
-	{
-		err << "Empty path!";
-		return false;
-	}
-	string_type object_path;
-	string_type item_path;
-	rx_split_item_path(full_path, object_path, item_path);
-	auto item = ctx->get_current_directory()->get_sub_item(object_path);
-	if (!item)
-	{
-		err << object_path << " not found!";
-		return false;
-	}
-
-	err << RX_NOT_IMPLEMENTED;
-	return false;
-	/*rx_value val;
-	rx_simple_value to_write;
-	to_write.parse(val_str);
-	if (to_write.is_null())
-	{
-		err << "Nothing to write!";
-		return false;
+		}, ctx->create_api_context());
+	if (result)
+	{		
+		ctx->set_waiting();
+		return true;
 	}
 	else
 	{
-		api::rx_context rx_ctx;
-		rx_ctx.object = ctx->get_client();
-		rx_ctx.directory = ctx->get_current_directory();
-		auto result = item->write_value(item_path, std::move(to_write), [ctx, full_path, val_str](rx_result callback_ret)
-			{
-				if (!callback_ret)
-				{
-					auto& err = ctx->get_stderr();
-					rx_dump_error_result(err, std::move(callback_ret));
-				}
-				else
-				{
-					auto& out = ctx->get_stdout();
-					out << full_path << " <= "
-						<< ANSI_RX_GOOD_COLOR
-						<< val_str
-						<< ANSI_COLOR_RESET "\r\n";
-				}
-				ctx->send_results(callback_ret);
-			}, rx_ctx);
-
-		if (!result)
-		{
-			dump_error_result(err, result);
-			return false;
-		}
-		else
-		{
-			ctx->set_waiting();
-			return true;
-		}
-	}*/
+		out << "Error writing item "
+			<< sub_item << "\r\n";
+		result.errors_line();
+		return false;
+	}
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_on_command 
+// Class rx_internal::sys_runtime::runtime_commands::turn_on_command
 
 turn_on_command::turn_on_command()
 	: terminal::commands::server_command("turn-on")
@@ -232,7 +217,7 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_off_command 
+// Class rx_internal::sys_runtime::runtime_commands::turn_off_command
 
 turn_off_command::turn_off_command()
 	: terminal::commands::server_command("turn-off")
@@ -274,7 +259,7 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::browse_command 
+// Class rx_internal::sys_runtime::runtime_commands::browse_command
 
 browse_command::browse_command()
 	: runtime_command_base("brw")
@@ -288,7 +273,7 @@ browse_command::~browse_command()
 
 
 
-bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err)
+bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
 {
 	std::vector<runtime_item_attribute> items;
 	auto result = rt_item->browse("", sub_item, "", items);
@@ -297,17 +282,63 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 		rx_table_type table(items.size() + 1);
 		size_t idx = 0;
 		table[0].emplace_back("Name");
+		table[0].emplace_back("Value");
 		table[0].emplace_back("Type");
+		idx++;
 		for (const auto& one : items)
 		{
-			idx++;
-			if (one.is_complex())
-				table[idx].emplace_back(one.name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
+			string_type postfix;
+			string_type value = one.value.get_storage().to_string();
+			if(one.value.is_null())
+				value = RX_TERMINAL_STRUCT_SYMBOL;
+			switch (one.type)
+			{
+			case rx_attribute_type::const_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::value_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::variable_attribute_type:
+				//postfix = RX_TERMINAL_STRUCT_SYMBOL;
+				table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::struct_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_STRUCT_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::filter_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_FILTER_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::event_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_EVENT_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::source_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_SOURCE_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::mapper_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_MAPPER_COLOR, ANSI_COLOR_RESET);
+				break;
+			case rx_attribute_type::relation_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_RELATION_COLOR, ANSI_COLOR_RESET);
+				if (one.value.get_type() == RX_STRING_TYPE)
+					value = "->"s + one.value.get_storage().get_string_value();
+				else if (one.value.is_null())
+					value = "->";
+				else
+					value = "->"s + one.value.get_storage().to_string();
+				break;
+			default:
+				table[idx].emplace_back(one.name);
+				break;
+			}
+			table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+			if(!postfix.empty())
+				table[idx].emplace_back(postfix + rx_runtime_attribute_type_name(one.type));
 			else
-				table[idx].emplace_back(one.name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
-			table[idx].emplace_back(rx_runtime_attribute_type_name(one.type));
+				table[idx].emplace_back(/*string_type(RX_TERMINAL_STRUCT_SYMBOL_SIZE, ' ') + */rx_runtime_attribute_type_name(one.type));
+			idx++;
 		}
-		rx_dump_table(table, out, true, true);
+		rx_dump_table(table, out, true, false);
 		return true;
 	}
 	else
@@ -318,7 +349,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base 
+// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base
 
 runtime_command_base::runtime_command_base (const string_type& name)
 	: server_command(name)
@@ -330,7 +361,14 @@ runtime_command_base::runtime_command_base (const string_type& name)
 bool runtime_command_base::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type full_path;
+	string_type val_str;
+	rx_simple_value to_write;
 	in >> full_path;
+	if (!in.eof())
+	{
+		in >> val_str;
+		to_write.parse(val_str);
+	}
 	if (full_path.empty())
 	{
 		err << "Empty path!";
@@ -357,13 +395,14 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 
 		}
 		rx_result result = model::algorithms::do_with_runtime_item<bool>(resolve_result.value()
-			, [ctx, item_path, this](rx_result_with<platform_item_ptr>&& data) -> bool
+			, [ctx, item_path, to_write, this](rx_result_with<platform_item_ptr>&& data) mutable -> bool
 			{
+				ctx->postpone_done();
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
 				if (data)
 				{
-					return do_with_item(data.move_value(), item_path, out, err);
+					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err);
 				}
 				else
 				{
@@ -372,7 +411,8 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 				}
 			}, [ctx](bool&& result) mutable
 			{
-				ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+				if (!ctx->is_postponed())
+					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
 			}, context);
 		if (result)
 		{

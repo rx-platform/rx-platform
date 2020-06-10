@@ -226,7 +226,18 @@ bool domain_instance_data::disconnect_application (rx_domain_ptr whose)
 
 rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
-    what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
+    RX_ASSERT(what->get_instance_data().my_application_);
+    if (what->get_instance_data().my_application_)
+    {
+        if (what->get_instance_data().processor >= 0)
+            what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
+        else
+            what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+    }
+    else
+    {
+
+    }
     return true;
 }
 
@@ -404,8 +415,6 @@ bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) cons
         return false;
     if (!stream.write_id("app", app_id))
         return false;
-    if (!stream.write_item_reference("next_up", up_port))
-        return false;
     if (!identity_.serialize("identity", stream))
         return false;
     if (!stream.end_object())
@@ -418,8 +427,6 @@ bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
     if (!stream.start_object("instance"))
         return false;
     if (!stream.read_id("app", app_id))
-        return false;
-    if (!stream.read_item_reference("next_up", up_port))
         return false;
     if (!identity_.deserialize("identity", stream))
         return false;
@@ -501,14 +508,12 @@ const rx_application_ptr port_instance_data::get_my_application () const
 port_instance_data::port_instance_data(port_instance_data&& right)
 {
     app_id = std::move(right.app_id);
-    up_port = std::move(right.up_port);
     executer_ = std::move(right.executer_);
     identity_ = std::move(right.identity_);
 }
 port_instance_data::port_instance_data(const port_instance_data& right)
 {
     app_id = right.app_id;
-    up_port = right.up_port;
     executer_ = right.executer_;
     identity_ = right.identity_;
 }

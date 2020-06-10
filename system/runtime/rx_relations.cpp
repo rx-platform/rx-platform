@@ -51,61 +51,75 @@ namespace runtime {
 
 namespace relations {
 
-// Class rx_platform::runtime::relations::relation_runtime 
+// Class rx_platform::runtime::relations::relation_connector 
 
-string_type relation_runtime::type_name = RX_CPP_RELATION_TYPE_NAME;
-
-rx_item_type relation_runtime::type_id = rx_item_type::rx_relation;
-
-relation_runtime::relation_runtime()
-      : executer_(0),
-        runtime_handle(0)
-{
-}
-
-relation_runtime::relation_runtime (const string_type& name, const rx_node_id& id, bool system)
-      : executer_(0),
-        runtime_handle(0)
-{
-}
-
-
-relation_runtime::~relation_runtime()
+relation_connector::~relation_connector()
 {
 }
 
 
 
-string_type relation_runtime::get_type_name () const
-{
-  return type_name;
+// Class rx_platform::runtime::relations::relation_data 
 
+relation_data::relation_data()
+      : runtime_handle(0),
+        executer_(0),
+        context_(nullptr)
+{
 }
 
-rx_result relation_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+
+
+rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx)
 {
-	return true;
+	object_directory = ctx.meta.get_path();
+	rx_item_reference ref;
+	auto result = implementation_->initialize_relation(ctx, ref);
+	if (!ref.is_null())
+	{
+		if (ref.is_node_id())
+		{
+			meta_data temp;
+			auto type = rx_internal::model::platform_types_manager::instance().get_types_resolver().get_item_data(ref.get_node_id(), temp);
+			if (type != rx_item_type::rx_invalid_type)
+			{
+				target = temp.get_full_path();
+			}
+		}
+		else
+		{
+			target = ref.get_path();
+		}
+		rx_simple_value val;
+		val.assign_static<string_type>(string_type(target));
+		value.set_value(std::move(val), ctx.context->now);
+	}
+	return result;
 }
 
-rx_result relation_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+rx_result relation_data::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
-	return true;
+	auto result = implementation_->deinitialize_relation(ctx);
+	return result;
 }
 
-rx_result relation_runtime::start_runtime (runtime::runtime_start_context& ctx)
+rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 {
 	executer_ = rx_thread_context();
-	try_resolve();
-	return true;
+	auto result = implementation_->start_relation(ctx);
+	if(result)
+		try_resolve();
+	return result;
 }
 
-rx_result relation_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 {
 	my_state_ = relation_state::stopping;
-	return true;
+	auto result = implementation_->stop_relation(ctx);
+	return result;
 }
 
-void relation_runtime::fill_data (const data::runtime_values_data& data)
+void relation_data::fill_data (const data::runtime_values_data& data)
 {
 	auto it = data.values.find(name);
 	if (it != data.values.end())
@@ -117,34 +131,93 @@ void relation_runtime::fill_data (const data::runtime_values_data& data)
 	value.simple_set_value(std::move(val));
 }
 
-void relation_runtime::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+void relation_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	rx_simple_value temp;
 	temp.assign_static<string_type>(string_type(target));
 	data.add_value(name, std::move(temp));
 }
 
-rx_result relation_runtime::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
+rx_result relation_data::read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const
 {
 	return RX_NOT_IMPLEMENTED;
 }
 
-rx_result relation_runtime::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+rx_result relation_data::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
 {
 	return RX_NOT_IMPLEMENTED;
 }
 
-meta::meta_data& relation_runtime::meta_info ()
+rx_result relation_data::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-  return meta_info_;
-
+	if (connector_)
+	{
+		auto result = connector_->browse(prefix, path, filter, items);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
 }
 
-void relation_runtime::try_resolve ()
+rx_result relation_data::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
+{
+	if (connector_)
+	{
+		auto result = connector_->read_tag(item, monitor, ctx);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result relation_data::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
+{
+	if (connector_)
+	{
+		auto result = connector_->write_tag(item, std::move(value), monitor, ctx);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result_with<runtime_handle_t> relation_data::connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx)
+{
+	if (connector_)
+	{
+		auto result = connector_->connect_tag(path, monitor, ctx);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+rx_result relation_data::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
+{
+	if (connector_)
+	{
+		auto result = connector_->disconnect_tag(handle, monitor);
+		return result;
+	}
+	else
+	{
+		return "Wrong object state!";
+	}
+}
+
+void relation_data::try_resolve ()
 {
 	if (my_state_ != relation_state::idle)
 		return;// not in right state
-	if (!target.empty())
+	if (target_id.is_null() && !target.empty())
 	{
 		rx_directory_resolver dirs;
 		dirs.add_paths({ object_directory });
@@ -162,7 +235,7 @@ void relation_runtime::try_resolve ()
 	my_state_ = relation_state::querying;
 	std::function<rx_result_with<platform_item_ptr>()> func = [id, this]
 	{
-		return resolve_runtime_sync(id);
+		return implementation_->resolve_runtime_sync(id);
 	};
 	rx_do_with_callback<rx_result_with<platform_item_ptr>, rx_reference_ptr>(
 		func, RX_DOMAIN_META, [this](rx_result_with<platform_item_ptr>&& result)
@@ -176,7 +249,7 @@ void relation_runtime::try_resolve ()
 				{
 					my_state_ = relation_state::same_domain;
 					connector_ = std::make_unique<local_relation_connector>(std::move(item_ptr));
-					relation_connected();
+					implementation_->relation_connected();
 					return;
 				}
 				else
@@ -185,72 +258,55 @@ void relation_runtime::try_resolve ()
 				}
 			}
 			my_state_ = relation_state::idle;
-		}, smart_this());
+		}, reference_ptr_);
 }
 
-rx_result relation_runtime::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+
+// Class rx_platform::runtime::relations::relation_runtime 
+
+string_type relation_runtime::type_name = RX_CPP_RELATION_TYPE_NAME;
+
+rx_item_type relation_runtime::type_id = rx_item_type::rx_relation;
+
+relation_runtime::relation_runtime()
 {
-	if (connector_)
-	{
-		auto result = connector_->browse(prefix, path, filter, items);
-		return result;
-	}
-	else
-	{
-		return "Wrong object state!";
-	}
 }
 
-rx_result relation_runtime::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+relation_runtime::relation_runtime (const string_type& name, const rx_node_id& id, bool system)
 {
-	if (connector_)
-	{
-		auto result = connector_->read_tag(item, monitor, state);
-		return result;
-	}
-	else
-	{
-		return "Wrong object state!";
-	}
 }
 
-rx_result relation_runtime::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+
+relation_runtime::~relation_runtime()
 {
-	if (connector_)
-	{
-		auto result = connector_->write_tag(item, std::move(value), monitor, state);
-		return result;
-	}
-	else
-	{
-		return "Wrong object state!";
-	}
 }
 
-rx_result_with<runtime_handle_t> relation_runtime::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+
+
+string_type relation_runtime::get_type_name () const
 {
-	if (connector_)
-	{
-		auto result = connector_->connect_tag(path, monitor, state);
-		return result;
-	}
-	else
-	{
-		return "Wrong object state!";
-	}
+  return type_name;
+
 }
 
-rx_result relation_runtime::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
+rx_result relation_runtime::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
 {
-	if (connector_)
-	{
-		auto result = connector_->disconnect_tag(handle, monitor);
-		return result;
-	}
-	else
-	{
-		return "Wrong object state!";
-	}
+	return true;
+}
+
+rx_result relation_runtime::deinitialize_relation (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result relation_runtime::start_relation (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result relation_runtime::stop_relation (runtime::runtime_stop_context& ctx)
+{
+	return true;
 }
 
 rx_result_with<platform_item_ptr> relation_runtime::resolve_runtime_sync (const rx_node_id& id)
@@ -266,17 +322,6 @@ void relation_runtime::relation_connected ()
 void relation_runtime::relation_disconnected ()
 {
 }
-
-
-// Class rx_platform::runtime::relations::relation_instance_data 
-
-
-// Class rx_platform::runtime::relations::relation_connector 
-
-relation_connector::~relation_connector()
-{
-}
-
 
 
 } // namespace relations

@@ -57,7 +57,7 @@ rx_result rx_udp_endpoint::open (const string_type& addr, uint16_t port)
 	return "Nisam jos implementirao";
 }
 
-rx_protocol_result_t rx_udp_endpoint::received_function (rx_protocol_stack_entry* reference, protocol_endpoint* end_point, rx_packet_buffer* buffer)
+rx_protocol_result_t rx_udp_endpoint::received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type id)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
@@ -170,19 +170,18 @@ rx_result tcp_server_port::start_runtime (runtime::runtime_start_context& ctx)
         listen_socket_ = rx_create_reference<io::tcp_listent_std_buffer>(
             [this] (sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> io::tcp_socket_std_buffer::smart_ptr
             {
-                auto up = up_stack();
-                if (up)
+                auto new_endpoint = std::make_unique<connection_endpoint>();
+
+                auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), identity);
+                if (ret_ptr)
                 {
-                    auto new_endpoint = std::make_unique<connection_endpoint>();
-                    auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), identity);
-                    if (ret_ptr)
-                    {
-                        register_stack_entry(std::move(new_endpoint));
-                    }
-                    return ret_ptr.value();
+                    io::ip4_address addr(his);
+                    auto result = register_stack_entry(std::move(new_endpoint), addr);
+                    if(!result)
+                        return io::tcp_socket_std_buffer::smart_ptr::null_ptr;
                 }
-                else
-                    return io::tcp_socket_std_buffer::smart_ptr::null_ptr;
+                return ret_ptr.value();
+
             });
         listen_socket_->set_identity(get_identity());
         result = listen_socket_->start_tcpip_4(port, addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());

@@ -33,12 +33,12 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
 // rx_runtime_instance
 #include "system/runtime/rx_runtime_instance.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 #include "rx_runtime_helpers.h"
 
@@ -68,14 +68,6 @@ physical port class. basic implementation of a physical port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_port_impl_ptr up_stack () const;
-
-      rx_port_impl_ptr down_stack () const;
-
-      void connect_up_stack (rx_port_impl_ptr who);
-
-      void connect_down_stack (rx_port_impl_ptr who);
-
 
   protected:
 
@@ -94,13 +86,8 @@ physical port class. basic implementation of a physical port");
 
   private:
 
-      bool has_up_port () const;
-
-
 
       rx_protocol_stack_entry *my_endpoints_;
-
-      rx_reference<items::port_runtime> next_up_;
 
 
       runtime_handle_t rx_bytes_item_;
@@ -139,14 +126,6 @@ protocol port class. basic implementation of a protocol port");
 
       void update_sent_counters (size_t count);
 
-      rx_port_impl_ptr up_stack () const;
-
-      rx_port_impl_ptr down_stack () const;
-
-      void connect_up_stack (rx_port_impl_ptr who);
-
-      void connect_down_stack (rx_port_impl_ptr who);
-
 
   protected:
 
@@ -154,16 +133,8 @@ protocol port class. basic implementation of a protocol port");
 
       void update_sent_packets (size_t count);
 
-      void structure_changed ();
-
 
   private:
-
-      bool has_up_port () const;
-
-
-
-      rx_reference<items::port_runtime> next_down_;
 
 
       runtime_handle_t rx_bytes_item_;
@@ -196,14 +167,6 @@ transport port class. basic implementation of a transport port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_port_impl_ptr up_stack () const;
-
-      rx_port_impl_ptr down_stack () const;
-
-      void connect_up_stack (rx_port_impl_ptr who);
-
-      void connect_down_stack (rx_port_impl_ptr who);
-
 
   protected:
 
@@ -215,18 +178,8 @@ transport port class. basic implementation of a transport port");
 
       void update_sent_packets (size_t count);
 
-      void structure_changed ();
-
 
   private:
-
-      bool has_up_port () const;
-
-
-
-      rx_reference<items::port_runtime> next_up_;
-
-      rx_reference<items::port_runtime> next_down_;
 
 
       runtime_handle_t rx_bytes_item_;
@@ -239,281 +192,6 @@ transport port class. basic implementation of a transport port");
 
 
 };
-
-
-
-
-
-
-template <typename endpointT>
-class std_transport_impl : public transport_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard one<=>many transport port implementation");
-
-    DECLARE_REFERENCE_PTR(transport_port);
-
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<endpointT> > endpoints_type;
-
-  public:
-
-      rx_protocol_stack_entry* create_stack_entry ();
-
-
-  protected:
-
-      void structure_changed ();
-
-
-  private:
-
-
-      endpoints_type endpoints_;
-
-
-};
-
-
-
-
-
-
-template <typename endpointT>
-class physical_single_port_impl : public physical_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard single endpoint transport port implementation");
-
-    DECLARE_REFERENCE_PTR(physical_single_port_impl);
-
-  public:
-
-  protected:
-
-      void structure_changed ();
-
-
-  private:
-
-      virtual rx_protocol_stack_entry* get_stack_entry () = 0;
-
-
-
-};
-
-
-
-
-
-
-template <typename endpointT>
-class physical_multiple_port_impl : public physical_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard multiple endpoint transport port implementation");
-
-    DECLARE_REFERENCE_PTR(physical_multiple_port_impl);
-
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<endpointT> > connections_type;
-
-  public:
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void remove_connection ( rx_protocol_stack_entry* what);
-
-
-  protected:
-
-      void structure_changed ();
-
-      rx_protocol_stack_entry* register_stack_entry (std::unique_ptr<endpointT>&& what);
-
-
-  private:
-
-
-      connections_type connections_;
-
-
-};
-
-
-
-
-
-
-template <typename endpointT>
-class std_protocol_impl : public protocol_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard many<=>many protocol port implementation");
-
-    DECLARE_REFERENCE_PTR(std_protocol_impl);
-
-    typedef std::map<rx_protocol_stack_entry*, endpointT> endpoints_type;
-
-  public:
-
-      rx_protocol_stack_entry* create_stack_entry ();
-
-
-  protected:
-
-  private:
-
-      virtual endpointT create_endpoint () = 0;
-
-
-
-      endpoints_type endpoints_;
-
-
-};
-
-
-// Parameterized Class rx_platform::runtime::io_types::std_transport_impl 
-
-
-template <typename endpointT>
-void std_transport_impl<endpointT>::structure_changed ()
-{
-    auto up = up_stack();
-    if (up)
-    {
-        for (auto& one : endpoints_)
-        {
-            rx_protocol_result_t res = rx_push_stack(one.first, up->create_stack_entry());
-        }
-    }
-}
-
-template <typename endpointT>
-rx_protocol_stack_entry* std_transport_impl<endpointT>::create_stack_entry ()
-{
-    auto endpoint_ptr = std::make_unique<endpointT>();
-    rx_protocol_stack_entry* entry = endpoint_ptr->bind([this](int64_t count)
-        {
-            update_sent_counters(count);
-        },
-        [this](int64_t count)
-        {
-            update_received_counters(count);
-        });
-    endpoints_.emplace(entry, std::move(endpoint_ptr));
-
-    auto up = up_stack();
-    if (up)
-    {
-        rx_protocol_result_t res = rx_push_stack(entry, up->create_stack_entry());
-    }
-
-    return entry;
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::physical_single_port_impl 
-
-
-template <typename endpointT>
-void physical_single_port_impl<endpointT>::structure_changed ()
-{
-    auto up = up_stack();
-    auto my_entry = this->get_stack_entry();
-    if (up && my_entry)
-    {
-        my_entry->identity = get_identity();
-        rx_protocol_result_t res = rx_push_stack(my_entry, up->create_stack_entry());
-    }
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::physical_multiple_port_impl 
-
-
-template <typename endpointT>
-void physical_multiple_port_impl<endpointT>::structure_changed ()
-{
-    auto up = up_stack();
-    if (up)
-    {
-        for (auto& one : connections_)
-        {
-            rx_protocol_result_t res = rx_push_stack(one.first, up->create_stack_entry());
-            if (res == RX_PROTOCOL_OK)
-            {
-
-            }
-            else
-            {
-
-            }
-        }
-    }
-}
-
-template <typename endpointT>
-rx_protocol_stack_entry* physical_multiple_port_impl<endpointT>::register_stack_entry (std::unique_ptr<endpointT>&& what)
-{
-    rx_protocol_stack_entry* entry = what.get();
-    entry->identity = get_identity();
-    connections_.emplace(entry, std::move(what));
-
-    auto up = up_stack();
-    if (up)
-    {
-        rx_protocol_result_t res = rx_push_stack(entry, up->create_stack_entry());
-        if (res == RX_PROTOCOL_OK)
-        {
-            security::secured_scope ctx(entry->identity);
-            rx_send_connected(entry);
-        }
-    }
-    return entry;
-}
-
-template <typename endpointT>
-rx_result physical_multiple_port_impl<endpointT>::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-    for (auto& one : connections_)
-    {
-        one.second->close();
-    }
-    connections_.clear();
-    return true;
-}
-
-template <typename endpointT>
-void physical_multiple_port_impl<endpointT>::remove_connection ( rx_protocol_stack_entry* what)
-{
-    auto it = connections_.find(what);
-    if (it != connections_.end())
-    {
-        connections_.erase(it);
-    }
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::std_protocol_impl 
-
-
-template <typename endpointT>
-rx_protocol_stack_entry* std_protocol_impl<endpointT>::create_stack_entry ()
-{
-    auto endpoint = this->create_endpoint();
-    rx_protocol_stack_entry* entry = endpoint->bind_endpoint([this](int64_t count)
-        {
-            update_sent_counters(count);
-        },
-        [this](int64_t count)
-        {
-            update_received_counters(count);
-        });
-    entry->identity = get_identity();
-    endpoints_.emplace(entry, std::move(endpoint));
-    
-    return entry;
-}
 
 
 } // namespace io_types

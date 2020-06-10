@@ -578,18 +578,18 @@ namespace meta_test {
 	 if (!result)
 	 {
 		 out << "check returned following errors:\r\n";
-		 for (const auto& one : check_ctx.get_errors())
+		 for (const auto& one : check_ctx.get_records())
 		 {
-			 out << one << "\r\n";
+			 out << one.text << "\r\n";
 		 }
 		 out << ANSI_COLOR_YELLOW "Checking invalid Struct Type\r\n" ANSI_COLOR_RESET;
 		 check_ctx.reinit();
 		 if (!model::platform_types_manager::instance().get_simple_type_repository<rx_platform::meta::basic_types::struct_type>().check_type(struct_id, check_ctx))
 		 {
 			 out << "check returned following errors:\r\n";
-			 for (const auto& one : check_ctx.get_errors())
+			 for (const auto& one : check_ctx.get_records())
 			 {
-				 out << one << "\r\n";
+				 out << one.text << "\r\n";
 			 }
 			 runtime::items::object_instance_data instance_data;
 			 auto obj = model::algorithms::runtime_model_algorithm<object_type>::create_runtime_implicit_sync(
@@ -598,9 +598,9 @@ namespace meta_test {
 			 if (!obj)
 			 {
 				 out << ANSI_COLOR_YELLOW "create returned following errors:\r\n" ANSI_COLOR_RESET;
-				 for (const auto& one : check_ctx.get_errors())
+				 for (const auto& one : check_ctx.get_records())
 				 {
-					 out << one << "\r\n";
+					 out << one.text << "\r\n";
 				 }
 				 ctx->set_passed();
 				 return true;

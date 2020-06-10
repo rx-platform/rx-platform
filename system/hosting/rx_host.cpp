@@ -401,7 +401,7 @@ void rx_platform_host::dump_log_items (const log::log_events_type& items, std::o
 	options.list_library = false;
 	options.list_source = false;
 	options.list_dates = false;
-	rx_internal::terminal::console::console_commands::log_command::dump_log_items(items, options, out);
+	rx_internal::terminal::console::console_commands::log_command::dump_log_items(items, options, out, -1);
 }
 
 

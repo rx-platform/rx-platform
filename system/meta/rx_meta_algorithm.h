@@ -64,6 +64,13 @@ using namespace rx_platform::runtime::blocks;
 
 
 namespace rx_platform {
+namespace runtime
+{
+namespace relations
+{
+class relation_data;
+}
+}
 
 namespace meta {
 	namespace def_blocks
@@ -171,7 +178,7 @@ class relation_blocks_algorithm
 
       static bool check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx);
 
-      static rx_result_with<runtime::relation_runtime_ptr> construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx);
+      static rx_result construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, construct_context& ctx);
 
 
   protected:

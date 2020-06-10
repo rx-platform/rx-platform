@@ -39,6 +39,7 @@
 #include "system/runtime/rx_objbase.h"
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
+#include "system/meta/rx_construction_templates.h"
 
 using namespace rx_platform::meta;
 using namespace rx_platform::meta::basic_types;
@@ -58,6 +59,55 @@ using namespace rx_platform::meta::object_types;
 namespace rx_internal {
 
 namespace model {
+
+template<typename typeT, typename derivedT>
+rx_result register_internal_constructor(library::rx_plugin_base* plugin
+    , const rx_node_id& id, std::function<typename derivedT::smart_ptr()> f)
+{
+    auto* container = &derivedT::runtime_instances;
+    std::function<constructed_data_t<typename typeT::RImplPtr>(const rx_node_id&)> func =
+        [container, f](const rx_node_id& new_id) // full constructor function
+    {
+        constructed_data_t<typename typeT::RImplPtr> ret;
+        auto new_ptr = f();
+        if (!new_ptr)
+        {
+            std::ostringstream ss;
+            ss << "Instance " << new_id.to_string()
+                << " could not be created for class";
+            return ret;
+        }
+        else
+        {
+            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
+
+            auto it = container->find(new_id);
+            if (it != container->end())
+            {
+                std::ostringstream ss;
+                ss << "Instance " << new_id.to_string()
+                    << " is already registered";
+                return ret;
+            }
+
+            ret.ptr = new_ptr;
+        }
+        ret.register_f = [container, new_ptr](const rx_node_id& id)
+        {
+            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
+            auto it = container->find(id);
+            if (it == container->end())
+                container->emplace(id, new_ptr);
+        };
+        ret.unregister_f = [container](const rx_node_id& id)
+        {
+            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
+            container->erase(id);
+        };
+        return ret;
+    };
+    return ::rx_platform::register_monitored_constructor_impl<typeT>(id, func);
+}
 
 namespace algorithms
 {
@@ -259,6 +309,17 @@ class instance_hash
 };
 
 
+template <class typeT>
+struct create_runtime_result
+{
+    typename typeT::RTypePtr ptr;
+    std::function<void(const rx_node_id&)> register_f;
+    std::function<void(const rx_node_id&)> unregister_f;
+    operator bool() const
+    {
+        return ptr;
+    }
+};
 
 
 
@@ -294,10 +355,9 @@ public:
 		RTypePtr target;
 		runtime_state state;
 	};
-
 	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
-	typedef typename std::map<rx_node_id, std::function<RImplPtr()> > constructors_type;
+	typedef typename std::map<rx_node_id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> > constructors_type;
 
   public:
       types_repository();
@@ -309,7 +369,9 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RImplPtr()> f);
 
-      rx_result_with<typename types_repository<typeT>::RTypePtr> create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> f);
+
+      rx_result_with<create_runtime_result<typeT> > create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -329,7 +391,7 @@ public:
 
       rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id);
 
-      rx_result_with<typename typeT::RTypePtr> mark_runtime_running (rx_node_id id);
+      rx_result mark_runtime_running (rx_node_id id);
 
       rx_result type_exists (rx_node_id id) const;
 
@@ -490,6 +552,7 @@ public:
 
 	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+    typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
       relations_type_repository();
@@ -499,15 +562,11 @@ public:
 
       rx_result register_type (relations_type_repository::Tptr what);
 
-      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, relation_type::instance_data_t&& type_data, rx_directory_resolver& dirs);
+      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
       rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
-
-      rx_result_with<relations_type_repository::RTypePtr> get_runtime (const rx_node_id& id) const;
-
-      rx_result delete_runtime (rx_node_id id);
 
       rx_result delete_type (rx_node_id id);
 
@@ -517,12 +576,14 @@ public:
 
       rx_result type_exists (rx_node_id id) const;
 
+      rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
+
 
   protected:
 
   private:
 
-      relations_type_repository::RTypePtr create_relation_runtime (relations_type_repository::Tptr form_what);
+      rx_result_with<relations_type_repository::RTypePtr> create_relation_runtime (relations_type_repository::Tptr form_what);
 
 
 
@@ -531,11 +592,11 @@ public:
       instance_hash instance_hash_;
 
 
-      registered_objects_type registered_objects_;
-
       registered_types_type registered_types_;
 
+      constructors_type constructors_;
 
+      std::function<RTypePtr()> default_constructor_;
 };
 
 

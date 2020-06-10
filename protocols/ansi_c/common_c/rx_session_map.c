@@ -36,9 +36,5 @@
 // rx_session_map
 #include "protocols/ansi_c/common_c/rx_session_map.h"
 
-void rx_init_endpoint(protocol_endpoint* value, size_t value_size)
-{
-	value->data_length = value_size;
-}
 
 

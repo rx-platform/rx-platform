@@ -4,7 +4,7 @@
 
 #define RX_SERVER_NAME "Atom" 
 #define RX_SERVER_MAJOR_VERSION 0
-#define RX_SERVER_MINOR_VERSION 24
+#define RX_SERVER_MINOR_VERSION 25
 #define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
@@ -23,4 +23,5 @@
 // version 0.22.0 runtime_holder is now template that is root to all runtime items
 // version 0.23.0 introduced rx_internal namespace, async functions to internal space
 // version 0.24.0 first process runtime algorithm
+// version 0.25.0 port relations done
 

@@ -68,11 +68,11 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
       local_relation_connector (platform_item_ptr&& item);
 
 
-      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
@@ -100,11 +100,11 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
 
   public:
 
-      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 

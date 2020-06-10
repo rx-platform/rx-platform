@@ -48,7 +48,7 @@ namespace api
 namespace ns
 {
 
-rx_result_with<rx_node_id> rx_resolve_reference(const rx_item_reference& ref, rx_directory_resolver& directories)
+rx_result_with<rx_node_id> rx_resolve_reference(const rx_item_reference& ref, const rx_directory_resolver& directories)
 {
 	return rx_internal::model::algorithms::resolve_reference(ref, directories);
 }
@@ -56,42 +56,42 @@ rx_result_with<rx_node_id> rx_resolve_reference(const rx_item_reference& ref, rx
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<typeT> _)
+	, const rx_directory_resolver& directories, tl::type2type<typeT> _)
 {
 	return rx_internal::model::algorithms::resolve_type_reference<typeT>(ref, directories, tl::type2type<typeT>());
 }
 template rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<object_type>);
+	, const rx_directory_resolver& directories, tl::type2type<object_type>);
 template rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<application_type>);
+	, const rx_directory_resolver& directories, tl::type2type<application_type>);
 template rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<port_type>);
+	, const rx_directory_resolver& directories, tl::type2type<port_type>);
 template rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<domain_type>);
+	, const rx_directory_resolver& directories, tl::type2type<domain_type>);
 
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<typeT>)
+	, const rx_directory_resolver& directories, tl::type2type<typeT>)
 {
 	return rx_internal::model::algorithms::resolve_simple_type_reference<typeT>(ref, directories, tl::type2type<typeT>());
 }
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<struct_type>);
+	, const rx_directory_resolver& directories, tl::type2type<struct_type>);
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<variable_type>);
+	, const rx_directory_resolver& directories, tl::type2type<variable_type>);
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<source_type>);
+	, const rx_directory_resolver& directories, tl::type2type<source_type>);
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<event_type>);
+	, const rx_directory_resolver& directories, tl::type2type<event_type>);
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<filter_type>);
+	, const rx_directory_resolver& directories, tl::type2type<filter_type>);
 template rx_result_with<rx_node_id> rx_resolve_simple_type_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<mapper_type>);
+	, const rx_directory_resolver& directories, tl::type2type<mapper_type>);
 
 
 rx_result_with<rx_node_id> rx_resolve_relation_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories)
+	, const rx_directory_resolver& directories)
 {
 	return rx_internal::model::algorithms::resolve_relation_reference(ref, directories);
 
@@ -99,19 +99,19 @@ rx_result_with<rx_node_id> rx_resolve_relation_reference(const rx_item_reference
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_runtime_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<typeT>)
+	, const rx_directory_resolver& directories, tl::type2type<typeT>)
 {
 	return rx_internal::model::algorithms::resolve_runtime_reference<typeT>(ref, directories, tl::type2type<typeT>());
 }
 
 template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<object_type>);
+	, const rx_directory_resolver& directories, tl::type2type<object_type>);
 template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<domain_type>);
+	, const rx_directory_resolver& directories, tl::type2type<domain_type>);
 template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<port_type>);
+	, const rx_directory_resolver& directories, tl::type2type<port_type>);
 template rx_result_with<rx_node_id> rx_resolve_runtime_reference(const rx_item_reference& ref
-	, rx_directory_resolver& directories, tl::type2type<application_type>);
+	, const rx_directory_resolver& directories, tl::type2type<application_type>);
 
 
 

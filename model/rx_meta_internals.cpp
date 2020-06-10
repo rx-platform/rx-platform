@@ -291,7 +291,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 template <class typeT>
 types_repository<typeT>::types_repository()
 {
-	if constexpr (typeT::has_default_constructor)
+	//if constexpr (typeT::has_default_constructor)
 	{
 		default_constructor_ = []()
 		{
@@ -343,12 +343,24 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 template <class typeT>
 rx_result types_repository<typeT>::register_constructor (const rx_node_id& id, std::function<RImplPtr()> f)
 {
+	constructors_.emplace(id, [f](const rx_node_id&)
+		{
+			constructed_data_t<RImplPtr> ret;
+			ret.ptr = f();
+			return ret;
+		});
+	return true;
+}
+
+template <class typeT>
+rx_result types_repository<typeT>::register_constructor (const rx_node_id& id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> f)
+{
 	constructors_.emplace(id, f);
 	return true;
 }
 
 template <class typeT>
-rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<typeT>::create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data, bool prototype)
 {
 	if (meta.get_id().is_null() || prototype)
 	{
@@ -362,7 +374,7 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 		}
 	}
 
-	RTypePtr ret;
+	create_runtime_result<typeT> ret;
 	RImplPtr implementation_ptr;
 
 	rx_node_ids base;
@@ -395,7 +407,10 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 		auto it = constructors_.find(one);
 		if (it != constructors_.end())
 		{
-			implementation_ptr = (it->second)();
+			auto construct_data = (it->second)(meta.get_id());
+			implementation_ptr = construct_data.ptr;
+			ret.register_f = construct_data.register_f;
+			ret.unregister_f = construct_data.unregister_f;
 			break;
 		}
 	}
@@ -405,23 +420,27 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 		{
 			implementation_ptr = default_constructor_();
 		}
-		else
+		else if(!prototype)
 		{
 			return "Unable to construct base runtime!";
+		}
+		else
+		{
+			implementation_ptr = default_constructor_();
 		}
 	}
 
 	construct_context ctx;
 	ctx.get_directories().add_paths({meta.get_path()});
-	ret = rx_create_reference<RType>(meta, std::move(type_data));
-	ret->implementation_ = implementation_ptr;
+	ret.ptr = rx_create_reference<RType>(meta, std::move(type_data));
+	ret.ptr->implementation_ = implementation_ptr;
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
 			overrides.push_back(&my_class.value()->complex_data().get_overrides());
-			auto result = my_class.value()->construct(ret, ctx);
+			auto result = my_class.value()->construct(ret.ptr, ctx);
 			if (!result)
 			{// error constructing object
 				return result.errors();
@@ -436,22 +455,21 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	rx_simple_value name_value;
 	name_value.assign_static<string_type>(string_type(meta.get_name()));
 	ctx.runtime_data.add_const_value("Name", name_value);
-	algorithms::register_runtime_relations<typeT>(ret, ctx);
-	ret->set_runtime_data(ctx.runtime_data);
+	ret.ptr->set_runtime_data(ctx.runtime_data);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)
 	{
 		if (*it)
-			ret->fill_data(*(*it));
+			ret.ptr->fill_data(*(*it));
 	}
 	if (init_data)
 	{
-		ret->fill_data(*init_data);
-		ret->get_overrides() = *init_data;
+		ret.ptr->fill_data(*init_data);
+		ret.ptr->get_overrides() = *init_data;
 	}
 	if (!prototype)
 	{
-		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret, runtime_state::runtime_state_created });
+		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret.ptr, runtime_state::runtime_state_created });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RImplType::type_id, meta);
@@ -485,6 +503,7 @@ api::query_result types_repository<typeT>::get_derived_types (const rx_node_id& 
 template <class typeT>
 rx_result types_repository<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
 {
+	ctx.push_source(rx_item_type_name(typeT::type_id) + " repository");
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
@@ -497,9 +516,7 @@ rx_result types_repository<typeT>::check_type (const rx_node_id& id, type_check_
 			<< rx_item_type_name(typeT::type_id)
 			<< " with node_id "
 			<< id;
-		ctx.add_error(ss.str());
-		for (const auto& one : temp.errors())
-			ctx.add_error(one);
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_critical_severity, temp.errors());
 		return false;
 	}
 }
@@ -662,7 +679,7 @@ rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_f
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_running (rx_node_id id)
+rx_result types_repository<typeT>::mark_runtime_running (rx_node_id id)
 {
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
@@ -673,7 +690,7 @@ rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_r
 		case runtime_state::runtime_state_initializing:
 		case runtime_state::runtime_state_deleting:// this is when delete fails to reset object as running
 			it->second.state = runtime_state::runtime_state_running;
-			return it->second.target;
+			return true;
 		case runtime_state::runtime_state_running:
 			return "Wrong state, object already running!";
 		case runtime_state::runtime_state_destroyed:
@@ -1085,6 +1102,7 @@ api::query_result simple_types_repository<typeT>::get_derived_types (const rx_no
 template <class typeT>
 rx_result simple_types_repository<typeT>::check_type (const rx_node_id& id, type_check_context& ctx) const
 {
+	ctx.push_source(rx_item_type_name(typeT::type_id) + " repository");
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
@@ -1097,9 +1115,7 @@ rx_result simple_types_repository<typeT>::check_type (const rx_node_id& id, type
 			<< rx_item_type_name(typeT::type_id)
 			<< " with node_id "
 			<< id;
-		ctx.add_error(ss.str());
-		for (const auto& one : temp.errors())
-			ctx.add_error(one);
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_critical_severity, temp.errors());
 		return false;
 	}
 }
@@ -1227,6 +1243,10 @@ rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& dat
 
 relations_type_repository::relations_type_repository()
 {
+	default_constructor_ = []()
+	{
+		return rx_create_reference<RType>();
+	};
 }
 
 
@@ -1267,14 +1287,16 @@ rx_result relations_type_repository::register_type (relations_type_repository::T
 	}
 }
 
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, relation_type::instance_data_t&& type_data, rx_directory_resolver& dirs)
+rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
 {
-	RTypePtr ret;
 	auto type_result = get_type_definition(type_id);
 	if (!type_result)
 		return type_result.errors();
 
 	relation_type::smart_ptr relation_type_ptr = type_result.move_value();
+	auto ret = create_relation_runtime(relation_type_ptr);
+	if (!ret)
+		return ret;
 
 	rx_node_id target_relation_type_id = type_id;
 	auto inv_ref = relation_type_ptr->get_inverse_reference();
@@ -1285,10 +1307,8 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 			return resolve_result.errors();
 		target_relation_type_id = resolve_result.move_value();
 	}
-	ret = create_relation_runtime(relation_type_ptr);
-	ret->target_relation_type = target_relation_type_id;
-	relation_type::set_instance_data(std::move(type_data), ret);
-
+	data.implementation_ = ret.value();
+	data.target_relation_type = target_relation_type_id;
 	return ret;
 }
 
@@ -1315,6 +1335,7 @@ api::query_result relations_type_repository::get_derived_types (const rx_node_id
 
 rx_result relations_type_repository::check_type (const rx_node_id& id, type_check_context& ctx) const
 {
+	ctx.push_source(rx_item_type_name(relation_type::type_id) + " repository");
 	auto temp = get_type_definition(id);
 	if (temp)
 	{
@@ -1327,58 +1348,8 @@ rx_result relations_type_repository::check_type (const rx_node_id& id, type_chec
 			<< rx_item_type_name(relation_type::type_id)
 			<< " with node_id "
 			<< id;
-		ctx.add_error(ss.str());
-		for (const auto& one : temp.errors())
-			ctx.add_error(one);
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_critical_severity, temp.errors());
 		return false;
-	}
-}
-
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::get_runtime (const rx_node_id& id) const
-{
-	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end() && it->second.state == runtime_state::runtime_state_running)
-	{
-		return it->second.target;
-	}
-	else
-	{
-		return RTypePtr::null_ptr;
-	}
-}
-
-rx_result relations_type_repository::delete_runtime (rx_node_id id)
-{
-	auto it = registered_objects_.find(id);
-	if (it != registered_objects_.end())
-	{
-		if (it->second.state == runtime_state::runtime_state_deleting || it->second.state == runtime_state::runtime_state_created)
-		{
-			auto type_id = it->second.target->meta_info().get_parent();
-			rx_node_ids base;
-			base.emplace_back(type_id);
-			auto base_result = inheritance_hash_.get_base_types(type_id, base);
-			registered_objects_.erase(it);
-			instance_hash_.remove_from_hash_data(id, type_id, base);
-			auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
-			RX_ASSERT(type_ret);
-			return true;
-		}
-		switch (it->second.state)
-		{
-		case runtime_state::runtime_state_initializing:
-			return "Wrong state, object starting!";
-		case runtime_state::runtime_state_running:
-			return "Wrong state, object not marked for delete!";
-		case runtime_state::runtime_state_destroyed:
-			return "Wrong state, object destroyed!";
-		default:
-			return "Unknown state!";
-		}
-	}
-	else
-	{
-		return "Object does not exists!";
 	}
 }
 
@@ -1409,10 +1380,6 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
-	for (auto& one : registered_objects_)
-	{
-		one.second.state = runtime_state::runtime_state_running;
-	}
 	return result;
 }
 
@@ -1434,9 +1401,47 @@ rx_result relations_type_repository::update_type (relations_type_repository::Tpt
 	}
 }
 
-relations_type_repository::RTypePtr relations_type_repository::create_relation_runtime (relations_type_repository::Tptr form_what)
+rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_relation_runtime (relations_type_repository::Tptr form_what)
 {
-	return rx_create_reference<runtime::relations::relation_runtime>();
+	RTypePtr ret;
+	rx_node_ids base;
+	auto type_id = form_what->meta_info().get_id();
+	base.emplace_back(type_id);
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		auto base_result = inheritance_hash_.get_base_types(type_id, base);
+		if (!base_result)
+			return base_result.errors();
+	}
+	else
+	{
+		rx_node_id temp_base = type_id;
+		while (!temp_base.is_null())
+		{
+			auto temp_type = get_type_definition(temp_base);
+			if (temp_type)
+			{
+				temp_base = temp_type.value()->meta_info().get_parent();
+				if (temp_base)
+					base.emplace_back(temp_base);
+			}
+			else
+				return temp_type.errors();
+		}
+	}
+
+	for (const auto& one : base)
+	{
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
+		{
+			ret = (it->second)();
+			break;
+		}
+	}
+	if (!ret)
+		ret = default_constructor_();
+	return ret;
 }
 
 rx_result relations_type_repository::type_exists (rx_node_id id) const
@@ -1455,6 +1460,12 @@ rx_result relations_type_repository::type_exists (rx_node_id id) const
 			<< id;
 		return ss.str();
 	}
+}
+
+rx_result relations_type_repository::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
+{
+	constructors_.emplace(id, f);
+	return true;
 }
 
 

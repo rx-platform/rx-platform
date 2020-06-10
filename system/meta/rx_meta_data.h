@@ -130,6 +130,7 @@ enum rx_item_state : uint8_t
 	rx_item_state_deleted = 3
 };
 
+
 string_type rx_item_type_name(rx_item_type type);
 string_type rx_runtime_attribute_type_name(rx_attribute_type type);
 rx_item_type rx_parse_type_name(const string_type name);
@@ -160,6 +161,7 @@ struct rx_context;
 struct query_result_detail;
 struct query_result;
 }
+
 
 namespace meta {
 

@@ -36,10 +36,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_log
-#include "lib/rx_log.h"
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
+// rx_log
+#include "lib/rx_log.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 

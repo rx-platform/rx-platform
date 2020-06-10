@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_io_relations.h
+*  lib\rx_templates.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,69 +28,18 @@
 ****************************************************************************/
 
 
-#ifndef rx_io_relations_h
-#define rx_io_relations_h 1
+#include "pch.h"
+
+
+// rx_templates
+#include "lib/rx_templates.h"
 
 
 
-// rx_relations
-#include "system/runtime/rx_relations.h"
+namespace rx {
+
+// Class rx::type_less_concept 
 
 
+} // namespace rx
 
-namespace rx_platform {
-
-namespace runtime {
-
-namespace relations {
-
-
-
-
-
-class port_up_relation : public relation_runtime  
-{
-    DECLARE_REFERENCE_PTR(port_up_relation);
-
-  public:
-      port_up_relation (rx_port_ptr my_port);
-
-
-      void process_stack ();
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-
-  protected:
-
-  private:
-
-      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
-
-      void relation_connected ();
-
-      void relation_disconnected ();
-
-
-
-      rx_port_ptr from_;
-
-      rx_port_ptr to_;
-
-
-};
-
-
-} // namespace relations
-} // namespace runtime
-} // namespace rx_platform
-
-
-
-#endif

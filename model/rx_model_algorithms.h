@@ -48,26 +48,26 @@ namespace algorithms {
 
 rx_result_with<rx_node_id> resolve_reference(
 	const rx_item_reference& ref
-	, ns::rx_directory_resolver& directories);
+	, const ns::rx_directory_resolver& directories);
 
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_type_reference(
 	const rx_item_reference& ref
-	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+	, const ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
 rx_result_with<rx_node_id> resolve_relation_reference(
 	const rx_item_reference& ref
-	, ns::rx_directory_resolver& directories);
+	, const ns::rx_directory_resolver& directories);
 
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_simple_type_reference(
 	const rx_item_reference& ref
-	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+	, const ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
 template<typename typeT>
 rx_result_with<rx_node_id> resolve_runtime_reference(
 	const rx_item_reference& ref
-	, ns::rx_directory_resolver& directories, tl::type2type<typeT>);
+	, const ns::rx_directory_resolver& directories, tl::type2type<typeT>);
 
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id);
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id);
@@ -89,7 +89,7 @@ rx_result do_with_item(
 		rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
 	};
 
-	std::function<void(const rx_node_id&)> func = [func2, ctx](const rx_node_id& id) {
+	std::function<void(rx_node_id)> func = [func2, ctx](rx_node_id id) {
 
 		auto result = get_platform_item_sync(id);
         if (!result)
@@ -106,7 +106,7 @@ rx_result do_with_item(
         }
 
 	};
-	rx_platform::rx_post_function_to<rx_reference_ptr, const rx_node_id&>(RX_DOMAIN_META, func, ctx.object, id);
+	rx_platform::rx_post_function_to<rx_reference_ptr, rx_node_id>(RX_DOMAIN_META, func, ctx.object, id);
 	return true;
 }
 
@@ -125,7 +125,7 @@ rx_result do_with_runtime_item(
         rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
     };
 
-    std::function<void(const rx_node_id&)> func = [func2, ctx](const rx_node_id& id) {
+    std::function<void(rx_node_id)> func = [func2, ctx](rx_node_id id) {
         auto result = get_working_runtime_sync(id);
         if (!result)
         {
@@ -141,7 +141,7 @@ rx_result do_with_runtime_item(
         }
 
     };
-    rx_platform::rx_post_function_to<rx_reference_ptr, const rx_node_id&>(RX_DOMAIN_META, func, ctx.object, id);
+    rx_platform::rx_post_function_to<rx_reference_ptr, rx_node_id>(RX_DOMAIN_META, func, ctx.object, id);
     return true;
 }
 
@@ -155,8 +155,6 @@ rx_result do_with_items(
 	, rx_platform::api::rx_context ctx);
 
 
-template<typename typeT>
-rx_result register_runtime_relations(typename typeT::RTypePtr what, construct_context& ctx);
 
 
 
@@ -169,7 +167,7 @@ class types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
 
       static void create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
@@ -186,7 +184,7 @@ class types_model_algorithm
 
   private:
 
-      static type_check_context check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
 
@@ -209,7 +207,7 @@ class simple_types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
 
       static void create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
@@ -226,7 +224,7 @@ class simple_types_model_algorithm
 
   private:
 
-      static type_check_context check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
 
@@ -298,7 +296,7 @@ class relation_types_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(type_check_context)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
 
       static void create_type (const string_type& name, const rx_item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
 
@@ -315,7 +313,7 @@ class relation_types_algorithm
 
   private:
 
-      static type_check_context check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
 

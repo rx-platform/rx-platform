@@ -59,19 +59,20 @@ local_register_source::local_register_source()
 
 
 
-rx_result local_register_source::write_value (rx_simple_value&& val, const structure::write_context& ctx)
+rx_result local_register_source::source_write (structure::write_data&& data, runtime_process_context* ctx)
 {
-    rx_value value = rx_value::from_simple(std::move(val), ctx.now);
+    rx_value value = rx_value::from_simple(std::move(data.value), rx_time::now());
     value.set_quality(RX_GOOD_QUALITY);
-    value_changed(std::move(value));
+    source_value_changed(std::move(value));
+    source_result_received(true, data.transaction_id);
     return true;
 }
 
-rx_result local_register_source::start_runtime (runtime::runtime_start_context& ctx)
+rx_result local_register_source::start_source (runtime::runtime_start_context& ctx)
 {
-    rx_value value = ctx.variables.get_current_variable()->get_value(*ctx.context->get_object_state());
+    rx_value value = ctx.variables.get_current_variable()->get_value(ctx.context);
     value.set_quality(RX_GOOD_QUALITY);
-    value_changed(std::move(value));
+    source_value_changed(std::move(value));
     return true;
 }
 

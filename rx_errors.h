@@ -32,14 +32,23 @@
 #define rx_errors_h 1
 
 
-// INternal error codes
+// general codes
+#define RX_FAILED 0x1
 
+// item codes
+#define RX_ITEM_NOT_FOUND 0x801
+
+// Internal error codes
 #define RX_INTERNAL_ERROR_NO_REGISTERED_NAME 0x1001
 #define RX_DUPLICATED_NAME 0x1002
 
 
 
-const char* rx_get_error_text(uint32_t code);
+
+typedef uint32_t rx_error_code_t;
+typedef uint_fast8_t rx_error_severity_t;
+
+const char* rx_get_error_text(rx_error_code_t code);
 
 
 

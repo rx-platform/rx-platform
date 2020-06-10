@@ -275,7 +275,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -283,7 +283,7 @@ rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 	return ret;
 }
 
-rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.move_storage();
@@ -291,7 +291,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -387,7 +387,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx_value rx_value::operator + (const rx_value& right) const
+rx::values::rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -396,7 +396,7 @@ rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator - (const rx_value& right) const
+rx::values::rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -405,7 +405,7 @@ rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator * (const rx_value& right) const
+rx::values::rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = quality_;
@@ -414,7 +414,7 @@ rx_value rx_value::operator * (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator / (const rx_value& right) const
+rx::values::rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -423,7 +423,7 @@ rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator % (const rx_value& right) const
+rx::values::rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -1741,7 +1741,7 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
@@ -1829,7 +1829,7 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1860,7 +1860,7 @@ rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1887,7 +1887,7 @@ rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -1918,7 +1918,7 @@ rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
@@ -4163,7 +4163,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = value.get_storage();
@@ -4171,7 +4171,7 @@ rx_timed_value rx_timed_value::from_simple (const rx_simple_value& value, rx_tim
 	return ret;
 }
 
-rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_timed_value ret;
 	ret.storage_ = std::move(value.get_storage());
@@ -4179,7 +4179,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

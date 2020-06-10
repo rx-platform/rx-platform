@@ -202,7 +202,7 @@ all about doing stuff with log");
       ~log_command();
 
 
-      static void dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out);
+      static void dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count);
 
 
   protected:

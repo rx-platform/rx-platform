@@ -36,6 +36,7 @@
 
 #include "rx_configuration.h"
 #include "rx_runtime_instance.h"
+#include "sys_internal/rx_inf.h"
 
 
 namespace rx_platform {
@@ -244,6 +245,21 @@ rx_result port_runtime::start_runtime (runtime_start_context& ctx)
 rx_result port_runtime::stop_runtime (runtime_stop_context& ctx)
 {
 	return true; 
+}
+
+rx_result port_runtime::push (rx_port_impl_ptr who, const meta::meta_data& info)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+const protocol_address* port_runtime::get_address () const
+{
+    return nullptr;
+}
+
+threads::job_thread* port_runtime::get_jobs_queue ()
+{
+    return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
 }
 
 

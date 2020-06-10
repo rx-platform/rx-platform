@@ -82,6 +82,8 @@ rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_
 
 // Class protocols::opcua::opcua_transport_port 
 
+std::map<rx_node_id, opcua_transport_port::smart_ptr> opcua_transport_port::runtime_instances;
+
 opcua_transport_port::opcua_transport_port()
 {
 }

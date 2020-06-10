@@ -38,6 +38,16 @@
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
+namespace rx_platform {
+namespace runtime {
+namespace resolvers {
+class runtime_subscriber;
+
+} // namespace resolvers
+} // namespace runtime
+} // namespace rx_platform
+
+
 #include "rx_runtime_algorithms.h"
 #include "sys_internal/rx_inf.h"
 #include "api/rx_platform_api.h"
@@ -54,29 +64,79 @@ namespace sys_runtime {
 
 
 
+
 class runtime_cache 
 {
+
+    typedef std::vector< std::pair<runtime::resolvers::runtime_subscriber*, rx_reference_ptr> > subs_list_t;
+    struct subscriber_data
+    {
+        rx_thread_handle_t target;
+        string_type name;
+        rx_node_id id;
+    };
+    struct destroyed_data
+    {
+        runtime::resolvers::runtime_subscriber* whose;
+        rx_reference_ptr ref;
+        rx_node_id id;
+    };
+    struct created_data
+    {
+        runtime::resolvers::runtime_subscriber* whose;
+        rx_reference_ptr ref;
+        platform_item_ptr item;
+    };
+    struct runtime_id_data
+    {
+        platform_item_ptr item;
+        std::function<void(const rx_node_id&)> register_f;
+        std::function<void(const rx_node_id&)> deleter_f;
+    };
+
+    typedef std::map<string_type, std::map<runtime::resolvers::runtime_subscriber*, subscriber_data> > path_subscribers_type;
+    typedef std::map<rx_node_id, std::map<runtime::resolvers::runtime_subscriber*, subscriber_data> > id_subscribers_type;
     typedef std::map<string_type, platform_item_ptr> path_cache_type;
+    typedef std::map<rx_node_id, runtime_id_data> id_cahce_type;
 
   public:
+      runtime_cache();
+
 
       void add_to_cache (platform_item_ptr&& item);
 
       std::vector<platform_item_ptr> get_items (const string_array& paths);
 
-      platform_item_ptr get_item (const string_type& path);
+      platform_item_ptr get_item (const rx_node_id& id);
 
-      void remove_from_cache (const string_type& path);
+      void remove_from_cache (platform_item_ptr&& item);
+
+      void add_functions (const rx_node_id& id, const std::function<void(const rx_node_id&)>& register_f, const std::function<void(const rx_node_id&)>& deleter_f);
+
+      void remove_functions (const rx_node_id& id);
+
+      void unregister_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose);
+
+      void register_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose);
 
 
   protected:
 
   private:
 
+      void collect_subscribers (const rx_node_id& id, const string_type& name, std::map<rx_thread_handle_t, subs_list_t>& to_send);
+
+
 
       locks::slim_lock lock_;
 
       path_cache_type path_cache_;
+
+      id_cahce_type id_cache_;
+
+      path_subscribers_type path_subscribers_;
+
+      id_subscribers_type id_subscribers_;
 
 
 };

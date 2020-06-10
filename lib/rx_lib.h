@@ -507,6 +507,8 @@ public:
 
 	bool is_node_id() const;
 
+	string_type to_string() const;
+
 	const string_type& get_path() const;
 
 	const rx_node_id& get_node_id() const;

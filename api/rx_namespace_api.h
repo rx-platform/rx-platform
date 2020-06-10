@@ -48,28 +48,28 @@ namespace ns
 {
 rx_result_with<rx_node_id> rx_resolve_reference(
 	const rx_item_reference& ref
-	, rx_directory_resolver& directories);
+	, const rx_directory_resolver& directories);
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_type_reference(
 	const rx_item_reference& ref
-	, rx_directory_resolver& directories
+	, const rx_directory_resolver& directories
 	, tl::type2type<typeT> _);
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_simple_type_reference(
 	const rx_item_reference& ref
-	, rx_directory_resolver& directories
+	, const rx_directory_resolver& directories
 	, tl::type2type<typeT> _);
 
 rx_result_with<rx_node_id> rx_resolve_relation_reference(
 	const rx_item_reference& ref
-	, rx_directory_resolver& directories);
+	, const rx_directory_resolver& directories);
 
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_runtime_reference(
 	const rx_item_reference& ref
-	, rx_directory_resolver& directories
+	, const rx_directory_resolver& directories
 	, tl::type2type<typeT> _);
 
 

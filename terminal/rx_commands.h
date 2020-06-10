@@ -51,6 +51,23 @@ using namespace rx;
 
 namespace rx_internal {
 
+template<typename valType>
+void rx_dump_value(const valType& value, std::ostream& out, bool colorized)
+{
+    if (colorized)
+    {
+        if (value.is_good())
+            out << (value.is_test() ? ANSI_RX_TEST_COLOR :  ANSI_RX_GOOD_COLOR);
+        else if (value.is_uncertain())
+            out << ANSI_RX_UNCERTAIN_COLOR;
+        else
+            out << ANSI_RX_BAD_COLOR;
+    }
+    value.dump_to_stream(out);
+    if (colorized)
+        out << ANSI_COLOR_RESET;
+}
+
 namespace terminal {
 namespace commands
 {

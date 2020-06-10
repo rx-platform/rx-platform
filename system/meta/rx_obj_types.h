@@ -82,18 +82,7 @@ class relation_attribute
 	~relation_attribute() = default;
 
   public:
-      relation_attribute (const string_type& name, const rx_node_id& id);
-
-      relation_attribute (const string_type& name, const string_type& target_name);
-
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      rx_result check (type_check_context& ctx);
-
-      rx_result_with<runtime::relation_runtime_ptr> construct (construct_context& ctx) const;
+      relation_attribute (const string_type& name, const rx_node_id& id, const rx_item_reference& target);
 
 
       const string_type& get_name () const
@@ -179,6 +168,10 @@ class object_data_type
 
       bool check_type (type_check_context& ctx);
 
+      rx_result register_relation (const string_type& name, const rx_node_id& id, const rx_node_id& target_id, complex_data_type& complex_data);
+
+      rx_result register_relation (const string_type& name, const rx_node_id& id, const rx_item_reference& target, complex_data_type& complex_data);
+
 
       const bool is_constructable () const
       {
@@ -246,6 +239,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      object_data_type& object_data ();
 
 
       const object_data_type& object_data () const;
@@ -327,6 +322,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      object_data_type& object_data ();
 
 
       const object_data_type& object_data () const;
@@ -411,6 +408,8 @@ public:
 
       bool check_type (type_check_context& ctx);
 
+      object_data_type& object_data ();
+
 
       const object_data_type& object_data () const;
 
@@ -492,6 +491,8 @@ public:
 
       bool check_type (type_check_context& ctx);
 
+      object_data_type& object_data ();
+
 
       const object_data_type& object_data () const;
 
@@ -561,7 +562,6 @@ relation is now full blown object!");
 public:
 	typedef runtime::relation_runtime_ptr RDataType;
 	typedef runtime::relations::relation_runtime RType;
-	typedef runtime::relations::relation_instance_data instance_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 	typedef runtime::relation_runtime_ptr RTypePtr;
@@ -585,8 +585,6 @@ public:
       bool check_type (type_check_context& ctx);
 
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
-      static void set_instance_data (instance_data_t&& data, RTypePtr where);
 
 
       const meta_data& meta_info () const;

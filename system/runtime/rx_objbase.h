@@ -34,12 +34,14 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// dummy
+#include "dummy.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -69,6 +71,13 @@ void rx_split_item_path(const string_type& full_path, string_type& object_path, 
 typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 typedef std::stack<buffer_ptr, std::vector<buffer_ptr> > buffers_type;
 
+template <class ptrT>
+struct constructed_data_t
+{
+    ptrT ptr;
+    std::function<void(const rx_node_id&)> register_f;
+    std::function<void(const rx_node_id&)> unregister_f;
+};
 
 
 
@@ -145,7 +154,7 @@ object class. basic implementation of an object");
   private:
 
 
-      algorithms::runtime_process_context *context_;
+      runtime_process_context *context_;
 
 
 };
@@ -219,7 +228,7 @@ system application class. basic implementation of a application");
   private:
 
 
-      algorithms::runtime_process_context *context_;
+      runtime_process_context *context_;
 
 
 };
@@ -293,7 +302,7 @@ system domain class. basic implementation of a domain");
   private:
 
 
-      algorithms::runtime_process_context *context_;
+      runtime_process_context *context_;
 
 
 };
@@ -330,13 +339,11 @@ system port class. basic implementation of a port");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      virtual rx_port_impl_ptr up_stack () const = 0;
+      virtual rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
 
-      virtual rx_port_impl_ptr down_stack () const = 0;
+      virtual const protocol_address* get_address () const;
 
-      virtual void connect_up_stack (rx_port_impl_ptr who) = 0;
-
-      virtual void connect_down_stack (rx_port_impl_ptr who) = 0;
+      threads::job_thread* get_jobs_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -385,10 +392,7 @@ system port class. basic implementation of a port");
       }
   protected:
 
-      virtual void structure_changed () = 0;
-
-
-      algorithms::runtime_process_context * get_context ()
+      runtime_process_context * get_context ()
       {
         return context_;
       }
@@ -404,11 +408,8 @@ system port class. basic implementation of a port");
 
   private:
 
-      virtual bool has_up_port () const = 0;
 
-
-
-      algorithms::runtime_process_context *context_;
+      runtime_process_context *context_;
 
 
       rx_thread_handle_t executer_;

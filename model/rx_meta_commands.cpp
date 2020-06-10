@@ -997,14 +997,14 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 	if (!name.empty())
 	{
 		algorithms::types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			[ctx, name, this](type_check_context result)
+			[ctx, name, this](check_records_type&& result)
 			{
-				if (!result.is_check_ok())
+				if (!result.empty())
 				{
 					auto& out = ctx->get_stdout();
 					out << rx_item_type_name(T::type_id) << " has errors:\r\n";
-					for(auto& one : result.get_errors())
-						out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+					for(auto& one : result)
+						out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
 				}
 				else
 				{
@@ -1030,14 +1030,14 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 	if (!name.empty())
 	{
 		algorithms::simple_types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			[ctx, name, this](type_check_context result)
+			[ctx, name, this](check_records_type&& result)
 		{
-			if (!result.is_check_ok())
+			if (!result.empty())
 			{
 				auto& out = ctx->get_stdout();
 				out << rx_item_type_name(T::type_id) << " has errors:\r\n";
-				for (auto& one : result.get_errors())
-					out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+				for (auto& one : result)
+					out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
 			}
 			else
 			{

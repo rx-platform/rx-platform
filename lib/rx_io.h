@@ -49,6 +49,7 @@ class dispatcher_subscriber;
 } // namespace rx
 
 
+#include "rx_io_addr.h"
 
 
 namespace rx {
@@ -57,8 +58,6 @@ namespace io {
 typedef std::set<io::dispatcher_subscriber> dispatcher_subscriber_ptr;
 typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_subscribers_type;
 
-rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct);
-string_type get_ip4_addr_string(const sockaddr_in* addr_struct);
 
 
 
@@ -477,37 +476,6 @@ class udp_socket : public full_duplex_comm<buffT>
 
 
 typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
-
-
-
-
-
-
-class tcp4_endpoint 
-{
-
-  public:
-      tcp4_endpoint (const protocol_endpoint* ep);
-
-
-      bool is_valid () const;
-
-      string_type to_string () const;
-
-      rx_result parse (const string_type& what);
-
-      const protocol_endpoint* to_endpoint () const;
-
-
-  protected:
-
-  private:
-
-
-      sockaddr_in addr_;
-
-
-};
 
 
 // Parameterized Class rx::io::full_duplex_comm 

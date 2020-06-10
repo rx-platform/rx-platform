@@ -42,6 +42,7 @@
 #include "rx_ip_endpoints.h"
 #include "sys_internal/rx_async_functions.h"
 #include "terminal/rx_commands.h"
+#include "rx_io_relations.h"
 
 
 namespace rx_internal {
@@ -69,6 +70,12 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 	rx_result result = result_c == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result_c));
 	if (result)
 	{
+        // register port stack relation
+        result = model::platform_types_manager::instance().get_relations_repository().register_constructor(
+            RX_NS_PORT_STACK_ID, [] {
+                return rx_create_reference<port_stack_relation>();
+            });
+
 		// register I/O constructors
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_UDP_PORT_TYPE_ID, [] {
@@ -102,19 +109,6 @@ rx_result rx_io_manager::start (hosting::rx_platform_host* host, const io_manage
 void rx_io_manager::stop ()
 {
 }
-
-
-// Class rx_internal::interfaces::io_endpoints::rx_io_endpoint 
-
-rx_io_endpoint::rx_io_endpoint()
-{
-}
-
-
-rx_io_endpoint::~rx_io_endpoint()
-{
-}
-
 
 
 } // namespace io_endpoints

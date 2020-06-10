@@ -233,9 +233,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, std::function<v
 
 rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
 {
-
-	platform_runtime_manager::instance().get_cache().remove_from_cache(what->meta_info().get_full_path());
-
+	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
@@ -397,6 +395,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, std::function<v
 
 rx_result domain_algorithms::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
 {
+	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
@@ -477,9 +476,6 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		{
 			RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_full_path());
 
-
-			runtime::algorithms::object_runtime_algorithms<port_type>::fire_job(*what);
-
 			rx_post_function<rx_port_ptr>([](rx_port_ptr whose)
 				{
 					runtime::runtime_start_context start_ctx = whose->create_start_context();
@@ -548,6 +544,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, std::function<void(
 
 rx_result port_algorithms::stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
+	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
@@ -719,6 +716,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, std::
 
 rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
+	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{

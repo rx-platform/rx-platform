@@ -80,7 +80,7 @@ std::vector<rx_result_with<runtime_handle_t> > object_runtime_algorithms<typeT>:
     has_errors = false;
     for (const auto& path : paths)
     {
-        auto one_result = whose.connected_tags_.connect_tag(path, *whose.item_, monitor, whose.state_);
+        auto one_result = whose.connected_tags_.connect_tag(path, *whose.item_, monitor);
         if (!has_errors && !one_result)
             has_errors = true;
         if (!had_good && one_result)
@@ -102,11 +102,23 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     whose.job_lock_.unlock();
     whose.context_.init_context();
 
+    string_type full_path = whose.meta_info().get_full_path();
+
     security::secured_scope _(whose.instance_data_.get_security_context());
     if (whose.scan_time_item_)
         whose.set_binded_as(whose.scan_time_item_, whose.last_scan_time_);
-    auto old_tick = rx_get_us_ticks();
+    if (whose.loop_count_item_)
+        whose.set_binded_as(whose.loop_count_item_, whose.loop_count_);
 
+
+    std::ostringstream ss;
+    ss << "Processing object <"
+        << full_path
+        << "> started";
+    RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
+
+    auto old_tick = rx_get_us_ticks();    
+    size_t lap_count = 0;
     do
     {
         /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,10 +149,20 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
         whose.process_source_outputs(whose.context_);
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
+        lap_count++;
+
     } while (whose.context_.should_repeat());
 
     auto diff = rx_get_us_ticks() - old_tick;
     whose.last_scan_time_ = (double)diff / 1000.0;
+    whose.loop_count_ += lap_count;
+
+    ss.str("");
+    ss << "Processed object <"
+        << full_path
+        << "> loop = " << lap_count << "; time = " << diff << "us.";
+    RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
+    
     if (whose.max_scan_time_ < whose.last_scan_time_)
     {
         whose.max_scan_time_ = whose.last_scan_time_;
@@ -265,12 +287,14 @@ runtime_holder<typeT>::runtime_holder()
         last_scan_time_(-1),
         max_scan_time_(0),
         max_scan_time_item_(0),
-        job_pending_(false)
+        job_pending_(false),
+        loop_count_(0),
+        loop_count_item_(0)
     , meta_info_(namespace_item_pull_access)
     , context_(binded_tags_, connected_tags_)
-    , state_(relations_, &context_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
+    connected_tags_.init_tags(&context_, &relations_);
 }
 
 template <class typeT>
@@ -279,13 +303,15 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
         last_scan_time_(-1),
         max_scan_time_(0),
         max_scan_time_item_(0),
-        job_pending_(false)
+        job_pending_(false),
+        loop_count_(0),
+        loop_count_item_(0)
     , meta_info_(meta)
     , instance_data_(instance)
     , context_(binded_tags_, connected_tags_)
-    , state_(relations_, &context_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
+    connected_tags_.init_tags(&context_, &relations_);
 }
 
 
@@ -334,7 +360,19 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
     }
     else
     {
-        result = item_->get_value(state_, path, value);
+        result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
+        if (!result)
+        {// check relations, but only for exact name
+            for (const auto& one : relations_)
+            {
+                if (one.name == path)
+                {
+                    value = one.value.get_value(const_cast<runtime_process_context*>(&context_));
+                    result = true;
+                    break;
+                }
+            }
+        }
     }
     
     return result;
@@ -349,8 +387,10 @@ rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple
     }
     std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
     {
-        structure::write_context my_ctx = structure::write_context::create_write_context(state_, false);
-        return item_->write_value(path, std::move(val), my_ctx, &context_);
+        structure::write_data data;
+        data.transaction_id = 0;
+        data.value = std::move(val);
+        return item_->write_value(path, std::move(data), &context_);
     };
     auto current_thread = rx_thread_context();
     if (current_thread == whose)
@@ -426,13 +466,13 @@ bool runtime_holder<typeT>::deserialize (base_meta_reader& stream, uint8_t type)
 template <class typeT>
 rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
-    context_.init_state(&state_, [this]
+    directories_.add_paths({ meta_info_.get_path() });
+    context_.init_state([this]
         {
             object_runtime_algorithms<typeT>::fire_job(*this);
         });
     ctx.structure.push_item(*item_);
     ctx.context = &context_;
-   
     auto result = item_->initialize_runtime(ctx);
     if (result)
     {
@@ -442,10 +482,13 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
         bind_result = ctx.tags->bind_item("Object.MaxScanTime", ctx);
         if (bind_result)
             max_scan_time_item_ = bind_result.value();
+        bind_result = ctx.tags->bind_item("Object.LoopCount", ctx);
+        if (bind_result)
+            loop_count_item_ = bind_result.value();
 
         for (auto& one : relations_)
         {
-            result = one->initialize_runtime(ctx);
+            result = one.initialize_relation(ctx);
             if (!result)
                 break;
         }
@@ -481,7 +524,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
     {
         for (auto& one : relations_)
         {
-            result = one->deinitialize_runtime(ctx);
+            result = one.deinitialize_relation(ctx);
             if (!result)
                 break;
         }
@@ -496,14 +539,13 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
 template <class typeT>
 rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
 {
-    state_.time = rx_time::now();
     ctx.structure.push_item(*item_);
     auto result = item_->start_runtime(ctx);
     if (result)
     {
         for (auto& one : relations_)
         {
-            result = one->start_runtime(ctx);
+            result = one.start_relation(ctx);
             if (!result)
                 break;
         }
@@ -539,7 +581,7 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
     {
         for (auto& one : relations_)
         {
-            result = one->stop_runtime(ctx);
+            result = one.stop_relation(ctx);
             if (!result)
                 break;
         }
@@ -555,90 +597,26 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
 template <class typeT>
 rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
 {
-    switch (command_type)
-    {
-    case rx_object_command_t::rx_turn_off:
-        {
-            if (state_.mode.turn_off())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-        }
-        break;
-    case rx_object_command_t::rx_turn_on:
-        {
-            if (state_.mode.turn_on())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-        }
-        break;
-    case rx_object_command_t::rx_set_blocked:
-        {
-            if (state_.mode.set_blocked())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-        }
-        break;
-    case rx_object_command_t::rx_reset_blocked:
-        {
-            if (state_.mode.reset_blocked())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-
-        }
-        break;
-    case rx_object_command_t::rx_set_test:
-        {
-            if (state_.mode.set_test())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-        }
-        break;
-    case rx_object_command_t::rx_reset_test:
-        {
-            if (state_.mode.reset_test())
-            {
-                state_.time = rx_time::now();
-                context_.status_change_pending();
-            }
-        }
-        break;
-    default:
-        return "Unsupported command type!";
-    }
-    return true;
+    return context_.do_command(command_type);
 }
 
 template <class typeT>
 void runtime_holder<typeT>::set_runtime_data (meta::runtime_data_prototype& prototype)
 {
-    for (auto one : prototype.additional_relations)
-    {
-        relations_.emplace_back(one);
-    }
     item_ = std::move(create_runtime_data(prototype));
 }
 
 template <class typeT>
 void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
 {
-    structure::init_context ctx(relations_, &context_);
+    structure::fill_context ctx(&context_);
     ctx.context = &context_;
     item_->fill_data(data, ctx);
     // now do the relations
     // they create their own context!
     for (auto& one : relations_)
     {
-        one->fill_data(data);
+        one.fill_data(data);
     }
 }
 
@@ -648,7 +626,7 @@ void runtime_holder<typeT>::collect_data (data::runtime_values_data& data, runti
     item_->collect_data(data, type);
     for (auto& one : relations_)
     {
-        one->collect_data(data, type);
+        one.collect_data(data, type);
     }
 }
 
@@ -663,15 +641,16 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
 {
     if (path.empty())
     {
-        auto ret = item_->browse_items(filter, prefix + path, items);
+        auto ret = item_->browse_items(filter, prefix + path, items, &context_);
         if (ret)
         {
-            for (const auto one : relations_)
+            for (const auto& one : relations_)
             {
                 runtime_item_attribute attr;
-                attr.full_path = prefix + one->name;
-                attr.name = one->name;
+                attr.full_path = prefix + one.name;
+                attr.name = one.name;
                 attr.type = rx_attribute_type::relation_attribute_type;
+                attr.value.assign_static<string_type>(string_type(one.target));
                 items.push_back(attr);
             }
         }
@@ -695,16 +674,16 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
             {
                 sub_path = path;
             }
-            for (auto one : relations_)
+            for (auto& one : relations_)
             {
-                if (one->name == sub_path)
+                if (one.name == sub_path)
                 {
-                    return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+                    return one.browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
                 }
             }
             return path + " not found";
         }
-        return sub_item->browse_items(filter, prefix + current_path, items);
+        return sub_item->browse_items(filter, prefix + current_path, items, &context_);
     }
 }
 
@@ -712,7 +691,7 @@ template <class typeT>
 rx_result runtime_holder<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results)
 {
     for (const auto& item : items)
-        connected_tags_.read_tag(item, monitor, state_);
+        connected_tags_.read_tag(item, monitor);
     return true;
 }
 
@@ -721,7 +700,7 @@ rx_result runtime_holder<typeT>::write_items (runtime_transaction_id_t transacti
 {
     for (const auto& item : items)
     {
-        auto result = connected_tags_.write_tag(item.first, rx_simple_value(item.second), monitor, state_);
+        auto result = connected_tags_.write_tag(item.first, rx_simple_value(item.second), monitor);
         results.emplace_back(std::move(result));
     }
     return true;
@@ -743,13 +722,13 @@ platform_item_ptr runtime_holder<typeT>::get_item_ptr () const
 template <class typeT>
 runtime_init_context runtime_holder<typeT>::create_init_context ()
 {
-    return runtime::runtime_init_context(*item_, meta_info_, &context_, &binded_tags_);
+    return runtime::runtime_init_context(*item_, meta_info_, &context_, &binded_tags_, &directories_);
 }
 
 template <class typeT>
 runtime_start_context runtime_holder<typeT>::create_start_context ()
 {
-    return runtime_start_context(*item_, &context_);
+    return runtime_start_context(*item_, &context_, &directories_);
 }
 
 template <class typeT>
@@ -791,7 +770,7 @@ template <class typeT>
 void runtime_holder<typeT>::process_status_change (runtime_process_context& ctx)
 {
     while (ctx.should_process_status_change())
-        item_->object_state_changed(state_);
+        item_->object_state_changed(&context_);
 }
 
 template <class typeT>
@@ -822,7 +801,7 @@ template <class typeT>
 void runtime_holder<typeT>::process_subscription_inputs (runtime_process_context& ctx)
 {
     while (ctx.should_process_tag_writes())
-        connected_tags_.process_runtime(ctx);
+        connected_tags_.process_runtime();
 }
 
 template <class typeT>
@@ -866,7 +845,7 @@ template <class typeT>
 void runtime_holder<typeT>::process_subscription_outputs (runtime_process_context& ctx)
 {
     while (ctx.should_process_tag_updates())
-        connected_tags_.process_runtime(ctx);
+        connected_tags_.process_runtime();
 }
 
 template <class typeT>

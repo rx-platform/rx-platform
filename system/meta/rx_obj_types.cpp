@@ -39,9 +39,9 @@
 #include "rx_configuration.h"
 #include "system/runtime/rx_objbase.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "model/rx_model_algorithms.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
-#include "system/runtime/rx_io_relations.h"
 using namespace rx_platform::meta::meta_algorithm;
 
 
@@ -113,6 +113,12 @@ def_blocks::mapped_data_type& application_type::mapping_data ()
 bool application_type::check_type (type_check_context& ctx)
 {
     return object_types_algorithm<application_type>::check_object_type(*this, ctx);
+}
+
+object_data_type& application_type::object_data ()
+{
+  return object_data_;
+
 }
 
 
@@ -204,6 +210,12 @@ def_blocks::mapped_data_type& domain_type::mapping_data ()
 bool domain_type::check_type (type_check_context& ctx)
 {
     return object_types_algorithm<domain_type>::check_object_type(*this, ctx);
+}
+
+object_data_type& domain_type::object_data ()
+{
+  return object_data_;
+
 }
 
 
@@ -298,6 +310,12 @@ bool object_type::check_type (type_check_context& ctx)
     return object_types_algorithm<object_type>::check_object_type(*this, ctx);
 }
 
+object_data_type& object_type::object_data ()
+{
+  return object_data_;
+
+}
+
 
 const object_data_type& object_type::object_data () const
 {
@@ -341,6 +359,26 @@ rx_result object_data_type::resolve (rx_directory_ptr dir)
 bool object_data_type::check_type (type_check_context& ctx)
 {
     return true;
+}
+
+rx_result object_data_type::register_relation (const string_type& name, const rx_node_id& id, const rx_node_id& target_id, complex_data_type& complex_data)
+{
+    auto ret = complex_data.check_name(name, 0);
+    if (ret)
+    {
+        relations_.emplace_back(name, id, rx_item_reference(target_id));
+    }
+    return ret;
+}
+
+rx_result object_data_type::register_relation (const string_type& name, const rx_node_id& id, const rx_item_reference& target, complex_data_type& complex_data)
+{
+    auto ret = complex_data.check_name(name, 0);
+    if (ret)
+    {
+        relations_.emplace_back(name, id, target);
+    }
+    return ret;
 }
 
 
@@ -408,6 +446,12 @@ bool port_type::check_type (type_check_context& ctx)
     return object_types_algorithm<port_type>::check_object_type(*this, ctx);
 }
 
+object_data_type& port_type::object_data ()
+{
+  return object_data_;
+
+}
+
 
 const object_data_type& port_type::object_data () const
 {
@@ -432,37 +476,13 @@ const def_blocks::mapped_data_type& port_type::mapping_data () const
 
 // Class rx_platform::meta::object_types::relation_attribute 
 
-relation_attribute::relation_attribute (const string_type& name, const rx_node_id& id)
+relation_attribute::relation_attribute (const string_type& name, const rx_node_id& id, const rx_item_reference& target)
       : name_(name)
+    , relation_type_(id)
+    , target_(target)
 {
 }
 
-relation_attribute::relation_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
-{
-}
-
-
-
-rx_result relation_attribute::serialize_definition (base_meta_writer& stream, uint8_t type) const
-{
-	return relation_blocks_algorithm::serialize_relation_attribute(*this, stream);
-}
-
-rx_result relation_attribute::deserialize_definition (base_meta_reader& stream, uint8_t type)
-{
-	return relation_blocks_algorithm::deserialize_relation_attribute(*this, stream);
-}
-
-rx_result relation_attribute::check (type_check_context& ctx)
-{
-	return true;
-}
-
-rx_result_with<runtime::relation_runtime_ptr> relation_attribute::construct (construct_context& ctx) const
-{
-	return meta_algorithm::relation_blocks_algorithm::construct_relation_attribute(*this, ctx);	
-}
 
 
 // Class rx_platform::meta::object_types::relation_type 
@@ -515,10 +535,6 @@ bool relation_type::check_type (type_check_context& ctx)
 }
 
 void relation_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
-{
-}
-
-void relation_type::set_instance_data (instance_data_t&& data, RTypePtr where)
 {
 }
 

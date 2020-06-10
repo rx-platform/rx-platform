@@ -32,19 +32,12 @@
 #define rx_meta_support_h 1
 
 
+// temporary error codes!!!
+#define RX_ITEM_NOT_FOUND 0x801
+
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-
-namespace rx_platform {
-namespace runtime {
-namespace relations {
-class relation_runtime;
-
-} // namespace relations
-} // namespace runtime
-} // namespace rx_platform
-
 
 #include "system/server/rx_ns.h"
 
@@ -52,57 +45,6 @@ class relation_runtime;
 namespace rx_platform {
 
 namespace meta {
-
-
-
-
-
-class type_check_context 
-{
-  public:
-	  type_check_context() = default;
-	  ~type_check_context() = default;
-  	  type_check_context(const type_check_context&) = default;
-	  type_check_context(type_check_context&&) = default;
-	  type_check_context& operator=(const type_check_context&) = default;
-   	  type_check_context& operator=(type_check_context&&) = default;
-
-  public:
-
-      bool is_check_ok () const;
-
-      void add_error (const string_type& error);
-
-      void reinit ();
-
-      void add_error (const string_type& msg, const rx_result& error);
-
-
-      const string_array& get_errors () const
-      {
-        return errors_;
-      }
-
-
-      ns::rx_directory_resolver& get_directories ()
-      {
-        return directories_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_array errors_;
-
-      ns::rx_directory_resolver directories_;
-
-
-};
-
 
 
 
@@ -119,7 +61,6 @@ class runtime_data_prototype
 	typedef std::vector<runtime::structure::mapper_data> mappers_type;
 	typedef std::vector<runtime::structure::filter_data> filters_type;
 	typedef std::vector<runtime::structure::event_data> events_type;
-    typedef std::vector<pointers::reference<runtime::relations::relation_runtime> > additional_relations_type;
 
 	typedef std::vector<runtime::structure::index_data> items_type;
 
@@ -133,16 +74,13 @@ class runtime_data_prototype
 
       void add (const string_type& name, runtime::structure::struct_data&& value);
 
-      void add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_value val);
+      void add_variable (const string_type& name, runtime::structure::variable_data&& value);
 
       void add (const string_type& name, runtime::structure::source_data&& value);
 
       void add (const string_type& name, runtime::structure::filter_data&& value);
 
       void add (const string_type& name, runtime::structure::event_data&& value);
-
-
-      additional_relations_type additional_relations;
 
 
       items_type items;
@@ -182,9 +120,15 @@ class runtime_data_prototype
 
 class construct_context 
 {
+ public:
+    ~construct_context() = default;
+    construct_context(const construct_context&) = delete;
+    construct_context(construct_context&&) = delete;
+    construct_context& operator=(const construct_context&) = delete;
+    construct_context& operator=(construct_context&&) = delete;
 
   public:
-      construct_context();
+      construct_context ();
 
 
       void reinit ();
@@ -277,14 +221,15 @@ struct type_creation_data
 class type_create_context 
 {
 public:
-	type_create_context() = default;
 	~type_create_context() = default;
-	type_create_context(const type_create_context&) = default;
-	type_create_context(type_create_context&&) = default;
-	type_create_context& operator=(const type_create_context&) = default;
-	type_create_context& operator=(type_create_context&&) = default;
+	type_create_context(const type_create_context&) = delete;
+	type_create_context(type_create_context&&) = delete;
+	type_create_context& operator=(const type_create_context&) = delete;
+	type_create_context& operator=(type_create_context&&) = delete;
 
   public:
+      type_create_context ();
+
 
       bool created () const;
 
@@ -314,6 +259,139 @@ public:
       string_array errors_;
 
       ns::rx_directory_resolver directories_;
+
+
+};
+
+
+enum class check_record_type
+{
+    info,
+    warning,
+    error
+};
+
+const rx_error_severity_t rx_tolerable_severity = 16;
+const rx_error_severity_t rx_low_severity = 64;
+const rx_error_severity_t rx_medium_severity = 128;
+const rx_error_severity_t rx_high_severity = 192;
+const rx_error_severity_t rx_critical_severity = 255;
+
+
+
+
+struct check_record 
+{
+
+
+      check_record_type type;
+
+      rx_error_code_t code;
+
+      rx_error_severity_t severity;
+
+      string_type source;
+
+      string_type text;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+typedef std::vector<check_record> check_records_type;
+
+
+
+
+class type_check_context 
+{
+    typedef std::stack<string_type, std::vector<string_type> >sources_stack_type;
+  public:
+	  ~type_check_context() = default;
+  	  type_check_context(const type_check_context&) = delete;
+	  type_check_context(type_check_context&&) = delete;
+	  type_check_context& operator=(const type_check_context&) = delete;
+   	  type_check_context& operator=(type_check_context&&) = delete;
+
+  public:
+      type_check_context ();
+
+
+      bool is_check_ok () const;
+
+      void add_error (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity);
+
+      void reinit ();
+
+      void add_error (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity, const rx_result& error);
+
+      const check_records_type& get_records () const;
+
+      check_records_type&& move_records ();
+
+      void push_source (const string_type& source);
+
+      void pop_source ();
+
+      const string_type& current_source () const;
+
+      void add_warning (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity);
+
+      void add_warning (const string_type& msg, rx_error_code_t code, rx_error_severity_t severity, const rx_result& error);
+
+      void add_info (const string_type& msg);
+
+      rx_result_erros_t get_errors () const;
+
+
+      ns::rx_directory_resolver& get_directories ()
+      {
+        return directories_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      check_records_type records_;
+
+
+      ns::rx_directory_resolver directories_;
+
+      sources_stack_type sources_stack_;
+
+
+};
+
+
+
+
+
+
+class type_check_source 
+{
+
+  public:
+      type_check_source (const string_type& source, type_check_context* ctx);
+
+      ~type_check_source();
+
+
+  protected:
+
+  private:
+
+
+      type_check_context *ctx_;
 
 
 };

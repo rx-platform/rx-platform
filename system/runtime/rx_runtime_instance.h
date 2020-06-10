@@ -232,8 +232,6 @@ class port_instance_data
 
       rx_node_id app_id;
 
-      rx_item_reference up_port;
-
       ~port_instance_data() = default;
       port_instance_data(port_instance_data&& right);
       port_instance_data(const port_instance_data& right);

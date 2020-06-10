@@ -179,8 +179,8 @@ void server_command_manager::register_internal_commands ()
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::rx_protocol::rx_protocol_port>();
 		});
-	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
-		RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport_port>(
+		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_transport_port>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(

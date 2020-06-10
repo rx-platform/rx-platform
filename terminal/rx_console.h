@@ -44,6 +44,8 @@
 #include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 
 namespace rx_internal {
 namespace terminal {
@@ -345,7 +347,7 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::std_protocol_impl< console_runtime::smart_ptr  > console_std_impl;
+typedef rx_platform::runtime::io_types::ports_templates::std_protocol_impl< console_runtime::smart_ptr  > console_std_impl;
 
 
 

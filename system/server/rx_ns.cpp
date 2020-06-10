@@ -532,7 +532,7 @@ rx_result_with<rx_storage_ptr> rx_platform_directory::resolve_storage () const
 		return "Storage not defined";
 }
 
-rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path)
+rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path) const
 {
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
@@ -686,12 +686,23 @@ bool rx_names_cache::should_cache (const rx_namespace_item& item)
 
 // Class rx_platform::ns::rx_directory_resolver 
 
+rx_directory_resolver::rx_directory_resolver()
+	: parent_(nullptr)
+{
+}
 
-rx_namespace_item rx_directory_resolver::resolve_path (const string_type& path)
+rx_directory_resolver::rx_directory_resolver (rx_directory_resolver* parent)
+	: parent_(parent)
+{
+}
+
+
+
+rx_namespace_item rx_directory_resolver::resolve_path (const string_type& path) const
 {
 	if (path.empty())
 		return rx_namespace_item();
-	// path length is checked in preious condition!!!
+	// path length is checked in previous condition!!!
 	if (path[0] == RX_DIR_DELIMETER)
 	{// global path
 		return rx_gate::instance().get_root_directory()->get_sub_item(path);
@@ -700,10 +711,10 @@ rx_namespace_item rx_directory_resolver::resolve_path (const string_type& path)
 	{
 		if (!one.resolved)
 		{
-			one.dir = rx_gate::instance().get_root_directory()->get_sub_directory(one.path);
+			const_cast<resolver_data&>(one).dir = rx_gate::instance().get_root_directory()->get_sub_directory(one.path);
 			if (one.dir)
 			{
-				one.resolved = true;
+				const_cast<resolver_data&>(one).resolved = true;
 			}
 		}
 		if (!one.dir)

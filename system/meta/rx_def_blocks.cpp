@@ -353,7 +353,8 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 	auto it = names_cache_.find(name);
 	if (it == names_cache_.end())
 	{
-		names_cache_.emplace(name, rt_index);
+		if(rt_index)
+			names_cache_.emplace(name, rt_index);
 		return true;
 	}
 	else

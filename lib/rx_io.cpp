@@ -77,40 +77,7 @@ int dispatcher_connect_callback(void* data, uint32_t status)
 }
 
 
-rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct)
-{
-	addr_struct->sin_family = AF_INET;
-	memzero(addr_struct, sizeof(*addr_struct));
-	addr_struct->sin_port = htons(port);
-	if (addr.empty())
-	{
-		addr_struct->sin_addr.s_addr = INADDR_ANY;
-		return true;
-	}
-	else
-	{
-		auto ret = inet_pton(AF_INET, addr.c_str(), &addr_struct->sin_addr);
-		if (ret == 1)
-			return true;
-		else
-			return addr + " is not valid IP4 address";
-	}
-}
 
-string_type get_ip4_addr_string(const sockaddr_in* addr_struct)
-{
-	if (addr_struct->sin_family != AF_INET)
-		return "ERROR, wrong address type.";
-	char buff[INET_ADDRSTRLEN];
-	const char* addr = inet_ntop(AF_INET, &addr_struct->sin_addr, buff, sizeof(buff) / sizeof(buff[0]));
-	if (addr)
-	{
-		char buff_end[INET_ADDRSTRLEN+0x10];
-		sprintf(buff_end, "%s:%d", addr, (int)htons(addr_struct->sin_port));
-		return buff_end;
-	}
-	return "ERROR parsing IP4 address.";
-}
 
 // Class rx::io::dispatcher_subscriber 
 
@@ -248,68 +215,7 @@ void dispatcher_subscriber::set_identity (rx_security_handle_t identity)
 }
 
 
-// Class rx::io::tcp4_endpoint 
-
-tcp4_endpoint::tcp4_endpoint (const protocol_endpoint* ep)
-{
-}
-
-
-
-bool tcp4_endpoint::is_valid () const
-{
-	return addr_.sin_family != AF_INET;
-}
-
-string_type tcp4_endpoint::to_string () const
-{
-	if (is_valid())
-		return get_ip4_addr_string(&addr_);
-	else
-		return "<null>";
-}
-
-rx_result tcp4_endpoint::parse (const string_type& what)
-{
-	auto idx = what.rfind(':');
-	uint16_t port = 0;
-	if (idx != string_type::npos && idx!=what.size())
-	{
-		auto result = std::from_chars(&what[idx + 1], &what[what.size()-1], port);
-		if (result.ec != std::errc())
-		{
-			std::ostringstream ss;
-			ss
-				<< "Error parsing port at char "
-				<< idx
-				<< ","
-				<< std::make_error_code(result.ec).message()
-				<< "!";
-			return ss.str();
-		}
-	}
-	sockaddr_in temp;
-	auto ret = fill_ip4_addr(what.substr(0, idx), port, &temp);
-	if (!ret)
-	{
-		std::ostringstream ss;
-		ss
-			<< "Error parsing ip address "
-			<< idx
-			<< ","
-			<< ret.errors()[0]
-			<< "!";
-		return ss.str();
-	}
-	return false;
-}
-
-const protocol_endpoint* tcp4_endpoint::to_endpoint () const
-{
-	return reinterpret_cast<const protocol_endpoint*>(&addr_);
-}
-
-
 } // namespace io
 } // namespace rx
+
 

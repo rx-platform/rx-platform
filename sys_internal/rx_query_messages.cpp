@@ -1056,7 +1056,7 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_conn
 			else
 			{
 				std::ostringstream ss;
-				ss << "Errors occured: \r\n";
+				ss << "Errors occurred: \r\n";
 				for (const auto& one : data.errors())
 				{
 					ss << one << "\r\n";

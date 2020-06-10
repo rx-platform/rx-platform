@@ -255,7 +255,7 @@ private:
 	template<class otherT>
 	otherT _internal_cast_to(tl::type2type<otherT>)
 	{
-		otherT ret;
+		//typename otherT::pointer_type ret(this->ptr_);
 		return otherT::create_from_pointer(static_cast<typename otherT::pointer_type>(this->ptr_));
 	}
 public:

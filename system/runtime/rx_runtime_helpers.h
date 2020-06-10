@@ -44,24 +44,25 @@
 
 
 namespace rx_platform {
+namespace ns {
+class rx_directory_resolver;
+} // namespace ns
+
 namespace runtime {
 namespace structure {
-class runtime_item;
 class variable_data;
+class runtime_item;
 } // namespace structure
 
 namespace algorithms {
-class runtime_process_context;
+template <class typeT> class runtime_holder;
 } // namespace algorithms
 
+class runtime_process_context;
 namespace operational {
 class binded_tags;
+
 } // namespace operational
-
-namespace algorithms {
-template <class typeT> class runtime_holder;
-
-} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
@@ -97,6 +98,7 @@ template <class typeT>
 class object_types_algorithm;
 template <class typeT>
 class meta_blocks_algorithm;
+class relation_blocks_algorithm;
 }
 }
 namespace runtime {
@@ -156,7 +158,7 @@ class event_runtime;
 }
 namespace relations
 {
-
+class relation_data;
 class relation_runtime;
 }
 
@@ -184,7 +186,6 @@ class event_data;
 class filter_data;
 class source_data;
 class mapper_data;
-class hosting_object_data;
 class write_context;
 } // namespace structure
 
@@ -201,7 +202,7 @@ union rt_value_ref_union
 	structure::const_value_data* const_value;
 	structure::value_data* value;
 	structure::variable_data* variable;
-    relations::relation_runtime* relation;
+    relations::relation_data* relation;
 };
 enum class rt_value_ref_type
 {
@@ -338,10 +339,11 @@ typedef std::map<string_type, runtime_handle_t> binded_tags_type;
 
 
 
+
 struct runtime_init_context 
 {
 
-      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, algorithms::runtime_process_context* context, operational::binded_tags* binded);
+      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories);
 
 
       runtime_handle_t get_new_handle ();
@@ -353,7 +355,7 @@ struct runtime_init_context
 
       runtime_structure_resolver structure;
 
-      algorithms::runtime_process_context *context;
+      runtime_process_context *context;
 
       operational::binded_tags *tags;
 
@@ -361,6 +363,8 @@ struct runtime_init_context
       const meta::meta_data& meta;
 
       binded_tags_type binded_tags;
+
+      ns::rx_directory_resolver* directories;
 
   public:
 
@@ -382,7 +386,7 @@ struct runtime_init_context
 struct runtime_start_context 
 {
 
-      runtime_start_context (structure::runtime_item& root, algorithms::runtime_process_context* context);
+      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories);
 
 
       runtime_path_resolver path;
@@ -391,7 +395,10 @@ struct runtime_start_context
 
       runtime_structure_resolver structure;
 
-      algorithms::runtime_process_context *context;
+      runtime_process_context *context;
+
+
+      ns::rx_directory_resolver* directories;
 
   public:
 

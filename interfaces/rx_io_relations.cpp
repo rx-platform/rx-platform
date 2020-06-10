@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_io_relations.cpp
+*  interfaces\rx_io_relations.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,56 +32,58 @@
 
 
 // rx_io_relations
-#include "system/runtime/rx_io_relations.h"
+#include "interfaces/rx_io_relations.h"
 
 #include "model/rx_meta_internals.h"
 #include "system/server/rx_platform_item.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace relations {
+namespace io_endpoints {
 
-// Class rx_platform::runtime::relations::port_up_relation 
+// Class rx_internal::interfaces::io_endpoints::port_stack_relation 
 
-port_up_relation::port_up_relation (rx_port_ptr my_port)
-    : from_(my_port)
+port_stack_relation::port_stack_relation()
 {
 }
 
 
 
-void port_up_relation::process_stack ()
+void port_stack_relation::process_stack ()
 {
 }
 
-rx_result port_up_relation::initialize_runtime (runtime::runtime_init_context& ctx)
+rx_result port_stack_relation::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
 {
-    auto ret = relation_runtime::initialize_runtime(ctx);
-    return ret;
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.get_id());
+    if (!result)
+    {
+        result.register_error(ctx.meta.get_full_path() + "is not a port!");
+        return result.errors();
+    }
+    from_ = result.value();
+    return true;
 }
 
-rx_result port_up_relation::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+rx_result port_stack_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
-    auto ret = relation_runtime::deinitialize_runtime(ctx);
-    return ret;
+    return true;
 }
 
-rx_result port_up_relation::start_runtime (runtime::runtime_start_context& ctx)
+rx_result port_stack_relation::start_relation (runtime::runtime_start_context& ctx)
 {
-    auto ret = relation_runtime::start_runtime(ctx);
-    return ret;
+    return true;
 }
 
-rx_result port_up_relation::stop_runtime (runtime::runtime_stop_context& ctx)
+rx_result port_stack_relation::stop_relation (runtime::runtime_stop_context& ctx)
 {
-    auto ret = relation_runtime::stop_runtime(ctx);
-    return ret;
+    return true;
 }
 
-rx_result_with<platform_item_ptr> port_up_relation::resolve_runtime_sync (const rx_node_id& id)
+rx_result_with<platform_item_ptr> port_stack_relation::resolve_runtime_sync (const rx_node_id& id)
 {
     auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
     if (!port_ptr)
@@ -98,20 +100,22 @@ rx_result_with<platform_item_ptr> port_up_relation::resolve_runtime_sync (const 
     }
 }
 
-void port_up_relation::relation_connected ()
+void port_stack_relation::relation_connected ()
 {
     if (from_ && to_)
     {
-        from_->get_implementation()->connect_up_stack(to_->get_implementation());
+        RUNTIME_LOG_DEBUG("port_stack_relation", 900, from_->meta_info().get_full_path() + " connected to port " + to_->meta_info().get_full_path());
+        meta::meta_data meta;
+        to_->get_implementation()->push(from_->get_implementation(), meta);
     }
 }
 
-void port_up_relation::relation_disconnected ()
+void port_stack_relation::relation_disconnected ()
 {
 }
 
 
-} // namespace relations
-} // namespace runtime
-} // namespace rx_platform
+} // namespace io_endpoints
+} // namespace interfaces
+} // namespace rx_internal
 

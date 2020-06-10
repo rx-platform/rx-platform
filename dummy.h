@@ -88,7 +88,7 @@ class rx_protocol_stack_entry
 
 
 
-class protocol_endpoint 
+class protocol_address 
 {
 
   public:

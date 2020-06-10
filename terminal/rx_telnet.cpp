@@ -86,7 +86,7 @@ namespace
 #define NEW_ENVIRON ((char)39)
 #define SLE ((char)45)
 
-
+/*
 const char* get_IAC_name(char code)
 {
 	static char buffer[0x20];
@@ -132,14 +132,14 @@ const char* get_IAC_what(char code)
 }
 
 char g_password_prompt[] = "Enter Password:";
-
+*/
 
 char g_server_telnet_idetification[] = { IAC, WILL, TELNET_ECHO,
 IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 //IAC, SB, LINEMODE, 1, 0, IAC, SE /* IAC SB LINEMODE MODE 0 IAC SE */};
 #define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
 
-} // anonymous 
+} // anonymous
 
 
 // Class rx_internal::terminal::term_transport::telnet_transport 

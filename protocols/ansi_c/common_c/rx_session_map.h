@@ -39,16 +39,15 @@
 extern "C" {
 #endif
 
-typedef struct protocol_endpoint_def
+typedef struct protocol_address_def
 {
 	// length of the whole data
 	size_t data_length;
 	// data itself
 	uint8_t data[1];
 
-} protocol_endpoint;
+} protocol_address;
 
-void rx_init_endpoint(protocol_endpoint* value, size_t value_size);
 
 // functions for manipulating protocol endpoint
 

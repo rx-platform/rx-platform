@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,6 +38,7 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
+#include "lib/rx_templates.h"
 
 
 namespace rx {
@@ -49,6 +50,37 @@ void execute_job(void* arg);
 }
 
 namespace jobs {
+
+
+template<class Tuple, size_t... Is>
+constexpr auto make_arguments_tuple_impl(Tuple& t, std::index_sequence<Is...>)
+{
+    return std::forward_as_tuple(std::get<Is>(std::forward<Tuple>(t))...);
+}
+template<class Tuple>
+constexpr auto make_arguments_tuple(Tuple& t)
+{
+    return make_arguments_tuple_impl(t, std::make_index_sequence<std::tuple_size<Tuple>::value >{});
+}
+
+
+template<typename T>
+constexpr static T&& handle_call_references(T&& t, std::true_type)
+{
+    return (std::forward<T>(t));
+}
+
+template<typename T>
+static T&& handle_call_references(T&& t, std::false_type)
+{
+    return std::forward<T>(t);
+}
+template<typename T>
+static T&& handle_call_references(T& t, std::false_type)
+{
+    return std::move(typename std::decay<T>::type(std::forward<T>(t)));
+}
+
 typedef int rx_complexity_t;
 const rx_complexity_t rx_default_complextiy = 0x10000;
 
@@ -453,16 +485,85 @@ class result_lambda_job : public job
 };
 
 
-// Parameterized Class rx::jobs::lambda_job 
 
 
-// Parameterized Class rx::jobs::lambda_period_job 
 
 
-// Parameterized Class rx::jobs::lambda_timer_job 
+template <typename refT, typename... Args>
+class full_lambda_job : public job  
+{
+
+  public:
+      full_lambda_job (refT ref, std::function<void(Args...)> f, Args&&... args)
+          : f_(f),
+          data_(handle_call_references<Args>(std::forward<Args>(args), std::is_lvalue_reference<Args>())...),
+          arguments_(make_arguments_tuple(data_)),
+          ref_(ref)
+      {
+      }
 
 
-// Parameterized Class rx::jobs::result_lambda_job 
+      void process ()
+      {
+          std::apply(f_, std::move(arguments_));
+      }
+
+
+  protected:
+
+  private:
+
+
+      std::function<void(Args...)> f_;
+
+      std::tuple<Args...> data_;
+
+      std::tuple<Args&&...> arguments_;
+
+      refT ref_;
+
+
+};
+
+template<class T, typename ...Args>
+class member_functor
+{
+    typedef typename T::smart_ptr ptrT;
+    typedef std::function<void(Args...)> func_t;
+    typedef void(T::* mem_fn_t)(Args...);
+
+    ptrT t_;
+    func_t func_;
+public:
+    member_functor(ptrT t, mem_fn_t fn)
+        : t_(t)
+        , func_(std::bind(fn, t.unsafe_ptr(), std::placeholders::_1))
+    {
+    }
+    void operator()(Args... params) const
+    {
+        using job_type = jobs::full_lambda_job<ptrT, Args...>;
+        auto job = rx_create_reference<job_type>(t_, func_, std::forward<Args...>(params...));
+        auto queue = t_->get_jobs_queue();
+        if (queue)
+            queue->append(job);
+    }
+};
+
+
+// Parameterized Class rx::jobs::lambda_job
+
+
+// Parameterized Class rx::jobs::lambda_period_job
+
+
+// Parameterized Class rx::jobs::lambda_timer_job
+
+
+// Parameterized Class rx::jobs::result_lambda_job
+
+
+// Parameterized Class rx::jobs::full_lambda_job
 
 
 } // namespace jobs

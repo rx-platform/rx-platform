@@ -222,7 +222,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       rx_result_with<rx_storage_ptr> resolve_storage () const;
 
-      rx_namespace_item get_sub_item (const string_type& path);
+      rx_namespace_item get_sub_item (const string_type& path) const;
 
       rx_result add_item (const rx_namespace_item& what);
 
@@ -311,17 +311,28 @@ class rx_directory_resolver
 		bool resolved;
 	};
 	typedef std::vector<resolver_data> directories_type;
+    rx_directory_resolver(const rx_directory_resolver&) = delete;
+    rx_directory_resolver(rx_directory_resolver&&) = delete;
+    rx_directory_resolver& operator=(const rx_directory_resolver&) = delete;
+    rx_directory_resolver& operator=(rx_directory_resolver&&) = delete;
 
   public:
+      rx_directory_resolver();
 
-      rx_namespace_item resolve_path (const string_type& path);
+      rx_directory_resolver (rx_directory_resolver* parent);
+
+
+      rx_namespace_item resolve_path (const string_type& path) const;
 
       void add_paths (std::initializer_list<string_type> paths);
 
-
+      ~rx_directory_resolver() = default;
   protected:
 
   private:
+
+
+      rx_directory_resolver *parent_;
 
 
       directories_type directories_;

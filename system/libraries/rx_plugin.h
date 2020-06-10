@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -35,6 +35,8 @@
 
 
 #include "system/storage_base/rx_storage.h"
+#include "system/meta/rx_obj_types.h"
+#include "system/runtime/rx_objbase.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for console library
@@ -47,10 +49,6 @@
 
 
 namespace rx_platform {
-template<typename typeT>
-rx_result register_plugin_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
-template<typename typeT>
-rx_result register_plugin_simple_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
 namespace library {
 
@@ -58,7 +56,7 @@ namespace library {
 
 
 
-class rx_plugin_base 
+class rx_plugin_base
 {
 
   public:
@@ -81,6 +79,41 @@ class rx_plugin_base
   protected:
 
   private:
+
+
+};
+
+
+
+//	I just love singletones
+
+
+
+class plugin_manager
+{
+    typedef std::map<rx_node_id, rx_plugin_base*> registered_plugins_type;
+
+
+    template<typename typeT>
+    friend rx_result register_plugin_constructor(rx_plugin_base* plugin
+        , const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
+    template<typename typeT>
+    friend rx_result register_plugin_simple_constructor(rx_plugin_base* plugin
+        , const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
+
+  public:
+
+      static plugin_manager& instance ();
+
+
+  protected:
+
+  private:
+      plugin_manager();
+
+
+
+      registered_plugins_type registered_plugins_;
 
 
 };

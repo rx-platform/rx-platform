@@ -76,34 +76,6 @@ command for pulling values from various items");
 
 
 
-class write_command : public terminal::commands::server_command  
-{
-	DECLARE_REFERENCE_PTR(write_command);
-	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
-command for writing values to various items");
-	
-
-  public:
-      write_command();
-
-      ~write_command();
-
-
-  protected:
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
 class turn_on_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(turn_on_command);
@@ -170,7 +142,7 @@ class runtime_command_base : public terminal::commands::server_command
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      virtual bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err) = 0;
+      virtual bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err) = 0;
 
 
   private:
@@ -197,7 +169,35 @@ command for reading values from various items");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class write_command : public runtime_command_base  
+{
+	DECLARE_REFERENCE_PTR(write_command);
+	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for writing values to various items");
+	
+
+  public:
+      write_command();
+
+      ~write_command();
+
+
+  protected:
+
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err);
 
 
   private:
@@ -224,7 +224,7 @@ command for browsing inside of object, domain, port or application");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, std::ostream& out, std::ostream& err);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err);
 
 
   private:

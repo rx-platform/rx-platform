@@ -52,8 +52,6 @@ namespace rx_platform {
 
 namespace runtime {
 
-namespace algorithms {
-
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -155,13 +153,11 @@ class runtime_process_context
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
 
-      void init_state (structure::hosting_object_data* state, fire_callback_func_t fire_callback);
+      void init_state (fire_callback_func_t fire_callback);
 
       void mapper_write_pending (write_data_struct<structure::mapper_data> data);
 
       mapper_writes_type& get_mapper_writes ();
-
-      structure::hosting_object_data* get_object_state () const;
 
       void status_change_pending ();
 
@@ -200,6 +196,27 @@ class runtime_process_context
       void struct_pending (structure::event_data* whose);
 
       structs_type& get_structs_for_process ();
+
+      rx_value adapt_value (const rx_value& from) const;
+
+      rx_value adapt_value (const rx_timed_value& from) const;
+
+      rx_value adapt_value (const rx_simple_value& from) const;
+
+      rx_result do_command (rx_object_command_t command_type);
+
+
+      const rx_mode_type get_mode () const
+      {
+        return mode_;
+      }
+
+
+      rx_time get_mode_time () const
+      {
+        return mode_time_;
+      }
+
 
 
       rx_time now;
@@ -243,8 +260,6 @@ class runtime_process_context
 
       runtime_process_step current_step_;
 
-      structure::hosting_object_data* state_;
-
       fire_callback_func_t fire_callback_;
 
       double_collection<mapper_writes_type> mapper_inputs_;
@@ -267,6 +282,10 @@ class runtime_process_context
 
       double_collection<structs_type> structs_;
 
+      rx_mode_type mode_;
+
+      rx_time mode_time_;
+
       template<runtime_process_step step>
       void turn_on_pending();
       template<runtime_process_step step>
@@ -274,7 +293,6 @@ class runtime_process_context
 };
 
 
-} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 

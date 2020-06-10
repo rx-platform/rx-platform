@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -48,9 +48,29 @@ bool dump_items_on_console(rx_row_type& row, const term_list_item_options& optio
 	if (one.is_type())
 		row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET });
 	else if (one.is_object())
-		row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+	{
+		switch (one.get_type())
+		{
+		case rx_item_type::rx_application:
+			row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
+			break;
+		case rx_item_type::rx_domain:
+			row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
+			break;
+		case rx_item_type::rx_port:
+			row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
+			break;
+		case rx_item_type::rx_object:
+			row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+			break;
+        default:
+            RX_ASSERT(false);
+            row.emplace_back(one.get_meta().get_name());
+		}
+	}
 	else
 		row.emplace_back(one.get_meta().get_name());
+
 	if (options.list_type)
 	{
 		row.emplace_back(rx_item_type_name(one.get_type()));
@@ -127,7 +147,7 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 
 }
 
-// Class rx_internal::internal_ns::namespace_commands::cd_command 
+// Class rx_internal::internal_ns::namespace_commands::cd_command
 
 cd_command::cd_command()
 	: server_command("cd")
@@ -164,7 +184,7 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class rx_internal::internal_ns::namespace_commands::dir_command 
+// Class rx_internal::internal_ns::namespace_commands::dir_command
 
 dir_command::dir_command()
 	: list_command("dir")
@@ -178,7 +198,7 @@ dir_command::~dir_command()
 
 
 
-// Class rx_internal::internal_ns::namespace_commands::ls_command 
+// Class rx_internal::internal_ns::namespace_commands::ls_command
 
 ls_command::ls_command()
 	: list_command("ls")
@@ -217,7 +237,25 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 			if (one.is_type())
 				row.emplace_back(one.get_meta().get_name(), ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
 			else if (one.is_object())
-				row.emplace_back(one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET);
+			{
+				switch (one.get_type())
+				{
+				case rx_item_type::rx_application:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_domain:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_port:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_object:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().get_name(), ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+					break;
+				default:
+					row.emplace_back(one.get_meta().get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+				}
+			}
 			else
 				row.emplace_back(one.get_meta().get_name(), ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
 
@@ -233,7 +271,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class rx_internal::internal_ns::namespace_commands::list_command 
+// Class rx_internal::internal_ns::namespace_commands::list_command
 
 list_command::list_command (const string_type& console_name)
 	: server_command(console_name)
@@ -326,7 +364,7 @@ bool list_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::internal_ns::namespace_commands::mkdir_command 
+// Class rx_internal::internal_ns::namespace_commands::mkdir_command
 
 mkdir_command::mkdir_command()
 	: server_command("mkdir")
@@ -356,7 +394,7 @@ bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class rx_internal::internal_ns::namespace_commands::rmdir_command 
+// Class rx_internal::internal_ns::namespace_commands::rmdir_command
 
 rmdir_command::rmdir_command()
 	: server_command("rmdir")
@@ -386,7 +424,7 @@ bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class rx_internal::internal_ns::namespace_commands::clone_system_command 
+// Class rx_internal::internal_ns::namespace_commands::clone_system_command
 
 clone_system_command::clone_system_command()
 	: server_command("clone-system")

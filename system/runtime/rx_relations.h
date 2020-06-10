@@ -34,10 +34,6 @@
 
 #include "rx_runtime_helpers.h"
 
-// rx_obj_types
-#include "system/meta/rx_obj_types.h"
-// rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 // rx_ptr
@@ -53,9 +49,23 @@ class relation_connector;
 } // namespace rx_platform
 
 
+namespace rx_internal
+{
+namespace model
+{
+class relations_type_repository;
+}
+}
 
 
 namespace rx_platform {
+namespace meta
+{
+namespace meta_algorithm
+{
+
+}
+}
 
 namespace runtime {
 
@@ -65,10 +75,23 @@ namespace relations {
 
 
 
-class relation_instance_data 
+class relation_connector 
 {
 
   public:
+      virtual ~relation_connector();
+
+
+      virtual rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+
+      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+
+      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+
+      virtual rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor) = 0;
+
+      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+
 
   protected:
 
@@ -86,18 +109,9 @@ class relation_instance_data
 class relation_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(relation_runtime);
+    
     friend class algorithms::object_runtime_algorithms<object_types::relation_type>;
-
-	enum class relation_state
-	{
-		idle = 0,
-		querying = 1,
-		same_domain = 2,
-		local_domain = 3,
-		remote = 4,
-		stopping = 5,
-	};
-	relation_state my_state_ = relation_state::idle;
+    friend class relation_data;
 
   public:
       relation_runtime();
@@ -109,46 +123,13 @@ class relation_runtime : public rx::pointers::reference_object
 
       string_type get_type_name () const;
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result start_relation (runtime::runtime_start_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void fill_data (const data::runtime_values_data& data);
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
-
-      meta::meta_data& meta_info ();
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
-
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state);
-
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state);
-
-      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
-
-
-      const relation_instance_data& get_instance_data () const
-      {
-        return instance_data_;
-      }
-
-
-
-      const meta::meta_data& meta_info () const
-      {
-        return meta_info_;
-      }
+      virtual rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
 
       static rx_item_type get_type_id ()
@@ -158,32 +139,14 @@ class relation_runtime : public rx::pointers::reference_object
 
 
 
-      string_type name;
-
       static string_type type_name;
 
-      rx_node_id target_base_id;
-
-      rx_node_id target_relation_type;
-
-      string_type target;
-
-      rx_node_id target_id;
-
       static rx_item_type type_id;
-
-      string_type object_directory;
-
-      runtime_handle_t runtime_handle;
-
-      structure::value_data value;
 
 
   protected:
 
   private:
-
-      void try_resolve ();
 
       virtual rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
 
@@ -193,16 +156,6 @@ class relation_runtime : public rx::pointers::reference_object
 
 
 
-      relation_instance_data instance_data_;
-
-      std::unique_ptr<relation_connector> connector_;
-
-
-      meta::meta_data meta_info_;
-
-      rx_thread_handle_t executer_;
-
-
 };
 
 
@@ -210,27 +163,88 @@ class relation_runtime : public rx::pointers::reference_object
 
 
 
-class relation_connector 
+
+class relation_data 
 {
+    friend class meta::meta_algorithm::relation_blocks_algorithm;
+    friend class rx_internal::model::relations_type_repository;
+    enum class relation_state
+    {
+        idle = 0,
+        querying = 1,
+        same_domain = 2,
+        local_domain = 3,
+        remote = 4,
+        stopping = 5,
+    };
+    relation_state my_state_ = relation_state::idle;
 
   public:
-      virtual ~relation_connector();
+      relation_data();
 
 
-      virtual rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+      virtual rx_result initialize_relation (runtime::runtime_init_context& ctx);
 
-      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+      virtual rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state) = 0;
+      virtual rx_result start_relation (runtime::runtime_start_context& ctx);
 
-      virtual rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor) = 0;
+      virtual rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
-      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
+
+      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
+
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
+
+      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
+
+      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
+
+
+      string_type name;
+
+      rx_node_id target_base_id;
+
+      structure::value_data value;
+
+      string_type object_directory;
+
+      runtime_handle_t runtime_handle;
+
+      string_type target;
+
+      rx_node_id target_id;
+
+      rx_node_id target_relation_type;
 
 
   protected:
 
   private:
+
+      void try_resolve ();
+
+
+
+      rx_reference<relation_runtime> implementation_;
+
+      std::unique_ptr<relation_connector> connector_;
+
+
+      rx_thread_handle_t executer_;
+
+      runtime_process_context* context_;
+
+      rx_reference_ptr reference_ptr_;
 
 
 };

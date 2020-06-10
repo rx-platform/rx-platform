@@ -80,12 +80,7 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
 	if (!resolve_result)
 	{
-		rx_result ret(resolve_result.errors());
-		ret.register_error("Unable to resolve attribute");
-		for (const auto& one : resolve_result.errors())
-		{
-			ctx.add_error(one);
-		}
+		ctx.add_error("Unable to resolve attribute", RX_ITEM_NOT_FOUND, rx_medium_severity, resolve_result.errors());
 		return false;
 	}
 	target_id = resolve_result.value();
@@ -97,12 +92,8 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 			<< rx_item_type_name(typeT::TargetType::type_id)
 			<< " in attribute "
 			<< whose.name_;
-		
-		ctx.add_error(ss.str());
-		for (const auto& one : target.errors())
-		{
-			ctx.add_error(one);
-		}
+
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
 	}
 	return ctx.is_check_ok();
 }
@@ -173,8 +164,8 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
-		temp.value().set_value(whose.get_value(ctx.now));
-		ctx.runtime_data.add_variable(whose.name_, std::move(temp.value()), whose.get_value(ctx.now));
+		temp.value().value = whose.get_value(ctx.now);
+		ctx.runtime_data.add_variable(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -224,8 +215,8 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
-		temp.value().source_ptr->io_.set_input(whose.io_.input);
-		temp.value().source_ptr->io_.set_output(whose.io_.output);
+		temp.value().io_.set_input(whose.io_.input);
+		temp.value().io_.set_output(whose.io_.output);
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
 		return true;
 	}
@@ -277,8 +268,8 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
-		temp.value().mapper_ptr->io_.set_input(whose.io_.input);
-		temp.value().mapper_ptr->io_.set_output(whose.io_.output);
+		temp.value().io_.set_input(whose.io_.input);
+		temp.value().io_.set_output(whose.io_.output);
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
 		return true;
 	}
@@ -330,8 +321,8 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target);
 	if (temp)
 	{
-		temp.value().filter_ptr->io_.set_input(whose.io_.input);
-		temp.value().filter_ptr->io_.set_output(whose.io_.output);
+		temp.value().io_.set_input(whose.io_.input);
+		temp.value().io_.set_output(whose.io_.output);
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
 		return true;
 	}
@@ -381,6 +372,7 @@ rx_result basic_types_algorithm<typeT>::deserialize_basic_type (typeT& whose, ba
 template <class typeT>
 bool basic_types_algorithm<typeT>::check_basic_type (typeT& whose, type_check_context& ctx)
 {
+	type_check_source _(whose.meta_info().get_full_path(), &ctx);
 	auto ret = whose.complex_data_.check_type(ctx);
 	return ret;
 }
@@ -471,6 +463,7 @@ rx_result basic_types_algorithm<struct_type>::deserialize_basic_type(struct_type
 template <>
 bool basic_types_algorithm<variable_type>::check_basic_type(variable_type& whose, type_check_context& ctx)
 {
+	type_check_source _(whose.meta_info().get_full_path(), &ctx);
 	auto ret = whose.complex_data_.check_type(ctx);
 	ret = ret && whose.variable_data_.check_type(ctx);
 	ret = ret && whose.mapping_data_.check_type(ctx);
@@ -479,6 +472,7 @@ bool basic_types_algorithm<variable_type>::check_basic_type(variable_type& whose
 template <>
 bool basic_types_algorithm<struct_type>::check_basic_type(struct_type& whose, type_check_context& ctx)
 {
+	type_check_source _(whose.meta_info().get_full_path(), &ctx);
 	auto ret = whose.complex_data_.check_type(ctx);
 	ret = ret && whose.mapping_data_.check_type(ctx);
 	return ret;
@@ -539,8 +533,8 @@ rx_result object_types_algorithm<typeT>::serialize_object_type (const typeT& who
 	{
 		if (!stream.start_object("item"))
 			return false;
-
-		if (!one.serialize_definition(stream, type))
+		
+		if (!relation_blocks_algorithm::serialize_relation_attribute(one, stream))
 			return false;
 
 		if (!stream.end_object())
@@ -585,7 +579,7 @@ rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, 
 			return false;
 
 		relation_attribute one;
-		if (!one.deserialize_definition(stream, type))
+		if (!relation_blocks_algorithm::deserialize_relation_attribute(one, stream))
 			return false;
 		whose.object_data_.relations_.emplace_back(one);
 
@@ -602,6 +596,7 @@ rx_result object_types_algorithm<typeT>::deserialize_object_type (typeT& whose, 
 template <class typeT>
 bool object_types_algorithm<typeT>::check_object_type (typeT& whose, type_check_context& ctx)
 {
+	type_check_source _(whose.meta_info().get_full_path(), &ctx);
 	bool ret = whose.complex_data_.check_type(ctx);
 	ret &= whose.mapping_data_.check_type(ctx);
 	ret &= whose.object_data_.check_type(ctx);
@@ -619,10 +614,12 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 		{
 			for (const auto& one : whose.object_data_.relations_)
 			{
-				auto one_result = one.construct(ctx);
-				if (!one_result)
-					return one_result.errors();
-				what->relations_.emplace_back(one_result.value());
+				runtime::relations::relation_data data;
+				ret = meta_algorithm::relation_blocks_algorithm::construct_relation_attribute(one, data, ctx);
+				if (ret)
+				{
+					what->relations_.emplace_back(std::move(data));
+				}
 			}
 		}
 	}
@@ -671,6 +668,8 @@ bool object_types_algorithm<relation_type>::check_object_type(relation_type& who
 	if (whose.inverse_reference_.is_null())
 		return true;
 
+	type_check_source _(whose.meta_info().get_full_path(), &ctx);
+
 	rx_node_id target_id;
 	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.inverse_reference_, ctx.get_directories());
 	if (!resolve_result)
@@ -689,11 +688,7 @@ bool object_types_algorithm<relation_type>::check_object_type(relation_type& who
 			<< " as inverse relation type in relation "
 			<< whose.meta_info().get_full_path();
 
-		ctx.add_error(ss.str());
-		for (const auto& one : target.errors())
-		{
-			ctx.add_error(one);
-		}
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
 	}
 	return ctx.is_check_ok();
 }
@@ -755,16 +750,12 @@ bool relation_blocks_algorithm::check_relation_attribute (object_types::relation
 			<< " in attribute "
 			<< whose.name_;
 
-		ctx.add_error(ss.str());
-		for (const auto& one : target.errors())
-		{
-			ctx.add_error(one);
-		}
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
 	}
 	return ctx.is_check_ok();
 }
 
-rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, construct_context& ctx)
+rx_result relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, construct_context& ctx)
 {
 	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.relation_type_, ctx.get_directories());
 	if (!resolve_result)
@@ -782,27 +773,27 @@ rx_result_with<runtime::relation_runtime_ptr> relation_blocks_algorithm::constru
 		return ret.errors();
 	}
 	auto target_base_id = resolve_result.value();
-	runtime::relations::relation_instance_data data;
 
-	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, std::move(data), ctx.get_directories());
+	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, data, ctx.get_directories());
 	if (ret_val)
 	{
-		ret_val.value()->name = whose.name_;
-		ret_val.value()->target_base_id = target_base_id;
+		data.name = whose.name_;
+		data.target_base_id = target_base_id;
 		rx_timed_value str_val;
 		str_val.assign_static<string_type>("", ctx.now);
-		ret_val.value()->value = runtime::structure::value_data{ str_val, false };
+		data.value = runtime::structure::value_data{ str_val, false };
+		data.implementation_ = ret_val.value();
 		// this is something i still don't know about
 		// it will have to wait
 		//!!!!!
 		/*rx_timed_value val;
 		val.assign_static<string_type>("", ctx.now);
 		ctx.runtime_data.add_value(whose.name_, val);*/
-		return ret_val;
+		return true;
 	}
 	else
 	{
-		return ret_val;
+		return ret_val.errors();
 	}
 }
 

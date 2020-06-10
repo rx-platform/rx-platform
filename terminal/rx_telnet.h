@@ -37,8 +37,8 @@
 #include "dummy.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 
 
 
@@ -111,7 +111,7 @@ private:
 
 
 
-typedef rx_platform::runtime::io_types::std_transport_impl< rx_internal::terminal::term_transport::telnet_transport  > telnet_std_transport;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< telnet_transport  > telnet_std_transport;
 
 
 

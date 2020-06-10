@@ -280,7 +280,6 @@ rx_result create_directory(const std::string& dir, bool fail_on_exsists)
 }
 rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern)
 {
-	bool succeeded = true;
 	std::vector<std::string> files;
 	std::vector<std::string> dirs;
 	auto result = rx_list_files(dir, pattern, files,dirs);
@@ -290,7 +289,7 @@ rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern
 		{
 			string_type temp_path = rx_combine_paths(dir, one);
 			if (!rx_file_delete(temp_path.c_str()))
-				succeeded = false;
+				return rx_result::create_from_last_os_error("Error deleting file.");
 		}
 	}
 	return result;
@@ -573,6 +572,11 @@ rx_item_reference& rx_item_reference::operator = (const string_type& right)
 bool rx_item_reference::is_node_id() const
 {
 	return is_id_;
+}
+
+string_type rx_item_reference::to_string() const
+{
+	return is_id_ ? id_.to_string() : path_;
 }
 
 const string_type& rx_item_reference::get_path() const

@@ -611,11 +611,11 @@ uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 	else if(ret==1)
 	{
         //do the read to release it
-        read(what, &buff, sizeof(buff));
-        return RX_WAIT_0;
+        ret = read(what, &buff, sizeof(buff));
+        if(ret>0)
+            return RX_WAIT_0;
     }
-	else
-        return RX_WAIT_ERROR;
+    return RX_WAIT_ERROR;
 
 }
 uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
@@ -638,11 +638,11 @@ uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
 	else if(ret==1)
 	{
         //do the read to release it
-        read(what, &buff, sizeof(buff));
-        return RX_WAIT_0;
+        ret = read(what, &buff, sizeof(buff));
+        if(ret>0)
+            return RX_WAIT_0;
     }
-	else
-        return RX_WAIT_ERROR;
+    return RX_WAIT_ERROR;
 
 }
 uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t timeout)
@@ -674,13 +674,15 @@ uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t t
 			{
 				if (first<0)
 					first = (int)i;
-				read(pfds[i].fd, &buff, sizeof(buff));
+				ret = read(pfds[i].fd, &buff, sizeof(buff));
+				if(ret<=0)
+                    break;
 			}
 		}
-		return RX_WAIT_0 + first;
+		if(ret>0)
+            return RX_WAIT_0 + first;
 	}
-	else
-		return RX_WAIT_ERROR;
+	return RX_WAIT_ERROR;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -708,8 +710,11 @@ int rx_mutex_release(sys_handle_t hndl)
 
 	eventfd_t val = 1;
 	int fd = (int)hndl;
-	write(fd, &val, sizeof(val));
-	return RX_ERROR;
+	int ret = write(fd, &val, sizeof(val));
+	if(ret<0)
+        return RX_ERROR;
+    else
+        return RX_OK;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #define MANUAL_EVENT
@@ -732,8 +737,11 @@ int rx_event_set(sys_handle_t hndl)
 {
 	eventfd_t val = 0xfffffffe;
 	int fd = (int)hndl;
-	write(fd, &val, sizeof(val));
-	return RX_ERROR;
+	int ret = write(fd, &val, sizeof(val));
+	if(ret<0)
+        return RX_ERROR;
+    else
+        return RX_OK;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -808,6 +816,7 @@ typedef struct linux_thread_chunk
 
 void* do_stuff(void* arg)
 {
+    int ret;
 	struct linux_thread_chunk* start_chunk = (struct linux_thread_chunk*)arg;
 	eventfd_t buff = 1;
 	start_address_t addr = start_chunk->f;
@@ -818,7 +827,9 @@ void* do_stuff(void* arg)
 	//start_chunk.f(NULL);
 	//(start_chunk->f)(start_chunk->arg);
 
-	write(start_chunk->thread_fd, &buff, sizeof(buff));
+	ret = write(start_chunk->thread_fd, &buff, sizeof(buff));
+	if(ret<0)
+        perror("Error in do stuff - write.");
 	return NULL;
 }
 
@@ -879,8 +890,11 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 int rx_thread_join(sys_handle_t what)
 {
 	eventfd_t buff = 0;
-	read(what, &buff, sizeof(buff));
-	return RX_ERROR;
+	int ret = read(what, &buff, sizeof(buff));
+	if(ret<0)
+        return RX_ERROR;
+    else
+        return RX_OK;
 }
 int rx_thread_close(sys_handle_t what)
 {

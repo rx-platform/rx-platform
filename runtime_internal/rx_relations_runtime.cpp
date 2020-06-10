@@ -55,17 +55,17 @@ local_relation_connector::local_relation_connector (platform_item_ptr&& item)
 
 
 
-rx_result local_relation_connector::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result local_relation_connector::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result local_relation_connector::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result local_relation_connector::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result_with<runtime_handle_t> local_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> local_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     string_array paths{ path };
     auto result = item_ptr_->connect_items(paths, monitor);
@@ -87,17 +87,17 @@ rx_result local_relation_connector::browse (const string_type& prefix, const str
 // Class rx_internal::sys_runtime::relations_runtime::remote_relation_connector 
 
 
-rx_result remote_relation_connector::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result remote_relation_connector::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result remote_relation_connector::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result remote_relation_connector::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result_with<runtime_handle_t> remote_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, const structure::hosting_object_data& state)
+rx_result_with<runtime_handle_t> remote_relation_connector::connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -116,4 +116,5 @@ rx_result remote_relation_connector::browse (const string_type& prefix, const st
 } // namespace relations_runtime
 } // namespace sys_runtime
 } // namespace rx_internal
+
 

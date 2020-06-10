@@ -34,7 +34,7 @@
 // rx_errors
 #include "rx_errors.h"
 
-const char* rx_get_error_text(uint32_t code)
+const char* rx_get_error_text(rx_error_code_t code)
 {
 	switch (code)
 	{

@@ -39,43 +39,14 @@
 #include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
 #include "system/runtime/rx_runtime_helpers.h"
+#include "system/runtime/rx_rt_struct.h"
 using namespace rx_platform::ns;
 using namespace rx::values;
 
 
 namespace rx_platform {
-namespace meta
-{
-class runtime_data_prototype;
-
-namespace def_blocks
-{
-	class complex_data_type;
-    class source_attribute;
-    class mapper_attribute;
-    class filter_attribute;
-}
-namespace basic_types
-{
-	class struct_type;
-	class variable_type;
-	class source_type;
-	class mapper_type;
-	class filter_type;
-	class event_type;
-}
-namespace object_types
-{
-	class object_data_type;
-}
-}
 
 namespace runtime {
-
-namespace relations {
-class relation_instance_data;
-
-} // namespace relations
 
 namespace blocks {
 
@@ -89,10 +60,6 @@ class filter_runtime : public rx::pointers::reference_object
 filter runtime. basic implementation of an filter runtime");
 
 	DECLARE_REFERENCE_PTR(filter_runtime);
-
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::filter_attribute>;
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::filter_type;
     friend class structure::filter_data;
 
   public:
@@ -103,21 +70,13 @@ filter runtime. basic implementation of an filter runtime");
 
       string_type get_type_name () const;
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_filter (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result start_filter (runtime::runtime_start_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result stop_filter (runtime::runtime_stop_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      bool is_input () const;
-
-      bool is_output () const;
-
-      virtual rx_result filter_write_value (rx_simple_value& val);
-
-      virtual rx_result filter_read_value (rx_value& val);
+      virtual rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
 
 
       static string_type type_name;
@@ -131,11 +90,77 @@ filter runtime. basic implementation of an filter runtime");
 
       virtual bool supports_output () const;
 
+      virtual rx_result filter_input (rx_value& val);
+
+      virtual rx_result filter_output (rx_simple_value& val);
 
 
-      structure::mapper_data* container_;
 
-      io_capabilities io_;
+      structure::filter_data* container_;
+
+
+};
+
+
+
+
+
+
+class source_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+source runtime. basic implementation of an source runtime");
+
+	DECLARE_REFERENCE_PTR(source_runtime);
+    friend class structure::source_data;
+
+  public:
+      source_runtime();
+
+      virtual ~source_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_source (runtime::runtime_init_context& ctx);
+
+      virtual rx_result start_source (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_source (runtime::runtime_stop_context& ctx);
+
+      virtual rx_result deinitialize_source (runtime::runtime_deinit_context& ctx);
+
+      bool is_input () const;
+
+      bool is_output () const;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+      rx_result source_value_changed (rx_value&& val);
+
+      void source_result_received (rx_result&& result, runtime_transaction_id_t id);
+
+
+      rx_value_t get_value_type () const;
+
+
+  private:
+
+      virtual bool supports_input () const;
+
+      virtual bool supports_output () const;
+
+      virtual rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+
+
+
+      structure::source_data* container_;
+
+      rx_value_t value_type_;
 
 
 };
@@ -151,10 +176,7 @@ class struct_runtime : public rx::pointers::reference_object
 struct runtime. basic implementation of an struct runtime");
 
 	DECLARE_REFERENCE_PTR(struct_runtime);
-
-	typedef std::vector<mapper_runtime_ptr> mappers_type;
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::struct_type;
+    friend class structure::struct_data;
 
   public:
       struct_runtime();
@@ -162,19 +184,15 @@ struct runtime. basic implementation of an struct runtime");
       virtual ~struct_runtime();
 
 
-      bool serialize_definition (base_meta_writer& stream, uint8_t type, const rx_time& ts, const rx_mode_type& mode) const;
-
-      bool deserialize_definition (base_meta_reader& stream, uint8_t type);
-
       string_type get_type_name () const;
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_struct (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result start_struct (runtime::runtime_start_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result stop_struct (runtime::runtime_stop_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+      virtual rx_result deinitialize_struct (runtime::runtime_deinit_context& ctx);
 
 
       static string_type type_name;
@@ -198,9 +216,7 @@ class variable_runtime : public rx::pointers::reference_object
 variable runtime. basic implementation of an variable runtime");
 
 	DECLARE_REFERENCE_PTR(variable_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::variable_type;
+    friend class structure::variable_data;
 
   public:
       variable_runtime();
@@ -210,17 +226,13 @@ variable runtime. basic implementation of an variable runtime");
 
       string_type get_type_name () const;
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_variable (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result deinitialize_variable (runtime::runtime_deinit_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result start_variable (runtime::runtime_start_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      virtual rx_result write_value (rx_simple_value&& val, const structure::write_context& ctx, runtime_sources_type& sources);
-
-      virtual rx_value select_input (algorithms::runtime_process_context* ctx, runtime_sources_type& sources);
+      virtual rx_result stop_variable (runtime::runtime_stop_context& ctx);
 
 
       static string_type type_name;
@@ -229,6 +241,11 @@ variable runtime. basic implementation of an variable runtime");
   protected:
 
   private:
+
+      virtual rx_value select_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
+
+      virtual rx_result variable_write (structure::write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
+
 
 
 };
@@ -244,9 +261,7 @@ class event_runtime : public rx::pointers::reference_object
 event runtime. basic implementation of an event runtime");
 
 	DECLARE_REFERENCE_PTR(event_runtime);
-
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::event_type;
+    friend class structure::event_data;
 
   public:
       event_runtime();
@@ -256,13 +271,13 @@ event runtime. basic implementation of an event runtime");
 
       string_type get_type_name () const;
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_event (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result start_event (runtime::runtime_start_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result stop_event (runtime::runtime_stop_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+      virtual rx_result deinitialize_event (runtime::runtime_deinit_context& ctx);
 
 
       static string_type type_name;
@@ -280,71 +295,41 @@ event runtime. basic implementation of an event runtime");
 
 
 
-class source_runtime : public rx::pointers::reference_object  
+class mapper_start_context 
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
-source runtime. basic implementation of an source runtime");
-
-	DECLARE_REFERENCE_PTR(source_runtime);
-
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::source_attribute>;
-	friend class meta::def_blocks::source_attribute;
-	friend class meta::basic_types::source_type;
-    friend class structure::source_data;
 
   public:
-      source_runtime();
 
-      virtual ~source_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      virtual rx_result write_value (rx_simple_value&& val, const structure::write_context& ctx);
-
-      virtual rx_result filter_output_value (rx_simple_value& val, runtime_filters_type& filters);
-
-      virtual rx_result filter_input_value (rx_simple_value& val, runtime_filters_type& filters);
-
-      bool is_input () const;
-
-      bool is_output () const;
-
-      const rx_value& get_current_value () const;
-
-
-      static string_type type_name;
+      rx_value& init_value ();
 
 
   protected:
 
-      rx_result value_changed (rx_value&& val);
-
-
   private:
 
-      virtual bool supports_input () const;
 
-      virtual bool supports_output () const;
-
-
-
-      structure::source_data* container_;
-
-      io_capabilities io_;
-
-      rx_value current_value_;
+      rx_value* initial_value_;
 
 
 };
+
+
+
+
+
+
+class mapper_stop_context 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
 
 
 
@@ -357,9 +342,6 @@ class mapper_runtime : public rx::pointers::reference_object
 mapper runtime. basic implementation of an mapper runtime");
 
 	DECLARE_REFERENCE_PTR(mapper_runtime);
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::mapper_attribute>;
-	friend class meta::def_blocks::complex_data_type;
-	friend class meta::basic_types::mapper_type;
     friend class structure::mapper_data;
 
   public:
@@ -372,15 +354,17 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual rx_result initialize_mapper (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_mapper (runtime::runtime_deinit_context& ctx);
-
       virtual rx_result start_mapper (runtime::runtime_start_context& ctx);
 
       virtual rx_result stop_mapper (runtime::runtime_stop_context& ctx);
 
+      virtual rx_result deinitialize_mapper (runtime::runtime_deinit_context& ctx);
+
       bool can_read () const;
 
       bool can_write () const;
+
+      threads::job_thread* get_jobs_queue ();
 
 
       static string_type type_name;
@@ -393,6 +377,9 @@ mapper runtime. basic implementation of an mapper runtime");
       void map_current_value () const;
 
 
+      rx_value_t get_value_type () const;
+
+
   private:
 
       virtual bool supports_read () const;
@@ -401,13 +388,13 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual void mapped_value_changed (rx_value&& val);
 
-      virtual void mapper_write_result (rx_result&& result, runtime_transaction_id_t id);
+      virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id);
 
 
 
       structure::mapper_data* container_;
 
-      io_capabilities io_;
+      rx_value_t value_type_;
 
 
 };
