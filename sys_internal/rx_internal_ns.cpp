@@ -147,20 +147,20 @@ template <class TImpl>
 values::rx_value rx_item_implementation<TImpl>::get_value () const
 {
     values::rx_value ret;
-    ret.assign_static(impl_->meta_info().get_version());
+    ret.assign_static(impl_->meta_info().version);
 	return ret;
 }
 
 template <class TImpl>
 string_type rx_item_implementation<TImpl>::get_name () const
 {
-	return impl_->meta_info().get_name();
+	return impl_->meta_info().name;
 }
 
 template <class TImpl>
 rx_node_id rx_item_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_info().get_id();
+	return impl_->meta_info().id;
 }
 
 template <class TImpl>
@@ -172,20 +172,6 @@ rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) co
 		ret = impl_->serialize(stream, STREAMING_TYPE_OBJECT);
 		if (ret)
 			stream.write_footer();
-	}
-	return ret;
-}
-
-template <class TImpl>
-rx_result rx_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
-{
-	int type;
-	auto ret = stream.read_header(type);
-	if (ret)
-	{
-		ret = impl_->deserialize(stream, STREAMING_TYPE_OBJECT);
-		if (ret)
-			stream.read_footer();
 	}
 	return ret;
 }
@@ -209,7 +195,7 @@ rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
 {
 	return impl_->write_value(path, std::move(val), std::move(callback), ctx, rx_thread_context());
 }
@@ -288,6 +274,12 @@ rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& st
     return impl_->deserialize_value(stream, type);
 }
 
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::save () const
+{
+	return rx_save_platform_item(*this);
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
@@ -314,7 +306,7 @@ values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_name () const
 {
-	return impl_->meta_info().get_name();
+	return impl_->meta_info().name;
 }
 
 template <class TImpl>
@@ -326,7 +318,7 @@ void rx_meta_item_implementation<TImpl>::fill_code_info (std::ostream& info, con
 template <class TImpl>
 rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_info().get_id();
+	return impl_->meta_info().id;
 }
 
 template <class TImpl>
@@ -336,12 +328,6 @@ rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& strea
 	auto ret = impl_->serialize_definition(stream, STREAMING_TYPE_TYPE);
 	stream.write_footer();
 	return ret;
-}
-
-template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::deserialize (base_meta_reader& stream)
-{
-	return false;
 }
 
 template <class TImpl>
@@ -357,7 +343,7 @@ rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& pat
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+rx_result rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
 {
 	return RX_NOT_IMPLEMENTED;
 }
@@ -447,6 +433,12 @@ rx_result rx_meta_item_implementation<TImpl>::deserialize_value (base_meta_reade
     return "Not valid for this type!";
 }
 
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::save () const
+{
+	return rx_save_platform_item(*this);
+}
+
 
 // Class rx_internal::internal_ns::internal_directory 
 
@@ -499,17 +491,11 @@ void rx_other_implementation<TImpl>::fill_code_info (std::ostream& info, const s
 template <class TImpl>
 rx_node_id rx_other_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_info().get_id();
+	return impl_->meta_info().id;
 }
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-	return "Not valid for this item";
-}
-
-template <class TImpl>
-rx_result rx_other_implementation<TImpl>::deserialize (base_meta_reader& stream)
 {
 	return "Not valid for this item";
 }
@@ -527,7 +513,7 @@ rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, r
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx)
+rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
 {
 	return RX_NOT_IMPLEMENTED;
 }
@@ -596,6 +582,12 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
 {
     return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::save () const
+{
+	return rx_save_platform_item(*this);
 }
 
 
@@ -678,7 +670,7 @@ template class rx_internal::internal_ns::rx_item_implementation<rx_application_p
 template class rx_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
 template class rx_internal::internal_ns::rx_item_implementation<rx_port_ptr>;
 template class rx_internal::internal_ns::rx_other_implementation<testing::test_case::smart_ptr>;
-template class rx_internal::internal_ns::rx_other_implementation<terminal::server_command_ptr>;
+template class rx_internal::internal_ns::rx_other_implementation<rx_internal::terminal::server_command_ptr>;
 template class rx_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
 
 template class rx_internal::internal_ns::rx_meta_item_implementation<rx_application_type_ptr>;

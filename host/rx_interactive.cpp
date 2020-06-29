@@ -548,7 +548,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		bool result = host_->read_stdin(in_buffer, count);
 		if (!result)
 		{
-			ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
+			HOST_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
 			break;
 		}
 		if (count > 0)
@@ -562,8 +562,8 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 				ss << "Error code " << (int)res << "(" << rx_protocol_error_message(res) << ") returned by stack!\r\n";
 				std::cout << ss.str();
 
-				ITF_LOG_ERROR("interactive_console_endpoint", 900, ss.str());
-				ITF_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
+				HOST_LOG_ERROR("interactive_console_endpoint", 900, ss.str());
+				HOST_LOG_ERROR("interactive_console_endpoint", 900, "Error reading <stdin>, exiting!");
 				break;
 			}
 		}
@@ -574,25 +574,27 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference);
+	using job_type = rx::jobs::function_job<rx_reference_ptr, std::vector<uint8_t>&&>;
+	std::vector<uint8_t> captured(buffer->buffer_ptr, buffer->buffer_ptr + buffer->size);
 
-	self->std_out_sender_.append(
-		rx_create_reference<jobs::lambda_job<rx_packet_buffer> >(
-			[self](rx_packet_buffer buffer)
+	rx::function_to_go<rx_reference_ptr, std::vector<uint8_t>&&> send_func(rx_reference_ptr(), [self](std::vector<uint8_t>&& buffer)
+		{
+			auto result = self->host_->write_stdout(&buffer[0], buffer.size());
+			if (result)
 			{
-				auto result = self->host_->write_stdout(buffer.buffer_ptr, buffer.size);
-				if (result)
-				{
-					self->sent_func_(buffer.size);
-					rx_move_result_up(self, RX_PROTOCOL_OK);
-				}
-				else
-				{
-					std::cout << "Error sending data to std out\r\n";
-				}
-				rx_deinit_packet_buffer(&buffer);
-			},
-			*buffer)
-		);
+				self->sent_func_(buffer.size());
+				rx_move_result_up(self, RX_PROTOCOL_OK);
+			}
+			else
+			{
+				std::cout << "Error sending data to std out\r\n";
+			}
+		});
+
+	send_func.set_arguments(std::move(captured));
+	auto job = rx_create_reference<job_type>(std::move(send_func));
+
+	self->std_out_sender_.append(job);
 
 	return RX_PROTOCOL_OK;
 }

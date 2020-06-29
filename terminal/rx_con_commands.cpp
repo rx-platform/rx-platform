@@ -61,7 +61,7 @@ bool dump_info(std::ostream& out, rx_namespace_item& item)
 	values::rx_value val(item.get_value());
 	fill_quality_string(val, quality_string);
 	string_type attrs;
-	ns::fill_attributes_string(item.get_meta().get_attributes(), attrs);
+	ns::fill_attributes_string(item.get_meta().attributes, attrs);
 	string_type console;
 	string_type storage_name(RX_NULL_ITEM_NAME);
 	string_type storage_reference(RX_NULL_ITEM_NAME);
@@ -75,8 +75,8 @@ bool dump_info(std::ostream& out, rx_namespace_item& item)
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << item.get_meta().get_name() << "\r\n";
-	out << "Path       : " << item.get_meta().get_path() << "\r\n";
+	out << "Name       : " << item.get_meta().name << "\r\n";
+	out << "Path       : " << item.get_meta().path << "\r\n";
 	if(!console.empty())
 		out << "Console    : " << console << "\r\n";
 	out << "Type       : " << rx_item_type_name(item.get_type()) << "\r\n";
@@ -169,15 +169,15 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
-	out << "Name       : " << info.get_name() << "\r\n";
-	out << "Full Path  : " << info.get_path() << "\r\n";
+	out << "Name       : " << info.name << "\r\n";
+	out << "Full Path  : " << info.path << "\r\n";
 	out << "Type       : "  RX_CPP_DIRECORY_TYPE_NAME "\r\n";
 	out << "Attributes : " << attrs << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : " << "<<null>>" << "\r\n";
 	out << "Quality	   : " << quality_stirng << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";
-	out << "Created    : " << info.get_created_time().get_string() << "\r\n";
+	out << "Created    : " << info.created_time.get_string() << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Class      : " << cls_name << "\r\n";
 	out << "Has Code   : " << (has_code ? "true" : "false") << "\r\n";
@@ -421,7 +421,7 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 				ctx->get_stdout() << line << "\r\n";
 				ctx->send_results(true);
 			};
-		rx_post_function_to<rx_reference_ptr, console_context_ptr>(ctx->get_executer(), func, api_ctx.object, ctx);
+		rx_post_function_to(ctx->get_executer(), api_ctx.object, std::move(func), ctx);
 	};
 
 
@@ -495,7 +495,7 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 		table[0].emplace_back("Source Code");
 
 	size_t idx = 1;
-	
+
 	for (auto i = first_index; i < full_count; i++)
 	{
 		auto& one = items[i];
@@ -778,8 +778,8 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 			return resolve_result;
 
 		}
-		rx_result result = model::algorithms::do_with_item<bool>(resolve_result.value()
-			, [ctx, this](rx_result_with<platform_item_ptr>&& data) -> bool
+		rx_result result = model::algorithms::do_with_item(resolve_result.move_value()
+			, [ctx, this](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
 			{
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
@@ -792,10 +792,12 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 					dump_error_result(err, data);
 					return false;
 				}
-			}, [ctx](bool&& result) mutable
-			{
-				ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
-			}, context);
+			}
+			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
+				{
+					bool arg = result;
+					ctx->get_client()->process_event(arg, ctx->get_out(), ctx->get_err(), true);
+				}), context);
 		if (result)
 		{
 			ctx->set_waiting();

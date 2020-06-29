@@ -346,7 +346,7 @@ class runtime_response_message : public rx_message_base
       rx_result deserialize (base_meta_reader& stream);
 
 
-      typename itemT::RTypePtr item;
+      typename itemT::instance_data_t item;
 
 
   protected:

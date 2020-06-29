@@ -145,7 +145,7 @@ rx_result derived_types_query::do_query(api::query_result& result, rx_directory_
 		auto item = dir->get_sub_item(base_type);
 		if (!item)
 			return base_type + " not found!";
-		id = item.get_meta().get_id();
+		id = item.get_meta().id;
 	}
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<T>().get_derived_types(id);
 
@@ -160,7 +160,7 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, rx_dir
 		auto item = dir->get_sub_item(base_type);
 		if (!item)
 			return base_type + " not found!";
-		id = item.get_meta().get_id();
+		id = item.get_meta().id;
 	}
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<T>().get_derived_types(id);
 
@@ -175,7 +175,7 @@ rx_result derived_types_query::do_relation_query(api::query_result& result, rx_d
 		auto item = dir->get_sub_item(base_type);
 		if (!item)
 			return base_type + " not found!";
-		id = item.get_meta().get_id();
+		id = item.get_meta().id;
 	}
 	result = rx_internal::model::platform_types_manager::instance().get_relations_repository().get_derived_types(id);
 
@@ -290,7 +290,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 					auto item = dir->get_sub_item(instance_name);
 					if (!item)
 						return type_name + " not found!";
-					id = item.get_meta().get_id();
+					id = item.get_meta().id;
 				}
 				auto app_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
@@ -310,7 +310,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 					auto item = dir->get_sub_item(instance_name);
 					if (!item)
 						return type_name + " not found!";
-					id = item.get_meta().get_id();
+					id = item.get_meta().id;
 				}
 				auto app_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
@@ -330,7 +330,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 					auto item = dir->get_sub_item(instance_name);
 					if (!item)
 						return type_name + " not found!";
-					id = item.get_meta().get_id();
+					id = item.get_meta().id;
 				}
 				auto app_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
 				if (app_ptr)

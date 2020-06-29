@@ -35,10 +35,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 #include "system/server/rx_server.h"
 

@@ -34,6 +34,7 @@
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/server/rx_ns.h"
+#include "system/meta/rx_obj_types.h"
 
 
 
@@ -43,23 +44,32 @@ namespace rx_platform {
 namespace runtime {
 
 namespace resolvers {
+enum class resolver_state : uint_fast8_t
+{
+    idle = 0,
+    waiting = 1,
+    querying = 2,
+    resolved = 3,
+    stopped = 4
+};
 
 
 
 
 
-class port_resolver_user 
+template <class typeT>
+class resolver_user 
 {
 
   public:
 
-      virtual bool port_connected (rx_port_impl_ptr port, rx_node_id id) = 0;
+      virtual bool runtime_connected (platform_item_ptr&& item, typename typeT::RImplPtr implementation) = 0;
 
-      virtual void port_disconnected () = 0;
+      virtual void runtime_disconnected () = 0;
 
       virtual rx_reference_ptr get_reference () = 0;
 
-      virtual ~port_resolver_user() = default;
+      virtual ~resolver_user() = default;
   protected:
 
   private:
@@ -96,33 +106,91 @@ class runtime_subscriber
 
 
 
-class item_port_resolver : public runtime_subscriber  
+template <class typeT>
+class runtime_resolver : public runtime_subscriber  
 {
-    enum class resolver_state
-    {
-        idle = 0,
-        waiting = 1,
-        querying = 2,
-        same_thread = 3,
-        other_thread = 4,
-        stopped = 5
-    };
     struct resolve_result
     {
-        rx_port_impl_ptr port;
-        rx_node_id id;
+        typename typeT::RImplPtr implementation;
+        platform_item_ptr item;
         operator bool() const
         {
-            return port;
+            return implementation;
         }
+        resolve_result() = default;
+        resolve_result(resolve_result&&) = default;
+        resolve_result& operator=(resolve_result&&) = default;
     };
     resolver_state my_state_ = resolver_state::idle;
 
   public:
 
-      rx_result init (const rx_item_reference& ref, port_resolver_user* user, ns::rx_directory_resolver* dirs);
+      rx_result start_resolver (const rx_item_reference& ref, resolver_user<typeT>* user, ns::rx_directory_resolver* dirs);
 
-      void deinit ();
+      void stop_resolver ();
+
+      void runtime_appeared (platform_item_ptr&& item);
+
+      void runtime_destroyed (const rx_node_id& id);
+
+      rx_reference_ptr get_reference ();
+
+      typedef resolver_user<typeT> resolver_user_type;
+  protected:
+
+  private:
+
+
+      resolver_user<typeT>* user_;
+
+
+      ns::rx_directory_resolver* directories_;
+
+      rx_item_reference runtime_reference_;
+
+      rx_node_id resolved_id_;
+
+
+};
+
+
+
+
+
+
+class item_resolver_user 
+{
+
+  public:
+
+      virtual bool runtime_connected (platform_item_ptr&& item) = 0;
+
+      virtual void runtime_disconnected () = 0;
+
+      virtual rx_reference_ptr get_reference () = 0;
+
+      virtual ~item_resolver_user() = default;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class runtime_item_resolver : public runtime_subscriber  
+{
+    resolver_state my_state_ = resolver_state::idle;
+
+  public:
+
+      rx_result start_resolver (const rx_item_reference& ref, item_resolver_user* user, ns::rx_directory_resolver* dirs);
+
+      void stop_resolver ();
 
       void runtime_appeared (platform_item_ptr&& item);
 
@@ -136,14 +204,12 @@ class item_port_resolver : public runtime_subscriber
   private:
 
 
-      port_resolver_user *user_;
+      item_resolver_user *user_;
 
 
       ns::rx_directory_resolver* directories_;
 
-      rx_item_reference port_reference_;
-
-      rx_node_id resolved_id_;
+      rx_item_reference runtime_reference_;
 
 
 };

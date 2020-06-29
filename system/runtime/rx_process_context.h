@@ -33,6 +33,8 @@
 
 
 #include "rx_runtime_helpers.h"
+#include "lib/rx_rt_data.h"
+#include "system/meta/rx_meta_data.h"
 
 
 namespace rx_platform {
@@ -52,6 +54,61 @@ namespace rx_platform {
 
 namespace runtime {
 
+
+
+
+
+class context_job 
+{
+
+  public:
+
+      virtual void process () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <typename funcT, typename... Args>
+class process_context_job : public context_job  
+{
+
+  public:
+      process_context_job (funcT&& f, Args&&... args)
+          : f_(decay_copy(std::forward<funcT>(f))),
+          data_(decay_copy(std::forward<Args>(handle_copy(args)))...)
+      {
+      }
+
+
+      void process ()
+      {
+          std::apply(f_, data_);
+      }
+
+
+  protected:
+
+  private:
+
+
+      std::decay_t<funcT> f_;
+
+      std::tuple<std::decay_t<Args>...> data_;
+
+
+};
+
+
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -64,10 +121,11 @@ enum class runtime_process_step : uint_fast8_t
     events = 7,
     filters = 8,
     structs = 9,
-    tag_outputs = 10,
-    mapper_outputs = 11,
-    source_outputs = 12,
-    beyond_last = 13
+    own = 10,
+    tag_outputs = 11,
+    mapper_outputs = 12,
+    source_outputs = 13,
+    beyond_last = 14
 };
 template<class T>
 struct write_data_struct
@@ -113,6 +171,9 @@ public:
         }
     }
 };
+
+typedef std::vector<jobs::job_ptr> owner_jobs_type;
+
 typedef std::vector<update_data_struct<structure::mapper_data> > mapper_updates_type;
 typedef std::vector<update_data_struct<structure::source_data> > source_updates_type;
 typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_type;
@@ -127,12 +188,13 @@ typedef std::vector<program_runtime_ptr> programs_type;
 
 
 
+
 class runtime_process_context 
 {
     typedef std::function<void()> fire_callback_func_t;
 
   public:
-      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags);
+      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs);
 
 
       bool should_repeat ();
@@ -205,6 +267,10 @@ class runtime_process_context
 
       rx_result do_command (rx_object_command_t command_type);
 
+      void own_pending (jobs::job_ptr what);
+
+      owner_jobs_type& get_for_own_process ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -218,8 +284,16 @@ class runtime_process_context
       }
 
 
+      ns::rx_directory_resolver* get_directory_resolver () const
+      {
+        return directory_resolver_;
+      }
+
+
 
       rx_time now;
+
+      const meta::meta_data& meta_info;
 
       template<typename T>
       rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
@@ -247,6 +321,12 @@ class runtime_process_context
           values::rx_simple_value temp_val;
           temp_val.assign_static<valT>(std::forward<valT>(value));
           auto result = this->set_value(handle, std::move(temp_val));
+      }
+      template<typename funcT, typename... Args>
+      void send_own(funcT&& func, Args... args)
+      {
+          auto job = rx_create_reference<jobs::function_job>(std::forward<funcT>(func), std::forward<Args>(args)...);
+          own_pending(job);
       }
   protected:
 
@@ -285,6 +365,10 @@ class runtime_process_context
       rx_mode_type mode_;
 
       rx_time mode_time_;
+
+      double_collection<owner_jobs_type> owns_;
+
+      ns::rx_directory_resolver* directory_resolver_;
 
       template<runtime_process_step step>
       void turn_on_pending();

@@ -140,8 +140,9 @@ rx_result_erros_t type_check_context::get_errors () const
 
 // Class rx_platform::meta::construct_context 
 
-construct_context::construct_context ()
+construct_context::construct_context (const string_type& name)
       : now(rx_time::now())
+	, rt_name(name)
 {
 }
 

@@ -54,15 +54,16 @@ class variable_data;
 class runtime_item;
 } // namespace structure
 
+namespace operational {
+class binded_tags;
+} // namespace operational
+
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
 class runtime_process_context;
-namespace operational {
-class binded_tags;
 
-} // namespace operational
 } // namespace runtime
 } // namespace rx_platform
 
@@ -122,7 +123,6 @@ template <class typeT>
 class object_runtime_algorithms;
 }
 }
-typedef rx_reference<pointers::reference_object> rx_reference_ptr;
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::domain_type> > rx_domain_ptr;
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::port_type> > rx_port_ptr;
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::object_type> > rx_object_ptr;
@@ -219,6 +219,35 @@ struct rt_value_ref
 };
 
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
+
+
+
+
+
+class io_capabilities 
+{
+
+  public:
+
+      void set_input (bool val);
+
+      void set_output (bool val);
+
+      bool get_input () const;
+
+      bool get_output () const;
+
+
+  protected:
+
+  private:
+
+
+      std::bitset<2> settings_;
+
+
+};
+
 
 
 
@@ -366,6 +395,10 @@ struct runtime_init_context
 
       ns::rx_directory_resolver* directories;
 
+      rx_time now;
+
+      rx_reference_ptr anchor;
+
   public:
 
   protected:
@@ -400,6 +433,8 @@ struct runtime_start_context
 
       ns::rx_directory_resolver* directories;
 
+      rx_time now;
+
   public:
 
   protected:
@@ -425,35 +460,6 @@ struct runtime_stop_context
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class io_capabilities 
-{
-
-  public:
-
-      void set_input (bool val);
-
-      void set_output (bool val);
-
-      bool get_input () const;
-
-      bool get_output () const;
-
-
-  protected:
-
-  private:
-
-
-      std::bitset<2> settings_;
 
 
 };

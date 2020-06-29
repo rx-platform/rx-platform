@@ -419,7 +419,7 @@ class rx_node_id
 {
 	friend struct std::hash<rx::rx_node_id>;
 public:
-	rx_node_id();
+	rx_node_id() noexcept;
 	rx_node_id(const rx_node_id &right);
 	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
@@ -527,6 +527,7 @@ public:
 	rx_item_reference& operator= (string_type&& right) noexcept;
 	rx_item_reference& operator= (values::rx_simple_value&& right) noexcept;
 
+	static const rx_item_reference null_ref;
 private:
 	void clear_content();
 	bool is_id_;
@@ -571,14 +572,18 @@ struct rx_mode_type
 class rx_time : public rx_time_struct
 {
 public:
-	rx_time();
+	rx_time() noexcept;
+	rx_time(const rx_time&) = default;
+	rx_time(rx_time&&) noexcept = default;
+	rx_time& operator=(const rx_time&) = default;
+	rx_time& operator=(rx_time&&) noexcept = default;
 	rx_time(const timeval& tv);
 	rx_time(const asn_binary_time& bt);
 	rx_time(const asn_generalized_time& bt);
 	rx_time(const rx_time_struct& ft);
 	rx_time(const uint64_t interval);
-	rx_time& operator=(const rx_time_struct& right);
-	rx_time& operator=(const uint64_t interval);
+	rx_time& operator=(const rx_time_struct& right) noexcept;
+	rx_time& operator=(const uint64_t interval) noexcept;
 
 
 	void to_asn_generalized_time(asn_generalized_time& tv) const;
@@ -666,6 +671,7 @@ bool rx_push_thread_context(rx_thread_handle_t obj);
 
 void rx_split_string(const string_type& what, string_vector& result, char delimeter);
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);
+string_type replace_in_string(const string_type& str, const string_type find, const string_type replace);
 string_type& rx_trim_in_place(string_type& str);
 string_type rx_trim(const string_type str);
 

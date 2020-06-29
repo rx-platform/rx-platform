@@ -42,7 +42,8 @@ namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
 namespace relations {
-class relation_runtime;
+class relations_holder;
+class relation_data;
 
 } // namespace relations
 } // namespace runtime
@@ -101,10 +102,11 @@ class rx_tags_callback : public rx::pointers::reference_object
 
 class connected_tags 
 {
+    using relation_ptr = rx_reference<relations::relation_data>;
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
 	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
 	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
-    typedef std::map<relations::relation_data*, runtime_handle_t> relations_type;
+    typedef std::map<relation_ptr, runtime_handle_t> relations_type;
 
 	typedef std::function<void(std::vector<update_item> items)> callback_function_t;
 	struct one_tag_data
@@ -118,8 +120,8 @@ class connected_tags
 
 	typedef std::map<tags_callback_ptr, std::map<runtime_handle_t, rx_value> > next_send_type;
 
-    typedef std::map<string_type, relations::relation_data*> mapped_relations_type;
-    typedef std::map<runtime_handle_t, relations::relation_data*> relation_handles_map_type;
+    typedef std::map<string_type, relation_ptr> mapped_relations_type;
+    typedef std::map<runtime_handle_t, relation_ptr> relation_handles_map_type;
 
   public:
       connected_tags();
@@ -139,13 +141,15 @@ class connected_tags
 
       rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
 
-      void relation_tags_change (relations::relation_runtime* whose, const rx_value& val);
+      void relation_tags_change (relation_ptr whose, const rx_value& val);
 
       void runtime_stopped (const rx_time& now);
 
       void variable_change (structure::variable_data* whose, const rx_value& val);
 
-      void init_tags (runtime_process_context* ctx, std::vector<relations::relation_data>* relations);
+      void init_tags (runtime_process_context* ctx, relations::relations_holder* relations);
+
+      void target_relation_removed (relation_ptr&& whose);
 
 
   protected:
@@ -154,7 +158,7 @@ class connected_tags
 
       rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor);
 
-      relations::relation_data* get_parent_relation (const string_type& name);
+      connected_tags::relation_ptr get_parent_relation (const string_type& name);
 
 
 
@@ -179,7 +183,7 @@ class connected_tags
 
       relation_handles_map_type relations_handles_map_;
 
-      std::vector<relations::relation_data>* parent_relations_;
+      relations::relations_holder* parent_relations_;
 
 
 };

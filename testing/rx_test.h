@@ -47,8 +47,6 @@ class test_case;
 
 } // namespace testing
 
-using namespace rx_internal;
-
 
 using namespace rx;
 
@@ -84,15 +82,15 @@ test cases are divided into several categories. you can use test command to expl
       ~test_command();
 
 
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
-      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_info_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
-      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_run_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
-      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_status_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
-      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
 
   protected:
@@ -118,7 +116,7 @@ class test_program_context : public rx_internal::terminal::console::console_prog
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<terminal::console::console_runtime> client);
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<rx_internal::terminal::console::console_runtime> client);
 
       ~test_program_context();
 
@@ -210,7 +208,7 @@ public:
 
       test_context_data get_data (test_context_data* data = nullptr) const;
 
-      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx);
+      bool do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx);
 
       rx_time get_created_time () const;
 
@@ -351,7 +349,7 @@ public:
 
       test_case::smart_ptr get_test_case (const string_type& test_name);
 
-      test_program_context* create_test_context (terminal::console_context_ptr console_ctx);
+      test_program_context* create_test_context (rx_internal::terminal::console_context_ptr console_ctx);
 
 
   protected:

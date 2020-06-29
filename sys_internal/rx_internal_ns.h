@@ -33,26 +33,57 @@
 
 
 
-// rx_platform_item
-#include "system/server/rx_platform_item.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "system/runtime/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_platform_item
+#include "system/server/rx_platform_item.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
+#include "api/rx_platform_api.h"
 #include "system/server/rx_server.h"
 #include "system/serialization/rx_serialization_defs.h"
 #include "system/meta/rx_types.h"
 #include "system/storage_base/rx_storage.h"
+#include "system/runtime/rx_runtime_holder.h"
 using namespace rx_platform::ns;
 
 
 namespace rx_internal {
 
 namespace internal_ns {
+template<class itemT>
+rx_result rx_save_platform_item(itemT& item)
+{
+    const auto& meta = item.meta_info();
+    auto storage_result = meta.resolve_storage();
+    if (storage_result)
+    {
+        auto item_result = storage_result.value()->get_item_storage(meta);
+        if (!item_result)
+        {
+            item_result.register_error("Error saving item "s + meta.path);
+            return item_result.errors();
+        }
+        auto result = item_result.value()->open_for_write();
+        if (result)
+        {
+            result = item.serialize(item_result.value()->write_stream());
+            item_result.value()->close();
+        }
+        return result;
+    }
+    else // !storage_result
+    {
+        rx_result result(storage_result.errors());
+        storage_result.register_error("Error saving item "s + meta.path);
+        return result;
+    }
+}
+
 
 
 
@@ -175,6 +206,10 @@ used to create user defined folders...\
 template <class TImpl>
 class rx_item_implementation : public rx_platform::ns::rx_platform_item  
 {
+    template<class itemT>
+    friend rx_result rx_save_platform_item(itemT& item);
+    template<class itemT>
+    friend itemT rx_clone_platform_item(itemT& item);
 
   public:
       rx_item_implementation (TImpl impl);
@@ -190,15 +225,13 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream);
-
       const meta_data_t& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
       rx_result read_value (const string_type& path, rx_value& value) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
@@ -219,6 +252,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
+      rx_result save () const;
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -239,6 +274,10 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 template <class TImpl>
 class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item  
 {
+    template<class itemT>
+    friend rx_result rx_save_platform_item(itemT& item);
+    template<class itemT>
+    friend itemT rx_clone_platform_item(itemT& item);
 
   public:
       rx_meta_item_implementation (TImpl impl);
@@ -256,13 +295,11 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream);
-
       const meta_data_t& meta_info () const;
 
       rx_result read_value (const string_type& path, rx_value& value) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
@@ -283,6 +320,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
+      rx_result save () const;
 
 
   protected:
@@ -329,6 +368,10 @@ used to create system defined folders...\
 template <class TImpl>
 class rx_other_implementation : public rx_platform::ns::rx_platform_item  
 {
+    template<class itemT>
+    friend rx_result rx_save_platform_item(itemT& item);
+    template<class itemT>
+    friend itemT rx_clone_platform_item(itemT& item);
 
   public:
       rx_other_implementation (TImpl impl);
@@ -346,13 +389,11 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream);
-
       const meta_data_t& meta_info () const;
 
       rx_result read_value (const string_type& path, rx_value& value) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
@@ -373,6 +414,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
+      rx_result save () const;
 
 
   protected:

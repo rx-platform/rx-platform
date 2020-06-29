@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,9 +39,13 @@
 #include "system/meta/rx_obj_types.h"
 #include "rx_model_algorithms.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "system/runtime/rx_runtime_holder.h"
+#include "api/rx_namespace_api.h"
+
 
 using namespace rx_platform::api;
 using namespace rx_platform::api::meta;
+using namespace rx_platform::meta::object_types;
 
 
 namespace rx_internal {
@@ -49,8 +53,71 @@ namespace rx_internal {
 namespace model {
 
 namespace meta_commands {
+namespace {
+template<typename T>
+rx_result_with<typename T::smart_ptr> create_prototype(string_type& name, const rx_item_reference& base_reference, string_type& path)
+{
+	rx_platform::ns::rx_directory_resolver resolver;
+	resolver.add_paths({ path });
+	string_type full_path = rx_combine_paths(path, name);
+	rx_split_path(full_path, path, name);
+	object_type_creation_data data;
+	data.name = name;
+	data.attributes = namespace_item_attributes::namespace_item_full_access;
+	data.path = path;
 
-// Class rx_internal::model::meta_commands::create_command 
+	auto base_resolved = api::ns::rx_resolve_type_reference<T>(base_reference, resolver, tl::type2type<T>());
+	if (!base_resolved)
+	{
+		base_resolved.register_error("Error resolving base reference:\r\n");
+		return base_resolved.errors();
+	}
+	data.base_id = base_resolved.move_value();
+	return rx_create_reference<T>(data);
+}
+template<typename T>
+rx_result_with<typename T::smart_ptr> create_simple_prototype(string_type& name, const rx_item_reference& base_reference, string_type& path)
+{
+	rx_platform::ns::rx_directory_resolver resolver;
+	resolver.add_paths({ path });
+	string_type full_path = rx_combine_paths(path, name);
+	rx_split_path(full_path, path, name);
+	type_creation_data data;
+	data.name = name;
+	data.attributes = namespace_item_attributes::namespace_item_full_access;
+	data.path = path;
+
+	auto base_resolved = api::ns::rx_resolve_simple_type_reference<T>(base_reference, resolver, tl::type2type<T>());
+	if (!base_resolved)
+	{
+		base_resolved.register_error("Error resolving base reference:\r\n");
+		return base_resolved.errors();
+	}
+	data.base_id = base_resolved.move_value();
+	return rx_create_reference<T>(data);
+}
+template<typename T>
+typename T::instance_data_t create_runtime_prototype(string_type& name, const rx_item_reference& base_reference, string_type& path)
+{
+	using definition_data_type = typename T::instance_data_t;
+
+	rx_platform::ns::rx_directory_resolver resolver;
+	resolver.add_paths({ path });
+	string_type full_path = rx_combine_paths(path, name);
+	rx_split_path(full_path, path, name);
+	definition_data_type data;
+	data.meta_info.name = name;
+	data.meta_info.attributes = namespace_item_attributes::namespace_item_full_access;
+	data.meta_info.path = path;
+
+	auto base_resolved = api::ns::rx_resolve_type_reference<T>(base_reference, resolver, tl::type2type<T>());
+	if (base_resolved)
+		data.meta_info.parent = base_resolved.move_value();
+	return data;
+}
+}
+
+// Class rx_internal::model::meta_commands::create_command
 
 create_command::create_command()
 	: server_command("create")
@@ -78,25 +145,25 @@ bool create_command::do_console_command (std::istream& in, std::ostream& out, st
 			{
 			case rx_item_type::rx_object:
 				{
-					runtime::items::object_instance_data instance_data;
+					runtime_data::object_runtime_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<object_type>());
 				}
 				break;
 			case rx_item_type::rx_domain:
 				{
-					runtime::items::domain_instance_data instance_data;
+					runtime_data::domain_runtime_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<domain_type>());
 				}
 				break;
 			case rx_item_type::rx_port:
 				{
-					runtime::items::port_instance_data instance_data;
+					runtime_data::port_runtime_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<port_type>());
 				}
 				break;
 			case rx_item_type::rx_application:
 				{
-					runtime::items::application_instance_data instance_data;
+					runtime_data::application_runtime_data instance_data;
 					ret = create_object(std::move(instance_data), in, out, err, ctx, tl::type2type<application_type>());
 				}
 				break;
@@ -217,12 +284,17 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				rx_context rxc;
-				rxc.object = ctx->get_client();
-				rxc.directory = ctx->get_current_directory();
-				auto result = rx_platform::api::meta::rx_create_runtime_implicit<T>(name, base_type_name
-					, namespace_item_attributes::namespace_item_full_access, &init_data, std::move(instance_data),
-					[=](rx_result_with<typename T::RTypePtr>&& result)
+				string_type path;
+				ctx->get_current_directory()->fill_path(path);
+				auto proto = create_runtime_prototype<T>(name, base_reference, path);
+				if (!proto.meta_info.parent.is_null())
+				{
+					err << "Error resolving base reference:\r\n";
+					return false;
+				}
+				proto.overrides = init_data;
+				auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto),
+					rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
 						{
@@ -237,7 +309,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 								<< ".\r\n";
 						}
 						ctx->send_results(result);
-					}, rxc);
+					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
@@ -265,12 +337,16 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	}
 	else if (as_command.empty())
 	{
-		rx_context rxc;
-		rxc.object = ctx->get_client();
-		rxc.directory = ctx->get_current_directory();
-		auto result = rx_platform::api::meta::rx_create_runtime_implicit<T>(name, base_type_name
-			, namespace_item_attributes::namespace_item_full_access, nullptr, std::move(instance_data),
-			[=](rx_result_with<typename T::RTypePtr>&& result)
+		string_type path;
+		ctx->get_current_directory()->fill_path(path);
+		auto proto = create_runtime_prototype<T>(name, base_reference, path);
+		if (!proto.meta_info.parent.is_null())
+		{
+			err << "Error resolving base reference:\r\n";
+			return false;
+		}
+		auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto),
+			rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				if (!result)
 				{
@@ -287,7 +363,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 						<< ".\r\n";
 				}
 				ctx->send_results(result);
-			}, rxc);
+			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
@@ -347,11 +423,17 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				rx_context rxc;
-				rxc.object = ctx->get_client();
-				rxc.directory = ctx->get_current_directory();
-				auto result = rx_platform::api::meta::rx_create_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
-					[=](rx_result_with<typename T::smart_ptr>&& result)
+				string_type path;
+				ctx->get_current_directory()->fill_path(path);
+				rx_result_with<typename T::smart_ptr> proto_result = create_prototype<T>(name, base_reference, path);
+				if (!proto_result)
+				{
+					dump_error_result(err, proto_result);
+					return false;
+				}
+
+				auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
+					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
 						{
@@ -366,7 +448,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 								<< ".\r\n";
 						}
 						ctx->send_results(result);
-					}, rxc);
+					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
@@ -394,11 +476,17 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	}
 	else if (as_command.empty())
 	{
-		rx_context rxc;
-		rxc.object = ctx->get_client();
-		rxc.directory = ctx->get_current_directory();
-		auto result = rx_platform::api::meta::rx_create_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
-			[=](rx_result_with<typename T::smart_ptr>&& result)
+		string_type path;
+		ctx->get_current_directory()->fill_path(path);
+		auto proto_result = create_prototype<T>(name, base_reference, path);
+		if (!proto_result)
+		{
+			dump_error_result(err, proto_result);
+			return false;
+		}
+
+		auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
+			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
 				{
@@ -415,8 +503,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 						<< ".\r\n";
 				}
 				ctx->send_results(result);
-			}
-		, rxc);
+			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
@@ -477,11 +564,16 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				rx_context rxc;
-				rxc.object = ctx->get_client();
-				rxc.directory = ctx->get_current_directory();
-				auto result = rx_platform::api::meta::rx_create_simple_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
-					[=](rx_result_with<typename T::smart_ptr>&& result)
+				string_type path;
+				ctx->get_current_directory()->fill_path(path);
+				auto proto_result = create_simple_prototype<T>(name, base_reference, path);
+				if (!proto_result)
+				{
+					dump_error_result(err, proto_result);
+					return false;
+				}
+				auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
+					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
 						{
@@ -496,7 +588,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 								<< ".\r\n";
 						}
 						ctx->send_results(result);
-					}, rxc);
+					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
@@ -524,11 +616,16 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 	}
 	else if (as_command.empty())
 	{
-		rx_context rxc;
-		rxc.object = ctx->get_client();
-		rxc.directory = ctx->get_current_directory();
-		auto result = rx_platform::api::meta::rx_create_simple_type<T>(name, base_reference, T::smart_ptr::null_ptr, namespace_item_attributes::namespace_item_full_access,
-			[=](rx_result_with<typename T::smart_ptr>&& result)
+		string_type path;
+		ctx->get_current_directory()->fill_path(path);
+		auto proto_result = create_simple_prototype<T>(name, base_reference, path);
+		if (!proto_result)
+		{
+			dump_error_result(err, proto_result);
+			return false;
+		}
+		auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
+			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
 				{
@@ -545,8 +642,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 						<< ".\r\n";
 				}
 				ctx->send_results(result);
-			}
-		, rxc);
+			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
@@ -564,7 +660,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::dump_types_command 
+// Class rx_internal::model::meta_commands::dump_types_command
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -628,12 +724,12 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	auto result = platform_types_manager::instance().get_type_repository<T>().get_derived_types(start);
 	for (auto one : result.items)
 	{
-		out << indent_str << one.data.get_name() << " [" << one.data.get_id().to_string() << "]\r\n";
-		dump_types_recursive(tl::type2type<T>(), one.data.get_id(), indent + 1, in, out, err, ctx);
+		out << indent_str << one.data.name << " [" << one.data.id.to_string() << "]\r\n";
+		dump_types_recursive(tl::type2type<T>(), one.data.id, indent + 1, in, out, err, ctx);
 	}
 	return true;
 }
-// Class rx_internal::model::meta_commands::delete_command 
+// Class rx_internal::model::meta_commands::delete_command
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -759,11 +855,10 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	rx_context rxc;
-	rxc.object = ctx->get_client();
-	rxc.directory = ctx->get_current_directory();
-	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(name),
-		[ctx, name, this](rx_result&& result)
+	string_type path;
+	ctx->get_current_directory()->fill_path(path);
+	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(rx_combine_paths(path, name)),
+		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result&& result)
 		{
 			if (!result)
 			{
@@ -779,8 +874,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 					<< ".\r\n";
 			}
 			ctx->send_results(result);
-		}
-		, rxc);
+		}));
 
 	if (!result)
 	{
@@ -811,8 +905,11 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	algorithms::types_model_algorithm<T>::delete_type(name, ctx->get_current_directory(),
-		[ctx, name, this](rx_result result)
+	string_type path;
+	ctx->get_current_directory()->fill_path(path);
+
+	algorithms::types_model_algorithm<T>::delete_type(rx_combine_paths(path, name),
+		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -828,9 +925,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 					<< ".\r\n";
 			}
 			ctx->send_results(result);
-		}
-		, ctx->get_client()
-	);
+		}));
 	ctx->set_waiting();
 	return true;
 }
@@ -852,8 +947,10 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	algorithms::simple_types_model_algorithm<T>::delete_type(name, ctx->get_current_directory(),
-		[ctx, name, this](rx_result result)
+	string_type path;
+	ctx->get_current_directory()->fill_path(path);
+	algorithms::simple_types_model_algorithm<T>::delete_type(rx_item_reference(rx_combine_paths(path, name)),
+		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -869,13 +966,11 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 					<< ".\r\n";
 			}
 			ctx->send_results(result);
-		}
-		, ctx->get_client()
-			);
+		}));
 	ctx->set_waiting();
 	return true;
 }
-// Class rx_internal::model::meta_commands::rm_command 
+// Class rx_internal::model::meta_commands::rm_command
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -884,7 +979,7 @@ rm_command::rm_command()
 
 
 
-// Class rx_internal::model::meta_commands::del_command 
+// Class rx_internal::model::meta_commands::del_command
 
 del_command::del_command()
 	: delete_command("del")
@@ -893,7 +988,7 @@ del_command::del_command()
 
 
 
-// Class rx_internal::model::meta_commands::check_command 
+// Class rx_internal::model::meta_commands::check_command
 
 check_command::check_command()
 	: server_command("check")
@@ -997,23 +1092,33 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 	if (!name.empty())
 	{
 		algorithms::types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			[ctx, name, this](check_records_type&& result)
+			rx_result_with_callback<check_type_result>(ctx->get_client(), [ctx, name, this](rx_result_with<check_type_result>&& result)
 			{
-				if (!result.empty())
+				if (result)
 				{
-					auto& out = ctx->get_stdout();
-					out << rx_item_type_name(T::type_id) << " has errors:\r\n";
-					for(auto& one : result)
-						out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
+					if (!result.value().records.empty())
+					{
+						auto& out = ctx->get_stdout();
+						out << rx_item_type_name(T::type_id) << " has errors:\r\n";
+						for (auto& one : result.value().records)
+							out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
+					}
+					else
+					{
+						ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
+							<< name << "O.K.\r\n";
+					}
+					ctx->send_results(true);
 				}
 				else
 				{
-					ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
-						<< name << "O.K.\r\n";
+					auto& err = ctx->get_stderr();
+					err << "Error checking "
+						<< rx_item_type_name(T::type_id) << " type:\r\n";
+					rx_dump_error_result(err, std::move(result));
+					ctx->send_results(false);
 				}
-				ctx->send_results(true);
-			}
-			, ctx->get_client());
+			}));
 		return true;
 	}
 	else
@@ -1030,23 +1135,33 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 	if (!name.empty())
 	{
 		algorithms::simple_types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			[ctx, name, this](check_records_type&& result)
-		{
-			if (!result.empty())
-			{
-				auto& out = ctx->get_stdout();
-				out << rx_item_type_name(T::type_id) << " has errors:\r\n";
-				for (auto& one : result)
-					out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
-			}
-			else
-			{
-				ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
-					<< name << " O.K.\r\n";
-			}
-			ctx->send_results(true);
-		}
-		, ctx->get_client());
+			rx_result_with_callback<check_type_result>(ctx->get_client(), [ctx, name, this](rx_result_with<check_type_result>&& result)
+				{
+					if (result)
+					{
+						if (!result.value().records.empty())
+						{
+							auto& out = ctx->get_stdout();
+							out << rx_item_type_name(T::type_id) << " has errors:\r\n";
+							for (auto& one : result.value().records)
+								out << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one.text << "\r\n";
+						}
+						else
+						{
+							ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
+								<< name << "O.K.\r\n";
+						}
+						ctx->send_results(true);
+					}
+					else
+					{
+						auto& err = ctx->get_stderr();
+						err << "Error checking "
+							<< rx_item_type_name(T::type_id) << " type:\r\n";
+						rx_dump_error_result(err, std::move(result));
+						ctx->send_results(false);
+					}
+				}));
 		return true;
 	}
 	else
@@ -1055,7 +1170,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::prototype_command 
+// Class rx_internal::model::meta_commands::prototype_command
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -1157,34 +1272,36 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	{
 		if (def_command == "json")
 		{
-
-			rx_context rxc;
-			rxc.object = ctx->get_client();
-			rxc.directory = ctx->get_current_directory();
-			meta_data info;
-			typename T::instance_data_t data{};
-			auto result = rx_platform::api::meta::rx_create_prototype<T>(info, data,
-				[=](rx_result_with<typename T::RTypePtr>&& result)
+			string_type path;
+			ctx->get_current_directory()->fill_path(path);
+			auto proto = create_runtime_prototype<T>(name, base_reference, path);
+			if (!proto.meta_info.parent.is_null())
 			{
-				bool ret = result;
-				if (!result)
+				err << "Error resolving base reference:\r\n";
+				return false;
+			}
+			auto result = rx_platform::api::meta::rx_create_prototype<T>(std::move(proto),
+				rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 				{
-					auto& err = ctx->get_stderr();
-					err << "Error prototyping "
-						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-					dump_error_result(err, result);
-				}
-				else
-				{
-					auto& out = ctx->get_stdout();
+					bool ret = result;
+					if (!result)
+					{
+						auto& err = ctx->get_stderr();
+						err << "Error prototyping "
+							<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
+						dump_error_result(err, result);
+					}
+					else
+					{
+						auto& out = ctx->get_stdout();
 
-					out << "Prototyped " << rx_item_type_name(T::RImplType::type_id) << " "
-						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
-						<< ".\r\n";
-					out << result.value()->get_item_ptr()->get_definition_as_json();
-				}
-				ctx->send_results(ret);
-			}, rxc);
+						out << "Prototyped " << rx_item_type_name(T::RImplType::type_id) << " "
+							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+							<< ".\r\n";
+						out << result.value()->get_item_ptr()->get_definition_as_json();
+					}
+					ctx->send_results(ret);
+				}));
 			if (!result)
 			{
 				ctx->get_stderr() << "Error creating "
@@ -1209,7 +1326,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::save_command 
+// Class rx_internal::model::meta_commands::save_command
 
 save_command::save_command()
 	: server_command("save")
@@ -1234,7 +1351,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 		{
 			api::rx_context rx_ctx = ctx->create_api_context();
 			auto result = rx_platform::api::meta::rx_save_item(path,
-				[ctx, path, this](rx_result result)
+				rx_function_to_go<rx_result&&>(rx_ctx.object, [ctx, path, this](rx_result&& result)
 				{
 					if (!result)
 					{
@@ -1249,7 +1366,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 							<< ".\r\n";
 					}
 					ctx->send_results(result);
-				}, rx_ctx);
+				}));
 			if (!result)
 			{
 				auto& err = ctx->get_stderr();

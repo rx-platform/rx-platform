@@ -615,7 +615,7 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -775,7 +775,7 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 

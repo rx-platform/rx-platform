@@ -37,6 +37,7 @@
 #include "sys_internal/rx_protocol_messages.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
+#include "system/runtime/rx_runtime_holder.h"
 using rx_platform::runtime::operational::update_item;
 
 

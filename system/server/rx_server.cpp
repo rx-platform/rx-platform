@@ -32,6 +32,8 @@
 
 #include "lib/rx_lib_version.h"
 
+// rx_cmds
+#include "system/server/rx_cmds.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
 // rx_server

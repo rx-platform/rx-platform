@@ -34,14 +34,14 @@
 
 #include "interfaces/rx_endpoints.h"
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_port_types
 #include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
 // rx_io
 #include "lib/rx_io.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -167,7 +167,7 @@ UDP port class. implementation of an UDP/IP4 port");
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::physical_multiple_port_impl< rx_internal::interfaces::ip_endpoints::connection_endpoint , io::ip4_address  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::physical_multiple_port_impl< connection_endpoint , io::ip4_address  > tcp_server_base;
 
 
 

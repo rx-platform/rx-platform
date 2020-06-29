@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"

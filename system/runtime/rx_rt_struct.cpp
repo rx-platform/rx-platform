@@ -39,6 +39,7 @@
 #include "rx_blocks.h"
 #include "rx_objbase.h"
 #include "rx_relations.h"
+#include "system/serialization/rx_ser.h"
 
 
 namespace rx_platform {

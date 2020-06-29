@@ -110,7 +110,7 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
 	if (temp)
 	{
 		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
@@ -161,7 +161,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
 	if (temp)
 	{
 		temp.value().value = whose.get_value(ctx.now);
@@ -212,7 +212,7 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
@@ -265,7 +265,7 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
@@ -318,7 +318,7 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
@@ -614,11 +614,11 @@ rx_result object_types_algorithm<typeT>::construct_object (const typeT& whose, t
 		{
 			for (const auto& one : whose.object_data_.relations_)
 			{
-				runtime::relations::relation_data data;
-				ret = meta_algorithm::relation_blocks_algorithm::construct_relation_attribute(one, data, ctx);
+				auto data = rx_create_reference<runtime::relations::relation_data>();
+				ret = meta_algorithm::relation_blocks_algorithm::construct_relation_attribute(one, *data, what, ctx);
 				if (ret)
 				{
-					what->relations_.emplace_back(std::move(data));
+					what->relations_.source_relations_.emplace_back(std::move(data));
 				}
 			}
 		}
@@ -635,9 +635,15 @@ rx_result object_types_algorithm<relation_type>::serialize_object_type(const rel
 	if (!stream.start_object("def"))
 		return false;
 
-	if (!stream.write_item_reference("inverse", whose.inverse_reference_))
+	if (!stream.write_bool("sealed", whose.relation_data_.sealed_type))
 		return false;
-	if (!stream.write_bool("hierarchical", whose.hierarchical_))
+	if (!stream.write_bool("abstract", whose.relation_data_.abstract_type))
+		return false;
+	if (!stream.write_bool("hierarchical", whose.relation_data_.hierarchical))
+		return false;
+	if (!stream.write_bool("symmetrical", whose.relation_data_.symmetrical))
+		return false;
+	if (!stream.write_string("inverse", whose.relation_data_.inverse_name))
 		return false;
 
 	if (!stream.end_object())
@@ -650,10 +656,16 @@ rx_result object_types_algorithm<relation_type>::deserialize_object_type(relatio
 {
 	if (!stream.start_object("def"))
 		return false;
-	
-	if (!stream.read_item_reference("inverse", whose.inverse_reference_))
+
+	if (!stream.read_bool("sealed", whose.relation_data_.sealed_type))
 		return false;
-	if (!stream.read_bool("hierarchical", whose.hierarchical_))
+	if (!stream.read_bool("abstract", whose.relation_data_.abstract_type))
+		return false;
+	if (!stream.read_bool("hierarchical", whose.relation_data_.hierarchical))
+		return false;
+	if (!stream.read_bool("symmetrical", whose.relation_data_.symmetrical))
+		return false;
+	if (!stream.read_string("inverse", whose.relation_data_.inverse_name))
 		return false;
 
 	if (!stream.end_object())
@@ -664,33 +676,15 @@ rx_result object_types_algorithm<relation_type>::deserialize_object_type(relatio
 template <>
 bool object_types_algorithm<relation_type>::check_object_type(relation_type& whose, type_check_context& ctx)
 {
-	// if there is no inverse reference then nothing to check
-	if (whose.inverse_reference_.is_null())
-		return true;
 
 	type_check_source _(whose.meta_info().get_full_path(), &ctx);
 
-	rx_node_id target_id;
-	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.inverse_reference_, ctx.get_directories());
-	if (!resolve_result)
-	{
-		rx_result ret(resolve_result.errors());
-		ret.register_error("Unable to resolve attribute");
-		return ret;
-	}
-	target_id = resolve_result.value();
-	auto target = rx_internal::model::platform_types_manager::instance().get_relations_repository().get_type_definition(target_id);
-	if (!target)
-	{
-		std::ostringstream ss;
-		ss << "Not existing "
-			<< rx_item_type_name(relation_type::type_id)
-			<< " as inverse relation type in relation "
-			<< whose.meta_info().get_full_path();
+	// just check inverse_name is symmetrical
+	if (!whose.relation_data_.symmetrical && whose.relation_data_.inverse_name.empty())
+		ctx.add_error("no inverse name provided for non-symmetrical relation", RX_NO_INVERSE_NAME_FOUND,rx_tolerable_severity);
+	
+	return true;
 
-		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
-	}
-	return ctx.is_check_ok();
 }
 
 
@@ -755,7 +749,7 @@ bool relation_blocks_algorithm::check_relation_attribute (object_types::relation
 	return ctx.is_check_ok();
 }
 
-rx_result relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, construct_context& ctx)
+rx_result relation_blocks_algorithm::construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, rx_reference_ptr ref_ptr, construct_context& ctx)
 {
 	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.relation_type_, ctx.get_directories());
 	if (!resolve_result)
@@ -774,9 +768,10 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 	}
 	auto target_base_id = resolve_result.value();
 
-	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, data, ctx.get_directories());
+	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, ctx.rt_name, data, ctx.get_directories());
 	if (ret_val)
 	{
+		data.target_relation_name = replace_in_string(data.target_relation_name, RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR, ctx.rt_name);
 		data.name = whose.name_;
 		data.target_base_id = target_base_id;
 		rx_timed_value str_val;

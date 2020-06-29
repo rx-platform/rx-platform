@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,13 +34,17 @@
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
 
+#include "system/runtime/rx_operational.h"
+#include "system/server/rx_server.h"
+#include "lib/rx_func_to_go.h"
+#include "lib/rx_job.h"
 
 
 namespace host {
 
 namespace pipe {
 
-// Class host::pipe::local_pipe_port 
+// Class host::pipe::local_pipe_port
 
 local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
       : pipe_handles_(pipes)
@@ -116,7 +120,7 @@ rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
 }
 
 
-// Class host::pipe::anonymus_pipe_client 
+// Class host::pipe::anonymus_pipe_client
 
 anonymus_pipe_client::anonymus_pipe_client (const pipe_client_t& pipes)
       : handles_(pipes)
@@ -165,7 +169,7 @@ void anonymus_pipe_client::close_pipe ()
 }
 
 
-// Class host::pipe::anonymus_pipe_endpoint 
+// Class host::pipe::anonymus_pipe_endpoint
 
 anonymus_pipe_endpoint::anonymus_pipe_endpoint()
 	: pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
@@ -190,7 +194,7 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 		result = pipes_->read_pipe(&buffer);
 		if (!result)
 		{
-			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
+			HOST_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
 			break;
 		}
 		received_func(buffer.size);
@@ -201,7 +205,7 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 			ss << "Error code " << (int)res << "(" << rx_protocol_error_message(res) << ") returned by stack!\r\n";
 			std::cout << ss.str();
 
-			ITF_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
+			HOST_LOG_ERROR("rx_pipe_host", 900, "Error reading pipe, exiting!");
 			break;
 		}
 	}
@@ -220,27 +224,28 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
 {
 	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference);
+	using job_type = rx::jobs::function_job<rx_reference_ptr, rx_packet_buffer>;
 
-	self->pipe_sender_.append(
-		rx_create_reference<jobs::lambda_job<rx_packet_buffer> >(
-			[self](rx_packet_buffer buffer)
+	rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self](rx_packet_buffer buffer)
+		{
+			auto result = self->pipes_->write_pipe(&buffer);
+			if (result)
 			{
-				auto result = self->pipes_->write_pipe(&buffer);
-				if (result)
-				{
-					self->sent_func_(buffer.size);
-					rx_move_result_up(self, RX_PROTOCOL_OK);
-				}
-				else
-				{
-					for (const auto& one : result.errors())
-						std::cout << one << "\r\n";
-				}
-				rx_deinit_packet_buffer(&buffer);
-			},
-			*buffer
-		)
-	);
+				self->sent_func_(buffer.size);
+				rx_move_result_up(self, RX_PROTOCOL_OK);
+			}
+			else
+			{
+				for (const auto& one : result.errors())
+					std::cout << one << "\r\n";
+			}
+			rx_deinit_packet_buffer(&buffer);
+		});
+
+	send_func.set_arguments(std::move(*buffer));
+	auto job = rx_create_reference<job_type>(std::move(send_func));
+
+	self->pipe_sender_.append(job);
 
 	return RX_PROTOCOL_OK;
 }

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace sys_runtime {
 
 namespace runtime_commands {
 
-// Class rx_internal::sys_runtime::runtime_commands::read_command
+// Class rx_internal::sys_runtime::runtime_commands::read_command 
 
 read_command::read_command()
 	: runtime_command_base("read")
@@ -85,7 +85,7 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::pull_command
+// Class rx_internal::sys_runtime::runtime_commands::pull_command 
 
 pull_command::pull_command()
 	: terminal::commands::server_command("pull")
@@ -107,7 +107,7 @@ bool pull_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::write_command
+// Class rx_internal::sys_runtime::runtime_commands::write_command 
 
 write_command::write_command()
 	: runtime_command_base("write")
@@ -132,11 +132,13 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	out << ANSI_COLOR_RESET "\r\n";
 	out << "Start time: " << now.get_string() << "\r\n";
 	uint64_t us1 = rx_get_us_ticks();
-	auto result = rt_item->write_value(sub_item, std::move(value), [ctx, this, sub_item, value, my_copy, us1](rx_result result)
+	auto rctx = ctx->create_api_context();
+	auto result = rt_item->write_value(sub_item, std::move(value), 
+		rx_function_to_go<rx_result&&>(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
 		{
 		///////////////////////////////////////////////
-			std::function<void(rx_result , string_type, rx_simple_value, console_context_ptr)> send_func =
-				[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
+			rx_post_function_to(ctx->get_executer(), smart_this()
+                ,[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
 				{
 					uint64_t us2 = rx_get_us_ticks() - us1;
 					auto& out = ctx->get_stdout();
@@ -144,7 +146,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 					if (result)
 					{
 						out << "Write to "
-							<< full_path 
+							<< full_path
 							<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
 						out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
 					}
@@ -154,14 +156,12 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 						dump_error_result(err, result);
 					}
 					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
-				};
-			rx_post_function_to(ctx->get_executer()
-                ,send_func , smart_this(), std::move(result), sub_item, my_copy, ctx);
+				} , std::move(result), sub_item, my_copy, ctx);
         //////////////////////////////////////////////
 
-		}, ctx->create_api_context());
+		}), ctx->create_api_context());
 	if (result)
-	{		
+	{
 		ctx->set_waiting();
 		return true;
 	}
@@ -175,7 +175,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_on_command
+// Class rx_internal::sys_runtime::runtime_commands::turn_on_command 
 
 turn_on_command::turn_on_command()
 	: terminal::commands::server_command("turn-on")
@@ -217,7 +217,7 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_off_command
+// Class rx_internal::sys_runtime::runtime_commands::turn_off_command 
 
 turn_off_command::turn_off_command()
 	: terminal::commands::server_command("turn-off")
@@ -259,7 +259,7 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::browse_command
+// Class rx_internal::sys_runtime::runtime_commands::browse_command 
 
 browse_command::browse_command()
 	: runtime_command_base("brw")
@@ -287,6 +287,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 		idx++;
 		for (const auto& one : items)
 		{
+			bool is_value = false;
 			string_type postfix;
 			string_type value = one.value.get_storage().to_string();
 			if(one.value.is_null())
@@ -294,12 +295,15 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 			switch (one.type)
 			{
 			case rx_attribute_type::const_attribute_type:
+				is_value = true;
 				table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
 				break;
 			case rx_attribute_type::value_attribute_type:
+				is_value = true;
 				table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
 				break;
 			case rx_attribute_type::variable_attribute_type:
+				is_value = true;
 				//postfix = RX_TERMINAL_STRUCT_SYMBOL;
 				table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
 				break;
@@ -321,17 +325,30 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 			case rx_attribute_type::relation_attribute_type:
 				table[idx].emplace_back(one.name, ANSI_RX_RELATION_COLOR, ANSI_COLOR_RESET);
 				if (one.value.get_type() == RX_STRING_TYPE)
-					value = "->"s + one.value.get_storage().get_string_value();
+					value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().get_string_value();
 				else if (one.value.is_null())
-					value = "->";
+					value = RX_TERMINAL_RELATION_SYMBOL;
 				else
-					value = "->"s + one.value.get_storage().to_string();
+					value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().to_string();
+				break;
+			case rx_attribute_type::relation_target_attribute_type:
+				table[idx].emplace_back(one.name, ANSI_RX_RELATION_TARGET_COLOR, ANSI_COLOR_RESET);
+				if (one.value.get_type() == RX_STRING_TYPE)
+					value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().get_string_value();
+				else if (one.value.is_null())
+					value = RX_TERMINAL_RELATION_TARGET_SYMBOL;
+				else
+					value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().to_string();
 				break;
 			default:
 				table[idx].emplace_back(one.name);
 				break;
 			}
-			table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+			if (is_value)
+				table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+			else
+				table[idx].emplace_back(value, ANSI_COLOR_WHITE, ANSI_COLOR_RESET);
+
 			if(!postfix.empty())
 				table[idx].emplace_back(postfix + rx_runtime_attribute_type_name(one.type));
 			else
@@ -349,7 +366,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base
+// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base 
 
 runtime_command_base::runtime_command_base (const string_type& name)
 	: server_command(name)
@@ -394,8 +411,8 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 			return resolve_result;
 
 		}
-		rx_result result = model::algorithms::do_with_runtime_item<bool>(resolve_result.value()
-			, [ctx, item_path, to_write, this](rx_result_with<platform_item_ptr>&& data) mutable -> bool
+		rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
+			, [ctx, item_path, to_write, this](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
 			{
 				ctx->postpone_done();
 				auto& out = ctx->get_stdout();
@@ -409,11 +426,14 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 					dump_error_result(err, data);
 					return false;
 				}
-			}, [ctx](bool&& result) mutable
-			{
-				if (!ctx->is_postponed())
-					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
-			}, context);
+			}
+			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
+				{
+					if (!ctx->is_postponed())
+						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+				})
+			, context);
+
 		if (result)
 		{
 			ctx->set_waiting();

@@ -454,6 +454,8 @@ rx_result rx_result::create_from_c_error(const string_type& text)
 }
 
 
+const rx_item_reference rx_item_reference::null_ref;
+
 
 rx_item_reference::rx_item_reference()
 {
@@ -811,7 +813,7 @@ std::ostream & operator << (std::ostream &out, const rx_node_id &val)
 	return out;
 }
 
-rx_node_id::rx_node_id()
+rx_node_id::rx_node_id() noexcept
 {
 	namespace_ = 0;
 	value_.int_value = 0;
@@ -1328,6 +1330,33 @@ void extract_next(const string_type& path, string_type& name, string_type& rest,
 		rest = "";
 	}
 }
+string_type replace_in_string(const string_type& str, const string_type find, const string_type replace)
+{
+	string_type result;
+	size_t find_len = find.size();
+	size_t str_size = str.size();
+	result.reserve(str.size());
+	size_t idx = 0;
+	size_t old_idx;
+	do
+	{
+		old_idx = idx;
+		idx = str.find(find, idx);
+		if (idx == string_type::npos)
+		{
+			result += str.substr(old_idx);
+		}
+		else
+		{
+			if(idx>old_idx)
+				result += str.substr(old_idx, idx - old_idx);
+			result += replace;
+			idx += find_len;
+		}
+	} while (idx != string_type::npos && idx < str_size);
+
+	return result;
+}
 
 string_type& trim_left_in_place(string_type& str) {
 	size_t i = 0;
@@ -1497,7 +1526,7 @@ rx_time g_null_time = { 0 };
 std::atomic<int64_t> g_current_offset(0);
 std::atomic<uint32_t> g_current_time_quality(DEFAULT_TIME_QUALITY);
 }
-rx_time::rx_time()
+rx_time::rx_time() noexcept
 {
 	t_value = 0;
 }
@@ -1605,12 +1634,12 @@ rx_time::rx_time(const uint64_t interval)
 {
 	t_value = interval*(uint64_t)10000;
 }
-rx_time& rx_time::operator=(const rx_time_struct& right)
+rx_time& rx_time::operator=(const rx_time_struct& right) noexcept
 {
 	memcpy(this, &right, sizeof(rx_time_struct));
 	return *this;
 }
-rx_time& rx_time::operator=(const uint64_t interval)
+rx_time& rx_time::operator=(const uint64_t interval) noexcept
 {
 	t_value = interval*(uint64_t)10000;
 	return *this;

@@ -56,10 +56,16 @@ using rx_platform::runtime::items::domain_instance_data;
 using rx_platform::runtime_data_t;
 
 
+using namespace rx_platform::runtime;
+
+
 namespace rx_internal {
 
 namespace sys_runtime {
 
+class runtime_cache;
+template<typename typeT>
+typename typeT::RTypePtr get_runtime_impl(runtime_cache* whose, const rx_node_id& id);
 
 
 
@@ -97,13 +103,22 @@ class runtime_cache
     typedef std::map<string_type, std::map<runtime::resolvers::runtime_subscriber*, subscriber_data> > path_subscribers_type;
     typedef std::map<rx_node_id, std::map<runtime::resolvers::runtime_subscriber*, subscriber_data> > id_subscribers_type;
     typedef std::map<string_type, platform_item_ptr> path_cache_type;
+    typedef std::map<rx_node_id, rx_object_ptr> objects_cache_type;
+    typedef std::map<rx_node_id, rx_port_ptr> ports_cache_type;
+    typedef std::map<rx_node_id, rx_domain_ptr> domains_cache_type;
+    typedef std::map<rx_node_id, rx_application_ptr> applications_cache_type;
     typedef std::map<rx_node_id, runtime_id_data> id_cahce_type;
+
+    typedef std::map<rx_thread_handle_t, subs_list_t> collected_subscribers_type;
+
+    template<typename typeT>
+    friend typename typeT::RTypePtr get_runtime_impl(runtime_cache* whose, const rx_node_id& id);
+
+
 
   public:
       runtime_cache();
 
-
-      void add_to_cache (platform_item_ptr&& item);
 
       std::vector<platform_item_ptr> get_items (const string_array& paths);
 
@@ -119,12 +134,42 @@ class runtime_cache
 
       void register_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose);
 
+      rx_object_ptr get_object (const rx_node_id& id);
 
+      rx_application_ptr get_application (const rx_node_id& id);
+
+      rx_domain_ptr get_domain (const rx_node_id& id);
+
+      rx_port_ptr get_port (const rx_node_id& id);
+
+      void add_to_cache (rx_object_ptr item);
+
+      void add_to_cache (rx_domain_ptr item);
+
+      void add_to_cache (rx_port_ptr item);
+
+      void add_to_cache (rx_application_ptr item);
+
+      rx_result add_target_relation (const rx_node_id& id, relations::relation_data::smart_ptr data);
+
+      rx_result remove_target_relation (const rx_node_id& id, const string_type& name);
+
+      std::vector<platform_item_ptr> get_items (const rx_node_ids& ids);
+
+      template<typename typeT>
+      typename typeT::RTypePtr get_runtime(const rx_node_id& id)
+      {
+          return get_runtime_impl<typeT>(this, id);
+      }
   protected:
 
   private:
 
+      void add_to_cache (platform_item_ptr&& item, collected_subscribers_type& subscribers);
+
       void collect_subscribers (const rx_node_id& id, const string_type& name, std::map<rx_thread_handle_t, subs_list_t>& to_send);
+
+      void post_appeared (collected_subscribers_type& subscribers);
 
 
 
@@ -137,6 +182,14 @@ class runtime_cache
       path_subscribers_type path_subscribers_;
 
       id_subscribers_type id_subscribers_;
+
+      objects_cache_type objects_cache_;
+
+      applications_cache_type applications_cache_;
+
+      domains_cache_type domains_cache_;
+
+      ports_cache_type ports_cache_;
 
 
 };
@@ -184,12 +237,16 @@ class platform_runtime_manager
 		  result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }
-	  template<class typeT>
-	  rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result)> callback)
+	  template<class typeT, class refT, class funcT>
+	  rx_result deinit_runtime(typename typeT::RTypePtr what, refT ref, rx_thread_handle_t result_target
+          , funcT&& callback)
 	  {
+          rx_result_callback wrapper;
+          wrapper.anchor = ref;
+          wrapper.function = std::forward<funcT>(callback);
           auto result = algorithms::delete_runtime_structure<typeT>(what);
           runtime::runtime_deinit_context ctx;
-		  result = algorithms::deinit_runtime<typeT>(what, callback, ctx);
+		  result = algorithms::deinit_runtime<typeT>(what, ref, result_target, std::move(wrapper), ctx);
 		  return result;
 	  }
   protected:

@@ -164,7 +164,7 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 		return result;
 
 	directory_creator creator;
-	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
+	auto dir = creator.get_or_create_direcotry(root, meta.path);
 	if (dir)
 	{
 		switch (target_type)
@@ -204,7 +204,7 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		return result;
 
 	directory_creator creator;
-	auto dir = creator.get_or_create_direcotry(root, meta.get_path());
+	auto dir = creator.get_or_create_direcotry(root, meta.path);
 	if (dir)
 	{
 		switch (target_type)
@@ -276,9 +276,7 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 	storage->close();
 	if (result)
 	{
-		auto create_result = model::algorithms::types_model_algorithm<T>::create_type_sync(
-			"", "", created, dir
-			, created->meta_info().get_attributes());
+		auto create_result = model::algorithms::types_model_algorithm<T>::create_type_sync(created);
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
@@ -286,7 +284,7 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_full_path());
 			return create_result.errors();
 		}
 	}
@@ -302,9 +300,7 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	storage->close();
 	if (result)
 	{
-		auto create_result = model::algorithms::simple_types_model_algorithm<T>::create_type_sync(
-			"", "", created, dir
-			, created->meta_info().get_attributes());
+		auto create_result = model::algorithms::simple_types_model_algorithm<T>::create_type_sync(created);
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
@@ -312,7 +308,7 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::type_id) + " " + meta.get_full_path());
 			return create_result.errors();
 		}
 	}
@@ -327,9 +323,7 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 	storage->close();
 	if (result)
 	{
-		auto create_result = model::algorithms::relation_types_algorithm::create_type_sync(
-			"", "", created, dir
-			, created->meta_info().get_attributes());
+		auto create_result = model::algorithms::relation_types_algorithm::create_type_sync(created);
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
@@ -337,7 +331,7 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(relation_type::type_id) + " " + meta_data.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(relation_type::type_id) + " " + meta_data.get_full_path());
 			return create_result.errors();
 		}
 	}
@@ -350,22 +344,11 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 {
 	auto init_data = std::make_unique< data::runtime_values_data>();
 	typename T::instance_data_t instance_data;
-	bool ret = false;
-	if (stream.start_object("def"))
-	{
-		if (stream.read_init_values("overrides", *init_data))
-		{
-			if (instance_data.deserialize(stream, 1))
-			{
-				ret = true;
-			}
-		}
-	}
+	auto result = instance_data.deserialize(stream, STREAMING_TYPE_TYPE, meta);
 	storage->close();
-	if (ret)
+	if (result)
 	{
-		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
-			meta, init_data.release(), std::move(instance_data), dir, rx_object_ptr::null_ptr);
+		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(instance_data));
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();
@@ -373,12 +356,11 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_name());
+			create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_full_path());
 			return create_result.errors();
 		}
 	}
-	else
-		return "Error reading initialize values for "s + meta.get_full_path();
+	return result;
 }
 
 // Class rx_internal::builders::storage::directory_creator 

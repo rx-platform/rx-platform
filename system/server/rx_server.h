@@ -47,12 +47,16 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
-// rx_cmds
-#include "system/server/rx_cmds.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
+
+namespace rx_platform {
+namespace prog {
+class server_script_host;
+} // namespace prog
+} // namespace rx_platform
 
 namespace rx_internal {
 namespace interfaces {
@@ -101,12 +105,20 @@ struct management_data_t
     string_type startup_script;
 };
 
+struct meta_configuration_data_t
+{
+    bool build_system_from_code = false;
+    string_type instance_name;
+    uint32_t wd_timer_period = 1000;
+};
+
+
 struct configuration_data_t
 {
 	runtime_data_t processor;
 	management_data_t management;
 	ns::namespace_data_t storage;
-	meta::meta_configuration_data_t meta_configuration;
+	meta_configuration_data_t meta_configuration;
 	io_manager_data_t io;
 	general_data_t other;
 };
@@ -230,7 +242,6 @@ class rx_gate
 
       template <class typeT>
       rx_result register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
-
 
       rx_directory_ptr root_;
 

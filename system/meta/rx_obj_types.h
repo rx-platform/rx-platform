@@ -57,7 +57,6 @@ template <class typeT> class object_types_algorithm;
 } // namespace rx_platform
 
 
-#include "system/runtime/rx_relations.h"
 #include "system/runtime//rx_rt_struct.h"
 #include "system/runtime/rx_objbase.h"
 using rx_platform::meta::construct_context;
@@ -212,7 +211,8 @@ public:
 	typedef rx_reference<RType> RTypePtr;
     typedef runtime::items::application_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
-	typedef typename runtime::items::application_instance_data instance_data_t;
+	typedef typename runtime_data::application_runtime_data instance_data_t;
+    typedef typename runtime::items::application_instance_data runtime_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -295,7 +295,8 @@ public:
 	typedef rx_reference<RType> RTypePtr;
     typedef runtime::items::domain_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
-	typedef runtime::items::domain_instance_data instance_data_t;
+    typedef typename runtime_data::domain_runtime_data instance_data_t;
+    typedef typename runtime::items::domain_instance_data runtime_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -378,7 +379,8 @@ public:
     typedef rx_reference<RType> RTypePtr;
     typedef runtime::items::object_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
-    typedef runtime::items::object_instance_data instance_data_t;
+    typedef typename runtime_data::object_runtime_data instance_data_t;
+    typedef typename runtime::items::object_instance_data runtime_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -463,7 +465,8 @@ public:
     typedef rx_reference<RType> RTypePtr;
     typedef runtime::items::port_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
-	typedef runtime::items::port_instance_data instance_data_t;
+    typedef typename runtime_data::port_runtime_data instance_data_t;
+    typedef typename runtime::items::port_instance_data runtime_data_t;
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 
@@ -534,12 +537,23 @@ public:
 
 
 
-class relation_data_type 
+class relation_type_data 
 {
 
   public:
 
       rx::data::runtime_values_data& get_overrides () const;
+
+
+      bool sealed_type;
+
+      bool abstract_type;
+
+      string_type inverse_name;
+
+      bool hierarchical;
+
+      bool symmetrical;
 
 
   protected:
@@ -569,7 +583,7 @@ public:
   public:
       relation_type();
 
-      relation_type (const object_type_creation_data& data);
+      relation_type (const object_type_creation_data& meta, const relation_type_data& data);
 
 
       platform_item_ptr get_item_ptr () const;
@@ -589,24 +603,12 @@ public:
 
       const meta_data& meta_info () const;
 
-      const relation_data_type& complex_data () const;
+      const relation_type_data& relation_data () const;
 
 
       static rx_item_type get_type_id ()
       {
         return type_id;
-      }
-
-
-      rx_item_reference get_inverse_reference () const
-      {
-        return inverse_reference_;
-      }
-
-
-      bool get_hierarchical () const
-      {
-        return hierarchical_;
       }
 
 
@@ -621,12 +623,7 @@ public:
 
       meta_data meta_info_;
 
-      relation_data_type complex_data_;
-
-
-      rx_item_reference inverse_reference_;
-
-      bool hierarchical_;
+      relation_type_data relation_data_;
 
 
 };

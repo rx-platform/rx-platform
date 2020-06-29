@@ -61,7 +61,6 @@ class slim_lock
 
       slim_lock(slim_lock&&) = delete;
       slim_lock(const slim_lock&) = delete;
-
   protected:
 
   private:

@@ -34,6 +34,7 @@
 // rx_runtime_relations
 #include "runtime_internal/rx_runtime_relations.h"
 
+#include "system/runtime/rx_runtime_holder.h"
 #include "system/server/rx_platform_item.h"
 #include "model/rx_meta_internals.h"
 using namespace rx_platform::runtime;
@@ -68,19 +69,77 @@ rx_result register_internal_relations_constructors()
     return result;
 }
 
-// Class rx_internal::sys_runtime::relations_runtime::application_relation 
+// Class rx_internal::sys_runtime::relations_runtime::domain_relation 
 
 
-rx_result application_relation::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_result domain_relation::initialize_relation (runtime::runtime_init_context& ctx)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(ctx.meta.get_id());
+    return true;
+}
+
+rx_result domain_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result domain_relation::start_relation (runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result domain_relation::stop_relation (runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
+rx_result_with<platform_item_ptr> domain_relation::resolve_runtime_sync (const rx_node_id& id)
+{
+    auto domain_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
+    if (!domain_ptr)
+    {
+        return domain_ptr.errors();
+    }
+    else
+    {
+        auto ret = domain_ptr.value()->get_item_ptr();
+        to_ = domain_ptr.move_value();
+        return ret;
+    }
+}
+
+void domain_relation::relation_connected ()
+{
+    if (from_ && to_)
+    {
+        RUNTIME_LOG_DEBUG("domain_relation", 900, from_->meta_info().get_full_path() + " connected to domain " + to_->meta_info().get_full_path());
+        meta::meta_data meta;
+        //to_->get_implementation()->push(from_->get_implementation(), meta);
+    }
+}
+
+void domain_relation::relation_disconnected ()
+{
+}
+
+rx_result domain_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+{
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(ctx.meta.id);
     if (!result)
     {
-        result.register_error(ctx.meta.get_full_path() + " is not a domain!");
+        result.register_error(ctx.meta.get_full_path() + " is not a object!");
         return result.errors();
     }
     from_ = result.value();
-    ref = from_->get_instance_data().app_id;
+    ref = from_->get_instance_data().get_data().domain_id;
+    return true;
+}
+
+
+// Class rx_internal::sys_runtime::relations_runtime::application_relation 
+
+
+rx_result application_relation::initialize_relation (runtime::runtime_init_context& ctx)
+{
     return true;
 }
 
@@ -128,20 +187,25 @@ void application_relation::relation_disconnected ()
 {
 }
 
+rx_result application_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+{
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(ctx.meta.id);
+    if (!result)
+    {
+        result.register_error(ctx.meta.get_full_path() + " is not an application!");
+        return result.errors();
+    }
+    from_ = result.value();
+    ref = from_->get_instance_data().get_data().app_id;
+    return true;
+}
+
 
 // Class rx_internal::sys_runtime::relations_runtime::port_app_relation 
 
 
-rx_result port_app_relation::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_result port_app_relation::initialize_relation (runtime::runtime_init_context& ctx)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.get_id());
-    if (!result)
-    {
-        result.register_error(ctx.meta.get_full_path() + " is not a port!");
-        return result.errors();
-    }
-    from_ = result.value();
-    ref = from_->get_instance_data().app_id;
     return true;
 }
 
@@ -189,65 +253,17 @@ void port_app_relation::relation_disconnected ()
 {
 }
 
-
-// Class rx_internal::sys_runtime::relations_runtime::domain_relation 
-
-
-rx_result domain_relation::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_result port_app_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(ctx.meta.get_id());
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.id);
     if (!result)
     {
-        result.register_error(ctx.meta.get_full_path() + " is not a object!");
+        result.register_error(ctx.meta.get_full_path() + " is not a port!");
         return result.errors();
     }
     from_ = result.value();
-    ref = from_->get_instance_data().domain_id;
+    ref = from_->get_instance_data().get_data().app_id;
     return true;
-}
-
-rx_result domain_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
-{
-    return true;
-}
-
-rx_result domain_relation::start_relation (runtime::runtime_start_context& ctx)
-{
-    return true;
-}
-
-rx_result domain_relation::stop_relation (runtime::runtime_stop_context& ctx)
-{
-    return true;
-}
-
-rx_result_with<platform_item_ptr> domain_relation::resolve_runtime_sync (const rx_node_id& id)
-{
-    auto domain_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
-    if (!domain_ptr)
-    {
-        return domain_ptr.errors();
-    }
-    else
-    {
-        auto ret = domain_ptr.value()->get_item_ptr();
-        to_ = domain_ptr.move_value();
-        return ret;
-    }
-}
-
-void domain_relation::relation_connected ()
-{
-    if (from_ && to_)
-    {
-        RUNTIME_LOG_DEBUG("domain_relation", 900, from_->meta_info().get_full_path() + " connected to domain " + to_->meta_info().get_full_path());
-        meta::meta_data meta;
-        //to_->get_implementation()->push(from_->get_implementation(), meta);
-    }
-}
-
-void domain_relation::relation_disconnected ()
-{
 }
 
 

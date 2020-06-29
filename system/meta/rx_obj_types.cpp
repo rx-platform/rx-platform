@@ -60,7 +60,7 @@ application_type::application_type()
 }
 
 application_type::application_type (const object_type_creation_data& data)
-	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+	: meta_info_(data)
 {
 }
 
@@ -152,7 +152,7 @@ domain_type::domain_type()
 }
 
 domain_type::domain_type (const object_type_creation_data& data)
-	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+	: meta_info_(data)
 {
 }
 
@@ -249,7 +249,7 @@ object_type::object_type()
 }
 
 object_type::object_type (const object_type_creation_data& data)
-	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+	: meta_info_(data)
 {
 }
 
@@ -391,7 +391,7 @@ port_type::port_type()
 }
 
 port_type::port_type (const object_type_creation_data& data)
-	: meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+	: meta_info_(data)
 {
 }
 
@@ -490,13 +490,12 @@ relation_attribute::relation_attribute (const string_type& name, const rx_node_i
 rx_item_type relation_type::type_id = rx_item_type::rx_relation_type;
 
 relation_type::relation_type()
-      : hierarchical_(false)
 {
 }
 
-relation_type::relation_type (const object_type_creation_data& data)
-      : hierarchical_(false)
-	, meta_info_(data.name, data.id, data.base_id, data.attributes, data.path)
+relation_type::relation_type (const object_type_creation_data& meta, const relation_type_data& data)
+	: meta_info_(meta)
+	, relation_data_(data)
 {
 }
 
@@ -544,16 +543,16 @@ const meta_data& relation_type::meta_info () const
   return meta_info_;
 }
 
-const relation_data_type& relation_type::complex_data () const
+const relation_type_data& relation_type::relation_data () const
 {
-  return complex_data_;
+  return relation_data_;
 }
 
 
-// Class rx_platform::meta::object_types::relation_data_type 
+// Class rx_platform::meta::object_types::relation_type_data 
 
 
-rx::data::runtime_values_data& relation_data_type::get_overrides () const
+rx::data::runtime_values_data& relation_type_data::get_overrides () const
 {
 	static rx::data::runtime_values_data dummy;
 	return dummy;

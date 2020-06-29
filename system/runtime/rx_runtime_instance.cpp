@@ -54,29 +54,13 @@ object_instance_data::object_instance_data()
 {
 }
 
-
-
-bool object_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+object_instance_data::object_instance_data (const object_data& data)
+      : executer_(-1)
+    , data_(data)
 {
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.write_id("domain", domain_id))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
 }
 
-bool object_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.read_id("domain", domain_id))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
+
 
 bool object_instance_data::connect_domain (rx_domain_ptr&& domain, rx_object_ptr whose)
 {
@@ -143,45 +127,17 @@ const security::security_context_ptr& object_instance_data::get_security_context
 // Class rx_platform::runtime::items::domain_instance_data 
 
 domain_instance_data::domain_instance_data()
-      : processor(-1),
-        executer_(-1),
-        priority(rx_domain_priority::standard)
+      : executer_(-1)
+{
+}
+
+domain_instance_data::domain_instance_data (const domain_data& data)
+      : executer_(-1)
+    , data_(data)
 {
 }
 
 
-
-bool domain_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.write_int("processor", processor))
-        return false;
-    if (!stream.write_byte("priority", (uint8_t)priority))
-        return false;
-    if (!stream.write_id("app", app_id))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
-
-bool domain_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.read_int("processor", processor))
-        return false;
-    uint8_t temp;
-    if (!stream.read_byte("priority", temp) || temp>(uint8_t)rx_domain_priority::priority_count)
-        return false;
-    priority = (rx_domain_priority)temp;
-    if (!stream.read_id("app", app_id))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
 
 void domain_instance_data::get_objects (api::query_result& result)
 {
@@ -195,12 +151,12 @@ void domain_instance_data::get_objects (api::query_result& result)
 
 void domain_instance_data::add_object (rx_object_ptr what)
 {
-    objects_.emplace(what->meta_info().get_id(), what);
+    objects_.emplace(what->meta_info().id, what);
 }
 
 void domain_instance_data::remove_object (rx_object_ptr what)
 {
-    auto it = objects_.find(what->meta_info().get_id());
+    auto it = objects_.find(what->meta_info().id);
     if (it != objects_.end())
         objects_.erase(it);
 }
@@ -229,7 +185,7 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
     RX_ASSERT(what->get_instance_data().my_application_);
     if (what->get_instance_data().my_application_)
     {
-        if (what->get_instance_data().processor >= 0)
+        if (what->get_instance_data().get_data().processor >= 0)
             what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
         else
             what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
@@ -273,45 +229,17 @@ const security::security_context_ptr& domain_instance_data::get_security_context
 // Class rx_platform::runtime::items::application_instance_data 
 
 application_instance_data::application_instance_data()
-      : processor(-1),
-        executer_(-1),
-        priority(rx_domain_priority::standard)
+      : executer_(-1)
+{
+}
+
+application_instance_data::application_instance_data (const application_data& data)
+      : executer_(-1)
+    , data_(data)
 {
 }
 
 
-
-bool application_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.write_int("processor", processor))
-        return false;
-    if(!stream.write_byte("priority", (uint8_t)priority))
-        return false;
-    if (!identity_.serialize("identity", stream))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
-
-bool application_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.read_int("processor", processor))
-        return false;
-    uint8_t temp;
-    if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
-        return false;
-    if (!identity_.deserialize("identity", stream))
-        return false;
-    priority = (rx_domain_priority)temp;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
 
 void application_instance_data::get_ports (api::query_result& result)
 {
@@ -324,19 +252,19 @@ void application_instance_data::get_ports (api::query_result& result)
 
 void application_instance_data::add_port (rx_port_ptr what)
 {
-    ports_.emplace(what->meta_info().get_id(), what);
+    ports_.emplace(what->meta_info().id, what);
 }
 
 void application_instance_data::add_domain (rx_domain_ptr what)
 {
     // domains can be from other thread so do the locking
     locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
-    domains_.emplace(what->meta_info().get_id(), what);
+    domains_.emplace(what->meta_info().id, what);
 }
 
 void application_instance_data::remove_port (rx_port_ptr what)
 {
-    auto it = ports_.find(what->meta_info().get_id());
+    auto it = ports_.find(what->meta_info().id);
     if (it != ports_.end())
         ports_.erase(it);
 }
@@ -345,13 +273,15 @@ void application_instance_data::remove_domain (rx_domain_ptr what)
 {
     // domains can be from other thread so do the locking
     locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
-    auto it = domains_.find(what->meta_info().get_id());
+    auto it = domains_.find(what->meta_info().id);
     if (it != domains_.end())
         domains_.erase(it);
 }
 
 void application_instance_data::get_domains (api::query_result& result)
 {
+    // domains can be from other thread so do the locking
+    locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
     result.items.reserve(domains_.size());
     for (const auto& one : domains_)
     {
@@ -386,20 +316,20 @@ const security::security_context_ptr& application_instance_data::get_security_co
     return identity_.get_context();
 }
 
-application_instance_data::application_instance_data(application_instance_data&& right)
-{
-    domains_ = std::move(right.domains_);
-    ports_ = std::move(right.ports_);
-    executer_ = std::move(right.executer_);
-    identity_ = std::move(right.identity_);
-}
-application_instance_data::application_instance_data(const application_instance_data& right)
-{
-    domains_ = right.domains_;
-    ports_ = right.ports_;
-    executer_ = right.executer_;
-    identity_ = right.identity_;
-}
+//application_instance_data::application_instance_data(application_instance_data&& right)
+//{
+//    domains_ = std::move(right.domains_);
+//    ports_ = std::move(right.ports_);
+//    executer_ = std::move(right.executer_);
+//    identity_ = std::move(right.identity_);
+//}
+//application_instance_data::application_instance_data(const application_instance_data& right)
+//{
+//    domains_ = right.domains_;
+//    ports_ = right.ports_;
+//    executer_ = right.executer_;
+//    identity_ = right.identity_;
+//}
 // Class rx_platform::runtime::items::port_instance_data 
 
 port_instance_data::port_instance_data()
@@ -407,33 +337,13 @@ port_instance_data::port_instance_data()
 {
 }
 
-
-
-bool port_instance_data::serialize (base_meta_writer& stream, uint8_t type) const
+port_instance_data::port_instance_data (const port_data& data)
+      : executer_(-1)
+    , data_(data)
 {
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.write_id("app", app_id))
-        return false;
-    if (!identity_.serialize("identity", stream))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
 }
 
-bool port_instance_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("instance"))
-        return false;
-    if (!stream.read_id("app", app_id))
-        return false;
-    if (!identity_.deserialize("identity", stream))
-        return false;
-    if (!stream.end_object())
-        return false;
-    return true;
-}
+
 
 bool port_instance_data::connect_application (rx_application_ptr&& app, rx_port_ptr whose)
 {
@@ -460,7 +370,7 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     if (what->get_instance_data().my_application_)
     {
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
-        auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path());
+        auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path(), what->get_instance_data().data_.identity);
         // for port we have to have executer cached value
         auto rt_ptr = what->get_implementation();
         RX_ASSERT(rt_ptr);
@@ -505,18 +415,7 @@ const rx_application_ptr port_instance_data::get_my_application () const
   return my_application_;
 }
 
-port_instance_data::port_instance_data(port_instance_data&& right)
-{
-    app_id = std::move(right.app_id);
-    executer_ = std::move(right.executer_);
-    identity_ = std::move(right.identity_);
-}
-port_instance_data::port_instance_data(const port_instance_data& right)
-{
-    app_id = right.app_id;
-    executer_ = right.executer_;
-    identity_ = right.identity_;
-}
+
 } // namespace items
 } // namespace runtime
 } // namespace rx_platform

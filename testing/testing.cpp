@@ -235,11 +235,11 @@ void test_thread()
 
 	std::function<void(int)> fptr(testing);
 
-	rx::jobs::lambda_job<int>::smart_ptr job(testing,55);
+	//rx::jobs::function_job<::smart_ptr job(testing,55);
 
-	jthread.append(job);
-	jthread.append(job);
-	jthread.append(job);
+	//jthread.append(job);
+	//jthread.append(job);
+	//jthread.append(job);
 
 	thread.wait_handle();
 

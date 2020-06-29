@@ -34,8 +34,10 @@
 // rx_io_relations
 #include "interfaces/rx_io_relations.h"
 
+#include "system/runtime/rx_runtime_holder.h"
 #include "model/rx_meta_internals.h"
 #include "system/server/rx_platform_item.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_internal {
@@ -56,9 +58,9 @@ void port_stack_relation::process_stack ()
 {
 }
 
-rx_result port_stack_relation::initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_result port_stack_relation::initialize_relation (runtime::runtime_init_context& ctx)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.get_id());
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.id);
     if (!result)
     {
         result.register_error(ctx.meta.get_full_path() + "is not a port!");
@@ -85,17 +87,17 @@ rx_result port_stack_relation::stop_relation (runtime::runtime_stop_context& ctx
 
 rx_result_with<platform_item_ptr> port_stack_relation::resolve_runtime_sync (const rx_node_id& id)
 {
-    auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
+    auto port_ptr = rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().get_port(id);
     if (!port_ptr)
     {
-        return port_ptr.errors();
+        return "Item not registered!";
     }
     else
     {
-        if (port_ptr.value()->get_instance_data().get_my_application() != from_->get_instance_data().get_my_application())
+        if (port_ptr->get_instance_data().get_my_application() != from_->get_instance_data().get_my_application())
             return "Connected I/O ports must be in the same application.";
-        auto ret = port_ptr.value()->get_item_ptr();
-        to_ = port_ptr.move_value();
+        auto ret = port_ptr->get_item_ptr();
+        to_ = port_ptr;
         return ret;
     }
 }

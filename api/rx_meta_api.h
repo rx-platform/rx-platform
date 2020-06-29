@@ -35,6 +35,8 @@
 
 
 #include "rx_platform_api.h"
+#include "lib/rx_func_to_go.h"
+
 namespace rx_platform
 {
 namespace api
@@ -43,123 +45,85 @@ namespace meta
 {
 
 template<class typeT>
-rx_result rx_delete_runtime(
-	const rx_item_reference& ref
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
+rx_result rx_delete_runtime(const rx_item_reference& ref
+	, rx_result_callback&& callback);
 
 
 template<class typeT>
 rx_result rx_create_runtime(
-	rx_platform::meta::meta_data& meta_info
-	, data::runtime_values_data* init_data  // initialization data
-	, typename typeT::instance_data_t instance_data
-	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
-	, rx_context ctx);
+	typename typeT::instance_data_t instance_data
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
 template<class typeT>
 rx_result rx_update_runtime(
-	rx_platform::meta::meta_data& meta_info
-	, data::runtime_values_data* init_data  // initialization data
-	, typename typeT::instance_data_t instance_data, bool increment_version
-	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
-	, rx_context ctx);
+	typename typeT::instance_data_t instance_data, bool increment_version
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-
-template<class typeT>
-rx_result rx_create_runtime_implicit(
-	const string_type& name, const string_type& type_name
-	, namespace_item_attributes attributes // required attributes
-	, data::runtime_values_data* init_data  // initialization data
-	, typename typeT::instance_data_t instance_data
-	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
-	, rx_context ctx);
 
 template<class typeT>
 rx_result rx_create_prototype(
-	rx_platform::meta::meta_data& meta_info, typename typeT::instance_data_t instance_data
-	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback
-	, rx_context ctx);
+	typename typeT::instance_data_t instance_data
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
 template<class typeT>
 rx_result rx_get_runtime(const rx_item_reference& ref
-	, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_context ctx);
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
 template<class typeT>
 rx_result rx_create_type(
-	const string_type& name // type's path
-	, const rx_item_reference& base_reference // base reference
-	, typename typeT::smart_ptr prototype // prototype
-	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
-	, rx_context ctx);
+	typename typeT::smart_ptr prototype // prototype
+	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 template<class typeT>
 rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_version
-	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
-	, rx_context ctx);
+	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 
 template<class typeT>
 rx_result rx_create_simple_type(
-	const string_type& name // type's path
-	, const rx_item_reference& base_reference // base reference
-	, typename typeT::smart_ptr prototype // prototype
-	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
-	, rx_context ctx);
+	typename typeT::smart_ptr prototype // prototype
+	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 template<class typeT>
 rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
-	, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback
-	, rx_context ctx);
+	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 rx_result rx_create_relation_type(
-	const string_type& name // type's path
-	, const rx_item_reference& base_reference // base reference
-	, object_types::relation_type::smart_ptr prototype // prototype
-	, namespace_item_attributes attributes // required attributes
-	, std::function<void(rx_result_with<typename object_types::relation_type::smart_ptr>&&)> callback
-	, rx_context ctx);
+	object_types::relation_type::smart_ptr prototype // prototype
+	, rx_result_with_callback<object_types::relation_type::smart_ptr>&& callback);
 
 rx_result rx_update_relation_type(object_types::relation_type::smart_ptr prototype, bool increment_version
-	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback
-	, rx_context ctx);
+	, rx_result_with_callback<object_types::relation_type::smart_ptr>&& callback);
 
 
-rx_result rx_save_item(
-	const string_type& name // item's path
-	, std::function<void(rx_result&&)> callback
-	, rx_context ctx);
+rx_result rx_save_item(const string_type& ref
+	, rx_result_callback&& callback);
 
 template<class T>
 rx_result rx_get_type(const rx_item_reference& ref
-	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
+	, rx_result_with_callback<typename T::smart_ptr>&& callback);
 
 
 template<class T>
 rx_result rx_get_simple_type(const rx_item_reference& ref
-	, std::function<void(rx_result_with<typename T::smart_ptr>&&)> callback, rx_context ctx);
+	, rx_result_with_callback<typename T::smart_ptr>&& callback);
 
 rx_result rx_get_relation_type(const rx_item_reference& ref
-	, std::function<void(rx_result_with<object_types::relation_type::smart_ptr>&&)> callback, rx_context ctx);
+	, rx_result_with_callback<object_types::relation_type::smart_ptr>&& callback);
 
 
 
 template<class T>
 rx_result rx_delete_type(const rx_item_reference& ref
-	, std::function<void(rx_result&&)> callback, rx_context ctx);
+	, rx_result_callback&& callback);
 
 
 template<class T>
 rx_result rx_delete_simple_type(const rx_item_reference& ref
-	, std::function<void(rx_result&&)> callback, rx_context ctx);
+	, rx_result_callback&& callback);
 
 rx_result rx_delete_relation_type(const rx_item_reference& ref
-	, std::function<void(rx_result&&)> callback, rx_context ctx);
-
-template<class resultT, class refT, class... Args>
-rx_result rx_do_with_items(const std::vector<rx_namespace_item>& items, std::function<resultT(Args...)> verb, std::function<void(resultT)> callback, rx_context ctx);
+	, rx_result_callback&& callback);
 
 }
 }

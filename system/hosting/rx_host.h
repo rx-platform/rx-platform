@@ -32,10 +32,7 @@
 #define rx_host_h 1
 
 
-#include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
-#include "system/libraries/rx_plugin.h"
-
 
 
 // adding command line parsing library
@@ -62,9 +59,15 @@ struct configuration_data_t;
 namespace rx {
 namespace security {
 class security_context;
-
 } // namespace security
 } // namespace rx
+
+namespace rx_platform {
+namespace library {
+class rx_plugin_base;
+
+} // namespace library
+} // namespace rx_platform
 
 
 

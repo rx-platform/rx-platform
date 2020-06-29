@@ -71,10 +71,12 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags)
+runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs)
       : tags_(tags),
         binded_(binded),
-        current_step_(runtime_process_step::idle)
+        current_step_(runtime_process_step::idle),
+        meta_info(info),
+        directory_resolver_(dirs)
 {
 }
 
@@ -375,9 +377,28 @@ rx_result runtime_process_context::do_command (rx_object_command_t command_type)
     return "Error executing command!";
 }
 
+void runtime_process_context::own_pending (jobs::job_ptr what)
+{
+    turn_on_pending<runtime_process_step::own>();
+    owns_.emplace_back(std::move(what));
+}
+
+owner_jobs_type& runtime_process_context::get_for_own_process ()
+{
+    static owner_jobs_type empty;
+    if (should_do_step<runtime_process_step::own>())
+        return owns_.get_and_swap();
+    else
+        return empty;
+}
+
+
+// Parameterized Class rx_platform::runtime::process_context_job 
+
+
+// Class rx_platform::runtime::context_job 
+
 
 } // namespace runtime
 } // namespace rx_platform
-
-
 

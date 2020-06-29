@@ -34,14 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
 
-// dummy
-#include "dummy.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 namespace host {
 namespace pipe {
@@ -93,7 +91,6 @@ class anonymus_pipe_client
 
 
 };
-
 
 
 

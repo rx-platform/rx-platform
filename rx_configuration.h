@@ -4,7 +4,7 @@
 #define RX_OBJECT_DELIMETER '.'
 #define RX_DIR_OBJECT_DELIMETER '/'
 #define RX_PATH_CURRENT '.'
-#define RX_PATH_PARENT '$'
+#define RX_PATH_PARENT '#'
 #define RX_SOURCE_DELIMETER '#'
 #define RX_DIR_DELIMETER_STR "/"
 #define RX_OBJECT_DELIMETER_STR "."
@@ -13,6 +13,8 @@
 #define RX_PATH_PARENT_STR '$'
 #define RX_DEFAULT_VARIABLE_NAME "_"
 #define RX_SOURCE_DELIMETER_STR "#"
+#define RX_MACRO_SYMBOL '$'
+#define RX_MACRO_SYMBOL_STR "$"
 
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
@@ -250,6 +252,7 @@
 #define RX_CPP_EVENT_TYPE_NAME "event"
 #define RX_CPP_RELATION_CLASS_TYPE_NAME "relation_type"
 #define RX_CPP_RELATION_TYPE_NAME "relation"
+#define RX_CPP_RELATION_TARGET_TYPE_NAME "relation_target"
 
 //Main messages
 #define RX_ACCESS_DENIED "*ACCESS DENIED*"

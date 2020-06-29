@@ -33,12 +33,12 @@
 
 
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 
 
 

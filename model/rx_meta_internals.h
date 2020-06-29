@@ -33,6 +33,8 @@
 
 
 
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 
 #include "system/meta/rx_types.h"
 #include "system/meta/rx_obj_types.h"
@@ -371,7 +373,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> f);
 
-      rx_result_with<create_runtime_result<typeT> > create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data = nullptr, bool prototype = false);
+      rx_result_with<create_runtime_result<typeT> > create_runtime (typename typeT::instance_data_t&& instance_data, bool prototype = false);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -449,7 +451,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id) const;
+      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, const rx_directory_resolver& dirs) const;
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -562,7 +564,7 @@ public:
 
       rx_result register_type (relations_type_repository::Tptr what);
 
-      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
+      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 

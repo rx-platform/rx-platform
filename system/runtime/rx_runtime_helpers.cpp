@@ -51,6 +51,30 @@ namespace rx_platform {
 
 namespace runtime {
 
+// Class rx_platform::runtime::io_capabilities 
+
+
+void io_capabilities::set_input (bool val)
+{
+    settings_[0] = val;
+}
+
+void io_capabilities::set_output (bool val)
+{
+    settings_[1] = val;
+}
+
+bool io_capabilities::get_input () const
+{
+    return settings_.test(0);
+}
+
+bool io_capabilities::get_output () const
+{
+    return settings_.test(1);
+}
+
+
 // Class rx_platform::runtime::runtime_deinit_context 
 
 
@@ -60,7 +84,8 @@ runtime_init_context::runtime_init_context (structure::runtime_item& root, const
       : context(context),
         next_handle_(0x80000000),
         meta(meta),
-        directories(directories)
+        directories(directories),
+        now(rx_time::now())
     , structure(root)
     , tags(binded)
 {
@@ -139,7 +164,8 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 
 runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories)
       : context(context),
-        directories(directories)
+        directories(directories),
+        now(rx_time::now())
     , structure(root)
 {
 }
@@ -206,30 +232,6 @@ structure::variable_data* variables_stack::get_current_variable () const
 		return variables_.top();
 	else
 		return nullptr;
-}
-
-
-// Class rx_platform::runtime::io_capabilities 
-
-
-void io_capabilities::set_input (bool val)
-{
-    settings_[0] = val;
-}
-
-void io_capabilities::set_output (bool val)
-{
-    settings_[1] = val;
-}
-
-bool io_capabilities::get_input () const
-{
-    return settings_.test(0);
-}
-
-bool io_capabilities::get_output () const
-{
-    return settings_.test(1);
 }
 
 

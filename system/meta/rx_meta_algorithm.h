@@ -178,7 +178,7 @@ class relation_blocks_algorithm
 
       static bool check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx);
 
-      static rx_result construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, construct_context& ctx);
+      static rx_result construct_relation_attribute (const object_types::relation_attribute& whose, runtime::relations::relation_data& data, rx_reference_ptr ref_ptr, construct_context& ctx);
 
 
   protected:

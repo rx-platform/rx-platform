@@ -42,8 +42,8 @@ namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_type_creator_base;
 class protocol_runtime_creator_base;
+class protocol_type_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -485,16 +485,12 @@ class protocol_runtime_creator : public protocol_runtime_creator_base
       rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
 
 
+      typename itemT::instance_data_t item;
+
+
   protected:
 
   private:
-
-
-      data::runtime_values_data overrides_;
-
-      typename itemT::instance_data_t instance_data_;
-
-      meta::meta_data meta_;
 
 
 };

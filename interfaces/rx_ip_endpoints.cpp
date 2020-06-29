@@ -36,6 +36,7 @@
 
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
+#include "system/runtime/rx_operational.h"
 
 
 namespace rx_internal {

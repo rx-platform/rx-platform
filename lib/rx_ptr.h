@@ -138,6 +138,12 @@ public:
 			ret.ptr_->bind();
 		return ret;
 	}
+	static reference create_from_pointer_without_bind(ptrT* ptr)
+	{
+		reference ret;
+		ret.ptr_ = ptr;		
+		return ret;
+	}
 private:
 
 	template<class T, class Tbase>
@@ -147,7 +153,7 @@ private:
 		return result;
 	}
 public:
-	explicit reference()
+	explicit reference() noexcept
 	{
 		this->ptr_ = nullptr;
 	}
@@ -475,16 +481,18 @@ using rx_reference = pointers::reference<Tptr>;
 //convenient alias
 typedef pointers::struct_reference::smart_ptr rx_struct_ptr;
 
+typedef pointers::reference_object::smart_ptr rx_reference_ptr;
+
 // for standard references
 template<class T, typename... Args>
 pointers::reference<T> rx_create_reference(Args&&... args)
 {
-	return pointers::reference<T>(std::forward<Args>(args)...);
+	return pointers::reference<T>::create_from_pointer_without_bind(new T(std::forward<Args>(args)...));
 }
 template<class T>
 pointers::reference<T> rx_create_reference()
 {
-	return pointers::reference<T>(pointers::_create_new);
+	return pointers::reference<T>::create_from_pointer_without_bind(new T());
 }
 }
 

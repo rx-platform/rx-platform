@@ -538,11 +538,10 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count)
     FILE *fp = fopen(_PATH_PROC_CPUINFO,"r");
     char buf[BUFSIZ];
     char* model_name=NULL;
-    char* cores=NULL;
     /* details */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         if (lookup(buf, "model name", &model_name)) ;
-        else if (lookup(buf, "cpu cores", &cores)) ;
+        //else if (lookup(buf, "cpu cores", &cores)) ;
         else
             continue;
     }
@@ -555,16 +554,7 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count)
     {
         buffer[0]='\0';
     }
-	if (cores != NULL)
-	{
-		char* end_ptr = NULL;
-		*count = strtol(cores, &end_ptr, 10);
-		strcat(buffer, " ; Total Cores:");
-		strcat(buffer, cores);
-		free(cores);
-	}
-	else
-		*count = 1;
+    *count = (size_t)get_nprocs_conf();
 }
 void read_off_memory_status(size_t* process)
 {
@@ -821,6 +811,7 @@ void* do_stuff(void* arg)
 	eventfd_t buff = 1;
 	start_address_t addr = start_chunk->f;
 
+
 	(addr)(start_chunk->arg);
 
 	//(*start_chunk-f)(start_chunk->arg);
@@ -873,6 +864,8 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 	pthread_create(&chunk->thr, &chunk->attr, do_stuff, chunk);
     *thread_id = chunk->thr;
 
+
+	pthread_setname_np(chunk->thr, name);
 
     int ret = pthread_setschedparam(chunk->thr,SCHED_RR,&sp);
     if(ret==-1)

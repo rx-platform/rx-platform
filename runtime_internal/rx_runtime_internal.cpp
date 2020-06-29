@@ -36,6 +36,7 @@
 // rx_runtime_internal
 #include "runtime_internal/rx_runtime_internal.h"
 
+#include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_runtime_helpers.h"
 #include "runtime_internal/rx_data_source.h"
@@ -43,6 +44,7 @@
 #include "rx_simulation.h"
 #include "rx_runtime_relations.h"
 #include "sys_internal/rx_async_functions.h"
+
 
 namespace rx_platform
 {
@@ -53,6 +55,26 @@ locks::slim_lock* g_runtime_lock = nullptr;
 namespace rx_internal {
 
 namespace sys_runtime {
+template<>
+rx_object_ptr get_runtime_impl<meta::object_types::object_type>(runtime_cache* whose, const rx_node_id& id)
+{
+	return whose->get_object(id);
+}
+template<>
+rx_domain_ptr get_runtime_impl<meta::object_types::domain_type>(runtime_cache* whose, const rx_node_id& id)
+{
+	return whose->get_domain(id);
+}
+template<>
+rx_application_ptr get_runtime_impl<meta::object_types::application_type>(runtime_cache* whose, const rx_node_id& id)
+{
+	return whose->get_application(id);
+}
+template<>
+rx_port_ptr get_runtime_impl<meta::object_types::port_type>(runtime_cache* whose, const rx_node_id& id)
+{
+	return whose->get_port(id);
+}
 
 // Class rx_internal::sys_runtime::platform_runtime_manager 
 
@@ -65,7 +87,7 @@ platform_runtime_manager& platform_runtime_manager::instance ()
 
 rx_thread_handle_t platform_runtime_manager::resolve_app_processor (const application_instance_data& data)
 {
-	rx_thread_handle_t this_cpu = data.processor;
+	rx_thread_handle_t this_cpu = data.get_data().processor;
 	if (this_cpu < 0)
 		this_cpu = resolve_processor_auto();
 	this_cpu = this_cpu % cpu_coverage_.size();
@@ -75,7 +97,7 @@ rx_thread_handle_t platform_runtime_manager::resolve_app_processor (const applic
 
 rx_thread_handle_t platform_runtime_manager::resolve_domain_processor (const domain_instance_data& data)
 {
-	rx_thread_handle_t this_cpu = data.processor;
+	rx_thread_handle_t this_cpu = data.get_data().processor;
 	if (this_cpu < 0)
 	{
 		// handle get application and get his
@@ -193,62 +215,38 @@ runtime_cache::runtime_cache()
 
 
 
-void runtime_cache::add_to_cache (platform_item_ptr&& item)
+void runtime_cache::add_to_cache (platform_item_ptr&& item, collected_subscribers_type& subscribers)
 {
 	static std::function<void(const rx_node_id&)> g_dummy_f;
 
 	string_type name = item->get_name();
 	string_type path = item->meta_info().get_full_path();
-	rx_node_id id = item->meta_info().get_id();
+	rx_node_id id = item->meta_info().id;
 
-	std::map<rx_thread_handle_t, subs_list_t> to_send;
-
+	auto it_path = path_cache_.find(path);
+	if (it_path != path_cache_.end())
 	{
-		locks::auto_slim_lock _(&lock_);
-		auto it_path = path_cache_.find(path);
-		if (it_path != path_cache_.end())
+		return;
+	}
+	auto it_id = id_cache_.find(id);
+	if (it_id != id_cache_.end())
+	{
+		if (it_id->second.item)
 		{
+			RX_ASSERT(false);
 			return;
 		}
-		auto it_id = id_cache_.find(id);
-		if (it_id != id_cache_.end())
-		{
-			if (it_id->second.item)
-			{
-				RX_ASSERT(false);
-				return;
-			}
-			if (it_id->second.register_f)
-				it_id->second.register_f(item->meta_info().get_id());
-			it_id->second.item = item->clone();
-		}
-		else
-		{
-			id_cache_.emplace(std::move(id), runtime_id_data{ item->clone(), g_dummy_f, g_dummy_f });
-		}
-		path_cache_.emplace(std::move(path), std::move(item));		
-
-		collect_subscribers(id, name, to_send);
+		if (it_id->second.register_f)
+			it_id->second.register_f(item->meta_info().id);
+		it_id->second.item = item->clone();
 	}
-	if (!to_send.empty())
+	else
 	{
-		for (auto& for_one : to_send)
-		{
-			if (!for_one.second.empty())
-			{
-				auto ref = for_one.second.begin()->second;
-				std::function<void(subs_list_t)> func = [id](subs_list_t data)
-				{
-					for (auto& one : data)
-					{
-						one.first->runtime_appeared(platform_item_ptr());
-					}
-				};
-				rx_post_function_to<rx_reference_ptr, subs_list_t>(for_one.first,
-					func, ref, std::move(for_one.second));
-			}
-		}
+		id_cache_.emplace(std::move(id), runtime_id_data{ item->clone(), g_dummy_f, g_dummy_f });
 	}
+	path_cache_.emplace(std::move(path), std::move(item));
+
+	collect_subscribers(id, name, subscribers);
 }
 
 std::vector<platform_item_ptr> runtime_cache::get_items (const string_array& paths)
@@ -271,7 +269,7 @@ platform_item_ptr runtime_cache::get_item (const rx_node_id& id)
 {
 	locks::auto_slim_lock _(&lock_);
 	auto it = id_cache_.find(id);
-	if (it != id_cache_.end())
+	if (it != id_cache_.end() &&  it->second.item)
 		return it->second.item->clone();
 	else
 		return platform_item_ptr();
@@ -282,17 +280,34 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 	using subs_list_t = std::vector< std::pair<runtime::resolvers::runtime_subscriber*, rx_reference_ptr> >;
 	std::map<rx_thread_handle_t, subs_list_t> to_send;
 	string_type name = item->get_name();
-	rx_node_id id = item->meta_info().get_id();
+	rx_node_id id = item->meta_info().id;
 	{
 		locks::auto_slim_lock _(&lock_);
+		switch (item->get_type_id())
+		{
+		case rx_item_type::rx_application:
+			applications_cache_.erase(id);
+			break;
+		case rx_item_type::rx_domain:
+			domains_cache_.erase(id);
+			break;
+		case rx_item_type::rx_port:
+			ports_cache_.erase(id);
+			break;
+		case rx_item_type::rx_object:
+			objects_cache_.erase(id);
+			break;
+		default:
+			RX_ASSERT(false);
+		}
 		auto it = path_cache_.find(item->meta_info().get_full_path());
 		if (it != path_cache_.end())
 			path_cache_.erase(it);
-		auto it_id = id_cache_.find(item->meta_info().get_id());
+		auto it_id = id_cache_.find(item->meta_info().id);
 		if (it_id != id_cache_.end())
 		{
 			if (it_id->second.deleter_f)
-				it_id->second.deleter_f(item->meta_info().get_id());
+				it_id->second.deleter_f(item->meta_info().id);
 			id_cache_.erase(it_id);
 		}
 		collect_subscribers(id, name, to_send);
@@ -304,15 +319,14 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 			if (!for_one.second.empty())
 			{
 				auto ref = for_one.second.begin()->second;
-				std::function<void(subs_list_t)> func = [id](subs_list_t data)
+				rx_post_function_to(for_one.first, ref,
+					[id](subs_list_t data)
 					{
                         for(auto& one : data)
                         {
 							one.first->runtime_destroyed(id);
                         }
-					};
-				rx_post_function_to<rx_reference_ptr, subs_list_t>(for_one.first,
-					func, ref, std::move(for_one.second));
+					}, std::move(for_one.second));
 			}
 		}
 	}
@@ -402,12 +416,11 @@ void runtime_cache::register_subscriber (const rx_item_reference& ref, runtime::
 			}
 		}
 	}
-	std::function<void(platform_item_ptr)> func = [whose](platform_item_ptr item)
-	{
-		whose->runtime_appeared(std::move(item));
-	};
-	rx_post_function_to<rx_reference_ptr, platform_item_ptr>(executer, func
-		, whose->get_reference(), item ? std::move(item) : platform_item_ptr());
+	rx_post_function_to(executer, whose->get_reference(), [whose](platform_item_ptr item)
+		{
+			whose->runtime_appeared(std::move(item));
+		}
+		, item ? std::move(item) : platform_item_ptr());
 }
 
 void runtime_cache::collect_subscribers (const rx_node_id& id, const string_type& name, std::map<rx_thread_handle_t, subs_list_t>& to_send)
@@ -428,6 +441,224 @@ void runtime_cache::collect_subscribers (const rx_node_id& id, const string_type
 			to_send[one.second.target].emplace_back(one.first, one.first->get_reference());
 		}
 	}
+}
+
+rx_object_ptr runtime_cache::get_object (const rx_node_id& id)
+{
+	locks::auto_slim_lock _(&lock_);
+	auto it = objects_cache_.find(id);
+	if (it != objects_cache_.end())
+		return it->second;
+	else
+		return rx_object_ptr::null_ptr;
+}
+
+rx_application_ptr runtime_cache::get_application (const rx_node_id& id)
+{
+	locks::auto_slim_lock _(&lock_);
+	auto it = applications_cache_.find(id);
+	if (it != applications_cache_.end())
+		return it->second;
+	else
+		return rx_application_ptr::null_ptr;
+}
+
+rx_domain_ptr runtime_cache::get_domain (const rx_node_id& id)
+{
+	locks::auto_slim_lock _(&lock_);
+	auto it = domains_cache_.find(id);
+	if (it != domains_cache_.end())
+		return it->second;
+	else
+		return rx_domain_ptr::null_ptr;
+}
+
+rx_port_ptr runtime_cache::get_port (const rx_node_id& id)
+{
+	locks::auto_slim_lock _(&lock_);
+	auto it = ports_cache_.find(id);
+	if (it != ports_cache_.end())
+		return it->second;
+	else
+		return rx_port_ptr::null_ptr;
+}
+
+void runtime_cache::add_to_cache (rx_object_ptr item)
+{
+	collected_subscribers_type subscribers;
+	{
+		locks::auto_slim_lock _(&lock_);
+		add_to_cache(item->get_item_ptr(), subscribers);
+		objects_cache_.emplace(item->meta_info().id, item);
+	}
+	post_appeared(subscribers);
+}
+
+void runtime_cache::add_to_cache (rx_domain_ptr item)
+{
+	collected_subscribers_type subscribers;
+	{
+		locks::auto_slim_lock _(&lock_);
+		add_to_cache(item->get_item_ptr(), subscribers);
+		domains_cache_.emplace(item->meta_info().id, item);
+	}
+	post_appeared(subscribers);
+}
+
+void runtime_cache::add_to_cache (rx_port_ptr item)
+{
+	collected_subscribers_type subscribers;
+	{
+		locks::auto_slim_lock _(&lock_);
+		add_to_cache(item->get_item_ptr(), subscribers);
+		ports_cache_.emplace(item->meta_info().id, item);
+	}
+	post_appeared(subscribers);
+}
+
+void runtime_cache::add_to_cache (rx_application_ptr item)
+{
+	collected_subscribers_type subscribers;
+	{
+		locks::auto_slim_lock _(&lock_);
+		add_to_cache(item->get_item_ptr(), subscribers);
+		applications_cache_.emplace(item->meta_info().id, item);
+	}
+	post_appeared(subscribers);
+}
+
+void runtime_cache::post_appeared (collected_subscribers_type& subscribers)
+{
+	if (!subscribers.empty())
+	{
+		for (auto& for_one : subscribers)
+		{
+			if (!for_one.second.empty())
+			{
+				auto ref = for_one.second.begin()->second;
+				rx_post_function_to(for_one.first, ref,
+					[](subs_list_t data)
+				{
+					for (auto& one : data)
+					{
+						one.first->runtime_appeared(platform_item_ptr());
+					}
+				}, std::move(for_one.second));
+			}
+		}
+	}
+}
+
+rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::relation_data::smart_ptr data)
+{
+	rx_result result;
+	lock_.lock();
+	auto it = id_cache_.find(id);
+	if (it != id_cache_.end() && it->second.item)
+	{
+		switch (it->second.item->get_type_id())
+		{
+		case rx_item_type::rx_application:
+			{
+				auto rt_it = applications_cache_.find(id);
+				if (rt_it != applications_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->add_target_relation(std::move(data));
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_domain:
+			{
+				auto rt_it = domains_cache_.find(id);
+				if (rt_it != domains_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->add_target_relation(std::move(data));
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_port:
+			{
+				auto rt_it = ports_cache_.find(id);
+				if (rt_it != ports_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->add_target_relation(std::move(data));
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_object:
+			{
+				auto rt_it = objects_cache_.find(id);
+				if (rt_it != objects_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->add_target_relation(std::move(data));
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		default:
+			lock_.unlock();
+			result = "Not found in cache!";
+			RX_ASSERT(false);
+		}
+	}
+	else
+	{
+		lock_.unlock();
+		result = "Not found in cache!";
+	}
+	return result;
+}
+
+rx_result runtime_cache::remove_target_relation (const rx_node_id& id, const string_type& name)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+std::vector<platform_item_ptr> runtime_cache::get_items (const rx_node_ids& ids)
+{
+	std::vector<platform_item_ptr> ret;
+	ret.reserve(ids.size());
+	locks::auto_slim_lock _(&lock_);
+	for (const auto& id : ids)
+	{
+		auto it = id_cache_.find(id);
+		if (it != id_cache_.end())
+			ret.emplace_back(it->second.item->clone());
+		else
+			ret.emplace_back(platform_item_ptr());
+	}
+	return ret;
 }
 
 

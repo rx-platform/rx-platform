@@ -39,6 +39,7 @@
 #include "api/rx_namespace_api.h"
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"
+#include "system/runtime/rx_runtime_holder.h"
 
 
 namespace rx_internal {
@@ -153,28 +154,28 @@ message_ptr delete_type_request::do_job(api::rx_context ctx, rx_protocol_connect
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, conn](rx_result&& result) mutable
-	{
-		if (result)
+	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 		{
-			auto response = std::make_unique<delete_type_response>();
-			response->request_id = request_id;
-			conn->data_processed(std::move(response));
+			if (result)
+			{
+				auto response = std::make_unique<delete_type_response>();
+				response->request_id = request_id;
+				conn->data_processed(std::move(response));
 
-		}
-		else
-		{
-			auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-			conn->data_processed(std::move(ret_value));
-		}
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+				conn->data_processed(std::move(ret_value));
+			}
 
-	};
+		});
 
-	rx_result result = api::meta::rx_delete_type<T>(reference, callback, ctx);
+	rx_result result = api::meta::rx_delete_type<T>(reference, std::move(callback));
 
 	if (!result)
 	{
-		return std::make_unique<error_message>(result, 13, request_id);
+		return std::make_unique<error_message>(std::move(result), 13, request_id);
 	}
 	else
 	{
@@ -188,7 +189,7 @@ message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, conn](rx_result&& result) mutable
+	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 	{
 		if (result)
 		{
@@ -203,9 +204,9 @@ message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 
-	rx_result result = api::meta::rx_delete_simple_type<T>(reference, callback, ctx);
+	rx_result result = api::meta::rx_delete_simple_type<T>(reference, std::move(callback));
 
 	if (!result)
 	{
@@ -256,7 +257,7 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 {
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
+	auto callback = rx_result_with_callback<typename itemT::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
@@ -281,12 +282,12 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 	rx_result result;
 	if(create)
-		result = api::meta::rx_create_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+		result = api::meta::rx_create_type<itemT>(item, std::move(callback));
 	else
-		result = api::meta::rx_update_type<itemT>(item, false, callback, ctx);
+		result = api::meta::rx_update_type<itemT>(item, false, std::move(callback));
 
 	if (!result)
 	{
@@ -517,6 +518,9 @@ rx_result update_type_request::deserialize (base_meta_reader& stream)
 	case rx_item_type::rx_domain_type:
 		updater_ = std::make_unique<protocol_type_creator<object_types::domain_type> >();
 		break;
+	case rx_item_type::rx_relation_type:
+		updater_ = std::make_unique<protocol_relation_type_creator>();
+		break;
 		// simple types
 	case rx_item_type::rx_struct_type:
 		updater_ = std::make_unique<protocol_simple_type_creator<basic_types::struct_type> >();
@@ -610,7 +614,7 @@ message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx
 {
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
+	auto callback = rx_result_with_callback<typename itemT::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
@@ -635,12 +639,12 @@ message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 	rx_result result;
 	if (create)
-		result = api::meta::rx_create_simple_type<itemT>("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+		result = api::meta::rx_create_simple_type<itemT>(item, std::move(callback));
 	else
-		result = api::meta::rx_update_simple_type<itemT>(item, false, callback, ctx);
+		result = api::meta::rx_update_simple_type<itemT>(item, false, std::move(callback));
 
 	if (!result)
 	{
@@ -682,14 +686,14 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 {
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [create, request, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
+	auto callback = rx_function_to_go<rx_result_with<object_types::relation_type::smart_ptr>&&>(ctx.object, [create, request, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
 			if (create)
 			{
 				auto response = std::make_unique<set_type_response<object_types::relation_type> >();
-				response->item = result.value();
+				response->item = result.move_value();
 				response->request_id = request;
 				conn->data_processed(std::move(response));
 			}
@@ -707,12 +711,12 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 	rx_result result;
 	if (create)
-		result = api::meta::rx_create_relation_type("", "", item, namespace_item_attributes::namespace_item_null, callback, ctx);
+		result = api::meta::rx_create_relation_type(item, std::move(callback));
 	else
-		result = api::meta::rx_update_relation_type(item, false, callback, ctx);
+		result = api::meta::rx_update_relation_type(item, false, std::move(callback));
 
 	if (!result)
 	{
@@ -837,7 +841,7 @@ message_ptr delete_runtime_request::do_job(api::rx_context ctx, rx_protocol_conn
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [request_id, conn](rx_result&& result) mutable
+	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 	{
 		if (result)
 		{
@@ -852,9 +856,9 @@ message_ptr delete_runtime_request::do_job(api::rx_context ctx, rx_protocol_conn
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 
-	rx_result result = api::meta::rx_delete_runtime<T>(reference, callback, ctx);
+	rx_result result = api::meta::rx_delete_runtime<T>(reference, std::move(callback));
 
 	if (!result)
 	{
@@ -904,7 +908,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 {
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = [create_type, request, conn](rx_result_with<typename itemT::RTypePtr>&& result) mutable
+	auto callback = rx_result_with_callback<typename itemT::RTypePtr>(ctx.object, [create_type, request, conn](rx_result_with<typename itemT::RTypePtr>&& result) mutable
 	{
 		if (result)
 		{
@@ -913,7 +917,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 			case 0: 
 				{
 					auto response = std::make_unique<prototype_runtime_response<itemT> >();
-					response->item = result.value();
+					response->item = result.value()->get_definition_data();
 					response->request_id = request;
 					conn->data_processed(std::move(response));
 				}
@@ -921,7 +925,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 			case 1:
 				{
 					auto response = std::make_unique<set_runtime_response<itemT> >();
-					response->item = result.value();
+					response->item = result.value()->get_definition_data();
 					response->request_id = request;
 					conn->data_processed(std::move(response));
 				}
@@ -929,7 +933,7 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 			case 2:
 				{
 					auto response = std::make_unique<update_runtime_response<itemT> >();
-					response->item = result.value();
+					response->item = result.value()->get_definition_data();
 					response->request_id = request;
 					conn->data_processed(std::move(response));
 				}
@@ -944,19 +948,19 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 			conn->data_processed(std::move(ret_value));
 		}
 
-	};
+	});
 	rx_result result;
 
 	switch (create_type)
 	{
 	case 0:// prototype
-		result = api::meta::rx_create_prototype<itemT>(meta_, instance_data_, callback, ctx);
+		result = api::meta::rx_create_prototype<itemT>(std::move(item), std::move(callback));
 		break;
 	case 1:// create
-		result = api::meta::rx_create_runtime<itemT>(meta_, &overrides_, instance_data_, callback, ctx);
+		result = api::meta::rx_create_runtime<itemT>(std::move(item), std::move(callback));
 		break;
 	case 2:// update
-		result = api::meta::rx_update_runtime<itemT>(meta_, &overrides_, instance_data_, false, callback, ctx);
+		result = api::meta::rx_update_runtime<itemT>(std::move(item), false, std::move(callback));
 		break;
 	default:
 		result = "Unexpected create_type error!";
@@ -977,25 +981,13 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 template <class itemT>
 rx_result protocol_runtime_creator<itemT>::serialize (base_meta_writer& stream) const
 {
-	return "Jbg nema jos!!!";
+	return item.serialize(stream, STREAMING_TYPE_OBJECT);
 }
 
 template <class itemT>
 rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
 {
-	bool ret = false;
-	if (stream.start_object("def"))
-	{
-		if (stream.read_init_values("overrides", overrides_))
-		{
-			if (instance_data_.deserialize(stream, STREAMING_TYPE_OBJECT))
-			{
-				meta_ = meta;
-				ret = true;
-			}
-		}
-	}
-	return ret;
+	return item.deserialize(stream, STREAMING_TYPE_OBJECT, meta);
 }
 
 

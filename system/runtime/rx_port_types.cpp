@@ -37,6 +37,7 @@
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
+#include "rx_runtime_holder.h"
 
 
 namespace rx_platform {
@@ -68,38 +69,38 @@ rx_result physical_port::initialize_runtime (runtime::runtime_init_context& ctx)
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.Connected", ctx);
         if (bind_result)
             connected_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.Connected");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.Connected");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
 
 void physical_port::update_received_counters (size_t count)
 {
-    rx_platform::rx_post_function<physical_port::smart_ptr>([count](physical_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](physical_port::smart_ptr whose)
         {
             if (whose->rx_bytes_item_)
             {
@@ -108,12 +109,12 @@ void physical_port::update_received_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void physical_port::update_sent_counters (size_t count)
 {
-    rx_platform::rx_post_function<physical_port::smart_ptr>([count](physical_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](physical_port::smart_ptr whose)
         {
             if (whose->tx_bytes_item_)
             {
@@ -122,7 +123,7 @@ void physical_port::update_sent_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void physical_port::update_received_packets (size_t count)
@@ -147,10 +148,10 @@ void physical_port::update_sent_packets (size_t count)
 
 void physical_port::update_connected_status (bool status)
 {
-    rx_platform::rx_post_function<physical_port::smart_ptr>([status](physical_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [status](physical_port::smart_ptr whose)
         {
             whose->set_binded_as(whose->connected_item_, status);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void physical_port::structure_changed ()
@@ -179,32 +180,32 @@ rx_result protocol_port::initialize_runtime (runtime::runtime_init_context& ctx)
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
 
 void protocol_port::update_received_counters (size_t count)
 {
-    rx_platform::rx_post_function<protocol_port::smart_ptr>([count](protocol_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](protocol_port::smart_ptr whose)
         {
             if (whose->rx_bytes_item_)
             {
@@ -213,12 +214,12 @@ void protocol_port::update_received_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void protocol_port::update_sent_counters (size_t count)
 {
-    rx_platform::rx_post_function<protocol_port::smart_ptr>([count](protocol_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](protocol_port::smart_ptr whose)
         {
             if (whose->tx_bytes_item_)
             {
@@ -227,7 +228,7 @@ void protocol_port::update_sent_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void protocol_port::update_received_packets (size_t count)
@@ -272,32 +273,32 @@ rx_result transport_port::initialize_runtime (runtime::runtime_init_context& ctx
         if (bind_result)
             rx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxPackets", ctx);
         if (bind_result)
             tx_packets_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
 
         bind_result = ctx.tags->bind_item("Status.RxBytes", ctx);
         if (bind_result)
             rx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.RxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.RxBytes");
 
         bind_result = ctx.tags->bind_item("Status.TxBytes", ctx);
         if (bind_result)
             tx_bytes_item_ = bind_result.value();
         else
-            RUNTIME_LOG_ERROR(ctx.meta.get_name(), 200, "Unable to bind to value Status.TxBytes");
+            RUNTIME_LOG_ERROR(ctx.meta.name, 200, "Unable to bind to value Status.TxBytes");
     }
     return result;
 }
 
 void transport_port::update_received_counters (size_t count)
 {
-    rx_platform::rx_post_function<transport_port::smart_ptr>([count](transport_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](transport_port::smart_ptr whose)
         {
             if (whose->rx_bytes_item_)
             {
@@ -306,12 +307,12 @@ void transport_port::update_received_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->rx_bytes_item_, std::move(current));
             }
             whose->update_received_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void transport_port::update_sent_counters (size_t count)
 {
-    rx_platform::rx_post_function<transport_port::smart_ptr>([count](transport_port::smart_ptr whose)
+    rx_platform::rx_post_function_to(get_executer(), smart_this(), [count](transport_port::smart_ptr whose)
         {
             if (whose->tx_bytes_item_)
             {
@@ -320,7 +321,7 @@ void transport_port::update_sent_counters (size_t count)
                 whose->set_binded_as<int64_t>(whose->tx_bytes_item_, std::move(current));
             }
             whose->update_sent_packets(1);
-        }, smart_this(), get_executer());
+        }, smart_this());
 }
 
 void transport_port::update_received_packets (size_t count)

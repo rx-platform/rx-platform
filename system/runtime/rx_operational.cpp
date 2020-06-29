@@ -31,10 +31,10 @@
 #include "pch.h"
 
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_operational
@@ -304,7 +304,7 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 	return true;
 }
 
-void connected_tags::relation_tags_change (relations::relation_runtime* whose, const rx_value& val)
+void connected_tags::relation_tags_change (relation_ptr whose, const rx_value& val)
 {
 }
 
@@ -361,7 +361,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 
 				rt_value_ref reference;
 				reference.ref_type = rt_value_ref_type::rt_relation;
-				reference.ref_value_ptr.relation = it->second;
+				reference.ref_value_ptr.relation = it->second.unsafe_ptr();
 				handles_map_.emplace(handle, one_tag_data{ reference, 1,  {monitor} });
 				it->second->runtime_handle = handle;
 
@@ -423,23 +423,22 @@ void connected_tags::variable_change (structure::variable_data* whose, const rx_
 	}
 }
 
-void connected_tags::init_tags (runtime_process_context* ctx, std::vector<relations::relation_data>* relations)
+void connected_tags::init_tags (runtime_process_context* ctx, relations::relations_holder* relations)
 {
 	context_ = ctx;
 	parent_relations_ = relations;
 }
 
-relations::relation_data* connected_tags::get_parent_relation (const string_type& name)
+connected_tags::relation_ptr connected_tags::get_parent_relation (const string_type& name)
 {
 	if (parent_relations_)
-	{
-		for (auto& one : *parent_relations_)
-		{
-			if (one.name == name)
-				return &one;
-		}
-	}
-	return nullptr;
+		return parent_relations_->get_relation(name);
+	else
+		return relations::relation_data::smart_ptr::null_ptr;
+}
+
+void connected_tags::target_relation_removed (relation_ptr&& whose)
+{
 }
 
 

@@ -33,10 +33,10 @@
 
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_resolvers
 #include "system/runtime/rx_resolvers.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 
 
 
@@ -57,15 +57,15 @@ class extern_mapper_impl : public mapper_runtime
 {
     DECLARE_REFERENCE_PTR(extern_mapper_impl);
 
-    class mapper_resolver_user : public resolvers::port_resolver_user
+    class mapper_resolver_user : public resolvers::resolver_user<meta::object_types::port_type>
     {
     public:
         extern_mapper_impl<portT>::smart_ptr my_mapper;
-        bool port_connected(rx_port_impl_ptr port, rx_node_id id)
+        bool runtime_connected(platform_item_ptr&& item, rx_port_impl_ptr port)
         {
-            return my_mapper->internal_port_connected(port, id);
+            return my_mapper->internal_port_connected(port, item->meta_info().id);
         }
-        void port_disconnected()
+        void runtime_disconnected()
         {
             my_mapper->internal_port_disconnected();
         }
@@ -103,7 +103,7 @@ protected:
 
 
 
-      resolvers::item_port_resolver resolver_;
+      resolvers::runtime_resolver<meta::object_types::port_type> resolver_;
 
 
       rx_thread_handle_t my_executer_;
@@ -123,15 +123,15 @@ class extern_source_impl : public source_runtime
 {
     DECLARE_REFERENCE_PTR(extern_source_impl);
 
-    class source_resolver_user : public resolvers::port_resolver_user
+    class source_resolver_user : public resolvers::resolver_user<meta::object_types::port_type>
     {
     public:
         extern_source_impl<portT>::smart_ptr my_source;
-        bool port_connected(rx_port_impl_ptr port, rx_node_id id)
+        bool runtime_connected(platform_item_ptr&& item, rx_port_impl_ptr port)
         {
             return true;
         }
-        void port_disconnected()
+        void runtime_connected()
         {
         }
         rx_reference_ptr get_reference()
@@ -158,7 +158,7 @@ class extern_source_impl : public source_runtime
   private:
 
 
-      resolvers::item_port_resolver resolver_;
+      resolvers::runtime_resolver<meta::object_types::port_type> resolver_;
 
 
       rx_thread_handle_t my_executer_;
@@ -190,7 +190,7 @@ rx_result extern_mapper_impl<portT>::start_mapper (runtime::runtime_start_contex
 
     my_executer_ = rx_thread_context();
     auto port_reference = rx_item_reference(ctx.structure.get_current_item().get_local_as<string_type>("Port", ""));
-    ret = this->resolver_.init(port_reference, &resolver_user_, ctx.directories);
+    ret = this->resolver_.start_resolver(port_reference, &resolver_user_, ctx.directories);
     return ret;
 }
 
@@ -220,7 +220,7 @@ void extern_mapper_impl<portT>::internal_port_disconnected ()
 template <class portT>
 rx_result extern_mapper_impl<portT>::stop_mapper (runtime::runtime_stop_context& ctx)
 {
-    this->resolver_.deinit();
+    this->resolver_.stop_resolver();
     auto ret = mapper_runtime::stop_mapper(ctx);
     return ret;
 }
@@ -241,14 +241,14 @@ extern_source_impl<portT>::extern_source_impl()
 template <class portT>
 rx_result extern_source_impl<portT>::start_source (runtime::runtime_start_context& ctx)
 {
-    auto ret = this->resolver_.init(ctx, &resolver_user_);
+    auto ret = this->resolver_.start_resolver(ctx, &resolver_user_, ctx.directories);
     return ret;
 }
 
 template <class portT>
 rx_result extern_source_impl<portT>::stop_source (runtime::runtime_stop_context& ctx)
 {
-    this->resolver_.deinit();
+    this->resolver_.stop_resolver();
     return true;
 }
 

@@ -133,7 +133,9 @@ runtime_transaction_test::~runtime_transaction_test()
 bool runtime_transaction_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 
-	auto transaction_state = new rx_transaction_state<rx_result, int>();
+	return false;
+
+	/*auto transaction_state = new rx_transaction_state<rx_result, int>();
 
 	ctx->set_current_test_case(smart_this());
 	ctx->set_waiting();
@@ -186,6 +188,7 @@ bool runtime_transaction_test::run_test (std::istream& in, std::ostream& out, st
 
 
 	return true;
+	*/
 }
 
 
@@ -207,7 +210,7 @@ runtime_connect_test::~runtime_connect_test()
 bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
 {
 	bool no_subscription = false;
-	string_type path("/sys/objects/system/SystemApp.CPU");	
+	string_type path("/sys/objects/system/SystemApp.CPU");
 	string_type expression("{rx://local#"s + path + "} + 1000");
 	/*out << "Connecting to expression: " + expression + "\r\n";
 	my_value_.connect(expression, 200,
@@ -219,7 +222,7 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 			out << "\r\n";
 		});
 	*/
-	auto subs = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(&callback_);
+	auto subs = rx_create_reference<rx_internal::sys_runtime::subscriptions::rx_subscription>(&callback_);
 	subs->activate();
 	string_array paths{ path };
 	std::vector<rx_result_with<runtime_handle_t> > results;
@@ -272,8 +275,8 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 
 				};
 
-			rx_post_delayed_function<smart_ptr, string_type, runtime_handle_t>(5000, func
-				, smart_this(), path, no_subscription ? 0 : results[0].value());
+			rx_post_delayed_function(smart_this(), 5000, std::move(func)
+				, path, no_subscription ? 0 : results[0].value());
 
 			ctx->set_current_test_case(smart_this());
 			ctx->set_waiting();

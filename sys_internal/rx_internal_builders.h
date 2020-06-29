@@ -36,6 +36,7 @@
 // rx_server
 #include "system/server/rx_server.h"
 
+#include "system/runtime/rx_runtime_holder.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for building
@@ -69,7 +70,7 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root);
+      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root);
 
       virtual rx_result do_build (rx_directory_ptr root) = 0;
 
@@ -82,7 +83,7 @@ class rx_platform_builder
       rx_platform_builder & operator=(const rx_platform_builder &right);
 
 
-      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, hosting::rx_platform_host* host);
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data, const meta_configuration_data_t& meta_data, hosting::rx_platform_host* host);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_user_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 

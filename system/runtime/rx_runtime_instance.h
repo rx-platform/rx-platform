@@ -35,6 +35,8 @@
 #include "rx_runtime_helpers.h"
 
 
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
 
@@ -49,19 +51,10 @@ class domain_instance_data;
 } // namespace rx_platform
 
 
+using namespace rx_platform::meta::runtime_data;
 
 
 namespace rx_platform {
-enum class rx_domain_priority : uint8_t
-{
-    low = 0,
-    normal = 1,
-    high = 2,
-    realtime = 3,
-    // default value
-    standard = 1,
-    priority_count = 4
-};
 
 namespace runtime {
 
@@ -77,10 +70,8 @@ class object_instance_data
   public:
       object_instance_data();
 
+      object_instance_data (const object_data& data);
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       bool connect_domain (rx_domain_ptr&& domain, rx_object_ptr whose);
 
@@ -97,22 +88,30 @@ class object_instance_data
       const security::security_context_ptr& get_security_context () const;
 
 
+      const meta::runtime_data::object_data& get_data () const
+      {
+        return data_;
+      }
+
+
+
       rx_thread_handle_t get_executer () const
       {
         return executer_;
       }
 
 
-
-      rx_node_id domain_id;
-
-
+      object_instance_data(object_instance_data&& right) noexcept = default;
+      object_instance_data(object_instance_data& right) = default;
   protected:
 
       rx_domain_ptr my_domain_;
 
 
   private:
+
+
+      meta::runtime_data::object_data data_;
 
 
       rx_thread_handle_t executer_;
@@ -132,10 +131,8 @@ class domain_instance_data
   public:
       domain_instance_data();
 
+      domain_instance_data (const domain_data& data);
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       void get_objects (api::query_result& result);
 
@@ -158,6 +155,13 @@ class domain_instance_data
       const security::security_context_ptr& get_security_context () const;
 
 
+      const meta::runtime_data::domain_data& get_data () const
+      {
+        return data_;
+      }
+
+
+
       rx_thread_handle_t get_executer () const
       {
         return executer_;
@@ -165,15 +169,10 @@ class domain_instance_data
 
 
 
-      rx_node_id app_id;
-
-      int processor;
-
       rx_node_ids objects;
 
-      rx_domain_priority priority;
-
-
+      domain_instance_data(domain_instance_data&& right) noexcept = default;
+      domain_instance_data(const domain_instance_data& right) = default;
   protected:
 
   private:
@@ -182,6 +181,8 @@ class domain_instance_data
       objects_type objects_;
 
       rx_application_ptr my_application_;
+
+      meta::runtime_data::domain_data data_;
 
 
       rx_thread_handle_t executer_;
@@ -200,10 +201,8 @@ class port_instance_data
   public:
       port_instance_data();
 
+      port_instance_data (const port_data& data);
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       bool connect_application (rx_application_ptr&& app, rx_port_ptr whose);
 
@@ -222,6 +221,12 @@ class port_instance_data
 
       const rx_application_ptr get_my_application () const;
 
+      const meta::runtime_data::port_data& get_data () const
+      {
+        return data_;
+      }
+
+
 
       rx_thread_handle_t get_executer () const
       {
@@ -229,12 +234,8 @@ class port_instance_data
       }
 
 
-
-      rx_node_id app_id;
-
-      ~port_instance_data() = default;
-      port_instance_data(port_instance_data&& right);
-      port_instance_data(const port_instance_data& right);
+      port_instance_data(port_instance_data&& right) noexcept = default;
+      port_instance_data(const port_instance_data& right) = default;
   protected:
 
   private:
@@ -243,6 +244,8 @@ class port_instance_data
       rx_application_ptr my_application_;
 
       security_context_holder identity_;
+
+      meta::runtime_data::port_data data_;
 
 
       rx_thread_handle_t executer_;
@@ -263,10 +266,8 @@ class application_instance_data
   public:
       application_instance_data();
 
+      application_instance_data (const application_data& data);
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       void get_ports (api::query_result& result);
 
@@ -291,20 +292,21 @@ class application_instance_data
       const security::security_context_ptr& get_security_context () const;
 
 
+      const meta::runtime_data::application_data& get_data () const
+      {
+        return data_;
+      }
+
+
+
       rx_thread_handle_t get_executer () const
       {
         return executer_;
       }
 
 
-
-      int processor;
-
-      rx_domain_priority priority;
-
-      ~application_instance_data() = default;
-      application_instance_data(application_instance_data&& right);
-      application_instance_data(const application_instance_data& right);
+      application_instance_data(application_instance_data&& right) noexcept = default;
+      application_instance_data(const application_instance_data& right) = default;
   protected:
 
   private:
@@ -316,10 +318,12 @@ class application_instance_data
 
       security_context_holder identity_;
 
+      meta::runtime_data::application_data data_;
 
-      locks::slim_lock domains_lock_;
 
       rx_thread_handle_t executer_;
+
+      locks::slim_lock domains_lock_;
 
 
 };

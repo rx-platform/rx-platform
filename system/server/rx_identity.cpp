@@ -68,35 +68,12 @@ namespace items {
 // Class rx_platform::runtime::items::security_context_holder 
 
 
-bool security_context_holder::serialize (const string_type& name, base_meta_writer& stream) const
+rx_result security_context_holder::create_context (const string_type& port, const string_type& location, const byte_string& data)
 {
-    if (data_.empty())
-    {
-        uint8_t null_data = 0;
-        if (!stream.write_bytes(name.c_str(), &null_data, 1))
-            return false;
-    }
-    else
-    {
-        if (!stream.write_bytes(name.c_str(), &data_[0], data_.size()))
-            return false;
-    }
-
-    return true;
-}
-
-bool security_context_holder::deserialize (const string_type& name, base_meta_reader& stream)
-{
-    if (!stream.read_bytes(name.c_str(), data_))
-        return false;
-
-    return true;
-}
-
-rx_result security_context_holder::create_context (const string_type& port, const string_type& location)
-{
+    if (data.empty())
+        return true;
     memory::std_buffer buffer;
-    buffer.push_data(&data_[0], data_.size());
+    buffer.push_data(&data[0], data.size());
     serialization::std_buffer_reader reader(buffer);
 
     if (!reader.read_byte("type", type_))

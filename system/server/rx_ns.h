@@ -36,12 +36,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"
@@ -214,7 +214,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       bool empty () const;
 
-      rx_result reserve_name (const string_type& name, string_type& path);
+      rx_result reserve_name (const string_type& name);
 
       rx_result cancel_reserve (const string_type& name);
 

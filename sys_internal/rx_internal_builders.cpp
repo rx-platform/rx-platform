@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -54,7 +54,7 @@ namespace builders {
 template<class T>
 void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool abstract_type)
 {
-	what->meta_info().resolve();
+	what->meta_info() = create_meta_for_new(what->meta_info());
 	what->complex_data().set_abstract(abstract_type);
 	auto result = model::platform_types_manager::instance().get_type_repository<T>().register_type(what);
 	if (!result)
@@ -79,7 +79,7 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 template<class T>
 void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool abstract_type)
 {
-	what->meta_info().resolve();
+	what->meta_info() = create_meta_for_new(what->meta_info());
 	what->complex_data().set_abstract(abstract_type);
 	auto result = model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	if (!result)
@@ -103,7 +103,7 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 
 void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::smart_ptr what)
 {
-	what->meta_info().resolve();
+	what->meta_info() = create_meta_for_new(what->meta_info());
 	auto result = model::platform_types_manager::instance().get_relations_repository().register_type(what);
 	if (!result)
 	{
@@ -125,12 +125,11 @@ void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::sma
 }
 
 template<class T>
-rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, typename T::instance_data_t&& data, tl::type2type<T>
+rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance_data_t&& data, tl::type2type<T>
 , std::function<void(typename T::RTypePtr)> result_f = std::function<void(typename T::RTypePtr)>())
 {
-	meta.resolve();
-	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(
-		meta, nullptr, std::move(data), dir, rx_reference_ptr::null_ptr);
+	data.meta_info = create_meta_for_new(data.meta_info);
+	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(data));
 	return true;
 	if (create_result)
 	{
@@ -142,7 +141,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, type
 	}
 	else
 	{
-		create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_name());
+		create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + data.meta_info.get_full_path());
 		for(const auto& one : create_result.errors())
 			BUILD_LOG_ERROR("code_objects", 900, one.c_str());
 		return create_result.errors();
@@ -150,7 +149,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, meta_data meta, type
 }
 
 
-// Class rx_internal::builders::rx_platform_builder
+// Class rx_internal::builders::rx_platform_builder 
 
 rx_platform_builder::rx_platform_builder()
 {
@@ -174,7 +173,7 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root)
+rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root)
 {
 	rx_result errors = register_system_constructors();
 	if (!errors)
@@ -271,7 +270,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	return true;
 }
 
-std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, const meta::meta_configuration_data_t& meta_data, hosting::rx_platform_host* host)
+std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, const meta_configuration_data_t& meta_data, hosting::rx_platform_host* host)
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// create system folder structure
@@ -367,39 +366,34 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
-		meta_data app_meta(
-			RX_NS_SYSTEM_UNASS_APP_NAME
-			, RX_NS_SYSTEM_UNASS_APP_ID
-			, RX_NS_SYSTEM_UNASS_APP_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path);
-		runtime::items::application_instance_data app_instance_data;
+		runtime_data::application_runtime_data app_instance_data;
+		app_instance_data.meta_info.name = RX_NS_SYSTEM_UNASS_APP_NAME;
+		app_instance_data.meta_info.id = RX_NS_SYSTEM_UNASS_APP_ID;
+		app_instance_data.meta_info.parent = RX_NS_SYSTEM_UNASS_APP_TYPE_ID;
+		app_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		app_instance_data.meta_info.path = full_path;
+		app_instance_data.instance_data.processor = 1;
+		app_instance_data.instance_data.priority = rx_domain_priority::low;
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), tl::type2type<application_type>());
+		if (!result)
 		{
-			app_instance_data.processor = 1;
-			auto result = add_object_to_configuration(dir, app_meta, std::move(app_instance_data), tl::type2type<application_type>());
-			if (!result)
-			{
-				result.register_error("Unable to add unassigned application!");
-				return result;
-			}
+			result.register_error("Unable to add unassigned application!");
+			return result;
 		}
-		meta_data meta(
-			RX_NS_SYSTEM_UNASS_NAME
-			, RX_NS_SYSTEM_UNASS_ID
-			, RX_NS_SYSTEM_UNASS_TYPE_ID
-			, namespace_item_attributes::
-			namespace_item_internal_access
-			, full_path);
+		runtime_data::domain_runtime_data instance_data;
+		instance_data.meta_info.name = RX_NS_SYSTEM_UNASS_NAME;
+		instance_data.meta_info.id = RX_NS_SYSTEM_UNASS_ID;
+		instance_data.meta_info.parent = RX_NS_SYSTEM_UNASS_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.processor = 1;
+		instance_data.instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
+		instance_data.instance_data.priority = rx_domain_priority::low;
+		auto result2 = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<domain_type>());
+		if (!result2)
 		{
-			runtime::items::domain_instance_data instance_data;
-			instance_data.processor = 1;
-			instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
-			auto result2 = add_object_to_configuration(dir, meta, std::move(instance_data), tl::type2type<domain_type>());
-			if (!result2)
-			{
-				result2.register_error("Unable to add unassigned domain!");
-				return result2;
-			}
+			result2.register_error("Unable to add unassigned domain!");
+			return result2;
 		}
 	}
 	return true;
@@ -412,7 +406,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_plug
 }
 
 
-// Class rx_internal::builders::root_folder_builder
+// Class rx_internal::builders::root_folder_builder 
 
 
 rx_result root_folder_builder::do_build (rx_directory_ptr root)
@@ -525,7 +519,7 @@ rx_result root_folder_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class rx_internal::builders::basic_types_builder
+// Class rx_internal::builders::basic_types_builder 
 
 
 rx_result basic_types_builder::do_build (rx_directory_ptr root)
@@ -638,14 +632,18 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 		port->object_data().register_relation("App", RX_NS_PORT_APPLICATION_RELATION_ID, RX_CLASS_APPLICATION_BASE_ID, port->complex_data());
 		build_basic_port_type<port_type>(dir, port);
 		// build relations
+		relation_type_data def_data;
+		def_data.abstract_type = true;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
 		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_RELATION_BASE_NAME
 			, RX_NS_RELATION_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
-		relation->meta_info().resolve();
+			}, def_data);
 		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
 		dir->add_item(relation->get_item_ptr());
 
@@ -688,11 +686,10 @@ void basic_types_builder::build_basic_port_type(rx_directory_ptr dir, rx_referen
 template<class T>
 void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T> what)
 {
-	what->meta_info().resolve();
 	model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
-// Class rx_internal::builders::system_types_builder
+// Class rx_internal::builders::system_types_builder 
 
 
 rx_result system_types_builder::do_build (rx_directory_ptr root)
@@ -827,7 +824,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class rx_internal::builders::port_types_builder
+// Class rx_internal::builders::port_types_builder 
 
 
 rx_result port_types_builder::do_build (rx_directory_ptr root)
@@ -958,7 +955,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class rx_internal::builders::system_objects_builder
+// Class rx_internal::builders::system_objects_builder 
 
 
 rx_result system_objects_builder::do_build (rx_directory_ptr root)
@@ -968,38 +965,62 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
-		runtime::items::application_instance_data app_instance_data;
-		app_instance_data.processor = 0;
-		meta_data meta(RX_NS_SYSTEM_APP_NAME, RX_NS_SYSTEM_APP_ID, RX_NS_SYSTEM_APP_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		auto result = add_object_to_configuration(dir, std::move(meta), std::move(app_instance_data), tl::type2type<application_type>());
+		runtime_data::application_runtime_data app_instance_data;
+		app_instance_data.meta_info.name = RX_NS_SYSTEM_APP_NAME;
+		app_instance_data.meta_info.id = RX_NS_SYSTEM_APP_ID;
+		app_instance_data.meta_info.parent = RX_NS_SYSTEM_APP_TYPE_ID;
+		app_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		app_instance_data.meta_info.path = full_path;
+		app_instance_data.instance_data.processor = 0;
+		app_instance_data.instance_data.priority = rx_domain_priority::normal;
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), tl::type2type<application_type>());
 
-		if (result)
-		{
-			runtime::items::domain_instance_data domain_instance_data;
-			domain_instance_data.processor = -1;
-			domain_instance_data.app_id = RX_NS_SYSTEM_APP_ID;
-			meta = meta_data(RX_NS_SYSTEM_DOM_NAME, RX_NS_SYSTEM_DOM_ID, RX_NS_SYSTEM_DOM_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-			result = add_object_to_configuration(dir, std::move(meta), std::move(domain_instance_data), tl::type2type<domain_type>());
-		}
-		runtime::items::object_instance_data object_instance_data;
-		object_instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		meta = meta_data(RX_NS_SERVER_RT_NAME, RX_NS_SERVER_RT_ID, RX_NS_SERVER_RT_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(meta), std::move(object_instance_data), tl::type2type<object_type>());
+		runtime_data::domain_runtime_data domain_instance_data;
+		domain_instance_data.meta_info.name = RX_NS_SYSTEM_DOM_NAME;
+		domain_instance_data.meta_info.id = RX_NS_SYSTEM_DOM_ID;
+		domain_instance_data.meta_info.parent = RX_NS_SYSTEM_DOM_TYPE_ID;
+		domain_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		domain_instance_data.meta_info.path = full_path;
+		domain_instance_data.instance_data.processor = -1;
+		domain_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		domain_instance_data.instance_data.priority = rx_domain_priority::normal;
+		result = add_object_to_configuration(dir, std::move(domain_instance_data), tl::type2type<domain_type>());
+
+		runtime_data::object_runtime_data instance_data;
+		instance_data.meta_info.name = RX_NS_SERVER_RT_NAME;
+		instance_data.meta_info.id = RX_NS_SERVER_RT_ID;
+		instance_data.meta_info.parent = RX_NS_SERVER_RT_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
+		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
 		// we did the move so make another object
-		object_instance_data = runtime::items::object_instance_data();
-		object_instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		meta = meta_data(IO_POOL_NAME, IO_POOL_ID, RX_POOL_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(meta), std::move(object_instance_data), tl::type2type<object_type>());
+		instance_data = runtime_data::object_runtime_data();
+		instance_data.meta_info.name = IO_POOL_NAME;
+		instance_data.meta_info.id = IO_POOL_ID;
+		instance_data.meta_info.parent = RX_POOL_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
+		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
 
-		object_instance_data = runtime::items::object_instance_data();
-		object_instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		meta = meta_data(META_POOL_NAME, META_POOL_ID, RX_META_POOL_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(meta), std::move(object_instance_data), tl::type2type<object_type>());
+		instance_data = runtime_data::object_runtime_data();
+		instance_data.meta_info.name = META_POOL_NAME;
+		instance_data.meta_info.id = META_POOL_ID;
+		instance_data.meta_info.parent = RX_META_POOL_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
+		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
 
-		object_instance_data = runtime::items::object_instance_data();
-		object_instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		meta = meta_data(UNASSIGNED_POOL_NAME, UNASSIGNED_POOL_ID, RX_UNASSIGNED_POOL_TYPE_ID, namespace_item_attributes::namespace_item_internal_access, full_path);
-		result = add_object_to_configuration(dir, std::move(meta), std::move(object_instance_data), tl::type2type<object_type>());
+
+		instance_data = runtime_data::object_runtime_data();
+		instance_data.meta_info.name = UNASSIGNED_POOL_NAME;
+		instance_data.meta_info.id = UNASSIGNED_POOL_ID;
+		instance_data.meta_info.parent = RX_UNASSIGNED_POOL_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
@@ -1007,7 +1028,7 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class rx_internal::builders::support_types_builder
+// Class rx_internal::builders::support_types_builder 
 
 
 rx_result support_types_builder::do_build (rx_directory_ptr root)
@@ -1141,7 +1162,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 }
 
 
-// Class rx_internal::builders::relation_types_builder
+// Class rx_internal::builders::relation_types_builder 
 
 
 rx_result relation_types_builder::do_build (rx_directory_ptr root)
@@ -1151,31 +1172,41 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
+		relation_type_data def_data;
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = true;
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
 		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_PORT_STACK_NAME
 			, RX_NS_PORT_STACK_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
+			}, def_data);
 		add_relation_type_to_configuration(dir, relation);
 
+
+		def_data.sealed_type = true;
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_APPLICATION_RELATION_NAME
 			, RX_NS_APPLICATION_RELATION_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
+			}, def_data);
 		add_relation_type_to_configuration(dir, relation);
 
+		def_data.sealed_type = true;
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
 			RX_NS_PORT_APPLICATION_RELATION_NAME
 			, RX_NS_PORT_APPLICATION_RELATION_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
+			}, def_data);
 		add_relation_type_to_configuration(dir, relation);
 
 		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
@@ -1184,7 +1215,7 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
+			}, def_data);
 		add_relation_type_to_configuration(dir, relation);
 	}
 	return true;

@@ -39,6 +39,7 @@
 #include "rx_terminal_style.h"
 #include "rx_terminal_version.h"
 #include "rx_commands.h"
+#include "api/rx_platform_api.h"
 
 
 namespace rx_internal {
@@ -154,14 +155,11 @@ console_runtime::~console_runtime()
 bool console_runtime::do_command (string_type&& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	string_type captured_line(std::move(line));
-	rx_post_function<smart_ptr>(
-		[captured_line, out_buffer, err_buffer, ctx](smart_ptr sended_this)
+	rx_post_function_to(get_executer(), smart_this(),
+		[captured_line, out_buffer, err_buffer, ctx, this]()
 		{
-			sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
-		}
-			, smart_this()
-			, get_executer()
-			);
+			synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
+		});
 	return true;
 }
 
@@ -374,14 +372,11 @@ void console_runtime::process_event (bool result, memory::buffer_ptr out_buffer,
 
 bool console_runtime::cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	rx_post_function<smart_ptr>(
-		[out_buffer, err_buffer, ctx](smart_ptr sended_this)
+	rx_post_function_to(get_executer(), smart_this(),
+		[out_buffer, err_buffer, ctx, this]()
 		{
-			sended_this->synchronized_cancel_command(out_buffer, err_buffer, ctx);
-		}
-		, smart_this()
-			, get_executer()
-			);
+			synchronized_cancel_command(out_buffer, err_buffer, ctx);
+		});
 	return true;
 }
 
@@ -410,16 +405,12 @@ void console_runtime::get_security_error (string_type& txt, sec_error_num_t err_
 
 bool console_runtime::do_commands (string_array&& lines, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	string_array captured_lines(std::move(lines));
-	rx_post_function<smart_ptr>(
-		[captured_lines, out_buffer, err_buffer, ctx](smart_ptr sended_this)
+	rx_post_function_to(get_executer(), smart_this(),
+		[out_buffer, err_buffer, ctx, this](string_array&& lines)
 		{
-			for (const auto& captured_line : captured_lines)
-				sended_this->synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
-		}
-		, smart_this()
-			, get_executer()
-			);
+			for (const auto& captured_line : lines)
+				synchronized_do_command(captured_line, out_buffer, err_buffer, ctx);
+		}, std::move(lines));
 	return true;
 }
 
@@ -511,28 +502,22 @@ bool console_program_context::postpone (uint32_t interval)
 	{
 		buffer_ptr out_ptr = out_;
 		buffer_ptr err_ptr = err_;
-		rx_post_delayed_function<decltype(client_)>(
+		rx_post_delayed_function(client_, interval, 
 			[out_ptr, err_ptr](decltype(client_) client)
 			{
 				client->process_event(true, out_ptr, err_ptr, true);
-			}
-			, interval
-				, client_
-				, client_->get_executer()
-				);
+			}, client_);
 	}
 	else
 	{
 		buffer_ptr out_ptr = out_;
 		buffer_ptr err_ptr = err_;
-		rx_post_function<decltype(client_)>(
+		rx_post_function(client_,
 			[out_ptr, err_ptr](decltype(client_) client)
 			{
 				client->process_event(true, out_ptr, err_ptr, true);
 			}
-			, client_
-				, client_->get_executer()
-				);
+			, client_);
 	}
 	return true;
 }

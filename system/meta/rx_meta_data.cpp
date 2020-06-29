@@ -33,6 +33,8 @@
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_meta_support
+#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 
@@ -115,6 +117,8 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 			return RX_VALUE_TYPE_NAME;
 		case relation_attribute_type:
 			return RX_CPP_RELATION_TYPE_NAME;
+		case relation_target_attribute_type:
+			return RX_CPP_RELATION_TARGET_TYPE_NAME;
 		default:
 			return "Unknown attribute type!!!";
 	}
@@ -167,7 +171,7 @@ rx_item_type rx_parse_type_name(const string_type name)
 
 
 namespace meta {
-
+/*
 template<typename T>
 rx_result_with<typename T::RTypePtr> deserialize_runtime(const meta_data& meta, base_meta_reader& stream, uint8_t type)
 {
@@ -180,55 +184,41 @@ rx_result_with<typename T::RTypePtr> deserialize_runtime(const meta_data& meta, 
 		ret->meta_info() = meta;
 	}
 	return ret;
-}
+}*/
 
 // Class rx_platform::meta::meta_data 
 
-meta_data::meta_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, const string_type& path, rx_time now)
-      : version_(RX_INITIAL_ITEM_VERSION)
-	, name_(name)
-	, id_(id)
-	, parent_(parent)
-	, path_(path)
-	, created_time_(now)
-	, modified_time_(now)
-	, attributes_(attrs)
-	, state_(rx_item_state::rx_item_state_unknown)
-{
-	if (id_.is_null())
-		id_ = rx_node_id(rx_uuid::create_new().uuid());
-}
-
-meta_data::meta_data (namespace_item_attributes attrs, rx_time now)
-      : version_(RX_INITIAL_ITEM_VERSION)
-	, created_time_(now)
-	, modified_time_(now)
-	, attributes_(attrs)
-	, state_(rx_item_state::rx_item_state_unknown)
+meta_data::meta_data()
+      : version(RX_INITIAL_ITEM_VERSION)
+	, attributes(namespace_item_full_type_access)
 {
 }
 
-
-
-rx_result meta_data::check_in (base_meta_reader& stream)
+meta_data::meta_data (const object_type_creation_data& type_data)
+      : version(RX_INITIAL_ITEM_VERSION)
+	, id(type_data.id)
+	, name(type_data.name)
+	, path(type_data.path)
+	, parent(type_data.base_id)
+	, created_time(rx_time::now())
+	, modified_time(created_time)
+	, attributes(type_data.attributes)
 {
-	return false;
 }
 
-rx_result meta_data::check_out (base_meta_writer& stream) const
+meta_data::meta_data (const type_creation_data& type_data)
+      : version(RX_INITIAL_ITEM_VERSION)
+	, id(type_data.id)
+	, name(type_data.name)
+	, path(type_data.path)
+	, parent(type_data.base_id)
+	, created_time(rx_time::now())
+	, modified_time(created_time)
+	, attributes(type_data.attributes)
 {
-	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
-		return false;
-
-	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
-	func(stream, STREAMING_TYPE_CHECKOUT);
-*/
-
-	if (!stream.write_footer())
-		return false;
-
-	return true;
 }
+
+
 
 rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type, rx_item_type object_type) const
 {
@@ -244,21 +234,21 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		if (!stream.write_byte("type", object_type))
 			return false;
 	}
-	if (!stream.write_id("nodeId", id_))
+	if (!stream.write_id("nodeId", id))
 		return false;
-	if (!stream.write_string("name", name_.c_str()))
+	if (!stream.write_string("name", name.c_str()))
 		return false;
-	if (!stream.write_byte("attrs", (uint8_t)attributes_))
+	if (!stream.write_byte("attrs", (uint8_t)attributes))
 		return false;
-	if (!stream.write_id("superId", parent_))
+	if (!stream.write_id("superId", parent))
 		return false;
-	if (!stream.write_time("created", created_time_))
+	if (!stream.write_time("created", created_time))
 		return false;
-	if (!stream.write_time("modified", modified_time_))
+	if (!stream.write_time("modified", modified_time))
 		return false;
-	if (!stream.write_version("ver", version_))
+	if (!stream.write_version("ver", version))
 		return false;
-	if (!stream.write_string("path", path_))
+	if (!stream.write_string("path", path))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -287,144 +277,57 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 			return "Invalid type";
 		object_type = (rx_item_type)temp;
 	}
-	if (!stream.read_id("nodeId", id_))
+	if (!stream.read_id("nodeId", id))
 		return false;
-	if (!stream.read_string("name", name_))
+	if (!stream.read_string("name", name))
 		return false;
 	uint8_t temp_byte;
 	if (!stream.read_byte("attrs", temp_byte))
 		return false;
-	attributes_ = (namespace_item_attributes)temp_byte;
-	if (!stream.read_id("superId", parent_))
+	attributes = (namespace_item_attributes)temp_byte;
+	if (!stream.read_id("superId", parent))
 		return false;
-	if (!stream.read_time("created", created_time_))
+	if (!stream.read_time("created", created_time))
 		return false;
-	if (!stream.read_time("modified", modified_time_))
+	if (!stream.read_time("modified", modified_time))
 		return false;
-	if (!stream.read_string("path", path_))
+	if (!stream.read_string("path", path))
 		return false;
-	if (!stream.read_version("ver", version_))
+	if (!stream.read_version("ver", version))
 		return false;
 	if (!stream.end_object())
 		return false;
 	return true;
 }
 
-values::rx_value meta_data::get_value () const
+rx_result meta_data::check_in (base_meta_reader& stream)
 {
-	values::rx_value temp;
-	temp.assign_static(version_, modified_time_);
-	return temp;
+	return false;
 }
 
-void meta_data::construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, namespace_item_attributes attributes, const string_type& path)
+rx_result meta_data::check_out (base_meta_writer& stream) const
 {
-	name_ = name;
-	id_ = id;
-	parent_ = type_id;
-	path_ = path;
-	attributes_ = attributes;
-}
+	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
+		return false;
 
-bool meta_data::get_system () const
-{
-	return (attributes_&namespace_item_system) != namespace_item_null;
-}
+	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
+	func(stream, STREAMING_TYPE_CHECKOUT);
+*/
 
-rx_result_with<platform_item_ptr> meta_data::deserialize_runtime_item (base_meta_reader& stream, uint8_t type)
-{
-	meta::meta_data meta;
-	rx_item_type type_id;
-	if (!meta.deserialize_meta_data(stream, type, type_id))
-		return "Error deserialize meta data!";
+	if (!stream.write_footer())
+		return false;
 
-	switch (type_id)
-	{
-		case rx_item_type::rx_object:
-		{
-			auto result = deserialize_runtime<object_types::object_type>(meta, stream, type);
-			if (result)
-				return result.value()->get_item_ptr();
-			else
-				return result.errors();
-		}
-		break;
-		case rx_item_type::rx_port:
-		{
-			auto result = deserialize_runtime<object_types::port_type>(meta, stream, type);
-			if (result)
-				return result.value()->get_item_ptr();
-			else
-				return result.errors();
-		}
-		break;
-		case rx_item_type::rx_domain:
-		{
-			auto result = deserialize_runtime<object_types::domain_type>(meta, stream, type);
-			if (result)
-				return result.value()->get_item_ptr();
-			else
-				return result.errors();
-		}
-		break;
-		case rx_item_type::rx_application:
-		{
-			auto result = deserialize_runtime<object_types::application_type>(meta, stream, type);
-			if (result)
-				return result.value()->get_item_ptr();
-			else
-				return result.errors();
-		}
-		break;
-		default:
-			return rx_item_type_name(type_id) + " is unknown type name";
-	}
-	return "Undefined error";
-}
-
-void meta_data::resolve ()
-{
-	// resolve storage type by attributes
-	modified_time_ = rx_time::now();
-	// now handle null id
-	if (id_.is_null())
-	{
-		id_ = rx_node_id::generate_new(RX_USER_NAMESPACE);
-	}
-}
-
-void meta_data::set_path (const string_type& path)
-{
-	path_ = path;
-}
-
-string_type meta_data::get_full_path () const
-{
-	if (!path_.empty() && *path_.rbegin() == RX_DIR_DELIMETER)
-	{
-		string_type ret(path_);
-		ret += name_;
-		return ret;
-
-	}
-	else
-	{
-		string_type ret(path_);
-		ret.reserve(ret.size() + name_.size() + 1);
-		ret += RX_DIR_DELIMETER;
-		ret += name_;
-		return ret;
-	}
+	return true;
 }
 
 bool meta_data::is_system () const
 {
-	return attributes_ & namespace_item_attributes::namespace_item_system_mask;
+	return attributes & namespace_item_attributes::namespace_item_system_mask;
 }
 
 rx_result_with<rx_storage_ptr> meta_data::resolve_storage () const
 {
-	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(path_);
+	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(path);
 	if (dir)
 	{
 		return dir->resolve_storage();
@@ -433,17 +336,56 @@ rx_result_with<rx_storage_ptr> meta_data::resolve_storage () const
 		return "Unable to locate item's directory!";
 }
 
-void meta_data::increment_version (bool full_ver)
+values::rx_value meta_data::get_value () const
 {
-	version_++;
+	values::rx_value temp;
+	temp.assign_static(version, modified_time);
+	return temp;
+}
+
+string_type meta_data::get_full_path () const
+{
+	if (!path.empty() && *path.rbegin() == RX_DIR_DELIMETER)
+	{
+		string_type ret(path);
+		ret += name;
+		return ret;
+
+	}
+	else
+	{
+		string_type ret(path);
+		ret.reserve(ret.size() + name.size() + 1);
+		ret += RX_DIR_DELIMETER;
+		ret += name;
+		return ret;
+	}
+}
+
+void meta_data::get_full_path_with_buffer (string_type& path) const
+{
+	if (!path.empty() && *path.rbegin() == RX_DIR_DELIMETER)
+	{
+		path = path;
+		path += name;
+
+	}
+	else
+	{
+		path = path;
+		// we are not doing any memory stuff it's not our buffer
+		//path.reserve(ret.size() + name_.size() + 1);
+		path += RX_DIR_DELIMETER;
+		path += name;
+	}
 }
 
 rx_item_reference meta_data::create_item_reference ()
 {
-	if (id_.is_null() && !path_.empty())
+	if (id.is_null() && !path.empty())
 		return rx_item_reference(get_full_path());
 	else
-		return rx_item_reference(id_);
+		return rx_item_reference(id);
 }
 
 rx_item_reference meta_data::create_weak_item_reference (const string_array& dirs)
@@ -451,13 +393,13 @@ rx_item_reference meta_data::create_weak_item_reference (const string_array& dir
 	string_type my_path = get_full_path();
 	if (my_path.empty())
 		return rx_item_reference();
-	rx_directory_ptr my_directory = rx_gate::instance().get_root_directory()->get_sub_directory(path_);
+	rx_directory_ptr my_directory = rx_gate::instance().get_root_directory()->get_sub_directory(path);
 	size_t best_idx = 0;
 	string_array best_splitted;
 	size_t current_idx;
 	string_type path;
 	string_array my_spplitted, splitted;
-	rx_split_string(path_, my_spplitted, RX_DIR_DELIMETER);
+	rx_split_string(path, my_spplitted, RX_DIR_DELIMETER);
 	for (const auto& one_path : dirs)
 	{
 		auto one_directory = my_directory->get_sub_directory(one_path);
@@ -507,7 +449,7 @@ rx_item_reference meta_data::create_weak_item_reference (const string_array& dir
 			relative_path += *my_it;
 			relative_path += RX_DIR_DELIMETER;
 		}
-		relative_path += name_;
+		relative_path += name;
 
 		return rx_item_reference(relative_path);
 	}
@@ -517,25 +459,23 @@ rx_item_reference meta_data::create_weak_item_reference (const string_array& dir
 	}
 }
 
-void meta_data::get_full_path_with_buffer (string_type& path) const
+void meta_data::increment_version (bool full_ver)
 {
-	if (!path_.empty() && *path_.rbegin() == RX_DIR_DELIMETER)
-	{
-		path = path_;
-		path += name_;
-
-	}
-	else
-	{
-		path = path_;
-		// we are not doing any memory stuff it's not our buffer
-		//path.reserve(ret.size() + name_.size() + 1);
-		path += RX_DIR_DELIMETER;
-		path += name_;
-	}
+	version++;
 }
 
+meta_data create_meta_for_new(const meta_data& proto)
+{
+	meta_data ret_data = proto;
+	rx_time now(rx_time::now());
+	ret_data.created_time = now;
+	ret_data.modified_time = now;
+	ret_data.version = RX_INITIAL_ITEM_VERSION;
+	if (proto.id.is_null())
+		ret_data.id = rx_node_id::generate_new();
 
+	return ret_data;
+}
 } // namespace meta
 } // namespace rx_platform
 

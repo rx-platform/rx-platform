@@ -33,8 +33,8 @@
 
 
 
-// rx_relations
-#include "system/runtime/rx_relations.h"
+// rx_relation_impl
+#include "system/runtime/rx_relation_impl.h"
 
 
 
@@ -49,13 +49,13 @@ rx_result register_internal_relations_constructors();
 
 
 
-class application_relation : public rx_platform::runtime::relations::relation_runtime  
+class domain_relation : public rx_platform::runtime::relations::relation_runtime  
 {
-    DECLARE_REFERENCE_PTR(application_relation);
+    DECLARE_REFERENCE_PTR(domain_relation);
 
   public:
 
-      rx_result initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref);
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
@@ -73,6 +73,49 @@ class application_relation : public rx_platform::runtime::relations::relation_ru
       void relation_connected ();
 
       void relation_disconnected ();
+
+      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
+
+
+
+      rx_object_ptr from_;
+
+      rx_domain_ptr to_;
+
+
+};
+
+
+
+
+
+
+class application_relation : public rx_platform::runtime::relations::relation_runtime  
+{
+    DECLARE_REFERENCE_PTR(application_relation);
+
+  public:
+
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_relation (runtime::runtime_start_context& ctx);
+
+      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
+
+      void relation_connected ();
+
+      void relation_disconnected ();
+
+      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 
@@ -94,7 +137,7 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
 
   public:
 
-      rx_result initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref);
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
@@ -112,51 +155,14 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
       void relation_connected ();
 
       void relation_disconnected ();
+
+      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 
       rx_port_ptr from_;
 
       rx_application_ptr to_;
-
-
-};
-
-
-
-
-
-
-class domain_relation : public rx_platform::runtime::relations::relation_runtime  
-{
-    DECLARE_REFERENCE_PTR(domain_relation);
-
-  public:
-
-      rx_result initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref);
-
-      rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_relation (runtime::runtime_start_context& ctx);
-
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
-
-
-  protected:
-
-  private:
-
-      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
-
-      void relation_connected ();
-
-      void relation_disconnected ();
-
-
-
-      rx_object_ptr from_;
-
-      rx_domain_ptr to_;
 
 
 };

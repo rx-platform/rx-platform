@@ -42,44 +42,11 @@ namespace ns {
 
 // Class rx_platform::ns::rx_platform_item 
 
-rx_platform_item::rx_platform_item()
-{
-}
-
-
 rx_platform_item::~rx_platform_item()
 {
 }
 
 
-
-rx_result rx_platform_item::save () const
-{
-	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
-	if (storage_result)
-	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
-		if (!item_result)
-		{
-			item_result.register_error("Error saving item "s + meta.get_path());
-			return item_result.errors();
-		}
-		auto result = item_result.value()->open_for_write();
-		if (result)
-		{
-			result = serialize(item_result.value()->write_stream());
-			item_result.value()->close();
-		}
-		return result;
-	}
-	else // !storage_result
-	{
-		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
-		return result;
-	}
-}
 
 rx_result rx_platform_item::delete_item () const
 {
@@ -90,7 +57,7 @@ rx_result rx_platform_item::delete_item () const
 		auto item_result = storage_result.value()->get_item_storage(meta);
 		if (!item_result)
 		{
-			item_result.register_error("Error saving item "s + meta.get_path());
+			item_result.register_error("Error saving item "s + meta.get_full_path());
 			return item_result.errors();
 		}
 		auto result = item_result.value()->delete_item();
@@ -100,7 +67,7 @@ rx_result rx_platform_item::delete_item () const
 	else // !storage_result
 	{
 		rx_result result(storage_result.errors());
-		storage_result.register_error("Error saving item "s + meta.get_path());
+		storage_result.register_error("Error saving item "s + meta.get_full_path());
 		return result;
 	}
 }

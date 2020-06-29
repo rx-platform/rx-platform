@@ -35,6 +35,8 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_job
+#include "lib/rx_job.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_operational.h"
@@ -217,6 +219,8 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
       rx_subscription_callback *callback_;
 
       connections_type connections_;
+
+      rx_reference<rx::jobs::periodic_job> timer_;
 
 
       handles_type handles_;

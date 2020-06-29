@@ -250,7 +250,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const
 
 string_type file_system_storage::get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base)
 {
-	if (data.get_path().empty())
+	if (data.path.empty())
 		return "";
 
 	locks::const_auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
@@ -258,17 +258,17 @@ string_type file_system_storage::get_file_path (const meta::meta_data& data, con
 	if (it == items_cache_.end())
 	{// we don't have this one yet
 		size_t idx;
-		idx = data.get_path().find(base);
+		idx = data.path.find(base);
 		if (idx != 0)
 			return "";
 		idx = base.size();
-		idx = data.get_path().find(RX_DIR_DELIMETER, idx);
+		idx = data.path.find(RX_DIR_DELIMETER, idx);
 		string_type file_path;
 		if (idx != string_type::npos)
-			file_path = rx_combine_paths(root, data.get_path().substr(idx + 1));
+			file_path = rx_combine_paths(root, data.path.substr(idx + 1));
 		else
 			file_path = root;
-		file_path = rx_combine_paths(file_path, data.get_name() + "." + RX_JSON_FILE_EXTENSION);
+		file_path = rx_combine_paths(file_path, data.name + "." + RX_JSON_FILE_EXTENSION);
 		items_cache_.emplace(data.get_full_path(), file_path);
 		return file_path;
 	}

@@ -38,6 +38,8 @@
 
 #include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
+#include "system/runtime/rx_runtime_holder.h"
+#include "lib/rx_func_to_go.h"
 
 
 namespace rx_internal {
@@ -51,8 +53,9 @@ template<class typeT>
 rx_result delete_runtime_structure(typename typeT::RTypePtr what);
 template<class typeT>
 rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
-template<class typeT>
-rx_result deinit_runtime(typename typeT::RTypePtr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+template<class typeT, class refT>
+rx_result deinit_runtime(typename typeT::RTypePtr what, refT ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
+    ,runtime::runtime_deinit_context& ctx);
 
 
 
@@ -66,7 +69,7 @@ class object_algorithms
 
       static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_object_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_object_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
       static rx_result connect_domain (rx_object_ptr what);
 
@@ -97,7 +100,7 @@ class domain_algorithms
 
       static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_domain_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_domain_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
       static rx_result connect_application (rx_domain_ptr what);
 
@@ -128,7 +131,7 @@ class port_algorithms
 
       static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_port_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_port_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
       static rx_result connect_application (rx_port_ptr what);
 
@@ -159,7 +162,7 @@ class application_algorithms
 
       static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_application_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_application_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
 
   protected:
@@ -186,7 +189,7 @@ class relations_algorithms
 
       static rx_result init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_relation_ptr what, std::function<void(rx_result&&)> callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_relation_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
 
   protected:

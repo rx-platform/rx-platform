@@ -33,12 +33,12 @@
 
 
 
+// rx_runtime_instance
+#include "system/runtime/rx_runtime_instance.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
-// rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
 
 #include "rx_runtime_helpers.h"
 

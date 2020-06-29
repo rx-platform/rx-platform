@@ -148,11 +148,12 @@ void server_runtime::deinitialize ()
 		calculation_timer_.release();
 }
 
-void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now, threads::job_thread* whose)
 {
-	rx::threads::job_thread* executer = get_executer(rx_thread_context());
+	if(whose==nullptr)
+		whose = get_executer(rx_thread_context());
 	if (general_timer_)
-		general_timer_->append_job(job,executer,period, now);
+		general_timer_->append_job(job,whose,period, now);
 }
 
 rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)

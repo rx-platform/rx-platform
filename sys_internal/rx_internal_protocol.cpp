@@ -143,11 +143,10 @@ rx_protocol_result_t rx_json_endpoint::received_function (rx_protocol_stack_entr
 			{
 				if (self->connection_)
 				{
-					rx_post_function<decltype(connection_)>([json, packet_id](decltype(connection_) whose) {
+					rx_post_function_to(self->connection_->get_executer(), self->connection_, 
+						[](decltype(connection_) whose, string_type&& json, rx_packet_id_type packet_id) {
 							whose->data_received(json, packet_id);
-						}
-						, self->connection_
-						, self->connection_->get_executer());
+						}, self->connection_, std::move(json), packet_id);
 				}
 			}
 		}

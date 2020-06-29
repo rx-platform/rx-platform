@@ -38,6 +38,134 @@
 
 namespace rx {
 
+template<class T>
+std::decay_t<T> decay_copy(T&& v)
+{
+    return std::forward<T>(v);
+}
+
+
+template<typename T>
+struct arg_type
+{
+    private:
+        typedef typename std::remove_reference<T>::type U;
+    public:
+         typedef typename std::remove_cv<U>::type type;
+};
+
+template<typename T>
+typename arg_type<T>::type forward_as_argument(T&& t)
+{
+    using ret_type = typename arg_type<T>::type;
+    if constexpr (std::is_lvalue_reference<T>::value)
+    {
+        if constexpr (std::is_copy_constructible<ret_type>::value)
+        {
+            ret_type ret(t);
+            return ret;
+        }
+        else
+        {
+            using ret_type = typename arg_type<T>::type;
+            ret_type ret(std::move(t));
+            return ret;
+        }
+    }
+    else if constexpr (std::is_rvalue_reference<T>::value)
+    {
+        return std::move(t);
+    }
+    else
+    {
+        if constexpr (!std::is_copy_constructible<ret_type>::value)
+        {
+            return std::forward<T>(t);
+        }
+        else
+        {
+            return std::move(t);
+        }
+    }
+}
+
+
+//
+//template<typename T>
+//typename arg_type<T>::type forward_as_argument(T t)
+//{
+//    return std::move(t);
+//}
+
+//template<typename T>
+//typename arg_type<T>::type forward_as_argument(T t)
+//{
+//    using ret_type = typename arg_type<T>::type;
+//
+//    if constexpr (std::is_copy_constructible<ret_type>::value)
+//    {
+//        ret_type ret(t);
+//        return ret;
+//    }
+//    else
+//    {
+//        using ret_type = typename arg_type<T>::type;
+//        ret_type ret(std::move(t));
+//        return ret;
+//    }
+//}
+
+
+template<typename argT, typename storedT>
+argT get_loose_call_value(storedT& v)
+{
+    if constexpr (std::is_lvalue_reference<argT>::value)
+    {
+        return v;
+    }
+    else if constexpr (std::is_rvalue_reference<argT>::value)
+    {
+        return std::move(v);
+    }
+    else
+    {
+        return v;
+    }
+}
+
+template<class tupleArgs, class tupleSrc, size_t... Is>
+constexpr auto loose_call(tupleSrc& t, std::index_sequence<Is...>)
+{
+    tupleArgs ret(get_loose_call_value<typename std::tuple_element<Is, tupleArgs>::type, typename std::tuple_element<Is, tupleSrc>::type>
+        (std::get<Is>(t))...);
+    return ret;
+}
+template<class tupleArgs, class tupleSrc>
+constexpr auto loose_call(tupleSrc& t)
+{
+    return loose_call<tupleArgs, tupleSrc>(t, std::make_index_sequence<std::tuple_size<tupleSrc>::value >{});
+}
+
+
+template<class tupleT, size_t idx>
+void rx_move_tuple_element(tupleT& dest, tupleT& src)
+{
+    std::get<idx>(dest) = std::move(std::get<idx>(src));
+}
+/*
+template<class tupleT, size_t... Is>
+void rx_move_tuple(tupleT& dest, tupleT& src, std::index_sequence<Is...>)
+{
+    rx_move_tuple_element<tupleT, Is>(dest, src);...
+}
+template<class tupleT>
+void rx_move_tuple(tupleT& dest, tupleT& src)
+{
+    rx_move_tuple<tupleT>(dest, src, std::make_index_sequence<std::tuple_size<tupleT>::value >{});
+}
+
+*/
+
 // This code below is from a gay's post on stack overflow
 // the gay:
 // <https://stackoverflow.com/users/596781/kerrek-sb>

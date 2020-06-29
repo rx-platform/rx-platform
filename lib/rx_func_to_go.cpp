@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_ptr.cpp
+*  lib\rx_func_to_go.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -31,76 +31,15 @@
 #include "pch.h"
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_func_to_go
+#include "lib/rx_func_to_go.h"
 
 
 
 namespace rx {
 
-namespace pointers {
-_create_new_type _create_new;
-
-// Parameterized Class rx::pointers::reference 
+// Parameterized Class rx::function_to_go 
 
 
-// Class rx::pointers::reference_object 
-
-std::atomic<ref_counting_type> reference_object::g_objects_count;
-
-reference_object::reference_object()
-      : ref_count_(1)
-{
-	g_objects_count++;
-}
-
-
-reference_object::~reference_object()
-{
-	g_objects_count--;
-}
-
-
-
-void reference_object::bind ()
-{
-	ref_count_.fetch_add(1);
-}
-
-void reference_object::release ()
-{
-	if (1 == ref_count_.fetch_sub(1))
-		delete this;
-}
-
-size_t reference_object::get_objects_count ()
-{
-	return (size_t)g_objects_count.load();
-}
-
-void reference_object::fill_code_info (std::ostream& info, const string_type& name)
-{
-}
-
-
-// Class rx::pointers::struct_reference 
-
-
-void struct_reference::bind ()
-{
-	ref_count_++;
-}
-
-void struct_reference::release ()
-{
-	if (0 == --ref_count_)
-		delete this;
-}
-
-
-// Parameterized Class rx::pointers::basic_smart_ptr 
-
-
-} // namespace pointers
 } // namespace rx
 

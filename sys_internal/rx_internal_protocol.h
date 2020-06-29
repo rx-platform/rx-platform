@@ -33,16 +33,16 @@
 
 
 
-// dummy
-#include "dummy.h"
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_subscription
-#include "runtime_internal/rx_subscription.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
+// rx_subscription
+#include "runtime_internal/rx_subscription.h"
 
 namespace rx_internal {
 namespace rx_protocol {

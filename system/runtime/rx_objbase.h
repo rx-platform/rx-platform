@@ -33,15 +33,16 @@
 
 
 #include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "system/server/rx_server.h"
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -244,7 +245,7 @@ class domain_runtime : public rx::pointers::reference_object
 system domain class. basic implementation of a domain");
 
 	DECLARE_REFERENCE_PTR(domain_runtime);
-    
+
     friend class algorithms::runtime_holder<meta::object_types::domain_type>;
 
   public:
@@ -389,6 +390,24 @@ system port class. basic implementation of a port");
               temp_val.assign_static<valT>(std::forward<valT>(value));
               auto result = context_->set_value(handle, std::move(temp_val));
           }
+      }
+      template<typename funcT, typename... Args>
+      void send_function(funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_job(std::forward<funcT>(func), std::forward<funcT>(func));
+          get_jobs_queue()->append(job);
+      }
+      template<class refT, class funcT, class callbackT>
+      void do_io_data_with_callback(funcT&& what, callbackT&& callback)
+      {
+          rx_thread_handle_t ctx = RX_DOMAIN_IO;
+          rx_do_with_callback(ctx, smart_this(), std::forward<funcT>(what), std::forward<callbackT>(callback));
+      }
+      template<class refT, class funcT, class callbackT>
+      void do_base_data_with_callback(funcT&& what, callbackT&& callback)
+      {
+          rx_thread_handle_t ctx = RX_DOMAIN_META;
+          rx_do_with_callback(ctx, smart_this(), std::forward<funcT>(what), std::forward<callbackT>(callback));
       }
   protected:
 

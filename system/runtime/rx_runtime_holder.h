@@ -35,6 +35,10 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
+// rx_relations
+#include "system/runtime/rx_relations.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
@@ -47,24 +51,12 @@
 #include "system/callbacks/rx_callback.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_job
-#include "lib/rx_job.h"
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
-// rx_rt_data
-#include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-
-namespace rx_platform {
-namespace runtime {
-namespace relations {
-class relation_data;
-
-} // namespace relations
-} // namespace runtime
-} // namespace rx_platform
-
+// rx_job
+#include "lib/rx_job.h"
+// rx_rt_data
+#include "lib/rx_rt_data.h"
 
 #include "system/meta/rx_obj_types.h"
 namespace rx_internal
@@ -176,11 +168,9 @@ public:
 
       rx_result read_value (const string_type& path, rx_value& value) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, rx_thread_handle_t whose);
+      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, rx_thread_handle_t whose);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
-
-      bool deserialize (base_meta_reader& stream, uint8_t type);
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 
@@ -222,7 +212,13 @@ public:
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      const typename typeT::instance_data_t& get_instance_data () const;
+      const typename typeT::runtime_data_t& get_instance_data () const;
+
+      rx_result add_target_relation (relations::relation_data::smart_ptr data);
+
+      rx_result remove_target_relation (const string_type& name);
+
+      typename typeT::instance_data_t get_definition_data ();
 
 
       rx::data::runtime_values_data& get_overrides ()
@@ -244,7 +240,7 @@ public:
       }
 
 
-      typename typeT::instance_data_t& get_instance_data ()
+      typename typeT::runtime_data_t& get_instance_data ()
       {
         return instance_data_;
       }
@@ -305,6 +301,8 @@ public:
 
       void process_structs (runtime_process_context& ctx);
 
+      void process_own (runtime_process_context& ctx);
+
 
 
       operational::connected_tags connected_tags_;
@@ -315,7 +313,7 @@ public:
 
       structure::runtime_item::smart_ptr item_;
 
-      relations_type relations_;
+      relations::relations_holder relations_;
 
       rx::data::runtime_values_data overrides_;
 
@@ -342,7 +340,7 @@ public:
 
       ImplPtr implementation_;
 
-      typename typeT::instance_data_t instance_data_;
+      typename typeT::runtime_data_t instance_data_;
 
       string_type json_cache_;
 

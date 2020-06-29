@@ -32,8 +32,6 @@
 
 #include "system/meta/rx_obj_types.h"
 
-// rx_relations
-#include "system/runtime/rx_relations.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 
@@ -117,7 +115,7 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
         << "> started";
     RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
 
-    auto old_tick = rx_get_us_ticks();    
+    auto old_tick = rx_get_us_ticks();
     size_t lap_count = 0;
     do
     {
@@ -140,6 +138,7 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
         whose.process_events(whose.context_);
         whose.process_filters(whose.context_);
         whose.process_structs(whose.context_);
+        whose.process_own(whose.context_);
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,7 +161,7 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
         << full_path
         << "> loop = " << lap_count << "; time = " << diff << "us.";
     RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
-    
+
     if (whose.max_scan_time_ < whose.last_scan_time_)
     {
         whose.max_scan_time_ = whose.last_scan_time_;
@@ -290,8 +289,7 @@ runtime_holder<typeT>::runtime_holder()
         job_pending_(false),
         loop_count_(0),
         loop_count_item_(0)
-    , meta_info_(namespace_item_pull_access)
-    , context_(binded_tags_, connected_tags_)
+    , context_(binded_tags_, connected_tags_, meta_info_, &directories_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     connected_tags_.init_tags(&context_, &relations_);
@@ -307,8 +305,8 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
         loop_count_(0),
         loop_count_item_(0)
     , meta_info_(meta)
-    , instance_data_(instance)
-    , context_(binded_tags_, connected_tags_)
+    , instance_data_(instance.instance_data)
+    , context_(binded_tags_, connected_tags_, meta_info_, &directories_)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     connected_tags_.init_tags(&context_, &relations_);
@@ -353,7 +351,7 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
             string_type temp_str;
             if (writer.get_string(const_cast<string_type&>(temp_str), true))
             {
-                value.assign_static<string_type>(string_type(temp_str), meta_info_.get_modified_time());
+                value.assign_static<string_type>(string_type(temp_str), meta_info_.modified_time);
             }
         }
 #endif
@@ -362,24 +360,16 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
     {
         result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
         if (!result)
-        {// check relations, but only for exact name
-            for (const auto& one : relations_)
-            {
-                if (one.name == path)
-                {
-                    value = one.value.get_value(const_cast<runtime_process_context*>(&context_));
-                    result = true;
-                    break;
-                }
-            }
+        {// check relations
+            result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_));
         }
     }
-    
+
     return result;
 }
 
 template <class typeT>
-rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx, rx_thread_handle_t whose)
+rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, rx_thread_handle_t whose)
 {
     if (path.empty())
     {// our value
@@ -396,12 +386,13 @@ rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple
     if (current_thread == whose)
     {
         auto result = func(path, std::move(val));
-        callback(std::move(result));
+        callback.set_arguments(std::move(result));
+        callback.call();
         return true;
     }
     else
     {
-        rx_do_with_callback<rx_result, decltype(ctx.object), const string_type&, rx_simple_value>(func, whose, callback, ctx.object, path, std::move(val));
+        rx_do_with_callback(current_thread, ctx.object, std::move(func), std::move(callback), path, std::move(val));
         return true;
     }
 }
@@ -415,7 +406,7 @@ bool runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) c
     if (!stream.start_object("def"))
         return false;
 
-    if (!instance_data_.serialize(stream, type))
+    if (!instance_data_.get_data().serialize(stream, type))
         return false;
 
     if (!stream.write_init_values("overrides", overrides_))
@@ -437,36 +428,10 @@ bool runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) c
 }
 
 template <class typeT>
-bool runtime_holder<typeT>::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("def"))
-        return false;
-
-    if (!instance_data_.deserialize(stream, type))
-        return false;
-
-    if (!stream.read_init_values("overrides", overrides_))
-        return false;
-    if (!stream.start_array("programs"))
-        return false;
-    while (!stream.array_end())
-    {
-        logic::ladder_program::smart_ptr one(pointers::_create_new);
-        if (!one->load_program(stream, type))
-            return false;
-        programs_.push_back(one);
-    }
-
-    if (!stream.end_object())
-        return false;
-
-    return true;
-}
-
-template <class typeT>
 rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
-    directories_.add_paths({ meta_info_.get_path() });
+    ctx.anchor = smart_this();
+    directories_.add_paths({ meta_info_.path });
     context_.init_state([this]
         {
             object_runtime_algorithms<typeT>::fire_job(*this);
@@ -486,12 +451,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
         if (bind_result)
             loop_count_item_ = bind_result.value();
 
-        for (auto& one : relations_)
-        {
-            result = one.initialize_relation(ctx);
-            if (!result)
-                break;
-        }
+        result = relations_.initialize_relations(ctx);
         if (result)
         {
             for (auto& one : programs_)
@@ -522,12 +482,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
     }
     if (result)
     {
-        for (auto& one : relations_)
-        {
-            result = one.deinitialize_relation(ctx);
-            if (!result)
-                break;
-        }
+        result = relations_.deinitialize_relations(ctx);
         if (result)
         {
             result = item_->deinitialize_runtime(ctx);
@@ -543,12 +498,7 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
     auto result = item_->start_runtime(ctx);
     if (result)
     {
-        for (auto& one : relations_)
-        {
-            result = one.start_relation(ctx);
-            if (!result)
-                break;
-        }
+        result = relations_.start_relations(ctx);
         if (result)
         {
             for (auto& one : programs_)
@@ -579,12 +529,8 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
     }
     if (result)
     {
-        for (auto& one : relations_)
-        {
-            result = one.stop_relation(ctx);
-            if (!result)
-                break;
-        }
+
+        result = relations_.stop_relations(ctx);
         if (result)
         {
             result = item_->stop_runtime(ctx);
@@ -614,20 +560,14 @@ void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
     item_->fill_data(data, ctx);
     // now do the relations
     // they create their own context!
-    for (auto& one : relations_)
-    {
-        one.fill_data(data);
-    }
+    relations_.fill_data(data);
 }
 
 template <class typeT>
 void runtime_holder<typeT>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
     item_->collect_data(data, type);
-    for (auto& one : relations_)
-    {
-        one.collect_data(data, type);
-    }
+    relations_.collect_data(data, type);
 }
 
 template <class typeT>
@@ -641,18 +581,10 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
 {
     if (path.empty())
     {
-        auto ret = item_->browse_items(filter, prefix + path, items, &context_);
+        auto ret = item_->browse_items(filter, prefix, items, &context_);
         if (ret)
         {
-            for (const auto& one : relations_)
-            {
-                runtime_item_attribute attr;
-                attr.full_path = prefix + one.name;
-                attr.name = one.name;
-                attr.type = rx_attribute_type::relation_attribute_type;
-                attr.value.assign_static<string_type>(string_type(one.target));
-                items.push_back(attr);
-            }
+            ret = relations_.browse(prefix, "", filter, items);
         }
         return ret;
     }
@@ -662,28 +594,14 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
         const auto& sub_item = item_->get_child_item(path);
         if (!sub_item)
         {
-            auto idx = path.find(RX_OBJECT_DELIMETER);
-            string_type sub_path;
-            string_type rest_path;
-            if (idx != string_type::npos)
-            {
-                sub_path = path.substr(0, idx);
-                rest_path = path.substr(idx + 1);
-            }
-            else
-            {
-                sub_path = path;
-            }
-            for (auto& one : relations_)
-            {
-                if (one.name == sub_path)
-                {
-                    return one.browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
-                }
-            }
-            return path + " not found";
+            auto ret = relations_.browse(prefix, path, filter, items);
+            return ret;
         }
-        return sub_item->browse_items(filter, prefix + current_path, items, &context_);
+        else
+        {
+            auto ret = sub_item->browse_items(filter, prefix + current_path, items, &context_);
+            return ret;
+        }
     }
 }
 
@@ -761,7 +679,7 @@ rx_result runtime_holder<typeT>::deserialize_value (base_meta_reader& stream, ru
 }
 
 template <class typeT>
-const typename typeT::instance_data_t& runtime_holder<typeT>::get_instance_data () const
+const typename typeT::runtime_data_t& runtime_holder<typeT>::get_instance_data () const
 {
     return instance_data_;
 }
@@ -894,6 +812,51 @@ void runtime_holder<typeT>::process_structs (runtime_process_context& ctx)
             one->process_runtime(&ctx);
         structs = ctx.get_structs_for_process();
     }
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::add_target_relation (relations::relation_data::smart_ptr data)
+{
+    auto ctx = create_start_context();
+    return relations_.add_target_relation(std::move(data), ctx);
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::remove_target_relation (const string_type& name)
+{
+    runtime_stop_context ctx;
+    auto result = relations_.remove_target_relation(name, ctx);
+    if (result)
+    {
+        connected_tags_.target_relation_removed(result.move_value());
+        return true;
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+
+template <class typeT>
+void runtime_holder<typeT>::process_own (runtime_process_context& ctx)
+{
+    auto& own_jobs = ctx.get_for_own_process();
+    while (!own_jobs.empty())
+    {
+        for (auto& one : own_jobs)
+            one->process();
+        own_jobs = ctx.get_for_own_process();
+    }
+}
+
+template <class typeT>
+typename typeT::instance_data_t runtime_holder<typeT>::get_definition_data ()
+{
+    typename typeT::instance_data_t def_data;
+    def_data.meta_info = meta_info_;
+    def_data.instance_data = instance_data_.get_data();
+    def_data.overrides = overrides_;
+    return def_data;
 }
 
 template class runtime_holder<object_types::object_type>;

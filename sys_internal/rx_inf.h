@@ -276,7 +276,7 @@ calculation ( normal priority)");
 
       void deinitialize ();
 
-      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
+      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false, threads::job_thread* whose = nullptr);
 
       rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
 

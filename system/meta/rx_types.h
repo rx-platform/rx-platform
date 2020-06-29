@@ -50,16 +50,6 @@ using rx_platform::meta::construct_context;
 namespace rx_platform {
 
 namespace meta {
-// had to do forward declaration because of back template pattern
-
-struct meta_configuration_data_t
-{
-	bool build_system_from_code = false;
-	string_type instance_name;
-	uint32_t wd_timer_period = 1000;
-};
-
-
 
 namespace basic_types {
 
@@ -86,8 +76,6 @@ public:
       event_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -99,6 +87,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -152,8 +142,6 @@ public:
       filter_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -165,6 +153,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -218,8 +208,6 @@ public:
       mapper_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -231,6 +219,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const meta_data& meta_info () const;
@@ -284,8 +274,6 @@ public:
       source_type (const type_creation_data& data);
 
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -297,6 +285,8 @@ public:
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -352,8 +342,6 @@ public:
 
       rx_result construct (RTypePtr& what, construct_context& ctx) const;
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
@@ -365,6 +353,8 @@ public:
       def_blocks::mapped_data_type& mapping_data ();
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const def_blocks::complex_data_type& complex_data () const;
@@ -428,8 +418,6 @@ public:
 
       rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
-      platform_item_ptr get_item_ptr () const;
-
       rx_value get_value () const;
 
       meta_data& meta_info ();
@@ -441,6 +429,8 @@ public:
       def_blocks::variable_data_type& variable_data ();
 
       bool check_type (type_check_context& ctx);
+
+      platform_item_ptr get_item_ptr () const;
 
 
       const meta_data& meta_info () const;

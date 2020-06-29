@@ -33,8 +33,8 @@
 
 
 
-// rx_relations
-#include "system/runtime/rx_relations.h"
+// rx_relation_impl
+#include "system/runtime/rx_relation_impl.h"
 
 
 
@@ -58,7 +58,7 @@ class port_stack_relation : public rx_platform::runtime::relations::relation_run
 
       void process_stack ();
 
-      rx_result initialize_relation (runtime::runtime_init_context& ctx, rx_item_reference& ref);
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 

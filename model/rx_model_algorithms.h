@@ -38,6 +38,7 @@
 
 #include "system/server/rx_platform_item.h"
 #include "sys_internal/rx_async_functions.h"
+#include "api/rx_platform_api.h"
 
 
 namespace rx_internal {
@@ -72,76 +73,129 @@ rx_result_with<rx_node_id> resolve_runtime_reference(
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id);
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id);
 
-rx_result_with<platform_item_ptr> get_working_runtime_sync(const rx_node_id& id);
+rx_result_with<platform_item_ptr> get_working_runtime(const rx_node_id& id);
 
-template<class resultT>
+template<class resultT, class funcT>
 rx_result do_with_item(
 	const rx_node_id& id
-	, std::function<resultT(rx_result_with<platform_item_ptr>&&)> what
-	, std::function<void(resultT)> callback
+    , funcT&& what
+    , rx_result_with_callback<resultT>&& callback
 	, rx_platform::api::rx_context ctx)
 {
+    using my_result_type = rx_function_to_go<rx_result_with<platform_item_ptr>&&, rx_result_with_callback<resultT>&&>;
 	auto ret_executer = rx_thread_context();
 
-	std::function<void(rx_result_with<platform_item_ptr>&&)> func2 = [what, ret_executer, callback, ctx](rx_result_with<platform_item_ptr>&& who)
-	{
-		auto ret_val = what(std::move(who));
-		rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
-	};
+	auto func2 = my_result_type(ctx.object,
+        [what = std::forward<funcT>(what), ret_executer, ctx]
+        (rx_result_with<platform_item_ptr>&& who, rx_result_with_callback<resultT> && callback) mutable
+	    {
+		    auto ret_val = what(std::move(who));
+            callback.set_arguments(std::move(ret_val));
+		    rx_platform::rx_post_packed_to(ret_executer, ctx.object, std::move(callback));
+	    });
 
-	std::function<void(rx_node_id)> func = [func2, ctx](rx_node_id id) {
-
-		auto result = get_platform_item_sync(id);
-        if (!result)
+	rx_platform::rx_post_function_to(RX_DOMAIN_META, ctx.object
+        , [ret_executer](rx_node_id id, my_result_type&& func2, rx_result_callback&& callback) mutable
         {
-            func2(std::move(result));
-        }
-        else
-        {
-            auto executer = result.value()->get_executer();
-            if (executer == RX_DOMAIN_META)
-                func2(std::move(result));
+            auto result = get_platform_item_sync(id);
+            if (!result)
+            {
+                rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
+            }
             else
-                rx_post_result_to(executer, func2, ctx.object, std::move(result));
-        }
-
-	};
-	rx_platform::rx_post_function_to<rx_reference_ptr, rx_node_id>(RX_DOMAIN_META, func, ctx.object, id);
+            {
+                auto executer = result.value()->get_executer();
+                func2.set_arguments(std::move(result), std::move(callback));
+                rx_post_packed_to(executer, std::move(func2));
+            }
+        }, id, std::move(func2), std::move(callback));
 	return true;
 }
 
-template<class resultT>
-rx_result do_with_runtime_item(
+template<class funcT>
+rx_result do_with_item(
     const rx_node_id& id
-    , std::function<resultT(rx_result_with<platform_item_ptr>&&)> what
-    , std::function<void(resultT)> callback
+    , funcT&& what
+    , rx_result_callback&& callback
     , rx_platform::api::rx_context ctx)
 {
+    using my_result_type = rx_function_to_go<rx_result_with<platform_item_ptr>&&, rx_result_callback&&>;
     auto ret_executer = rx_thread_context();
 
-    std::function<void(rx_result_with<platform_item_ptr>&&)> func2 = [what, ret_executer, callback, ctx](rx_result_with<platform_item_ptr>&& who)
-    {
-        auto ret_val = what(std::move(who));
-        rx_platform::rx_post_function_to<rx_reference_ptr, resultT>(ret_executer, callback, ctx.object, std::move(ret_val));
-    };
+    auto func2 = my_result_type(ctx.object,
+        [what = std::forward<funcT>(what), ret_executer, ctx]
+        (rx_result_with<platform_item_ptr>&& who, rx_result_callback&& callback) mutable
+        {
+            auto ret_val = what(std::move(who));
+            callback.set_arguments(std::move(ret_val));
+            rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
+        });
 
-    std::function<void(rx_node_id)> func = [func2, ctx](rx_node_id id) {
-        auto result = get_working_runtime_sync(id);
-        if (!result)
+    rx_platform::rx_post_function_to(RX_DOMAIN_META, ctx.object
+        , [ret_executer](rx_node_id id, my_result_type&& func2, rx_result_callback&& callback) mutable
         {
-            func2(std::move(result));
-        }
-        else
-        {
-            auto executer = result.value()->get_executer();
-            if (executer == RX_DOMAIN_META)
-                func2(std::move(result));
+            auto result = get_platform_item_sync(id);
+            if (!result)
+            {
+                callback.set_arguments(rx_result(result.errors()));
+                rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
+            }
             else
-                rx_post_result_to(executer, func2, ctx.object, std::move(result));
-        }
+            {
+                auto executer = result.value()->get_executer();
+                func2.set_arguments(std::move(result), std::move(callback));
+                rx_post_packed_to(executer, std::move(func2));
+            }
+        }, id, std::move(func2), std::move(callback));
+    return true;
+}
 
-    };
-    rx_platform::rx_post_function_to<rx_reference_ptr, rx_node_id>(RX_DOMAIN_META, func, ctx.object, id);
+template<class resultT, class funcT>
+rx_result do_with_runtime_item(
+    const rx_node_id& id
+    , funcT&& what
+    , rx_result_with_callback<resultT>&& callback
+    , rx_platform::api::rx_context ctx)
+{
+
+    auto item_result = get_working_runtime(id);
+    if (!item_result)
+    {
+        item_result.errors();
+    }
+    auto item = item_result.move_value();
+
+    auto item_executer = item->get_executer();
+
+    rx_platform::rx_do_with_callback<rx_reference_ptr, funcT>(item_executer, ctx.object
+        , std::forward<funcT>(what), std::move(callback)
+        , std::move(item));
+
+    return true;
+}
+
+
+template<class funcT>
+rx_result do_with_runtime_item(
+    const rx_node_id& id
+    , funcT&& what
+    , rx_result_callback&& callback
+    , rx_platform::api::rx_context ctx)
+{
+
+    auto item_result = get_working_runtime(id);
+    if (!item_result)
+    {
+        item_result.errors();
+    }
+    auto item = item_result.move_value();
+
+    auto item_executer = item->get_executer();
+
+    rx_platform::rx_do_with_callback<rx_reference_ptr, funcT>(item_executer, ctx.object
+        , std::forward<funcT>(what), std::move(callback)
+        , std::move(item));
+
     return true;
 }
 
@@ -151,7 +205,7 @@ template<class resultT, class refT, class... Args>
 rx_result do_with_items(
 	const rx_node_ids& ids
 	, std::function<resultT(Args...)> what
-	, std::function<void(resultT)> callback
+	, rx_result_callback&& callback
 	, rx_platform::api::rx_context ctx);
 
 
@@ -167,30 +221,30 @@ class types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
+      static void get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void create_type (typename typeT::smart_ptr prototype, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static rx_result_with<typename typeT::smart_ptr> create_type_sync (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
+      static void update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
-      static void update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
-      static void get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
 
   protected:
 
   private:
 
-      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, bool increment_version);
 
-      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version);
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
 
 
 
@@ -207,30 +261,30 @@ class simple_types_model_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
+      static void get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void create_type (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void create_type (typename typeT::smart_ptr prototype, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static rx_result_with<typename typeT::smart_ptr> create_type_sync (const string_type& name, const rx_item_reference& base_reference, typename typeT::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
+      static void update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
-      static void update_type (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
-      static void get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
 
   protected:
 
   private:
 
-      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, bool increment_version);
 
-      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_directory_ptr dir, bool increment_version);
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
 
 
 
@@ -244,43 +298,37 @@ class simple_types_model_algorithm
 template <class typeT>
 class runtime_model_algorithm 
 {
+  public:
+      using instanceT = typename typeT::instance_data_t;
 
   public:
 
-      static void delete_runtime (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+      static void get_runtime (const rx_item_reference& item_reference, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void create_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+      static void create_runtime (instanceT&& instance_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
+      static void create_prototype (instanceT&& instance_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void create_prototype (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+      static void update_runtime (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void create_runtime_implicit (const string_type& name, const rx_item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
-
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_implicit_sync (const string_type& name, const rx_item_reference& base_reference, namespace_item_attributes attributes, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, rx_directory_ptr dir, rx_reference_ptr ref);
+      static void delete_runtime (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
       static rx_result init_runtime (typename typeT::RTypePtr what);
 
-      static void update_runtime (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, bool increment_version, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
-
-      static rx_result update_runtime_sync (const meta_data& info, data::runtime_values_data* init_data, typename typeT::instance_data_t instance_data, bool increment_version, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref, rx_thread_handle_t result_target);
-
-      static void get_runtime (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<typename typeT::RTypePtr>&&)> callback, rx_reference_ptr ref);
+      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (instanceT&& instance_data);
 
 
   protected:
 
   private:
 
-      static rx_result delete_runtime_sync (const rx_item_reference& item_reference, rx_directory_ptr dir, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+      static rx_result_with<typename typeT::RTypePtr> get_runtime_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (const meta_data& info, typename typeT::instance_data_t instance_data, rx_directory_ptr dir);
+      static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (instanceT&& instance_data);
 
-      static rx_result helper_delete_runtime_sync (meta_data_t info);
+      static void update_runtime_sync (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target);
 
-      static rx_result delete_runtime_sync (meta_data_t info, rx_thread_handle_t result_target, std::function<void(rx_result)> callback, rx_reference_ptr ref);
-
-      static rx_result_with<typename typeT::RTypePtr> get_runtime_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result delete_runtime_sync (const rx_item_reference& item_reference, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback);
 
 
 
@@ -296,30 +344,30 @@ class relation_types_algorithm
 
   public:
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, std::function<void(check_records_type)> callback, rx_reference_ptr ref);
+      static void get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
-      static void create_type (const string_type& name, const rx_item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void create_type (relation_type::smart_ptr prototype, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
-      static rx_result_with<relation_type::smart_ptr> create_type_sync (const string_type& name, const rx_item_reference& base_reference, relation_type::smart_ptr prototype, rx_directory_ptr dir, namespace_item_attributes attributes);
+      static void update_type (relation_type::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result)> callback, rx_reference_ptr ref);
+      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
-      static void update_type (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
-      static void get_type (const rx_item_reference& item_reference, rx_directory_ptr dir, std::function<void(rx_result_with<relation_type::smart_ptr>&&)> callback, rx_reference_ptr ref);
+      static rx_result_with<relation_type::smart_ptr> create_type_sync (relation_type::smart_ptr prototype);
 
 
   protected:
 
   private:
 
-      static check_records_type check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<relation_type::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result delete_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, bool increment_version);
 
-      static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, rx_directory_ptr dir, bool increment_version);
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<relation_type::smart_ptr> get_type_sync (const rx_item_reference& item_reference, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
 
 
 

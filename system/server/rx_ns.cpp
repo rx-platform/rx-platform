@@ -110,8 +110,11 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 
 rx_platform_directory::rx_platform_directory (const string_type& name, namespace_item_attributes attrs, rx_storage_ptr storage)
       : storage_(storage)
-	, meta_(name, rx_node_id::null_id, rx_node_id::null_id, attrs, "")
 {
+	meta_.name = name;
+	meta_.created_time = rx_time::now();
+	meta_.modified_time = meta_.created_time;
+	meta_.attributes = attrs;
 }
 
 
@@ -211,7 +214,7 @@ string_type rx_platform_directory::get_name () const
 	string_type ret;
 	{
 		locks::const_auto_slim_lock dummy(&structure_lock_);
-		ret = meta_.get_name();
+		ret = meta_.name;
 	}
 	if (ret.empty())
 		return string_type({ RX_DIR_DELIMETER });
@@ -227,7 +230,7 @@ void rx_platform_directory::fill_path (string_type& path) const
 	{
 		parent_->fill_path(path);
 	}
-	name = meta_.get_name();
+	name = meta_.name;
 	structure_unlock();
 	if (name.empty())
 		path = RX_DIR_DELIMETER;
@@ -245,7 +248,7 @@ void rx_platform_directory::set_parent (rx_directory_ptr parent)
 	parent->fill_path(path);
 	locks::auto_lock_t<decltype(structure_lock_)> _(&structure_lock_);
 	parent_ = parent;
-	meta_.set_path(path);
+	meta_.path = path;
 	for (auto& one : sub_directories_)
 		one.second->set_parent(smart_this());
 }
@@ -253,7 +256,7 @@ void rx_platform_directory::set_parent (rx_directory_ptr parent)
 namespace_item_attributes rx_platform_directory::get_attributes () const
 {
 	locks::const_auto_lock_t<decltype(structure_lock_)> _(&structure_lock_);
-	return meta_.get_attributes();
+	return meta_.attributes;
 }
 
 void rx_platform_directory::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -283,12 +286,12 @@ void rx_platform_directory::structure_unlock () const
 
 void rx_platform_directory::get_value (rx_value& value)
 {
-	value.assign_static(get_name(), meta_.get_created_time());
+	value.assign_static(get_name(), meta_.created_time);
 }
 
 void rx_platform_directory::fill_dir_code_info (std::ostream& info)
 {
-	string_type name = meta_.get_path();
+	string_type name = meta_.path;
 	fill_code_info(info, name);
 }
 
@@ -300,15 +303,15 @@ rx_result rx_platform_directory::add_sub_directory (rx_directory_ptr who)
 {
 	rx_result ret;
 	structure_lock();
-	auto it = sub_directories_.find(who->meta_.get_name());
+	auto it = sub_directories_.find(who->meta_.name);
 	if (it == sub_directories_.end())
 	{
-		sub_directories_.emplace(who->meta_.get_name(), who);
+		sub_directories_.emplace(who->meta_.name, who);
 		who->set_parent(smart_this());
 	}
 	else
 	{
-		ret.register_error("Directory " + who->meta_.get_name() + " already exists");
+		ret.register_error("Directory " + who->meta_.name + " already exists");
 	}
 	structure_unlock();
 	return ret;
@@ -483,7 +486,7 @@ bool rx_platform_directory::empty () const
 	return ret;
 }
 
-rx_result rx_platform_directory::reserve_name (const string_type& name, string_type& path)
+rx_result rx_platform_directory::reserve_name (const string_type& name)
 {
 	rx_result ret;
 	structure_lock();
@@ -504,8 +507,6 @@ rx_result rx_platform_directory::reserve_name (const string_type& name, string_t
 	else
 		ret.register_error("Item " + name + " already exists");
 	structure_unlock();
-	if (ret)
-		fill_path(path);
 	return ret;
 }
 
@@ -567,7 +568,7 @@ rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path) 
 
 rx_result rx_platform_directory::add_item (const rx_namespace_item& what)
 {
-	auto name = what.get_meta().get_name();
+	auto name = what.get_meta().name;
 	rx_result ret;
 	structure_lock();
 	auto it = sub_items_.find(name);
@@ -661,7 +662,7 @@ rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_
 bool rx_names_cache::should_cache (const platform_item_ptr& item)
 {
 	// stupid algorithm here, should be checked!!!
-	if (item->meta_info().get_attributes()& namespace_item_system_mask)
+	if (item->meta_info().attributes& namespace_item_system_mask)
 	{
 		return true;
 	}
@@ -673,7 +674,7 @@ bool rx_names_cache::should_cache (const platform_item_ptr& item)
 
 bool rx_names_cache::should_cache (const rx_namespace_item& item)
 {
-	if (item.get_meta().get_attributes() & namespace_item_system_mask)
+	if (item.get_meta().attributes & namespace_item_system_mask)
 	{
 		return true;
 	}
@@ -750,7 +751,7 @@ rx_namespace_item::rx_namespace_item (const platform_item_ptr& who)
 	type_ = who->get_type_id();
 	meta_ = who->meta_info();
 	//executer_ = who->get_executer();
-	value_.assign_static(meta_.get_version(), meta_.get_modified_time());
+	value_.assign_static(meta_.version, meta_.modified_time);
 }
 
 
@@ -767,7 +768,7 @@ string_type rx_namespace_item::callculate_path (rx_directory_ptr dir) const
 	{
 		dir->fill_path(ret);
 	}
-	return ret + meta_.get_name();
+	return ret + meta_.name;
 }
 
 bool rx_namespace_item::is_object () const

@@ -53,11 +53,7 @@ class security_context_holder
 
   public:
 
-      bool serialize (const string_type& name, base_meta_writer& stream) const;
-
-      bool deserialize (const string_type& name, base_meta_reader& stream);
-
-      rx_result create_context (const string_type& port, const string_type& location);
+      rx_result create_context (const string_type& port, const string_type& location, const byte_string& data);
 
       void destory_context ();
 
@@ -78,8 +74,6 @@ class security_context_holder
 
 
       uint8_t type_;
-
-      byte_string data_;
 
 
 };

@@ -34,10 +34,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 
 #include "runtime_internal/rx_subscription.h"
 
@@ -134,7 +134,7 @@ class runtime_connect_test : public test_case
 	DECLARE_TEST_CODE_INFO(0, 1, 0, "\
 basic testing subscription connect/disconnect.");
 
-	class internal_callback : public sys_runtime::subscriptions::rx_subscription_callback
+	class internal_callback : public rx_internal::sys_runtime::subscriptions::rx_subscription_callback
 	{
 	public:
 		runtime_connect_test* parent = nullptr;

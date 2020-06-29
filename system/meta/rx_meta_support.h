@@ -34,6 +34,7 @@
 
 // temporary error codes!!!
 #define RX_ITEM_NOT_FOUND 0x801
+#define RX_NO_INVERSE_NAME_FOUND 0x802
 
 
 // rx_rt_struct
@@ -128,7 +129,7 @@ class construct_context
     construct_context& operator=(construct_context&&) = delete;
 
   public:
-      construct_context ();
+      construct_context (const string_type& name);
 
 
       void reinit ();
@@ -145,6 +146,8 @@ class construct_context
 
 
       rx_time now;
+
+      string_type rt_name;
 
 
   protected:
@@ -305,6 +308,11 @@ struct check_record
 
 
 typedef std::vector<check_record> check_records_type;
+struct check_type_result
+{
+    check_records_type records;
+    operator bool() const { return records.empty(); }
+};
 
 
 

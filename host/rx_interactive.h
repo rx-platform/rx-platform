@@ -35,16 +35,14 @@
 
 #include "system/server/rx_server.h"
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
-// rx_endpoints
-#include "interfaces/rx_endpoints.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 
 namespace host {
 namespace interactive {
@@ -130,7 +128,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
 };
-
 
 
 

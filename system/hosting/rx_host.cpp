@@ -33,6 +33,8 @@
 
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_plugin
+#include "system/libraries/rx_plugin.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 
@@ -410,5 +412,4 @@ void rx_platform_host::dump_log_items (const log::log_events_type& items, std::o
 
 } // namespace hosting
 } // namespace rx_platform
-
 

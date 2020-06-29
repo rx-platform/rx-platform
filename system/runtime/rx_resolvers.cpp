@@ -36,6 +36,7 @@
 
 #include "model/rx_model_algorithms.h"
 #include "runtime_internal/rx_runtime_internal.h"
+using namespace rx_internal::sys_runtime;
 
 
 namespace rx_platform {
@@ -44,99 +45,241 @@ namespace runtime {
 
 namespace resolvers {
 
-// Class rx_platform::runtime::resolvers::item_port_resolver 
+// Parameterized Class rx_platform::runtime::resolvers::runtime_resolver 
 
 
-rx_result item_port_resolver::init (const rx_item_reference& ref, port_resolver_user* user, ns::rx_directory_resolver* dirs)
+template <class typeT>
+rx_result runtime_resolver<typeT>::start_resolver (const rx_item_reference& ref, resolver_user<typeT>* user, ns::rx_directory_resolver* dirs)
 {
     user_ = user;
     directories_ = dirs;
-    port_reference_ = ref;
+    runtime_reference_ = ref;
     my_state_ = resolver_state::waiting;
-    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().register_subscriber(port_reference_, this);
+    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().register_subscriber(runtime_reference_, this);
     return true;
 }
 
-void item_port_resolver::deinit ()
+template <class typeT>
+void runtime_resolver<typeT>::stop_resolver ()
 {
     my_state_ = resolver_state::stopped;
-    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().unregister_subscriber(port_reference_, this);
+    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().unregister_subscriber(runtime_reference_, this);
     if (user_)
     {
-        user_->port_disconnected();
+        user_->runtime_disconnected();
     }
 }
 
-void item_port_resolver::runtime_appeared (platform_item_ptr&& item)
+template <class typeT>
+void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
 {
     if (my_state_ != resolver_state::waiting && my_state_!=resolver_state::querying)
         return;
 
-    if (port_reference_.is_null() || (item && item->get_type_id() != rx_item_type::rx_port))
+    if (runtime_reference_.is_null())
         return;
 
-    if (my_state_ != resolver_state::querying)
-        my_state_ = resolver_state::querying;
-
-    std::function<rx_result_with<resolve_result>(rx_item_reference)> func = [this](rx_item_reference ref)
-        -> rx_result_with<resolve_result>
+    if (runtime_reference_.is_node_id())
     {
-        auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
-        if (!ref_result)
+        auto rt_ptr = platform_runtime_manager::instance().get_cache().get_runtime<typeT>(runtime_reference_.get_node_id());
+        if (rt_ptr)
         {
-            return ref_result.errors();
-        }
-        rx_node_id id = ref_result.move_value();
-
-        auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
-        if (!port_ptr)
-        {
-            return port_ptr.errors();
-        }
-        else
-        {
-            resolve_result result;
-            result.id = id;
-            result.port = port_ptr.value()->get_implementation();
-            return result;
-        }
-    };
-    rx_do_with_callback<rx_result_with<resolve_result>, rx_reference_ptr, rx_item_reference>(
-        func, RX_DOMAIN_META, [this](rx_result_with<resolve_result>&& result)
-        {
-            if (my_state_ == resolver_state::querying)
+            my_state_ = resolver_state::resolved;
             {
-                if (result)
+                if (!user_->runtime_connected(std::move(item), rt_ptr->get_implementation()))
                 {
-                    resolved_id_ = result.value().id;
-                    my_state_ = resolver_state::same_thread;
-                    if(!user_->port_connected(std::move(result.value().port), std::move(resolved_id_)))
+                    my_state_ = resolver_state::waiting;
+                    RUNTIME_LOG_ERROR("item_port_resolver", 100, "Resolver user returned error for item "s + runtime_reference_.to_string());
+                }
+            }
+        }
+    }
+    else
+    {
+        if (my_state_ != resolver_state::querying)
+            my_state_ = resolver_state::querying;
+
+        auto callback = rx_result_with_callback<resolve_result>(user_->get_reference(), [this](rx_result_with<resolve_result>&& result)
+            {
+                if (my_state_ == resolver_state::querying)
+                {
+                    if (result)
+                    {
+                        my_state_ = resolver_state::resolved;
+                        if (!user_->runtime_connected(std::move(result.value().item), std::move(result.value().implementation)))
+                        {
+                            my_state_ = resolver_state::waiting;
+                            RUNTIME_LOG_ERROR("item_port_resolver", 100, "Resolver user returned error for item "s + runtime_reference_.to_string());
+                        }
+                    }
+                    else
+                    {
                         my_state_ = resolver_state::waiting;
+                        RUNTIME_LOG_ERROR("item_port_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
+                    }
+                }
+            });
+
+        // this one is path based so do all the things
+        rx_do_with_callback(RX_DOMAIN_META, user_->get_reference(),
+            [this](rx_item_reference ref) -> rx_result_with<resolve_result>
+            {
+                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
+                if (!ref_result)
+                {
+                    return ref_result.errors();
+                }
+                rx_node_id id = ref_result.move_value();
+
+                auto rt_result = platform_runtime_manager::instance().get_cache().get_runtime<typeT>(id);
+                if (!rt_result)
+                {
+                    return "Item not registered as running runtime.";
                 }
                 else
                 {
-                    my_state_ = resolver_state::waiting;
-                    RUNTIME_LOG_ERROR("item_port_resolver", 100, "Unable to resolve port reference to "s + port_reference_.to_string());
+                    resolved_id_ = id;
+                    resolve_result result;
+                    result.item = rt_result->get_item_ptr();
+                    result.implementation = rt_result->get_implementation();
+                    return result;
                 }
-            }
-        }, user_->get_reference(), port_reference_);
-}
-
-void item_port_resolver::runtime_destroyed (const rx_node_id& id)
-{
-    if (my_state_ != resolver_state::same_thread && my_state_ != resolver_state::other_thread)
-        return; // we're in the wrong state
-    if (id == resolved_id_)
-    {
-        if (user_)
-        {
-            user_->port_disconnected();
-        }
-        my_state_ = resolver_state::waiting;
+            }, std::move(callback), runtime_reference_);
     }
 }
 
-rx_reference_ptr item_port_resolver::get_reference ()
+template <class typeT>
+void runtime_resolver<typeT>::runtime_destroyed (const rx_node_id& id)
+{
+    if (my_state_ != resolver_state::resolved)
+        return; // we're in the wrong state
+    if (id == resolved_id_)
+    {
+        my_state_ = resolver_state::waiting;
+        resolved_id_ = rx_node_id::null_id;
+        if (user_)
+        {
+            user_->runtime_disconnected();
+        }
+    }
+}
+
+template <class typeT>
+rx_reference_ptr runtime_resolver<typeT>::get_reference ()
+{
+    if (user_)
+        return user_->get_reference();
+    else
+        return rx_reference_ptr();
+}
+
+// explicit instantiations
+template class resolver_user<meta::object_types::object_type>;
+template class resolver_user<meta::object_types::port_type>;
+template class resolver_user<meta::object_types::domain_type>;
+template class resolver_user<meta::object_types::application_type>;
+
+template class runtime_resolver<meta::object_types::object_type>;
+template class runtime_resolver<meta::object_types::port_type>;
+template class runtime_resolver<meta::object_types::domain_type>;
+template class runtime_resolver<meta::object_types::application_type>;
+// Parameterized Class rx_platform::runtime::resolvers::resolver_user 
+
+
+// Class rx_platform::runtime::resolvers::runtime_subscriber 
+
+
+// Class rx_platform::runtime::resolvers::runtime_item_resolver 
+
+
+rx_result runtime_item_resolver::start_resolver (const rx_item_reference& ref, item_resolver_user* user, ns::rx_directory_resolver* dirs)
+{
+    user_ = user;
+    directories_ = dirs;
+    runtime_reference_ = ref;
+    my_state_ = resolver_state::waiting;
+    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().register_subscriber(runtime_reference_, this);
+    return true;
+}
+
+void runtime_item_resolver::stop_resolver ()
+{
+    my_state_ = resolver_state::stopped;
+    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().unregister_subscriber(runtime_reference_, this);
+    if (user_)
+    {
+        user_->runtime_disconnected();
+    }
+}
+
+void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
+{
+    if (my_state_ != resolver_state::waiting && my_state_ != resolver_state::querying)
+        return;
+
+    if (runtime_reference_.is_null())
+        return;
+
+    if (runtime_reference_.is_node_id())
+    {
+        my_state_ = resolver_state::resolved;
+        if (!user_->runtime_connected(std::move(item)))
+        {
+            my_state_ = resolver_state::waiting;
+            RUNTIME_LOG_ERROR("item_port_resolver", 100, "Resolver user returned error for item "s + runtime_reference_.to_string());
+        }
+    }
+    else
+    {
+        if (my_state_ != resolver_state::querying)
+            my_state_ = resolver_state::querying;
+
+        auto callback = rx_result_with_callback<platform_item_ptr>(user_->get_reference(), [this](rx_result_with<platform_item_ptr>&& result)
+            {
+                if (my_state_ == resolver_state::querying)
+                {
+                    if (result)
+                    {
+                        my_state_ = resolver_state::resolved;
+                        if (!user_->runtime_connected(std::move(result.value())))
+                        {
+                            my_state_ = resolver_state::waiting;
+                            RUNTIME_LOG_ERROR("item_port_resolver", 100, "Resolver user returned error for item "s + runtime_reference_.to_string());
+                        }
+                    }
+                    else
+                    {
+                        my_state_ = resolver_state::waiting;
+                        RUNTIME_LOG_ERROR("item_port_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
+                    }
+                }
+            });
+        // this one is path based so do all the things
+        rx_do_with_callback(RX_DOMAIN_META, user_->get_reference(),
+            [this](rx_item_reference ref)-> rx_result_with<platform_item_ptr>
+            {
+                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
+                if (!ref_result)
+                {
+                    return ref_result.errors();
+                }
+                else
+                {
+                    auto item = platform_runtime_manager::instance().get_cache().get_item(ref_result.value());
+                    if (!item)
+                        return "Item not registered as running runtime.";
+
+                    return item;
+                }
+            }, std::move(callback), runtime_reference_);
+    }    
+}
+
+void runtime_item_resolver::runtime_destroyed (const rx_node_id& id)
+{
+}
+
+rx_reference_ptr runtime_item_resolver::get_reference ()
 {
     if (user_)
         return user_->get_reference();
@@ -145,10 +288,7 @@ rx_reference_ptr item_port_resolver::get_reference ()
 }
 
 
-// Class rx_platform::runtime::resolvers::port_resolver_user 
-
-
-// Class rx_platform::runtime::resolvers::runtime_subscriber 
+// Class rx_platform::runtime::resolvers::item_resolver_user 
 
 
 } // namespace resolvers

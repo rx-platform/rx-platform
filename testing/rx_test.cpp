@@ -62,7 +62,7 @@ test_command::~test_command()
 
 
 
-bool test_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 	string_type temp_str;
 	in >> temp_str;
@@ -87,7 +87,7 @@ bool test_command::do_console_command (std::istream& in, std::ostream& out, std:
 	return false;
 }
 
-bool test_command::do_info_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_command::do_info_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 	string_type temp_str;
 
@@ -106,7 +106,7 @@ bool test_command::do_info_command (std::istream& in, std::ostream& out, std::os
 	return false;
 }
 
-bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 
 	string_type temp_str;
@@ -138,7 +138,7 @@ bool test_command::do_run_command (std::istream& in, std::ostream& out, std::ost
 	return false;
 }
 
-bool test_command::do_status_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_command::do_status_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 	string_type filter;
 	in >> filter;
@@ -200,7 +200,7 @@ bool test_command::do_status_command (std::istream& in, std::ostream& out, std::
 	return true;
 }
 
-bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 	string_array categories;
 	testing_enviroment::instance().get_categories(categories);
@@ -432,7 +432,7 @@ test_context_data test_case::get_data (test_context_data* data) const
 	return data_;
 }
 
-bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, terminal::console_context_ptr ctx)
+bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 {
 	auto test_ctx = testing_enviroment::instance().create_test_context(ctx);
 	if (test_start(in, out, err, test_ctx))
@@ -571,7 +571,7 @@ test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_
 	return test_case::smart_ptr::null_ptr;
 }
 
-test_program_context* testing_enviroment::create_test_context (terminal::console_context_ptr console_ctx)
+test_program_context* testing_enviroment::create_test_context (rx_internal::terminal::console_context_ptr console_ctx)
 {
 	return new test_program_context(
 		console_ctx,
@@ -586,7 +586,7 @@ test_program_context* testing_enviroment::create_test_context (terminal::console
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<terminal::console::console_runtime> client)
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<rx_internal::terminal::console::console_runtime> client)
       : status_(RX_TEST_STATUS_UNKNOWN)
 	, console_program_context(parent, holder,  current_directory, out, err, client)
 {

@@ -47,9 +47,14 @@ namespace rx_platform {
 namespace runtime {
 namespace items {
 class object_runtime;
-
 } // namespace items
 } // namespace runtime
+
+namespace meta {
+struct type_creation_data;
+struct object_type_creation_data;
+
+} // namespace meta
 } // namespace rx_platform
 
 
@@ -80,7 +85,8 @@ enum rx_attribute_type
 	mapper_attribute_type = 6,
 	const_attribute_type = 7,
 	value_attribute_type = 8,
-	relation_attribute_type = 9
+	relation_attribute_type = 9,
+    relation_target_attribute_type = 10
 };
 struct runtime_item_attribute
 {
@@ -174,99 +180,53 @@ class meta_data
 {
 
   public:
-      meta_data (const string_type& name, const rx_node_id& id, const rx_node_id& parent, namespace_item_attributes attrs, const string_type& path, rx_time now = rx_time::now());
+      meta_data();
 
-      meta_data (namespace_item_attributes attrs = namespace_item_null, rx_time now = rx_time::now());
+      meta_data (const object_type_creation_data& type_data);
 
+      meta_data (const type_creation_data& type_data);
 
-      rx_result check_in (base_meta_reader& stream);
-
-      rx_result check_out (base_meta_writer& stream) const;
 
       rx_result serialize_meta_data (base_meta_writer& stream, uint8_t type, rx_item_type object_type) const;
 
       rx_result deserialize_meta_data (base_meta_reader& stream, uint8_t type, rx_item_type& object_type);
 
-      values::rx_value get_value () const;
+      rx_result check_in (base_meta_reader& stream);
 
-      void construct (const string_type& name, const rx_node_id& id, rx_node_id type_id, namespace_item_attributes attributes, const string_type& path);
-
-      bool get_system () const;
-
-      static rx_result_with<platform_item_ptr> deserialize_runtime_item (base_meta_reader& stream, uint8_t type);
-
-      void resolve ();
-
-      void set_path (const string_type& path);
-
-      string_type get_full_path () const;
+      rx_result check_out (base_meta_writer& stream) const;
 
       bool is_system () const;
 
       rx_result_with<rx_storage_ptr> resolve_storage () const;
 
-      void increment_version (bool full_ver);
+      values::rx_value get_value () const;
+
+      string_type get_full_path () const;
+
+      void get_full_path_with_buffer (string_type& path) const;
 
       rx_item_reference create_item_reference ();
 
       rx_item_reference create_weak_item_reference (const string_array& dirs);
 
-      void get_full_path_with_buffer (string_type& path) const;
+      void increment_version (bool full_ver);
 
 
-      const rx_node_id& get_parent () const
-      {
-        return parent_;
-      }
+      rx_node_id id;
 
+      string_type name;
 
-      uint32_t get_version () const
-      {
-        return version_;
-      }
+      string_type path;
 
+      rx_node_id parent;
 
-      rx_time get_created_time () const
-      {
-        return created_time_;
-      }
+      rx_time created_time;
 
+      rx_time modified_time;
 
-      const rx_time get_modified_time () const
-      {
-        return modified_time_;
-      }
+      uint32_t version;
 
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      const rx_node_id& get_id () const
-      {
-        return id_;
-      }
-
-
-      namespace_item_attributes get_attributes () const
-      {
-        return attributes_;
-      }
-
-
-      const string_type& get_path () const
-      {
-        return path_;
-      }
-
-
-      rx_item_state get_state () const
-      {
-        return state_;
-      }
-
+      namespace_item_attributes attributes;
 
 
   protected:
@@ -274,29 +234,9 @@ class meta_data
   private:
 
 
-      rx_node_id parent_;
-
-      uint32_t version_;
-
-      rx_time created_time_;
-
-      rx_time modified_time_;
-
-      string_type name_;
-
-      rx_node_id id_;
-
-      namespace_item_attributes attributes_;
-
-      string_type path_;
-
-      rx_item_state state_;
-
-      rx_thread_handle_t executer_;
-
-
 };
 
+meta_data create_meta_for_new(const meta_data& proto);
 
 } // namespace meta
 } // namespace rx_platform

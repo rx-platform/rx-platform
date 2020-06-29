@@ -36,6 +36,8 @@
 #include "interfaces/rx_endpoints.h"
 #include "system/runtime/rx_port_types.h"
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
 // rx_ptr
@@ -44,8 +46,6 @@
 #include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 
 namespace rx_internal {
 namespace terminal {

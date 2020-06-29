@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 0
 #define RX_HAL_MINOR_VERSION 11
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_BUILD_NUMBER 2
 
 /*********************************************************************************
 
@@ -21,5 +21,6 @@
 0.10.13. corrected rx_create_and_bind_ip4_udp_socket
 0.11.0. added os errors supportrx_ms_sleep
 0.11.1. rx_msleep => rx_ms_sleep
+0.11.2. get_nprocs_conf used for core counts
 
 *********************************************************************************/

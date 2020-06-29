@@ -77,28 +77,22 @@ private:
 	const rx_platform_item* smart_this() const { return this; }
 
   public:
-      rx_platform_item();
-
-      ~rx_platform_item();
+      virtual ~rx_platform_item();
 
 
       virtual rx_item_type get_type_id () const = 0;
 
       virtual values::rx_value get_value () const = 0;
 
-      virtual rx_result serialize (base_meta_writer& stream) const = 0;
-
-      virtual rx_result deserialize (base_meta_reader& stream) = 0;
-
       virtual string_type get_name () const = 0;
 
-      rx_result save () const;
+      virtual rx_result save () const = 0;
 
       virtual const meta_data_t& meta_info () const = 0;
 
       virtual rx_result read_value (const string_type& path, rx_value& value) const = 0;
 
-      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx) = 0;
+      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
@@ -109,8 +103,6 @@ private:
       virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
 
       rx_result delete_item () const;
-
-      virtual rx_platform_item::smart_ptr clone () const = 0;
 
       virtual string_type get_definition_as_json () const = 0;
 
@@ -123,6 +115,8 @@ private:
       virtual rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const = 0;
 
       virtual rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type) = 0;
+
+      virtual rx_platform_item::smart_ptr clone () const = 0;
 
 
   protected:

@@ -36,12 +36,21 @@
 
 #include "runtime_internal/rx_runtime_internal.h"
 #include "rx_model_algorithms.h"
+#include "system/runtime/rx_runtime_holder.h"
 using namespace rx;
 
 
 namespace rx_internal {
 
 namespace model {
+
+namespace
+{
+rx_directory_ptr get_root_directory()
+{
+	return rx_gate::instance().get_root_directory();
+}
+}
 
 // Class rx_internal::model::platform_types_manager 
 
@@ -323,20 +332,21 @@ typename types_repository<typeT>::TdefRes types_repository<typeT>::get_type_defi
 template <class typeT>
 rx_result types_repository<typeT>::register_type (typename types_repository<typeT>::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+	const auto& id = what->meta_info().id;
+
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info().get_id(), what);
+		registered_types_.emplace(what->meta_info().id, what);
 		if(rx_gate::instance().get_platform_status()== rx_platform_status::running)
-			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
+			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().id, typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
 	}
 	else
 	{
-		return "Duplicated Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name();
+		return "Duplicated Node Id: "s + what->meta_info().id.to_string() + " for " + what->meta_info().name;
 	}
 }
 
@@ -360,18 +370,15 @@ rx_result types_repository<typeT>::register_constructor (const rx_node_id& id, s
 }
 
 template <class typeT>
-rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_runtime (meta_data& meta, typename typeT::instance_data_t&& type_data, data::runtime_values_data* init_data, bool prototype)
+rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_runtime (typename typeT::instance_data_t&& instance_data, bool prototype)
 {
-	if (meta.get_id().is_null() || prototype)
+	instance_data.meta_info = create_meta_for_new(instance_data.meta_info);
+	meta_data& meta = instance_data.meta_info;
+
+	if (!platform_types_manager::instance().get_types_resolver().is_available_id(meta.id) 
+		|| registered_objects_.find(meta.id) != registered_objects_.end())
 	{
-		meta.resolve();
-	}
-	else
-	{
-		if (!platform_types_manager::instance().get_types_resolver().is_available_id(meta.get_id()) || registered_objects_.find(meta.get_id()) != registered_objects_.end())
-		{
-			return "Duplicate Id!";
-		}
+		return "Duplicate Id!";
 	}
 
 	create_runtime_result<typeT> ret;
@@ -379,22 +386,22 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 
 	rx_node_ids base;
 	std::vector<const data::runtime_values_data*> overrides;
-	base.emplace_back(meta.get_parent());
+	base.emplace_back(meta.parent);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		auto base_result = inheritance_hash_.get_base_types(meta.get_parent(), base);
+		auto base_result = inheritance_hash_.get_base_types(meta.parent, base);
 		if (!base_result)
 			return base_result.errors();
 	}
 	else
 	{
-		rx_node_id temp_base = meta.get_parent();
+		rx_node_id temp_base = meta.parent;
 		while (!temp_base.is_null())
 		{
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
-				temp_base = temp_type.value()->meta_info().get_parent();
+				temp_base = temp_type.value()->meta_info().parent;
 				if(temp_base)
 					base.emplace_back(temp_base);
 			}
@@ -407,7 +414,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		auto it = constructors_.find(one);
 		if (it != constructors_.end())
 		{
-			auto construct_data = (it->second)(meta.get_id());
+			auto construct_data = (it->second)(meta.id);
 			implementation_ptr = construct_data.ptr;
 			ret.register_f = construct_data.register_f;
 			ret.unregister_f = construct_data.unregister_f;
@@ -430,9 +437,9 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		}
 	}
 
-	construct_context ctx;
-	ctx.get_directories().add_paths({meta.get_path()});
-	ret.ptr = rx_create_reference<RType>(meta, std::move(type_data));
+	construct_context ctx(meta.name);
+	ctx.get_directories().add_paths({meta.path});
+	ret.ptr = rx_create_reference<RType>(meta, instance_data);
 	ret.ptr->implementation_ = implementation_ptr;
 	for (auto one_id : base)
 	{
@@ -453,7 +460,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		}
 	}
 	rx_simple_value name_value;
-	name_value.assign_static<string_type>(string_type(meta.get_name()));
+	name_value.assign_static<string_type>(string_type(meta.name));
 	ctx.runtime_data.add_const_value("Name", name_value);
 	ret.ptr->set_runtime_data(ctx.runtime_data);
 	// go reverse with overrides
@@ -462,17 +469,15 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		if (*it)
 			ret.ptr->fill_data(*(*it));
 	}
-	if (init_data)
-	{
-		ret.ptr->fill_data(*init_data);
-		ret.ptr->get_overrides() = *init_data;
-	}
+	ret.ptr->fill_data(instance_data.overrides);
+	ret.ptr->get_overrides() = instance_data.overrides;
+	
 	if (!prototype)
 	{
-		registered_objects_.emplace(meta.get_id(), runtime_data_t{ ret.ptr, runtime_state::runtime_state_created });
+		registered_objects_.emplace(meta.id, runtime_data_t{ ret.ptr, runtime_state::runtime_state_created });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			instance_hash_.add_to_hash_data(meta.get_id(), meta.get_parent(), base);
-		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.get_id(), typeT::RImplType::type_id, meta);
+			instance_hash_.add_to_hash_data(meta.id, meta.parent, base);
+		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.id, typeT::RImplType::type_id, meta);
 		RX_ASSERT(type_ret);// has to be, we checked earlier
 	}
 	return ret;
@@ -543,7 +548,7 @@ rx_result types_repository<typeT>::delete_runtime (rx_node_id id)
 	{
 		if (it->second.state == runtime_state::runtime_state_deleting || it->second.state == runtime_state::runtime_state_created)
 		{
-			auto type_id = it->second.target->meta_info().get_parent();
+			auto type_id = it->second.target->meta_info().parent;
 			rx_node_ids base;
 			base.emplace_back(type_id);
 			auto base_result = inheritance_hash_.get_base_types(type_id, base);
@@ -597,7 +602,7 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 	to_add.reserve(registered_types_.size());
 	for (const auto& one : registered_types_)
 	{
-		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
+		to_add.emplace_back(one.second->meta_info().id, one.second->meta_info().parent);
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	for (auto& one : registered_objects_)
@@ -612,19 +617,19 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 template <class typeT>
 rx_result types_repository<typeT>::update_type (types_repository<typeT>::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+	const auto& id = what->meta_info().id;
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
 		it->second = what;
 		// TODO Should check and change if parent is different
 		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);*/
 		return true;
 	}
 	else
 	{
-		return "Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name() + " does not exists";
+		return "Node Id: "s + what->meta_info().id.to_string() + " for " + what->meta_info().name + " does not exists";
 	}
 }
 
@@ -995,14 +1000,14 @@ typename simple_types_repository<typeT>::TdefRes simple_types_repository<typeT>:
 template <class typeT>
 rx_result simple_types_repository<typeT>::register_type (typename simple_types_repository<typeT>::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+	const auto& id = what->meta_info().id;
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info().get_id(), what);
+		registered_types_.emplace(what->meta_info().id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), typeT::type_id, what->meta_info());
+			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().id, typeT::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
 	}
@@ -1020,7 +1025,7 @@ rx_result simple_types_repository<typeT>::register_constructor (const rx_node_id
 }
 
 template <class typeT>
-rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id) const
+rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, const rx_directory_resolver& dirs) const
 {
 	RTypePtr ret;
 	rx_node_ids base;
@@ -1039,7 +1044,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
-				temp_base = temp_type.value()->meta_info().get_parent();
+				temp_base = temp_type.value()->meta_info().parent;
 				if (temp_base)
 					base.emplace_back(temp_base);
 			}
@@ -1060,7 +1065,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 	if (!ret)
 		ret = default_constructor_();
 
-	construct_context ctx;
+	construct_context ctx(rt_name);
 	ctx.get_directories().add_paths({ "/" });
 	for (auto one_id : base)
 	{
@@ -1126,7 +1131,7 @@ rx_result simple_types_repository<typeT>::delete_type (rx_node_id id)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_info().get_parent();
+		auto type_id = it->second->meta_info().parent;
 		registered_types_.erase(it);
 		auto remove_result = inheritance_hash_.remove_from_hash_data(id);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
@@ -1165,7 +1170,7 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 	to_add.reserve(registered_types_.size());
 	for (const auto& one : registered_types_)
 	{
-		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
+		to_add.emplace_back(one.second->meta_info().id, one.second->meta_info().parent);
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
@@ -1174,19 +1179,19 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 template <class typeT>
 rx_result simple_types_repository<typeT>::update_type (typename simple_types_repository<typeT>::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+	const auto& id = what->meta_info().id;
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
 		it->second = what;
 		// TODO Should check and change if parent is different
 		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);*/
 		return true;
 	}
 	else
 	{
-		return "Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name() + " does not exists";
+		return "Node Id: "s + what->meta_info().id.to_string() + " for " + what->meta_info().name + " does not exists";
 	}
 }
 
@@ -1270,24 +1275,26 @@ relations_type_repository::TdefRes relations_type_repository::get_type_definitio
 
 rx_result relations_type_repository::register_type (relations_type_repository::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+
+
+	const auto& id = what->meta_info().id;
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info().get_id(), what);
+		registered_types_.emplace(what->meta_info().id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());
-		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().get_id(), relation_type::type_id, what->meta_info());
+			auto hash_result = inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info().id, relation_type::type_id, what->meta_info());
 		RX_ASSERT(type_res);
 		return true;
 	}
 	else
 	{
-		return "Duplicated Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name();
+		return "Duplicated Node Id: "s + what->meta_info().id.to_string() + " for " + what->meta_info().name;
 	}
 }
 
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
+rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
 {
 	auto type_result = get_type_definition(type_id);
 	if (!type_result)
@@ -1298,17 +1305,12 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 	if (!ret)
 		return ret;
 
-	rx_node_id target_relation_type_id = type_id;
-	auto inv_ref = relation_type_ptr->get_inverse_reference();
-	if (!inv_ref.is_null())
-	{// this is symmetrical reference
-		auto resolve_result = model::algorithms::resolve_relation_reference(inv_ref, dirs);
-		if (!resolve_result)
-			return resolve_result.errors();
-		target_relation_type_id = resolve_result.move_value();
-	}
 	data.implementation_ = ret.value();
-	data.target_relation_type = target_relation_type_id;
+	if (!relation_type_ptr->relation_data().symmetrical)
+	{
+		data.target_relation_name =
+			relation_type_ptr->relation_data().inverse_name.empty() ? rt_name : relation_type_ptr->relation_data().inverse_name;
+	}
 	return ret;
 }
 
@@ -1377,7 +1379,7 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 	to_add.reserve(registered_types_.size());
 	for (const auto& one : registered_types_)
 	{
-		to_add.emplace_back(one.second->meta_info().get_id(), one.second->meta_info().get_parent());
+		to_add.emplace_back(one.second->meta_info().id, one.second->meta_info().parent);
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
@@ -1385,19 +1387,19 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 
 rx_result relations_type_repository::update_type (relations_type_repository::Tptr what)
 {
-	const auto& id = what->meta_info().get_id();
+	const auto& id = what->meta_info().id;
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
 		it->second = what;
 		// TODO Should check and change if parent is different
 		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info().get_parent());*/
+			inheritance_hash_.add_to_hash_data(id, what->meta_info().parent);*/
 		return true;
 	}
 	else
 	{
-		return "Node Id: "s + what->meta_info().get_id().to_string() + " for " + what->meta_info().get_name() + " does not exists";
+		return "Node Id: "s + what->meta_info().id.to_string() + " for " + what->meta_info().name + " does not exists";
 	}
 }
 
@@ -1405,7 +1407,7 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 {
 	RTypePtr ret;
 	rx_node_ids base;
-	auto type_id = form_what->meta_info().get_id();
+	auto type_id = form_what->meta_info().id;
 	base.emplace_back(type_id);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
@@ -1421,7 +1423,7 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
-				temp_base = temp_type.value()->meta_info().get_parent();
+				temp_base = temp_type.value()->meta_info().parent;
 				if (temp_base)
 					base.emplace_back(temp_base);
 			}

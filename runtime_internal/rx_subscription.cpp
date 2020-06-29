@@ -112,7 +112,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 				connections_.emplace_back(std::move(temp));
 				connection_paths_.emplace(object_path, idx);
-				
+
 				to_retrieve_.emplace(idx);
 				to_process_.emplace(idx);
 			}
@@ -242,7 +242,7 @@ void rx_subscription::process_subscription (bool posted)
 		// go through and connect or execute in other thread
 		std::set<rx_thread_handle_t> to_send;
 		auto ts = rx_time::now();
-		
+
 		auto it_process = to_process_.begin();
 		while (it_process != to_process_.end())
 		{
@@ -271,12 +271,11 @@ void rx_subscription::process_subscription (bool posted)
 		items_lock_.unlock();
 		if (!to_send.empty())
 		{
-			std::function<void(smart_ptr)> func = [](smart_ptr whose) {
-				whose->process_subscription(true);
-			};
 			for (auto one : to_send)
 			{
-				rx_post_function_to(one, func, smart_this(), smart_this());
+				rx_post_function_to(one, smart_this(), [](smart_ptr whose) {
+                        whose->process_subscription(true);
+                    }, smart_this());
 			}
 		}
 	}
@@ -306,13 +305,9 @@ void rx_subscription::activate ()
 	if (!active_)
 	{
 		active_ = true;
-		std::function<bool(int)> func = [this] (int) -> bool 
-			{ 
-				if(active_)
-					process_subscription();
-				return active_;
-			};
-		rx_create_periodic_function<smart_ptr, int>(100u, func, smart_this(), 5);
+		int a = 5;
+		timer_ = rx_create_periodic_function(100u, smart_this()
+			, [this]() { process_subscription(); });
 	}
 }
 
@@ -428,10 +423,10 @@ rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id,
 	{
 		for (auto one : pending_writes_)
 		{
-			rx_post_function<smart_ptr>([](smart_ptr whose)
+			rx_post_function(smart_this(), [this]()
 				{
-					whose->process_writes();
-				}, smart_this(), one.first);
+					process_writes();
+				});
 		}
 	}
 	items_lock_.unlock();
@@ -602,7 +597,7 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 			}
 			if (!had_good)
 				connection_dead();
-			
+
 			return all_good;
 		}
 	}
