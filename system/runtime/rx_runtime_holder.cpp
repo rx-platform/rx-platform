@@ -32,6 +32,8 @@
 
 #include "system/meta/rx_obj_types.h"
 
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 
@@ -39,6 +41,8 @@
 #include "sys_internal/rx_async_functions.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_obj_types.h"
+#include "rx_write_transaction.h"
+using rx_internal::sys_runtime::data_source::value_point;
 
 
 namespace rx_platform {
@@ -174,12 +178,9 @@ template <class typeT>
 rx_result object_runtime_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
-    auto ret = whose.read_items(items, monitor, results);
-    if (ret)
-    {
-        whose.context_.tag_updates_pending();
-    }
-    return ret;
+    for (const auto& item : items)
+        whose.connected_tags_.read_tag(item, monitor);
+    return true;
 }
 
 template <class typeT>
@@ -199,12 +200,12 @@ template <class typeT>
 rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
-    auto ret = whose.write_items(transaction_id, items, monitor, results);
-    if (ret)
+    for (const auto& item : items)
     {
-        whose.context_.tag_writes_pending();
+        auto result = whose.connected_tags_.write_tag(transaction_id, item.first, rx_simple_value(item.second), monitor);
+        results.emplace_back(std::move(result));
     }
-    return ret;
+    return true;
 }
 
 template <class typeT>
@@ -223,6 +224,24 @@ rx_result object_runtime_algorithms<typeT>::disconnect_items (const std::vector<
         results.emplace_back(std::move(one_result));
     }
     return true;
+}
+
+template <class typeT>
+rx_result object_runtime_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose)
+{
+    auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback), rx_thread_context());
+    auto connect_result = whose.connected_tags_.connect_tag(path, *whose.item_, transaction_ptr);
+    if (!connect_result)
+    {
+        connect_result.register_error("Error writing to item "s + path);
+        return connect_result.errors();
+    }
+    auto result = whose.connected_tags_.write_tag(1, connect_result.value(), std::move(val), transaction_ptr);
+    if (!result)
+    {
+        whose.connected_tags_.disconnect_tag(connect_result.value(), transaction_ptr);
+    }
+    return result;
 }
 
 
@@ -281,22 +300,7 @@ template class object_runtime_algorithms<object_types::application_type>;
 // Parameterized Class rx_platform::runtime::algorithms::runtime_holder 
 
 template <class typeT>
-runtime_holder<typeT>::runtime_holder()
-      : scan_time_item_(0),
-        last_scan_time_(-1),
-        max_scan_time_(0),
-        max_scan_time_item_(0),
-        job_pending_(false),
-        loop_count_(0),
-        loop_count_item_(0)
-    , context_(binded_tags_, connected_tags_, meta_info_, &directories_)
-{
-    my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
-    connected_tags_.init_tags(&context_, &relations_);
-}
-
-template <class typeT>
-runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance)
+runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
       : scan_time_item_(0),
         last_scan_time_(-1),
         max_scan_time_(0),
@@ -305,97 +309,28 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
         loop_count_(0),
         loop_count_item_(0)
     , meta_info_(meta)
-    , instance_data_(instance.instance_data)
-    , context_(binded_tags_, connected_tags_, meta_info_, &directories_)
+    , instance_data_(instance.instance_data, std::move(rt_behavior))
+    , points_(std::make_unique<std::vector<value_point> >())
+    , context_(binded_tags_, connected_tags_, meta_info_, &directories_, points_.get())
 {
+    using rimpl_t = typename typeT::RImplType;
+    RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     connected_tags_.init_tags(&context_, &relations_);
 }
 
 
-
 template <class typeT>
-rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& value) const
+runtime_holder<typeT>::~runtime_holder()
 {
-    rx_result result;
-    if (path.empty())
-    {// our value
-#ifdef RX_MIN_MEMORY
-        if (!json_cache_.empty())
-        {
-            value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
-        }
-        else
-        {
-            serialization::json_writer writer;
-            writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-            result = serialize_value(writer, runtime_value_type::simple_runtime_value);
-            if (result)
-            {
-#ifdef _DEBUG
-                if (writer.get_string(const_cast<string_type&>(json_cache_), true))
-                {
-#else
-                writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false);
-#endif
-                value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
-                }
-            }
-        }
-#else
-        serialization::json_writer writer;
-        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-        result = serialize_value(writer, runtime_value_type::simple_runtime_value);
-        if (result)
-        {
-            string_type temp_str;
-            if (writer.get_string(const_cast<string_type&>(temp_str), true))
-            {
-                value.assign_static<string_type>(string_type(temp_str), meta_info_.modified_time);
-            }
-        }
-#endif
-    }
+    using rimpl_t = typename typeT::RImplType;
+    if (meta_info_.name.empty())
+        RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " destructor, for unknown"));
     else
-    {
-        result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
-        if (!result)
-        {// check relations
-            result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_));
-        }
-    }
-
-    return result;
+        RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta_info_.get_full_path()));
 }
 
-template <class typeT>
-rx_result runtime_holder<typeT>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, rx_thread_handle_t whose)
-{
-    if (path.empty())
-    {// our value
-        return RX_ACCESS_DENIED;
-    }
-    std::function<rx_result(const string_type&, rx_simple_value)> func = [this, ctx](const string_type& path, rx_simple_value val)
-    {
-        structure::write_data data;
-        data.transaction_id = 0;
-        data.value = std::move(val);
-        return item_->write_value(path, std::move(data), &context_);
-    };
-    auto current_thread = rx_thread_context();
-    if (current_thread == whose)
-    {
-        auto result = func(path, std::move(val));
-        callback.set_arguments(std::move(result));
-        callback.call();
-        return true;
-    }
-    else
-    {
-        rx_do_with_callback(current_thread, ctx.object, std::move(func), std::move(callback), path, std::move(val));
-        return true;
-    }
-}
+
 
 template <class typeT>
 bool runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
@@ -541,18 +476,6 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
 }
 
 template <class typeT>
-rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
-{
-    return context_.do_command(command_type);
-}
-
-template <class typeT>
-void runtime_holder<typeT>::set_runtime_data (meta::runtime_data_prototype& prototype)
-{
-    item_ = std::move(create_runtime_data(prototype));
-}
-
-template <class typeT>
 void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
 {
     structure::fill_context ctx(&context_);
@@ -568,6 +491,72 @@ void runtime_holder<typeT>::collect_data (data::runtime_values_data& data, runti
 {
     item_->collect_data(data, type);
     relations_.collect_data(data, type);
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& value) const
+{
+    rx_result result;
+    if (path.empty())
+    {// our value
+#ifdef RX_MIN_MEMORY
+        if (!json_cache_.empty())
+        {
+            value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+        }
+        else
+        {
+            serialization::json_writer writer;
+            writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+            result = serialize_value(writer, runtime_value_type::simple_runtime_value);
+            if (result)
+            {
+#ifdef _DEBUG
+                if (writer.get_string(const_cast<string_type&>(json_cache_), true))
+                {
+#else
+                writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false);
+#endif
+                value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+                }
+            }
+        }
+#else
+        serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        result = serialize_value(writer, runtime_value_type::simple_runtime_value);
+        if (result)
+        {
+            string_type temp_str;
+            if (writer.get_string(const_cast<string_type&>(temp_str), true))
+            {
+                value.assign_static<string_type>(string_type(temp_str), meta_info_.modified_time);
+            }
+        }
+#endif
+    }
+    else
+    {
+        result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
+        if (!result)
+        {// check relations
+            result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_));
+        }
+    }
+
+    return result;
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
+{
+    return context_.do_command(command_type);
+}
+
+template <class typeT>
+void runtime_holder<typeT>::set_runtime_data (meta::runtime_data_prototype& prototype)
+{
+    item_ = std::move(create_runtime_data(prototype));
 }
 
 template <class typeT>
@@ -603,25 +592,6 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
             return ret;
         }
     }
-}
-
-template <class typeT>
-rx_result runtime_holder<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results)
-{
-    for (const auto& item : items)
-        connected_tags_.read_tag(item, monitor);
-    return true;
-}
-
-template <class typeT>
-rx_result runtime_holder<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results)
-{
-    for (const auto& item : items)
-    {
-        auto result = connected_tags_.write_tag(item.first, rx_simple_value(item.second), monitor);
-        results.emplace_back(std::move(result));
-    }
-    return true;
 }
 
 template <class typeT>
@@ -694,9 +664,14 @@ void runtime_holder<typeT>::process_status_change (runtime_process_context& ctx)
 template <class typeT>
 void runtime_holder<typeT>::process_source_inputs (runtime_process_context& ctx)
 {
+    auto& source_results = ctx.get_source_results();
     auto& source_updates = ctx.get_source_updates();
-    while (!source_updates.empty())
+    while (!source_updates.empty() || !source_results.empty())
     {
+        for (auto& one : source_results)
+            one.whose->process_result(one.transaction_id, std::move(one.result));
+        auto& source_results = ctx.get_source_results();
+
         for (auto& one : source_updates)
             one.whose->process_update(std::move(one.value));
         source_updates = ctx.get_source_updates();
@@ -719,7 +694,7 @@ template <class typeT>
 void runtime_holder<typeT>::process_subscription_inputs (runtime_process_context& ctx)
 {
     while (ctx.should_process_tag_writes())
-        connected_tags_.process_runtime();
+        connected_tags_.process_transactions();
 }
 
 template <class typeT>

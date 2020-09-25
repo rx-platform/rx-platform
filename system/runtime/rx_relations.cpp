@@ -133,6 +133,12 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 
 rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 {
+	if (target_id)
+	{		
+		auto remove_result = platform_runtime_manager::instance().get_cache().remove_target_relation(target_id, target_relation_name);
+		if (!remove_result)
+			RUNTIME_LOG_ERROR("relation_runtime", 999, "Error removing target relation from "s + target);
+	}
 	my_state_ = relation_state::stopping;
 	auto result = implementation_->stop_relation(ctx);
 	return result;
@@ -295,7 +301,15 @@ rx_result relation_data::start_target_relation (runtime::runtime_start_context& 
 	is_target_ = true;
 	auto result = implementation_->start_relation(ctx);
 	if (result)
+	{
 		try_resolve();
+		/*rx_item_reference ref;
+		if (target_id.is_null() && !target.empty())
+			ref = target;
+		else
+			ref = target_id;
+		resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());*/
+	}
 	return result;
 }
 
@@ -314,6 +328,9 @@ bool relation_data::runtime_connected (platform_item_ptr&& item)
 
 void relation_data::runtime_disconnected ()
 {
+	implementation_->relation_disconnected();
+	if (my_state_ != relation_state::stopping)
+		my_state_ = relation_state::idle;
 }
 
 

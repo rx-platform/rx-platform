@@ -38,10 +38,10 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -203,7 +203,7 @@ class meta_data
 
       string_type get_full_path () const;
 
-      void get_full_path_with_buffer (string_type& path) const;
+      void get_full_path_with_buffer (string_type& buffer) const;
 
       rx_item_reference create_item_reference ();
 

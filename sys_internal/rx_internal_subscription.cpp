@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace messages {
 
 namespace subscription_messages {
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_request
 
 string_type create_subscription_request::type_name = "createSubsReq";
 
@@ -121,7 +121,7 @@ rx_message_type_t create_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response
 
 string_type create_subscriptions_response::type_name = "createSubsResp";
 
@@ -165,7 +165,7 @@ rx_message_type_t create_subscriptions_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_request
 
 string_type delete_subscription_request::type_name = "delSubsReq";
 
@@ -217,7 +217,7 @@ rx_message_type_t delete_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_request 
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_request
 
 string_type update_subscription_request::type_name = "updSubsReq";
 
@@ -274,7 +274,7 @@ rx_message_type_t update_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_response
 
 string_type delete_subscription_response::type_name = "delSubsResp";
 
@@ -310,7 +310,7 @@ rx_message_type_t delete_subscription_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_response
 
 string_type update_subscription_response::type_name = "updSubsResp";
 
@@ -354,7 +354,7 @@ rx_message_type_t update_subscription_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_items_change 
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_items_change
 
 string_type subscription_items_change::type_name = "subsItemsNotif";
 
@@ -421,6 +421,112 @@ rx_message_type_t subscription_items_change::get_type_id ()
 {
   return type_id;
 
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_write_done
+
+string_type subscription_write_done::type_name = "subsWriteDone";
+
+rx_message_type_t subscription_write_done::type_id = rx_subscription_write_done_id;
+
+
+rx_result subscription_write_done::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id.uuid()))
+		return "error writing subscription id";
+	if (!stream.write_uint("transId", transaction_id))
+		return "error writing transaction id";
+	if (!stream.start_array("results", results.size()))
+		return "Unable to start results array";
+	for (auto&& one : results)
+	{
+		if (!stream.start_object("result"))
+			return "Unable to start item";
+
+		if (!stream.write_uint("handle", std::get<0>(one)))
+			return "error writing transaction id";
+
+		if (!stream.write_uint("errCode", std::get<1>(one)))
+			return "error writing error code";
+
+		if (!stream.write_string("errMsg", std::move(std::get<2>(one))))
+			return "error writing error message";
+
+		if (!stream.end_object())
+			return "Unable to end item";
+	}
+	if (!stream.end_array())
+		return "Unable to end results array";
+	return true;
+}
+
+rx_result subscription_write_done::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return "error reading subscription id";
+	subscription_id = temp;
+	if (!stream.read_uint("transId", transaction_id))
+		return "error reading transaction id";
+	if (!stream.start_array("results"))
+		return "Unable to start results array";
+	while (!stream.array_end())
+	{
+		result_type one;
+		if (!stream.start_object("result"))
+			return "Unable to start item";
+
+		if (!stream.read_uint("handle", std::get<0>(one)))
+			return "error writing transaction id";
+
+		if (!stream.read_uint("errCode", std::get<1>(one)))
+			return "error writing error code";
+
+		if (!stream.read_string("errMsg", std::get<2>(one)))
+			return "error writing error message";
+
+		if (!stream.end_object())
+			return "Unable to end item";
+		results.emplace_back(one);
+	}
+	return true;
+}
+
+const string_type& subscription_write_done::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t subscription_write_done::get_type_id ()
+{
+  return type_id;
+
+}
+
+void subscription_write_done::add_result (runtime_handle_t handle, rx_result&& result)
+{
+	uint32_t error_code = 0;
+	string_type error_text;
+	if (result)
+	{
+		error_code = 0;
+	}
+	else
+	{
+		error_code = 98;
+		bool first = true;
+		for (const auto& one : result.errors())
+		{
+			if (first)
+				first = false;
+			else
+				error_text += ", ";
+			error_text += one;
+		}
+	}
+	results.emplace_back(result_type{ handle, error_code, error_text });
 }
 
 

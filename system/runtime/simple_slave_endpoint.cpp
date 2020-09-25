@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_session_map.c
+*  system\runtime\simple_slave_endpoint.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -30,11 +30,12 @@
 
 #include "pch.h"
 
-#include "protocols/ansi_c/internal_c/rx_internal_impl.h"
-#include "rx_protocol_errors.h"
+#include "lib/rx_io_addr.h"
+#include "rx_runtime_helpers.h"
+using namespace rx_platform;
 
-// rx_session_map
-#include "protocols/ansi_c/common_c/rx_session_map.h"
+// simple_slave_endpoint
+#include "system/runtime/simple_slave_endpoint.h"
 
 
 

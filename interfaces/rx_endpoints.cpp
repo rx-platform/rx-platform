@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,9 +40,15 @@
 #include "system/runtime/rx_blocks.h"
 #include "model/rx_meta_internals.h"
 #include "rx_ip_endpoints.h"
+#include "rx_tcp_client.h"
 #include "sys_internal/rx_async_functions.h"
 #include "terminal/rx_commands.h"
 #include "rx_io_relations.h"
+#include "system/runtime/rx_runtime_holder.h"
+#include "system/runtime/rx_port_instance.h"
+#include "system/runtime/rx_port_stack_construction.h"
+#include "system/runtime/rx_port_stack_passive.h"
+#include "system/runtime/rx_port_stack_active.h"
 
 
 namespace rx_internal {
@@ -51,7 +57,7 @@ namespace interfaces {
 
 namespace io_endpoints {
 
-// Class rx_internal::interfaces::io_endpoints::rx_io_manager 
+// Class rx_internal::interfaces::io_endpoints::rx_io_manager
 
 rx_io_manager::rx_io_manager()
 {
@@ -76,21 +82,54 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
                 return rx_create_reference<port_stack_relation>();
             });
 
+        // register behavior creators
+
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
+			RX_EXTERNAL_PORT_TYPE_ID, [] {
+				runtime::items::port_behaviors ret;
+				ret.build_behavior = std::make_unique<runtime::io_types::assemble_sender>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::listen_subscriber>();
+				ret.active_behavior = std::make_unique<runtime::io_types::extern_behavior>();
+				return ret;
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
+			RX_TRANSPORT_PORT_TYPE_ID, [] {
+				runtime::items::port_behaviors ret;
+				ret.build_behavior = std::make_unique<runtime::io_types::assemble_ignorant>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::passive_ignorant>();
+				ret.active_behavior = std::make_unique<runtime::io_types::passive_transport_behavior>();
+				return ret;
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
+			RX_ROUTED_TRANSPORT_PORT_TYPE_ID, [] {
+				runtime::items::port_behaviors ret;
+				ret.build_behavior = std::make_unique<runtime::io_types::assemble_sender_subscriber>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::server_master_router>();
+				ret.active_behavior = std::make_unique<runtime::io_types::active_transport_behavior>();
+				return ret;
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
+			RX_APPLICATION_PORT_TYPE_ID, [] {
+				runtime::items::port_behaviors ret;
+				ret.build_behavior = std::make_unique<runtime::io_types::assemble_subscriber>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::listen_sender>();
+				ret.active_behavior = std::make_unique<runtime::io_types::application_behavior>();
+				return ret;
+			});
+
 		// register I/O constructors
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_UDP_PORT_TYPE_ID, [] {
 				return rx_create_reference<ip_endpoints::udp_port>();
 			});
-        /*if (!result)
-        {
-            
-        }*/
-        // register I/O constructors
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_server_port>();
             });
-
+        result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+            RX_TCP_CLIENT_PORT_TYPE_ID, [] {
+                return rx_create_reference<ip_endpoints::tcp_client_port>();
+            });
         rx_internal::terminal::commands::server_command_manager::instance()->register_internal_commands();
 	}
 	return result;

@@ -32,7 +32,7 @@
 #define rx_internal_impl_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 
 extern struct rx_hosting_functions g_memory;

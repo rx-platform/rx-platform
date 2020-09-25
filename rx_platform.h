@@ -39,7 +39,6 @@
  #define PYTHON_SUPPORT			- includes the python support
  #define EXCLUDE_TEST_CODE		- exclude testing code in build
  #define RX_LOG_SOURCE_INFO		- log full source code in log
- #define RX_MIN_MEMORY          - remove some hash containers to gain smaller memory footprint
  
 ********************************************************************/
 

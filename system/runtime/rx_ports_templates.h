@@ -33,8 +33,8 @@
 
 
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
@@ -52,105 +52,30 @@ namespace ports_templates {
 
 
 
-template <typename endpointT>
-class physical_single_port_impl : public physical_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard single endpoint transport port implementation");
-
-    DECLARE_REFERENCE_PTR(physical_single_port_impl);
-
-  public:
-
-      rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
-
-
-  protected:
-
-  private:
-
-      virtual rx_protocol_stack_entry* get_stack_entry () = 0;
-
-
-
-      rx_reference<items::port_runtime> up_stack_;
-
-
-};
-
-
-
-
-
-
-template <typename endpointT>
-class std_protocol_impl : public protocol_port  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard many<=>many protocol port implementation");
-
-    DECLARE_REFERENCE_PTR(std_protocol_impl);
-
-    typedef std::map<rx_protocol_stack_entry*, endpointT> endpoints_type;
-
-  public:
-
-      rx_protocol_stack_entry* create_stack_entry ();
-
-
-  protected:
-
-  private:
-
-      virtual endpointT create_endpoint () = 0;
-
-
-
-      endpoints_type endpoints_;
-
-
-};
-
-
-
-
-
-
-template <typename endpointT, typename addrT>
-class physical_multiple_port_impl : public physical_port  
+template <typename endpointT, typename routingT>
+class extern_routed_port_impl : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 standard multiple endpoint transport port implementation");
 
-    DECLARE_REFERENCE_PTR(physical_multiple_port_impl);
+    DECLARE_REFERENCE_PTR(extern_routed_port_impl);
 
-
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<endpointT> > connections_type;
-    typedef std::map<addrT, rx_port_impl_ptr> up_stack_type;
+    typedef routed_port_endpoint<endpointT, routingT> endpoint_type;
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpoint_type> > active_endpoints_type;
 
   public:
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      void remove_connection ( rx_protocol_stack_entry* what);
-
-      rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
+      void remove_connection (rx_protocol_stack_endpoint* what);
 
 
   protected:
 
-      rx_protocol_stack_entry* register_stack_entry (std::unique_ptr<endpointT>&& what, const addrT& addr);
-
-
   private:
 
 
-      up_stack_type up_stack_;
-
-      rx_reference<items::port_runtime> default_up_;
-
-
-      connections_type connections_;
+      active_endpoints_type active_endpoints_;
 
 
 };
@@ -161,20 +86,18 @@ standard multiple endpoint transport port implementation");
 
 
 template <typename endpointT>
-class transport_port_impl : public transport_port  
+class extern_port_impl : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard one<=>many transport port implementation");
+standard single endpoint transport port implementation");
 
-    DECLARE_REFERENCE_PTR(transport_port_impl);
+    DECLARE_REFERENCE_PTR(extern_port_impl);
 
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<endpointT> > endpoints_type;
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> > active_endpoints_type;
 
   public:
 
-      rx_protocol_stack_entry* create_stack_entry ();
-
-      rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
+      void remove_endpoint (rx_protocol_stack_endpoint* what);
 
 
   protected:
@@ -182,276 +105,46 @@ standard one<=>many transport port implementation");
   private:
 
 
-      rx_reference<items::port_runtime> up_stack_;
-
-
-      endpoints_type endpoints_;
+      active_endpoints_type active_endpoints_;
 
 
 };
 
 
+// Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl 
 
 
-
-
-template <typename endpointT, typename addrT>
-class addressable_transport_impl : public transport_port  
+template <typename endpointT, typename routingT>
+rx_result extern_routed_port_impl<endpointT,routingT>::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard one<=>many addressable transport port implementation");
-
-    DECLARE_REFERENCE_PTR(addressable_transport_impl);
-
-    typedef std::map<rx_protocol_stack_entry*, std::unique_ptr<endpointT> > endpoints_type;
-    typedef std::map<addrT, rx_port_impl_ptr> up_stack_type;
-
-  public:
-
-      rx_protocol_stack_entry* create_stack_entry ();
-
-      rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
-
-
-  protected:
-
-      void structure_changed ();
-
-
-  private:
-
-
-      up_stack_type up_stack_;
-
-      rx_reference<items::port_runtime> default_up_;
-
-
-      endpoints_type endpoints_;
-
-
-};
-
-
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::physical_single_port_impl 
-
-
-template <typename endpointT>
-rx_result physical_single_port_impl<endpointT>::push (rx_port_impl_ptr who, const meta::meta_data& info)
-{
-    if(up_stack_)
-        return "Already connected.";
-    up_stack_ = who;
-    auto my_entry = this->get_stack_entry();
-    if (my_entry)
+    for (auto& one : active_endpoints_)
     {
-        my_entry->identity = get_identity();
-        rx_protocol_result_t res = rx_push_stack(my_entry, up_stack_->create_stack_entry());
+        rx_close(one.first, RX_PROTOCOL_DISCONNECTED);
     }
+    active_endpoints_.clear();
     return true;
 }
 
+template <typename endpointT, typename routingT>
+void extern_routed_port_impl<endpointT,routingT>::remove_connection (rx_protocol_stack_endpoint* what)
+{
+    auto it = active_endpoints_.find(what);
+    if (it != active_endpoints_.end())
+    {
+        active_endpoints_.erase(it);
+    }
+}
 
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::std_protocol_impl 
+
+// Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_port_impl 
 
 
 template <typename endpointT>
-rx_protocol_stack_entry* std_protocol_impl<endpointT>::create_stack_entry ()
+void extern_port_impl<endpointT>::remove_endpoint (rx_protocol_stack_endpoint* what)
 {
-    auto endpoint = this->create_endpoint();
-    rx_protocol_stack_entry* entry = endpoint->bind_endpoint([this](int64_t count)
-        {
-            update_sent_counters(count);
-        },
-        [this](int64_t count)
-        {
-            update_received_counters(count);
-        });
-    entry->identity = get_identity();
-    endpoints_.emplace(entry, std::move(endpoint));
-
-    return entry;
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::physical_multiple_port_impl 
-
-
-template <typename endpointT, typename addrT>
-rx_protocol_stack_entry* physical_multiple_port_impl<endpointT,addrT>::register_stack_entry (std::unique_ptr<endpointT>&& what, const addrT& addr)
-{
-    rx_protocol_stack_entry* entry = nullptr;
-    static addrT g_null_addr;
-    rx_port_impl_ptr up;
-
-    auto it_port = up_stack_.find(addr);
-    if (it_port != up_stack_.end())
-        up = it_port->second;
-    else
-        up = default_up_;
-    if (up)
-    {
-        entry = what.get();
-        entry->identity = get_identity();
-        connections_.emplace(entry, std::move(what));
-
-        rx_protocol_result_t res = rx_push_stack(entry, up->create_stack_entry());
-        if (res == RX_PROTOCOL_OK)
-        {
-            security::secured_scope ctx(entry->identity);
-            rx_send_connected(entry);
-        }
-    }
-    return entry;
-}
-
-template <typename endpointT, typename addrT>
-rx_result physical_multiple_port_impl<endpointT,addrT>::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-    for (auto& one : connections_)
-    {
-        one.second->close();
-    }
-    connections_.clear();
-    return true;
-}
-
-template <typename endpointT, typename addrT>
-void physical_multiple_port_impl<endpointT,addrT>::remove_connection ( rx_protocol_stack_entry* what)
-{
-    auto it = connections_.find(what);
-    if (it != connections_.end())
-    {
-        connections_.erase(it);
-    }
-}
-
-template <typename endpointT, typename addrT>
-rx_result physical_multiple_port_impl<endpointT,addrT>::push (rx_port_impl_ptr who, const meta::meta_data& info)
-{
-    auto ep = who->get_address();
-    addrT temp;
-    auto result = temp.parse(ep);
-    if(result)
-    {
-        if (temp.is_null())
-        {
-            if (default_up_)
-                result = "Default address already connected.";
-            default_up_ = who;
-        }
-        else
-        {
-            auto it_port = up_stack_.find(temp);
-            if (it_port != up_stack_.end())
-                result = "Address "s + temp.to_string() + " already connected.";
-            else
-                up_stack_.emplace(temp, who);
-        }
-    }
-    return result;
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::transport_port_impl 
-
-
-template <typename endpointT>
-rx_protocol_stack_entry* transport_port_impl<endpointT>::create_stack_entry ()
-{
-    auto endpoint_ptr = std::make_unique<endpointT>();
-    rx_protocol_stack_entry* entry = endpoint_ptr->bind([this](int64_t count)
-        {
-            update_sent_counters(count);
-        },
-        [this](int64_t count)
-        {
-            update_received_counters(count);
-        });
-    endpoints_.emplace(entry, std::move(endpoint_ptr));
-
-    auto up = up_stack_;
-    if (up)
-    {
-        rx_protocol_result_t res = rx_push_stack(entry, up->create_stack_entry());
-    }
-
-    return entry;
-}
-
-template <typename endpointT>
-rx_result transport_port_impl<endpointT>::push (rx_port_impl_ptr who, const meta::meta_data& info)
-{
-    if(up_stack_)
-        return "Already connected.";
-    up_stack_ = who;
-    for (auto& one : endpoints_)
-    {
-        rx_protocol_result_t res = rx_push_stack(one.first, up_stack_->create_stack_entry());
-    }
-    return true;
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::addressable_transport_impl 
-
-
-template <typename endpointT, typename addrT>
-void addressable_transport_impl<endpointT,addrT>::structure_changed ()
-{
-}
-
-template <typename endpointT, typename addrT>
-rx_protocol_stack_entry* addressable_transport_impl<endpointT,addrT>::create_stack_entry ()
-{
-    rx_protocol_stack_entry* entry = nullptr;
-    static addrT g_null_addr;
-    rx_port_impl_ptr up;
-
-/*    auto it_port = up_stack_.find(addr);
-    if (it_port != up_stack_.end())
-        up = it_port->second;
-    else
-        up = default_up_;
-    if (up)
-    {
-        entry = what.get();
-        entry->identity = get_identity();
-        connections_.emplace(entry, std::move(what));
-
-        rx_protocol_result_t res = rx_push_stack(entry, up->create_stack_entry());
-        if (res == RX_PROTOCOL_OK)
-        {
-            security::secured_scope ctx(entry->identity);
-            rx_send_connected(entry);
-        }
-    }*/
-    return entry;
-}
-
-template <typename endpointT, typename addrT>
-rx_result addressable_transport_impl<endpointT,addrT>::push (rx_port_impl_ptr who, const meta::meta_data& info)
-{
-    auto ep = who->get_address();
-    addrT temp;
-    auto result = temp.parse(ep);
-    if (result)
-    {
-        if (temp.is_null())
-        {
-            if (default_up_)
-                result = "Default address already connected.";
-            default_up_ = who;
-        }
-        else
-        {
-            auto it_port = up_stack_.find(temp);
-            if (it_port != up_stack_.end())
-                result = "Address "s + temp.to_string() + " already connected.";
-            else
-                up_stack_.emplace(temp, who);
-        }
-    }
-    return result;
+    auto it = active_endpoints_.find(what);
+    if (it != active_endpoints_.end())
+        active_endpoints_.erase(it);// i just might want something to do with it...
 }
 
 

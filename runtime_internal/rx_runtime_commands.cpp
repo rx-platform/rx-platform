@@ -36,6 +36,7 @@
 
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
+#include "terminal/rx_console.h"
 
 
 namespace rx_internal {
@@ -134,7 +135,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
 	auto result = rt_item->write_value(sub_item, std::move(value), 
-		rx_function_to_go<rx_result&&>(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
+		rx_result_callback(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
 		{
 		///////////////////////////////////////////////
 			rx_post_function_to(ctx->get_executer(), smart_this()
@@ -169,7 +170,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	{
 		out << "Error writing item "
 			<< sub_item << "\r\n";
-		result.errors_line();
+		err << result.errors_line();
 		return false;
 	}
 }
@@ -430,7 +431,7 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
 				{
 					if (!ctx->is_postponed())
-						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), result);
 				})
 			, context);
 

@@ -65,9 +65,9 @@ struct value_handle_extended
 
 enum value_point_state
 {
-	value_point_not_connected = 0,
-	value_point_connected_simple = 1,
-	value_point_connected = 2
+    value_point_not_connected = 0,
+    value_point_connected_simple = 1,
+    value_point_connected = 2
 };
 
 
@@ -76,9 +76,8 @@ enum value_point_state
 
 class value_point 
 {
-
-	typedef std::vector<rx_value> tag_variables_type;
-	typedef std::map<value_handle_type, int> tag_handles_type;
+    typedef std::vector<rx_value> tag_variables_type;
+    typedef std::map<value_handle_type, int> tag_handles_type;
 
   public:
 
@@ -155,3 +154,5 @@ class value_point
 
 
 #endif
+
+

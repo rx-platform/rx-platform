@@ -235,10 +235,25 @@ uint32_t rx_border_rand(uint32_t min, uint32_t max)
 {
 	if (max > min)
 	{
-		UINT ret = 0;
-		rand_s(&ret);
-		ret = ret % (max - min) + min;
-		return ret;
+		uint32_t diff = (max - min);
+		if (diff > RAND_MAX)
+		{
+			int shifts = 0;
+			while (diff > RAND_MAX)
+			{
+				shifts++;
+				diff >>= 1;
+			}
+			uint32_t gen = rand()<<shifts;
+			gen = gen % (max - min) + min;
+			return gen;
+		}
+		else
+		{
+			uint32_t gen = rand();
+			gen = gen % (max - min) + min;
+			return gen;
+		}
 	}
 	else
 		return min;
@@ -1068,28 +1083,6 @@ uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// mutex abstractions ( wait and the rest of the stuff
-sys_handle_t rx_mutex_create(int initialy_owned)
-{
-	return CreateMutex(NULL, initialy_owned, NULL);
-}
-int rx_mutex_destroy(sys_handle_t hndl)
-{
-	return CloseHandle(hndl);
-}
-int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout)
-{
-	return WaitForSingleObject(hndl, timeout);
-}
-int rx_mutex_release(sys_handle_t hndl)
-{
-	return ReleaseMutex(hndl);
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 // event abstractions ( wait and the rest of the stuff
 sys_handle_t rx_event_create(int initialy_set)
 {
@@ -1142,6 +1135,8 @@ unsigned _stdcall _inner_handler(void* arg)
 #endif //RX_PLATFORM_USE_COM
 
 		Sleep(0);// i don't know why, maybe microsoft does!!!
+
+		srand(rx_get_tick_count());
 		
 		(inner_arg->start_address)(inner_arg->arg);
 		
@@ -1230,7 +1225,7 @@ int rx_thread_close(sys_handle_t what)
 }
 sys_handle_t rx_current_thread()
 {
-	return (sys_handle_t)GetCurrentThreadId();
+	return (sys_handle_t)(intptr_t)GetCurrentThreadId();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1529,7 +1524,7 @@ int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-// completition ports
+// completion ports
 
 
 rx_kernel_dispather_t rx_create_kernel_dispathcer(int max)
@@ -1585,16 +1580,44 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 				{
 					(data->write_callback)(data->data, 0);
 				}
+				else if (pOvl == &internal_data->m_read_from)
+				{// read operation
+					if (transfered != 0)
+					{
+						temp = (BYTE*)data->read_buffer;
+						(data->read_from_callback)(data->data, 0, transfered, (struct sockaddr*)&temp[data->read_buffer_size - SOCKET_ADDR_SIZE - sizeof(INT)], SOCKET_ADDR_SIZE);
+					}
+					else
+					{
+						(data->shutdown_callback)(data->data, 255);
+					}
+				}
 				else if (pOvl == &internal_data->m_accept)
 				{
 					temp = (BYTE*)data->read_buffer;
 					// skip local address
-					temp += ACCEPT_ADDR_SIZE;
-					(data->accept_callback)(data->data, 0, (sys_handle_t)internal_data->helper_socket, (struct sockaddr*)temp, (struct sockaddr*)data->read_buffer, transfered - ACCEPT_ADDR_SIZE);
+					temp += SOCKET_ADDR_SIZE;
+					(data->accept_callback)(data->data, 0, (sys_handle_t)internal_data->helper_socket, (struct sockaddr*)temp, (struct sockaddr*)data->read_buffer);
 				}
 				else if (pOvl == &internal_data->m_connect)
 				{
-					(data->connect_callback)(data->data, 0);
+					struct sockaddr* local_addr = NULL;
+					struct sockaddr* remote_addr = NULL;
+					struct sockaddr_storage local;
+					int local_size = sizeof(local);
+					struct sockaddr_storage remote;
+					int remote_size = sizeof(remote);
+					if (0 == getsockname((SOCKET)data->handle, (struct sockaddr*)&local, &local_size))
+						local_addr = (struct sockaddr*)&local;
+					setsockopt((SOCKET)data->handle, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
+					if (0 == getpeername((SOCKET)data->handle, (struct sockaddr*)&remote, &remote_size))
+						remote_addr = (struct sockaddr*)&remote;
+					else
+					{
+						int err = WSAGetLastError();
+					}
+
+					(data->connect_callback)(data->data, 0, remote_addr, local_addr);
 				}
 			}
 			else
@@ -1692,6 +1715,55 @@ uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, s
 	return RX_ASYNC;
 }
 
+
+uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed, struct sockaddr_storage* addr)
+{
+	struct sockaddr* sock_addr;
+	struct windows_overlapped_t* internal_data;
+	internal_data = (struct windows_overlapped_t*)what->internal;
+	LPOVERLAPPED povl = (LPOVERLAPPED)&internal_data->m_read_from;
+	//Initialize Overlapped
+	*readed = 0;
+	ZeroMemory(povl, sizeof(OVERLAPPED));
+	DWORD read = 0;
+	WSABUF buff;
+	buff.buf = (CHAR*)what->read_buffer;
+	buff.len = (ULONG)what->read_buffer_size - SOCKET_ADDR_SIZE - sizeof(INT);
+	sock_addr = (struct sockaddr*)&buff.buf[buff.len];
+	INT* fromlen = (INT*)(&buff.buf[buff.len + SOCKET_ADDR_SIZE]);
+	*fromlen = (INT)sizeof(struct sockaddr_storage);
+	DWORD flags = 0;
+	auto ret = WSARecvFrom((SOCKET)what->handle, &buff, 1, NULL, &flags, sock_addr, fromlen, povl, NULL);
+	if (ret == SOCKET_ERROR)
+	{
+		int err = WSAGetLastError();
+		if (err != WSA_IO_PENDING)
+			return RX_ERROR;
+	}
+	return RX_ASYNC;
+}
+uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data, size_t count, const struct sockaddr* addr, size_t addrsize)
+{
+	struct windows_overlapped_t* internal_data;
+	internal_data = (struct windows_overlapped_t*)what->internal;
+	LPOVERLAPPED povl = (LPOVERLAPPED)&internal_data->m_write;
+	//Initialize Overlapped
+	ZeroMemory(povl, sizeof(OVERLAPPED));
+	DWORD written = 0;
+	WSABUF buff;
+	buff.buf = (CHAR*)data;
+	buff.len = (ULONG)count;
+	auto ret = WSASendTo((SOCKET)what->handle, &buff, 1, &written, 0, addr, (int)addrsize, (LPOVERLAPPED)povl, NULL);
+	if (ret == SOCKET_ERROR)
+	{
+		int err = WSAGetLastError();
+		if (err != WSA_IO_PENDING)
+			return RX_ERROR;
+	}
+	return RX_ASYNC;
+}
+
+
 uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 {
 
@@ -1730,7 +1802,7 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 	//Initialize Overlapped
 	ZeroMemory(povl, sizeof(OVERLAPPED));
 	DWORD written = 0;
-	BOOL ret = (internal_data->m_acceptex)((SOCKET)what->handle, internal_data->helper_socket, what->read_buffer, 0, ACCEPT_ADDR_SIZE, ACCEPT_ADDR_SIZE, &recived, (LPOVERLAPPED)povl);
+	BOOL ret = (internal_data->m_acceptex)((SOCKET)what->handle, internal_data->helper_socket, what->read_buffer, 0, SOCKET_ADDR_SIZE, SOCKET_ADDR_SIZE, &recived, (LPOVERLAPPED)povl);
 	if (!ret)
 	{
 		err = GetLastError();
@@ -1745,7 +1817,7 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 
 
 
-uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sockaddr* addr, size_t addrsize)
 {
 	uint32_t err;
 	DWORD sent = 0;
@@ -1780,7 +1852,7 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* 
 	return ret != FALSE ? RX_ASYNC : RX_ERROR;
 }
 
-sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr)
 {
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == INVALID_SOCKET)
@@ -1813,9 +1885,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	
 	if (addr)
 	{
-		addr->sin_family = AF_INET;// just in case
-
-		if (bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
+		if (addr->sin_family != AF_INET || bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);
@@ -1826,7 +1896,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
 	return (sys_handle_t)sock;
 }
 
-sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 {
 	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock == INVALID_SOCKET)
@@ -1847,9 +1917,7 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
 	
 	if (addr)
 	{
-		addr->sin_family = AF_INET;// just in case
-
-		if (bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
+		if (addr->sin_family != AF_INET || bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);

@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -102,8 +102,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       string_type get_host_name ();
 
-      virtual bool supports_ansi () const = 0;
-
       virtual bool read_stdin (std::array<char,0x100>& chars, size_t& count) = 0;
 
       virtual bool write_stdout (const void* data, size_t size) = 0;
@@ -134,7 +132,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
 
-class interactive_console_endpoint : public rx_protocol_stack_entry  
+class interactive_console_endpoint 
 {
 
   public:
@@ -152,7 +150,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
 
 
@@ -160,10 +158,12 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
       rx::threads::physical_job_thread std_out_sender_;
 
+      rx_protocol_stack_endpoint stack_entry_;
+
 
       std::function<void(int64_t)> sent_func_;
 
-
+      friend class interactive_console_port;
 };
 
 
@@ -171,15 +171,7 @@ class interactive_console_endpoint : public rx_protocol_stack_entry
 
 
 
-
-typedef rx_platform::runtime::io_types::ports_templates::physical_single_port_impl< interactive_console_endpoint  > interactive_console_base;
-
-
-
-
-
-
-class interactive_console_port : public interactive_console_base  
+class interactive_console_port : public rx_platform::runtime::items::port_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 Standard IO class. implementation of an standard IO console port");
@@ -192,24 +184,20 @@ Standard IO class. implementation of an standard IO console port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
       rx_result run_interactive (interactive_console_host* host);
+
+      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
 
   protected:
 
   private:
 
-      rx_protocol_stack_entry* get_stack_entry ();
-
-
 
       interactive_console_endpoint endpoint_;
+
+
+      std::atomic<bool> listening_;
 
 
 };

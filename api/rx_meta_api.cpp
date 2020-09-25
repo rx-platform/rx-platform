@@ -181,7 +181,7 @@ template<class typeT>
 rx_result rx_create_simple_type(typename typeT::smart_ptr prototype
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
 {
-	prototype->meta_info() = create_meta_for_new(prototype->meta_info());
+	prototype->meta_info = create_meta_for_new(prototype->meta_info);
 	rx_internal::model::algorithms::simple_types_model_algorithm<typeT>::create_type(prototype, std::move(callback));
 	return true;
 }
@@ -230,7 +230,7 @@ template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr pro
 rx_result rx_create_relation_type(typename relation_type::smart_ptr prototype // prototype
 	, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
 {
-	prototype->meta_info() = create_meta_for_new(prototype->meta_info());
+	prototype->meta_info = create_meta_for_new(prototype->meta_info);
 	rx_internal::model::algorithms::relation_types_algorithm::create_type(prototype, std::move(callback));
 	return true;
 }

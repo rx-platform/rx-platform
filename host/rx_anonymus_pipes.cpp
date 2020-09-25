@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,10 +44,11 @@ namespace host {
 
 namespace pipe {
 
-// Class host::pipe::local_pipe_port
+// Class host::pipe::local_pipe_port 
 
 local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
-      : pipe_handles_(pipes)
+      : pipe_handles_(pipes),
+        active_(false)
 {
 }
 
@@ -55,72 +56,48 @@ local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
 
 rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = local_pipe_port_type::initialize_runtime(ctx);
-	if (result)
-	{
-		ctx.tags->set_item_static("Pipe.InPipe"s, (uint64_t)(pipe_handles_.client_read), ctx);
-		ctx.tags->set_item_static("Pipe.OutPipe"s, (uint64_t)(pipe_handles_.client_write) , ctx);
-	}
-	return result;
-}
-
-rx_result local_pipe_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-	auto result = local_pipe_port_type::deinitialize_runtime(ctx);
-	if (result)
-	{
-	}
-	return result;
-}
-
-rx_result local_pipe_port::start_runtime (runtime::runtime_start_context& ctx)
-{
-	auto result = local_pipe_port_type::start_runtime(ctx);
-	if (result)
-	{
-	}
-	return result;
-}
-
-rx_result local_pipe_port::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-	auto result = local_pipe_port_type::stop_runtime(ctx);
-	if (result)
-	{
-	}
-	return result;
+	ctx.tags->set_item_static("Pipe.InPipe"s, (uint64_t)(pipe_handles_.client_read), ctx);
+	ctx.tags->set_item_static("Pipe.OutPipe"s, (uint64_t)(pipe_handles_.client_write) , ctx);
+	return true;
 }
 
 void local_pipe_port::receive_loop ()
 {
+	while (!active_)
+		rx_ms_sleep(50);
 
 	pipes_.receive_loop([this] (size_t count)
 		{
-			update_received_counters(count);
 		});
 }
 
-rx_result local_pipe_port::open ()
+rx_result local_pipe_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
+	if (active_)
+	{
+		RX_ASSERT(false);
+		return "Already started.";
+	}
 	auto result = pipes_.open(pipe_handles_, [this](size_t count)
 		{
-			update_sent_counters(count);
 		});
-	return result;
+	if (!result)
+		return result;
+
+	bind_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);	
+	active_ = true;
+
+	return true;
 }
 
-void local_pipe_port::close ()
+void local_pipe_port::stack_disassembled ()
 {
-	pipes_.close();
-}
-
-rx_protocol_stack_entry* local_pipe_port::get_stack_entry ()
-{
-	return &pipes_;
+	if(active_)
+		pipes_.close();
 }
 
 
-// Class host::pipe::anonymus_pipe_client
+// Class host::pipe::anonymus_pipe_client 
 
 anonymus_pipe_client::anonymus_pipe_client (const pipe_client_t& pipes)
       : handles_(pipes)
@@ -169,16 +146,17 @@ void anonymus_pipe_client::close_pipe ()
 }
 
 
-// Class host::pipe::anonymus_pipe_endpoint
+// Class host::pipe::anonymus_pipe_endpoint 
 
 anonymus_pipe_endpoint::anonymus_pipe_endpoint()
-	: pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
+      : binded(false)
+	, pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
 {
-	rx_protocol_stack_entry* mine_entry = this;
 
-	rx_init_stack_entry(mine_entry);
+	rx_init_stack_entry(&stack_entry_, this);
 
-	mine_entry->send_function = &anonymus_pipe_endpoint::send_function;
+	stack_entry_.send_function = &anonymus_pipe_endpoint::send_function;
+	stack_entry_.stack_changed_function= &anonymus_pipe_endpoint::stack_changed_function;
 
 }
 
@@ -198,7 +176,8 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 			break;
 		}
 		received_func(buffer.size);
-		auto res = rx_move_packet_up(this, &buffer, 0);
+
+		auto res = rx_move_packet_up(&stack_entry_, rx_create_recv_packet(0, &buffer, 0, 0));
 		if (res != RX_PROTOCOL_OK)
 		{
 			std::ostringstream ss;
@@ -221,18 +200,18 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 	return true;
 }
 
-rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
+rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
-	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference);
+	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
 	using job_type = rx::jobs::function_job<rx_reference_ptr, rx_packet_buffer>;
-
-	rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self](rx_packet_buffer buffer)
+	auto packet_id = packet.id;
+	rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self, packet_id](rx_packet_buffer buffer)
 		{
 			auto result = self->pipes_->write_pipe(&buffer);
 			if (result)
 			{
 				self->sent_func_(buffer.size);
-				rx_move_result_up(self, RX_PROTOCOL_OK);
+				rx_notify_ack(&self->stack_entry_, packet_id, RX_PROTOCOL_OK);
 			}
 			else
 			{
@@ -242,7 +221,7 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 			rx_deinit_packet_buffer(&buffer);
 		});
 
-	send_func.set_arguments(std::move(*buffer));
+	send_func.set_arguments(std::move(*packet.buffer));
 	auto job = rx_create_reference<job_type>(std::move(send_func));
 
 	self->pipe_sender_.append(job);
@@ -255,6 +234,11 @@ void anonymus_pipe_endpoint::close ()
 	pipe_sender_.end();
 	pipes_->close_pipe();
 	pipes_.release();
+}
+
+void anonymus_pipe_endpoint::stack_changed_function (rx_protocol_stack_endpoint* reference)
+{
+	rx_notify_connected(reference, nullptr);
 }
 
 

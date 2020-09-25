@@ -86,6 +86,7 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
         {
             my_state_ = resolver_state::resolved;
             {
+                resolved_id_ = runtime_reference_.get_node_id();
                 if (!user_->runtime_connected(std::move(item), rt_ptr->get_implementation()))
                 {
                     my_state_ = resolver_state::waiting;
@@ -106,6 +107,7 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
                     if (result)
                     {
                         my_state_ = resolver_state::resolved;
+                        resolved_id_ = result.value().item->meta_info().id;
                         if (!user_->runtime_connected(std::move(result.value().item), std::move(result.value().implementation)))
                         {
                             my_state_ = resolver_state::waiting;
@@ -138,7 +140,6 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
                 }
                 else
                 {
-                    resolved_id_ = id;
                     resolve_result result;
                     result.item = rt_result->get_item_ptr();
                     result.implementation = rt_result->get_implementation();
@@ -223,6 +224,7 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
     if (runtime_reference_.is_node_id())
     {
         my_state_ = resolver_state::resolved;
+        resolved_id_ = runtime_reference_.get_node_id();
         if (!user_->runtime_connected(std::move(item)))
         {
             my_state_ = resolver_state::waiting;
@@ -241,6 +243,7 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
                     if (result)
                     {
                         my_state_ = resolver_state::resolved;
+                        resolved_id_ = result.value()->meta_info().id;
                         if (!user_->runtime_connected(std::move(result.value())))
                         {
                             my_state_ = resolver_state::waiting;
@@ -277,6 +280,17 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
 
 void runtime_item_resolver::runtime_destroyed (const rx_node_id& id)
 {
+    if (my_state_ != resolver_state::resolved)
+        return; // we're in the wrong state
+    if (id == resolved_id_)
+    {
+        my_state_ = resolver_state::waiting;
+        resolved_id_ = rx_node_id::null_id;
+        if (user_)
+        {
+            user_->runtime_disconnected();
+        }
+    }
 }
 
 rx_reference_ptr runtime_item_resolver::get_reference ()

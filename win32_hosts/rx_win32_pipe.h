@@ -64,6 +64,10 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
 
       string_type get_full_path (const string_type& path);
 
+      bool supports_ansi () const;
+
+      rx_result setup_console (int argc, char* argv[]);
+
 
   protected:
 
@@ -74,6 +78,9 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
 
       void get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err);
 
+
+
+      bool supports_ansi_;
 
 
 };

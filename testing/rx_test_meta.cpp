@@ -72,7 +72,9 @@ rx_result_with<typename T::smart_ptr> create_prototype(const string_type& type_n
 		return base_resolved.errors();
 	}
 	data.base_id = base_resolved.move_value();
-	return rx_create_reference<T>(data);
+	auto ret = rx_create_reference<T>();
+	ret->meta_info = meta_data(data);
+	return ret;
 }
 template<typename T>
 rx_result_with<typename T::smart_ptr> create_simple_prototype(const string_type& type_name, const string_type& base_reference)
@@ -95,7 +97,9 @@ rx_result_with<typename T::smart_ptr> create_simple_prototype(const string_type&
 		return base_resolved.errors();
 	}
 	data.base_id = base_resolved.move_value();
-	return rx_create_reference<T>(data);
+	auto ret = rx_create_reference<T>();
+	ret->meta_info = meta_data(data);
+	return ret;
 }
 template<typename T>
 typename T::instance_data_t create_runtime_prototype(const string_type& rt_name, const string_type& base_reference)
@@ -236,10 +240,10 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("variableVal", false, 66.9);
-	 test_type->variable_data().register_source("sourceName", source_id, test_type->complex_data());
-	 test_type->variable_data().register_filter("filterName", filter_id, test_type->complex_data());
-	 test_type->variable_data().register_event("eventName", event_id, test_type->complex_data());
+	 test_type->complex_data.register_simple_value_static("variableVal", false, 66.9);
+	 test_type->variable_data.register_source("sourceName", source_id, test_type->complex_data);
+	 test_type->variable_data.register_filter("filterName", filter_id, test_type->complex_data);
+	 test_type->variable_data.register_event("eventName", event_id, test_type->complex_data);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<variable_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -249,7 +253,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Variable type created\r\n";
 		 }
 	 }
@@ -272,8 +276,8 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("structVal", false, false);
-	 test_type->complex_data().register_variable_static("variableName", variable_id, 456u, true);
+	 test_type->complex_data.register_simple_value_static("structVal", false, false);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -283,7 +287,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Struct type created\r\n";
 		 }
 	 }
@@ -306,10 +310,10 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
-	 test_type->complex_data().register_const_value_static("constVal", 113.5);
-	 test_type->complex_data().register_struct("structName", struct_id);
-	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
+	 test_type->complex_data.register_simple_value_static("simpleVal", false, true);
+	 test_type->complex_data.register_const_value_static("constVal", 113.5);
+	 test_type->complex_data.register_struct("structName", struct_id);
+	 test_type->mapping_data.register_mapper("mapperName", mapper_id, test_type->complex_data);
 	 auto result = rx_internal::model::algorithms::types_model_algorithm<object_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -318,7 +322,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -341,7 +345,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("filterVal", false, false);
+	 test_type->complex_data.register_simple_value_static("filterVal", false, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::filter_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -350,7 +354,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Filter type created\r\n";
 		 }
 	 }
@@ -373,7 +377,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("eventVal", false, false);
+	 test_type->complex_data.register_simple_value_static("eventVal", false, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::event_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -382,7 +386,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Event type created\r\n";
 		 }
 	 }
@@ -405,7 +409,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("sourceVal", false, false);
+	 test_type->complex_data.register_simple_value_static("sourceVal", false, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<source_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -414,7 +418,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Source type created\r\n";
 		 }
 	 }
@@ -437,7 +441,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("mapperVal", false, "Test"s);
+	 test_type->complex_data.register_simple_value_static("mapperVal", false, "Test"s);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<mapper_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -446,7 +450,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Mapper type created\r\n";
 		 }
 	 }
@@ -498,7 +502,6 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 
 	 if (object_type_id)
 	 {
-		 runtime::items::object_instance_data instance_data;
 		 out << ANSI_COLOR_YELLOW "\r\nCreating test object!\r\n" ANSI_COLOR_RESET;
 		 auto def_data = create_runtime_prototype<object_type>("inh_test_object", "derived_test_object_type");
 		 auto test_result = rx_internal::model::algorithms::runtime_model_algorithm<object_type>::create_runtime_sync(std::move(def_data));
@@ -532,9 +535,9 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("constVal", false, true);
-	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
-	 test_type->complex_data().register_struct("structName", struct_id);
+	 test_type->complex_data.register_simple_value_static("constVal", false, true);
+	 test_type->complex_data.register_const_value_static("simpleVal", 113.5);
+	 test_type->complex_data.register_struct("structName", struct_id);
 	 auto result = rx_internal::model::algorithms::types_model_algorithm<object_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -543,7 +546,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -566,8 +569,8 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("structVal", false, false);
-	 test_type->complex_data().register_variable_static("variableName", variable_id, 456u, true);
+	 test_type->complex_data.register_simple_value_static("structVal", false, false);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -576,7 +579,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Struct type created\r\n";
 		 }
 	 }
@@ -594,7 +597,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("variableVal", false, 66.9);
+	 test_type->complex_data.register_simple_value_static("variableVal", false, 66.9);
 
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<variable_type>::create_type_sync(test_type);
 	 if (result)
@@ -604,7 +607,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Variable type created\r\n";
 		 }
 	 }
@@ -622,7 +625,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_variable_static("simpleVal", variable_id, 114.8, false);
+	 test_type->complex_data.register_variable_static("simpleVal", variable_id, 114.8, false);
 	 auto result = rx_internal::model::algorithms::types_model_algorithm<object_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -631,7 +634,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -747,10 +750,10 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("simpleVal", false, true);
-	 test_type->complex_data().register_const_value_static("simpleVal", 113.5);
-	 test_type->complex_data().register_struct("structName", struct_id);
-	 test_type->mapping_data().register_mapper("mapperName", mapper_id, test_type->complex_data());
+	 test_type->complex_data.register_simple_value_static("simpleVal", false, true);
+	 test_type->complex_data.register_const_value_static("simpleVal", 113.5);
+	 test_type->complex_data.register_struct("structName", struct_id);
+	 test_type->mapping_data.register_mapper("mapperName", mapper_id, test_type->complex_data);
 	 auto result = rx_internal::model::algorithms::types_model_algorithm<object_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -759,7 +762,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Object type created\r\n";
 		 }
 	 }
@@ -782,8 +785,8 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data().register_simple_value_static("structVal", false, false);
-	 test_type->complex_data().register_variable_static("variableName", variable_id, 'a', true);
+	 test_type->complex_data.register_simple_value_static("structVal", false, false);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 'a', true);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -792,7 +795,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
-			 id = test_type->meta_info().id;
+			 id = test_type->meta_info.id;
 			 out << "Struct type created\r\n";
 		 }
 	 }

@@ -54,7 +54,7 @@ rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* bu
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, struct rx_protocol_stack_entry* whose)
+rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, struct rx_protocol_stack_endpoint* whose)
 {
 	rx_protocol_result_t result;
 

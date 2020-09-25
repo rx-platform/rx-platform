@@ -47,7 +47,9 @@ const char* error_messages[] =
 	"Invalid parsing sequence",
 	"Transport collecting state error",
 	"Protocol stack not defined completely",
-	"Insufficient data"
+	"Insufficient data",
+	"Invalid address",
+	"Closed by stack"
 };
 
 

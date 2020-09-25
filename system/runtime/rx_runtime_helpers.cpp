@@ -98,6 +98,11 @@ runtime_handle_t runtime_init_context::get_new_handle ()
 	return next_handle_++;
 }
 
+rx_result_with<runtime_handle_t> runtime_init_context::bind_item (const string_type& path)
+{
+	return tags->bind_item(path, *this);
+}
+
 
 // Class rx_platform::runtime::runtime_path_resolver 
 
@@ -170,6 +175,12 @@ runtime_start_context::runtime_start_context (structure::runtime_item& root, run
 {
 }
 
+
+
+runtime_handle_t runtime_start_context::connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback)
+{
+	return context->connect(path, rate, callback, *this);
+}
 
 
 // Class rx_platform::runtime::runtime_stop_context 

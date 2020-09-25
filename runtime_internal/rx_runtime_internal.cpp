@@ -42,6 +42,7 @@
 #include "runtime_internal/rx_data_source.h"
 #include "system/server/rx_platform_item.h"
 #include "rx_simulation.h"
+#include "rx_filters.h"
 #include "rx_runtime_relations.h"
 #include "sys_internal/rx_async_functions.h"
 
@@ -147,6 +148,7 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 	{
 		result = simulation::register_simulation_constructors();
 		result = relations_runtime::register_internal_relations_constructors();
+		result = filters::register_filter_constructors();
 	}
 	return result;
 }
@@ -199,6 +201,16 @@ runtime_handle_t platform_runtime_manager::get_new_handle ()
 {
 	static std::atomic<runtime_handle_t> g_handle(1);
 	runtime_handle_t ret = g_handle++;
+	if (!ret)// avoid zero
+		return get_new_handle();
+	else
+		return ret;
+}
+
+runtime_transaction_id_t platform_runtime_manager::get_new_transaction_id ()
+{
+	static std::atomic<runtime_transaction_id_t> g_trans_id(1);
+	runtime_transaction_id_t ret = g_trans_id++;
 	if (!ret)// avoid zero
 		return get_new_handle();
 	else
@@ -642,7 +654,93 @@ rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::r
 
 rx_result runtime_cache::remove_target_relation (const rx_node_id& id, const string_type& name)
 {
-	return RX_NOT_IMPLEMENTED;
+	rx_result result;
+	lock_.lock();
+	auto it = id_cache_.find(id);
+	if (it != id_cache_.end() && it->second.item)
+	{
+		switch (it->second.item->get_type_id())
+		{
+		case rx_item_type::rx_application:
+			{
+				auto rt_it = applications_cache_.find(id);
+				if (rt_it != applications_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->remove_target_relation(name);
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_domain:
+			{
+				auto rt_it = domains_cache_.find(id);
+				if (rt_it != domains_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->remove_target_relation(name);
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_port:
+			{
+				auto rt_it = ports_cache_.find(id);
+				if (rt_it != ports_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->remove_target_relation(name);
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		case rx_item_type::rx_object:
+			{
+				auto rt_it = objects_cache_.find(id);
+				if (rt_it != objects_cache_.end())
+				{
+					auto rt_ptr = rt_it->second;
+					lock_.unlock();
+					result = rt_ptr->remove_target_relation(name);
+				}
+				else
+				{
+					lock_.unlock();
+					result = "Critical stuff!";
+					RX_ASSERT(false);
+				}
+			}
+			break;
+		default:
+			lock_.unlock();
+			result = "Not found in cache!";
+			RX_ASSERT(false);
+		}
+	}
+	else
+	{
+		lock_.unlock();
+		result = "Not found in cache!";
+	}
+	return result;
 }
 
 std::vector<platform_item_ptr> runtime_cache::get_items (const rx_node_ids& ids)

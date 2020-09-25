@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -142,27 +142,35 @@ IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
 } // anonymous
 
 
-// Class rx_internal::terminal::term_transport::telnet_transport 
+// Class rx_internal::terminal::term_transport::telnet_transport
 
-telnet_transport::telnet_transport()
+telnet_transport::telnet_transport (runtime::items::port_runtime* port)
       : send_echo_(false),
-        telnet_state_(telnet_parser_idle)
-	, vt100_(false)
+        telnet_state_(telnet_parser_idle),
+        port_(port)
+	, vt100_(nullptr, false)
 {
-	rx_protocol_stack_entry* mine_entry = this;
+	printf("****Created telnet_transport\r\n");
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &telnet_transport::received_function;
+	stack_entry_.connected_function = &telnet_transport::connected_function;
+}
 
-	rx_init_stack_entry(mine_entry);
-	mine_entry->received_function = &telnet_transport::received_function;
+
+telnet_transport::~telnet_transport()
+{
+	printf("****Deleted telnet_transport\r\n");
 }
 
 
 
-rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
+rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-	telnet_transport* self = reinterpret_cast<telnet_transport*>(reference);
+	telnet_transport* self = reinterpret_cast<telnet_transport*>(reference->user_data);
 	string_type to_echo;
 	string_array lines;
 	size_t i = 0;
+	auto buffer = packet.buffer;
 
 	for (; i < buffer->size; i++)
 	{
@@ -177,9 +185,14 @@ rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entr
 		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
 		auto temp = send_buffer.write_chars(to_echo);
 		if (!temp)
+		{
 			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+		}
 		else
-			result = rx_move_packet_down(reference, &send_buffer, packet_id);
+		{
+			send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer, 0, 0);
+			result = rx_move_packet_down(reference, down);
+		}
 		if (result == RX_PROTOCOL_OK)
 			send_buffer.detach(nullptr);
 	}
@@ -189,7 +202,10 @@ rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entr
 		{
 			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
 			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
-			result = rx_move_packet_up(reference, &up_buffer, 0);
+
+			recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
+
+			result = rx_move_packet_up(reference, packet);
 			if (result != RX_PROTOCOL_OK)
 				break;
 		}
@@ -197,11 +213,25 @@ rx_protocol_result_t telnet_transport::received_function (rx_protocol_stack_entr
 	return result;
 }
 
-rx_protocol_stack_entry* telnet_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_result_t telnet_transport::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+	rx_packet_buffer_type buffer;
+	auto result = rx_init_packet_buffer(&buffer, TELENET_IDENTIFICATION_SIZE, nullptr);
+	if (result != RX_PROTOCOL_OK)
+		return result;
+	result = rx_push_to_packet(&buffer, g_server_telnet_idetification, TELENET_IDENTIFICATION_SIZE);
+	if (result != RX_PROTOCOL_OK)
+		return result;
+	result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer, 0, 0));
+	result = rx_notify_connected(reference, session);
+	return result;
+}
+
+rx_protocol_stack_endpoint* telnet_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
 	sent_func_ = sent_func;
 	received_func_ = received_func;
-	return this;
+	return &stack_entry_;
 }
 
 bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
@@ -239,7 +269,11 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		{
 		case TELNET_ECHO:
 			to_echo = { IAC, DONT, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
 			return true;
+		default:
+			telnet_state_ = telnet_parser_idle;
+			return false;
 		}
 		break;
 	case telnet_parser_had_wont:
@@ -247,7 +281,11 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		{
 		case TELNET_ECHO:
 			to_echo = { IAC, DONT, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
 			return true;
+		default:
+			telnet_state_ = telnet_parser_idle;
+			return false;
 		}
 		break;
 	case telnet_parser_had_do:
@@ -256,7 +294,11 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		case TELNET_ECHO:
 			send_echo_ = true;
 			to_echo = { IAC, WILL, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
 			return true;
+		default:
+			telnet_state_ = telnet_parser_idle;
+			return false;
 		}
 		break;
 	case telnet_parser_had_dont:
@@ -265,70 +307,21 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		case TELNET_ECHO:
 			send_echo_ = false;
 			to_echo = { IAC, WONT, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
 			return true;
+		default:
+			telnet_state_ = telnet_parser_idle;
+			return false;
 		}
 		break;
 	case telnet_parser_had_sb:
+		telnet_state_ = telnet_parser_idle;
 		break;
 	case telnet_parser_had_sb2:
+		telnet_state_ = telnet_parser_idle;
 		break;
 	};
 	return false;
-	size_t idx = 0;
-	char* buff = NULL;
-	if (buff[0] == IAC)
-	{
-		if (buff[1] >= WILL)
-		{
-			if (buff[2] == TELNET_ECHO)
-			{
-				if (buff[1] == DONT)
-				{
-					if (send_echo_)
-					{
-						send_echo_ = false;
-						to_echo = { IAC, WONT, TELNET_ECHO };
-					}
-				}
-				else if (buff[1] == DO)
-				{
-					if (!send_echo_)
-					{
-						send_echo_ = true;
-						to_echo = { IAC, WILL, TELNET_ECHO };
-					}
-				}
-			}
-			idx += 3;
-		}
-		else if (buff[1] == SB)
-		{
-			idx += 2;
-			int i = 2;
-			while (buff[i] != SE)
-			{
-				i++;
-				idx++;
-			}
-		}
-		else
-		{
-			switch (buff[1])
-			{
-			case BRK:
-			case IP:
-			case EL:
-				/*cancel_current_ = true;
-				send_string_response("\r\nCanceling...\r\n", false);*/
-				break;
-			case AYT:
-				//cancel_current_ = true;
-				to_echo = "\r\nHello!\r\n";
-				break;
-			}
-			idx += 2;
-		}
-	}
 }
 
 bool telnet_transport::char_received (const char ch, bool eof, string_type& to_echo, string_type& line)
@@ -344,12 +337,13 @@ bool telnet_transport::char_received (const char ch, bool eof, string_type& to_e
 }
 
 
-// Class rx_internal::terminal::term_transport::telnet_transport_port 
+// Class rx_internal::terminal::term_transport::telnet_transport_port
 
-telnet_transport_port::telnet_transport_port()
+
+std::unique_ptr<telnet_transport> telnet_transport_port::construct_endpoint ()
 {
+	return std::make_unique<telnet_transport>(this);
 }
-
 
 
 } // namespace term_transport

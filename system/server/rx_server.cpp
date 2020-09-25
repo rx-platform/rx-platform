@@ -47,6 +47,7 @@
 #include "interfaces/rx_endpoints.h"
 #include "sys_internal/rx_inf.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -245,9 +246,13 @@ bool rx_gate::shutdown (const string_type& msg)
 	return true;
 }
 
-bool rx_gate::read_log (const log::log_query_type& query, log::log_events_type& result)
+bool rx_gate::read_log (const string_type& log, const log::log_query_type& query, std::function<void(rx_result_with<log::log_events_type>&&)> callback)
 {
-	return log::log_object::instance().read_cache(query, result);
+	auto current_executer = rx_thread_context();
+	return log::log_object::instance().read_log(log, query, [current_executer, callback](rx_result_with<log::log_events_type>&& result)
+		{
+			rx_post_function_to(current_executer, rx_reference_ptr(), callback, std::move(result));
+		});
 }
 
 bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
@@ -261,6 +266,11 @@ bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_b
 		err_buffer->push_line(ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET "\r\n");
 		return false;
 	}
+}
+
+runtime_data_t rx_gate::get_cpu_data ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_cpu_data();
 }
 
 template <class typeT>

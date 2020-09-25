@@ -113,6 +113,10 @@ void internal_data_subscription::items_changed (const std::vector<update_item>& 
 	controler_->items_changed(values);
 }
 
+void internal_data_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
+{
+}
+
 void internal_data_subscription::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
 {
 }

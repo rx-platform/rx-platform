@@ -42,10 +42,18 @@ namespace runtime {
 namespace operational {
 class binded_tags;
 class connected_tags;
-
 } // namespace operational
 } // namespace runtime
 } // namespace rx_platform
+
+namespace rx_internal {
+namespace sys_runtime {
+namespace data_source {
+class value_point;
+
+} // namespace data_source
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 
@@ -134,6 +142,28 @@ struct write_data_struct
     values::rx_simple_value value;
     runtime_transaction_id_t transaction_id;
 };
+
+template<class T>
+struct write_result_struct
+{
+    T* whose;
+    rx_result result;
+    runtime_transaction_id_t transaction_id;
+    write_result_struct() = default;
+    write_result_struct(write_result_struct&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        transaction_id = right.transaction_id;
+    }
+    write_result_struct& operator=(write_result_struct&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        transaction_id = right.transaction_id;
+        return *this;
+    }
+};
 template<class T>
 struct update_data_struct
 {
@@ -178,6 +208,7 @@ typedef std::vector<update_data_struct<structure::mapper_data> > mapper_updates_
 typedef std::vector<update_data_struct<structure::source_data> > source_updates_type;
 typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_type;
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
+typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
 typedef std::vector<structure::filter_data*> filters_type;
@@ -192,9 +223,10 @@ typedef std::vector<program_runtime_ptr> programs_type;
 class runtime_process_context 
 {
     typedef std::function<void()> fire_callback_func_t;
+    typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;
 
   public:
-      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs);
+      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points);
 
 
       bool should_repeat ();
@@ -271,6 +303,12 @@ class runtime_process_context
 
       owner_jobs_type& get_for_own_process ();
 
+      runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx);
+
+      void source_result_pending (write_result_struct<structure::source_data> data);
+
+      source_results_type& get_source_results ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -337,6 +375,8 @@ class runtime_process_context
 
       operational::binded_tags& binded_;
 
+      points_type points_;
+
 
       runtime_process_step current_step_;
 
@@ -351,6 +391,8 @@ class runtime_process_context
       double_collection<source_updates_type> source_inputs_;
 
       double_collection<source_writes_type> source_outputs_;
+
+      double_collection<source_results_type> source_results_;
 
       double_collection<variables_type> variables_;
 

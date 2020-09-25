@@ -71,7 +71,7 @@ class std::streambuf
 
 
 
-class rx_protocol_stack_entry 
+class rx_protocol_stack_endpoint 
 {
 
   public:

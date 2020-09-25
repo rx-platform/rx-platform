@@ -32,7 +32,7 @@
 #define rx_interfaces_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 // rx_ip_endpoints
 #include "interfaces/rx_ip_endpoints.h"

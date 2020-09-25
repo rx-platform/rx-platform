@@ -276,7 +276,7 @@ calculation ( normal priority)");
 
       void deinitialize ();
 
-      void append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false, threads::job_thread* whose = nullptr);
+      void append_timer_job (rx::jobs::timer_job_ptr job, threads::job_thread* whose = nullptr);
 
       rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
 
@@ -292,11 +292,11 @@ calculation ( normal priority)");
 
       rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
 
-      void append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
+      void append_calculation_job (rx::jobs::timer_job_ptr job);
 
       void append_io_job (rx::jobs::job_ptr job);
 
-      void append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now = false);
+      void append_timer_io_job (rx::jobs::timer_job_ptr job);
 
       rx_time get_created_time (values::rx_value& val) const;
 
@@ -307,6 +307,8 @@ calculation ( normal priority)");
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
       static server_runtime& instance ();
+
+      runtime_data_t get_cpu_data ();
 
 
       rx_reference<server_dispatcher_object> get_io_pool ()

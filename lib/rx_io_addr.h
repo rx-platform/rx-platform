@@ -32,9 +32,11 @@
 #define rx_io_addr_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "lib/rx_lib.h"
 
+// dummy
+#include "dummy.h"
 
 
 
@@ -43,18 +45,14 @@ namespace rx {
 namespace io {
 rx_result fill_ip4_addr(const string_type& addr, uint16_t port, sockaddr_in* addr_struct);
 string_type get_ip4_addr_string(const sockaddr_in* addr_struct);
+string_type get_ip4_addr_string(const string_type& addr, uint16_t port);
 
 
 
 
 
-class ip4_address 
+class ip4_address : public protocol_address  
 {
-    struct endpoint_storage
-    {
-        size_t size;
-        sockaddr_in addr;
-    };
 
   public:
       ip4_address();
@@ -63,7 +61,9 @@ class ip4_address
 
       ip4_address (const sockaddr_in* addr);
 
-      ~ip4_address();
+      ip4_address (const sockaddr* addr);
+
+      ip4_address (const string_type& addr, uint16_t port);
 
       bool operator==(const ip4_address &right) const;
 
@@ -80,7 +80,7 @@ class ip4_address
 
       rx_result parse (const protocol_address* ep);
 
-      const sockaddr_in* get_address () const;
+      const sockaddr_in* get_ip4_address () const;
 
       bool is_null () const;
 
@@ -90,17 +90,16 @@ class ip4_address
 
       rx_result parse (const string_type& what);
 
-      const protocol_address* to_protocol_address () const;
+      rx_result parse (const string_type& addr, uint16_t port);
 
+      const sockaddr* get_address () const;
 
+      ip4_address(ip4_address&& right) noexcept;
+      ip4_address& operator=(const ip4_address& right);
+      ip4_address& operator=(ip4_address&& right) noexcept;
   protected:
 
   private:
-
-
-      sockaddr_in addr_;
-
-      endpoint_storage storage_;
 
 
 };
@@ -111,13 +110,8 @@ class ip4_address
 
 
 template <typename defT>
-class numeric_address 
+class numeric_address : public protocol_address  
 {
-    struct endpoint_storage
-    {
-        size_t size;
-        defT value;
-    };
 
   public:
       numeric_address();
@@ -125,8 +119,6 @@ class numeric_address
       numeric_address(const numeric_address< defT > &right);
 
       numeric_address (defT val);
-
-      ~numeric_address();
 
       bool operator==(const numeric_address< defT > &right) const;
 
@@ -153,15 +145,41 @@ class numeric_address
 
       rx_result parse (const string_type& what);
 
-      const protocol_address* to_protocol_address () const;
-
-
+      ~numeric_address() = default;
   protected:
 
   private:
 
 
-      endpoint_storage storage_;
+};
+
+
+
+
+
+
+class any_address : public protocol_address  
+{
+
+  public:
+      any_address();
+
+      any_address (const protocol_address* ep);
+
+      ~any_address();
+
+
+      bool is_null () const;
+
+      any_address(any_address&& right) noexcept;
+      any_address(const any_address& right);
+      any_address& operator=(const any_address& right);
+      any_address& operator=(any_address&& right) noexcept;
+
+      bool operator<(const any_address& right) const;
+  protected:
+
+  private:
 
 
 };

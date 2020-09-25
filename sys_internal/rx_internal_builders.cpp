@@ -52,10 +52,25 @@ namespace rx_internal {
 namespace builders {
 
 template<class T>
+rx_reference<T> create_type(meta::object_type_creation_data data)
+{
+	auto ret = rx_create_reference<T>();
+	ret->meta_info = data;
+	return ret;
+}
+template<class T>
+rx_reference<T> create_type(meta::type_creation_data data)
+{
+	auto ret = rx_create_reference<T>();
+	ret->meta_info = data;
+	return ret;
+}
+
+template<class T>
 void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool abstract_type)
 {
-	what->meta_info() = create_meta_for_new(what->meta_info());
-	what->complex_data().set_abstract(abstract_type);
+	what->meta_info = create_meta_for_new(what->meta_info);
+	what->complex_data.is_abstract = abstract_type;
 	auto result = model::platform_types_manager::instance().get_type_repository<T>().register_type(what);
 	if (!result)
 	{
@@ -63,7 +78,7 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
 		}
-		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path());
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path());
 	}
 	result = dir->add_item(what->get_item_ptr());
 	if (!result)
@@ -72,15 +87,15 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
 		}
-		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path() + " to directory.");
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
 	}
 }
 
 template<class T>
 void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool abstract_type)
 {
-	what->meta_info() = create_meta_for_new(what->meta_info());
-	what->complex_data().set_abstract(abstract_type);
+	what->meta_info = create_meta_for_new(what->meta_info);
+	what->complex_data.is_abstract = abstract_type;
 	auto result = model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	if (!result)
 	{
@@ -88,12 +103,12 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
 		}
-		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path());
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path());
 	}
 	result = dir->add_item(what->get_item_ptr());
 	if (!result)
 	{
-		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info().get_full_path() + " to directory.");
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
 		for (const auto& one : result.errors())
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
@@ -103,7 +118,7 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 
 void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::smart_ptr what)
 {
-	what->meta_info() = create_meta_for_new(what->meta_info());
+	what->meta_info = create_meta_for_new(what->meta_info);
 	auto result = model::platform_types_manager::instance().get_relations_repository().register_type(what);
 	if (!result)
 	{
@@ -111,12 +126,12 @@ void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::sma
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
 		}
-		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info().get_full_path());
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info.get_full_path());
 	}
 	result = dir->add_item(what->get_item_ptr());
 	if (!result)
 	{
-		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info().get_full_path() + " to directory.");
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(rx_item_type::rx_relation_type) + " "s + what->meta_info.get_full_path() + " to directory.");
 		for (const auto& one : result.errors())
 		{
 			BUILD_LOG_ERROR("builders", 500, one);
@@ -530,7 +545,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 	if (dir)
 	{
 		//build base types, user extensible
-		auto str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
+		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_CLASS_STRUCT_BASE_NAME
 			, RX_CLASS_STRUCT_BASE_ID
 			, rx_node_id::null_id
@@ -538,7 +553,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_type<basic_types::struct_type>(dir, str);
-		auto var = rx_create_reference<basic_types::variable_type>(meta::type_creation_data{
+		auto var = create_type<basic_types::variable_type>(meta::type_creation_data{
 			RX_CLASS_VARIABLE_BASE_NAME
 			, RX_CLASS_VARIABLE_BASE_ID
 			, rx_node_id::null_id
@@ -548,16 +563,16 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 		build_basic_type<basic_types::variable_type>(dir, var);
 
 		// build base types, code only extensible
-		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{
+		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_CLASS_MAPPER_BASE_NAME
 			, RX_CLASS_MAPPER_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data().register_const_value_static("ValueType", (uint8_t)0);
+		map->complex_data.register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::mapper_type>(dir, map);
-		auto evnt = rx_create_reference<basic_types::event_type>(meta::type_creation_data{
+		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
 			, RX_CLASS_EVENT_BASE_ID
 			, rx_node_id::null_id
@@ -565,7 +580,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_type<basic_types::event_type>(dir, evnt);
-		auto filt = rx_create_reference<basic_types::filter_type>(meta::type_creation_data{
+		auto filt = create_type<basic_types::filter_type>(meta::type_creation_data{
 			RX_CLASS_FILTER_BASE_NAME
 			, RX_CLASS_FILTER_BASE_ID
 			, rx_node_id::null_id
@@ -573,18 +588,18 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_type<basic_types::filter_type>(dir, filt);
-		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_CLASS_SOURCE_BASE_NAME
 			, RX_CLASS_SOURCE_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data().register_const_value_static("ValueType", (uint8_t)0);
+		src->complex_data.register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::source_type>(dir, src);
 
 		//build general data for runtime objects
-		str = rx_create_reference<basic_types::struct_type>(meta::type_creation_data{
+		str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_NS_OBJECT_DATA_NAME
 			, RX_NS_OBJECT_DATA_ID
 			, RX_CLASS_STRUCT_BASE_ID
@@ -594,18 +609,38 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 		build_object_data_struct_type(dir, str);
 
 		//build base object type
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_CLASS_OBJECT_BASE_NAME
 			, RX_CLASS_OBJECT_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		obj->object_data().register_relation("Domain", RX_NS_DOMAIN_RELATION_ID, RX_CLASS_DOMAIN_BASE_ID, obj->complex_data());
+		meta::object_types::relation_attribute rel_attr;
+		rel_attr.name = "Domain";
+		rel_attr.relation_type = RX_NS_DOMAIN_RELATION_ID;
+		rel_attr.target = RX_CLASS_DOMAIN_BASE_ID;
+		obj->object_data.register_relation(rel_attr, obj->complex_data);
 		build_basic_object_type<object_type>(dir, obj);
+		obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_USER_OBJECT_TYPE_NAME
+			, RX_USER_OBJECT_TYPE_ID
+			, RX_CLASS_OBJECT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, obj, false);
+		obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_SYSTEM_OBJECT_TYPE_NAME
+			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_CLASS_OBJECT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, obj, false);
 
 		//build derived object types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
+		auto app = create_type<application_type>(meta::object_type_creation_data{
 			RX_CLASS_APPLICATION_BASE_NAME
 			, RX_CLASS_APPLICATION_BASE_ID
 			, rx_node_id::null_id
@@ -613,23 +648,62 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		build_basic_application_type<application_type>(dir, app);
-		auto domain = rx_create_reference<domain_type>(meta::object_type_creation_data{
+		app = create_type<application_type>(meta::object_type_creation_data{
+			RX_USER_APP_TYPE_NAME
+			, RX_USER_APP_TYPE_ID
+			, RX_CLASS_APPLICATION_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, app, false);
+		app = create_type<application_type>(meta::object_type_creation_data{
+			RX_SYSTEM_APP_TYPE_NAME
+			, RX_SYSTEM_APP_TYPE_ID
+			, RX_CLASS_APPLICATION_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, app, false);
+		auto domain = create_type<domain_type>(meta::object_type_creation_data{
 			RX_CLASS_DOMAIN_BASE_NAME
 			, RX_CLASS_DOMAIN_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		domain->object_data().register_relation("App", RX_NS_APPLICATION_RELATION_ID, RX_CLASS_APPLICATION_BASE_ID, domain->complex_data());
+		rel_attr.name = "App";
+		rel_attr.relation_type = RX_NS_APPLICATION_RELATION_ID;
+		rel_attr.target = RX_CLASS_APPLICATION_BASE_ID;
+		domain->object_data.register_relation(rel_attr, domain->complex_data);
 		build_basic_domain_type<domain_type>(dir, domain);
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		domain = create_type<domain_type>(meta::object_type_creation_data{
+			RX_USER_DOMAIN_TYPE_NAME
+			, RX_USER_DOMAIN_TYPE_ID
+			, RX_CLASS_DOMAIN_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, domain, false);
+		domain = create_type<domain_type>(meta::object_type_creation_data{
+			RX_SYSTEM_DOMAIN_TYPE_NAME
+			, RX_SYSTEM_DOMAIN_TYPE_ID
+			, RX_CLASS_DOMAIN_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, domain, false);
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
 			RX_CLASS_PORT_BASE_NAME
 			, RX_CLASS_PORT_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->object_data().register_relation("App", RX_NS_PORT_APPLICATION_RELATION_ID, RX_CLASS_APPLICATION_BASE_ID, port->complex_data());
+		rel_attr.name = "App";
+		rel_attr.relation_type = RX_NS_PORT_APPLICATION_RELATION_ID;
+		rel_attr.target = RX_CLASS_APPLICATION_BASE_ID;
+		port->object_data.register_relation(rel_attr, port->complex_data);
 		build_basic_port_type<port_type>(dir, port);
 		// build relations
 		relation_type_data def_data;
@@ -637,13 +711,14 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 		def_data.sealed_type = false;
 		def_data.symmetrical = false;
 		def_data.hierarchical = false;
-		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+		auto relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_RELATION_BASE_NAME
 			, RX_NS_RELATION_BASE_ID
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}, def_data);
+			});
+		relation->relation_data = def_data;
 		model::platform_types_manager::instance().get_relations_repository().register_type(relation);
 		dir->add_item(relation->get_item_ptr());
 
@@ -654,23 +729,23 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 
 void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what)
 {
-	what->complex_data().register_const_value_static("Description", ""s);
-	what->complex_data().register_simple_value_static("Note", false, ""s);
-	what->complex_data().register_simple_value_static("LastScanTime", true, 0.0);
-	what->complex_data().register_simple_value_static<uint32_t>("LoopCount", true, 0);
-	what->complex_data().register_simple_value_static("MaxScanTime", true, 0.0);
+	what->complex_data.register_const_value_static("Description", ""s);
+	what->complex_data.register_simple_value_static("Note", false, ""s);
+	what->complex_data.register_simple_value_static("LastScanTime", true, 0.0);
+	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", true, 0);
+	what->complex_data.register_simple_value_static("MaxScanTime", true, 0.0);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 template<class T>
 void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
 {
-	what->complex_data().register_struct("Object", RX_NS_OBJECT_DATA_ID);
+	what->complex_data.register_struct("Object", RX_NS_OBJECT_DATA_ID);
 	add_type_to_configuration(dir, what, true);
 }
 template<class T>
 void basic_types_builder::build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what)
 {
-	what->complex_data().register_const_value_static("CPU", -1);
+	what->complex_data.register_const_value_static("CPU", -1);
 	build_basic_object_type(dir, what);
 }
 template<class T>
@@ -700,82 +775,83 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 	if (dir)
 	{
 		// system application and domain types
-		auto app = rx_create_reference<application_type>(meta::object_type_creation_data{
+		auto app = create_type<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_APP_TYPE_NAME
 			, RX_NS_SYSTEM_APP_TYPE_ID
-			, RX_CLASS_APPLICATION_BASE_ID
+			, RX_SYSTEM_APP_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_type_to_configuration(dir, app, false);
-		auto dom = rx_create_reference<domain_type>(meta::object_type_creation_data{
+		add_type_to_configuration(dir, app, false);		
+		auto dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_DOM_TYPE_NAME
 			, RX_NS_SYSTEM_DOM_TYPE_ID
-			, RX_CLASS_DOMAIN_BASE_ID
+			, RX_SYSTEM_DOMAIN_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_type_to_configuration(dir, dom, false);
+		add_type_to_configuration(dir, dom, false);		
+		
 		// unassigned application and domain types
-		app = rx_create_reference<application_type>(meta::object_type_creation_data{
+		app = create_type<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_UNASS_APP_TYPE_NAME
 			, RX_NS_SYSTEM_UNASS_APP_TYPE_ID
-			, RX_CLASS_APPLICATION_BASE_ID
+			, RX_SYSTEM_APP_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, app, false);
-		dom = rx_create_reference<domain_type>(meta::object_type_creation_data{
+		dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_UNASS_TYPE_NAME
 			, RX_NS_SYSTEM_UNASS_TYPE_ID
-			, RX_CLASS_DOMAIN_BASE_ID
+			, RX_SYSTEM_DOMAIN_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, dom, false);
 		// other system object types
-		auto obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_COMMANDS_MANAGER_TYPE_NAME
 			, RX_COMMANDS_MANAGER_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_NS_SERVER_RT_TYPE_NAME
 			, RX_NS_SERVER_RT_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		obj->complex_data().register_struct("Runtime", RX_RT_DATA_TYPE_ID);
+		obj->complex_data.register_struct("Runtime", RX_RT_DATA_TYPE_ID);
 		add_type_to_configuration(dir, obj, false);
 		// pool type
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_POOL_TYPE_NAME
 			, RX_POOL_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		obj->complex_data().register_struct("Pool", RX_POOL_DATA_TYPE_ID);
+		obj->complex_data.register_struct("Pool", RX_POOL_DATA_TYPE_ID);
 		add_type_to_configuration(dir, obj, false);
 
 		// physical thread type
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_PHYSICAL_THREAD_TYPE_NAME
 			, RX_PHYSICAL_THREAD_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		obj->complex_data().register_struct("Thread", RX_THREAD_DATA_TYPE_ID);
-		obj->complex_data().register_struct("Pool", RX_POOL_DATA_TYPE_ID);
+		obj->complex_data.register_struct("Thread", RX_THREAD_DATA_TYPE_ID);
+		obj->complex_data.register_struct("Pool", RX_POOL_DATA_TYPE_ID);
 		add_type_to_configuration(dir, obj, false);
 
 		// unassigned thread type
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_UNASSIGNED_POOL_TYPE_NAME
 			, RX_UNASSIGNED_POOL_TYPE_ID
 			, RX_PHYSICAL_THREAD_TYPE_ID
@@ -783,7 +859,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);// unassigned thread type
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_META_POOL_TYPE_NAME
 			, RX_META_POOL_TYPE_ID
 			, RX_PHYSICAL_THREAD_TYPE_ID
@@ -792,28 +868,28 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, obj, false);
 
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_LOG_TYPE_NAME
 			, RX_LOG_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
 
-		obj = rx_create_reference<object_type>(meta::object_type_creation_data{
+		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_IO_MANAGER_TYPE_NAME
 			, RX_IO_MANAGER_TYPE_ID
-			, RX_CLASS_OBJECT_BASE_ID
+			, RX_SYSTEM_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, obj, false);
 
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		auto port = create_type<port_type>(meta::object_type_creation_data{
 			RX_RX_JSON_TYPE_NAME
 			, RX_RX_JSON_TYPE_ID
-			, RX_PROTOCOL_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -834,74 +910,115 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{// physical ports
-		auto port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_PHYSICAL_PORT_TYPE_NAME
-			, RX_PHYSICAL_PORT_TYPE_ID
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_EXTERNAL_PORT_TYPE_NAME
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data().register_struct("Status", RX_PHY_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Status", RX_PHY_PORT_STATUS_TYPE_ID);
 		add_type_to_configuration(dir, port, true);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		/*port = create_type<port_type>(meta::object_type_creation_data{
+			RX_PHYSICAL_SINGLE_PORT_TYPE_NAME
+			, RX_PHYSICAL_SINGLE_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, true);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_PHYSICAL_MULTI_PORT_TYPE_NAME
+			, RX_PHYSICAL_MULTI_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, true);*/
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TTY_PORT_TYPE_NAME
 			, RX_TTY_PORT_TYPE_ID
-			, RX_PHYSICAL_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_ETHERNET_PORT_TYPE_NAME
 			, RX_ETHENERT_PORT_TYPE_ID
-			, RX_PHYSICAL_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_UDP_PORT_TYPE_NAME
 			, RX_UDP_PORT_TYPE_ID
-			, RX_PHYSICAL_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data().register_struct("Bind", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TCP_SERVER_PORT_TYPE_NAME
 			, RX_TCP_SERVER_PORT_TYPE_ID
-			, RX_PHYSICAL_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data().register_struct("Bind", RX_IP_BIND_TYPE_ID);
-		port->complex_data().register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
+		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TCP_CLIENT_PORT_TYPE_NAME
 			, RX_TCP_CLIENT_PORT_TYPE_ID
-			, RX_PHYSICAL_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Connection", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Timeouts", RX_CLIENT_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 		// transport ports
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TRANSPORT_PORT_TYPE_NAME
 			, RX_TRANSPORT_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data().register_struct("Status", RX_PORT_STATUS_TYPE_ID);
-		port->object_data().register_relation("StackTop", RX_NS_PORT_STACK_ID, RX_CLASS_PORT_BASE_ID, port->complex_data());
+		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		meta::object_types::relation_attribute rel_attr;
+		rel_attr.name = "StackTop";
+		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
+		rel_attr.target = RX_CLASS_PORT_BASE_ID;
+		port->object_data.register_relation(rel_attr, port->complex_data);
 		add_type_to_configuration(dir, port, true);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_ROUTED_TRANSPORT_PORT_TYPE_NAME
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, RX_CLASS_PORT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		rel_attr.name = "StackTop";
+		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
+		rel_attr.target = RX_CLASS_PORT_BASE_ID;
+		port->object_data.register_relation(rel_attr, port->complex_data);
+		add_type_to_configuration(dir, port, true);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_VT00_TYPE_NAME
 			, RX_VT00_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -910,7 +1027,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, port, false);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TELNET_TYPE_NAME
 			, RX_TELNET_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -919,7 +1036,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, port, false);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
 			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -929,21 +1046,24 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		add_type_to_configuration(dir, port, false);
 
 		// protocol ports
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
-			RX_PROTOCOL_PORT_TYPE_NAME
-			, RX_PROTOCOL_PORT_TYPE_ID
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_APPLICATION_PORT_TYPE_NAME
+			, RX_APPLICATION_PORT_TYPE_ID
 			, RX_CLASS_PORT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data().register_struct("Status", RX_PORT_STATUS_TYPE_ID);
-		port->object_data().register_relation("StackTop", RX_NS_PORT_STACK_ID, RX_CLASS_PORT_BASE_ID, port->complex_data());
+		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		rel_attr.name = "StackTop";
+		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
+		rel_attr.target = RX_CLASS_PORT_BASE_ID;
+		port->object_data.register_relation(rel_attr, port->complex_data);
 		add_type_to_configuration(dir, port, true);
 
-		port = rx_create_reference<port_type>(meta::object_type_creation_data{
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_CONSOLE_TYPE_NAME
 			, RX_CONSOLE_TYPE_ID
-			, RX_PROTOCOL_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -1039,27 +1159,27 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 	if (dir)
 	{
 		// base mappers and sources
-		auto map = rx_create_reference<basic_types::mapper_type>(meta::type_creation_data{
+		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_EXTERN_MAPPER_TYPE_NAME
 			, RX_EXTERN_MAPPER_TYPE_ID
 			, RX_CLASS_MAPPER_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data().register_const_value_static("Port", ""s);
+		map->complex_data.register_const_value_static("Port", ""s);
 		add_simple_type_to_configuration<mapper_type>(dir, map, false);
 
-		auto src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_EXTERN_SOURCE_TYPE_NAME
 			, RX_EXTERN_SOURCE_TYPE_ID
 			, RX_CLASS_SOURCE_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data().register_const_value_static("Port", ""s);
+		src->complex_data.register_const_value_static("Port", ""s);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
-		src = rx_create_reference<basic_types::source_type>(meta::type_creation_data{
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_REGISTER_SOURCE_TYPE_NAME
 			, RX_REGISTER_SOURCE_TYPE_ID
 			, RX_CLASS_SOURCE_BASE_ID
@@ -1068,94 +1188,108 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
+		// standard filters
+		auto filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_LINEAR_SCALING_FILTER_TYPE_NAME
+			, RX_LINEAR_SCALING_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_simple_value_static("HiEU", false, 100.0);
+		filter->complex_data.register_simple_value_static("LowEU", false, 0.0);
+		filter->complex_data.register_simple_value_static("HiRaw", false, 10.0);
+		filter->complex_data.register_simple_value_static("LowRaw", false, 0.0);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
 		// port related helper structures
-		auto what = rx_create_reference<struct_type>(meta::type_creation_data{
+		auto what = create_type<struct_type>(meta::type_creation_data{
 			RX_PORT_STATUS_TYPE_NAME
 			, RX_PORT_STATUS_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_simple_value_static("Connected", true, false);
-		what->complex_data().register_simple_value_static<int64_t>("RxPackets", false, 0);
-		what->complex_data().register_simple_value_static<int64_t>("TxPackets", false, 0);
+		what->complex_data.register_simple_value_static("Connected", true, false);
+		what->complex_data.register_simple_value_static<int64_t>("RxPackets", false, 0);
+		what->complex_data.register_simple_value_static<int64_t>("TxPackets", false, 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_PHY_PORT_STATUS_TYPE_NAME
 			, RX_PHY_PORT_STATUS_TYPE_ID
 			, RX_PORT_STATUS_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_simple_value_static<int64_t>("RxBytes", false, 0);
-		what->complex_data().register_simple_value_static<int64_t>("TxBytes", false, 0);
+		what->complex_data.register_simple_value_static<int64_t>("RxBytes", false, 0);
+		what->complex_data.register_simple_value_static<int64_t>("TxBytes", false, 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_IP_BIND_TYPE_NAME
 			, RX_IP_BIND_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_const_value_static("IPAddress", ""s);
-		what->complex_data().register_const_value_static<uint16_t>("IPPort", 0);
+		what->complex_data.register_const_value_static("IPAddress", ""s);
+		what->complex_data.register_const_value_static<uint16_t>("IPPort", 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_TIMEOUTS_TYPE_NAME
 			, RX_TIMEOUTS_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_simple_value_static<uint32_t>("ReceiveTimeout", false, 10000);
-		what->complex_data().register_simple_value_static<uint32_t>("SendTimeout", false, 1000);
+		what->complex_data.register_simple_value_static<uint32_t>("ReceiveTimeout", false, 10000);
+		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", false, 1000);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_CLIENT_TIMEOUTS_TYPE_NAME
 			, RX_CLIENT_TIMEOUTS_TYPE_ID
 			, RX_TIMEOUTS_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_simple_value_static<uint32_t>("ConnectTimeout", false, 5000);
+		what->complex_data.register_simple_value_static<uint32_t>("ConnectTimeout", false, 5000);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_POOL_DATA_TYPE_NAME
 			, RX_POOL_DATA_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_const_value_static("Threads", (uint16_t)0);
+		what->complex_data.register_const_value_static("Threads", (uint16_t)0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_THREAD_DATA_TYPE_NAME
 			, RX_THREAD_DATA_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_const_value_static("ThreadId", (uint32_t)0);
-		what->complex_data().register_simple_value_static("Queue", true, (uint16_t)0);
-		what->complex_data().register_simple_value_static("MaxQueue", true, (uint16_t)0);
+		what->complex_data.register_const_value_static("ThreadId", (uint32_t)0);
+		what->complex_data.register_simple_value_static("Queue", true, (uint16_t)0);
+		what->complex_data.register_simple_value_static("MaxQueue", true, (uint16_t)0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		what = rx_create_reference<struct_type>(meta::type_creation_data{
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_RT_DATA_TYPE_NAME
 			, RX_RT_DATA_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data().register_const_value_static<uint16_t>("IOThreads", 0);
-		what->complex_data().register_const_value_static<uint16_t>("Workers", 0);
-		what->complex_data().register_const_value_static<bool>("CalcTimer", false);
+		what->complex_data.register_const_value_static<uint16_t>("IOThreads", 0);
+		what->complex_data.register_const_value_static<uint16_t>("Workers", 0);
+		what->complex_data.register_const_value_static<bool>("CalcTimer", false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 	}
 	return true;
@@ -1179,43 +1313,47 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 		def_data.hierarchical = true;
 		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
 
-		auto relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+		auto relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_PORT_STACK_NAME
 			, RX_NS_PORT_STACK_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}, def_data);
+			});
+		relation->relation_data = def_data;
 		add_relation_type_to_configuration(dir, relation);
 
 
 		def_data.sealed_type = true;
-		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+		relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_APPLICATION_RELATION_NAME
 			, RX_NS_APPLICATION_RELATION_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}, def_data);
+			});
+		relation->relation_data = def_data;
 		add_relation_type_to_configuration(dir, relation);
 
 		def_data.sealed_type = true;
-		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+		relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_PORT_APPLICATION_RELATION_NAME
 			, RX_NS_PORT_APPLICATION_RELATION_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}, def_data);
+			});
+		relation->relation_data = def_data;
 		add_relation_type_to_configuration(dir, relation);
 
-		relation = rx_create_reference<relation_type>(meta::object_type_creation_data{
+		relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_DOMAIN_RELATION_NAME
 			, RX_NS_DOMAIN_RELATION_ID
 			, RX_NS_RELATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}, def_data);
+			});
+		relation->relation_data = def_data;
 		add_relation_type_to_configuration(dir, relation);
 	}
 	return true;

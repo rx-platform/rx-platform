@@ -42,6 +42,7 @@
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
 #include "system/runtime/rx_runtime_holder.h"
+#include "system/meta/rx_meta_algorithm.h"
 
 
 namespace rx_internal {
@@ -59,6 +60,12 @@ struct string_result_wrapper
 		return !value.empty();
 	}
 };
+string_result_wrapper rx_create_string_result(const string_type& value)
+{
+	string_result_wrapper ret;
+	ret.value = value;
+	return ret;
+}
 
 // Class rx_internal::rx_protocol::messages::query_messages::browse_request_message 
 
@@ -582,10 +589,12 @@ rx_message_type_t query_response_message::get_type_id ()
 template <class itemT>
 rx_result type_response_message<itemT>::serialize (base_meta_writer& stream) const
 {
+	using algorithm_type = typename itemT::algorithm_type;
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 
@@ -598,10 +607,12 @@ rx_result type_response_message<itemT>::serialize (base_meta_writer& stream) con
 template <class itemT>
 rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 {
+	using algorithm_type = typename itemT::algorithm_type;
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 
@@ -1057,12 +1068,13 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_conn
 		return ret_value;
 	}
 	rx_result result = model::algorithms::do_with_runtime_item<string_result_wrapper>(resolve_result.value(), [](rx_result_with<platform_item_ptr>&& data)
+		-> rx_result_with<string_result_wrapper>
 		{
 			if (data)
 			{
 				std::ostringstream ss;
 				data.value()->fill_code_info(ss, data.value()->meta_info().get_full_path());
-				return ss.str();
+				return rx_create_string_result(ss.str());
 			}
 			else
 			{

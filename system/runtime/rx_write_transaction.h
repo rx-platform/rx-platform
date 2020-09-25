@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_session_map.h
+*  system\runtime\rx_write_transaction.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,34 +28,60 @@
 ****************************************************************************/
 
 
-#ifndef rx_session_map_h
-#define rx_session_map_h 1
+#ifndef rx_write_transaction_h
+#define rx_write_transaction_h 1
 
 
-#include "rx_protocol_errors.h"
+
+// rx_operational
+#include "system/runtime/rx_operational.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-typedef struct protocol_address_def
+namespace rx_platform {
+
+namespace runtime {
+
+namespace algorithms {
+
+
+
+
+
+class write_item_transaction : public operational::rx_tags_callback  
 {
-	// length of the whole data
-	size_t data_length;
-	// data itself
-	uint8_t data[1];
+    DECLARE_REFERENCE_PTR(write_item_transaction);
 
-} protocol_address;
+  public:
+      write_item_transaction (rx_result_callback&& callback, rx_thread_handle_t whose);
 
 
-// functions for manipulating protocol endpoint
+      void items_changed (const std::vector<operational::update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<operational::update_item>&& items);
+
+      rx_thread_handle_t get_target ();
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
 
+  protected:
 
-#ifdef __cplusplus
-}
-#endif
+  private:
+
+
+      rx_result_callback callback_;
+
+      rx_thread_handle_t whose_;
+
+
+};
+
+
+} // namespace algorithms
+} // namespace runtime
+} // namespace rx_platform
+
 
 
 #endif

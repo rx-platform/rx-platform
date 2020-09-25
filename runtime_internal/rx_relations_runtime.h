@@ -35,8 +35,6 @@
 
 // rx_relations
 #include "system/runtime/rx_relations.h"
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -117,8 +115,6 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
 
 
       rx_reference<subscriptions::rx_subscription> my_subscription_;
-
-      values_type values_;
 
 
 };

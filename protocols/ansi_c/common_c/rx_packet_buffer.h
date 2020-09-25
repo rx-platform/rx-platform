@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 // this is a very long way forward declaration!!!
-struct rx_protocol_stack_entry;
+struct rx_protocol_stack_endpoint;
 
 
 typedef struct rx_packet_buffer_type
@@ -48,7 +48,7 @@ typedef struct rx_packet_buffer_type
 	uint8_t* buffer_ptr;
 	size_t size;
 	size_t capacity;
-	struct rx_protocol_stack_entry* whose;
+	struct rx_protocol_stack_endpoint* whose;
 
 } rx_packet_buffer;
 
@@ -62,7 +62,7 @@ typedef struct rx_const_packet_buffer_type
 } rx_const_packet_buffer;
 
 // initialization
-rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, struct rx_protocol_stack_entry* whose);
+rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, struct rx_protocol_stack_endpoint* whose);
 rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer);
 rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer);
 rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer);

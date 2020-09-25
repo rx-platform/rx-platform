@@ -32,7 +32,7 @@
 #define rx_io_buffers_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 // dummy
 #include "dummy.h"
@@ -55,7 +55,7 @@ class rx_io_buffer : public rx_packet_buffer
   public:
       rx_io_buffer();
 
-      rx_io_buffer (size_t initial_capacity, rx_protocol_stack_entry* stack_entry);
+      rx_io_buffer (size_t initial_capacity, rx_protocol_stack_endpoint* stack_entry);
 
       ~rx_io_buffer();
 

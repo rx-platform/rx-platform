@@ -222,6 +222,8 @@ class platform_runtime_manager
 
       static runtime_handle_t get_new_handle ();
 
+      static runtime_transaction_id_t get_new_transaction_id ();
+
 
       runtime_cache& get_cache ()
       {

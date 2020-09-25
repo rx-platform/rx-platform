@@ -94,6 +94,12 @@ string_type gnu_pipe_host::get_full_path (const string_type& path)
     return get_full_path_from_relative(path);
 }
 
+bool gnu_pipe_host::supports_ansi () const
+{
+  return true;
+
+}
+
 
 } // namespace gnu
 

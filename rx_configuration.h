@@ -112,14 +112,27 @@
 #define META_POOL_ID 0x8000019
 
 
-
-
 // system objects type stuff
-#define RX_NS_SYSTEM_APP_TYPE_NAME "SystemAppType"
+#define RX_NS_SYSTEM_APP_TYPE_NAME "SysAppType"
 #define RX_NS_SYSTEM_APP_TYPE_ID 0xc000000
-#define RX_NS_SYSTEM_DOM_TYPE_NAME "SystemDomainType"
+#define RX_NS_SYSTEM_DOM_TYPE_NAME "SysDomainType"
 #define RX_NS_SYSTEM_DOM_TYPE_ID 0xc000001
 
+
+#define RX_USER_APP_TYPE_NAME "UserApplication"
+#define RX_USER_APP_TYPE_ID 0xc00003a
+#define RX_USER_DOMAIN_TYPE_NAME "UserDomain"
+#define RX_USER_DOMAIN_TYPE_ID 0xc00003b
+#define RX_USER_OBJECT_TYPE_NAME "UserObject"
+#define RX_USER_OBJECT_TYPE_ID 0xc00003c
+
+
+#define RX_SYSTEM_APP_TYPE_NAME "SystemApplicationType"
+#define RX_SYSTEM_APP_TYPE_ID 0xc00003d
+#define RX_SYSTEM_DOMAIN_TYPE_NAME "SystemDomainType"
+#define RX_SYSTEM_DOMAIN_TYPE_ID 0xc00003e
+#define RX_SYSTEM_OBJECT_TYPE_NAME "SystemObjectType"
+#define RX_SYSTEM_OBJECT_TYPE_ID 0xc00003f
 
 #define RX_COMMANDS_MANAGER_TYPE_NAME "CmdManagerType"
 #define RX_COMMANDS_MANAGER_TYPE_ID 0xc000002
@@ -144,12 +157,20 @@
 
 
 // port classes and related structs
-#define RX_PHYSICAL_PORT_TYPE_NAME "PhysicalPort"
-#define RX_PHYSICAL_PORT_TYPE_ID 0xc00000c
+#define RX_EXTERNAL_PORT_TYPE_NAME "ExternalPort"
+#define RX_EXTERNAL_PORT_TYPE_ID 0xc00000c
+//#define RX_PHYSICAL_SINGLE_PORT_TYPE_NAME "PhysicalSingle"
+//#define RX_PHYSICAL_SINGLE_PORT_TYPE_ID 0xc000036
+//#define RX_PHYSICAL_MULTI_PORT_TYPE_NAME "PhysicalMultiple"
+//#define RX_PHYSICAL_MULTI_PORT_TYPE_ID 0xc000037
+
 #define RX_TRANSPORT_PORT_TYPE_NAME "TransportPort"
 #define RX_TRANSPORT_PORT_TYPE_ID 0xc00000d
-#define RX_PROTOCOL_PORT_TYPE_NAME "ProtocolPort"
-#define RX_PROTOCOL_PORT_TYPE_ID 0xc00000e
+#define RX_ROUTED_TRANSPORT_PORT_TYPE_NAME "RoutedTransportPort"
+#define RX_ROUTED_TRANSPORT_PORT_TYPE_ID 0xc000038
+
+#define RX_APPLICATION_PORT_TYPE_NAME "ApplicationPort"
+#define RX_APPLICATION_PORT_TYPE_ID 0xc00000e
 
 #define RX_TTY_PORT_TYPE_NAME "TTYPort"
 #define RX_TTY_PORT_TYPE_ID 0xc000010
@@ -213,10 +234,13 @@
 #define RX_EXTERN_SOURCE_TYPE_ID 0xc000034
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
 #define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
+ 
 
 
+#define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
+#define RX_LINEAR_SCALING_FILTER_TYPE_ID 0xc000039
 
-
+// last is 0xc00003f!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
@@ -237,6 +261,7 @@
 
 #define RX_CONST_VALUE_TYPE_NAME "const_value"
 #define RX_VALUE_TYPE_NAME "value"
+#define RX_INDIRECT_VALUE_TYPE_NAME "value"
 
 #define RX_CPP_VARIABLE_CLASS_TYPE_NAME "variable_type"
 #define RX_CPP_VARIABLE_TYPE_NAME "variable"

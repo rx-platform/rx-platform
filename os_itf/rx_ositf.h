@@ -59,7 +59,7 @@ extern "C" {
 
 	rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size);
 	///////////////////////////////////////////////////////////////////
-	// anynoimus pipes
+	// anonymous pipes
 
 	typedef struct pipe_server_t
 	{
@@ -175,12 +175,12 @@ extern "C" {
 
 	// returns NULL if not succeeded
 	find_file_handle_t rx_open_find_file_list(const char* path, struct rx_file_directory_entry_t* entry);
-	// while not zero files are fethecd
+	// while not zero files are fetched
 	int rx_get_next_file(find_file_handle_t hndl, struct rx_file_directory_entry_t* entry);
 	void rx_find_file_close(find_file_handle_t hndl);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// handles apstractions ( wait and the rest of the stuff
+	// handles abstractions ( wait and the rest of the stuff
 #define RX_INFINITE 0xffffffff
 #define RX_WAIT_0 0
 #define RX_WAIT_TIMEOUT 0x102
@@ -193,16 +193,7 @@ extern "C" {
 
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// mutex apstractions ( wait and the rest of the stuff
-	sys_handle_t rx_mutex_create(int initialy_owned);
-	int rx_mutex_destroy(sys_handle_t hndl);
-	int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout);
-	int rx_mutex_release(sys_handle_t hndl);
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// event apstractions ( wait and the rest of the stuff
+	// event abstractions ( wait and the rest of the stuff
 	sys_handle_t rx_event_create(int initialy_set);
 	int rx_event_destroy(sys_handle_t hndl);
 	int rx_event_set(sys_handle_t hndl);
@@ -243,9 +234,10 @@ extern "C" {
 	typedef void(*rx_callback)(void*);
 
 	typedef int(*rx_io_read_callback)(void*, uint32_t status, size_t);
+	typedef int(*rx_io_read_from_callback)(void*, uint32_t status, size_t, struct sockaddr*, size_t);
 	typedef int(*rx_io_write_callback)(void*, uint32_t status);
-	typedef int(*rx_io_connect_callback)(void*, uint32_t status);
-	typedef int(*rx_io_accept_callback)(void*, uint32_t status, sys_handle_t, struct sockaddr*, struct sockaddr*, size_t);
+	typedef int(*rx_io_connect_callback)(void*, uint32_t status, struct sockaddr*, struct sockaddr*);
+	typedef int(*rx_io_accept_callback)(void*, uint32_t status, sys_handle_t, struct sockaddr*, struct sockaddr*);
 	typedef int(*rx_io_shutdown_callback)(void*, uint32_t status);
 
 
@@ -253,6 +245,7 @@ extern "C" {
 	{
 		sys_handle_t handle;
 		rx_io_read_callback read_callback;
+		rx_io_read_from_callback read_from_callback;
 		rx_io_write_callback write_callback;
 		rx_io_connect_callback connect_callback;
 		rx_io_accept_callback accept_callback;
@@ -280,20 +273,22 @@ extern "C" {
 	uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed);
 	uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count);
 
+	uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed, struct sockaddr_storage* addr);
+	uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data, size_t count, const struct sockaddr* addr, size_t addrsize);
 
 	uint32_t rx_socket_accept(struct rx_io_register_data_t* what);
-	uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize);
+	uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sockaddr* addr, size_t addrsize);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// socket apstractions
-	sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr);
-	sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr);
+	// socket abstractions
+	sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr);
+	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// slim lock apstraction
+	// slim lock abstraction
 	// 1. light weight
-	// 2. reenternat
+	// 2. reentrant
 	// 3. small object so no malloc/free stuff ( header should define size of object )
 	typedef struct slim_lock_def
 	{
@@ -321,7 +316,7 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// thread apstractions
+	// thread abstractions
 
 #define RX_PRIORITY_IDLE -3
 #define RX_PRIORITY_LOW -2
@@ -337,7 +332,7 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// basic apstractions
+	// basic abstractions
 	void rx_ms_sleep(uint32_t timeout);
 	void rx_us_sleep(uint64_t timeout);
 	uint32_t rx_get_tick_count();
@@ -364,9 +359,9 @@ extern "C" {
 #define RX_CRYPT_MODE_ECB          2       // Electronic code book
 #define RX_CRYPT_MODE_OFB          3       // Output feedback mode
 #define RX_CRYPT_MODE_CFB          4       // Cipher feedback mode
-#define RX_CRYPT_MODE_CTS          5       // Ciphertext stealing mode
+#define RX_CRYPT_MODE_CTS          5       // Cipher-text stealing mode
 
-	// theese are ones implement so far
+	// these are ones implement so far
 #define RX_SYMETRIC_AES128 1
 #define RX_SYMETRIC_AES192 2
 #define RX_SYMETRIC_AES256 3

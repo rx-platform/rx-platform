@@ -31,6 +31,8 @@
 #include "pch.h"
 
 
+// rx_thread
+#include "lib/rx_thread.h"
 // rx_job
 #include "lib/rx_job.h"
 
@@ -96,7 +98,8 @@ void job::process_wrapper ()
 
 timer_job::timer_job()
       : next_(0x0),
-        period_(0x0)
+        period_(0x0),
+        suspended_(true)
   , executer_(nullptr), my_timer_(nullptr)
 {
 }
@@ -111,10 +114,26 @@ void timer_job::set_executer (threads::job_thread* executer)
 
 void timer_job::lock ()
 {
+	lock_.lock();
 }
 
 void timer_job::unlock ()
 {
+	lock_.unlock();
+}
+
+rx_timer_ticks_t timer_job::get_random_time_offset ()
+{
+	if (my_timer_)
+		return my_timer_->get_random_time_offset(*this);
+	else
+		return 0;
+}
+
+void timer_job::wake_timer ()
+{
+	if (my_timer_)
+		my_timer_->wake_up();
 }
 
 
@@ -126,7 +145,7 @@ post_period_job::post_period_job()
 
 
 
-rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& remove)
+rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
 	if (((next_ - current_tick) & 0x80000000) || (next_ - current_tick) == 0)
 	{
@@ -142,6 +161,19 @@ rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, bool& rem
 		return std::min(max_sleep_period, next_ - current_tick);// not jet so send how much more to timer
 }
 
+void post_period_job::start (uint32_t period)
+{
+	lock();
+	{
+		if (suspended_)
+			suspended_ = false;
+		period_ = ((rx_timer_ticks_t)period) * 1000;
+		next_ = rx_get_us_ticks() + period_ + get_random_time_offset();
+		wake_timer();
+	}
+	unlock();
+}
+
 
 // Class rx::jobs::periodic_job 
 
@@ -151,13 +183,17 @@ periodic_job::periodic_job()
 
 
 
-rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove)
+rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
+	if (suspended_)
+		return 0;
+
 	if (current_tick >= next_)
 	{
 		// should be done
 		executer_->append(smart_this());// add job to right thread
 
+		next_ += random_offset;
 		do
 		{
 			next_ = next_ + period_;// new time
@@ -168,6 +204,24 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, bool& remove
 	}
 	else
 		return next_ - current_tick;// not jet so send how match more to timer
+}
+
+void periodic_job::start (uint32_t period, bool now)
+{
+	lock();
+	{
+		if (suspended_)
+			suspended_ = false;
+		period_ = ((rx_timer_ticks_t)period) * 1000;
+		next_ = (now ? rx_get_us_ticks() : rx_get_us_ticks() + period_ + get_random_time_offset());
+		wake_timer();
+	}
+	unlock();
+}
+
+void periodic_job::suspend ()
+{
+	suspended_ = true;
 }
 
 

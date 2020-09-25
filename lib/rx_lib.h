@@ -37,11 +37,25 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 // main server library file
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*******************************************************************
+ Preprocessor switches
+ ======================
+
+ #define RX_MIN_MEMORY          - remove some hash containers to gain smaller memory footprint
+
+********************************************************************/
+
+
 string_type _not_implemented_func(const char* fname);
 #define RX_NOT_IMPLEMENTED _not_implemented_func(_rx_func_)
+#define RX_INVALID_ARGUMENT "Invalid argument."
 #define RX_INVALID_CONVERSION "Invalid conversion."
 #define RX_ERROR_STOPPED "Item is not running."
 #define RX_NOT_SUPPORTED "Operation not supported."
+#define RX_NOT_CONNECTED "Not connected."
+#define RX_ALREADY_CONNECTED "Already connected."
 
 namespace rx
 {
@@ -656,6 +670,9 @@ enum class rx_criticalness
 	medium,
 	hard
 };
+constexpr uint32_t rx_soft_time_offset = 100'000;
+constexpr uint32_t rx_medium_time_offset = 10'000;
+
 enum class  rx_access
 {
 	read	= 0x01,

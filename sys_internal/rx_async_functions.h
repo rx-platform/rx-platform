@@ -117,10 +117,12 @@ void rx_post_function(refT&& ref, funcT&& what, Args&&... args)
 template<class refT, class funcT, class... Args>
 post_period_job::smart_ptr  rx_post_delayed_function_to(rx_thread_handle_t target,refT ref, uint32_t period, funcT&& what, Args... args)
 {
-	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(rx_thread_context());
 	auto job = rx_create_period_job<refT, funcT, Args...>()(std::forward<refT>(ref), std::forward<funcT>(what), std::forward<Args>(args)...);
 	if (job)
-		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, period);
+	{
+		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job);
+		job->start(period);
+	}
 	else
 		RX_ASSERT(false);
 	return job;
@@ -146,10 +148,12 @@ periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, refT ref, f
 template<class refT, class funcT>
 periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, refT ref, funcT&& what)
 {
-	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(rx_thread_context());
 	auto job = rx_create_timer_job<refT, decltype(what)>()(std::forward<refT>(ref), std::forward<funcT>(what));
 	if (job)
-		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, period);
+	{
+		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job);
+		job->start(period);
+	}
 	else
 		RX_ASSERT(false);
 	return job;

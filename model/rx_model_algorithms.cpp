@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@
 #include "lib/rx_lib.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "api/rx_platform_api.h"
-
+#include "system/meta/rx_meta_algorithm.h"
 
 
 namespace rx_internal {
@@ -335,17 +335,25 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 		return ret;
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item.get_meta().get_full_path());
+		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
 	else
-		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + item.get_meta().get_full_path());
+		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
 	return true;
 }
 template<class typeCache, class typeType>
 rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, rx_transaction_type& transaction)
 {
-	rx_node_id item_id = prototype->meta_info().id;
-	string_type type_name = prototype->meta_info().name;
-	string_type path = prototype->meta_info().path;
+	using algorithm_type = typename typeType::pointee_type::algorithm_type;
+
+	rx_node_id item_id = prototype->meta_info.id;
+	string_type type_name = prototype->meta_info.name;
+	string_type path = prototype->meta_info.path;
+
+	if (item_id.is_null())
+	{
+		item_id = rx_node_id::generate_new();
+		prototype->meta_info.id = item_id;
+	}
 
 	auto dir = get_root_directory()->get_sub_directory(path);
 
@@ -364,7 +372,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 	{
 		type_check_context ctx;
 		ctx.get_directories().add_paths({ path });
-		auto result = prototype->check_type(ctx);
+		auto result = algorithm_type::check_type(*prototype, ctx);
 		if (!result)
 		{
 			return ctx.get_errors();
@@ -397,31 +405,33 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 		if (!save_result)
 		{
 			rx_result_with<typeType> ret(save_result.errors());
-			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
+			ret.register_error("Error saving type item "s + prototype->meta_info.get_full_path());
 			return ret;
 		}
-		META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+		META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 	}
 	else
-		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 
 	return prototype;
 }
 template<class typeCache, class typeT>
 rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, bool increment_version, rx_transaction_type& transaction)
 {
+	using algorithm_type = typename typeT::pointee_type::algorithm_type;
+
 	rx_directory_ptr dir = rx_gate::instance().get_root_directory();
 
-	prototype->meta_info().increment_version(increment_version);
+	prototype->meta_info.increment_version(increment_version);
 	type_check_context ctx;
-	ctx.get_directories().add_paths({ prototype->meta_info().path });
-	auto result = prototype->check_type(ctx);
+	ctx.get_directories().add_paths({ prototype->meta_info.path });
+	auto result = algorithm_type::check_type(*prototype, ctx);
 	if (!result)
 	{
 		return ctx.get_errors();
 	}
 
-	auto ret = cache.get_type_definition(prototype->meta_info().id);
+	auto ret = cache.get_type_definition(prototype->meta_info.id);
 	if (!ret)
 	{// error, didn't created runtime
 		ret.register_error("Unable to get type from repository.");
@@ -446,13 +456,13 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, bool i
 		if (!save_result)
 		{
 			rx_result_with<typeT> ret(save_result.errors());
-			ret.register_error("Error saving type item "s + prototype->meta_info().get_full_path());
+			ret.register_error("Error saving type item "s + prototype->meta_info.get_full_path());
 			return ret;
 		}
-		META_LOG_INFO("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+		META_LOG_INFO("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 	}
 	else
-		META_LOG_TRACE("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::get_type_id()) + " "s + prototype->meta_info().get_full_path());
+		META_LOG_TRACE("types_model_algorithm", 100, "Updated "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 	return prototype;
 }
 template<class typeT>
@@ -824,7 +834,7 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes(const rx_no
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class rx_internal::model::algorithms::types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -942,7 +952,7 @@ rx_result_with<check_type_result> types_model_algorithm<typeT>::check_type_sync 
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -1061,7 +1071,7 @@ rx_result_with<check_type_result> simple_types_model_algorithm<typeT>::check_typ
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
@@ -1166,18 +1176,43 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 {
 	using ret_type = rx_result_with<typename typeT::RTypePtr>;
 	auto id = instance_data.meta_info.id;
+	bool is_empty = false;
 	if (id.is_null())
 	{// error, item does not have id
-		callback.set_arguments(ret_type(instance_data.meta_info.name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!"));
-		rx_post_packed_to(result_target, std::move(callback));
+		string_type path = instance_data.meta_info.get_full_path();
+		if (path.empty())
+		{
+			callback.set_arguments(ret_type(instance_data.meta_info.name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!"));
+			rx_post_packed_to(result_target, std::move(callback));
+			return;
+		}
+		else
+		{
+			ns::rx_directory_resolver dirs;
+			auto resolved = resolve_reference(path, dirs);
+			if (!resolved)
+			{
+				callback.set_arguments(ret_type(path + " not existing " + rx_item_type_name(typeT::type_id)));
+				rx_post_packed_to(result_target, std::move(callback));
+				return;
+			}
+			is_empty = true;
+			id = resolved.value();
+		}
 	}
 	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
 		callback.set_arguments(ret_type(obj_ptr.errors()));
 		rx_post_packed_to(result_target, std::move(callback));
+		return;
 	}
-
+	if (is_empty)
+	{
+		instance_data.meta_info = obj_ptr.value()->meta_info();
+		instance_data.overrides = obj_ptr.value()->get_overrides();
+		instance_data.instance_data = obj_ptr.value()->get_instance_data().get_data();
+	}
 	auto anchor = callback.anchor;
 
 	auto callback_ptr = std::make_shared<rx_result_with_callback<typename typeT::RTypePtr> >(std::move(callback));
@@ -1234,7 +1269,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const rx_item_ref
 }
 
 
-// Class rx_internal::model::algorithms::relation_types_algorithm
+// Class rx_internal::model::algorithms::relation_types_algorithm 
 
 
 void relation_types_algorithm::get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)

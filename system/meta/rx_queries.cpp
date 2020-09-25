@@ -205,6 +205,7 @@ rx_result rx_query::init_query_types ()
 	registered_queries_.emplace(derived_types_query::query_name, [] { return std::make_shared<derived_types_query>(); });
 	registered_queries_.emplace(runtime_objects_query::query_name, [] { return std::make_shared<runtime_objects_query>(); });
 	registered_queries_.emplace(translate_query::query_name, [] { return std::make_shared<translate_query>(); });
+	registered_queries_.emplace(port_stack_query::query_name, [] { return std::make_shared<port_stack_query>(); });
 	return true;
 }
 
@@ -295,7 +296,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				auto app_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(id);
 				if (app_ptr)
 				{
-					app_ptr.value()->get_instance_data().get_ports(result);
+					app_ptr.value()->get_instance_data().get_ports(result, true);
 				}
 			}
 		}
@@ -411,6 +412,76 @@ rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr
 		}
 	}
 	result.success = true;
+	return true;
+}
+
+
+// Class rx_platform::meta::queries::port_stack_query 
+
+string_type port_stack_query::query_name = "io";
+
+
+rx_result port_stack_query::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_string("typeName", type_name))
+		return "Error serializing type_name";
+	if (!stream.write_string("instanceName", instance_name))
+		return "Error serializing instance name";
+	if (!stream.write_id("instance", instance))
+		return "Error reading instance";
+	if (!stream.write_string("subfolder", subfolder))
+		return "Error serializing subfolder";
+
+	return true;
+}
+
+rx_result port_stack_query::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_string("typeName", type_name))
+		return "Error reading type_name";
+	if (!stream.read_string("instanceName", instance_name))
+		return "Error reading instance name";
+	if (!stream.read_id("instance", instance))
+		return "Error reading instance";
+	if (!stream.read_string("subfolder", subfolder))
+		return "Error reading subfolder";
+
+	return true;
+}
+
+const string_type& port_stack_query::get_query_type ()
+{
+  return query_name;
+
+}
+
+rx_result port_stack_query::do_query (api::query_result& result, rx_directory_ptr dir)
+{
+	if (!instance_name.empty() || !instance.is_null())
+	{
+		rx_node_id id = instance;
+		if (id.is_null())
+		{
+			auto item = dir->get_sub_item(instance_name);
+			if (!item)
+				return type_name + " not found!";
+			id = item.get_meta().id;
+		}
+		auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
+		if (port_ptr)
+		{
+			;
+			rx_port_ptr stack_top = port_ptr.value()->get_instance_data().stack_data.stack_top;
+			std::vector<rx_port_ptr> up_ports = port_ptr.value()->get_instance_data().stack_data.passive_map.get_registered();
+			result.items.reserve(stack_top ? up_ports.size() + 1 : up_ports.size());
+			for (const auto& one : up_ports)
+			{
+				result.items.emplace_back(api::query_result_detail{ rx_port, one->meta_info() });
+			}
+			//if(stack_top)
+				//result.items.emplace_back(api::query_result_detail{ rx_port, stack_top->meta_info() });
+		}
+	}
 	return true;
 }
 

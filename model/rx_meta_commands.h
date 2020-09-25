@@ -280,6 +280,41 @@ command for saving items to storage\r\n\
 };
 
 
+
+
+
+
+class update_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(update_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for updating various objects and types in platform\r\n\
+\
+");
+
+  public:
+      update_command();
+
+      ~update_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+      template<class T>
+      bool update_object(typename T::instance_data_t instance_data, std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
+      template<class T>
+      bool update_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
+      template<class T>
+      bool update_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
+
+
+};
+
+
 } // namespace meta_commands
 } // namespace model
 } // namespace rx_internal

@@ -36,6 +36,7 @@
 
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
+#include "system/meta/rx_meta_algorithm.h"
 
 
 namespace rx_internal {
@@ -270,9 +271,10 @@ void configuration_storage_builder::dump_errors_to_log (const string_array& erro
 template<class T>
 rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
 {
+	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
-	created->meta_info() = meta;
-	auto result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	created->meta_info = meta;
+	auto result = algorithm_type::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
 	storage->close();
 	if (result)
 	{
@@ -294,9 +296,10 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 template<class T>
 rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
 {
+	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
-	created->meta_info() = meta;
-	auto result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	created->meta_info = meta;
+	auto result = algorithm_type::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
 	storage->close();
 	if (result)
 	{
@@ -318,8 +321,8 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage)
 {
 	auto created = rx_create_reference<relation_type>();
-	created->meta_info() = meta_data;
-	auto result = created->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	created->meta_info = meta_data;
+	auto result = meta::meta_algorithm::relation_type_algorithm::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
 	storage->close();
 	if (result)
 	{

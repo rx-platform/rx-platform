@@ -35,12 +35,12 @@
 #include "lib/rx_values.h"
 /////////////////////////////////////////////////////////////
 // logging macros for console library
-#define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,msg)
-#define RUNTIME_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Run",src,lvl,msg)
+#define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,(msg))
+#define RUNTIME_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Run",src,lvl,(msg))
 #define RUNTIME_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Run",src,lvl,msg)
-#define RUNTIME_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Run",src,lvl,msg)
-#define RUNTIME_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Run",src,lvl,msg)
-#define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,msg)
+#define RUNTIME_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Run",src,lvl,(msg))
+#define RUNTIME_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Run",src,lvl,(msg))
+#define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,(msg))
 
 
 namespace rx_platform {
@@ -54,13 +54,13 @@ class variable_data;
 class runtime_item;
 } // namespace structure
 
-namespace operational {
-class binded_tags;
-} // namespace operational
-
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
+
+namespace operational {
+class binded_tags;
+} // namespace operational
 
 class runtime_process_context;
 
@@ -100,6 +100,7 @@ class object_types_algorithm;
 template <class typeT>
 class meta_blocks_algorithm;
 class relation_blocks_algorithm;
+class complex_data_algorithm;
 }
 }
 namespace runtime {
@@ -377,6 +378,8 @@ struct runtime_init_context
 
       runtime_handle_t get_new_handle ();
 
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
+
 
       runtime_path_resolver path;
 
@@ -420,6 +423,9 @@ struct runtime_start_context
 {
 
       runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories);
+
+
+      runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback);
 
 
       runtime_path_resolver path;

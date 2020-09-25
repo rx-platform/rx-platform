@@ -33,11 +33,15 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
 #include "rx_blocks.h"
 #include "system/logic/rx_logic.h"
+
+using rx_internal::sys_runtime::data_source::value_point;
 
 
 namespace rx_platform {
@@ -71,7 +75,7 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs)
+runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
@@ -388,6 +392,37 @@ owner_jobs_type& runtime_process_context::get_for_own_process ()
     static owner_jobs_type empty;
     if (should_do_step<runtime_process_step::own>())
         return owns_.get_and_swap();
+    else
+        return empty;
+}
+
+runtime_handle_t runtime_process_context::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx)
+{
+    if (points_)
+    {
+        runtime_handle_t ret = (runtime_handle_t)points_->size() + 1;// avoid zero
+        auto point = points_->emplace_back(value_point());
+        point.connect(path, rate, callback);
+        return ret;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void runtime_process_context::source_result_pending (write_result_struct<structure::source_data> data)
+{
+    turn_on_pending<runtime_process_step::source_inputs>();
+    source_results_.emplace_back(std::move(data));
+}
+
+source_results_type& runtime_process_context::get_source_results ()
+{
+    static source_results_type empty;
+    RX_ASSERT(current_step_ == runtime_process_step::source_inputs);
+    if (current_step_ == runtime_process_step::source_inputs)
+        return source_results_.get_and_swap();
     else
         return empty;
 }

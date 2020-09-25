@@ -161,7 +161,7 @@ rx_result do_with_runtime_item(
     auto item_result = get_working_runtime(id);
     if (!item_result)
     {
-        item_result.errors();
+        return item_result.errors();
     }
     auto item = item_result.move_value();
 
@@ -186,7 +186,7 @@ rx_result do_with_runtime_item(
     auto item_result = get_working_runtime(id);
     if (!item_result)
     {
-        item_result.errors();
+        return item_result.errors();
     }
     auto item = item_result.move_value();
 

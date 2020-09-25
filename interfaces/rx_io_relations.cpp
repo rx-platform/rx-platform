@@ -38,6 +38,7 @@
 #include "model/rx_meta_internals.h"
 #include "system/server/rx_platform_item.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/runtime/rx_port_stack_construction.h"
 
 
 namespace rx_internal {
@@ -106,14 +107,29 @@ void port_stack_relation::relation_connected ()
 {
     if (from_ && to_)
     {
-        RUNTIME_LOG_DEBUG("port_stack_relation", 900, from_->meta_info().get_full_path() + " connected to port " + to_->meta_info().get_full_path());
-        meta::meta_data meta;
-        to_->get_implementation()->push(from_->get_implementation(), meta);
+        auto result = runtime::io_types::stack_builder::connect_stack_top(to_, from_);
+        if (result)
+        {
+            RUNTIME_LOG_DEBUG("port_stack_relation", 900, from_->meta_info().get_full_path() + " connected to port " + to_->meta_info().get_full_path());
+        }
+        else
+        {
+            result.register_error(from_->meta_info().get_full_path() + " not connected to port " + to_->meta_info().get_full_path());
+            RUNTIME_LOG_ERROR("port_stack_relation", 900, result.errors_line());
+        }
     }
 }
 
 void port_stack_relation::relation_disconnected ()
 {
+    if (from_ && to_)
+    {
+        auto result = runtime::io_types::stack_builder::disconnect_stack(from_);
+        if (result)
+            RUNTIME_LOG_DEBUG("port_stack_relation", 900, from_->meta_info().get_full_path() + " disconnected from port " + to_->meta_info().get_full_path());
+        else
+            RUNTIME_LOG_ERROR("port_stack_relation", 900, from_->meta_info().get_full_path() + " not disconnected from port " + to_->meta_info().get_full_path());
+    }
 }
 
 

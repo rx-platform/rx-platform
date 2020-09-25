@@ -53,6 +53,7 @@
 
 #include <WinSock2.h>
 #include <ws2tcpip.h>
+#include <ws2ipdef.h>
 #include <windows.h>
 
 
@@ -84,10 +85,19 @@
 #include <crtdefs.h>
 #include <wincrypt.h>
 #include <IPHlpApi.h>
+#include <io.h>
 
 typedef HCRYPTKEY crypt_key_t;
 typedef HCRYPTHASH  crypt_hash_t;
 
+#ifndef __cplusplus
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+#endif
+
+#define MAX max
 
 #ifdef _DEBUG
 #define RX_ASSERT(v) _ASSERT(v)
@@ -137,9 +147,9 @@ typedef DWORD rx_os_error_t;
 #define RW_SLIM_LOCK_SIZE sizeof(SRWLOCK)
 
 
-#define ACCEPT_ADDR_SIZE (sizeof (SOCKADDR_IN) + 0x10)
+#define SOCKET_ADDR_SIZE (sizeof (struct sockaddr_storage))
 
-#define ACCEPT_BUFFER_SIZE (ACCEPT_ADDR_SIZE*2)
+#define ACCEPT_BUFFER_SIZE (SOCKET_ADDR_SIZE*2)
 
 #define TCP_BUFFER_SIZE 0x8000
 #define UDP_BUFFER_SIZE 0x800
@@ -147,6 +157,7 @@ typedef DWORD rx_os_error_t;
 typedef struct windows_overlapped_t
 {
 	OVERLAPPED m_read;
+	OVERLAPPED m_read_from;
 	OVERLAPPED m_write;
 	OVERLAPPED m_accept;
 	OVERLAPPED m_connect;
@@ -165,7 +176,7 @@ typedef ULONG ip_addr_ctx_t;
 
 
 
-#define GET_IP4_ADDR(a) (a.sin_addr.S_un.S_addr)
+#define GET_IP4_ADDR(a) (a->sin_addr.S_un.S_addr)
 
 
 typedef int socklen_t;

@@ -40,6 +40,7 @@
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"
 #include "system/runtime/rx_runtime_holder.h"
+#include "system/meta/rx_meta_algorithm.h"
 
 
 namespace rx_internal {
@@ -304,7 +305,9 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 template <class itemT>
 rx_result protocol_type_creator<itemT>::serialize (base_meta_writer& stream) const
 {
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	using algorithm_type = typename itemT::algorithm_type;
+
+	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 	return true;
@@ -313,11 +316,13 @@ rx_result protocol_type_creator<itemT>::serialize (base_meta_writer& stream) con
 template <class itemT>
 rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
 {
+	using algorithm_type = typename itemT::algorithm_type;
+
 	item = rx_create_reference<itemT>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
-	item->meta_info() = meta;
+	item->meta_info = meta;
 	return result;
 }
 
@@ -661,7 +666,9 @@ message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx
 template <class itemT>
 rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stream) const
 {
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	using algorithm_type = typename itemT::algorithm_type;
+
+	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 	return true;
@@ -670,11 +677,13 @@ rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stre
 template <class itemT>
 rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
 {
+	using algorithm_type = typename itemT::algorithm_type;
+
 	item = rx_create_reference<itemT>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
-	item->meta_info() = meta;
+	item->meta_info = meta;
 	return result;
 }
 
@@ -732,7 +741,9 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 
 rx_result protocol_relation_type_creator::serialize (base_meta_writer& stream) const
 {
-	auto result = item->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	using algorithm_type = object_types::relation_type::algorithm_type;
+
+	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 	return true;
@@ -740,11 +751,12 @@ rx_result protocol_relation_type_creator::serialize (base_meta_writer& stream) c
 
 rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
 {
+	using algorithm_type = object_types::relation_type::algorithm_type;
 	item = rx_create_reference<object_types::relation_type>();
-	auto result = item->deserialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
-	item->meta_info() = meta;
+	item->meta_info = meta;
 	return result;
 }
 

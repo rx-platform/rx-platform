@@ -312,17 +312,17 @@ public:
 	  {
 		  return this->ptr_ < right.ptr_;
 	  }
-	  template<class otherT, class otherFullT>
+	  template<class otherT>
 	  bool operator>(const reference<otherT>& right) const
 	  {
 		  return this->ptr_ > right.ptr_;
 	  }
-	  template<class otherT, class otherFullT>
+	  template<class otherT>
 	  bool operator==(const reference<otherT>& right) const
 	  {
 		  return this->ptr_ == right.ptr_;
 	  }
-	  template<class otherT, class otherFullT>
+	  template<class otherT>
 	  bool operator!=(const reference<otherT>& right) const
 	  {
 		  return this->ptr_ != right.ptr_;

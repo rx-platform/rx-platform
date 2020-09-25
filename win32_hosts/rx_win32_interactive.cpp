@@ -101,7 +101,7 @@ BOOL ctrl_handler(DWORD fdwCtrlType)
 		// CTRL-CLOSE: confirm that the user wants to exit. 
 	case CTRL_BREAK_EVENT:
 		g_console_canceled.store(1, std::memory_order_relaxed);
-		return TRUE;
+		return TRUE;// break it
 	case CTRL_CLOSE_EVENT:
 		return TRUE;
 	default:
@@ -318,7 +318,7 @@ bool win32_console_host::is_canceling () const
 
 bool win32_console_host::break_host (const string_type& msg)
 {
-	return GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0) != FALSE;
+	return GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, 0) != FALSE;
 }
 
 bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
@@ -334,20 +334,27 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 		read = 0;
 		INPUT_RECORD input;
 		BOOL peek = PeekConsoleInput(in_handle_, &input, 1, &read);
-		if (read)
+		if (!peek)
 		{
-			has = true;
-			if (input.EventType == KEY_EVENT)
-			{
-				if (input.Event.KeyEvent.bKeyDown && input.Event.KeyEvent.wVirtualKeyCode == VK_LEFT)
-				{
-					strcpy(&chars[0], "\033[D");
-					count += 3;
-				}
-			}
+			RX_ASSERT(false);
 		}
 		else
-			Sleep(20);
+		{
+			if (read)
+			{
+				has = true;
+				if (input.EventType == KEY_EVENT)
+				{
+					if (input.Event.KeyEvent.bKeyDown && input.Event.KeyEvent.wVirtualKeyCode == VK_LEFT)
+					{
+						strcpy(&chars[0], "\033[D");
+						count += 3;
+					}
+				}
+			}
+			else
+				Sleep(20);
+		}	
 	}
 	if (is_canceling())
 		return false;

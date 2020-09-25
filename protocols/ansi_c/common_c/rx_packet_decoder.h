@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_transport_base.c
+*  protocols\ansi_c\common_c\rx_packet_decoder.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,12 +28,45 @@
 ****************************************************************************/
 
 
-#include "pch.h"
+#ifndef rx_packet_decoder_h
+#define rx_packet_decoder_h 1
+
 
 #include "rx_protocol_errors.h"
-
-// rx_transport_base
-#include "protocols/ansi_c/common_c/rx_transport_base.h"
+#include "rx_packet_buffer.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+typedef rx_protocol_result_t(*check_header_function_type)(uint8_t* header, size_t* size);
+
+typedef struct packed_decoder_type
+{
+	size_t header_size;
+	size_t expected;
+	size_t collected;
+	uint8_t* header;
+	size_t collected_header;
+	uint8_t* header_buffer;
+
+	struct rx_packet_buffer_type* receive_buffer;
+
+	check_header_function_type check_header_func;
+
+} packed_decoder;
+
+rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder, struct rx_packet_buffer_type* recv_buffer, check_header_function_type chk_function, size_t hdr_size, void* hdr_buffer);
+
+rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, struct rx_const_packet_buffer_type* data, struct rx_const_packet_buffer_type* recv_buffer);
+
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif

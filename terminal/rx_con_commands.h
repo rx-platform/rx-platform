@@ -211,7 +211,7 @@ all about doing stuff with log");
 
       bool do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      bool do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+      bool do_read_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   private:

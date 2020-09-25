@@ -291,7 +291,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -639,6 +639,18 @@ bool rx_simple_value::is_float () const
 rx_value_storage&& rx_simple_value::move_storage ()
 {
 	return std::move(storage_);
+}
+
+double rx_simple_value::get_float_value () const
+{
+  return storage_.get_float_value();
+
+}
+
+bool rx_simple_value::set_from_float (double val, rx_value_t type)
+{
+  return storage_.set_from_float(val,type);
+
 }
 
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
@@ -4179,7 +4191,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

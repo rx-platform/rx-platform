@@ -68,6 +68,36 @@ connected_tags::~connected_tags()
 
 
 
+void connected_tags::init_tags (runtime_process_context* ctx, relations::relations_holder* relations)
+{
+	context_ = ctx;
+	parent_relations_ = relations;
+}
+
+void connected_tags::runtime_stopped (const rx_time& now)
+{
+	rx_value temp_val;
+	temp_val.set_time(now);
+	temp_val.set_quality(RX_DEAD_QUALITY);
+	for (const auto& one : handles_map_)
+	{
+		for (auto& monitor : one.second.monitors)
+		{
+			next_send_[monitor].emplace(one.first, temp_val);
+		}
+	}
+	std::vector<update_item> update_data;
+	for (auto one : next_send_)
+	{
+		auto monitor = one.first;
+		update_data.clear();
+		for (const auto& item : one.second)
+			update_data.emplace_back(update_item{ item.first, item.second });
+		monitor->items_changed(update_data);
+	}
+	next_send_.clear();
+}
+
 rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor)
 {
 	auto it_tags = referenced_tags_.find(path);
@@ -150,40 +180,6 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 	}
 }
 
-rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
-{
-	if (!handle)
-		return true;
-	auto it_handles = handles_map_.find(handle);
-	if (it_handles == handles_map_.end() || it_handles->second.reference_count == 0)
-		return "Invalid item handle";
-	it_handles->second.reference_count--;
-	it_handles->second.monitors.erase(monitor);
-	return true;
-}
-
-bool connected_tags::process_runtime ()
-{
-	if (!next_send_.empty())
-	{
-		std::vector<update_item> update_data;
-		next_send_type next_send;
-		{
-			next_send = next_send_;
-			next_send_.clear();			
-		}
-		for (auto one : next_send)
-		{
-			auto monitor = one.first;
-			update_data.clear();
-			for(const auto& item : one.second)
-				update_data.emplace_back(update_item{ item.first, item.second });
-			monitor->items_changed(update_data);
-		}
-	}
-	return false;
-}
-
 rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr monitor)
 {
 	auto it = handles_map_.find(item);
@@ -224,6 +220,72 @@ rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr mon
 	return true;
 }
 
+rx_result connected_tags::write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
+{
+	write_requests_.push_back({ trans_id, item, std::move(value), monitor });
+	context_->tag_writes_pending();
+	return true;
+}
+
+rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
+{
+	if (!handle)
+		return true;
+	auto it_handles = handles_map_.find(handle);
+	if (it_handles == handles_map_.end() || it_handles->second.reference_count == 0)
+		return "Invalid item handle";
+	it_handles->second.reference_count--;
+	it_handles->second.monitors.erase(monitor);
+	return true;
+}
+
+bool connected_tags::process_runtime ()
+{
+	if (!write_results_.empty())
+	{
+		for (auto& one : write_results_)
+		{
+			auto monitor = one.first;
+			for (auto& item : one.second)
+				monitor->write_complete(item.transaction_id, item.item, std::move(item.result));
+		}
+		write_results_.clear();
+	}
+	if (!next_send_.empty())
+	{
+		std::vector<update_item> update_data;
+		next_send_type next_send;
+		{
+			next_send = next_send_;
+			next_send_.clear();			
+		}
+		for (auto one : next_send)
+		{
+			auto monitor = one.first;
+			update_data.clear();
+			for(const auto& item : one.second)
+				update_data.emplace_back(update_item{ item.first, item.second });
+			monitor->items_changed(update_data);
+		}
+	}
+	return false;
+}
+
+bool connected_tags::process_transactions ()
+{
+	for (auto& one : write_requests_)
+	{
+		auto result = internal_write_tag(one.transaction_id, one.item, std::move(one.value), one.callback);
+		if (!result)
+		{
+			write_results_[one.callback].emplace_back(write_result_data{ one.transaction_id, one.item, std::move(result) });
+			context_->tag_updates_pending();
+		}
+	}
+	write_requests_.clear();
+	return false;
+}
+
 void connected_tags::binded_tags_change (structure::value_data* whose, const rx_value& val)
 {
 	auto it = values_.find(whose);
@@ -245,13 +307,40 @@ void connected_tags::binded_tags_change (structure::value_data* whose, const rx_
 	}
 }
 
-rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
+void connected_tags::write_result_arrived (tags_callback_ptr whose, write_result_data&& data)
+{
+	write_results_[whose].emplace_back(std::move(data));
+	context_->tag_updates_pending();
+}
+
+void connected_tags::variable_change (structure::variable_data* whose, const rx_value& val)
+{
+	auto it = variables_.find(whose);
+	if (it != variables_.end())
+	{
+		auto handle = it->second;
+		auto it_data = handles_map_.find(handle);
+		if (it_data != handles_map_.end())
+		{
+			if (!it_data->second.monitors.empty())
+			{
+				for (auto& one : it_data->second.monitors)
+				{
+					next_send_[one].emplace(handle, val);
+				}
+				context_->tag_updates_pending();
+			}
+		}
+	}
+}
+
+rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
 {
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
 	{
 		structure::write_data data;
-		data.transaction_id = 0;
+		data.transaction_id = trans_id;
 		data.value = std::move(value);
 		switch (it->second.reference.ref_type)
 		{
@@ -263,6 +352,7 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 				if (result)
 				{
 					auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
+					write_results_[monitor].emplace_back(write_result_data{trans_id, item, std::move(result)});
 					for(const auto& one : it->second.monitors)
 						next_send_[one].emplace(item, val);
 					context_->tag_updates_pending();
@@ -271,7 +361,8 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 			}
 		case rt_value_ref_type::rt_variable:
 			{
-				auto result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data), context_);
+				auto result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data)
+					, new connected_write_task(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		case rt_value_ref_type::rt_relation:
@@ -280,6 +371,7 @@ rx_result connected_tags::write_tag (runtime_handle_t item, rx_simple_value&& va
 				if (result)
 				{
 					auto val = it->second.reference.ref_value_ptr.relation->value.get_value(context_);
+					write_results_[monitor].emplace_back(write_result_data{ trans_id, item, std::move(result) });
 					for (const auto& one : it->second.monitors)
 						next_send_[one].emplace(item, val);
 					context_->tag_updates_pending();
@@ -376,57 +468,6 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 			return "Invalid path!";
 		}
 	}
-}
-
-void connected_tags::runtime_stopped (const rx_time& now)
-{
-	rx_value temp_val;
-	temp_val.set_time(now);
-	temp_val.set_quality(RX_DEAD_QUALITY);
-	for (const auto& one : handles_map_)
-	{
-		for (auto& monitor : one.second.monitors)
-		{
-			next_send_[monitor].emplace(one.first, temp_val);
-		}
-	}
-	std::vector<update_item> update_data;
-	for (auto one : next_send_)
-	{
-		auto monitor = one.first;
-		update_data.clear();
-		for (const auto& item : one.second)
-			update_data.emplace_back(update_item{ item.first, item.second });
-		monitor->items_changed(update_data);
-	}
-	next_send_.clear();
-}
-
-void connected_tags::variable_change (structure::variable_data* whose, const rx_value& val)
-{
-	auto it = variables_.find(whose);
-	if (it != variables_.end())
-	{
-		auto handle = it->second;
-		auto it_data = handles_map_.find(handle);
-		if (it_data != handles_map_.end())
-		{
-			if (!it_data->second.monitors.empty())
-			{
-				for (auto& one : it_data->second.monitors)
-				{
-					next_send_[one].emplace(handle, val);
-				}
-				context_->tag_updates_pending();
-			}
-		}
-	}
-}
-
-void connected_tags::init_tags (runtime_process_context* ctx, relations::relations_holder* relations)
-{
-	context_ = ctx;
-	parent_relations_ = relations;
 }
 
 connected_tags::relation_ptr connected_tags::get_parent_relation (const string_type& name)
@@ -553,7 +594,7 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 				if (it != ctx.binded_tags.end())
 					return it->second;
 
-				auto ref_result = ctx.structure.get_current_item().get_value_ref(path, ref);
+				auto ref_result = ctx.structure.get_current_item().get_value_ref(&path.c_str()[1], ref);
 				if (!ref_result)
 					return ref_result.errors();
 			}
@@ -660,6 +701,24 @@ rx_result binded_tags::internal_set_item (const string_type& path, rx_simple_val
 	default:
 		return "Unsupported type!.";
 	}
+}
+
+
+// Class rx_platform::runtime::operational::connected_write_task 
+
+connected_write_task::connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item)
+      : parent_(parent),
+        id_(id),
+        callback_(callback),
+        item_(item)
+{
+}
+
+
+
+void connected_write_task::process_result (runtime_transaction_id_t id, rx_result&& result)
+{
+	parent_->write_result_arrived(callback_, write_result_data{ id_, item_, std::move(result) });
 }
 
 

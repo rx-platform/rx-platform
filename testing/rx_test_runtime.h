@@ -36,8 +36,6 @@
 
 // rx_test
 #include "testing/rx_test.h"
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 
 #include "runtime_internal/rx_subscription.h"
 
@@ -148,8 +146,12 @@ basic testing subscription connect/disconnect.");
 		}
 		void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<runtime::operational::update_item>&& items)
 		{
-			printf("\r\n**********Write complete fired!!!\r\n");
+			printf("\r\n**********Transaction complete fired!!!\r\n");
 		}
+        void write_completed(runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
+        {
+            printf("\r\n**********Write complete fired!!!\r\n");
+        }
 	};
 
   public:
@@ -164,9 +166,6 @@ basic testing subscription connect/disconnect.");
   protected:
 
   private:
-
-
-      rx_internal::sys_runtime::data_source::value_point my_value_;
 
 
       internal_callback callback_;

@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #define STACK_LOG_SIZE 0x400
+#define CACHE_LOG_NAME "last"
 
 // rx_log
 #include "lib/rx_log.h"
@@ -111,6 +112,34 @@ void log_event_data::dump_to_stream_simple(std::ostream& stream) const
 		<< message
 		<< "\r\n";	
 }
+bool log_event_data::is_included(log_query_type query) const
+{
+	switch (query.type)
+	{
+	case rx_log_query_type::debug_level:
+		break;// pass all
+	case rx_log_query_type::trace_level:
+		if (event_type < log_event_type::trace)
+			return false;
+		break;
+	case rx_log_query_type::normal_level:
+		if (event_type < log_event_type::info)
+			return false;
+		break;
+	case rx_log_query_type::warining_level:
+		if (event_type < log_event_type::warning)
+			return false;
+		break;
+	case rx_log_query_type::error_level:
+		if (event_type < log_event_type::error)
+			return false;
+		break;
+	}
+	if (!query.pattern.empty() && match_pattern(message.c_str(), query.pattern.c_str(), 1) == 0)
+		return false;
+
+	return true;
+}
 
 #define LOG_SELF_INFO(msg) RX_LOG_INFO(RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, msg);
 
@@ -146,7 +175,7 @@ log_object & log_object::operator=(const log_object &right)
 log_object& log_object::instance ()
 {
 	// this one here doesn't have double lock
-	// it forces you on the begining of your process to start the log
+	// it forces you on the beginning of your process to start the log
 	// :)
 
 	if (g_object == nullptr)
@@ -183,7 +212,7 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 	temp_array.reserve(0x10);
 	lock();
 	for (auto one : subscribers_)
-		temp_array.push_back(one);
+		temp_array.push_back(one.second);
 	unlock();
 	for (auto one : temp_array)
 		one->log_event(event_type, library, source, level, code, message,when);
@@ -194,13 +223,13 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 void log_object::register_subscriber (log_subscriber::smart_ptr who)
 {
 	locks::auto_lock dummy(this);
-	subscribers_.insert(who);
+	subscribers_.emplace(who->get_name(), who);
 }
 
 void log_object::unregister_subscriber (log_subscriber::smart_ptr who)
 {
 	locks::auto_lock dummy(this);
-	subscribers_.erase(who);
+	subscribers_.erase(who->get_name());
 }
 
 void log_object::deinitialize ()
@@ -211,10 +240,6 @@ void log_object::deinitialize ()
 	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
-	if (cache_)
-	{
-		unregister_subscriber(cache_);
-	}
 	delete g_object;
 	g_object = nullptr;
 }
@@ -223,8 +248,7 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 {
 	if (log_cache_size)
 	{
-		cache_ = rx_create_reference<cache_log_subscriber>(log_cache_size);
-		register_subscriber(cache_);
+		register_subscriber(rx_create_reference<cache_log_subscriber>(log_cache_size));
 	}
 	const char* line = "Log started!";
 	LOG_CODE_PREFIX
@@ -284,9 +308,33 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 	return true;
 }
 
-bool log_object::read_cache (const log_query_type& query, log_events_type& result)
+bool log_object::read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback)
 {
-	return cache_->read_log(query, result);
+	rx_reference_ptr ref;
+	auto my_job = jobs::rx_create_func_job(std::move(ref), [this](const string_type& log, log_query_type query, std::function<void(rx_result_with < log_events_type>&&)> callback)
+		{
+			log_events_type result;
+			auto it = subscribers_.find(log);
+			if (it != subscribers_.end())
+			{
+				auto read_result = it->second->read_log(query, result);
+				if (read_result)
+				{
+					result.succeeded = true;
+					callback(std::move(result));
+				}
+				else
+				{
+					callback(read_result.errors());
+				}
+			}
+			else
+			{
+				callback(RX_INVALID_ARGUMENT);
+			}
+		}, log, log_query_type(query), std::move(callback));
+	worker_.append(my_job);
+	return true;
 }
 
 
@@ -301,6 +349,12 @@ log_subscriber::~log_subscriber()
 {
 }
 
+
+
+rx_result log_subscriber::read_log (const log_query_type& query, log_events_type& result)
+{
+	return RX_NOT_IMPLEMENTED;
+}
 
 
 // Class rx::log::log_event_job 
@@ -352,6 +406,16 @@ void stream_log_subscriber::log_event (log_event_type event_type, const string_t
 	one.dump_to_stream(stream_);
 }
 
+string_type stream_log_subscriber::get_name () const
+{
+	return string_type();
+}
+
+rx_result stream_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
+{
+	return RX_NOT_SUPPORTED;
+}
+
 
 // Class rx::log::cache_log_subscriber 
 
@@ -375,45 +439,52 @@ void cache_log_subscriber::log_event (log_event_type event_type, const string_ty
 	events_cache_.emplace(when, one);
 }
 
-bool cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
+rx_result cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
 {
+	result.data.reserve(0x20);
 	locks::auto_lock dummy(&cache_lock_);
 	auto start_it = events_cache_.begin();
 	auto end_it = events_cache_.end();
 	if (!query.start_time.is_null())
 	{// we have start time
 		start_it = events_cache_.lower_bound(query.start_time);
+		if (start_it == events_cache_.end())
+			start_it = events_cache_.begin();
 	}
 	if (!query.stop_time.is_null())
 	{// we have start time
 		end_it = events_cache_.upper_bound(query.start_time);
 	}
-	for (events_cache_type::const_iterator it=start_it; it!=end_it; it++)
+	uint32_t count = 0;
+	if (!events_cache_.empty())
 	{
-		switch (query.type)
+		events_cache_type::const_iterator it = end_it;
+		if (start_it != end_it)
 		{
-		case rx_log_query_type::debug_level:
-			break;// pass all
-		case rx_log_query_type::trace_level:
-			if (it->second.event_type < log_event_type::trace)
-				continue;
-			break;
-		case rx_log_query_type::normal_level:
-			if (it->second.event_type < log_event_type::info)
-				continue;
-			break;
-		case rx_log_query_type::warining_level:
-			if (it->second.event_type < log_event_type::warning)
-				continue;
-			break;
-		case rx_log_query_type::error_level:
-			if (it->second.event_type < log_event_type::error)
-				continue;
-			break;
+			do
+			{
+				it--;
+				if (it->second.is_included(query))
+				{
+					result.data.emplace_back(it->second);
+					if (query.count)
+					{
+						count++;
+						if (count >= query.count)
+							break;
+					}
+				}
+			} while (it != start_it);
 		}
-		result.emplace_back(it->second);
 	}
+	if(!result.data.empty())
+		std::reverse(result.data.begin(), result.data.end());
 	return true;
+}
+
+string_type cache_log_subscriber::get_name () const
+{
+	return CACHE_LOG_NAME;
 }
 
 

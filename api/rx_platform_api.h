@@ -39,6 +39,10 @@
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/meta/rx_types.h"
+
+using rx_platform::meta::meta_data;
+using namespace rx_platform::meta;
+
 namespace rx_platform
 {
 namespace api
@@ -58,12 +62,12 @@ struct runtime_browse_result
 
 struct query_result_detail
 {
-	query_result_detail(rx_item_type type, const meta_data& data)
+	query_result_detail(const rx_item_type type, const meta_data& data)
 	{
 		this->type = type;
 		this->data = data;
 	}
-	query_result_detail(rx_item_type type, meta_data&& data) noexcept 
+	query_result_detail(const rx_item_type type, meta_data&& data) noexcept 
 	{
 		this->type = type;
 		this->data = std::move(data);

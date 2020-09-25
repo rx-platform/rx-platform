@@ -154,7 +154,7 @@ void value_point::connect (const string_type& path, uint32_t rate, std::function
 {
 	if (!controler)
 		controler = data_controler::get_controler();
-	if (state_!=value_point_not_connected)
+	if (state_ != value_point_not_connected)
 		disconnect(controler);
 
 	callback_ = callback;
@@ -384,7 +384,7 @@ void value_point::primitive (rx_value& result, char*& prog, char*& token, char& 
 	}
 	else if (tok_type == VARIABLE)
 	{
-		int index = (int)(((*token)&TAG_ID_MASK));
+		int index = (int)(((*token) & TAG_ID_MASK));
 		if (index < 0 || index >= (int)tag_variables_.size())
 		{
 			char err[256];
@@ -488,7 +488,7 @@ void value_point::unary (char o, rx_value& r, char*& prog, char*& token, char& t
 			complex_value_struct temp = r.get_complex_value();
 			temp.real = -temp.real;
 			temp.imag = -temp.imag;
-			r.set_from_float(sqrt(temp.real*temp.real + temp.imag*temp.imag), RX_DOUBLE_TYPE);
+			r.set_from_float(sqrt(temp.real * temp.real + temp.imag * temp.imag), RX_DOUBLE_TYPE);
 		}
 		else if (r.is_integer())
 		{
@@ -719,7 +719,7 @@ void value_point::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& t
 			uint64_t rl = (uint64_t)res;
 			if (hl > 63)
 				res = 0;
-			r.assign_static<bool>(((rl&(1ll << hl)) != 0));
+			r.assign_static<bool>(((rl & (1ll << hl)) != 0));
 		}
 		break;
 
@@ -729,7 +729,7 @@ void value_point::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& t
 			uint8_t t2;
 			int64_t h1 = r.get_integer_value(&t1);
 			int64_t h2 = h.get_integer_value(&t2);
-			r.set_from_integer((h1&h2), std::max(t1, t2));
+			r.set_from_integer((h1 & h2), std::max(t1, t2));
 		}
 		break;
 
@@ -851,13 +851,13 @@ void value_point::parse_and_connect (const char* path, char* tbuff, const rx_tim
 			else
 				*write_to++ = *prog++;
 		}
-		else if (*prog == '|' &&  *(prog + 1) == '|')
+		else if (*prog == '|' && *(prog + 1) == '|')
 		{
 			*write_to = (char)OR_CODE;
 			write_to++;
 			prog += 2;
 		}
-		else if (*prog == '&' &&  *(prog + 1) == '&')
+		else if (*prog == '&' && *(prog + 1) == '&')
 		{
 			*write_to = (char)AND_CODE;
 			write_to++;
@@ -968,7 +968,7 @@ void value_point::parse_and_connect (const char* path, char* tbuff, const rx_tim
 
 			if (temp)
 			{
-				tag_handles_[temp] = (it->second&TAG_ID_MASK);
+				tag_handles_[temp] = (it->second & TAG_ID_MASK);
 				controler->register_value(temp, this);
 			}
 		}
@@ -1058,4 +1058,5 @@ void value_point::value_changed (value_handle_type handle, const rx_value& val)
 } // namespace data_source
 } // namespace sys_runtime
 } // namespace rx_internal
+
 

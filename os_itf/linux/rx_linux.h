@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -79,6 +79,13 @@ typedef std::string string_type;
 #define RX_ASSERT(v) ((void)(v))
 #endif
 
+#ifndef __cplusplus
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+#endif
+
 #pragma pack(push)
 #pragma pack(1)
 typedef struct _GUID {
@@ -102,9 +109,12 @@ typedef unsigned int ip_addr_ctx_t;
 #define EPOLL_WRITE_TYPE 2
 #define EPOLL_ACCEPT_TYPE 3
 #define EPOLL_CONNECT_TYPE 4
+#define EPOLL_READ_FROM_TYPE 5
+#define EPOLL_WRITE_TO_TYPE 6
 
 #define SOCKET_ERROR (-1)
 
+#define SOCKET_ADDR_SIZE (sizeof (struct sockaddr_storage))
 
 typedef struct linux_epoll_subscriber_t
 {
@@ -115,6 +125,10 @@ typedef struct linux_epoll_subscriber_t
 	char write_type;
 	const void* write_buffer;
 	size_t left_to_write;
+	uint8_t addr_buffer[SOCKET_ADDR_SIZE];
+	size_t addr_size;
+	uint8_t read_addr_buffer[SOCKET_ADDR_SIZE];
+	size_t read_addr_size;
 } linux_epoll_subscriber;
 
 #define INTERNAL_IO_EVENT_SIZE sizeof(struct linux_epoll_subscriber_t)
@@ -125,6 +139,7 @@ typedef struct linux_epoll_subscriber_t
 #define UDP_BUFFER_SIZE 0x800
 
 #define ACCEPT_BUFFER_SIZE 0x100
+
 
 #define closesocket(a) ::close(a)
 
@@ -153,7 +168,7 @@ typedef int rx_os_error_t;
 #define memzero(S, N) memset((S), 0, (N))
 
 
-#define GET_IP4_ADDR(a) (a.sin_addr.s_addr)
+#define GET_IP4_ADDR(a) (a->sin_addr.s_addr)
 
 
 typedef int rx_socket_t;

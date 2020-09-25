@@ -34,10 +34,10 @@
 
 #ifndef EXCLUDE_TEST_CODE
 
-// rx_io
-#include "lib/rx_io.h"
 // rx_test
 #include "testing/rx_test.h"
+// rx_stream_io
+#include "lib/rx_stream_io.h"
 
 
 
@@ -60,7 +60,7 @@ class tcp_test_client : public rx::io::tcp_client_socket_std_buffer
       ~tcp_test_client();
 
 
-      bool connect_complete ();
+      bool connect_complete (sockaddr_in* addr, sockaddr_in* local_addr);
 
 
   protected:

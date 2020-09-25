@@ -148,12 +148,12 @@ void server_runtime::deinitialize ()
 		calculation_timer_.release();
 }
 
-void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now, threads::job_thread* whose)
+void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, threads::job_thread* whose)
 {
 	if(whose==nullptr)
 		whose = get_executer(rx_thread_context());
 	if (general_timer_)
-		general_timer_->append_job(job,whose,period, now);
+		general_timer_->append_job(job,whose);
 }
 
 rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data)
@@ -185,7 +185,10 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 
 	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
 	if (general_timer_)
-		general_timer_->append_job(dispatcher_timer_, &io_pool_->get_pool(), io_data.io_timer_period);
+	{
+		general_timer_->append_job(dispatcher_timer_, &io_pool_->get_pool());
+		dispatcher_timer_->start(io_data.io_timer_period);
+	}
 
 	return true;
 }
@@ -283,13 +286,13 @@ rx::threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain
 	}
 }
 
-void server_runtime::append_calculation_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_calculation_job (rx::jobs::timer_job_ptr job)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
 	if(calculation_timer_)
-		general_timer_->append_job(job, executer, period, now);
+		general_timer_->append_job(job, executer);
 	if (general_timer_)
-		general_timer_->append_job(job, executer, period, now);
+		general_timer_->append_job(job, executer);
 }
 
 void server_runtime::append_io_job (rx::jobs::job_ptr job)
@@ -297,10 +300,10 @@ void server_runtime::append_io_job (rx::jobs::job_ptr job)
 	io_pool_->get_pool().append(job);
 }
 
-void server_runtime::append_timer_io_job (rx::jobs::timer_job_ptr job, uint32_t period, bool now)
+void server_runtime::append_timer_io_job (rx::jobs::timer_job_ptr job)
 {
 	if (general_timer_)
-		general_timer_->append_job(job, &io_pool_->get_pool(), period, now);
+		general_timer_->append_job(job, &io_pool_->get_pool());
 }
 
 rx_time server_runtime::get_created_time (values::rx_value& val) const
@@ -363,6 +366,19 @@ server_runtime& server_runtime::instance ()
 {
 	static server_runtime g_object;
 	return g_object;
+}
+
+runtime_data_t server_runtime::get_cpu_data ()
+{
+	runtime_data_t ret;
+	ret.has_calculation_timer = calculation_timer_.operator bool();
+	ret.has_unassigned_pool = unassigned_pool_.operator bool();
+	ret.io_pool_size = io_pool_->get_pool_size();
+	if (workers_[0])
+		ret.workers_pool_size = workers_[0]->get_pool_size();
+	else
+		ret.workers_pool_size = 0;
+	return ret;
 }
 
 

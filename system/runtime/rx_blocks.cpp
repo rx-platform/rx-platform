@@ -101,12 +101,12 @@ bool filter_runtime::supports_output () const
 
 }
 
-rx_result filter_runtime::filter_input (rx_value& val)
+rx_result filter_runtime::filter_input (rx_value& val, runtime_process_context* ctx)
 {
     return true;
 }
 
-rx_result filter_runtime::filter_output (rx_simple_value& val)
+rx_result filter_runtime::filter_output (rx_simple_value& val, runtime_process_context* ctx)
 {
     return true;
 }
@@ -289,6 +289,8 @@ rx_result source_runtime::source_value_changed (rx_value&& val)
 
 void source_runtime::source_result_received (rx_result&& result, runtime_transaction_id_t id)
 {
+    if (container_)
+        container_->source_result_pending(std::move(result), id);
 }
 
 rx_result source_runtime::source_write (structure::write_data&& data, runtime_process_context* ctx)

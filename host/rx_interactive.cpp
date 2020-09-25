@@ -43,8 +43,6 @@
 
 #include "api/rx_meta_api.h"
 
-#define SAFE_ANSI_STATUS_ERROR (supports_ansi() ? ANSI_STATUS_ERROR : "ERROR")
-#define SAFE_ANSI_STATUS_OK (supports_ansi() ? ANSI_STATUS_OK : "OK")
 
 //#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
@@ -305,9 +303,11 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 	rx_result ret = setup_console(argc, argv);
 
 	rx_platform::configuration_data_t config;
+	std::cout << "Parsing command line...";
 	ret = parse_command_line(argc, argv, config);
 	if (ret)
 	{
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
 		ret = read_config_file(reader, config);
@@ -384,9 +384,11 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 						std::cout << "\r\n\r\nStartup log entries:\r\n";
 
 						log::log_query_type query;
+						query.count = 20;
 						log::log_events_type events;
 						query.type = log::rx_log_query_type::error_level;
-						rx::log::log_object::instance().read_cache(query, events);
+						//rx::log::log_object::instance().read_log(query, events);
+						//!!!
 
 						hosting::rx_platform_host::dump_log_items(events, std::cout);
 
@@ -458,7 +460,8 @@ bool interactive_console_host::write_stdout (const string_type& lines)
 // Class host::interactive::interactive_console_port 
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
-	: endpoint_(host)
+      : listening_(false)
+	, endpoint_(host)
 {
 }
 
@@ -466,61 +469,44 @@ interactive_console_port::interactive_console_port (interactive_console_host* ho
 
 rx_result interactive_console_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = physical_port::initialize_runtime(ctx);
-	if (result)
-	{
-		result = endpoint_.open([this](size_t count)
-			{
-				update_sent_counters(count);
-			});
-	}
-	return result;
-}
-
-rx_result interactive_console_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-	auto result = physical_port::deinitialize_runtime(ctx);
-	if (result)
-	{
-	}
-	return result;
-}
-
-rx_result interactive_console_port::start_runtime (runtime::runtime_start_context& ctx)
-{
-	auto result = physical_port::start_runtime(ctx);
-	if (result)
-	{
-	}
-	return result;
-}
-
-rx_result interactive_console_port::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-	auto result = physical_port::stop_runtime(ctx);
-	if (result)
-	{
-	}
+	auto result = endpoint_.open([this](size_t count)
+		{
+		});
 	return result;
 }
 
 rx_result interactive_console_port::run_interactive (interactive_console_host* host)
 {
-
 	host->write_stdout(RX_LICENSE_MESSAGE);
 
+	while (!listening_)
+		rx_ms_sleep(50);
+
+	bind_stack_endpoint(&endpoint_.stack_entry_, nullptr, nullptr);
 	auto result = endpoint_.run_interactive([this](size_t count)
 		{
-			update_received_counters(count);
 
-		});
+		});	
 
 	return result;
 }
 
-rx_protocol_stack_entry* interactive_console_port::get_stack_entry ()
+rx_result interactive_console_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-	return &endpoint_;
+	if (listening_)
+	{
+		RX_ASSERT(false);
+		return "Already listening.";
+	}
+	auto result = endpoint_.open([this](int64_t count)
+		{
+
+		});
+	if (!result)
+		return result;
+
+	listening_ = true;
+	return true;
 }
 
 
@@ -530,6 +516,8 @@ interactive_console_endpoint::interactive_console_endpoint (interactive_console_
       : host_(host)
 	, std_out_sender_("Standard Out Writer", RX_DOMAIN_EXTERN)
 {
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.send_function = &interactive_console_endpoint::send_function;
 }
 
 
@@ -555,7 +543,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		{
 			rx_init_const_packet_buffer(&buffer, &in_buffer[0], count);
 			received_func(buffer.size);
-			auto res = rx_move_packet_up(this, &buffer, 0);
+			auto res = rx_move_packet_up(&stack_entry_, rx_create_recv_packet(0, &buffer, 0, 0));
 			if (res != RX_PROTOCOL_OK)
 			{
 				std::ostringstream ss;
@@ -571,19 +559,20 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 	return true;
 }
 
-rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id)
+rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
-	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference);
+	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference->user_data);
 	using job_type = rx::jobs::function_job<rx_reference_ptr, std::vector<uint8_t>&&>;
-	std::vector<uint8_t> captured(buffer->buffer_ptr, buffer->buffer_ptr + buffer->size);
+	std::vector<uint8_t> captured(packet.buffer->buffer_ptr, packet.buffer->buffer_ptr + packet.buffer->size);
+	auto packet_id = packet.id;
 
-	rx::function_to_go<rx_reference_ptr, std::vector<uint8_t>&&> send_func(rx_reference_ptr(), [self](std::vector<uint8_t>&& buffer)
+	rx::function_to_go<rx_reference_ptr, std::vector<uint8_t>&&> send_func(rx_reference_ptr(), [self, packet_id](std::vector<uint8_t>&& buffer)
 		{
 			auto result = self->host_->write_stdout(&buffer[0], buffer.size());
 			if (result)
 			{
 				self->sent_func_(buffer.size());
-				rx_move_result_up(self, RX_PROTOCOL_OK);
+				rx_notify_ack(&self->stack_entry_, packet_id, RX_PROTOCOL_OK);
 			}
 			else
 			{
@@ -606,13 +595,8 @@ void interactive_console_endpoint::close ()
 
 rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_func)
 {
-	rx_protocol_stack_entry* mine_entry = this;
-	rx_init_stack_entry(mine_entry);
-
 	sent_func_ = sent_func;
 	std_out_sender_.start();
-
-	mine_entry->send_function = &interactive_console_endpoint::send_function;
 	return true;
 }
 

@@ -39,6 +39,7 @@
 #include "api/rx_platform_api.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/server/rx_server.h"
+using namespace meta::object_types;
 
 
 namespace rx_platform {
@@ -49,12 +50,7 @@ namespace items {
 
 // Class rx_platform::runtime::items::object_instance_data 
 
-object_instance_data::object_instance_data()
-      : executer_(-1)
-{
-}
-
-object_instance_data::object_instance_data (const object_data& data)
+object_instance_data::object_instance_data (const object_data& data, int rt_behavior)
       : executer_(-1)
     , data_(data)
 {
@@ -92,6 +88,7 @@ rx_result object_instance_data::before_init_runtime (rx_object_ptr what, runtime
     {
 
     }
+    what->get_implementation()->context_ = ctx.context;
     return true;
 }
 
@@ -126,12 +123,7 @@ const security::security_context_ptr& object_instance_data::get_security_context
 
 // Class rx_platform::runtime::items::domain_instance_data 
 
-domain_instance_data::domain_instance_data()
-      : executer_(-1)
-{
-}
-
-domain_instance_data::domain_instance_data (const domain_data& data)
+domain_instance_data::domain_instance_data (const domain_data& data, int rt_behavior)
       : executer_(-1)
     , data_(data)
 {
@@ -194,6 +186,7 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
     {
 
     }
+    what->get_implementation()->context_ = ctx.context;
     return true;
 }
 
@@ -228,12 +221,7 @@ const security::security_context_ptr& domain_instance_data::get_security_context
 
 // Class rx_platform::runtime::items::application_instance_data 
 
-application_instance_data::application_instance_data()
-      : executer_(-1)
-{
-}
-
-application_instance_data::application_instance_data (const application_data& data)
+application_instance_data::application_instance_data (const application_data& data, int rt_behavior)
       : executer_(-1)
     , data_(data)
 {
@@ -241,12 +229,15 @@ application_instance_data::application_instance_data (const application_data& da
 
 
 
-void application_instance_data::get_ports (api::query_result& result)
+void application_instance_data::get_ports (api::query_result& result, bool extern_only)
 {
     result.items.reserve(ports_.size());
     for (const auto& one : ports_)
     {
-        result.items.emplace_back(api::query_result_detail{ rx_port, one.second->meta_info() });
+        if (extern_only 
+            && one.second->get_instance_data().behavior.active_behavior 
+            && one.second->get_instance_data().behavior.active_behavior->is_extern())
+            result.items.emplace_back(api::query_result_detail{ rx_port, one.second->meta_info() });
     }
 }
 
@@ -292,6 +283,7 @@ void application_instance_data::get_domains (api::query_result& result)
 rx_result application_instance_data::before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
+    what->get_implementation()->context_ = ctx.context;
     return true;
 }
 
@@ -330,92 +322,6 @@ const security::security_context_ptr& application_instance_data::get_security_co
 //    executer_ = right.executer_;
 //    identity_ = right.identity_;
 //}
-// Class rx_platform::runtime::items::port_instance_data 
-
-port_instance_data::port_instance_data()
-      : executer_(-1)
-{
-}
-
-port_instance_data::port_instance_data (const port_data& data)
-      : executer_(-1)
-    , data_(data)
-{
-}
-
-
-
-bool port_instance_data::connect_application (rx_application_ptr&& app, rx_port_ptr whose)
-{
-    RX_ASSERT(!my_application_);
-    my_application_ = std::move(app);
-    my_application_->get_instance_data().add_port(whose);
-    return true;
-}
-
-bool port_instance_data::disconnect_application (rx_port_ptr whose)
-{
-    if (my_application_)
-    {
-        auto temp = my_application_;
-        my_application_ = rx_application_ptr::null_ptr;
-        temp->get_instance_data().remove_port(whose);
-    }
-    return true;
-}
-
-rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
-{
-    RX_ASSERT(what->get_instance_data().my_application_);
-    if (what->get_instance_data().my_application_)
-    {
-        what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
-        auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path(), what->get_instance_data().data_.identity);
-        // for port we have to have executer cached value
-        auto rt_ptr = what->get_implementation();
-        RX_ASSERT(rt_ptr);
-        if (rt_ptr)
-        {
-            rt_ptr->executer_ = what->get_instance_data().executer_;
-            if(what->get_instance_data().identity_.get_context())
-                rt_ptr->identity_ = what->get_instance_data().identity_.get_context()->get_handle();
-        }
-    }
-    else
-    {
-
-    }
-    return true;
-}
-
-rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
-{
-    return true;
-}
-
-rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
-{
-    what->get_instance_data().identity_.destory_context();
-    return true;
-}
-
-rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
-{
-    return true;
-}
-
-const security::security_context_ptr& port_instance_data::get_security_context () const
-{
-    return identity_.get_context();
-}
-
-
-const rx_application_ptr port_instance_data::get_my_application () const
-{
-  return my_application_;
-}
-
-
 } // namespace items
 } // namespace runtime
 } // namespace rx_platform

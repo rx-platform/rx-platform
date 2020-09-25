@@ -35,8 +35,8 @@
 
 
 
-rx_protocol_result_t opcua_parse_open_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
-rx_protocol_result_t opcua_parse_close_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint* reference, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+rx_protocol_result_t opcua_parse_close_message(struct rx_protocol_stack_endpoint* reference, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
 
 
 

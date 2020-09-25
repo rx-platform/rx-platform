@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -209,7 +209,7 @@ void call_with(F f, Tuple&& t)
 
 
 template <typename T, typename conceptT>
-class type_less_box
+class type_less_box 
 {
 
   public:
@@ -228,7 +228,7 @@ class type_less_box
 
 
 
-class content_concept
+class content_concept 
 {
 
   public:
@@ -245,7 +245,7 @@ class content_concept
 
 
 
-struct type_less_concept
+struct type_less_concept 
 {
 
       virtual ~type_less_concept() = 0;
@@ -260,7 +260,7 @@ struct type_less_concept
 };
 
 
-// Parameterized Class rx::type_less_box
+// Parameterized Class rx::type_less_box 
 
 template <typename T, typename conceptT>
 type_less_box<T,conceptT>::type_less_box (const T& whose)
@@ -269,7 +269,7 @@ type_less_box<T,conceptT>::type_less_box (const T& whose)
 
 
 
-// Class rx::content_concept
+// Class rx::content_concept 
 
 
 } // namespace rx

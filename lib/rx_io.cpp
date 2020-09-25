@@ -39,7 +39,7 @@
 namespace rx {
 
 namespace io {
-int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr, size_t size)
+int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
 	int ret = whose->_internal_accept_callback(handle, (sockaddr_in*)addr, (sockaddr_in*)local_addr, status);
@@ -61,6 +61,13 @@ int dispatcher_read_callback(void* data, uint32_t status, size_t size)
 	whose->release();
 	return ret;
 }
+int dispatcher_read_from_callback(void* data, uint32_t status, size_t size, struct sockaddr* addr, size_t addrsize)
+{
+	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
+	int ret = whose->_internal_read_from_callback(size, status, addr, addrsize);
+	whose->release();
+	return ret;
+}
 int dispatcher_write_callback(void* data, uint32_t status)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
@@ -68,10 +75,10 @@ int dispatcher_write_callback(void* data, uint32_t status)
 	whose->release();
 	return ret;
 }
-int dispatcher_connect_callback(void* data, uint32_t status)
+int dispatcher_connect_callback(void* data, uint32_t status, struct sockaddr* addr, struct sockaddr* local_addr)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
-	int ret = whose->_internal_connect_callback(status);
+	int ret = whose->_internal_connect_callback((sockaddr_in*)addr, (sockaddr_in*)local_addr, status);
 	whose->release();
 	return ret;
 }
@@ -92,6 +99,7 @@ dispatcher_subscriber::dispatcher_subscriber (rx_security_handle_t identity)
 	memzero(&dispatcher_data_, sizeof(dispatcher_data_));
 
 	dispatcher_data_.read_callback = dispatcher_read_callback;
+	dispatcher_data_.read_from_callback = dispatcher_read_from_callback;
 	dispatcher_data_.write_callback = dispatcher_write_callback;
 	dispatcher_data_.connect_callback = dispatcher_connect_callback;
 	dispatcher_data_.accept_callback = dispatcher_accept_callback;
@@ -199,14 +207,14 @@ int dispatcher_subscriber::_internal_accept_callback (sys_handle_t handle, socka
 	return internal_accept_callback(handle, addr, local_addr, status);
 }
 
-int dispatcher_subscriber::internal_connect_callback (uint32_t status)
+int dispatcher_subscriber::internal_connect_callback (sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
 	return 0;
 }
 
-int dispatcher_subscriber::_internal_connect_callback (uint32_t status)
+int dispatcher_subscriber::_internal_connect_callback (sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
 {
-	return internal_connect_callback(status);
+	return internal_connect_callback(addr, local_addr, status);
 }
 
 void dispatcher_subscriber::set_identity (rx_security_handle_t identity)
@@ -214,8 +222,17 @@ void dispatcher_subscriber::set_identity (rx_security_handle_t identity)
 	identity_ = identity;
 }
 
+int dispatcher_subscriber::internal_read_from_callback (size_t count, uint32_t status, struct sockaddr* addr, size_t addrsize)
+{
+	return 0;
+}
+
+int dispatcher_subscriber::_internal_read_from_callback (size_t count, uint32_t status, struct sockaddr* addr, size_t addrsize)
+{
+	return internal_read_from_callback(count, status, addr, addrsize);
+}
+
 
 } // namespace io
 } // namespace rx
-
 

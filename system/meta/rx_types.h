@@ -33,10 +33,6 @@
 
 
 
-// rx_meta_algorithm
-#include "system/meta/rx_meta_algorithm.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
@@ -50,9 +46,13 @@ using rx_platform::meta::construct_context;
 namespace rx_platform {
 
 namespace meta {
+namespace meta_algorithm
+{
+template<class typeT>
+class basic_types_algorithm;
+}
 
 namespace basic_types {
-
 
 
 
@@ -67,33 +67,11 @@ public:
 	typedef runtime::structure::event_data RDataType;
 	typedef runtime::blocks::event_runtime RType;
 	typedef runtime::event_runtime_ptr RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<event_type> algorithm_type;
 
   public:
-      event_type();
-
-      event_type (const type_creation_data& data);
-
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      bool check_type (type_check_context& ctx);
 
       platform_item_ptr get_item_ptr () const;
-
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const meta_data& meta_info () const;
 
 
       static rx_item_type get_type_id ()
@@ -101,6 +79,11 @@ public:
         return type_id;
       }
 
+
+
+      def_blocks::complex_data_type complex_data;
+
+      meta_data meta_info;
 
 
       static rx_item_type type_id;
@@ -111,13 +94,7 @@ public:
   private:
 
 
-      def_blocks::complex_data_type complex_data_;
-
-      meta_data meta_info_;
-
-
 };
-
 
 
 
@@ -133,33 +110,11 @@ public:
 	typedef runtime::structure::filter_data RDataType;
 	typedef runtime::blocks::filter_runtime RType;
 	typedef runtime::filter_runtime_ptr RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<filter_type> algorithm_type;
 
   public:
-      filter_type();
-
-      filter_type (const type_creation_data& data);
-
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      bool check_type (type_check_context& ctx);
 
       platform_item_ptr get_item_ptr () const;
-
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const meta_data& meta_info () const;
 
 
       static rx_item_type get_type_id ()
@@ -167,6 +122,11 @@ public:
         return type_id;
       }
 
+
+
+      def_blocks::complex_data_type complex_data;
+
+      meta_data meta_info;
 
 
       static rx_item_type type_id;
@@ -177,13 +137,7 @@ public:
   private:
 
 
-      def_blocks::complex_data_type complex_data_;
-
-      meta_data meta_info_;
-
-
 };
-
 
 
 
@@ -199,40 +153,16 @@ public:
 	typedef runtime::structure::mapper_data RDataType;
 	typedef runtime::blocks::mapper_runtime RType;
 	typedef rx_reference<RType> RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<mapper_type> algorithm_type;
 
   public:
-      mapper_type();
-
-      mapper_type (const type_creation_data& data);
-
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      bool check_type (type_check_context& ctx);
 
       platform_item_ptr get_item_ptr () const;
 
 
-      const meta_data& meta_info () const;
+      meta_data meta_info;
 
-      const def_blocks::complex_data_type& complex_data () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
+      def_blocks::complex_data_type complex_data;
 
 
       static rx_item_type type_id;
@@ -243,13 +173,7 @@ public:
   private:
 
 
-      meta_data meta_info_;
-
-      def_blocks::complex_data_type complex_data_;
-
-
 };
-
 
 
 
@@ -265,33 +189,11 @@ public:
 	typedef runtime::structure::source_data RDataType;
 	typedef runtime::blocks::source_runtime RType;
 	typedef runtime::source_runtime_ptr RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<source_type> algorithm_type;
 
   public:
-      source_type();
-
-      source_type (const type_creation_data& data);
-
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      bool check_type (type_check_context& ctx);
 
       platform_item_ptr get_item_ptr () const;
-
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const meta_data& meta_info () const;
 
 
       static rx_item_type get_type_id ()
@@ -299,6 +201,11 @@ public:
         return type_id;
       }
 
+
+
+      def_blocks::complex_data_type complex_data;
+
+      meta_data meta_info;
 
 
       static rx_item_type type_id;
@@ -309,13 +216,7 @@ public:
   private:
 
 
-      def_blocks::complex_data_type complex_data_;
-
-      meta_data meta_info_;
-
-
 };
-
 
 
 
@@ -331,37 +232,11 @@ public:
 	typedef runtime::structure::struct_data RDataType;
 	typedef runtime::blocks::struct_runtime RType;
 	typedef runtime::struct_runtime_ptr RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<struct_type> algorithm_type;
 
   public:
-      struct_type();
-
-      struct_type (const type_creation_data& data);
-
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      def_blocks::mapped_data_type& mapping_data ();
-
-      bool check_type (type_check_context& ctx);
 
       platform_item_ptr get_item_ptr () const;
-
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-      const meta_data& meta_info () const;
 
 
       static rx_item_type get_type_id ()
@@ -369,6 +244,13 @@ public:
         return type_id;
       }
 
+
+
+      def_blocks::complex_data_type complex_data;
+
+      def_blocks::mapped_data_type mapping_data;
+
+      meta_data meta_info;
 
 
       static rx_item_type type_id;
@@ -379,15 +261,7 @@ public:
   private:
 
 
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-      meta_data meta_info_;
-
-
 };
-
 
 
 
@@ -403,43 +277,13 @@ public:
 	typedef runtime::structure::variable_data RDataType;
 	typedef runtime::blocks::variable_runtime RType;
 	typedef runtime::variable_runtime_ptr RTypePtr;
-	template<class typeT>
-	friend class meta_algorithm::basic_types_algorithm;
+    typedef meta_algorithm::basic_types_algorithm<variable_type> algorithm_type;
 
   public:
-      variable_type();
-
-      variable_type (const type_creation_data& data);
-
-
-      rx_result construct (RTypePtr& what, construct_context& ctx) const;
-
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
 
       rx_value get_value () const;
 
-      meta_data& meta_info ();
-
-      def_blocks::complex_data_type& complex_data ();
-
-      def_blocks::mapped_data_type& mapping_data ();
-
-      def_blocks::variable_data_type& variable_data ();
-
-      bool check_type (type_check_context& ctx);
-
       platform_item_ptr get_item_ptr () const;
-
-
-      const meta_data& meta_info () const;
-
-      const def_blocks::variable_data_type& variable_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
 
 
       static rx_item_type get_type_id ()
@@ -449,21 +293,21 @@ public:
 
 
 
+      meta_data meta_info;
+
+      def_blocks::variable_data_type variable_data;
+
+      def_blocks::mapped_data_type mapping_data;
+
+      def_blocks::complex_data_type complex_data;
+
+
       static rx_item_type type_id;
 
 
   protected:
 
   private:
-
-
-      meta_data meta_info_;
-
-      def_blocks::variable_data_type variable_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-      def_blocks::complex_data_type complex_data_;
 
 
 };

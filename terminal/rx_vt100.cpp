@@ -45,19 +45,18 @@ namespace term_transport {
 
 // Class rx_internal::terminal::term_transport::vt100_transport 
 
-vt100_transport::vt100_transport (bool to_echo)
+vt100_transport::vt100_transport (runtime::items::port_runtime* port, bool to_echo)
       : state_(parser_normal),
         current_idx_(string_type::npos),
         password_mode_(false),
         history_it_(history_.begin()),
         had_first_(false),
         opened_brackets_(0),
-        send_echo_(to_echo)
+        send_echo_(to_echo),
+        port_(port)
 {
-	rx_protocol_stack_entry* mine_entry = this;
-
-	rx_init_stack_entry(mine_entry);
-	mine_entry->received_function = &vt100_transport::received_function;
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &vt100_transport::received_function;
 }
 
 
@@ -326,12 +325,13 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
-rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
+rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference);
+	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference->user_data);
 	string_type to_echo;
 	string_array lines;
 	size_t i = 0;
+	auto buffer = packet.buffer;
 
 	for (; i < buffer->size; i++)
 	{
@@ -346,9 +346,14 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
 		auto temp = send_buffer.write_chars(to_echo);
 		if (!temp)
+		{
 			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+		}
 		else
-			result = rx_move_packet_down(reference, &send_buffer, packet_id);
+		{
+			send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer, 0, 0);
+			result = rx_move_packet_down(reference, down);
+		}
 		if (result == RX_PROTOCOL_OK)
 			send_buffer.detach(nullptr);
 	}
@@ -358,7 +363,9 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 		{
 			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
 			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
-			result = rx_move_packet_up(reference, &up_buffer, 0);
+
+			recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
+			result = rx_move_packet_up(reference, packet);
 			if (result != RX_PROTOCOL_OK)
 				break;
 		}
@@ -366,11 +373,11 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_entry
 	return result;
 }
 
-rx_protocol_stack_entry* vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_endpoint* vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
 	sent_func_ = sent_func;
 	received_func_ = received_func;
-	return this;
+	return &stack_entry_;
 }
 
 void vt100_transport::set_echo (bool val)
@@ -380,10 +387,11 @@ void vt100_transport::set_echo (bool val)
 
 // Class rx_internal::terminal::term_transport::vt100_transport_port 
 
-vt100_transport_port::vt100_transport_port()
-{
-}
 
+std::unique_ptr<vt100_transport> vt100_transport_port::construct_endpoint ()
+{
+	return std::make_unique<vt100_transport>(this);
+}
 
 
 } // namespace term_transport

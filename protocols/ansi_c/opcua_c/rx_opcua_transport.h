@@ -34,7 +34,7 @@
 
 #define RX_OPCUA_MAX_VERSION 0
 #define RX_OPCUA_MIN_BUFFER 8192
-#include "protocols/ansi_c/common_c/rx_transport_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 
 #ifdef __cplusplus
@@ -132,8 +132,7 @@ enum opcua_transport_state
 // definition of transport struct
 typedef struct opcua_transport_protocol_def
 {
-	// protocol stack data
-	struct rx_protocol_stack_entry protocol_stack_entry;
+	struct rx_protocol_stack_endpoint stack_entry;
 	// settings
 	int supports_pipe;
 	int server_side;
@@ -166,9 +165,9 @@ rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type
 	, size_t queue_size);
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
 
-rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type id);
-rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_entry* reference, rx_protocol_result_t result);
-rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_endpoint* reference, rx_packet_id_type id, rx_protocol_result_t result);
+rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 
 
 

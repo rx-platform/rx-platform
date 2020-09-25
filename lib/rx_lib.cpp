@@ -38,6 +38,7 @@
 #include "version/rx_version.h"
 #include "lib/rx_ser_lib.h"
 #include "lib/rx_values.h"
+#include "lib/rx_job.h"
 
 
 #define MS_IN_DAY (1000*60*60*24)

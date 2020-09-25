@@ -31,6 +31,8 @@
 #include "pch.h"
 
 
+// rx_console
+#include "terminal/rx_console.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 
@@ -153,6 +155,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::del_command>());
 	register_command(rx_create_reference<model::meta_commands::rm_command>());
 	register_command(rx_create_reference<model::meta_commands::create_command>());
+	register_command(rx_create_reference<model::meta_commands::update_command>());
 	register_command(rx_create_reference<model::meta_commands::prototype_command>());
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 	register_command(rx_create_reference<model::meta_commands::check_command>());
@@ -372,7 +375,7 @@ string_type server_command::get_help () const
 	return ss.str();
 }
 
-void server_command::dump_error_result (std::ostream& err, const rx_result& result) const
+void server_command::dump_error_result (std::ostream& err, const rx_result& result)
 {
 	for (const auto& one : result.errors())
 		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";

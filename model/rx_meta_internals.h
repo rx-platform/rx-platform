@@ -342,6 +342,7 @@ public:
 	typedef rx_result_with<Tptr> TdefRes;
     typedef typename typeT::RImplType RImplType;
     typedef typename typeT::RImplPtr RImplPtr;
+    typedef typename typeT::runtime_behavior_t RBeh;
 
 	enum class runtime_state
 	{
@@ -360,6 +361,7 @@ public:
 	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> > constructors_type;
+    typedef typename std::map<rx_node_id, std::function<RBeh()> > behaviors_type;
 
   public:
       types_repository();
@@ -372,6 +374,8 @@ public:
       rx_result register_constructor (const rx_node_id& id, std::function<RImplPtr()> f);
 
       rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> f);
+
+      rx_result register_behavior (const rx_node_id& id, std::function<RBeh()> f);
 
       rx_result_with<create_runtime_result<typeT> > create_runtime (typename typeT::instance_data_t&& instance_data, bool prototype = false);
 
@@ -413,6 +417,8 @@ public:
       registered_types_type registered_types_;
 
       constructors_type constructors_;
+
+      behaviors_type behaviors_;
 
 	  std::function<RImplPtr()> default_constructor_;
 };

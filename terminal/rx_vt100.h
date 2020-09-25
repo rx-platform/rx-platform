@@ -33,8 +33,8 @@
 
 
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
 
@@ -50,7 +50,7 @@ namespace term_transport {
 
 
 
-class vt100_transport : public rx_protocol_stack_entry  
+class vt100_transport 
 {
   public:
 	vt100_transport(const vt100_transport &right) = delete;
@@ -69,14 +69,14 @@ class vt100_transport : public rx_protocol_stack_entry
 	typedef std::list<string_type> history_type;
 
   public:
-      vt100_transport (bool to_echo = true);
+      vt100_transport (runtime::items::port_runtime* port, bool to_echo = true);
 
 
       bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
 
       void add_to_history (const string_type& line);
 
-      rx_protocol_stack_entry* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
       void set_echo (bool val);
 
@@ -84,6 +84,12 @@ class vt100_transport : public rx_protocol_stack_entry
       void set_password_mode (bool value)
       {
         password_mode_ = value;
+      }
+
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
       }
 
 
@@ -110,8 +116,11 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool move_history_down (string_type& to_echo);
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 
+
+
+      rx_protocol_stack_endpoint stack_entry_;
 
 
       parser_state state_;
@@ -136,6 +145,8 @@ class vt100_transport : public rx_protocol_stack_entry
 
       bool send_echo_;
 
+      runtime::items::port_runtime* port_;
+
 
 };
 
@@ -145,27 +156,29 @@ class vt100_transport : public rx_protocol_stack_entry
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport  > vt100_std_transport;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport  > vt100_port_base;
 
 
 
 
 
 
-class vt100_transport_port : public vt100_std_transport  
+class vt100_transport_port : public vt100_port_base  
 {
 	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 VT100 terminal. implementation of VT100 transport protocol port.");
 
 	DECLARE_REFERENCE_PTR(vt100_transport_port);
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<vt100_transport> > active_endpoints_type;
 
   public:
-      vt100_transport_port();
-
 
   protected:
 
   private:
+
+      std::unique_ptr<vt100_transport> construct_endpoint ();
+
 
 
 };

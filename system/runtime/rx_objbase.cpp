@@ -37,6 +37,10 @@
 #include "rx_configuration.h"
 #include "rx_runtime_instance.h"
 #include "sys_internal/rx_inf.h"
+#include "rx_runtime_holder.h"
+#include "rx_port_stack_construction.h"
+#include "rx_port_stack_passive.h"
+#include "rx_port_stack_active.h"
 
 
 namespace rx_platform {
@@ -131,7 +135,6 @@ application_runtime::~application_runtime()
 
 rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
 {
-    context_ = ctx.context;
     return true;
 }
 
@@ -175,7 +178,6 @@ domain_runtime::~domain_runtime()
 
 rx_result domain_runtime::initialize_runtime (runtime_init_context& ctx)
 {
-    context_ = ctx.context;
 	return true;
 }
 
@@ -220,19 +222,7 @@ port_runtime::~port_runtime()
 
 
 
-rx_protocol_stack_entry* port_runtime::create_stack_entry ()
-{
-	RX_ASSERT(false);
-	return nullptr;
-}
-
 rx_result port_runtime::initialize_runtime (runtime_init_context& ctx)
-{
-    context_ = ctx.context;
-	return true;
-}
-
-rx_result port_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
 {
 	return true;
 }
@@ -242,24 +232,72 @@ rx_result port_runtime::start_runtime (runtime_start_context& ctx)
 	return true;
 }
 
+rx_result port_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
+{
+	return true;
+}
+
 rx_result port_runtime::stop_runtime (runtime_stop_context& ctx)
 {
-	return true; 
+	return true;
 }
 
-rx_result port_runtime::push (rx_port_impl_ptr who, const meta::meta_data& info)
+void port_runtime::stack_assembled ()
 {
-    return RX_NOT_IMPLEMENTED;
 }
 
-const protocol_address* port_runtime::get_address () const
+void port_runtime::stack_disassembled ()
 {
-    return nullptr;
+}
+
+rx_result port_runtime::listen (const protocol_address* local_address, const protocol_address* remote_address)
+{
+	return io_types::passive_builder::send_listen(runtime_, local_address, remote_address);
+}
+
+rx_result port_runtime::connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+{
+	return io_types::passive_builder::send_connect(runtime_, local_address, remote_address);
+}
+
+rx_result port_runtime::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
+{
+    return RX_NOT_SUPPORTED;
+}
+
+rx_result port_runtime::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+rx_protocol_stack_endpoint* port_runtime::create_endpoint ()
+{
+	RX_ASSERT(false);
+	return nullptr;
+}
+
+rx_result port_runtime::bind_stack_endpoint (rx_protocol_stack_endpoint* what, const protocol_address* local_address, const protocol_address* remote_address)
+{
+	return io_types::active_builder::bind_stack_endpoint(runtime_, what, local_address, remote_address);
+}
+
+void port_runtime::remove_endpoint (rx_protocol_stack_endpoint* what)
+{
 }
 
 threads::job_thread* port_runtime::get_jobs_queue ()
 {
     return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
+
+void port_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
+}
+
+threads::job_thread* port_runtime::get_io_queue ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_META);
 }
 
 

@@ -211,6 +211,8 @@ class runtime_item_resolver : public runtime_subscriber
 
       rx_item_reference runtime_reference_;
 
+      rx_node_id resolved_id_;
+
 
 };
 

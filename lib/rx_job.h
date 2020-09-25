@@ -40,6 +40,8 @@
 // rx_func_to_go
 #include "lib/rx_func_to_go.h"
 
+
+
 #include "lib/rx_templates.h"
 
 
@@ -70,6 +72,7 @@ const rx_complexity_t rx_default_complextiy = 0x10000;
 
 typedef int job_value_factor_t;
 const job_value_factor_t rx_default_value_factor = 0x10000;
+
 
 //	basic job class
 
@@ -151,6 +154,7 @@ class job : private pointers::reference_object
 
 
 
+
 class timer_job : public job  
 {
 	DECLARE_REFERENCE_PTR(timer_job);
@@ -159,7 +163,7 @@ class timer_job : public job
       timer_job();
 
 
-      virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove) = 0;
+      virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove) = 0;
 
       void set_executer (threads::job_thread* executer);
 
@@ -170,12 +174,19 @@ class timer_job : public job
       static constexpr uint64_t max_sleep_period = 200;
   protected:
 
+      rx_timer_ticks_t get_random_time_offset ();
+
+      void wake_timer ();
+
+
       threads::job_thread *executer_;
 
 
       rx_timer_ticks_t next_;
 
       rx_timer_ticks_t period_;
+
+      bool suspended_;
 
 
   private:
@@ -203,7 +214,9 @@ class post_period_job : public timer_job
       post_period_job();
 
 
-      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
+      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove);
+
+      void start (uint32_t period);
 
 
   protected:
@@ -226,7 +239,11 @@ class periodic_job : public timer_job
       periodic_job();
 
 
-      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, bool& remove);
+      rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove);
+
+      void start (uint32_t period, bool now = false);
+
+      void suspend ();
 
 
   protected:
@@ -394,14 +411,19 @@ class function_job : public job
 
 
 template<typename refT, typename funcT, typename... Args>
+job_ptr rx_create_func_job(refT&& ref, funcT&& f, Args&&... args)
+{
+    return rx_create_job< refT, funcT, Args...>()(std::move(ref), std::move(f), std::forward<Args>(args)...);
+}
+template<typename refT, typename funcT, typename... Args>
 struct rx_create_job
 {
     job_ptr operator()(refT&& ref, funcT&& f, Args&&... args)
     {
         using wrapped_type = function_to_go<refT, Args...>;
         auto wrapped = wrapped_type();
-        wrapped.set_arguments(std::forward<Args>(args)...);
         wrapped.function = std::forward<funcT>(f);
+        wrapped.set_arguments(std::forward<Args>(args)...);
         auto job = rx_create_reference<function_job<refT, Args...> >(std::move(wrapped));
         return job;
     }
@@ -460,6 +482,11 @@ public:
 } // namespace jobs
 } // namespace rx
 
+namespace rx
+{
+typedef jobs::periodic_job::smart_ptr rx_timer_ptr;
+typedef jobs::post_period_job::smart_ptr rx_monostabile_ptr;
+}
 
 
 #endif

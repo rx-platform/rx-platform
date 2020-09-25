@@ -34,6 +34,7 @@
 // rx_ns_commands
 #include "sys_internal/rx_ns_commands.h"
 
+#include "terminal/rx_console.h"
 
 
 namespace rx_internal {

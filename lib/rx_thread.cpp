@@ -295,11 +295,16 @@ uint32_t dispatcher_thread::handler ()
 
 // Class rx::threads::timer 
 
+rx_timer_ticks_t timer::soft_randoms_[RX_OFFSET_TIMES_SIZE];
+
 timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : wake_up_(false),
-        should_exit_(false)
+        should_exit_(false),
+        soft_random_index_(0),
+        medium_random_index_(0)
 	, thread(name, rx_thread_id)
 {
+	init_random_sequences();
 }
 
 
@@ -319,17 +324,17 @@ uint32_t timer::handler ()
 		uint64_t min = 0ull - 1ull;
 
 		auto it = jobs_.begin();
+		rx_timer_ticks_t tick = rx_get_us_ticks();
 		while (it != jobs_.end())
 		{
 			bool remove = false;
 			timer_job_ptr one = *it;
-			rx_timer_ticks_t tick = rx_get_us_ticks();
 			if (!one->is_canceled())
 			{
-				rx_timer_ticks_t temp = one->tick(tick,remove);
+				rx_timer_ticks_t temp = one->tick(tick, get_random_time_offset(*one), remove);
 				if (!remove)
 				{
-					if (temp < min)
+					if(temp && temp < min)
 						min = temp;
 					it++;
 				}
@@ -371,23 +376,52 @@ void timer::wake_up ()
 	wake_up_.set();
 }
 
-void timer::append_job (timer_job_ptr job, job_thread* executer, uint32_t period, bool now)
+void timer::append_job (timer_job_ptr job, job_thread* executer)
 {
 
 	job->lock();
 	job->my_timer_ = this;
 	job->executer_ = executer;
-	job->period_ = period*1000;
-	job->next_ = (now ? rx_get_us_ticks() : rx_get_us_ticks() + job->period_);
 	job->unlock();
 
 
 	lock_.lock();
-
 	jobs_.emplace(job);
-	wake_up();
-
 	lock_.unlock();
+
+	wake_up();
+}
+
+void timer::init_random_sequences ()
+{
+	srand(rx_get_tick_count());
+	for (auto i = 0; i < RX_OFFSET_TIMES_SIZE; i++)
+	{
+		medium_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_medium_time_offset);
+		soft_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_soft_time_offset);
+	}
+}
+
+rx_timer_ticks_t timer::get_random_time_offset (job& whose)
+{
+	switch (whose.get_criticalness())
+	{
+	case rx_criticalness::hard:
+		return 0;
+	case rx_criticalness::medium:
+		medium_random_index_++;
+		if (medium_random_index_ >= RX_OFFSET_TIMES_SIZE)
+			medium_random_index_ = 0;
+		return medium_randoms_[medium_random_index_];
+	case rx_criticalness::soft:
+		soft_random_index_++;
+		if (soft_random_index_ >= RX_OFFSET_TIMES_SIZE)
+			soft_random_index_ = 0;
+		return soft_randoms_[soft_random_index_];
+	default:
+		RX_ASSERT(false);
+		return 0;
+	}
 }
 
 

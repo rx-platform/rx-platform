@@ -43,7 +43,8 @@ namespace win32 {
 // Class win32::win32_pipe_host 
 
 win32_pipe_host::win32_pipe_host (hosting::rx_host_storages& storage)
-	: rx_pipe_host(storage)
+      : supports_ansi_(false)
+	, rx_pipe_host(storage)
 {
 }
 
@@ -92,6 +93,33 @@ void win32_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sy
 string_type win32_pipe_host::get_full_path (const string_type& path)
 {
     return get_full_path_from_relative(path);
+}
+
+bool win32_pipe_host::supports_ansi () const
+{
+	return supports_ansi_;
+}
+
+rx_result win32_pipe_host::setup_console (int argc, char* argv[])
+{
+	auto out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	DWORD in_mode = 0;
+	DWORD out_mode = 0;
+	GetConsoleMode(out_handle, &out_mode);
+
+	std::bitset<32> out_bits(out_mode);
+
+	out_bits.set(2);
+	out_bits.set(0);
+	//out_bits.reset(3);
+
+	SetConsoleMode(out_handle, out_bits.to_ulong());
+
+	if (GetConsoleMode(out_handle, &out_mode) && (ENABLE_VIRTUAL_TERMINAL_PROCESSING & out_mode))
+		supports_ansi_ = true;
+
+	return true;
 }
 
 

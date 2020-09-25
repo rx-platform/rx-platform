@@ -40,7 +40,7 @@ const size_t opcua_hello_min_size = sizeof(opcua_transport_header) + sizeof(opcu
 const size_t opcua_hello_max_size = sizeof(opcua_transport_header) + sizeof(opcua_hello_message) + 4096;
 
 
-rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
+rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
 {
 	rx_protocol_result_t result;
 	opcua_hello_message* message;
@@ -68,7 +68,7 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 	transport->connection_data.max_chunk_count = message->max_chunk_count;
 
 	// allocate the response
-	result = rx_init_packet_buffer(&response, 0x1000, transport->protocol_stack_entry.downward);
+	result = rx_init_packet_buffer(&response, 0x1000, stack->downward);
 	if (result != RX_PROTOCOL_OK)
 		return result;
 	// fill the response header
@@ -93,7 +93,10 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 
 	response_header->message_size = (uint32_t)rx_get_packet_usable_data(&response);
 
-	result = rx_move_packet_down(&transport->protocol_stack_entry, &response, id);
+
+	send_protocol_packet pack = rx_create_send_packet(id, &response, 0, 0);
+
+	result = rx_move_packet_down(stack, pack);
 	if (result == RX_PROTOCOL_OK)
 	{
 		if (transport->supports_pipe)
@@ -103,11 +106,11 @@ rx_protocol_result_t opcua_parse_hello_message(opcua_transport_protocol_type* tr
 	}
 	return result;
 }
-rx_protocol_result_t opcua_parse_reverse_hello_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
+rx_protocol_result_t opcua_parse_reverse_hello_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
-rx_protocol_result_t opcua_parse_ack_message(opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
+rx_protocol_result_t opcua_parse_ack_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }

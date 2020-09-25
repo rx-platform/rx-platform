@@ -47,10 +47,10 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace rx_platform {
 namespace prog {
@@ -158,9 +158,11 @@ class rx_gate
 
       bool shutdown (const string_type& msg);
 
-      bool read_log (const log::log_query_type& query, log::log_events_type& result);
+      bool read_log (const string_type& log, const log::log_query_type& query, std::function<void(rx_result_with<log::log_events_type>&&)> callback);
 
       bool do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
+
+      runtime_data_t get_cpu_data ();
 
 
       hosting::rx_platform_host * get_host ()

@@ -200,7 +200,6 @@ bool extern_mapper_impl<portT>::internal_port_connected (rx_port_impl_ptr port, 
     auto result = rx_platform::get_runtime_instance<portT>(id);
     if (result)
     {
-        RUNTIME_LOG_DEBUG("extern_mapper_impl", 100, "Resolved port reference");
         his_executer_ = port->get_executer();
         my_port_ = result.value();
         this->port_connected(my_port_);

@@ -38,8 +38,6 @@
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_meta_support
-#include "system/meta/rx_meta_support.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
@@ -47,24 +45,20 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-namespace rx_platform {
-namespace meta {
-namespace meta_algorithm {
-template <class typeT> class object_types_algorithm;
-
-} // namespace meta_algorithm
-} // namespace meta
-} // namespace rx_platform
-
-
-#include "system/runtime//rx_rt_struct.h"
-#include "system/runtime/rx_objbase.h"
+#include "system/runtime/rx_rt_struct.h"
 using rx_platform::meta::construct_context;
+using namespace rx_platform::meta::def_blocks;
 
 
 namespace rx_platform {
 
 namespace meta {
+namespace meta_algorithm
+{
+class relation_type_algorithm;
+template<class typeT>
+class object_types_algorithm;
+}
 
 namespace object_types {
 
@@ -74,33 +68,14 @@ namespace object_types {
 
 class relation_attribute 
 {
-  public:
-	relation_attribute(const relation_attribute& right) = default;
-	relation_attribute(relation_attribute&& right) = default;
-	relation_attribute() = default;
-	~relation_attribute() = default;
 
   public:
-      relation_attribute (const string_type& name, const rx_node_id& id, const rx_item_reference& target);
 
+      string_type name;
 
-      const string_type& get_name () const
-      {
-        return name_;
-      }
+      rx_item_reference relation_type;
 
-
-      rx_item_reference get_relation_type () const
-      {
-        return relation_type_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
+      rx_item_reference target;
 
 
   protected:
@@ -108,14 +83,6 @@ class relation_attribute
   private:
 
 
-      string_type name_;
-
-      rx_item_reference relation_type_;
-
-      rx_item_reference target_;
-
-
-    friend class meta_algorithm::relation_blocks_algorithm;
 };
 
 
@@ -167,16 +134,17 @@ class object_data_type
 
       bool check_type (type_check_context& ctx);
 
-      rx_result register_relation (const string_type& name, const rx_node_id& id, const rx_node_id& target_id, complex_data_type& complex_data);
-
-      rx_result register_relation (const string_type& name, const rx_node_id& id, const rx_item_reference& target, complex_data_type& complex_data);
+      rx_result register_relation (const relation_attribute& what, complex_data_type& complex_data);
 
 
-      const bool is_constructable () const
+      const relations_type& get_relations () const
       {
-        return constructable_;
+        return relations_;
       }
 
+
+
+      bool is_constructable;
 
 
   protected:
@@ -189,11 +157,7 @@ class object_data_type
       relations_type relations_;
 
 
-      bool constructable_;
-
-
 };
-
 
 
 
@@ -213,50 +177,21 @@ public:
     typedef rx_reference<RImplType> RImplPtr;
 	typedef typename runtime_data::application_runtime_data instance_data_t;
     typedef typename runtime::items::application_instance_data runtime_data_t;
-	template<class typeT>
-	friend class meta_algorithm::object_types_algorithm;
+    typedef int runtime_behavior_t;
+    typedef meta_algorithm::object_types_algorithm<application_type> algorithm_type;
 
   public:
-      application_type();
-
-      application_type (const object_type_creation_data& data);
-
-      ~application_type();
-
-
-      rx_result construct (rx_application_ptr& what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr () const;
 
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+      object_data_type object_data;
 
-      meta_data& meta_info ();
+      meta_data meta_info;
 
-      def_blocks::complex_data_type& complex_data ();
+      def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type& mapping_data ();
-
-      bool check_type (type_check_context& ctx);
-
-      object_data_type& object_data ();
-
-
-      const object_data_type& object_data () const;
-
-      const meta_data& meta_info () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
+      def_blocks::mapped_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -267,17 +202,7 @@ public:
   private:
 
 
-      object_data_type object_data_;
-
-      meta_data meta_info_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-
 };
-
 
 
 
@@ -297,50 +222,21 @@ public:
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::domain_runtime_data instance_data_t;
     typedef typename runtime::items::domain_instance_data runtime_data_t;
-	template<class typeT>
-	friend class meta_algorithm::object_types_algorithm;
+    typedef int runtime_behavior_t;
+    typedef meta_algorithm::object_types_algorithm<domain_type> algorithm_type;
 
   public:
-      domain_type();
-
-      domain_type (const object_type_creation_data& data);
-
-      ~domain_type();
-
-
-      rx_result construct (rx_domain_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr () const;
 
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+      object_data_type object_data;
 
-      meta_data& meta_info ();
+      meta_data meta_info;
 
-      def_blocks::complex_data_type& complex_data ();
+      def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type& mapping_data ();
-
-      bool check_type (type_check_context& ctx);
-
-      object_data_type& object_data ();
-
-
-      const object_data_type& object_data () const;
-
-      const meta_data& meta_info () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
+      def_blocks::mapped_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -351,17 +247,7 @@ public:
   private:
 
 
-      object_data_type object_data_;
-
-      meta_data meta_info_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-
 };
-
 
 
 
@@ -381,52 +267,23 @@ public:
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::object_runtime_data instance_data_t;
     typedef typename runtime::items::object_instance_data runtime_data_t;
-	template<class typeT>
-	friend class meta_algorithm::object_types_algorithm;
+    typedef int runtime_behavior_t;
+    typedef meta_algorithm::object_types_algorithm<object_type> algorithm_type;
 
   public:
-      object_type();
-
-      object_type (const object_type_creation_data& data);
-
-      ~object_type();
-
 
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
-      rx_result construct (rx_object_ptr what, construct_context& ctx) const;
-
       platform_item_ptr get_item_ptr () const;
 
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+      object_data_type object_data;
 
-      meta_data& meta_info ();
+      meta_data meta_info;
 
-      def_blocks::complex_data_type& complex_data ();
+      def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type& mapping_data ();
-
-      bool check_type (type_check_context& ctx);
-
-      object_data_type& object_data ();
-
-
-      const object_data_type& object_data () const;
-
-      const meta_data& meta_info () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
+      def_blocks::mapped_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -437,17 +294,7 @@ public:
   private:
 
 
-      object_data_type object_data_;
-
-      meta_data meta_info_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
-
-
 };
-
 
 
 
@@ -467,67 +314,29 @@ public:
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::port_runtime_data instance_data_t;
     typedef typename runtime::items::port_instance_data runtime_data_t;
-	template<class typeT>
-	friend class meta_algorithm::object_types_algorithm;
+    typedef typename runtime::items::port_behaviors runtime_behavior_t;
+    typedef meta_algorithm::object_types_algorithm<port_type> algorithm_type;
 
   public:
-      port_type();
-
-      port_type (const object_type_creation_data& data);
-
-      ~port_type();
-
-
-      rx_result construct (rx_port_ptr what, construct_context& ctx) const;
 
       platform_item_ptr get_item_ptr () const;
 
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
 
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
+      object_data_type object_data;
 
-      meta_data& meta_info ();
+      meta_data meta_info;
 
-      def_blocks::complex_data_type& complex_data ();
+      def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type& mapping_data ();
-
-      bool check_type (type_check_context& ctx);
-
-      object_data_type& object_data ();
+      def_blocks::mapped_data_type mapping_data;
 
 
-      const object_data_type& object_data () const;
-
-      const meta_data& meta_info () const;
-
-      const def_blocks::complex_data_type& complex_data () const;
-
-      const def_blocks::mapped_data_type& mapping_data () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static rx_item_type type_id;
+      static const rx_item_type type_id;
 
 
   protected:
 
   private:
-
-
-      object_data_type object_data_;
-
-      meta_data meta_info_;
-
-      def_blocks::complex_data_type complex_data_;
-
-      def_blocks::mapped_data_type mapping_data_;
 
 
 };
@@ -579,31 +388,13 @@ public:
 	template<class typeT>
 	friend class meta_algorithm::object_types_algorithm;
 	typedef runtime::relation_runtime_ptr RTypePtr;
+    typedef meta_algorithm::relation_type_algorithm algorithm_type;
 
   public:
-      relation_type();
-
-      relation_type (const object_type_creation_data& meta, const relation_type_data& data);
-
 
       platform_item_ptr get_item_ptr () const;
 
-      rx_result serialize_definition (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream, uint8_t type);
-
-      meta_data& meta_info ();
-
-      rx_result_with<runtime::relation_runtime_ptr> construct (runtime::relation_runtime_ptr what, construct_context& ctx) const;
-
-      bool check_type (type_check_context& ctx);
-
       static void set_runtime_data (runtime_data_prototype& prototype, RTypePtr where);
-
-
-      const meta_data& meta_info () const;
-
-      const relation_type_data& relation_data () const;
 
 
       static rx_item_type get_type_id ()
@@ -613,17 +404,17 @@ public:
 
 
 
+      meta_data meta_info;
+
+      relation_type_data relation_data;
+
+
       static rx_item_type type_id;
 
 
   protected:
 
   private:
-
-
-      meta_data meta_info_;
-
-      relation_type_data relation_data_;
 
 
 };

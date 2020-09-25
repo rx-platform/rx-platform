@@ -33,12 +33,12 @@
 
 
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
 
@@ -55,25 +55,34 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 {
 
   public:
-      opcua_transport_endpoint();
+      opcua_transport_endpoint (runtime::items::port_runtime* port);
 
 
-      rx_protocol_stack_entry* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
+      }
+
 
 
   protected:
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
 
 
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
+
+      runtime::items::port_runtime* port_;
 
 
 };
@@ -84,14 +93,14 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_std_transport;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_transport_base;
 
 
 
 
 
 
-class opcua_transport_port : public opcua_std_transport  
+class opcua_transport_port : public opcua_transport_base  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 OPC-UA transport port. Implementation of binary OPC-UA transport and simplified local pipe version without secure channel.");
@@ -99,8 +108,6 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
     DECLARE_REFERENCE_PTR(opcua_transport_port);
 
   public:
-      opcua_transport_port();
-
 
       static std::map<rx_node_id, opcua_transport_port::smart_ptr> runtime_instances;
 
@@ -108,6 +115,9 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
   protected:
 
   private:
+
+      std::unique_ptr<opcua_transport_endpoint> construct_endpoint ();
+
 
 
 };

@@ -165,11 +165,11 @@ class data_controler
   private:
 
 
-      registered_values_type registered_values_;
-
       rx::threads::physical_job_thread *my_worker_;
 
       sources_type sources_;
+
+      registered_values_type registered_values_;
 
 
       locks::slim_lock data_lock_;

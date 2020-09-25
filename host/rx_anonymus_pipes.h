@@ -32,12 +32,12 @@
 #define rx_anonymus_pipes_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -97,7 +97,7 @@ class anonymus_pipe_client
 
 
 
-class anonymus_pipe_endpoint : public rx_protocol_stack_entry  
+class anonymus_pipe_endpoint 
 {
 
   public:
@@ -111,11 +111,16 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
       void close ();
 
 
+      bool binded;
+
+
   protected:
 
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+      static void stack_changed_function (rx_protocol_stack_endpoint* reference);
 
 
 
@@ -123,10 +128,12 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
 
       rx::threads::physical_job_thread pipe_sender_;
 
+      rx_protocol_stack_endpoint stack_entry_;
+
 
       std::function<void(int64_t)> sent_func_;
 
-
+      friend class local_pipe_port;
 };
 
 
@@ -134,14 +141,7 @@ class anonymus_pipe_endpoint : public rx_protocol_stack_entry
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::physical_single_port_impl< anonymus_pipe_endpoint  > local_pipe_port_type;
-
-
-
-
-
-
-class local_pipe_port : public local_pipe_port_type  
+class local_pipe_port : public rx_platform::runtime::items::port_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 Local Pipe class. implementation of an local pipe port port");
@@ -154,31 +154,24 @@ Local Pipe class. implementation of an local pipe port port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
       void receive_loop ();
 
-      rx_result open ();
+      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      void close ();
+      void stack_disassembled ();
 
 
   protected:
 
   private:
 
-      rx_protocol_stack_entry* get_stack_entry ();
-
-
 
       anonymus_pipe_endpoint pipes_;
 
 
       pipe_client_t pipe_handles_;
+
+      std::atomic<bool> active_;
 
 
 };

@@ -36,6 +36,16 @@
 #include "lib/rx_ptr.h"
 
 
+
+
+#ifdef RX_MIN_MEMORY
+#define RX_OFFSET_TIMES_SIZE 0x20
+#else
+#define RX_OFFSET_TIMES_SIZE 0x400
+#endif
+
+
+
 namespace rx {
 namespace jobs {
 class timer_job;
@@ -263,7 +273,7 @@ class timer : public thread
 
       void stop ();
 
-      void append_job (timer_job_ptr job, job_thread* executer, uint32_t period, bool now = false);
+      void append_job (timer_job_ptr job, job_thread* executer);
 
 
   protected:
@@ -274,6 +284,10 @@ class timer : public thread
   private:
 
       void wake_up ();
+
+      void init_random_sequences ();
+
+      rx_timer_ticks_t get_random_time_offset (job& whose);
 
 
 
@@ -286,7 +300,16 @@ class timer : public thread
 
       locks::lockable lock_;
 
+      rx_timer_ticks_t medium_randoms_[RX_OFFSET_TIMES_SIZE];
 
+      static rx_timer_ticks_t soft_randoms_[RX_OFFSET_TIMES_SIZE];
+
+      int soft_random_index_;
+
+      int medium_random_index_;
+
+
+    friend class jobs::timer_job;
 };
 
 

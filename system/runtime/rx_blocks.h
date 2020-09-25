@@ -83,16 +83,39 @@ filter runtime. basic implementation of an filter runtime");
 
 
   protected:
-
+      template<typename valT>
+      valT get_binded_as(runtime_process_context* ctx, runtime_handle_t handle, const valT& default_value) const
+      {
+          if (ctx)
+          {
+              values::rx_simple_value temp_val;
+              auto result = ctx->get_value(handle, temp_val);
+              if (result)
+              {
+                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              }
+          }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_process_context* ctx, runtime_handle_t handle, valT&& value)
+      {
+          if (ctx)
+          {
+              values::rx_simple_value temp_val;
+              temp_val.assign_static<valT>(std::forward<valT>(value));
+              auto result = ctx->set_value(handle, std::move(temp_val));
+          }
+      }
   private:
 
       virtual bool supports_input () const;
 
       virtual bool supports_output () const;
 
-      virtual rx_result filter_input (rx_value& val);
+      virtual rx_result filter_input (rx_value& val, runtime_process_context* ctx);
 
-      virtual rx_result filter_output (rx_simple_value& val);
+      virtual rx_result filter_output (rx_simple_value& val, runtime_process_context* ctx);
 
 
 

@@ -32,17 +32,17 @@
 #define rx_objbase_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -83,6 +83,14 @@ struct constructed_data_t
 
 
 namespace runtime {
+namespace io_types
+{
+namespace ports_templates
+{
+template <typename translatorT, typename addrT>
+class routing_endpoint;
+}
+}
 
 namespace items {
 // instance data forwards
@@ -101,6 +109,7 @@ object class. basic implementation of an object");
 	DECLARE_REFERENCE_PTR(object_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::object_type>;
+    friend class object_instance_data;
 
   public:
       object_runtime();
@@ -173,6 +182,7 @@ system application class. basic implementation of a application");
 	DECLARE_REFERENCE_PTR(application_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::application_type>;
+    friend class application_instance_data;
 
   public:
       application_runtime();
@@ -247,6 +257,7 @@ system domain class. basic implementation of a domain");
 	DECLARE_REFERENCE_PTR(domain_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::domain_type>;
+    friend class domain_instance_data;
 
   public:
       domain_runtime();
@@ -318,11 +329,13 @@ class port_runtime : public rx::pointers::reference_object
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system port class. basic implementation of a port");
-
+    
 	DECLARE_REFERENCE_PTR(port_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::port_type>;
     friend class port_instance_data;
+    template <typename translatorT, typename addrT>
+    friend class io_types::ports_templates::routing_endpoint;
 
   public:
       port_runtime();
@@ -330,21 +343,31 @@ system port class. basic implementation of a port");
       ~port_runtime();
 
 
-      virtual rx_protocol_stack_entry* create_stack_entry ();
-
       virtual rx_result initialize_runtime (runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime_deinit_context& ctx);
 
       virtual rx_result start_runtime (runtime_start_context& ctx);
 
+      virtual rx_result deinitialize_runtime (runtime_deinit_context& ctx);
+
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      virtual rx_result push (rx_port_impl_ptr who, const meta::meta_data& info);
+      virtual void stack_assembled ();
 
-      virtual const protocol_address* get_address () const;
+      virtual void stack_disassembled ();
+
+      virtual rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+      virtual rx_result start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+
+      virtual rx_protocol_stack_endpoint* create_endpoint ();
+
+      virtual void remove_endpoint (rx_protocol_stack_endpoint* what);
 
       threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      threads::job_thread* get_io_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -364,11 +387,17 @@ system port class. basic implementation of a port");
       }
 
 
+      rx_security_handle_t get_identity () const
+      {
+        return identity_;
+      }
+
+
 
       static rx_item_type type_id;
 
       template<typename valT>
-      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value) const
       {
           if (context_)
           {
@@ -394,8 +423,21 @@ system port class. basic implementation of a port");
       template<typename funcT, typename... Args>
       void send_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_job(std::forward<funcT>(func), std::forward<funcT>(func));
+          auto job = rx_create_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           get_jobs_queue()->append(job);
+      }
+      template<typename funcT, typename... Args>
+      void send_io_function(funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          get_io_queue()->append(job);
+      }
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_periodic_job(job);
+          return job;
       }
       template<class refT, class funcT, class callbackT>
       void do_io_data_with_callback(funcT&& what, callbackT&& callback)
@@ -411,16 +453,16 @@ system port class. basic implementation of a port");
       }
   protected:
 
+      rx_result listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+      rx_result connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+
+      rx_result bind_stack_endpoint (rx_protocol_stack_endpoint* what, const protocol_address* local_address, const protocol_address* remote_address);
+
+
       runtime_process_context * get_context ()
       {
         return context_;
-      }
-
-
-
-      rx_security_handle_t get_identity () const
-      {
-        return identity_;
       }
 
 
@@ -434,6 +476,8 @@ system port class. basic implementation of a port");
       rx_thread_handle_t executer_;
 
       rx_security_handle_t identity_;
+
+      rx_port_ptr runtime_;
 
 
 };

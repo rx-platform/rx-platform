@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 0
 #define RX_LIB_MINOR_VERSION 21
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_BUILD_NUMBER 3
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -33,7 +33,8 @@
 // version 0.19.0 introduced protocol buffers for IO types
 // version 0.19.1 slim_lock can't be moved or copied
 // version 0.20.0 introduced full_lambda_job and type_less_box
-// version 0.20.1 introduced rx_item_reference::null_ref
 // version 0.20.1 introduced function_to_go<refT, Args...>
+// version 0.20.2 finished udp_socket<>
+// version 0.20.3 added tcp_client_socket::bind(addr, port, ...)
 
 

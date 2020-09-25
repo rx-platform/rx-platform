@@ -53,6 +53,11 @@ struct configuration_data_t;
 #define HOST_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Host",src,lvl,msg)
 #define HOST_LOG_TRACE(src,lvl,msg) RX_TRACE("Host",src,lvl,msg)
 
+
+#define SAFE_ANSI_STATUS_ERROR (supports_ansi() ? ANSI_STATUS_ERROR : "ERROR")
+#define SAFE_ANSI_STATUS_OK (supports_ansi() ? ANSI_STATUS_OK : "OK")
+
+
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
@@ -206,6 +211,8 @@ class rx_platform_host
       static void dump_log_items (const log::log_events_type& items, std::ostream& out);
 
       virtual string_type get_full_path (const string_type& path) = 0;
+
+      virtual bool supports_ansi () const = 0;
 
 
       rx_platform_host * get_parent ()

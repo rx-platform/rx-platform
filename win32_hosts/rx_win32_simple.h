@@ -62,6 +62,10 @@ class win32_simple_host : public host::simple::simple_platform_host
 
       string_type get_full_path (const string_type& path);
 
+      bool supports_ansi () const;
+
+      rx_result setup_console (int argc, char* argv[]);
+
 
   protected:
 
@@ -71,6 +75,9 @@ class win32_simple_host : public host::simple::simple_platform_host
 
 
   private:
+
+
+      bool supports_ansi_;
 
 
 };

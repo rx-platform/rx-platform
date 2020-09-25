@@ -2,8 +2,8 @@
 
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 0
-#define RX_HAL_MINOR_VERSION 11
-#define RX_HAL_BUILD_NUMBER 2
+#define RX_HAL_MINOR_VERSION 12
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -22,5 +22,6 @@
 0.11.0. added os errors supportrx_ms_sleep
 0.11.1. rx_msleep => rx_ms_sleep
 0.11.2. get_nprocs_conf used for core counts
+0.12.0. added rx_socket_read_from and rx_socket_write_to
 
 *********************************************************************************/

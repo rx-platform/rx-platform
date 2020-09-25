@@ -51,12 +51,22 @@
 #include "system/callbacks/rx_callback.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_rt_data
+#include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
-// rx_rt_data
-#include "lib/rx_rt_data.h"
+
+namespace rx_internal {
+namespace sys_runtime {
+namespace data_source {
+class value_point;
+
+} // namespace data_source
+} // namespace sys_runtime
+} // namespace rx_internal
+
 
 #include "system/meta/rx_obj_types.h"
 namespace rx_internal
@@ -100,7 +110,9 @@ class object_runtime_algorithms
 
       static rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      rx_result disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose);
+      static rx_result disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose);
+
+      static rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose);
 
 
   protected:
@@ -155,20 +167,19 @@ class runtime_holder : public rx::pointers::reference_object
     friend class meta::meta_algorithm::object_types_algorithm<typeT>;
     friend class rx_internal::model::algorithms::runtime_model_algorithm<typeT>;
     friend class rx_internal::model::types_repository<typeT>;
+
+
+    typedef std::unique_ptr<std::vector<rx_internal::sys_runtime::data_source::value_point> > points_type;
 public:
     typedef typeT DefType;
     typedef typename typeT::RImplPtr ImplPtr;
     typedef typename typeT::RImplType ImplType;
 
   public:
-      runtime_holder();
+      runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior);
 
-      runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance);
+      ~runtime_holder();
 
-
-      rx_result read_value (const string_type& path, rx_value& value) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, rx_thread_handle_t whose);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
@@ -180,21 +191,19 @@ public:
 
       rx_result stop_runtime (runtime_stop_context& ctx);
 
-      rx_result do_command (rx_object_command_t command_type);
-
-      void set_runtime_data (meta::runtime_data_prototype& prototype);
-
       void fill_data (const data::runtime_values_data& data);
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
+      rx_result read_value (const string_type& path, rx_value& value) const;
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      void set_runtime_data (meta::runtime_data_prototype& prototype);
+
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
-
-      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results);
 
       meta::meta_data& meta_info ();
 
@@ -322,6 +331,8 @@ public:
       runtime_process_context context_;
 
       ns::rx_directory_resolver directories_;
+
+      points_type points_;
 
 
       runtime_handle_t scan_time_item_;

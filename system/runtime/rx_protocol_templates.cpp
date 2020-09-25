@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_transport_base.h
+*  system\runtime\rx_protocol_templates.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,22 +28,11 @@
 ****************************************************************************/
 
 
-#ifndef rx_transport_base_h
-#define rx_transport_base_h 1
+#include "pch.h"
 
 
-#include "rx_protocol_base.h"
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 
 
 
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif

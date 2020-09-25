@@ -32,18 +32,17 @@
 #define rx_console_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "interfaces/rx_endpoints.h"
-#include "system/runtime/rx_port_types.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -66,41 +65,6 @@ namespace terminal {
 
 namespace console {
 typedef pointers::reference<console_runtime> console_runtime_ptr;
-
-
-
-
-
-class console_endpoint : public rx_protocol_stack_entry  
-{
-
-  public:
-
-      void bind (console_runtime_ptr console, std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
-
-      rx_result write (runtime::io_types::rx_io_buffer& what);
-
-
-  protected:
-
-  private:
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id);
-
-      static rx_protocol_result_t connected_function (rx_protocol_stack_entry* reference);
-
-
-
-      rx_reference<console_runtime> my_console_;
-
-
-      std::function<void(int64_t)> sent_func_;
-
-      std::function<void(int64_t)> received_func_;
-
-
-};
-
 
 
 
@@ -262,10 +226,9 @@ class console_program : public sl_runtime::sl_script::sl_script_program
 class console_runtime : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(console_runtime)
-    friend class console_endpoint;
 
   public:
-      console_runtime();
+      console_runtime (runtime::items::port_runtime* port);
 
       ~console_runtime();
 
@@ -280,9 +243,7 @@ class console_runtime : public rx::pointers::reference_object
 
       rx_result check_validity ();
 
-      console_endpoint* get_endpoint ();
-
-      rx_protocol_stack_entry* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
 
       rx_thread_handle_t get_executer () const
@@ -293,6 +254,12 @@ class console_runtime : public rx::pointers::reference_object
       void set_executer (rx_thread_handle_t value)
       {
         executer_ = value;
+      }
+
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
       }
 
 
@@ -318,6 +285,10 @@ class console_runtime : public rx::pointers::reference_object
 
       void synchronized_cancel_command (memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
 
       rx_directory_ptr current_directory_;
 
@@ -325,9 +296,9 @@ class console_runtime : public rx::pointers::reference_object
 
       console_program_context *current_context_;
 
-      console_endpoint endpoint_;
-
       console_program program_;
+
+      rx_protocol_stack_endpoint stack_entry_;
 
 
       string_type line_;
@@ -338,6 +309,8 @@ class console_runtime : public rx::pointers::reference_object
 
       rx_thread_handle_t executer_;
 
+      runtime::items::port_runtime* port_;
+
 
 };
 
@@ -347,14 +320,14 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::std_protocol_impl< console_runtime::smart_ptr  > console_std_impl;
+typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< console_runtime  > console_port_base;
 
 
 
 
 
 
-class console_port : public console_std_impl  
+class console_port : public console_port_base  
 {
     DECLARE_CODE_INFO("rx", 0, 0, 3, "\
 Console port. implementation of an console port");
@@ -362,17 +335,20 @@ Console port. implementation of an console port");
     DECLARE_REFERENCE_PTR(console_port);
     friend class console_endpoint;
 
-    typedef std::map<rx_protocol_stack_entry*, console_runtime::smart_ptr> endpoints_type;
+    typedef std::map<rx_protocol_stack_endpoint*, console_runtime::smart_ptr> active_endpoints_type;
 
   public:
       console_port();
+
+
+      void stack_assembled ();
 
 
   protected:
 
   private:
 
-      console_runtime::smart_ptr create_endpoint ();
+      rx_reference<console_runtime> construct_endpoint ();
 
 
 

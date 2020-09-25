@@ -75,68 +75,14 @@ char g_console_welcome[] = ANSI_COLOR_YELLOW "\
 
 char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
 
-// Class rx_internal::terminal::console::console_endpoint 
-
-
-rx_protocol_result_t console_endpoint::received_function (rx_protocol_stack_entry* reference, rx_const_packet_buffer* buffer, rx_packet_id_type packet_id)
-{
-	console_endpoint* self = reinterpret_cast<console_endpoint*>(reference);
-	if (self->my_console_)
-	{
-		string_type line;
-		runtime::io_types::rx_const_io_buffer buff(buffer);
-		auto result = buff.read_chars(line);
-		if (result)
-		{
-			memory::buffer_ptr out_buffer(pointers::_create_new);
-			memory::buffer_ptr err_buffer(pointers::_create_new);
-			self->my_console_->do_command(std::move(line), out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
-		}
-	}
-	return RX_PROTOCOL_OK;
-}
-
-void console_endpoint::bind (console_runtime_ptr console, std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
-{
-	my_console_ = console;
-	received_func_ = received_func;
-	rx_protocol_stack_entry* mine_entry = this;
-
-	rx_init_stack_entry(mine_entry);
-	mine_entry->received_function = &console_endpoint::received_function;
-	mine_entry->connected_function = &console_endpoint::connected_function;
-}
-
-rx_result console_endpoint::write (runtime::io_types::rx_io_buffer& what)
-{
-	rx_packet_buffer buff;
-	what.detach(&buff);
-	auto result = rx_move_packet_down(this, &buff, 0);
-	if (result == RX_PROTOCOL_OK)
-		return true;
-	else
-		return rx_protocol_error_message(result);
-}
-
-rx_protocol_result_t console_endpoint::connected_function (rx_protocol_stack_entry* reference)
-{
-	console_endpoint* self = reinterpret_cast<console_endpoint*>(reference);
-	if (self->my_console_)
-	{		
-		memory::buffer_ptr out_buffer(pointers::_create_new);
-		memory::buffer_ptr err_buffer(pointers::_create_new);
-		self->my_console_->do_command("welcome", out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
-	}
-	return RX_PROTOCOL_OK;
-}
-
-
 // Class rx_internal::terminal::console::console_runtime 
 
-console_runtime::console_runtime()
+console_runtime::console_runtime (runtime::items::port_runtime* port)
       : current_context_(nullptr),
-        executer_(-1)
+        executer_(-1),
+        port_(port)
 {
+	printf("****Created console_endpoint\r\n");
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");
 #else
@@ -148,6 +94,7 @@ console_runtime::console_runtime()
 
 console_runtime::~console_runtime()
 {
+	printf("****Deleted console_endpoint\r\n");
 }
 
 
@@ -201,7 +148,7 @@ void console_runtime::process_result (bool result, memory::buffer_ptr out_buffer
 	size_t size = out_buffer->get_size() + err_buffer->get_size() + prompt.size();
 	if (size)
 	{
-		runtime::io_types::rx_io_buffer send_buffer(size, &endpoint_);
+		runtime::io_types::rx_io_buffer send_buffer(size, &stack_entry_);
 		if (!result)
 		{
 			if (!out_buffer->empty())
@@ -222,7 +169,15 @@ void console_runtime::process_result (bool result, memory::buffer_ptr out_buffer
 		}
 		if(!prompt.empty())
 			send_buffer.write_chars(prompt);
-		endpoint_.write(send_buffer);
+
+		rx_packet_buffer buff;
+		send_buffer.detach(&buff);
+		send_protocol_packet packet = rx_create_send_packet(0, &buff, 0, 0);
+		auto result = rx_move_packet_down(&stack_entry_, packet);
+		/*if (result == RX_PROTOCOL_OK)
+			return true;
+		else
+			return rx_protocol_error_message(result);*/
 
 	}
 }
@@ -432,15 +387,36 @@ rx_result console_runtime::check_validity ()
 		return true;
 }
 
-console_endpoint* console_runtime::get_endpoint ()
+rx_protocol_stack_endpoint* console_runtime::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
-	return &endpoint_;
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &console_runtime::received_function;
+	stack_entry_.connected_function = &console_runtime::connected_function;
+	return &stack_entry_;
 }
 
-rx_protocol_stack_entry* console_runtime::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_result_t console_runtime::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-	endpoint_.bind(smart_this(), sent_func, received_func);
-	return &endpoint_;
+	console_runtime* self = reinterpret_cast<console_runtime*>(reference->user_data);
+	string_type line;
+	runtime::io_types::rx_const_io_buffer buff(packet.buffer);
+	auto result = buff.read_chars(line);
+	if (result)
+	{
+		memory::buffer_ptr out_buffer(pointers::_create_new);
+		memory::buffer_ptr err_buffer(pointers::_create_new);
+		self->do_command(std::move(line), out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
+	}
+	return RX_PROTOCOL_OK;
+}
+
+rx_protocol_result_t console_runtime::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+	console_runtime* self = reinterpret_cast<console_runtime*>(reference->user_data);
+	memory::buffer_ptr out_buffer(pointers::_create_new);
+	memory::buffer_ptr err_buffer(pointers::_create_new);
+	self->do_command("welcome", out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
+	return RX_PROTOCOL_OK;
 }
 
 
@@ -640,9 +616,14 @@ console_port::console_port()
 
 
 
-console_runtime::smart_ptr console_port::create_endpoint ()
+void console_port::stack_assembled ()
 {
-	return rx_create_reference<console_runtime>();
+	auto result = listen(nullptr, nullptr);
+}
+
+rx_reference<console_runtime> console_port::construct_endpoint ()
+{
+	return rx_create_reference<console_runtime>(this);
 }
 
 

@@ -38,6 +38,7 @@
 #include "testing/rx_test.h"
 #include "sys_internal/rx_internal_builders.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "system/meta/rx_meta_algorithm.h"
 
 
 namespace rx_internal {
@@ -197,7 +198,7 @@ rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
 {
-	return impl_->write_value(path, std::move(val), std::move(callback), ctx, rx_thread_context());
+	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
 }
 
 template <class TImpl>
@@ -294,19 +295,19 @@ rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
 template <class TImpl>
 rx_item_type rx_meta_item_implementation<TImpl>::get_type_id () const
 {
-	return impl_->get_type_id();
+	return impl_->type_id;
 }
 
 template <class TImpl>
 values::rx_value rx_meta_item_implementation<TImpl>::get_value () const
 {
-	return impl_->meta_info().get_value();
+	return impl_->meta_info.get_value();
 }
 
 template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_name () const
 {
-	return impl_->meta_info().name;
+	return impl_->meta_info.name;
 }
 
 template <class TImpl>
@@ -318,14 +319,15 @@ void rx_meta_item_implementation<TImpl>::fill_code_info (std::ostream& info, con
 template <class TImpl>
 rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 {
-	return impl_->meta_info().id;
+	return impl_->meta_info.id;
 }
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
 {
+	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
 	stream.write_header(STREAMING_TYPE_TYPE, 0);
-	auto ret = impl_->serialize_definition(stream, STREAMING_TYPE_TYPE);
+	auto ret = algorithm_type::serialize_type(*impl_, stream, STREAMING_TYPE_TYPE);
 	stream.write_footer();
 	return ret;
 }
@@ -333,7 +335,7 @@ rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& strea
 template <class TImpl>
 const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
 {
-	return impl_->meta_info();
+	return impl_->meta_info;
 }
 
 template <class TImpl>
@@ -381,13 +383,13 @@ rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runt
 template <class TImpl>
 string_type rx_meta_item_implementation<TImpl>::get_definition_as_json () const
 {
+	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
+
 	rx_platform::serialization::json_writer writer;
-
 	writer.write_header(STREAMING_TYPE_TYPE, 0);
-
 	bool out = false;
 
-	out = impl_->serialize_definition(writer, STREAMING_TYPE_TYPE);
+	out = algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_TYPE);
 
 	writer.write_footer();
 

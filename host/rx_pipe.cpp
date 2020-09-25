@@ -43,6 +43,7 @@
 #include "sys_internal/rx_internal_protocol.h"
 #include "rx_pipe_config.h"
 #include "api/rx_meta_api.h"
+#include "terminal/rx_terminal_style.h"
 
 
 namespace host {
@@ -60,7 +61,7 @@ rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
 	, stdout_log_(rx_create_reference< rx_pipe_stdout_log_subscriber>())
 {
 	//opcua_bin_init_client_transport(&transport_, 0x1000, 10);
-	stdout_log_->show_traces = false;
+	RX_ASSERT(stdout_log_->log_query == log::rx_log_query_type::normal_level);// just in case, i got a hunch ;)
 }
 
 
@@ -103,11 +104,13 @@ bool rx_pipe_host::break_host (const string_type& msg)
 
 int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_result ret = setup_console(argc, argv);
+	stdout_log_->set_supports_ansi(supports_ansi());
 
 	rx_platform::configuration_data_t config;
 	pipe_client_t pipes;
 	memzero(&pipes, sizeof(pipes));
-	rx_result ret = parse_command_line(argc, argv, config, pipes);
+	ret = parse_command_line(argc, argv, config, pipes);
 	if (ret)
 	{
 		if (debug_stop_)
@@ -121,7 +124,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		ret = read_config_file(reader, config);
 		if (ret)
 		{
-			std::cout << "OK\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
 
@@ -129,12 +132,18 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
-			std::cout << "OK\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-			std::cout << "\r\n"
-				<< "rx-platform "
-				<< rx_gate::instance().get_rx_version()
-				<< "\r\n\r\n";
+
+			std::cout << "\r\n";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << "rx-platform "
+				<< rx_gate::instance().get_rx_version();
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
+			std::cout << "\r\n\r\n";
+
 			string_array hosts;
 			get_host_info(hosts);
 			bool first = true;
@@ -159,7 +168,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			ret = rx::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
-				std::cout << "OK\r\n";
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 				char buff[0x20];
 				sprintf(buff, "%d", rx_gate::instance().get_pid());
 				HOST_LOG_INFO("Main", 900, "rx-platform running on PID "s + buff);
@@ -168,13 +177,13 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 				ret = register_plugins(plugins);
 				if (ret)
 				{
-					std::cout << "OK\r\n";
+					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 					std::cout << "Initializing storages...";
 					ret = initialize_storages(config, plugins);
 
 					if (ret)
 					{
-						std::cout << "OK\r\n";
+						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
 						// execute main loop of the console host
@@ -185,13 +194,13 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 					}
 					else
 					{
-						std::cout << "ERROR\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
 				}
 				else
 				{
-					std::cout << "ERROR\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -203,11 +212,12 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		}
 		else
 		{
-			std::cout << "ERROR\r\nError reading configuration file\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError reading configuration file\r\n";
 			rx_dump_error_result(std::cout, ret);
 		}
 	}
 	std::cout << "\r\n";
+	restore_console();
 
 	if (debug_stop_)
 	{
@@ -242,14 +252,23 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 	intptr_t write_handle(0);
 	bool use_std = false;
 
+	bool do_debug_level = false;
+	bool do_trace_level = true;
+	bool do_info_level = true;
+	bool do_warning_level = true;
+	bool do_error_level = true;
+
 	options.add_options()
-		("input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
-		("output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
+		("i,input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
+		("o,output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
 		("std", "Use stdin and stderr for communication", cxxopts::value<bool>(use_std))
 		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
 		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
-		("debug", "Wait keyboard hit on start", cxxopts::value<bool>(debug_stop_))
-		("trace", "Dump traces in standard output", cxxopts::value<bool>(stdout_log_->show_traces))
+		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
+		("trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
+		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))
+		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_info_level))
+		("e,error", "Show error level content only error and critical events are listed  to standard output", cxxopts::value<bool>(do_info_level))
 
 		;
 
@@ -258,6 +277,18 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 	try
 	{
 		auto result = options.parse(argc, argv);
+		debug_stop_ = do_debug_level;
+		if (do_debug_level)
+			stdout_log_->log_query = log::rx_log_query_type::debug_level;
+		else if (do_trace_level)
+			stdout_log_->log_query = log::rx_log_query_type::trace_level;
+		else if (do_info_level)
+			stdout_log_->log_query = log::rx_log_query_type::normal_level;
+		else if (do_warning_level)
+			stdout_log_->log_query = log::rx_log_query_type::warining_level;
+		else if (do_error_level)
+			stdout_log_->log_query = log::rx_log_query_type::error_level;
+
 		if (result.count("help"))
 		{
 			// fill paths
@@ -340,19 +371,19 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	if (sec_result)
 	{
 		security::secured_scope _(sec_result.value());
-		std::cout << "OK\r\n";
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting rx-platform...";
 		result = rx_platform::rx_gate::instance().start(this, config);
 		if (result)
 		{
-			std::cout << "OK\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			std::cout << "Starting pipe communication...";
 
-			result = pipe_port_->open();
+			result = true;// pipe_port_->open();
 			if (result)
 			{
-				std::cout << "OK\r\n";
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 				if (dump_storage_references_)
 				{
@@ -375,13 +406,16 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 					}
 				}
 				std::cout << "\r\n";
+				if (dump_start_log_)
+					std::cout << "\r\nStartup log START"
+								<< "\r\n=============================================\r\n";
 				stdout_log_->release_log(dump_start_log_);
 				if (dump_start_log_)
-					std::cout << "\r\nStartup log:\r\n============================\r\n";
+					std::cout
+					<< "=============================================\r\n"
+					<< "Startup log END\r\n\r\n";
 
 				auto user = security::active_security()->get_full_name();
-
-				rx_ms_sleep(200);
 
 				pipe_port_->receive_loop();
 
@@ -389,43 +423,41 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 
 				std::cout << "Exited loop....\r\n";
 
-				pipe_port_->close();
-
 				std::cout << "Stopping rx-platform...";
 				result = rx_platform::rx_gate::instance().stop();
 				if (result)
-					std::cout << "OK\r\n";
+					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 				else
 				{
-					std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
 					rx_dump_error_result(std::cout, result);
 				}
 
 			}
 			else
 			{
-				std::cout << "ERROR\r\nError initializing pipe endpoint!\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing pipe endpoint!\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 		}
 		else
 		{
-			std::cout << "ERROR\r\nError starting rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing rx-platform...";
 		result = rx_platform::rx_gate::instance().deinitialize(sec_result.value());
 		if (result)
-			std::cout << "OK\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
 		{
-			std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 	}
 	else
 	{
-		std::cout << "ERROR\r\nError initializing rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	HOST_LOG_INFO("Main", 999, "Closing console...");
@@ -446,12 +478,41 @@ string_type rx_pipe_host::get_host_name ()
 	return RX_PIPE_HOST;
 }
 
+void rx_pipe_host::restore_console ()
+{
+}
 
+rx_result rx_pipe_host::setup_console (int argc, char* argv[])
+{
+	return true;
+}
+
+const char* get_log_type_string(log::log_event_type type)
+{
+	switch (type)
+	{
+	case log::log_event_type::info:
+		return ANSI_RX_LOG_INFO		" INFO     " ANSI_COLOR_RESET;
+	case log::log_event_type::warning:
+		return ANSI_RX_LOG_WARNING	" WARNING  " ANSI_COLOR_RESET;
+	case log::log_event_type::error:
+		return ANSI_RX_LOG_ERROR	" ERROR    " ANSI_COLOR_RESET;
+	case log::log_event_type::critical:
+		return ANSI_RX_LOG_CRITICAL	" CRITICAL " ANSI_COLOR_RESET;
+	case log::log_event_type::debug:
+		return ANSI_RX_LOG_DEBUG	" DEBUG    " ANSI_COLOR_RESET;
+	case log::log_event_type::trace:
+		return ANSI_RX_LOG_TRACE	" TRACE    " ANSI_COLOR_RESET;
+	default:
+		return "***UNKNOWN***";
+	}
+}
 // Class host::pipe::rx_pipe_stdout_log_subscriber 
 
-rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber()
+rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber (bool supports_ansi)
       : running_(false),
-        show_traces(false)
+        supports_ansi_(false),
+        log_query(log::rx_log_query_type::normal_level)
 {
 }
 
@@ -460,11 +521,23 @@ rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber()
 void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
 {
 	log::log_event_data one = { event_type,library,source,level,code,message,when };
-	if (!show_traces && event_type == log::log_event_type::trace)
+	log::log_query_type query;
+	query.type = log_query;
+	if (!one.is_included(query))
 		return;
 	if (running_)
 	{
-		one.dump_to_stream_simple(std::cout);	}
+		if (supports_ansi_)
+		{
+			std::cout << one.when.get_string(false)
+				<< get_log_type_string(one.event_type)
+				<< one.message << "\r\n";
+		}
+		else
+		{
+			one.dump_to_stream_simple(std::cout);
+		}
+	}
 	else
 	{
 		locks::auto_slim_lock _(&pending_lock_);
@@ -474,21 +547,41 @@ void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, c
 
 void rx_pipe_stdout_log_subscriber::release_log (bool dump_previous)
 {
-	running_ = true;
 	if (dump_previous)
 	{
+
 		locks::auto_slim_lock _(&pending_lock_);
 		for (const auto& one : pending_events_)
 		{
-			one.dump_to_stream_simple(std::cout);
+			if (supports_ansi_)
+			{
+				std::cout << one.when.get_string(false)
+					<< get_log_type_string(one.event_type)
+					<< one.message << "\r\n";
+			}
+			else
+			{
+				one.dump_to_stream_simple(std::cout);
+			}
 		}
 		pending_events_.clear();
 	}
+	running_ = true;	
 }
 
 void rx_pipe_stdout_log_subscriber::suspend_log ()
 {
 	running_ = false;
+}
+
+rx_result rx_pipe_stdout_log_subscriber::read_log (const log::log_query_type& query, log::log_events_type& result)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+string_type rx_pipe_stdout_log_subscriber::get_name () const
+{
+	return "stdout";
 }
 
 

@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
+// rx_anonymus_pipes
+#include "host/rx_anonymus_pipes.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_log
 #include "lib/rx_log.h"
-// rx_anonymus_pipes
-#include "host/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -57,7 +57,7 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
 	typedef std::vector<log::log_event_data> pending_events_type;
 
   public:
-      rx_pipe_stdout_log_subscriber();
+      rx_pipe_stdout_log_subscriber (bool supports_ansi = true);
 
 
       void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
@@ -66,8 +66,19 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
 
       void suspend_log ();
 
+      rx_result read_log (const log::log_query_type& query, log::log_events_type& result);
 
-      bool show_traces;
+      string_type get_name () const;
+
+
+      void set_supports_ansi (bool value)
+      {
+        supports_ansi_ = value;
+      }
+
+
+
+      log::rx_log_query_type log_query;
 
 
   protected:
@@ -80,6 +91,8 @@ class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber
       bool running_;
 
       locks::slim_lock pending_lock_;
+
+      bool supports_ansi_;
 
 
 };
@@ -121,6 +134,10 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
       string_type get_host_manual () const;
 
       string_type get_host_name ();
+
+      virtual void restore_console ();
+
+      virtual rx_result setup_console (int argc, char* argv[]);
 
 
   protected:

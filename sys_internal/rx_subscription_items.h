@@ -41,11 +41,6 @@
 namespace rx_internal {
 
 namespace rx_protocol {
-enum subscription_trigger_type
-{
-	subscription_trigger_periodic = 0,
-	subscription_trigger_critical = 1
-};
 
 namespace messages {
 

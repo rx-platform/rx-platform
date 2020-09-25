@@ -515,6 +515,10 @@ class rx_simple_value
 
       rx_value_storage&& move_storage ();
 
+      double get_float_value () const;
+
+      bool set_from_float (double val, rx_value_t type);
+
 
       const rx_value_storage& get_storage () const
       {
@@ -615,7 +619,7 @@ public:
 
       static rx_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 
@@ -775,7 +779,7 @@ public:
 
       static rx_timed_value from_simple (rx_simple_value&& value, rx_time ts);
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool convert_to (rx_value_t type);
 

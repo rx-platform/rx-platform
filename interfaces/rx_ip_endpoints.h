@@ -34,19 +34,20 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // dummy
 #include "dummy.h"
-// rx_io
-#include "lib/rx_io.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
+// rx_stream_io
+#include "lib/rx_stream_io.h"
+// rx_datagram_io
+#include "lib/rx_datagram_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
-class connection_endpoint;
+class tcp_server_port;
+class udp_port;
 
 } // namespace ip_endpoints
 } // namespace interfaces
@@ -66,24 +67,36 @@ namespace ip_endpoints {
 
 
 
-class rx_udp_endpoint : public rx_protocol_stack_entry  
+class udp_endpoint 
 {
 
   public:
-      rx_udp_endpoint();
+      udp_endpoint();
+
+      ~udp_endpoint();
 
 
-      rx_result open (const string_type& addr, uint16_t port);
+      rx_result open (io::ip4_address addr, udp_port* port);
 
       rx_result close ();
+
+      rx_protocol_stack_endpoint* get_stack_endpoint ();
 
 
   protected:
 
   private:
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type id);
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
+
+
+      udp_port *my_port_;
+
+      rx_protocol_stack_endpoint stack_endpoint_;
+
+
+      io::ip4_address addr_;
 
 
 };
@@ -93,12 +106,28 @@ class rx_udp_endpoint : public rx_protocol_stack_entry
 
 
 
-class udp_port : public rx_platform::runtime::io_types::physical_port  
+
+typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl< udp_endpoint , io::ip4_address  > udp_server_base;
+
+
+
+
+
+
+class udp_port : public udp_server_base  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 2, "\
 UDP port class. implementation of an UDP/IP4 port");
 
 	DECLARE_REFERENCE_PTR(udp_port);
+
+    struct session_data_t
+    {
+        rx_protocol_stack_endpoint* entry;
+        uint32_t last_tick;
+    };
+
+    typedef std::map<io::ip4_address, session_data_t> sessions_type;
 
 	struct socket_holder_t : public rx::io::udp_socket_std_buffer
 	{
@@ -108,20 +137,17 @@ UDP port class. implementation of an UDP/IP4 port");
 		void release_buffer(buffer_ptr what)
 		{
 		}
-		bool readed(const void* data, size_t count, rx_security_handle_t identity)
-		{
-            security::secured_scope _(identity);
-			if (whose)
-			{
-				whose->update_received_counters(count);
-				rx_const_packet_buffer buff{};
-				rx_init_const_packet_buffer(&buff, data, count);
-				auto result = rx_move_packet_up(&whose->udp_endpoint_, &buff, 0);
-				if(result!=RX_PROTOCOL_OK)
-                    return false;
-			}
-			return true;
-		}
+        bool readed(const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
+        {
+            if (whose)
+                whose->packet_arrived(data, count, addr, identity);
+            return true;
+        }
+        void timer_tick(uint32_t tick)
+        {
+            if (whose)
+                whose->timer_tick(tick);
+        }
 	public:
 		socket_holder_t(udp_port* whose)
 		{
@@ -132,7 +158,7 @@ UDP port class. implementation of an UDP/IP4 port");
 			whose = nullptr;
 		}
 	};
-	friend struct socket_holder_t;
+	friend struct udp_port::socket_holder_t;
 
   public:
       udp_port();
@@ -140,23 +166,35 @@ UDP port class. implementation of an UDP/IP4 port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
       rx_result start_runtime (runtime::runtime_start_context& ctx);
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_protocol_stack_entry* get_stack_entry ();
+      rx_protocol_result_t send_function (rx_packet_buffer* buffer, const io::ip4_address& addr);
+
+      void timer_tick (uint32_t tick);
 
 
   protected:
 
+      bool packet_arrived (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
+
+
   private:
 
 
-      rx_udp_endpoint udp_endpoint_;
-
       rx_reference<socket_holder_t> udp_socket_;
+
+      sessions_type sessions_;
+
+
+      locks::slim_lock sessions_lock_;
+
+      uint32_t session_timeout_;
+
+      runtime_handle_t rx_recv_timeout_;
+
+      runtime_handle_t rx_send_timeout_;
 
 
 };
@@ -166,70 +204,43 @@ UDP port class. implementation of an UDP/IP4 port");
 
 
 
-
-typedef rx_platform::runtime::io_types::ports_templates::physical_multiple_port_impl< connection_endpoint , io::ip4_address  > tcp_server_base;
-
-
-
-
-
-
-class connection_endpoint : public rx_protocol_stack_entry  
+class tcp_server_endpoint 
 {
     struct socket_holder_t : public rx::io::tcp_socket_std_buffer
     {
-        DECLARE_REFERENCE_PTR(connection_endpoint::socket_holder_t);
-        friend class connection_endpoint;
+        DECLARE_REFERENCE_PTR(tcp_server_endpoint::socket_holder_t);
+        friend class tcp_server_endpoint;
     private:
-        connection_endpoint* whose = nullptr;
+        tcp_server_endpoint* whose = nullptr;
     protected:
-        void release_buffer(buffer_ptr what)
-        {
-        }
-        bool readed(const void* data, size_t count, rx_security_handle_t identity)
-        {
-            security::secured_scope _(identity);
-            if (whose)
-                return whose->readed(data, count, identity);
-            else
-                return false;
-        }
-        void on_shutdown(rx_security_handle_t identity)
-        {
-            security::secured_scope _(identity);
-            if(whose)
-                whose->disconnected(identity);
-        }
+        void release_buffer(buffer_ptr what);
+        bool readed(const void* data, size_t count, rx_security_handle_t identity);
+        void on_shutdown(rx_security_handle_t identity);
     public:
-        socket_holder_t(connection_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr)
-            : whose(whose)
-            , rx::io::tcp_socket_std_buffer(handle, addr, local_addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool())
-        {
-        }
-        socket_holder_t(socket_holder_t&& right) noexcept
-        {
-            whose = right.whose;
-            right.whose = nullptr;
-        }
-        void disconnect()
-        {
-            whose = nullptr;
-        }
+        socket_holder_t(tcp_server_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr);
+        socket_holder_t(socket_holder_t&& right) noexcept;
+        void disconnect();
     };
-    friend struct socket_holder_t;
+    friend struct tcp_server_endpoint::socket_holder_t;
   public:
-    typedef std::unique_ptr<connection_endpoint> endpoint_ptr;
+    typedef std::unique_ptr<tcp_server_endpoint> endpoint_ptr;
     typedef rx_reference<socket_holder_t> socket_ptr;
 
   public:
-      connection_endpoint();
+      tcp_server_endpoint();
 
-      connection_endpoint (const string_type& remote_port, const string_type& local_port);
+      ~tcp_server_endpoint();
 
 
-      rx_result_with<connection_endpoint::socket_ptr> open (tcp_server_base* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, rx_security_handle_t identity);
+      rx_result_with<tcp_server_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, rx_security_handle_t identity);
 
       rx_result close ();
+
+      rx_protocol_stack_endpoint* get_stack_endpoint ();
+
+      void set_receive_timeout (uint32_t val);
+
+      void set_send_timeout (uint32_t val);
 
 
       const rx_reference<socket_holder_t> get_tcp_socket () const
@@ -238,34 +249,32 @@ class connection_endpoint : public rx_protocol_stack_entry
       }
 
 
-      connection_endpoint(const connection_endpoint&) = delete;
-      connection_endpoint(connection_endpoint&& right) noexcept;
-      connection_endpoint& operator=(const connection_endpoint&) = delete;
-      connection_endpoint& operator=(connection_endpoint&&) = delete;
+      tcp_server_endpoint(const tcp_server_endpoint&) = delete;
+      tcp_server_endpoint(tcp_server_endpoint&& right) = delete;
+      tcp_server_endpoint& operator=(const tcp_server_endpoint&) = delete;
+      tcp_server_endpoint& operator=(tcp_server_endpoint&&) = delete;
   protected:
 
   private:
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
 
       void disconnected (rx_security_handle_t identity);
 
       bool readed (const void* data, size_t count, rx_security_handle_t identity);
 
-      void bind ();
-
-      static rx_protocol_result_t send_function (rx_protocol_stack_entry* reference, rx_packet_buffer* buffer, rx_packet_id_type packet_id);
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
 
 
       rx_reference<socket_holder_t> tcp_socket_;
 
-      tcp_server_base *my_port_;
+      rx_protocol_stack_endpoint stack_endpoint_;
+
+      tcp_server_port *my_port_;
 
 
-      string_type remote_port_;
+      io::ip4_address remote_address_;
 
-      string_type local_port_;
+      io::ip4_address local_address_;
 
 
 };
@@ -276,30 +285,30 @@ class connection_endpoint : public rx_protocol_stack_entry
 
 
 
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
+
+
+
+
+
+
 class tcp_server_port : public tcp_server_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+    DECLARE_CODE_INFO("rx", 1, 1, 0, "\
 TCP Server port class. implementation of an TCP/IP4 server side, listen, accept, clients list...");
 
     DECLARE_REFERENCE_PTR(tcp_server_port);
 
-    typedef std::set<connection_endpoint::endpoint_ptr> connections_type;
+
+    typedef std::map<rx_protocol_stack_endpoint*, tcp_server_endpoint::endpoint_ptr> active_endpoints_type;
 
   public:
-      tcp_server_port();
-
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void update_received_counters (size_t count);
-
-      void update_sent_counters (size_t count);
+      void stack_disassembled ();
 
 
   protected:
@@ -309,10 +318,14 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
       rx_reference<rx::io::tcp_listent_std_buffer> listen_socket_;
 
+      active_endpoints_type active_endpoints_;
+
 
       runtime_handle_t rx_recv_timeout_;
 
       runtime_handle_t rx_send_timeout_;
+
+      io::ip4_address bind_address_;
 
 
 };

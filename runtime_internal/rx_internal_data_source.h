@@ -61,6 +61,8 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 
       void items_changed (const std::vector<update_item>& items);
 
+      void write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results);
+
       void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
 
       void add_item (const string_type& path, value_handle_extended& handle);

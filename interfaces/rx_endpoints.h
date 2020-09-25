@@ -32,7 +32,7 @@
 #define rx_endpoints_h 1
 
 
-#include "protocols/ansi_c/common_c/rx_protocol_base.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 
 /////////////////////////////////////////////////////////////
@@ -44,8 +44,6 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// rx_port_types
-#include "system/runtime/rx_port_types.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
@@ -70,8 +68,8 @@ namespace io_endpoints {
 
 class rx_io_manager : public rx_platform::runtime::items::object_runtime  
 {
-	typedef std::map<string_type, rx_protocol_stack_entry*> endpoints_type;
-	typedef std::map<string_type, runtime::io_types::physical_port::smart_ptr> physical_ports_type;
+	typedef std::map<string_type, rx_protocol_stack_endpoint*> endpoints_type;
+	typedef std::map<string_type, rx_port_ptr> physical_ports_type;
 
   public:
       rx_io_manager();
@@ -96,8 +94,6 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
       //	These endpoints include COM ports, Console and UDP
       //	communications
       endpoints_type endpoints_;
-
-      physical_ports_type physical_ports_;
 
 
 };

@@ -12,6 +12,7 @@
 #include "lib/rx_log.h"
 #include "system/server/rx_server.h"
 #include "lib/rx_ptr.h"
+#include "lib/rx_stream_io.h"
 #include "system/meta/rx_obj_types.h"
 
 
@@ -47,7 +48,8 @@ namespace obsolite
 		printf("Sleeping\r\n");
 
 		my_periodic_job::smart_ptr job(rx::pointers::_create_new);
-		tm.append_job(job, &pool, 100, false);
+		tm.append_job(job, &pool);
+		job->start(100, false);
 
 		rx_ms_sleep(1000);
 
@@ -256,8 +258,9 @@ void test_thread()
 
 void test_classes()
 {
-	rx_platform::rx_object_type_ptr obj(rx_platform::meta::object_type_creation_data
-		{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_full_access });
+	rx_platform::rx_object_type_ptr obj;
+	obj->meta_info = rx_platform::meta::object_type_creation_data
+		{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_full_access };
 }
 
 

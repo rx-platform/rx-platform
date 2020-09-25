@@ -524,12 +524,12 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		}
 		else
 		{
-			result = "Unable to initialize domain runtime";
+			result.register_error("Unable to initialize port runtime");
 		}
 	}
 	else
 	{
-		result = "Unable to initialize instance_data";
+		result.register_error("Unable to initialize instance_data");
 	}
 
 	return result;

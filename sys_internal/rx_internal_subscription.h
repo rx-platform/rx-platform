@@ -33,6 +33,8 @@
 
 
 
+// rx_subscription_items
+#include "sys_internal/rx_subscription_items.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 
@@ -302,6 +304,48 @@ class subscription_items_change : public rx_message_base
       rx_uuid subscription_id;
 
       std::vector<update_item> items;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class subscription_write_done : public rx_message_base  
+{
+    typedef std::tuple<runtime_handle_t, uint32_t, string_type> result_type;
+    typedef std::vector<result_type> results_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      void add_result (runtime_handle_t handle, rx_result&& result);
+
+
+      results_type results;
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      runtime_transaction_id_t transaction_id;
 
 
   protected:

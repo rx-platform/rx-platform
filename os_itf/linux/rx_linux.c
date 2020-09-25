@@ -457,7 +457,30 @@ uint8_t pipe_dummy_buffer[0x100];
 
 uint32_t rx_border_rand(uint32_t min, uint32_t max)
 {
-	return RX_ERROR;
+    if (max > min)
+    {
+        uint32_t diff = (max - min);
+        if (diff > RAND_MAX)
+        {
+            int shifts = 0;
+            while (diff > RAND_MAX)
+            {
+                shifts++;
+                diff >>= 1;
+            }
+            uint32_t gen = rand() << shifts;
+            gen = gen % (max - min) + min;
+            return gen;
+        }
+        else
+        {
+            uint32_t gen = rand();
+            gen = gen % (max - min) + min;
+            return gen;
+        }
+    }
+    else
+        return min;
 }
 
 void* rx_allocate_os_memory(size_t size)
@@ -676,37 +699,6 @@ uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t t
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// mutex apstractions ( wait and the rest of the stuff
-sys_handle_t rx_mutex_create(int initialy_owned)
-{
-	int fd = 0;
-	fd = eventfd(initialy_owned == 0 ? 1 : 0, EFD_NONBLOCK);
-
-	return fd;
-}
-int rx_mutex_destroy(sys_handle_t hndl)
-{
-	close(hndl);
-	return RX_ERROR;
-}
-int rx_mutex_aquire(sys_handle_t hndl, uint32_t timeout)
-{
-    rx_handle_wait(hndl,timeout);
-	return RX_ERROR;
-}
-int rx_mutex_release(sys_handle_t hndl)
-{
-
-	eventfd_t val = 1;
-	int fd = (int)hndl;
-	int ret = write(fd, &val, sizeof(val));
-	if(ret<0)
-        return RX_ERROR;
-    else
-        return RX_OK;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
 #define MANUAL_EVENT
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1327,6 +1319,38 @@ uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 
 	return RX_OK;
 }
+uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed, struct sockaddr_storage* addr)
+{
+	struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
+	internal->read_type = EPOLL_READ_FROM_TYPE;
+
+    add_pending_op(internal);
+
+    socklen_t addr_len = SOCKET_ADDR_SIZE;
+	int ret = recvfrom(what->handle, what->read_buffer, what->read_buffer_size, 0, (struct sockaddr*)addr, &addr_len);
+	if (ret == -1)
+	{
+		int err = errno;
+		if (err == EAGAIN || err == EWOULDBLOCK)
+		{
+			*readed = 0;
+			return RX_ASYNC;
+		}
+		else
+		{
+            remove_pending_op(internal);
+			return RX_ERROR;
+        }
+	}
+	else// performed in sync
+	{
+        remove_pending_op(internal);
+		*readed = (size_t)ret;
+		internal->read_type = 0;
+	}
+
+	return RX_OK;
+}
 uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 {
 	struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
@@ -1347,7 +1371,7 @@ uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, s
             struct epoll_event event;
             event.data.ptr=what;
             event.events=EPOLLOUT|EPOLLET|EPOLLONESHOT;
-            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_ADD,type_data->write_handle,&event);
+            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD,type_data->write_handle,&event);
 			if(ret==0)
 			{
                 return RX_ASYNC;
@@ -1385,6 +1409,67 @@ uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, s
 	return RX_OK;
 }
 
+uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data, size_t count, const struct sockaddr* addr, size_t addrsize)
+{
+	struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
+	internal->write_buffer = data;
+	internal->left_to_write = count;
+	internal->write_type = EPOLL_WRITE_TO_TYPE;
+	if(addrsize > SOCKET_ADDR_SIZE)
+        return RX_ERROR;
+    memcpy(internal->addr_buffer, addr, addrsize);
+    internal->addr_size = addrsize;
+
+    add_pending_op(internal);
+
+	int ret = sendto(what->handle, data, count, 0, addr, (socklen_t)addrsize);
+	if (ret == -1)
+	{
+		int err = errno;
+		if (err == EAGAIN || err == EWOULDBLOCK)
+		{
+
+            struct linux_epoll_subscriber_t* type_data=(struct linux_epoll_subscriber_t*)what->internal;
+            struct epoll_event event;
+            event.data.ptr=what;
+            event.events=EPOLLOUT|EPOLLET|EPOLLONESHOT;
+            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD,type_data->write_handle,&event);
+			if(ret==0)
+			{
+                return RX_ASYNC;
+            }
+            else
+            {
+                remove_pending_op(internal);
+                return RX_ERROR;
+            }
+		}
+		else
+		{
+            remove_pending_op(internal);
+			return RX_ERROR;
+		}
+	}
+	else// performed in sync
+	{
+        remove_pending_op(internal);
+		// check to see if we written all
+		size_t written = (size_t)ret;
+		if (written<count)
+		{// din't write all do it again
+
+			uint8_t* temp = (uint8_t*)data;
+			temp += written;
+			return rx_socket_write_to(what, temp, count - written, addr, addrsize);
+		}
+		else
+		{
+			internal->write_buffer = NULL;
+			internal->write_type = 0;
+		}
+	}
+	return RX_OK;
+}
 
 uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 {
@@ -1418,12 +1503,13 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
         struct sockaddr_in local_addr;
         socklen_t addr_size=sizeof(local_addr);
         getsockname(ret,(struct sockaddr*)&local_addr,&addr_size);
-        (what->accept_callback)(what->data,0,ret,addr,(struct sockaddr*)&local_addr,addrsize);
+        (what->accept_callback)(what->data,0,ret,addr,(struct sockaddr*)&local_addr);
     }
 
     return RX_OK;
 }
-uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* addr, size_t addrsize)
+
+uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sockaddr* addr, size_t addrsize)
 {
     int ret;
     struct linux_epoll_subscriber_t* internal=(struct linux_epoll_subscriber_t*)what->internal;
@@ -1435,10 +1521,26 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* 
         int err=errno;
         if(err==EAGAIN || err==EWOULDBLOCK || err==EINPROGRESS)
         {
-            return RX_ASYNC;
+            struct linux_epoll_subscriber_t* type_data = (struct linux_epoll_subscriber_t*)what->internal;
+            struct epoll_event event;
+            event.data.ptr = what;
+            event.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
+            ret = epoll_ctl(type_data->epoll_handle, EPOLL_CTL_MOD, type_data->write_handle, &event);
+            if (ret == 0)
+            {
+                return RX_ASYNC;
+            }
+            else
+            {
+                int err=errno;
+                char* errstr=strerror(err);
+                remove_pending_op(internal);
+                return RX_ERROR;
+            }
         }
         else
         {
+            char* errstr=strerror(err);
             remove_pending_op(internal);
             return RX_ERROR;
         }
@@ -1446,7 +1548,10 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, struct sockaddr* 
     else// performed in sync
     {
         remove_pending_op(internal);
-        (what->connect_callback)(what->data,0);
+        struct sockaddr_in local_addr;
+        socklen_t addr_size=sizeof(local_addr);
+        getsockname(ret,(struct sockaddr*)&local_addr,&addr_size);
+        (what->connect_callback)(what->data, 0, addr,(const struct sockaddr*)&local_addr);
     }
 
     return RX_OK;
@@ -1548,14 +1653,15 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 			}
 			else
 			{
-                struct sockaddr_in local_addr;
+                struct sockaddr_storage local_addr;
+                struct sockaddr_storage remote_addr;
 				struct linux_epoll_subscriber_t* type_data;
 				struct rx_io_register_data_t* io_data;
 				io_data = (struct rx_io_register_data_t*)one.data.ptr;
 				type_data = (struct linux_epoll_subscriber_t*)io_data->internal;
 
 
-                if(one.events&EPOLLERR || one.events&EPOLLHUP)
+                if(one.events&EPOLLERR)// || one.events&EPOLLHUP)
                 {
                     int ops=remove_pending_op(type_data);
                     if(ops>=0)
@@ -1597,6 +1703,40 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                 epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
                             }
                             break;
+
+                        case EPOLL_READ_FROM_TYPE:
+                            {
+                                type_data->read_type = 0;
+
+                                struct sockaddr_storage addr;
+                                socklen_t addr_len = SOCKET_ADDR_SIZE;
+                                int err = recvfrom(io_data->handle, io_data->read_buffer, io_data->read_buffer_size, 0, (struct sockaddr*)&addr, &addr_len);
+                                if (err == -1)
+                                {
+                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                    {
+                                        int ops=remove_pending_op(type_data);
+                                        if(ops>=0)
+                                            (io_data->shutdown_callback)(io_data->data, errno);
+                                    }
+                                    // nothing to do here, he will call us again any way
+                                }
+                                else
+                                {
+                                    int ops=remove_pending_op(type_data);
+                                    if(ops>=0)
+                                    {
+                                        if(err==0)// closed up
+                                            (io_data->shutdown_callback)(io_data->data, errno);
+                                        else
+                                            (io_data->read_from_callback)(io_data->data, 0, err, (struct sockaddr*)&addr, addr_len);
+                                    }
+                                }
+
+                                one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
+                                epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
+                            }
+                            break;
                         case EPOLL_ACCEPT_TYPE:
                             {
                                 type_data->read_type = 0;
@@ -1619,7 +1759,7 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     {
                                         socklen_t addr_size=sizeof(local_addr);
                                         getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
-										(io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer, (struct sockaddr*)&local_addr, addr_size);
+										(io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer, (struct sockaddr*)&local_addr);
                                     }
                                 }
 
@@ -1631,7 +1771,6 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                     }
                     if (one.events&EPOLLOUT)
                     {// writing on handle
-                        printf("out\r\n");
                         switch (type_data->write_type)
                         {
                         case EPOLL_WRITE_TYPE:
@@ -1688,34 +1827,82 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 
                             }
                             break;
-                        case EPOLL_CONNECT_TYPE:
+                        case EPOLL_WRITE_TO_TYPE:
                             {
-                                type_data->write_type = 0;
-                                socklen_t addr_size = io_data->read_buffer_size;
-                                int err = accept4(io_data->handle, (struct sockaddr*)io_data->read_buffer, &addr_size, SOCK_NONBLOCK);
-                                if (err == -1)
+                                if (type_data->write_buffer)
                                 {
-                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                    int rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
+                                        , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
+                                    if (rt == -1)
                                     {
-                                        int ops=remove_pending_op(type_data);
-                                        if(ops>=0)
-                                            (io_data->shutdown_callback)(io_data->data, errno);
+                                        int err = errno;
+                                        if (err != EAGAIN && err != EWOULDBLOCK)
+                                        {// error occured do the shutdown
+                                            int ops=remove_pending_op(type_data);
+                                            if(ops>=0)
+                                                (io_data->shutdown_callback)(io_data->data, err);
+                                        }
+                                        // nothing to do here, he will call us again any way
                                     }
-                                    // nothing to do here, he will call us again any way
+                                    else
+                                    {
+                                        size_t written = (size_t)rt;
+                                        if (written<type_data->left_to_write)
+                                        {// din't write all do it again
+                                            uint8_t* temp = (uint8_t*)type_data->write_buffer;
+                                            temp += written;
+                                            type_data->write_buffer = temp;
+                                            type_data->left_to_write = type_data->left_to_write - written;
+                                            rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
+                                                , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
+                                            if (rt == -1)
+                                            {
+                                                int err = errno;
+                                                if (err != EAGAIN && err != EWOULDBLOCK)
+                                                {// error occured do the shutdown
+                                                    int ops=remove_pending_op(type_data);
+                                                    if(ops>=0)
+                                                        (io_data->shutdown_callback)(io_data->data, err);
+                                                }
+                                                // nothing to do here, he will call us again any way
+                                            }
+                                        }
+                                        else
+                                        {
+                                            type_data->write_type = 0;
+                                            type_data->write_buffer = NULL;
+                                            int ops=remove_pending_op(type_data);
+                                            if(ops>=0)
+                                                (io_data->write_callback)(io_data->data, 0);
+                                        }
+                                    }
                                 }
                                 else
                                 {
-                                    int ops=remove_pending_op(type_data);
-                                    if(ops>=0)
-                                    {
-                                        socklen_t addr_size=sizeof(local_addr);
-                                        getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
-                                        (io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer,(struct sockaddr*)&local_addr, addr_size);
-                                    }
                                 }
 
-                                one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
-                                epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
+                            }
+                            break;
+                        case EPOLL_CONNECT_TYPE:
+                            {
+                                type_data->write_type = 0;
+
+                                socklen_t addr_size=sizeof(local_addr);
+                                int err = getsockname(io_data->handle,(struct sockaddr*)&local_addr,&addr_size);
+                                if(err==0)
+                                {
+                                    addr_size=sizeof(local_addr);
+                                    err = getpeername(io_data->handle,(struct sockaddr*)&remote_addr,&addr_size);
+                                }
+                                int ops=remove_pending_op(type_data);
+                                if(ops>=0)
+                                {
+                                    if(err==0)
+                                        (io_data->connect_callback)(io_data->data, 0, (struct sockaddr*)&remote_addr,(struct sockaddr*)&local_addr);
+                                    else
+                                        (io_data->shutdown_callback)(io_data->data, err);
+                                }
+
                             }
                             break;
                         case 0:
@@ -1743,7 +1930,7 @@ uint32_t rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* a
         return RX_ERROR;
 }
 
-sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr)
 {
     sys_handle_t ret=socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK,0);
     if(ret)
@@ -1761,9 +1948,8 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
             setsockopt(ret,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
         }
 
-        addr->sin_family=AF_INET;
 
-        if(0==bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in)))
+        if(addr->sin_family == AF_INET && 0==bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in)))
         {
             return ret;
         }
@@ -1773,7 +1959,7 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(struct sockaddr_in* addr)
     return RX_ERROR;
 }
 
-sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 {
     sys_handle_t ret=socket(AF_INET,SOCK_DGRAM|SOCK_NONBLOCK,0);
     if(ret)
@@ -1788,11 +1974,13 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(struct sockaddr_in* addr)
             setsockopt(ret,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
         }
 
-        addr->sin_family=AF_INET;
-        int result = bind(ret,(const struct sockaddr*)addr,sizeof(struct sockaddr_in));
-        if(0 == result)
+        if (addr->sin_family == AF_INET)
         {
-            return ret;
+            int result = bind(ret, (const struct sockaddr*)addr, sizeof(struct sockaddr_in));
+            if (0 == result)
+            {
+                return ret;
+            }
         }
     }
     if(ret)

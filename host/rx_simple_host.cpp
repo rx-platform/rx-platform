@@ -36,6 +36,7 @@
 #include "host/rx_simple_host.h"
 
 #include "system/hosting/rx_yaml.h"
+#include "terminal/rx_terminal_style.h"
 
 
 namespace host {
@@ -190,7 +191,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 							}
 							else
 							{
-								std::cout << "ERROR\r\nError initializing rx-platform:\r\n";
+								std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
 								rx_dump_error_result(std::cout, result);
 							}
 						}
@@ -201,13 +202,13 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 					}
 					else
 					{
-						std::cout << "ERROR\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
 				}
 				else
 				{
-					std::cout << "ERROR\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -218,7 +219,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 		}
 		else
 		{
-			std::cout << "ERROR\r\nError reading configuration file\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError reading configuration file\r\n";
 			rx_dump_error_result(std::cout, ret);
 		}
 	}
@@ -332,7 +333,7 @@ int simple_platform_host::start_platform ()
 		result = set_simple_thread_security();
 		if (result)
 		{
-			std::cout << "OK\r\n";
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			//if (dump_storage_references_)
 			{
@@ -359,22 +360,22 @@ int simple_platform_host::start_platform ()
 			std::cout << "\r\n=================================\r\n";
 			return 1;
 		}
-		std::cout << "ERROR\r\nError starting rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	else
 	{
-		std::cout << "ERROR\r\nError starting rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	std::cout << "De-initializing rx-platform...";
 	if(host_security_context_)
 		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
-		std::cout << "OK\r\n";
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
 	{
-		std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	return 0;
@@ -387,7 +388,7 @@ int simple_platform_host::stop_platform ()
 	if (host_security_context_)
 		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
-		std::cout << "OK\r\n";
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
 	{
 		std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";

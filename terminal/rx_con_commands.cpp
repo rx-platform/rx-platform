@@ -44,6 +44,7 @@
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
+#include "terminal/rx_console.h"
 
 
 namespace rx_internal {
@@ -334,9 +335,9 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	{// testing stuff
 		do_test_command(in, out, err, ctx);
 	}
-	else if (sub_command == "last")
+	else if (sub_command == "read")
 	{// testing stuff
-		do_last_command(in, out, err, ctx);
+		do_read_command(in, out, err, ctx);
 	}
 	else if (sub_command == "help")
 	{
@@ -434,18 +435,26 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 	return true;
 }
 
-bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	log::log_query_type query;
 	query.type = log::rx_log_query_type::normal_level;
+	string_type log_name;
 	string_type options;
-	int count = 20;
+	string_type pattern;
+
+	in >> log_name;
+
+	in >> pattern;
+	query.pattern = pattern;
+
+	query.count = 20;
 	in >> options;
 	if (!options.empty())
 	{
 		auto temp = atoi(options.c_str());
 		if (temp > 0)
-			count = temp;
+			query.count = temp;
 		in >> options;
 		if (options == "-t")
 			query.type = log::rx_log_query_type::trace_level;
@@ -456,25 +465,45 @@ bool log_command::do_last_command (std::istream& in, std::ostream& out, std::ost
 		if (options == "-e")
 			query.type = log::rx_log_query_type::error_level;
 	}
-	log::log_events_type result;
-	auto ret = rx_gate::instance().read_log(query, result);
+	auto ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
+		{
+			auto& out = ctx->get_stdout();
+			auto& err = ctx->get_stdout();
+			if (result)
+			{
+				list_log_options options;
+				options.list_level = false;
+				options.list_code = false;
+				options.list_library = false;
+				options.list_source = false;
+				options.list_dates = false;
+				dump_log_items(result.value(), options, out, 1000);
+				ctx->send_results(true);
+				
+			}
+			else
+			{
+				dump_error_result(err, result);
+				ctx->send_results(false);
+			}
+		}
+	);
 	if (ret)
 	{
-		list_log_options options;
-		options.list_level = false;
-		options.list_code = false;
-		options.list_library = false;
-		options.list_source = false;
-		options.list_dates = false;
-		dump_log_items(result, options, out, count);
+		ctx->set_waiting();
+		return true;
 	}
-	return true;
+	else
+	{
+		dump_error_result(err, ret);
+		return false;
+	}
 }
 
 void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count)
 {
 	size_t first_index = 0;
-	size_t full_count = items.size();
+	size_t full_count = items.data.size();
 	size_t rows_count = full_count;
 	if (count > 0 && (size_t)count + 1 < full_count)
 	{
@@ -498,7 +527,7 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 
 	for (auto i = first_index; i < full_count; i++)
 	{
-		auto& one = items[i];
+		auto& one = items.data[i];
 		table[idx].emplace_back(one.when.get_string(options.list_dates));
 
 		table[idx].emplace_back(create_log_type_cell(one.event_type));

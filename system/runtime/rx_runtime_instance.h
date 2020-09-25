@@ -33,12 +33,14 @@
 
 
 #include "rx_runtime_helpers.h"
-
+#include "lib/rx_io_addr.h"
 
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
+// rx_port_instance
+#include "system/runtime/rx_port_instance.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -68,9 +70,7 @@ class object_instance_data
 {
 
   public:
-      object_instance_data();
-
-      object_instance_data (const object_data& data);
+      object_instance_data (const object_data& data, int rt_behavior);
 
 
       bool connect_domain (rx_domain_ptr&& domain, rx_object_ptr whose);
@@ -129,9 +129,7 @@ class domain_instance_data
     typedef std::map<rx_node_id, rx_object_ptr> objects_type;
 
   public:
-      domain_instance_data();
-
-      domain_instance_data (const domain_data& data);
+      domain_instance_data (const domain_data& data, int rt_behavior);
 
 
       void get_objects (api::query_result& result);
@@ -195,81 +193,16 @@ class domain_instance_data
 
 
 
-class port_instance_data 
-{
-
-  public:
-      port_instance_data();
-
-      port_instance_data (const port_data& data);
-
-
-      bool connect_application (rx_application_ptr&& app, rx_port_ptr whose);
-
-      bool disconnect_application (rx_port_ptr whose);
-
-      static rx_result before_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
-
-      static rx_result before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded);
-
-      static rx_result after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx);
-
-      static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
-
-      const security::security_context_ptr& get_security_context () const;
-
-
-      const rx_application_ptr get_my_application () const;
-
-      const meta::runtime_data::port_data& get_data () const
-      {
-        return data_;
-      }
-
-
-
-      rx_thread_handle_t get_executer () const
-      {
-        return executer_;
-      }
-
-
-      port_instance_data(port_instance_data&& right) noexcept = default;
-      port_instance_data(const port_instance_data& right) = default;
-  protected:
-
-  private:
-
-
-      rx_application_ptr my_application_;
-
-      security_context_holder identity_;
-
-      meta::runtime_data::port_data data_;
-
-
-      rx_thread_handle_t executer_;
-
-
-};
-
-
-
-
-
-
 class application_instance_data 
 {
     typedef std::map<rx_node_id, rx_domain_ptr> domains_type;
     typedef std::map<rx_node_id, rx_port_ptr> ports_type;
 
   public:
-      application_instance_data();
-
-      application_instance_data (const application_data& data);
+      application_instance_data (const application_data& data, int rt_behavior);
 
 
-      void get_ports (api::query_result& result);
+      void get_ports (api::query_result& result, bool extern_only);
 
       void add_port (rx_port_ptr what);
 

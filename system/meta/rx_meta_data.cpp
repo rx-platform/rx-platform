@@ -362,21 +362,21 @@ string_type meta_data::get_full_path () const
 	}
 }
 
-void meta_data::get_full_path_with_buffer (string_type& path) const
+void meta_data::get_full_path_with_buffer (string_type& buffer) const
 {
 	if (!path.empty() && *path.rbegin() == RX_DIR_DELIMETER)
 	{
-		path = path;
-		path += name;
+		buffer = path;
+		buffer += name;
 
 	}
 	else
 	{
-		path = path;
+		buffer = path;
 		// we are not doing any memory stuff it's not our buffer
 		//path.reserve(ret.size() + name_.size() + 1);
-		path += RX_DIR_DELIMETER;
-		path += name;
+		buffer += RX_DIR_DELIMETER;
+		buffer += name;
 	}
 }
 
