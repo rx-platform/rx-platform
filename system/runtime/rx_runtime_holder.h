@@ -110,7 +110,7 @@ class object_runtime_algorithms
 
       static rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      static rx_result disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose);
+      static std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
       static rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose);
 
@@ -228,6 +228,8 @@ public:
       rx_result remove_target_relation (const string_type& name);
 
       typename typeT::instance_data_t get_definition_data ();
+
+      rx_result add_implicit_relation (relations::relation_data::smart_ptr data);
 
 
       rx::data::runtime_values_data& get_overrides ()

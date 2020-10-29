@@ -202,6 +202,8 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(items_messages::read_items_request::type_id, [] { return std::make_unique<items_messages::read_items_request>(); });
 	registered_messages_.emplace(items_messages::write_items_request::type_id, [] { return std::make_unique<items_messages::write_items_request>(); });
 	registered_messages_.emplace(items_messages::execute_item_request::type_id, [] { return std::make_unique<items_messages::execute_item_request>(); });
+	// special messages
+	registered_messages_.emplace(rx_keep_alive_message::type_id, [] { return std::make_unique<rx_keep_alive_message>(); });
 
 	registered_string_messages_.emplace(general_messages::rx_system_info_request::type_name, [] { return std::make_unique<general_messages::rx_system_info_request>(); });
 	registered_string_messages_.emplace(query_messages::get_code_info_request::type_name, [] { return std::make_unique<query_messages::get_code_info_request>(); });
@@ -232,6 +234,8 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(items_messages::read_items_request::type_name, [] { return std::make_unique<items_messages::read_items_request>(); });
 	registered_string_messages_.emplace(items_messages::write_items_request::type_name, [] { return std::make_unique<items_messages::write_items_request>(); });
 	registered_string_messages_.emplace(items_messages::execute_item_request::type_name, [] { return std::make_unique<items_messages::execute_item_request>(); });
+	// special messages
+	registered_string_messages_.emplace(rx_keep_alive_message::type_name, [] { return std::make_unique<rx_keep_alive_message>(); });
 
 	auto ret = meta::queries::rx_query::init_query_types();
 
@@ -354,6 +358,43 @@ rx_message_type_t rx_connection_context_response::get_type_id ()
 {
   return type_id;
 
+}
+
+
+// Class rx_internal::rx_protocol::messages::rx_keep_alive_message 
+
+string_type rx_keep_alive_message::type_name = "keep-alive";
+
+rx_message_type_t rx_keep_alive_message::type_id = rx_keep_alive_message_id;
+
+
+rx_result rx_keep_alive_message::serialize (base_meta_writer& stream) const
+{
+	return true;
+}
+
+rx_result rx_keep_alive_message::deserialize (base_meta_reader& stream)
+{
+	return true;
+}
+
+const string_type& rx_keep_alive_message::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_keep_alive_message::get_type_id ()
+{
+  return type_id;
+
+}
+
+message_ptr rx_keep_alive_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto ret_msg = std::make_unique<rx_keep_alive_message>();
+	ret_msg->request_id = request_id;
+	return ret_msg;
 }
 
 

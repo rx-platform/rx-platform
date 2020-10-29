@@ -81,29 +81,27 @@ rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx
 	auto result = implementation_->initialize_relation(ctx);
 	if (result)
 	{
-		rx_item_reference ref;
-		result = implementation_->get_implicit_reference(ctx, ref);
-		if (result)
+		rx_item_reference ref = implementation_->get_implicit_reference(ctx.meta);
+		
+		if (!ref.is_null())
 		{
-			if (!ref.is_null())
+			meta_data target_meta;
+			if (ref.is_node_id())
 			{
-				if (ref.is_node_id())
+				auto type = rx_internal::model::platform_types_manager::instance().get_types_resolver().get_item_data(ref.get_node_id(), target_meta);
+				if (type != rx_item_type::rx_invalid_type)
 				{
-					meta_data temp;
-					auto type = rx_internal::model::platform_types_manager::instance().get_types_resolver().get_item_data(ref.get_node_id(), temp);
-					if (type != rx_item_type::rx_invalid_type)
-					{
-						target = temp.get_full_path();
-					}
+					target_path = target_meta.get_full_path() + RX_OBJECT_DELIMETER + target_relation_name;
 				}
-				else
-				{
-					target = ref.get_path();
-				}
-				rx_simple_value val;
-				val.assign_static<string_type>(string_type(target));
-				value.set_value(std::move(val), ctx.now);
 			}
+			else
+			{
+				target_path = ref.get_path();
+			}
+			resolve_inverse_name();
+			rx_simple_value val;
+			val.assign_static<string_type>(string_type(target_path));
+			value.set_value(std::move(val), ctx.now);
 		}
 	}
 	return result;
@@ -117,13 +115,32 @@ rx_result relation_data::deinitialize_relation (runtime::runtime_deinit_context&
 
 rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 {
+	rx_item_reference ref = implementation_->get_implicit_reference(ctx.context->meta_info);
+	if (!ref.is_null())
+	{
+		meta_data target_meta;
+		if (ref.is_node_id())
+		{
+			auto type = rx_internal::model::platform_types_manager::instance().get_types_resolver().get_item_data(ref.get_node_id(), target_meta);
+			if (type != rx_item_type::rx_invalid_type)
+			{
+				target_path = target_meta.get_full_path() + RX_OBJECT_DELIMETER + target_relation_name;
+			}
+			rx_simple_value val;
+			val.assign_static<string_type>(string_type(target_path));
+			value.set_value(std::move(val), ctx.now);
+			target_id = ref.get_node_id();
+		}
+	}
 	executer_ = rx_thread_context();
 	auto result = implementation_->start_relation(ctx);
 	if (result)
 	{
+		resolve_inverse_name();
+
 		rx_item_reference ref;
-		if (target_id.is_null() && !target.empty())
-			ref = target;
+		if (target_id.is_null() && !parent_path.empty())
+			ref = parent_path;
 		else
 			ref = target_id;
 		resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());
@@ -137,7 +154,7 @@ rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 	{		
 		auto remove_result = platform_runtime_manager::instance().get_cache().remove_target_relation(target_id, target_relation_name);
 		if (!remove_result)
-			RUNTIME_LOG_ERROR("relation_runtime", 999, "Error removing target relation from "s + target);
+			RUNTIME_LOG_ERROR("relation_runtime", 999, "Error removing target relation from "s + parent_path);
 	}
 	my_state_ = relation_state::stopping;
 	auto result = implementation_->stop_relation(ctx);
@@ -149,17 +166,17 @@ void relation_data::fill_data (const data::runtime_values_data& data)
 	auto it = data.values.find(name);
 	if (it != data.values.end())
 	{
-		target = it->second.value.get_storage().get_string_value();
+		target_path = it->second.value.get_storage().get_string_value();
 	}
 	rx_simple_value val;
-	val.assign_static(target);
+	val.assign_static(target_path);
 	value.simple_set_value(std::move(val));
 }
 
 void relation_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	rx_simple_value temp;
-	temp.assign_static<string_type>(string_type(target));
+	temp.assign_static<string_type>(string_type(target_path));
 	data.add_value(name, std::move(temp));
 }
 
@@ -242,18 +259,22 @@ void relation_data::try_resolve ()
 {
 	if (my_state_ != relation_state::idle)
 		return;// not in right state
-	if (target_id.is_null() && !target.empty())
+
+	resolve_inverse_name();
+
+	if (target_id.is_null())
 	{
 		rx_directory_resolver dirs;
 		dirs.add_paths({ object_directory });
-		auto resolve_result = rx_internal::model::algorithms::resolve_reference(target, dirs);
+		auto resolve_result = rx_internal::model::algorithms::resolve_reference(parent_path, dirs);
 		if (!resolve_result)
 		{
-			RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + target);
+			RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
 			return;
 		}
 		target_id = resolve_result.move_value();
 	}
+	
 	if (target_id.is_null())
 		return;
 
@@ -264,31 +285,38 @@ void relation_data::try_resolve ()
 		if (item_ptr->get_executer() == executer_)
 		{
 			my_state_ = relation_state::same_domain;
+
 			connector_ = std::make_unique<local_relation_connector>(std::move(item_ptr));
 			implementation_->relation_connected();
 			if (!is_target_)
 			{
-				auto target_rel = make_target_relation();
+				auto target_rel = make_target_relation(context_->meta_info.get_full_path());
+
 				auto add_result = platform_runtime_manager::instance().get_cache().add_target_relation(target_id, std::move(target_rel));
 				if (!add_result)
-					RUNTIME_LOG_ERROR("relation_runtime", 999, "Error adding target relation to "s + target);
+					RUNTIME_LOG_ERROR("relation_runtime", 999, "Error adding target relation to "s + parent_path);
 			}
 		}
 		else
 		{
 			my_state_ = relation_state::remote;
-			RUNTIME_LOG_ERROR("relation_runtime", 999, "Not supported relation type"s + target);
+			RUNTIME_LOG_ERROR("relation_runtime", 999, "Not supported relation type "s + parent_path);
 		}
 	}
 }
 
-relation_data::smart_ptr relation_data::make_target_relation ()
+relation_data::smart_ptr relation_data::make_target_relation (const string_type& path)
 {
 	auto ret = rx_create_reference<relation_data>();
-	ret->target = context_->meta_info.get_full_path();
+	ret->target_path = path + RX_OBJECT_DELIMETER + name;
+	ret->resolve_inverse_name();
 	ret->target_id = context_->meta_info.id;
 	ret->name = target_relation_name;
 	ret->implementation_ = implementation_->make_target_relation();
+	rx_timed_value str_val;
+	str_val.assign_static<string_type>(string_type(ret->target_path), rx_time::now());
+	ret->value.value = str_val;
+	ret->value.read_only = true;
 	return ret;
 }
 
@@ -299,6 +327,12 @@ rx_result relation_data::start_target_relation (runtime::runtime_start_context& 
 	context_ = ctx.context;
 	executer_ = rx_thread_context();
 	is_target_ = true;
+	ctx.context->meta_info.get_full_path();
+
+	rx_simple_value val;
+	val.assign_static<string_type>(string_type(target_path));
+	value.set_value(std::move(val), ctx.now);
+
 	auto result = implementation_->start_relation(ctx);
 	if (result)
 	{
@@ -331,6 +365,40 @@ void relation_data::runtime_disconnected ()
 	implementation_->relation_disconnected();
 	if (my_state_ != relation_state::stopping)
 		my_state_ = relation_state::idle;
+}
+
+rx_result relation_data::resolve_inverse_name ()
+{
+	if (!target_path.empty())
+	{
+		string_type inverse_name;
+		auto idx_obj = target_path.rfind('.');
+		if (idx_obj != string_type::npos && idx_obj > 1)// safely 1 
+		{
+			auto idx_path = target_path.rfind(RX_DIR_DELIMETER);
+			if (idx_path != string_type::npos && idx_path>idx_obj)
+			{
+				// this is a strange thing like "../name
+				parent_path = target_path;
+			}
+			else
+			{
+				inverse_name = target_path.substr(idx_obj + 1);
+				parent_path = target_path.substr(0, idx_obj);
+				if (!rx_is_valid_namespace_name(inverse_name))
+				{
+					RUNTIME_LOG_ERROR("relation_runtime", 100, inverse_name + " in " + target_path + " is not a valid namespace name");
+					return true;
+				}
+				target_relation_name = inverse_name;
+			}
+		}
+		else
+		{
+			parent_path = target_path;
+		}		
+	}
+	return true;
 }
 
 
@@ -368,12 +436,24 @@ rx_result relations_holder::initialize_relations (runtime::runtime_init_context&
 		if (!result)
 			break;
 	}
+	for (auto& one : implicit_relations_)
+	{
+		result = one->initialize_relation(ctx);
+		if (!result)
+			break;
+	}
 	return result;
 }
 
 rx_result relations_holder::deinitialize_relations (runtime::runtime_deinit_context& ctx)
 {
 	rx_result result = true;
+	for (auto& one : implicit_relations_)
+	{
+		result = one->deinitialize_relation(ctx);
+		if (!result)
+			break;
+	}
 	for (auto& one : source_relations_)
 	{
 		result = one->deinitialize_relation(ctx);
@@ -392,12 +472,24 @@ rx_result relations_holder::start_relations (runtime::runtime_start_context& ctx
 		if (!result)
 			break;
 	}
+	for (auto& one : implicit_relations_)
+	{
+		result = one->start_relation(ctx);
+		if (!result)
+			break;
+	}
 	return result;
 }
 
 rx_result relations_holder::stop_relations (runtime::runtime_stop_context& ctx)
 {
 	rx_result result = true;
+	for (auto& one : implicit_relations_)
+	{
+		result = one->stop_relation(ctx);
+		if (!result)
+			break;
+	}
 	for (auto& one : source_relations_)
 	{
 		result = one->stop_relation(ctx);
@@ -421,6 +513,10 @@ void relations_holder::collect_data (data::runtime_values_data& data, runtime_va
 	{
 		one->collect_data(data, type);
 	}
+	for (const auto& one : implicit_relations_)
+	{
+		one->collect_data(data, type);
+	}
 	for (const auto& one : target_relations_)
 	{
 		one->collect_data(data, type);
@@ -437,7 +533,16 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 			attr.full_path = prefix + one->name;
 			attr.name = one->name;
 			attr.type = rx_attribute_type::relation_attribute_type;
-			attr.value.assign_static<string_type>(string_type(one->target));
+			attr.value.assign_static<string_type>(string_type(one->target_path));
+			items.push_back(attr);
+		}
+		for (auto& one : implicit_relations_)
+		{
+			runtime_item_attribute attr;
+			attr.full_path = prefix + one->name;
+			attr.name = one->name;
+			attr.type = rx_attribute_type::relation_target_attribute_type;
+			attr.value.assign_static<string_type>(string_type(one->target_path));
 			items.push_back(attr);
 		}
 		for (auto& one : target_relations_)
@@ -446,7 +551,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 			attr.full_path = prefix + one->name;
 			attr.name = one->name;
 			attr.type = rx_attribute_type::relation_target_attribute_type;
-			attr.value.assign_static<string_type>(string_type(one->target));
+			attr.value.assign_static<string_type>(string_type(one->target_path));
 			items.push_back(attr);
 		}
 		return true;
@@ -472,6 +577,13 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
 			}
 		}
+		for (auto& one : implicit_relations_)
+		{
+			if (one->name == sub_path)
+			{
+				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+			}
+		}
 		for (auto& one : target_relations_)
 		{
 			if (one->name == sub_path)
@@ -491,6 +603,11 @@ relation_data::smart_ptr relations_holder::get_relation (const string_type& name
 			return one;
 	}
 	for (auto& one : target_relations_)
+	{
+		if (one->name == name)
+			return one;
+	}
+	for (auto& one : implicit_relations_)
 	{
 		if (one->name == name)
 			return one;
@@ -529,6 +646,20 @@ rx_result_with<relation_data::smart_ptr> relations_holder::remove_target_relatio
 		return ret;
 	else
 		return "Relation "s + name + "not found.";
+}
+
+rx_result relations_holder::add_implicit_relation (relations::relation_data::smart_ptr data)
+{
+	for (auto& one : implicit_relations_)
+	{
+		if (one->name.empty())
+		{
+			one = std::move(data);
+			return true;
+		}
+	}
+	implicit_relations_.emplace_back(std::move(data));
+	return true;
 }
 
 

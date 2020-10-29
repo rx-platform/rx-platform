@@ -189,7 +189,6 @@ class subscription_write_transaction
       std::vector<std::pair<runtime_handle_t, rx_result> > get_results ();
 
       runtime_transaction_id_t client_handle;
-
   protected:
 
   private:
@@ -212,7 +211,8 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
 	DECLARE_REFERENCE_PTR(rx_subscription);
 
 	typedef std::map<runtime_handle_t, std::vector<runtime_handle_t> > handles_type;// target_handle -> mine handles
-	typedef std::map<string_type, runtime_handle_t> inverse_tags_type;// path -> mine handle
+	typedef std::map<string_type, runtime_handle_t> tags_type;// path -> mine handle
+    typedef std::map<runtime_handle_t, string_type> inverse_tags_type;// mine handle -> path
 	
     typedef std::vector<runtime_connection_data> connections_type;
 	typedef std::map<string_type, size_t> connection_paths_type;
@@ -284,6 +284,8 @@ class rx_subscription : public rx_platform::runtime::operational::rx_tags_callba
       handles_type handles_;
 
       inverse_tags_type inverse_tags_;
+
+      tags_type tag_paths_;
 
       locks::slim_lock items_lock_;
 

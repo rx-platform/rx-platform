@@ -286,263 +286,86 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 	}
 }
 
-// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm 
+// Parameterized Class rx_platform::meta::meta_algorithm::meta_blocks_algorithm 
 
 
-rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
+template <class typeT>
+rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
-	if (!stream.start_array("mappers", whose.mappers_.size()))
+	if (!stream.write_string("name", whose.name_))
 		return false;
-	for (const auto& one : whose.mappers_)
-	{
-		if (!stream.start_object("item"))
-			return false;
-		if (!one.serialize_definition(stream))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
+	if (!stream.write_item_reference("target", whose.target_))
 		return false;
 	return true;
 }
 
-rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
+template <class typeT>
+rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
 {
-	if (!stream.start_array("mappers"))
+	if (!stream.read_string("name", whose.name_))
 		return false;
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		mapper_attribute temp;
-		if (!temp.deserialize_definition(stream))
-			return false;
-		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.mappers_.size() | complex_data_type::mappings_mask)));
-		if (ret)
-		{
-			whose.mappers_.emplace_back(std::move(temp));
-		}
-		else
-			return ret;
-
-		if (!stream.end_object())
-			return false;
-	}
+	if (!stream.read_item_reference("target", whose.target_))
+		return false;
 	return true;
 }
 
-bool mapped_data_algorithm::check_complex_attribute (mapped_data_type& whose, type_check_context& ctx)
+template <class typeT>
+bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_check_context& ctx)
 {
-	bool ret = true;
-	for (auto& one : whose.mappers_)
+	rx_node_id target_id;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	if (!resolve_result)
 	{
-		ret &= meta_blocks_algorithm<mapper_attribute>::check_complex_attribute(one, ctx);
+		ctx.add_error("Unable to resolve attribute", RX_ITEM_NOT_FOUND, rx_medium_severity, resolve_result.errors());
+		return false;
 	}
-	return ret;
+	target_id = resolve_result.value();
+	auto target = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
+	if (!target)
+	{
+		std::ostringstream ss;
+		ss << "Not existing "
+			<< rx_item_type_name(typeT::TargetType::type_id)
+			<< " in attribute "
+			<< whose.name_;
+
+		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
+	}
+	return ctx.is_check_ok();
 }
 
-rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+template <class typeT>
+rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
 {
-	for (const auto& one : names)
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
+	if (!resolve_result)
 	{
-		switch (one.second & complex_data_type::type_mask)
-		{
-			// mappers
-		case complex_data_type::mappings_mask:
-			{
-				rx_result ret = meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(whose.mappers_[one.second & complex_data_type::index_mask], ctx);
-				if (!ret)
-				{
-					ret.register_error("Unable to create mapper "s + one.first + "!");
-					return ret;
-				}
-				break;
-			}
-		}
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
 	}
-	return true;
-}
-
-
-// Class rx_platform::meta::meta_algorithm::variable_data_algorithm 
-
-
-rx_result variable_data_algorithm::serialize_complex_attribute (const variable_data_type& whose, base_meta_writer& stream)
-{
-	if (!stream.start_array("sources", whose.sources_.size()))
-		return false;
-	for (const auto& one : whose.sources_)
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	if (temp)
 	{
-		if (!stream.start_object("item"))
-			return false;
-		if (!one.serialize_definition(stream))
-			return false;
-		if (!stream.end_object())
-			return false;
+		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		return true;
 	}
-	if (!stream.end_array())
-		return false;
-
-	if (!stream.start_array("filters", whose.filters_.size()))
-		return false;
-	for (const auto& one : whose.filters_)
+	else
 	{
-		if (!stream.start_object("item"))
-			return false;
-		if (!one.serialize_definition(stream))
-			return false;
-		if (!stream.end_object())
-			return false;
+		return temp.errors();
 	}
-	if (!stream.end_array())
-		return false;
-
-	if (!stream.start_array("events", whose.events_.size()))
-		return false;
-	for (const auto& one : whose.events_)
-	{
-		if (!stream.start_object("item"))
-			return false;
-		if (!one.serialize_definition(stream))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
-
-	return true;
-}
-
-rx_result variable_data_algorithm::deserialize_complex_attribute (variable_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
-{
-	if (!stream.start_array("sources"))
-		return false;
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		source_attribute temp;
-		if (!temp.deserialize_definition(stream))
-			return false;
-		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.sources_.size() | complex_data_type::sources_mask)));
-		if (ret)
-		{
-			whose.sources_.emplace_back(std::move(temp));
-		}
-		else
-			return ret;
-
-		if (!stream.end_object())
-			return false;
-	}
-
-	if (!stream.start_array("filters"))
-		return false;
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		filter_attribute temp;
-		if (!temp.deserialize_definition(stream))
-			return false;
-		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.filters_.size() | complex_data_type::filters_mask)));
-		if (ret)
-		{
-			whose.filters_.emplace_back(std::move(temp));
-		}
-		else
-			return ret;
-
-		if (!stream.end_object())
-			return false;
-	}
-
-	if (!stream.start_array("events"))
-		return false;
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		event_attribute temp;
-		if (!temp.deserialize_definition(stream))
-			return false;
-		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.events_.size() | complex_data_type::events_mask)));
-		if (ret)
-		{
-			whose.events_.emplace_back(std::move(temp));
-		}
-		else
-			return ret;
-
-		if (!stream.end_object())
-			return false;
-	}
-	return true;
-}
-
-bool variable_data_algorithm::check_complex_attribute (variable_data_type& whose, type_check_context& ctx)
-{
-	bool ret = true;
-	for (auto& one : whose.sources_)
-		ret &= meta_blocks_algorithm<source_attribute>::check_complex_attribute(one, ctx);
-	for (auto& one : whose.filters_)
-		ret &= meta_blocks_algorithm<filter_attribute>::check_complex_attribute(one, ctx);
-	for (auto& one : whose.events_)
-		ret &= meta_blocks_algorithm<event_attribute>::check_complex_attribute(one, ctx);
-	return ret;
-}
-
-rx_result variable_data_algorithm::construct_complex_attribute (const variable_data_type& whose, const names_cahce_type& names, construct_context& ctx)
-{
-	for (const auto& one : names)
-	{
-		switch (one.second & complex_data_type::type_mask)
-		{
-			// sources
-		case complex_data_type::sources_mask:
-			{
-				rx_result ret = meta_blocks_algorithm<source_attribute>::construct_complex_attribute(whose.sources_[one.second & complex_data_type::index_mask], ctx);
-				if (!ret)
-				{
-					ret.register_error("Unable to create source "s + one.first + "!");
-					return ret;
-				}
-				break;
-			}
-			// filters
-		case complex_data_type::filters_mask:
-			{
-				rx_result ret = meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(whose.filters_[one.second & complex_data_type::index_mask], ctx);
-				if (!ret)
-				{
-					ret.register_error("Unable to create filter "s + one.first + "!");
-					return ret;
-				}
-				break;
-			}
-			// events
-		case complex_data_type::events_mask:
-			{
-				rx_result ret = meta_blocks_algorithm<event_attribute>::construct_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], ctx);
-				if (!ret)
-				{
-					ret.register_error("Unable to create event "s + one.first + "!");
-					return ret;
-				}
-				break;
-			}
-		}
-	}
-	return true;
 }
 
 
+// explicit templates initialization
+template class meta_blocks_algorithm<variable_attribute>;
+template class meta_blocks_algorithm<struct_attribute>;
+template class meta_blocks_algorithm<event_attribute>;
+template class meta_blocks_algorithm<filter_attribute>;
+template class meta_blocks_algorithm<source_attribute>;
+template class meta_blocks_algorithm<mapper_attribute>;
 // Class rx_platform::meta::meta_algorithm::complex_data_algorithm 
 
 
@@ -822,86 +645,342 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::meta_blocks_algorithm 
+// Class rx_platform::meta::meta_algorithm::variable_data_algorithm 
 
 
-template <class typeT>
-rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
+rx_result variable_data_algorithm::serialize_complex_attribute (const variable_data_type& whose, base_meta_writer& stream)
 {
-	if (!stream.write_string("name", whose.name_))
+	if (!stream.start_array("sources", whose.sources_.size()))
 		return false;
-	if (!stream.write_item_reference("target", whose.target_))
+	for (const auto& one : whose.sources_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+		if (!one.serialize_definition(stream))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.start_array("filters", whose.filters_.size()))
+		return false;
+	for (const auto& one : whose.filters_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+		if (!one.serialize_definition(stream))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	if (!stream.start_array("events", whose.events_.size()))
+		return false;
+	for (const auto& one : whose.events_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+		if (!one.serialize_definition(stream))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
+		return false;
+
+	return true;
+}
+
+rx_result variable_data_algorithm::deserialize_complex_attribute (variable_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
+{
+	if (!stream.start_array("sources"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		source_attribute temp;
+		if (!temp.deserialize_definition(stream))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.sources_.size() | complex_data_type::sources_mask)));
+		if (ret)
+		{
+			whose.sources_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+
+	if (!stream.start_array("filters"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		filter_attribute temp;
+		if (!temp.deserialize_definition(stream))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.filters_.size() | complex_data_type::filters_mask)));
+		if (ret)
+		{
+			whose.filters_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+
+	if (!stream.start_array("events"))
+		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		event_attribute temp;
+		if (!temp.deserialize_definition(stream))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.events_.size() | complex_data_type::events_mask)));
+		if (ret)
+		{
+			whose.events_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
+}
+
+bool variable_data_algorithm::check_complex_attribute (variable_data_type& whose, type_check_context& ctx)
+{
+	bool ret = true;
+	for (auto& one : whose.sources_)
+		ret &= meta_blocks_algorithm<source_attribute>::check_complex_attribute(one, ctx);
+	for (auto& one : whose.filters_)
+		ret &= meta_blocks_algorithm<filter_attribute>::check_complex_attribute(one, ctx);
+	for (auto& one : whose.events_)
+		ret &= meta_blocks_algorithm<event_attribute>::check_complex_attribute(one, ctx);
+	return ret;
+}
+
+rx_result variable_data_algorithm::construct_complex_attribute (const variable_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+{
+	for (const auto& one : names)
+	{
+		switch (one.second & complex_data_type::type_mask)
+		{
+			// sources
+		case complex_data_type::sources_mask:
+			{
+				rx_result ret = meta_blocks_algorithm<source_attribute>::construct_complex_attribute(whose.sources_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create source "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
+			// filters
+		case complex_data_type::filters_mask:
+			{
+				rx_result ret = meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(whose.filters_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create filter "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
+			// events
+		case complex_data_type::events_mask:
+			{
+				rx_result ret = meta_blocks_algorithm<event_attribute>::construct_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create event "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
+		}
+	}
+	return true;
+}
+
+
+// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm 
+
+
+rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
+{
+	if (!stream.start_array("mappers", whose.mappers_.size()))
+		return false;
+	for (const auto& one : whose.mappers_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+		if (!one.serialize_definition(stream))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+	if (!stream.end_array())
 		return false;
 	return true;
 }
 
-template <class typeT>
-rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
+rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
-	if (!stream.read_string("name", whose.name_))
+	if (!stream.start_array("mappers"))
 		return false;
-	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return false;
+
+		mapper_attribute temp;
+		if (!temp.deserialize_definition(stream))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.mappers_.size() | complex_data_type::mappings_mask)));
+		if (ret)
+		{
+			whose.mappers_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
+	}
 	return true;
 }
 
-template <class typeT>
-bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_check_context& ctx)
+bool mapped_data_algorithm::check_complex_attribute (mapped_data_type& whose, type_check_context& ctx)
 {
-	rx_node_id target_id;
-	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
-	if (!resolve_result)
+	bool ret = true;
+	for (auto& one : whose.mappers_)
 	{
-		ctx.add_error("Unable to resolve attribute", RX_ITEM_NOT_FOUND, rx_medium_severity, resolve_result.errors());
+		ret &= meta_blocks_algorithm<mapper_attribute>::check_complex_attribute(one, ctx);
+	}
+	return ret;
+}
+
+rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+{
+	for (const auto& one : names)
+	{
+		switch (one.second & complex_data_type::type_mask)
+		{
+			// mappers
+		case complex_data_type::mappings_mask:
+			{
+				rx_result ret = meta_blocks_algorithm<mapper_attribute>::construct_complex_attribute(whose.mappers_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create mapper "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
+		}
+	}
+	return true;
+}
+
+
+// Class rx_platform::meta::meta_algorithm::filtered_data_algorithm 
+
+
+rx_result filtered_data_algorithm::serialize_complex_attribute (const filtered_data_type& whose, base_meta_writer& stream)
+{
+	if (!stream.start_array("filters", whose.filters_.size()))
 		return false;
-	}
-	target_id = resolve_result.value();
-	auto target = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
-	if (!target)
+	for (const auto& one : whose.filters_)
 	{
-		std::ostringstream ss;
-		ss << "Not existing "
-			<< rx_item_type_name(typeT::TargetType::type_id)
-			<< " in attribute "
-			<< whose.name_;
-
-		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_medium_severity, target.errors());
+		if (!stream.start_object("item"))
+			return false;
+		if (!one.serialize_definition(stream))
+			return false;
+		if (!stream.end_object())
+			return false;
 	}
-	return ctx.is_check_ok();
+	if (!stream.end_array())
+		return false;
+
+	return true;
 }
 
-template <class typeT>
-rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT& whose, construct_context& ctx)
+rx_result filtered_data_algorithm::deserialize_complex_attribute (filtered_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
-	rx_node_id target;
-	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<typename typeT::TargetType>());
-	if (!resolve_result)
+	if (!stream.start_array("filters"))
+		return false;
+	while (!stream.array_end())
 	{
-		rx_result ret(resolve_result.errors());
-		ret.register_error("Unable to resolve attribute");
-		return ret;
+		if (!stream.start_object("item"))
+			return false;
+
+		filter_attribute temp;
+		if (!temp.deserialize_definition(stream))
+			return false;
+		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.filters_.size() | complex_data_type::filters_mask)));
+		if (ret)
+		{
+			whose.filters_.emplace_back(std::move(temp));
+		}
+		else
+			return ret;
+
+		if (!stream.end_object())
+			return false;
 	}
-	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
-	if (temp)
+	return true;
+}
+
+bool filtered_data_algorithm::check_complex_attribute (filtered_data_type& whose, type_check_context& ctx)
+{
+	bool ret = true;
+	for (auto& one : whose.filters_)
+		ret &= meta_blocks_algorithm<filter_attribute>::check_complex_attribute(one, ctx);
+	return ret;
+}
+
+rx_result filtered_data_algorithm::construct_complex_attribute (const filtered_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+{
+	for (const auto& one : names)
 	{
-		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
-		return true;
+		switch (one.second & complex_data_type::type_mask)
+		{
+			// filters
+		case complex_data_type::filters_mask:
+			{
+				rx_result ret = meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(whose.filters_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create filter "s + one.first + "!");
+					return ret;
+				}
+				break;			
+			}
+		}
 	}
-	else
-	{
-		return temp.errors();
-	}
+	return true;
 }
 
 
-// explicit templates initialization
-template class meta_blocks_algorithm<variable_attribute>;
-template class meta_blocks_algorithm<struct_attribute>;
-template class meta_blocks_algorithm<event_attribute>;
-template class meta_blocks_algorithm<filter_attribute>;
-template class meta_blocks_algorithm<source_attribute>;
-template class meta_blocks_algorithm<mapper_attribute>;
 } // namespace meta_algorithm
 } // namespace meta
 } // namespace rx_platform

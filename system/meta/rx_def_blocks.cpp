@@ -62,6 +62,88 @@ namespace meta {
 
 namespace def_blocks {
 
+// Class rx_platform::meta::def_blocks::complex_data_type 
+
+
+rx_result complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
+{
+	auto ret = check_name(name, (static_cast<int>(structs_.size() | structs_mask)));
+	if (ret)
+	{
+		structs_.emplace_back(struct_attribute(name, id));
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
+{
+	auto ret = check_name(name, (static_cast<int>(variables_.size() | variables_mask)));
+	if(ret)
+	{
+		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only));
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
+{
+	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
+	if (ret)
+	{
+		simple_values_.emplace_back(name, read_only, std::move(val));
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
+{
+	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
+	if (ret)
+	{
+		const_values_.emplace_back(name, std::move(val));
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
+{
+	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
+	if(ret)
+	{
+		simple_values_.emplace_back(name, read_only, val);
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
+{
+	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
+	if(ret)
+	{
+		const_values_.emplace_back(name, val);
+	}
+	return ret;
+}
+
+rx_result complex_data_type::check_name (const string_type& name, int rt_index)
+{
+	if (!rx_is_valid_item_name(name))
+		return name + "is invalid item name!";
+
+	auto it = names_cache_.find(name);
+	if (it == names_cache_.end())
+	{
+		if(rt_index)
+			names_cache_.emplace(name, rt_index);
+		return true;
+	}
+	else
+	{
+		return name + " already exists!";
+	}
+}
+
+
 // Class rx_platform::meta::def_blocks::const_value_def 
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
@@ -139,43 +221,6 @@ rx_result event_attribute::check (type_check_context& ctx)
 rx_result event_attribute::construct (construct_context& ctx) const
 {
 	return meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
-}
-
-
-// Class rx_platform::meta::def_blocks::filter_attribute 
-
-filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name)
-	, target_(id)
-{
-}
-
-filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
-	, target_(target_name)
-{
-}
-
-
-
-rx_result filter_attribute::serialize_definition (base_meta_writer& stream) const
-{
-	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
-}
-
-rx_result filter_attribute::deserialize_definition (base_meta_reader& stream)
-{
-	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
-}
-
-rx_result filter_attribute::check (type_check_context& ctx)
-{
-	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
-}
-
-rx_result filter_attribute::construct (construct_context& ctx) const
-{
-	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -444,91 +489,58 @@ rx_result variable_data_type::register_event (const string_type& name, const rx_
 // Class rx_platform::meta::def_blocks::io_attribute 
 
 
-// Class rx_platform::meta::def_blocks::complex_data_type 
+// Class rx_platform::meta::def_blocks::filter_attribute 
 
-
-rx_result complex_data_type::register_struct (const string_type& name, const rx_node_id& id)
+filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
+      : name_(name)
+	, target_(id)
 {
-	auto ret = check_name(name, (static_cast<int>(structs_.size() | structs_mask)));
+}
+
+filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_(target_name)
+{
+}
+
+
+
+rx_result filter_attribute::serialize_definition (base_meta_writer& stream) const
+{
+	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
+}
+
+rx_result filter_attribute::deserialize_definition (base_meta_reader& stream)
+{
+	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
+}
+
+rx_result filter_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
+}
+
+rx_result filter_attribute::construct (construct_context& ctx) const
+{
+	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
+}
+
+
+// Class rx_platform::meta::def_blocks::filtered_data_type 
+
+
+rx_result filtered_data_type::register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	auto ret = complex_data.check_name(name, (static_cast<int>(filters_.size() | complex_data_type::filters_mask)));
 	if (ret)
 	{
-		structs_.emplace_back(struct_attribute(name, id));
+		filters_.emplace_back(name, id);
 	}
 	return ret;
-}
-
-rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
-{
-	auto ret = check_name(name, (static_cast<int>(variables_.size() | variables_mask)));
-	if(ret)
-	{
-		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only));
-	}
-	return ret;
-}
-
-rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
-{
-	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
-	if (ret)
-	{
-		simple_values_.emplace_back(name, read_only, std::move(val));
-	}
-	return ret;
-}
-
-rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
-{
-	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
-	if (ret)
-	{
-		const_values_.emplace_back(name, std::move(val));
-	}
-	return ret;
-}
-
-rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
-{
-	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
-	if(ret)
-	{
-		simple_values_.emplace_back(name, read_only, val);
-	}
-	return ret;
-}
-
-rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
-{
-	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
-	if(ret)
-	{
-		const_values_.emplace_back(name, val);
-	}
-	return ret;
-}
-
-rx_result complex_data_type::check_name (const string_type& name, int rt_index)
-{
-	if (!rx_is_valid_item_name(name))
-		return name + "is invalid item name!";
-
-	auto it = names_cache_.find(name);
-	if (it == names_cache_.end())
-	{
-		if(rt_index)
-			names_cache_.emplace(name, rt_index);
-		return true;
-	}
-	else
-	{
-		return name + " already exists!";
-	}
 }
 
 
 } // namespace def_blocks
 } // namespace meta
 } // namespace rx_platform
-
-
 

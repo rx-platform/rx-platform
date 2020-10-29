@@ -1116,7 +1116,7 @@ rx_result variable_data::write_value (write_data&& data, variable_write_task* ta
 		for (auto& filter : filters)
 		{
 			if (filter.is_output()
-				|| !(result = filter.filter_output(data.value, ctx)))
+				&& !(result = filter.filter_output(data.value)))
 				break;
 		}
 		if (!result)
@@ -1214,7 +1214,7 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 		{
 			if (filter.is_input())
 			{
-				result = filter.filter_input(prepared_value, ctx);
+				result = filter.filter_input(prepared_value);
 				if (!result)
 					break;
 			}
@@ -1228,22 +1228,20 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 	{
 		// value has changed
 		value = prepared_value;
+		
 		// send subscription update
 		ctx->variable_value_changed(this, prepared_value);
 		// send update to mappers
-		auto& mappers = item->get_mappers();
-		if (!mappers.empty())
+		auto& mappers = item->get_mappers();		
+		if (mappers.size() == 1)
 		{
-			if (mappers.size() == 1)
+			mappers[0].value_changed(std::move(prepared_value));
+		}
+		else
+		{
+			for (auto& one : mappers)
 			{
-				mappers[0].value_changed(std::move(prepared_value));
-			}
-			else
-			{
-				for (auto& one : mappers)
-				{
-					one.value_changed(rx_value(prepared_value));
-				}
+				one.value_changed(rx_value(prepared_value));
 			}
 		}
 	}
@@ -1413,14 +1411,16 @@ void mapper_data::process_update (values::rx_value&& value)
 		if (value.is_null() && my_variable_)
 			value = my_variable_->get_value(context_);
 		rx_result result;
+		rx_simple_value prepared_value = value.to_simple();
+		auto quality = value.get_quality();
 		auto& filters = item->get_filters();
-		if (!filters.empty())
+		if (!filters.empty() && !value.is_null())
 		{
 			for (auto& filter : filters)
 			{
-				if (filter.is_input())
+				if (filter.is_output())
 				{
-					result = filter.filter_input(value, context_);
+					result = filter.filter_output(prepared_value);
 					if (!result)
 						break;
 				}
@@ -1428,9 +1428,20 @@ void mapper_data::process_update (values::rx_value&& value)
 			if (!result)
 			{
 				result.register_error("Unable to filter input value.");
+				quality = RX_BAD_QUALITY_FAILURE;
 			}
+			if (!prepared_value.convert_to(mapper_ptr->value_type_))
+				quality = RX_BAD_QUALITY_TYPE_MISMATCH;
+			rx_value filtered_value = rx_value::from_simple(std::move(prepared_value), value.get_time());
+			filtered_value.set_quality(quality);
+			mapper_ptr->mapped_value_changed(std::move(filtered_value));
 		}
-		mapper_ptr->mapped_value_changed(std::move(value));
+		else
+		{
+			if (!value.convert_to(mapper_ptr->value_type_))
+				value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+			mapper_ptr->mapped_value_changed(std::move(value));
+		}
 	}
 }
 
@@ -1438,29 +1449,48 @@ void mapper_data::process_write (rx_simple_value&& val, runtime_transaction_id_t
 {
 	if (my_variable_)
 	{
-		rx_result result;
-		auto& filters = item->get_filters();
-		if (!filters.empty())
+		rx_value prepared_value = rx_value::from_simple(std::move(val), rx_time());
+		if (!prepared_value.convert_to(my_variable_->value.get_type()))
 		{
-			for (auto& filter : filters)
+			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, id);
+		}
+		else
+		{
+			rx_result result;
+			auto& filters = item->get_filters();
+			if (!filters.empty())
 			{
-				if (filter.is_output())
+				for (auto& filter : filters)
 				{
-					result = filter.filter_output(val, context_);
-					if (!result)
-						break;
+					if (filter.is_input())
+					{
+						result = filter.filter_input(prepared_value);
+						if (!result)
+							break;
+					}
+				}
+				if (!result)
+				{
+					result.register_error("Unable to filter output value.");
 				}
 			}
 			if (!result)
 			{
-				result.register_error("Unable to filter output value.");
+				mapper_ptr->mapper_result_received(std::move(result), id);
+			}
+			else
+			{
+				write_data data;
+				data.transaction_id = id;
+				data.value = prepared_value.to_simple();
+				auto task = new mapper_write_task(this, id);
+				result = my_variable_->write_value(std::move(data), task, context_);
+				if (!result)
+				{
+					mapper_ptr->mapper_result_received(std::move(result), id);
+				}
 			}
 		}
-		write_data data;
-		data.transaction_id = id;
-		data.value = std::move(val);
-		auto task = new mapper_write_task(this, id);
-		result = my_variable_->write_value(std::move(data), task, context_);
 	}
 }
 
@@ -1615,7 +1645,7 @@ void source_data::process_update (values::rx_value&& value)
 				{
 					if (filter.is_input())
 					{
-						result = filter.filter_input(value, context_);
+						result = filter.filter_input(value);
 						if (!result)
 							break;
 					}
@@ -1644,7 +1674,7 @@ void source_data::process_write (rx_simple_value&& val, runtime_transaction_id_t
 			{
 				if (filter.is_input())
 				{
-					result = filter.filter_output(val, context_);
+					result = filter.filter_output(val);
 					if (!result)
 						break;
 				}
@@ -1697,6 +1727,16 @@ void source_data::source_result_pending (rx_result&& result, runtime_transaction
 void source_data::process_result (runtime_transaction_id_t id, rx_result&& result)
 {
 	my_variable_->process_result(id, std::move(result));
+}
+
+threads::job_thread* source_data::get_jobs_queue ()
+{
+	return nullptr;
+}
+
+void source_data::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_calculation_job(job);
 }
 
 
@@ -1772,11 +1812,13 @@ void event_data::process_runtime (runtime_process_context* ctx)
 string_type filter_data::type_name = RX_CPP_FILTER_TYPE_NAME;
 
 filter_data::filter_data()
+      : context_(nullptr)
 {
 }
 
 filter_data::filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var)
-	: item(std::move(rt))
+      : context_(nullptr)
+	, item(std::move(rt))
 	, filter_ptr(std::move(var))
 {
 }
@@ -1795,10 +1837,13 @@ void filter_data::fill_data (const data::runtime_values_data& data, fill_context
 
 rx_result filter_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+	filter_ptr->container_ = this;
 	ctx.structure.push_item(*item);
 	auto result = item->initialize_runtime(ctx);
 	if (result)
+	{
 		result = filter_ptr->initialize_filter(ctx);
+	}
 	ctx.structure.pop_item();
 	return result;
 }
@@ -1808,11 +1853,13 @@ rx_result filter_data::deinitialize_runtime (runtime::runtime_deinit_context& ct
 	auto result = filter_ptr->deinitialize_filter(ctx);
 	if (result)
 		result = item->deinitialize_runtime(ctx);
+	filter_ptr->container_ = this;
 	return result;
 }
 
 rx_result filter_data::start_runtime (runtime::runtime_start_context& ctx)
 {
+	context_ = ctx.context;
 	ctx.structure.push_item(*item);
 	auto result = item->start_runtime(ctx);
 	if (result)
@@ -1826,6 +1873,7 @@ rx_result filter_data::stop_runtime (runtime::runtime_stop_context& ctx)
 	auto result = filter_ptr->stop_filter(ctx);
 	if (result)
 		result = item->stop_runtime(ctx);
+	context_ = nullptr;
 	return result;
 }
 
@@ -1833,14 +1881,14 @@ void filter_data::process_runtime (runtime_process_context* ctx)
 {
 }
 
-rx_result filter_data::filter_output (rx_simple_value& val, runtime_process_context* ctx)
+rx_result filter_data::filter_output (rx_simple_value& val)
 {
-	return filter_ptr ? filter_ptr->filter_output(val, ctx) : RX_ERROR_STOPPED;
+	return filter_ptr ? filter_ptr->filter_output(val) : RX_ERROR_STOPPED;
 }
 
-rx_result filter_data::filter_input (rx_value& val, runtime_process_context* ctx)
+rx_result filter_data::filter_input (rx_value& val)
 {
-	return filter_ptr ? filter_ptr->filter_input(val, ctx) : RX_ERROR_STOPPED;
+	return filter_ptr ? filter_ptr->filter_input(val) : RX_ERROR_STOPPED;
 }
 
 bool filter_data::is_input () const
@@ -1851,6 +1899,32 @@ bool filter_data::is_input () const
 bool filter_data::is_output () const
 {
 	return filter_ptr ? filter_ptr->supports_output() && io_.get_output() : false;
+}
+
+rx_result filter_data::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
+{
+	if (context_)
+	{
+		return context_->get_value(handle, val);
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return "Context not binded!";
+	}
+}
+
+rx_result filter_data::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
+{
+	if (context_)
+	{
+		return context_->set_value(handle, std::move(val));
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return "Context not binded!";
+	}
 }
 
 
@@ -1918,7 +1992,7 @@ void value_data::object_state_changed (runtime_process_context* ctx)
 
 rx_result value_data::write_value (write_data&& data)
 {
-	if (read_only && !data.is_internal())
+	if (read_only && !data.internal)
 		return "Access Denied!";
 	if (data.value.convert_to(value.get_type()))
 	{
@@ -2017,6 +2091,14 @@ rx_result indirect_value_data::write_value (write_data&& data, runtime_process_c
 }
 
 
+// Class rx_platform::runtime::structure::variable_write_task 
+
+variable_write_task::~variable_write_task()
+{
+}
+
+
+
 // Class rx_platform::runtime::structure::mapper_write_task 
 
 mapper_write_task::mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id)
@@ -2031,14 +2113,6 @@ void mapper_write_task::process_result (runtime_transaction_id_t id, rx_result&&
 {
 	my_mapper_->process_write_result(std::move(result), transaction_id_);
 }
-
-
-// Class rx_platform::runtime::structure::variable_write_task 
-
-variable_write_task::~variable_write_task()
-{
-}
-
 
 
 } // namespace structure

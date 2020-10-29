@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace sys_runtime {
 
 namespace subscriptions {
 
-// Class rx_internal::sys_runtime::subscriptions::rx_subscription
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription 
 
 rx_subscription::rx_subscription (rx_subscription_callback* callback)
       : callback_(callback),
@@ -67,8 +67,8 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 		///!!!!!IT HAS BEEN DONE ON PURPOSE
 		///!!!!!JUST BE CAREFUL
 		items_lock_.lock();
-		auto it_inv = inverse_tags_.find(one);
-		if (it_inv == inverse_tags_.end())
+		auto it_inv = tag_paths_.find(one);
+		if (it_inv == tag_paths_.end())
 		{
 			runtime_handle_t new_id = 0;
 			string_type object_path;
@@ -115,6 +115,11 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 				to_retrieve_.emplace(idx);
 				to_process_.emplace(idx);
+			}
+			if (new_id)
+			{
+				tag_paths_.emplace(one, new_id);
+				inverse_tags_.emplace(new_id, one);
 			}
 			items_lock_.unlock();
 
@@ -173,7 +178,13 @@ rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>
 			auto result = connection->remove_tag(one);
 			if (result)
 			{
-				//!!!! TODO clean all stuff
+				auto it = inverse_tags_.find(one);
+				if (it != inverse_tags_.end())
+				{
+					tag_paths_.erase(it->second);
+					inverse_tags_.erase(it);
+				}
+				// inverse_tags_
 				to_process_.emplace(one >> 16);
 				results.emplace_back(true);
 			}
@@ -559,10 +570,10 @@ void rx_subscription::process_results ()
 }
 
 
-// Class rx_internal::sys_runtime::subscriptions::rx_subscription_tag
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription_tag 
 
 
-// Class rx_internal::sys_runtime::subscriptions::rx_subscription_callback
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription_callback 
 
 rx_subscription_callback::~rx_subscription_callback()
 {
@@ -570,7 +581,7 @@ rx_subscription_callback::~rx_subscription_callback()
 
 
 
-// Class rx_internal::sys_runtime::subscriptions::runtime_connection_data
+// Class rx_internal::sys_runtime::subscriptions::runtime_connection_data 
 
 
 rx_subscription_tag* runtime_connection_data::get_tag (runtime_handle_t handle)
@@ -596,8 +607,15 @@ bool runtime_connection_data::remove_tag (runtime_handle_t handle)
 		tag.ref_count--;
 		if (tag.ref_count < 1)
 		{
-			tags_[idx].path.clear();
-			empty_slots_.emplace_back(idx);
+			if (tags_[idx].target_handle)
+			{
+				tags_[idx].mine_handle = 0;
+			}
+			else
+			{
+				tags_[idx].path.clear();
+				empty_slots_.emplace_back(idx);
+			}
 		}
 		return true;
 	}
@@ -621,6 +639,7 @@ runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, ru
 	else
 	{
 		auto idx = empty_slots_.back();
+		empty_slots_.pop_back();
 		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
 		tag.mine_handle = ret;
 		RX_ASSERT(tags_[idx].path.empty());
@@ -636,13 +655,35 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 	{
 		connect_indexes.clear();
 		to_connect.clear();
+		std::vector<runtime_handle_t> to_disconnect;
+		std::vector<size_t> disconnect_indexes;
 		size_t count = tags_.size();
 		for (size_t idx=0; idx<count; idx++)
 		{
+			if (tags_[idx].path.empty())
+				continue;
 			if (tags_[idx].target_handle == 0)
 			{
 				to_connect.emplace_back(tags_[idx].path);
 				connect_indexes.emplace_back(idx);
+			}
+			else if (tags_[idx].target_handle != 0 && tags_[idx].mine_handle == 0)
+			{
+				to_disconnect.emplace_back(tags_[idx].target_handle);
+				disconnect_indexes.emplace_back(idx);
+			}
+		}
+		if (!to_disconnect.empty())
+		{
+			auto result = item->disconnect_items(to_disconnect, whose);
+			count = result.size();
+			for (size_t idx = 0; idx < count; idx++)
+			{
+				if (result[idx])
+				{
+					tags_[disconnect_indexes[idx]].path.clear();
+					empty_slots_.emplace_back(disconnect_indexes[idx]);
+				}
 			}
 		}
 		if (!to_connect.empty())
@@ -702,7 +743,7 @@ bool runtime_connection_data::connection_dead ()
 }
 
 
-// Class rx_internal::sys_runtime::subscriptions::subscription_write_transaction
+// Class rx_internal::sys_runtime::subscriptions::subscription_write_transaction 
 
 
 runtime_transaction_id_t subscription_write_transaction::add_write (runtime_transaction_id_t master_id, transactions_map_type& map, runtime_handle_t handle)

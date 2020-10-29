@@ -64,6 +64,7 @@ class base_meta_reader;
 namespace values
 {
 class rx_simple_value;
+class rx_value;
 }
 
 struct rx_table_cell_struct
@@ -106,13 +107,17 @@ public:
 		rollback_actions_.push(rollback);
 	}
 	rx_transaction_type() = default;
-	rx_transaction_type(const rx_transaction_type& right) = default;
-	rx_transaction_type(rx_transaction_type&& right) = default;
-	rx_transaction_type& operator= (const rx_transaction_type & right) = default;
-	rx_transaction_type& operator= (rx_transaction_type && right) = default;
+	rx_transaction_type(const rx_transaction_type& right) = delete;
+	rx_transaction_type(rx_transaction_type&& right) noexcept = default;
+	rx_transaction_type& operator= (const rx_transaction_type & right) = delete;
+	rx_transaction_type& operator= (rx_transaction_type && right) noexcept = default;
 	void commit()
 	{
 		is_commited = true;
+	}
+	void uncommit()
+	{
+		is_commited = false;
 	}
 	~rx_transaction_type()
 	{
@@ -562,6 +567,8 @@ struct rx_mode_type
 {
 	rx_mode_type();
 	uint32_t raw_format;
+	bool can_callculate(uint32_t quality) const;
+	bool can_callculate(const values::rx_value& value) const;
 	bool is_on() const;
 	bool is_test() const;
 	bool is_blocked() const;

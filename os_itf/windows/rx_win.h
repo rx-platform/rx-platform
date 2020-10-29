@@ -102,7 +102,7 @@ typedef HCRYPTHASH  crypt_hash_t;
 #ifdef _DEBUG
 #define RX_ASSERT(v) _ASSERT(v)
 #else
-#define RX_ASSERT 
+#define RX_ASSERT(v) ((void)0)
 #endif
 
 //#define snprintf _snprintf

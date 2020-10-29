@@ -2,9 +2,9 @@
 
 
 #define RX_HAL_NAME "Windows"
-#define RX_HAL_MAJOR_VERSION 0
-#define RX_HAL_MINOR_VERSION 12
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_MAJOR_VERSION 1
+#define RX_HAL_MINOR_VERSION 0
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -32,5 +32,6 @@
 0.11.3. corrected rx_thread_create, skips priority
 0.12.0. added rx_socket_read_from and rx_socket_write_to
 0.12.1. added addresses to connect callback
+1.0.0 first release version
 
 *********************************************************************************/

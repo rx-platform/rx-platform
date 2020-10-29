@@ -160,7 +160,12 @@ Local Pipe class. implementation of an local pipe port port");
 
       void stack_disassembled ();
 
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
+      void remove_endpoint(rx_protocol_stack_endpoint* what)
+      {
+
+      }
   protected:
 
   private:

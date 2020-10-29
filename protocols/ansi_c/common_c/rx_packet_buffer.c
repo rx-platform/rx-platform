@@ -138,6 +138,8 @@ rx_protocol_result_t rx_handle_buffer_resize(rx_packet_buffer* buffer, size_t to
 	if (buffer->capacity < buffer->size + to_add)
 	{
 		new_capacity = (buffer->capacity << 1);
+		if (new_capacity == 0)
+			new_capacity = sizeof(void*);
 		while (new_capacity < buffer->size + to_add)
 			new_capacity <<= 1;
 		if (buffer->whose && buffer->whose->allocate_packet_function)

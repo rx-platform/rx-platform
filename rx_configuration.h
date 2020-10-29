@@ -32,6 +32,7 @@
 #define RX_NS_SYSTEM_CLASSES_NAME "system"
 #define RX_NS_PORT_CLASSES_NAME "ports"
 #define RX_NS_SUPPORT_CLASSES_NAME "support"
+#define RX_NS_SIMULATION_CLASSES_NAME "simulation"
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
@@ -240,7 +241,23 @@
 #define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
 #define RX_LINEAR_SCALING_FILTER_TYPE_ID 0xc000039
 
-// last is 0xc00003f!!!! 
+#define RX_SIMULATION_SOURCE_TYPE_NAME "SimulationSource"
+#define RX_SIMULATION_SOURCE_TYPE_ID 0xc000040
+#define RX_RAMP_SIMULATION_SOURCE_TYPE_NAME "RampSource"
+#define RX_RAMP_SIMULATION_SOURCE_TYPE_ID 0xc000041
+#define RX_SINE_SIMULATION_SOURCE_TYPE_NAME "SineSource"
+#define RX_SINE_SIMULATION_SOURCE_TYPE_ID 0xc000041
+
+
+#define RX_NS_SYSTEM_TCP_NAME "TcpServer"
+#define RX_NS_SYSTEM_TCP_ID 0xc000042
+#define RX_NS_SYSTEM_OPCUABIN_NAME "OpcUaTransport"
+#define RX_NS_SYSTEM_OPCUABIN_ID 0xc000043
+#define RX_NS_SYSTEM_RXJSON_NAME "JSON"
+#define RX_NS_SYSTEM_RXJSON_ID 0xc000044
+
+
+// last is 0xc000044!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

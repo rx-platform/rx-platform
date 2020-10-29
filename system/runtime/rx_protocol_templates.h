@@ -88,22 +88,23 @@ standard many<=>many protocol port implementation");
     };*/
 
     typedef std::map<rx_protocol_stack_endpoint*, rx_reference<endpointT> > active_endpoints_type;
+public:
+    typedef std::function<std::pair<rx_protocol_stack_endpoint* , rx_reference<endpointT> >()> construct_func_type;
+    construct_func_type construct_func;
 
   public:
 
-      rx_protocol_stack_endpoint* create_endpoint ();
+      rx_protocol_stack_endpoint* construct_endpoint ();
 
-      void remove_endpoint (rx_protocol_stack_endpoint* what);
-
-      rx_reference<endpointT> get_endpoint (rx_protocol_stack_endpoint* who);
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
 
   protected:
 
+      rx_reference<endpointT> get_endpoint (rx_protocol_stack_endpoint* stack);
+
+
   private:
-
-      virtual rx_reference<endpointT> construct_endpoint () = 0;
-
 
 
       active_endpoints_type active_endpoints_;
@@ -116,43 +117,43 @@ standard many<=>many protocol port implementation");
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* application_port_impl<endpointT>::create_endpoint ()
+rx_protocol_stack_endpoint* application_port_impl<endpointT>::construct_endpoint ()
 {
-    auto endpoint_ptr = construct_endpoint();
-    rx_protocol_stack_endpoint* entry = endpoint_ptr->bind_endpoint([this](int64_t count)
-        {
-        },
-        [this](int64_t count)
-        {
-        });
-    if (entry->closed_function == nullptr)
+    if (!construct_func)
+        return nullptr;
+    auto endpoint_data = construct_func();
+
+    if (endpoint_data.first->closed_function == nullptr)
     {
-        entry->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
         {
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            whose->get_port()->remove_endpoint(entry);
+            whose->close_endpoint();
+            whose->get_port()->unbind_stack_endpoint(entry);
         };
     }
-    active_endpoints_.emplace(entry, std::move(endpoint_ptr));
-    return entry;
+    active_endpoints_.emplace(endpoint_data.first, std::move(endpoint_data.second));
+    return endpoint_data.first;
 }
 
 template <typename endpointT>
-void application_port_impl<endpointT>::remove_endpoint (rx_protocol_stack_endpoint* what)
+void application_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
+    {
         active_endpoints_.erase(it);
+    }
 }
 
 template <typename endpointT>
-rx_reference<endpointT> application_port_impl<endpointT>::get_endpoint (rx_protocol_stack_endpoint* who)
+rx_reference<endpointT> application_port_impl<endpointT>::get_endpoint (rx_protocol_stack_endpoint* stack)
 {
-    auto it = active_endpoints_.find(who);
+    auto it = active_endpoints_.find(stack);
     if (it != active_endpoints_.end())
         return it->second;
     else
-        return rx_reference<endpointT>();
+        return rx_reference<endpointT>::null_ptr;
 }
 
 

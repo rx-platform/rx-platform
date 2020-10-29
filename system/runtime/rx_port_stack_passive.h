@@ -46,6 +46,8 @@ namespace runtime {
 
 namespace io_types {
 
+namespace stack_passive {
+
 
 
 
@@ -60,12 +62,15 @@ class passive_builder
 
       static rx_result send_connect (rx_port_ptr who, const io::any_address& local_addr, const io::any_address& remote_addr);
 
-      static rx_result send_unbind (rx_port_ptr who);
+      static rx_result unbind_passive (rx_port_ptr who);
 
 
   protected:
 
   private:
+
+      static rx_result send_unbind_up_recursive (rx_port_ptr who);
+
 
 
 };
@@ -279,6 +284,59 @@ class client_slave_router : public port_passive_behavior
 };
 
 
+
+
+
+
+class full_router : public port_passive_behavior  
+{
+
+  public:
+
+      bool is_listen_sender ();
+
+      bool is_connect_sender ();
+
+      bool is_listen_subscriber ();
+
+      bool is_connect_subscriber ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class listen_connect_sender : public port_passive_behavior  
+{
+
+  public:
+
+      bool is_listen_sender ();
+
+      bool is_connect_sender ();
+
+      bool is_listen_subscriber ();
+
+      bool is_connect_subscriber ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace stack_passive
 } // namespace io_types
 } // namespace runtime
 } // namespace rx_platform

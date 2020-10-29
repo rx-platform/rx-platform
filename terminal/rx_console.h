@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "interfaces/rx_endpoints.h"
 
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
-// rx_mem
-#include "lib/rx_mem.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_mem
+#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
 
@@ -228,6 +228,8 @@ class console_runtime : public rx::pointers::reference_object
     DECLARE_REFERENCE_PTR(console_runtime)
 
   public:
+      console_runtime();
+
       console_runtime (runtime::items::port_runtime* port);
 
       ~console_runtime();
@@ -244,6 +246,8 @@ class console_runtime : public rx::pointers::reference_object
       rx_result check_validity ();
 
       rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+      void close_endpoint ();
 
 
       rx_thread_handle_t get_executer () const
@@ -320,7 +324,7 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< console_runtime  > console_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< rx_internal::terminal::console::console_runtime  > console_port_base;
 
 
 
@@ -333,9 +337,7 @@ class console_port : public console_port_base
 Console port. implementation of an console port");
 
     DECLARE_REFERENCE_PTR(console_port);
-    friend class console_endpoint;
 
-    typedef std::map<rx_protocol_stack_endpoint*, console_runtime::smart_ptr> active_endpoints_type;
 
   public:
       console_port();
@@ -347,9 +349,6 @@ Console port. implementation of an console port");
   protected:
 
   private:
-
-      rx_reference<console_runtime> construct_endpoint ();
-
 
 
 };

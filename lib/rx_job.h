@@ -33,12 +33,12 @@
 
 
 
+// rx_func_to_go
+#include "lib/rx_func_to_go.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_thread
 #include "lib/rx_thread.h"
-// rx_func_to_go
-#include "lib/rx_func_to_go.h"
 
 
 
@@ -98,6 +98,11 @@ class job : private pointers::reference_object
       const rx_criticalness get_criticalness () const
       {
         return criticalness_;
+      }
+
+      void set_criticalness (rx_criticalness value)
+      {
+        criticalness_ = value;
       }
 
 

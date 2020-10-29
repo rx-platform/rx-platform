@@ -252,12 +252,12 @@ void port_runtime::stack_disassembled ()
 
 rx_result port_runtime::listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-	return io_types::passive_builder::send_listen(runtime_, local_address, remote_address);
+	return io_types::stack_passive::passive_builder::send_listen(runtime_, local_address, remote_address);
 }
 
-rx_result port_runtime::connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result port_runtime::connect (const protocol_address* local_address, const protocol_address* remote_address)
 {
-	return io_types::passive_builder::send_connect(runtime_, local_address, remote_address);
+	return io_types::stack_passive::passive_builder::send_connect(runtime_, local_address, remote_address);
 }
 
 rx_result port_runtime::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
@@ -270,19 +270,36 @@ rx_result port_runtime::start_connect (const protocol_address* local_address, co
 	return RX_NOT_SUPPORTED;
 }
 
-rx_protocol_stack_endpoint* port_runtime::create_endpoint ()
+rx_result port_runtime::stop_passive ()
+{
+	return RX_NOT_SUPPORTED;
+}
+
+rx_protocol_stack_endpoint* port_runtime::construct_endpoint ()
 {
 	RX_ASSERT(false);
 	return nullptr;
 }
 
-rx_result port_runtime::bind_stack_endpoint (rx_protocol_stack_endpoint* what, const protocol_address* local_address, const protocol_address* remote_address)
+rx_result port_runtime::add_stack_endpoint (rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr)
 {
-	return io_types::active_builder::bind_stack_endpoint(runtime_, what, local_address, remote_address);
+	return io_types::stack_active::active_builder::add_stack_endpoint(runtime_, what, local_addr, remote_addr);
 }
 
-void port_runtime::remove_endpoint (rx_protocol_stack_endpoint* what)
+rx_result port_runtime::register_routing_endpoint (rx_protocol_stack_endpoint* what)
 {
+	return io_types::stack_active::active_builder::register_routing_endpoint(runtime_, what);
+}
+
+rx_result port_runtime::close_all_endpoints ()
+{
+	io_types::stack_active::active_builder::close_all_endpoints(runtime_);
+	return true;
+}
+
+rx_result port_runtime::unbind_stack_endpoint (rx_protocol_stack_endpoint* what)
+{
+	return io_types::stack_active::active_builder::unbind_stack_endpoint(runtime_, what);
 }
 
 threads::job_thread* port_runtime::get_jobs_queue ()
@@ -298,6 +315,10 @@ void port_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 threads::job_thread* port_runtime::get_io_queue ()
 {
 	return rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_META);
+}
+
+void port_runtime::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
 }
 
 

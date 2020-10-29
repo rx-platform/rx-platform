@@ -41,6 +41,8 @@
 #include "api/rx_platform_api.h"
 #include "system/meta/rx_meta_algorithm.h"
 
+#define RX_NEW_SYMBOL_LOG_PREFIX_STR "#"s
+
 
 namespace rx_internal {
 
@@ -588,7 +590,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_thr
 	return true;
 }
 template<class typeCache>
-rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, rx_transaction_type& transaction)
+rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, rx_transaction_type& transaction)
 {
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
@@ -612,13 +614,7 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 		ret_value.register_error("Unable to create runtime in repository.");
 		return ret_value.errors();
 	}
-	rx_node_id item_id = ret_value.value().ptr->meta_info().id;
-	sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(item_id, ret_value.value().register_f, ret_value.value().unregister_f);
-	transaction.push([&cache, item_id]() mutable {
-		sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
-		auto delete_result = cache.delete_runtime(item_id);
-		});
-
+	
 	result = dir->add_item(ret_value.value().ptr->get_item_ptr());
 	if (!result)
 	{
@@ -641,31 +637,19 @@ rx_result_with<typename typeCache::RTypePtr> create_some_runtime(typeCache& cach
 			return save_result.errors();
 		}
 	}
+	auto item_id = ret_value.value().ptr->meta_info().id;
 	result = cache.mark_runtime_running(item_id);
 	if (!result)
 	{
 		// error, can't add this name
 		result.register_error("Unable to mark "s + runtime_name + " as running!");
-		return ret_value.errors();
+		return result.errors();
 	}
 	transaction.push([&cache, item_id]() mutable {
 		auto mark_result = cache.mark_runtime_for_delete(item_id);
 		});
 
-	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-	{
-		result = sys_runtime::platform_runtime_manager::instance().init_runtime<typename typeCache::HType>(ret_value.value().ptr);
-		if (!result)
-		{
-			result.register_error("Unable to initialize "s + runtime_name);
-			return result.errors();
-		}
-		META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RImplType::type_id) + " "s + ret_value.value().ptr->meta_info().get_full_path());
-	}
-	else
-		META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::RImplType::type_id) + " "s + ret_value.value().ptr->meta_info().get_full_path());
-
-	return ret_value.value().ptr;
+	return ret_value.value();
 }
 
 }
@@ -1156,9 +1140,30 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		, std::move(instance_data), transaction);
 	if (result)
 	{
+		rx_node_id item_id = result.value().ptr->meta_info().id;
+		sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(item_id, result.value().register_f, result.value().unregister_f);
+		transaction.push([item_id]() mutable {
+			sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
+			auto delete_result = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(item_id);
+			});
+
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(result.value().ptr);
+			if (!init_result)
+			{
+				init_result.register_error("Unable to initialize "s + result.value().ptr->meta_info().get_full_path());
+				return result.errors();
+			}
+			META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + result.value().ptr->meta_info().get_full_path());
+		}
+		else
+			META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + result.value().ptr->meta_info().get_full_path());
+
 		transaction.commit();
+		return result.value().ptr;
 	}
-	return result;
+	return result.errors();
 }
 
 template <class typeT>
@@ -1182,7 +1187,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		string_type path = instance_data.meta_info.get_full_path();
 		if (path.empty())
 		{
-			callback.set_arguments(ret_type(instance_data.meta_info.name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!"));
+			callback.set_arguments(ret_type(RX_NEW_SYMBOL_LOG_PREFIX_STR + instance_data.meta_info.name + " does not have valid " + rx_item_type_name(typeT::type_id) + " id!"));
 			rx_post_packed_to(result_target, std::move(callback));
 			return;
 		}
@@ -1192,7 +1197,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 			auto resolved = resolve_reference(path, dirs);
 			if (!resolved)
 			{
-				callback.set_arguments(ret_type(path + " not existing " + rx_item_type_name(typeT::type_id)));
+				callback.set_arguments(ret_type(RX_NEW_SYMBOL_LOG_PREFIX_STR + path + " not existing " + rx_item_type_name(typeT::type_id)));
 				rx_post_packed_to(result_target, std::move(callback));
 				return;
 			}
@@ -1200,6 +1205,8 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 			id = resolved.value();
 		}
 	}
+	auto transaction_ptr = std::make_shared<rx_transaction_type>();
+	auto& transaction = *transaction_ptr;
 	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
 	{
@@ -1207,55 +1214,112 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		rx_post_packed_to(result_target, std::move(callback));
 		return;
 	}
+	meta_data old_meta = obj_ptr.value()->meta_info();
 	if (is_empty)
 	{
-		instance_data.meta_info = obj_ptr.value()->meta_info();
+		instance_data.meta_info = old_meta;
 		instance_data.overrides = obj_ptr.value()->get_overrides();
 		instance_data.instance_data = obj_ptr.value()->get_instance_data().get_data();
 	}
+	// now remove old runtime from platform if needed
+	///////////////////////////////////////////////////////////////////////////
+	auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(old_meta.id);
+	if (!ret)
+	{
+		callback.set_arguments(ret_type(ret.errors()));
+		rx_post_packed_to(result_target, std::move(callback));
+		return;
+	}
+	
+	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(old_meta.path);
+	if (dir)
+		dir->delete_item(old_meta.name);
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		auto storage_result = instance_data.meta_info.resolve_storage();
+		if (storage_result)
+		{
+			auto item_result = storage_result.value()->get_item_storage(old_meta);
+			if (item_result)
+			{
+				item_result.value()->delete_item();
+				META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + old_meta.get_full_path());
+			}
+		}
+	}
+	if (instance_data.meta_info.version <= old_meta.version)
+	{
+		instance_data.meta_info.version = old_meta.version;
+		instance_data.meta_info.increment_version(increment_version);
+	}
+	
+	///////////////////////////////////////////////////////////////////////////
+	// now prepare runtime for creations
+	auto create_result = create_some_runtime(platform_types_manager::instance().get_type_repository<typeT>()
+		, std::move(instance_data), transaction);
+
+	if (!create_result)
+	{
+		callback.set_arguments(ret_type(create_result.errors()));
+		rx_post_packed_to(result_target, std::move(callback));
+		return;
+	}
+
 	auto anchor = callback.anchor;
 
 	auto callback_ptr = std::make_shared<rx_result_with_callback<typename typeT::RTypePtr> >(std::move(callback));
 
+	transaction_ptr->commit();
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value()
 			, anchor, rx_thread_context(), [
 					result_target
 					, increment_version
 					, instance_data = std::move(instance_data)
+					, transaction_ptr
+					, create_data = create_result.value()
 					, callback_ptr
 				]
 				(rx_result&& deinit_result) mutable
-				{
-					auto ret = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(instance_data.meta_info.id);
-					if (ret)
+				{	
+					auto& transaction = *transaction_ptr;
+					if (deinit_result)
 					{
-						auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(instance_data.meta_info.path);
-						if (dir)
-							dir->delete_item(instance_data.meta_info.name);
+						rx_node_id item_id = create_data.ptr->meta_info().id;
+						sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(item_id, create_data.register_f, create_data.unregister_f);
+						transaction.push([item_id]() mutable {
+							sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
+							auto delete_result = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(item_id);
+							});
+
 						if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 						{
-							auto storage_result = instance_data.meta_info.resolve_storage();
-							if (storage_result)
+							auto result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(create_data.ptr);
+							if (!result)
 							{
-								auto item_result = storage_result.value()->get_item_storage(instance_data.meta_info);
-								if (item_result)
-								{
-									item_result.value()->delete_item();
-									META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + instance_data.meta_info.get_full_path());
-								}
+								result.register_error("Unable to initialize "s + RX_NEW_SYMBOL_LOG_PREFIX_STR + create_data.ptr->meta_info().name);
+								callback_ptr->set_arguments(result.errors());
+							}
+							else
+							{
+								transaction.commit();
+								callback_ptr->set_arguments(create_data.ptr);
+								META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + RX_NEW_SYMBOL_LOG_PREFIX_STR + create_data.ptr->meta_info().get_full_path());
 							}
 						}
-						instance_data.meta_info.increment_version(increment_version);
-						auto create_result = create_runtime_sync(std::move(instance_data));
-						callback_ptr->set_arguments(std::move(create_result));
+						else
+						{
+							META_LOG_TRACE("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + RX_NEW_SYMBOL_LOG_PREFIX_STR + create_data.ptr->meta_info().get_full_path());
+						}
 					}
-					if (!ret)
-						callback_ptr->set_arguments(ret.errors());
-
+					else
+					{
+						callback_ptr->set_arguments(deinit_result.errors());
+					}
 					rx_post_packed_to(result_target, std::move(*callback_ptr));
 				});
 	if (!result)
 	{
+		transaction_ptr->uncommit();
 		callback.set_arguments(ret_type(result.errors()));
 		rx_post_packed_to(result_target, std::move(callback));
 	}

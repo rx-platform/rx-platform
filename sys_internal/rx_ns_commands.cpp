@@ -447,6 +447,70 @@ bool clone_system_command::do_console_command (std::istream& in, std::ostream& o
 }
 
 
+// Class rx_internal::internal_ns::namespace_commands::move_command 
+
+move_command::move_command()
+	: server_command("mv")
+{
+}
+
+
+move_command::~move_command()
+{
+}
+
+
+
+bool move_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type old_path;
+	string_type new_path;
+	in >> old_path;
+	in >> new_path;
+
+	auto ret = ctx->get_current_directory()->move_directory(old_path, new_path);
+	if (!ret)
+	{
+		err << "Error deleting directory!\r\n";
+		rx_dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
+}
+
+
+// Class rx_internal::internal_ns::namespace_commands::clone_command 
+
+clone_command::clone_command()
+	: server_command("cp")
+{
+}
+
+
+clone_command::~clone_command()
+{
+}
+
+
+
+bool clone_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type old_path;
+	string_type new_path;
+	in >> old_path;
+	in >> new_path;
+
+	auto ret = ctx->get_current_directory()->copy_directory(old_path, new_path);
+	if (!ret)
+	{
+		err << "Error deleting directory!\r\n";
+		rx_dump_error_result(err, std::move(ret));
+		return false;
+	}
+	return true;
+}
+
+
 } // namespace namespace_commands
 } // namespace internal_ns
 } // namespace rx_internal

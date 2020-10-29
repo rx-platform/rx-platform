@@ -111,7 +111,7 @@ void domain_relation::relation_connected ()
 {
     if (from_ && to_)
     {
-        RUNTIME_LOG_DEBUG("domain_relation", 900, from_->meta_info().get_full_path() + " connected to domain " + to_->meta_info().get_full_path());
+        RUNTIME_LOG_DEBUG("domain_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
         meta::meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
@@ -121,17 +121,15 @@ void domain_relation::relation_disconnected ()
 {
 }
 
-rx_result domain_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_item_reference domain_relation::get_implicit_reference (const meta::meta_data& info)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(ctx.meta.id);
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(info.id);
     if (!result)
     {
-        result.register_error(ctx.meta.get_full_path() + " is not a object!");
-        return result.errors();
+        return rx_item_reference();
     }
     from_ = result.value();
-    ref = from_->get_instance_data().get_data().domain_id;
-    return true;
+    return from_->get_instance_data().get_data().domain_id;
 }
 
 
@@ -177,7 +175,7 @@ void application_relation::relation_connected ()
 {
     if (from_ && to_)
     {
-        RUNTIME_LOG_DEBUG("application_relation", 900, from_->meta_info().get_full_path() + " connected to application " + to_->meta_info().get_full_path());
+        RUNTIME_LOG_DEBUG("application_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
         meta::meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
@@ -187,17 +185,15 @@ void application_relation::relation_disconnected ()
 {
 }
 
-rx_result application_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_item_reference application_relation::get_implicit_reference (const meta::meta_data& info)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(ctx.meta.id);
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(info.id);
     if (!result)
     {
-        result.register_error(ctx.meta.get_full_path() + " is not an application!");
-        return result.errors();
+        return rx_item_reference();
     }
     from_ = result.value();
-    ref = from_->get_instance_data().get_data().app_id;
-    return true;
+    return from_->get_instance_data().get_data().app_id;
 }
 
 
@@ -243,7 +239,7 @@ void port_app_relation::relation_connected ()
 {
     if (from_ && to_)
     {
-        RUNTIME_LOG_DEBUG("port_app_relation", 900, from_->meta_info().get_full_path() + " connected to application " + to_->meta_info().get_full_path());
+        RUNTIME_LOG_DEBUG("port_app_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
         meta::meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
@@ -253,17 +249,15 @@ void port_app_relation::relation_disconnected ()
 {
 }
 
-rx_result port_app_relation::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_item_reference port_app_relation::get_implicit_reference (const meta::meta_data& info)
 {
-    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(ctx.meta.id);
+    auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(info.id);
     if (!result)
     {
-        result.register_error(ctx.meta.get_full_path() + " is not a port!");
-        return result.errors();
+        return rx_item_reference();
     }
     from_ = result.value();
-    ref = from_->get_instance_data().get_data().app_id;
-    return true;
+    return from_->get_instance_data().get_data().app_id;
 }
 
 
@@ -271,3 +265,15 @@ rx_result port_app_relation::get_implicit_reference (runtime::runtime_init_conte
 } // namespace sys_runtime
 } // namespace rx_internal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    return true;
+
+    return true;
+
+    return true;
+
+#endif

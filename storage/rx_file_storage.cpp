@@ -136,6 +136,8 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 		{
 			if (one == ".git")
 				continue;// skip git's folder
+			if (one == ".vs")
+				continue;// MSVC folder
 			result_path = rx_combine_paths(file_path, one);
 			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
 			if (!ret)
@@ -143,8 +145,11 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 		}
 		for (auto& one : file_names)
 		{
+			meta::meta_data storage_meta;
+			storage_meta.name = rx_remove_extension(one);
+			storage_meta.path = get_base_path() + path;
 			result_path = rx_combine_paths(file_path, one);
-			auto storage_item = get_storage_item_from_file_path(result_path);
+			auto storage_item = get_storage_item_from_file_path(result_path, storage_meta);
 			if(storage_item)
 				items.emplace_back(std::move(storage_item));
 		}
@@ -162,18 +167,18 @@ bool file_system_storage::is_valid_storage () const
 	return !root_.empty();
 }
 
-std::unique_ptr<rx_file_item> file_system_storage::get_storage_item_from_file_path (const string_type& path)
+std::unique_ptr<rx_file_item> file_system_storage::get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta)
 {
 	string_type ext = rx_get_extension(path);
 
 	if (ext == RX_JSON_FILE_EXTENSION)
 	{
-		return std::make_unique<rx_json_file>(path);
+		return std::make_unique<rx_json_file>(path, storage_meta);
 
 	}
 	else if (ext == RX_BINARY_FILE_EXTENSION)
 	{
-		return std::make_unique<rx_binary_file>(path);
+		return std::make_unique<rx_binary_file>(path, storage_meta);
 	}
 	else
 	{
@@ -235,7 +240,8 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const
 	auto result = ensure_path_exsistence(path);
 	if (result)
 	{
-		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path);
+		meta::meta_data storage_meta;
+		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path, storage_meta);
 		if (storage_item)
 			return storage_item;
 		else
@@ -285,11 +291,14 @@ void file_system_storage::add_file_path (const meta::meta_data& data, const stri
 
 // Class storage::files::rx_file_item 
 
-rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path)
+rx_file_item::rx_file_item (const string_type& serialization_type, const string_type& file_path, const meta::meta_data& storage_meta)
       : valid_(false),
-        file_path_(file_path)
+        file_path_(file_path),
+        storage_meta_(storage_meta)
 	, rx_storage_item(serialization_type)
 {
+	if (storage_meta_.path.size() > 2 && *storage_meta_.path.rbegin() == RX_DIR_DELIMETER)
+		storage_meta_.path.pop_back();
 }
 
 
@@ -344,11 +353,37 @@ const string_type& rx_file_item::get_item_reference () const
 	return file_path_;
 }
 
+bool rx_file_item::preprocess_meta_data (meta::meta_data& data)
+{
+	bool ret = false;
+	if (!storage_meta_.name.empty() && storage_meta_.name!=data.name)
+	{
+		data.name = storage_meta_.name;
+		ret = true;
+	}
+	if (!storage_meta_.path.empty() && storage_meta_.path != data.path)
+	{
+		data.path = storage_meta_.path;
+		ret = true;
+	}
+	if (storage_meta_.modified_time > data.modified_time)
+	{
+		data.modified_time = storage_meta_.modified_time;
+		// ret = true;// this is not worth the trouble
+	}
+	if (storage_meta_.created_time > data.created_time)
+	{
+		data.created_time = storage_meta_.created_time;
+		// ret = true;// this is not worth the trouble
+	}
+	return ret;
+}
+
 
 // Class storage::files::rx_json_file 
 
-rx_json_file::rx_json_file (const string_type& file_path)
-	: rx_file_item(RX_JSON_SERIALIZATION_TYPE, file_path)
+rx_json_file::rx_json_file (const string_type& file_path, const meta::meta_data& storage_meta)
+	: rx_file_item(RX_JSON_SERIALIZATION_TYPE, file_path, storage_meta)
 {
 }
 
@@ -440,8 +475,8 @@ void rx_json_file::close ()
 
 // Class storage::files::rx_binary_file 
 
-rx_binary_file::rx_binary_file (const string_type& file_path)
-	: rx_file_item(RX_BINARY_SERIALIZATION_TYPE, file_path)
+rx_binary_file::rx_binary_file (const string_type& file_path, const meta::meta_data& storage_meta)
+	: rx_file_item(RX_BINARY_SERIALIZATION_TYPE, file_path, storage_meta)
 {
 }
 

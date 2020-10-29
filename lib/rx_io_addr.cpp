@@ -235,7 +235,7 @@ bool ip4_address::operator<(const ip4_address &right) const
             return false;
         }
         return me->sin_port < other->sin_port
-            || me->sin_port == other->sin_port && GET_IP4_ADDR(me) < GET_IP4_ADDR(other);
+            || (me->sin_port == other->sin_port && GET_IP4_ADDR(me) < GET_IP4_ADDR(other));
     }
     else
     {
@@ -267,7 +267,7 @@ bool ip4_address::operator>(const ip4_address &right) const
             return false;
         }
         return me->sin_port > other->sin_port
-            || me->sin_port == other->sin_port && GET_IP4_ADDR(me) > GET_IP4_ADDR(other);
+            || (me->sin_port == other->sin_port && GET_IP4_ADDR(me) > GET_IP4_ADDR(other));
     }
     else
     {
@@ -678,6 +678,56 @@ any_address::~any_address()
 bool any_address::is_null () const
 {
     return this->type == protocol_address_none;
+}
+
+string_type any_address::to_string () const
+{
+    switch (this->type)
+    {
+    case protocol_address_none:
+        return "null";
+    case protocol_address_uint8:
+        {
+            numeric_address<uint8_t> temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
+    case protocol_address_uint16:
+        {
+            numeric_address<uint16_t> temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
+    case protocol_address_uint32:
+        {
+            numeric_address<uint32_t> temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
+    case protocol_address_uint64:
+        {
+            numeric_address<uint64_t> temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
+    case protocol_address_mac:
+        return "nemamac";
+    case protocol_address_ip4:
+        {
+            ip4_address temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
+    case protocol_address_ip6:
+        return "nemaip6";
+    case protocol_address_string:
+        return this->value.string_address;
+    case protocol_address_bytes:
+        return "nemabytes";
+    default:
+        RX_ASSERT(false);
+        return "err";
+    }
 }
 
 

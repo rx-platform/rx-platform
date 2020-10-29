@@ -127,6 +127,8 @@ class rx_storage_item
 
       virtual const string_type& get_item_reference () const = 0;
 
+      virtual bool preprocess_meta_data (meta::meta_data& data) = 0;
+
 
       const string_type& get_serialization_type () const
       {
@@ -274,6 +276,8 @@ class rx_code_storage_item : public rx_storage_item
       const string_type& get_item_reference () const;
 
       rx_result delete_item ();
+
+      bool preprocess_meta_data (meta::meta_data& data);
 
 
   protected:

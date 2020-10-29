@@ -33,10 +33,10 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 
 
@@ -172,13 +172,12 @@ VT100 terminal. implementation of VT100 transport protocol port.");
     typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<vt100_transport> > active_endpoints_type;
 
   public:
+      vt100_transport_port();
+
 
   protected:
 
   private:
-
-      std::unique_ptr<vt100_transport> construct_endpoint ();
-
 
 
 };

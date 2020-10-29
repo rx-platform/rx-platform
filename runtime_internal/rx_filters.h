@@ -65,9 +65,9 @@ Implementation of linear scaling for input and output.");
 
   private:
 
-      rx_result filter_input (rx_value& val, runtime::runtime_process_context* ctx);
+      rx_result filter_input (rx_value& val);
 
-      rx_result filter_output (rx_simple_value& val, runtime::runtime_process_context* ctx);
+      rx_result filter_output (rx_simple_value& val);
 
 
 
@@ -78,6 +78,36 @@ Implementation of linear scaling for input and output.");
       runtime_handle_t hi_eu_;
 
       runtime_handle_t low_eu_;
+
+
+};
+
+
+
+
+
+
+class bound_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+
+
+      runtime_handle_t hi_bound_;
+
+      runtime_handle_t low_bound_;
 
 
 };

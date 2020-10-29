@@ -34,6 +34,7 @@
 // rx_vt100
 #include "terminal/rx_vt100.h"
 
+#include "rx_con_commands.h"
 #define VT100_CURCOR_UP ""
 
 
@@ -55,6 +56,10 @@ vt100_transport::vt100_transport (runtime::items::port_runtime* port, bool to_ec
         send_echo_(to_echo),
         port_(port)
 {
+	std::ostringstream ss;
+	ss << "Port "
+		<< " created VT100 Transport Endpoint.";
+	CONSOLE_LOG_TRACE("vt100_transport", 900, ss.str());
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &vt100_transport::received_function;
 }
@@ -387,14 +392,32 @@ void vt100_transport::set_echo (bool val)
 
 // Class rx_internal::terminal::term_transport::vt100_transport_port 
 
-
-std::unique_ptr<vt100_transport> vt100_transport_port::construct_endpoint ()
+vt100_transport_port::vt100_transport_port()
 {
-	return std::make_unique<vt100_transport>(this);
+	construct_func = [this]()
+	{
+		auto rt = std::make_unique<vt100_transport>(this);
+		auto entry = rt->bind([this](int64_t count)
+			{
+			},
+			[this](int64_t count)
+			{
+			});
+		return construct_func_type::result_type{ entry, std::move(rt) };
+	};
 }
+
 
 
 } // namespace term_transport
 } // namespace terminal
 } // namespace rx_internal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	
+
+#endif

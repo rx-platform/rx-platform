@@ -171,6 +171,8 @@ class any_address : public protocol_address
 
       bool is_null () const;
 
+      string_type to_string () const;
+
       any_address(any_address&& right) noexcept;
       any_address(const any_address& right);
       any_address& operator=(const any_address& right);

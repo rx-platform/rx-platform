@@ -146,11 +146,11 @@ rx_session rx_create_session(const protocol_address* local, const protocol_addre
 }
 rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session)
 {
-	while (stack->downward != NULL)
+	while (stack)
 	{
-		if (stack->downward->connect_function)
+		if (stack->connect_function)
 		{
-			return stack->downward->connect_function(stack->downward, session);
+			return stack->connect_function(stack->downward, session);
 		}
 		stack = stack->downward;
 	}
@@ -159,17 +159,23 @@ rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct
 
 rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason)
 {
-	while (stack->downward != NULL)
+	while (stack != NULL)
 	{
-		if (stack->downward->disconnect_function)
+		if (stack->disconnect_function)
 		{
-			return stack->downward->disconnect_function(stack->downward, session, reason);
+			return stack->disconnect_function(stack->downward, session, reason);
 		}
+		if (stack->downward == NULL)
+			break;
 		stack = stack->downward;
 	}
 	if (stack)// just in case :)
 	{
 		// we didn't find it so do the default thing
+		if (stack->disconnected_function)
+		{
+			stack->disconnected_function(stack, session, reason);
+		}
 		return rx_notify_disconnected(stack, session, reason);
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
@@ -177,16 +183,18 @@ rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, str
 
 rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
 {
-	while (stack->downward != NULL)
+	while (stack != NULL)
 	{
-		if (stack->downward->close_function)
+		if (stack->close_function)
 		{
-			return stack->downward->close_function(stack, reason);
+			return stack->close_function(stack, reason);
 		}
+		if (stack->downward == NULL)
+			break;
 		stack = stack->downward;
 	}
 	if (stack)// just in case :)
-	{
+	{		
 		// we didn't find it so do the default thing
 		rx_notify_closed(stack, reason);
 	}
@@ -257,7 +265,6 @@ rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* s
 void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
 {
 	struct rx_protocol_stack_endpoint* temp_stack;
-	stack = stack->upward;
 	while (stack != NULL)
 	{
 		temp_stack = stack->upward;

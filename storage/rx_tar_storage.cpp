@@ -179,6 +179,10 @@ const string_type& tar_file_item::get_item_reference () const
 {
 }
 
+bool tar_file_item::preprocess_meta_data (meta::meta_data& data)
+{
+}
+
 
 } // namespace tar
 } // namespace storage

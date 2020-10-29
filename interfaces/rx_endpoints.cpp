@@ -39,7 +39,8 @@
 #include "system/server/rx_server.h"
 #include "system/runtime/rx_blocks.h"
 #include "model/rx_meta_internals.h"
-#include "rx_ip_endpoints.h"
+#include "rx_tcp_server.h"
+#include "rx_udp.h"
 #include "rx_tcp_client.h"
 #include "sys_internal/rx_async_functions.h"
 #include "terminal/rx_commands.h"
@@ -87,33 +88,33 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
 			RX_EXTERNAL_PORT_TYPE_ID, [] {
 				runtime::items::port_behaviors ret;
-				ret.build_behavior = std::make_unique<runtime::io_types::assemble_sender>();
-				ret.passive_behavior = std::make_unique<runtime::io_types::listen_subscriber>();
-				ret.active_behavior = std::make_unique<runtime::io_types::extern_behavior>();
+				ret.build_behavior = std::make_unique<runtime::io_types::stack_build::assemble_sender>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::stack_passive::listen_connect_subscriber>();
+				ret.active_behavior = std::make_unique<runtime::io_types::stack_active::extern_behavior>();
 				return ret;
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
 			RX_TRANSPORT_PORT_TYPE_ID, [] {
 				runtime::items::port_behaviors ret;
-				ret.build_behavior = std::make_unique<runtime::io_types::assemble_ignorant>();
-				ret.passive_behavior = std::make_unique<runtime::io_types::passive_ignorant>();
-				ret.active_behavior = std::make_unique<runtime::io_types::passive_transport_behavior>();
+				ret.build_behavior = std::make_unique<runtime::io_types::stack_build::assemble_ignorant>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::stack_passive::passive_ignorant>();
+				ret.active_behavior = std::make_unique<runtime::io_types::stack_active::passive_transport_behavior>();
 				return ret;
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
 			RX_ROUTED_TRANSPORT_PORT_TYPE_ID, [] {
 				runtime::items::port_behaviors ret;
-				ret.build_behavior = std::make_unique<runtime::io_types::assemble_sender_subscriber>();
-				ret.passive_behavior = std::make_unique<runtime::io_types::server_master_router>();
-				ret.active_behavior = std::make_unique<runtime::io_types::active_transport_behavior>();
+				ret.build_behavior = std::make_unique<runtime::io_types::stack_build::assemble_sender_subscriber>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::stack_passive::full_router>();
+				ret.active_behavior = std::make_unique<runtime::io_types::stack_active::active_transport_behavior>();
 				return ret;
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
 			RX_APPLICATION_PORT_TYPE_ID, [] {
 				runtime::items::port_behaviors ret;
-				ret.build_behavior = std::make_unique<runtime::io_types::assemble_subscriber>();
-				ret.passive_behavior = std::make_unique<runtime::io_types::listen_sender>();
-				ret.active_behavior = std::make_unique<runtime::io_types::application_behavior>();
+				ret.build_behavior = std::make_unique<runtime::io_types::stack_build::assemble_subscriber>();
+				ret.passive_behavior = std::make_unique<runtime::io_types::stack_passive::listen_connect_sender>();
+				ret.active_behavior = std::make_unique<runtime::io_types::stack_active::application_behavior>();
 				return ret;
 			});
 

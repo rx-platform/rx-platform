@@ -101,14 +101,40 @@ bool filter_runtime::supports_output () const
 
 }
 
-rx_result filter_runtime::filter_input (rx_value& val, runtime_process_context* ctx)
+rx_result filter_runtime::filter_input (rx_value& val)
 {
     return true;
 }
 
-rx_result filter_runtime::filter_output (rx_simple_value& val, runtime_process_context* ctx)
+rx_result filter_runtime::filter_output (rx_simple_value& val)
 {
     return true;
+}
+
+rx_result filter_runtime::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
+{
+    if (container_)
+    {
+        return container_->get_value(handle, val);
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Context not binded!";
+    }
+}
+
+rx_result filter_runtime::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
+{
+    if (container_)
+    {
+        return container_->set_value(handle, std::move(val));
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Context not binded!";
+    }
 }
 
 
@@ -296,6 +322,20 @@ void source_runtime::source_result_received (rx_result&& result, runtime_transac
 rx_result source_runtime::source_write (structure::write_data&& data, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
+}
+
+threads::job_thread* source_runtime::get_jobs_queue ()
+{
+    if (container_)
+        return container_->get_jobs_queue();
+    else
+        return nullptr;
+}
+
+void source_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+    if (container_)
+        container_->add_periodic_job(job);
 }
 
 

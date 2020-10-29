@@ -36,6 +36,7 @@
 
 #include "sys_internal/rx_internal_protocol.h"
 #include "system//server/rx_server.h"
+#include "terminal/rx_console.h"
 
 
 namespace rx_internal {
@@ -61,14 +62,30 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
         return "Unable to write instance";
     if (!stream.write_string("node", node))
         return "Unable to write node";
+    if (!stream.write_time("started", start_time))
+        return "Unable to write start time";
+    if (!stream.write_time("current", current_time))
+        return "Unable to write current time";
     if (!stream.write_string("platform", platform))
         return "Unable to write platform";
     if (!stream.write_string("lib", library))
         return "Unable to write lib";
+    if (!stream.write_string("term", terminal))
+        return "Unable to write term";
+    if (!stream.write_string("comp", compiler))
+        return "Unable to write comp";
+    if (!stream.write_string("platform_host", platform_host))
+        return "Unable to write platform_host";
+    if (!stream.write_string("os_host", os_host))
+        return "Unable to write os_host";
     if (!stream.write_string("os_itf", os_itf))
         return "Unable to write os_itf";
     if (!stream.write_string("os", os))
         return "Unable to write os";
+    if (!stream.write_string("cpu", cpu))
+        return "Unable to write cpu";
+    if (!stream.write_string("memory", memory))
+        return "Unable to write memory";
     if (!stream.end_object())
         return "Unable to end object general";
     return true;
@@ -129,10 +146,52 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
 {
     auto response = std::make_unique<rx_system_info_response>();
     response->request_id = request_id;
+    response->instance = rx_gate::instance().get_rx_name();
+    response->node = rx_gate::instance().get_host()->get_default_name();
     response->platform = rx_gate::instance().get_rx_version();
     response->library = rx_gate::instance().get_lib_version();
     response->os_itf = rx_gate::instance().get_hal_version();
-    response->os = rx_gate::instance().get_os_info();
+    response->terminal = terminal::console::console_runtime::get_terminal_info();
+    response->compiler = rx_gate::instance().get_comp_version();
+    std::ostringstream out3;
+    out3 << rx_gate::instance().get_os_info() << " [PID:" << rx_gate::instance().get_pid() << "]";
+    response->os = out3.str();
+    string_array hosts;
+    rx_gate::instance().get_host()->get_host_info(hosts);
+    if (hosts.size() > 0)
+        response->os_host = hosts[0];
+    if (hosts.size() > 1)
+        response->platform_host = hosts[1];
+    response->start_time = rx_gate::instance().get_started();
+    response->current_time = rx_time::now();
+    /////////////////////////////////////////////////////////////////////////
+    // Processor
+    char buff[0x100];
+    size_t cpu_count = 1;
+    std::ostringstream out1;
+    rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
+    out1 << "CPU: " << buff
+        << (rx_big_endian ? "; Big-endian" : "; Little-endian");
+    response->cpu = out1.str();
+    
+    /////////////////////////////////////////////////////////////////////////
+    // memory
+    size_t total = 0;
+    size_t free = 0;
+    size_t process = 0;
+    std::ostringstream out2;
+    rx_collect_memory_info(&total, &free, &process);
+    out2 << "Memory: Total "
+        << (int)(total / 1048576ull)
+        << "MiB / Free "
+        << (int)(free / 1048576ull)
+        << "MiB / Process "
+        << (int)(process / 1024ull)
+        << "KiB \r\n";
+    /////////////////////////////////////////////////////////////////////////
+    out2 << "Page size: " << (int)rx_os_page_size() << " bytes";
+    response->memory = out2.str();
+    
     return response;
 }
 

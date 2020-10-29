@@ -316,6 +316,8 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
+			if (config.meta_configuration.instance_name.empty())
+				config.meta_configuration.instance_name = "develop";
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
@@ -328,7 +330,20 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 				<< rx_gate::instance().get_rx_version();
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
-			std::cout << "\r\n\r\n";;
+			std::cout << "\r\n\r\n";
+
+			std::cout << "Instance Name:";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << config.meta_configuration.instance_name << "\r\n";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
+			std::cout << "Node Name:";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << server_name << "\r\n\r\n";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
 
 			string_array hosts;
 			get_host_info(hosts);
@@ -469,10 +484,7 @@ interactive_console_port::interactive_console_port (interactive_console_host* ho
 
 rx_result interactive_console_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	auto result = endpoint_.open([this](size_t count)
-		{
-		});
-	return result;
+	return true;
 }
 
 rx_result interactive_console_port::run_interactive (interactive_console_host* host)
@@ -482,7 +494,7 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 	while (!listening_)
 		rx_ms_sleep(50);
 
-	bind_stack_endpoint(&endpoint_.stack_entry_, nullptr, nullptr);
+	add_stack_endpoint(&endpoint_.stack_entry_, nullptr, nullptr);
 	auto result = endpoint_.run_interactive([this](size_t count)
 		{
 
@@ -507,6 +519,10 @@ rx_result interactive_console_port::start_listen (const protocol_address* local_
 
 	listening_ = true;
 	return true;
+}
+
+void interactive_console_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
 }
 
 

@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -359,15 +359,21 @@ system port class. basic implementation of a port");
 
       virtual rx_result start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
-      virtual rx_protocol_stack_endpoint* create_endpoint ();
+      virtual rx_result stop_passive ();
 
-      virtual void remove_endpoint (rx_protocol_stack_endpoint* what);
+      virtual rx_protocol_stack_endpoint* construct_endpoint ();
+
+      rx_result unbind_stack_endpoint (rx_protocol_stack_endpoint* what);
+
+      virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
 
       threads::job_thread* get_jobs_queue ();
 
       void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
       threads::job_thread* get_io_queue ();
+
+      virtual void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
       static rx_item_type get_type_id ()
@@ -455,9 +461,13 @@ system port class. basic implementation of a port");
 
       rx_result listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_result connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      rx_result connect (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_result bind_stack_endpoint (rx_protocol_stack_endpoint* what, const protocol_address* local_address, const protocol_address* remote_address);
+      rx_result add_stack_endpoint (rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr);
+
+      rx_result register_routing_endpoint (rx_protocol_stack_endpoint* what);
+
+      rx_result close_all_endpoints ();
 
 
       runtime_process_context * get_context ()

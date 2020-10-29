@@ -63,6 +63,8 @@ class domain_relation : public rx_platform::runtime::relations::relation_runtime
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
+      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+
 
   protected:
 
@@ -73,8 +75,6 @@ class domain_relation : public rx_platform::runtime::relations::relation_runtime
       void relation_connected ();
 
       void relation_disconnected ();
-
-      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 
@@ -104,6 +104,8 @@ class application_relation : public rx_platform::runtime::relations::relation_ru
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
+      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+
 
   protected:
 
@@ -114,8 +116,6 @@ class application_relation : public rx_platform::runtime::relations::relation_ru
       void relation_connected ();
 
       void relation_disconnected ();
-
-      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 
@@ -145,6 +145,8 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
+      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+
 
   protected:
 
@@ -155,8 +157,6 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
       void relation_connected ();
 
       void relation_disconnected ();
-
-      rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 

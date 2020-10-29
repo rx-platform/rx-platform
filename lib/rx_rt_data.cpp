@@ -48,12 +48,50 @@ namespace data {
 
 void runtime_values_data::add_value (const string_type& name, const rx_simple_value& value)
 {
-	values.insert(std::make_pair(name, runtime_value{ value }));
+	if (name.empty())
+		return;
+	auto idx = name.find(".");
+
+	if (idx == string_type::npos)
+	{// our value
+		values.insert(std::make_pair(name, runtime_value{ value }));
+	}
+	else
+	{
+		auto child_it = children.find(name.substr(0, idx));
+		if (child_it != children.end())
+		{
+			child_it->second.add_value(name.substr(idx + 1), value);
+		}
+		else
+		{
+			auto& vals = add_child(name.substr(0, idx));
+			vals.add_value(name.substr(idx + 1), value);
+		}
+	}
 }
 
 runtime_values_data& runtime_values_data::add_child (const string_type& name)
 {
-	return children.emplace(name, data::runtime_values_data()).first->second;
+	auto idx = name.find(".");
+
+	if (idx == string_type::npos)
+	{// our value
+		return children.emplace(name, data::runtime_values_data()).first->second;
+	}
+	else
+	{
+		auto child_it = children.find(name.substr(0, idx));
+		if (child_it != children.end())
+		{
+			return child_it->second.add_child(name.substr(idx + 1));
+		}
+		else
+		{
+			auto& vals = add_child(name.substr(0, idx));
+			return vals.add_child(name.substr(idx + 1));
+		}
+	}
 }
 
 rx_simple_value runtime_values_data::get_value (const string_type& path) const

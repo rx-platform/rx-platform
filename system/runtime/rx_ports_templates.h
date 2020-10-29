@@ -33,10 +33,10 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 
 
@@ -65,12 +65,13 @@ standard multiple endpoint transport port implementation");
 
   public:
 
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void remove_connection (rx_protocol_stack_endpoint* what);
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
 
   protected:
+
+      rx_result add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep);
+
 
   private:
 
@@ -93,14 +94,22 @@ standard single endpoint transport port implementation");
 
     DECLARE_REFERENCE_PTR(extern_port_impl);
 
-    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> > active_endpoints_type;
-
-  public:
-
-      void remove_endpoint (rx_protocol_stack_endpoint* what);
+    typedef endpointT endpoint_t;
+    typedef typename std::unique_ptr<endpointT> endpoint_ptr_t;
 
 
   protected:
+    typedef std::map<rx_protocol_stack_endpoint*, endpoint_ptr_t> active_endpoints_type;
+
+  public:
+
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
+
+
+  protected:
+
+      rx_result add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep, const protocol_address* local_address, const protocol_address* remote_address);
+
 
   private:
 
@@ -115,22 +124,41 @@ standard single endpoint transport port implementation");
 
 
 template <typename endpointT, typename routingT>
-rx_result extern_routed_port_impl<endpointT,routingT>::stop_runtime (runtime::runtime_stop_context& ctx)
+rx_result extern_routed_port_impl<endpointT,routingT>::add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep)
 {
-    for (auto& one : active_endpoints_)
+    auto endpoint_ptr = std::make_unique<endpoint_type>(this);
+
+    if (what->closed_function == nullptr)
     {
-        rx_close(one.first, RX_PROTOCOL_DISCONNECTED);
+        what->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->get_port()->unbind_stack_endpoint(entry);
+        };
     }
-    active_endpoints_.clear();
-    return true;
+
+    auto push_result = rx_push_stack(what, &endpoint_ptr->router->stack);
+    if (push_result == RX_PROTOCOL_OK)
+    {
+        auto result = register_routing_endpoint(&endpoint_ptr->router->stack);
+        result = register_routing_endpoint(what);
+        endpoint_ptr->endpoint = std::move(ep);
+        active_endpoints_.emplace(&endpoint_ptr->router->stack, std::move(endpoint_ptr));
+        return result;
+    }
+    else
+    {
+        return rx_protocol_error_message(push_result);
+    }
 }
 
 template <typename endpointT, typename routingT>
-void extern_routed_port_impl<endpointT,routingT>::remove_connection (rx_protocol_stack_endpoint* what)
+void extern_routed_port_impl<endpointT,routingT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
     {
+        it->second->router->close_sessions();
         active_endpoints_.erase(it);
     }
 }
@@ -140,11 +168,33 @@ void extern_routed_port_impl<endpointT,routingT>::remove_connection (rx_protocol
 
 
 template <typename endpointT>
-void extern_port_impl<endpointT>::remove_endpoint (rx_protocol_stack_endpoint* what)
+rx_result extern_port_impl<endpointT>::add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep, const protocol_address* local_address, const protocol_address* remote_address)
+{
+    if (what->closed_function == nullptr)
+    {
+        what->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->get_port()->unbind_stack_endpoint(entry);
+        };
+    }
+    active_endpoints_.emplace(what, std::move(ep));
+    auto result = port_runtime::add_stack_endpoint(what, local_address, remote_address);
+    if (!result)
+    {
+        active_endpoints_.erase(what);
+    }
+    return result;
+}
+
+template <typename endpointT>
+void extern_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
+    {
         active_endpoints_.erase(it);// i just might want something to do with it...
+    }
 }
 
 

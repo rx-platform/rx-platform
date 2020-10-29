@@ -1259,7 +1259,7 @@ uint64_t rx_get_us_ticks()
 
 // directories stuff
 
-size_t drives_count = 0;
+int drives_count = 0;
 char** drives = NULL;
 
 void init_fixed_drives()

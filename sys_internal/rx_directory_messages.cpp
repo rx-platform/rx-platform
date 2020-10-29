@@ -117,8 +117,17 @@ rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
 
 message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
-	auto ret_value = std::make_unique<error_message>("Jebi ga nije jos gotovo!"s, 17, request_id);
-	return ret_value;
+	auto ret = ctx.safe_directory()->delete_sub_directory(path);
+	if (!ret)
+	{
+		auto ret_value = std::make_unique<error_message>(ret, 17, request_id);
+		return ret_value;
+	}
+	else
+	{
+		auto response = std::make_unique<rx_remove_directory_response>();
+		return response;
+	}
 }
 
 const string_type& rx_remove_directory_request::get_type_name ()

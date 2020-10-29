@@ -147,7 +147,9 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::ls_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::cd_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::rmdir_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::move_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
 	// test command
 	register_command(rx_create_reference<testing::test_command>());
@@ -180,7 +182,7 @@ void server_command_manager::register_internal_commands ()
 	// register protocol constructors
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_RX_JSON_TYPE_ID, [] {
-			return rx_create_reference<rx_internal::rx_protocol::rx_protocol_port>();
+			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_port>();
 		});
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport_port>(
 		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {

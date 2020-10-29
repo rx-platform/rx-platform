@@ -35,7 +35,7 @@
 #include "model/rx_construction_list.h"
 
 #include "model/rx_meta_internals.h"
-#include "interfaces/rx_ip_endpoints.h"
+#include "interfaces/rx_udp.h"
 
 
 namespace rx_internal {

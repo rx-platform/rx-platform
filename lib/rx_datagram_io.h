@@ -63,9 +63,7 @@ protected:
       ~udp_socket();
 
 
-      rx_result bind_socket_udpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
-
-      rx_result bind_socket_udpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher);
+      rx_result bind_socket_udpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
 
       void close ();
 
@@ -176,7 +174,7 @@ udp_socket<buffT>::~udp_socket()
 
 
 template <class buffT>
-rx_result udp_socket<buffT>::bind_socket_udpip_4 (sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result udp_socket<buffT>::bind_socket_udpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
     this->dispatcher_data_.handle = rx_create_and_bind_ip4_udp_socket(addr);
     if (this->dispatcher_data_.handle)
@@ -186,24 +184,6 @@ rx_result udp_socket<buffT>::bind_socket_udpip_4 (sockaddr_in* addr, threads::di
         return true;
     }
     return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
-}
-
-template <class buffT>
-rx_result udp_socket<buffT>::bind_socket_udpip_4 (uint16_t port, const string_type& addr, threads::dispatcher_pool& dispatcher)
-{
-    sockaddr_in temp_addr;
-    string_type trimmed(rx_trim(addr));
-
-    auto result = fill_ip4_addr(trimmed, port, &temp_addr);
-    if (result)
-    {
-        return this->bind_socket_udpip_4(&temp_addr, dispatcher);
-    }
-    else
-    {
-        result.register_error("Unable to parse address string.");
-        return result;
-    }
 }
 
 template <class buffT>
@@ -462,3 +442,5 @@ bool udp_socket<buffT>::start_loops ()
 
 
 #endif
+
+

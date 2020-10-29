@@ -42,8 +42,8 @@ namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_runtime_creator_base;
 class protocol_type_creator_base;
+class protocol_runtime_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -274,6 +274,8 @@ class update_type_request : public rx_request_message
       static string_type type_name;
 
       static uint16_t type_id;
+
+      rx_uuid checkout;
 
 
   protected:
@@ -583,6 +585,8 @@ class update_runtime_request : public rx_request_message
       static string_type type_name;
 
       static uint16_t type_id;
+
+      rx_uuid checkout;
 
 
   protected:

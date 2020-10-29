@@ -33,12 +33,12 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 
 
@@ -141,13 +141,12 @@ VT100 terminal. implementation of telnet and VT100 transport protocol port.");
     DECLARE_REFERENCE_PTR(telnet_transport_port);
 
   public:
+      telnet_transport_port();
+
 
   protected:
 
   private:
-
-      std::unique_ptr<telnet_transport> construct_endpoint ();
-
 
 
 };

@@ -112,13 +112,6 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     if (whose.loop_count_item_)
         whose.set_binded_as(whose.loop_count_item_, whose.loop_count_);
 
-
-    std::ostringstream ss;
-    ss << "Processing object <"
-        << full_path
-        << "> started";
-    RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
-
     auto old_tick = rx_get_us_ticks();
     size_t lap_count = 0;
     do
@@ -160,11 +153,7 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     whose.last_scan_time_ = (double)diff / 1000.0;
     whose.loop_count_ += lap_count;
 
-    ss.str("");
-    ss << "Processed object <"
-        << full_path
-        << "> loop = " << lap_count << "; time = " << diff << "us.";
-    RUNTIME_LOG_DEBUG("Algorithm", 100, ss.str());
+    
 
     if (whose.max_scan_time_ < whose.last_scan_time_)
     {
@@ -209,21 +198,19 @@ rx_result object_runtime_algorithms<typeT>::write_items (runtime_transaction_id_
 }
 
 template <class typeT>
-rx_result object_runtime_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, std::vector<rx_result>& results, bool& has_errors, typename typeT::RType& whose)
+std::vector<rx_result> object_runtime_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
-    if (items.empty())
-        return true;
-    results.clear();// just in case
-    results.reserve(items.size());
-    has_errors = false;
-    for (const auto& handle : items)
+    std::vector<rx_result> results;
+    if (!items.empty())
     {
-        auto one_result = whose.connected_tags_.disconnect_tag(handle, monitor);
-        if (!has_errors && !one_result)
-            has_errors = true;
-        results.emplace_back(std::move(one_result));
+        results.reserve(items.size());
+        for (const auto& handle : items)
+        {
+            auto one_result = whose.connected_tags_.disconnect_tag(handle, monitor);
+            results.emplace_back(std::move(one_result));
+        }
     }
-    return true;
+    return results;
 }
 
 template <class typeT>
@@ -664,29 +651,29 @@ void runtime_holder<typeT>::process_status_change (runtime_process_context& ctx)
 template <class typeT>
 void runtime_holder<typeT>::process_source_inputs (runtime_process_context& ctx)
 {
-    auto& source_results = ctx.get_source_results();
-    auto& source_updates = ctx.get_source_updates();
-    while (!source_updates.empty() || !source_results.empty())
+    source_results_type* source_results = &ctx.get_source_results();
+    source_updates_type* source_updates = &ctx.get_source_updates();
+    while (!source_updates->empty() || !source_results->empty())
     {
-        for (auto& one : source_results)
+        for (auto& one : *source_results)
             one.whose->process_result(one.transaction_id, std::move(one.result));
-        auto& source_results = ctx.get_source_results();
+        source_results = &ctx.get_source_results();
 
-        for (auto& one : source_updates)
+        for (auto& one : *source_updates)
             one.whose->process_update(std::move(one.value));
-        source_updates = ctx.get_source_updates();
+        source_updates = &ctx.get_source_updates();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_mapper_inputs (runtime_process_context& ctx)
 {
-    auto& mapper_writes = ctx.get_mapper_writes();
-    while (!mapper_writes.empty())
+    auto mapper_writes = &ctx.get_mapper_writes();
+    while (!mapper_writes->empty())
     {
-        for (auto& one : mapper_writes)
+        for (auto& one : *mapper_writes)
             one.whose->process_write(std::move(one.value), one.transaction_id);
-        mapper_writes = ctx.get_mapper_writes();
+        mapper_writes = &ctx.get_mapper_writes();
     }
 }
 
@@ -700,37 +687,37 @@ void runtime_holder<typeT>::process_subscription_inputs (runtime_process_context
 template <class typeT>
 void runtime_holder<typeT>::process_variables (runtime_process_context& ctx)
 {
-    auto& variables = ctx.get_variables_for_process();
-    while (!variables.empty())
+    auto variables = &ctx.get_variables_for_process();
+    while (!variables->empty())
     {
-        for (auto& one : variables)
+        for (auto& one : *variables)
             one->process_runtime(&ctx);
-        variables = ctx.get_variables_for_process();
+        variables = &ctx.get_variables_for_process();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_programs (runtime_process_context& ctx)
 {
-    auto& programs = ctx.get_programs_for_process();
-    while (!programs.empty())
+    auto programs = &ctx.get_programs_for_process();
+    while (!programs->empty())
     {
         // TODO!!!
         /*for (auto& one : programs)
             one->process_runtime(&ctx);*/
-        programs = ctx.get_programs_for_process();
+        programs = &ctx.get_programs_for_process();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_filters (runtime_process_context& ctx)
 {
-    auto& filters = ctx.get_filters_for_process();
-    while (!filters.empty())
+    auto filters = &ctx.get_filters_for_process();
+    while (!filters->empty())
     {
-        for (auto& one : filters)
+        for (auto& one : *filters)
             one->process_runtime(&ctx);
-        filters = ctx.get_filters_for_process();
+        filters = &ctx.get_filters_for_process();
     }
 }
 
@@ -744,48 +731,48 @@ void runtime_holder<typeT>::process_subscription_outputs (runtime_process_contex
 template <class typeT>
 void runtime_holder<typeT>::process_mapper_outputs (runtime_process_context& ctx)
 {
-    auto& mapper_updates = ctx.get_mapper_updates();
-    while (!mapper_updates.empty())
+    auto mapper_updates = &ctx.get_mapper_updates();
+    while (!mapper_updates->empty())
     {
-        for (auto& one : mapper_updates)
+        for (auto& one : *mapper_updates)
             one.whose->process_update(std::move(one.value));
-        mapper_updates = ctx.get_mapper_updates();
+        mapper_updates = &ctx.get_mapper_updates();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_source_outputs (runtime_process_context& ctx)
 {
-    auto& source_writes = ctx.get_source_writes();
-    while (!source_writes.empty())
+    auto source_writes = &ctx.get_source_writes();
+    while (!source_writes->empty())
     {
-        for (auto& one : source_writes)
+        for (auto& one : *source_writes)
             one.whose->process_write(std::move(one.value), one.transaction_id);
-        source_writes = ctx.get_source_writes();
+        source_writes = &ctx.get_source_writes();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_events (runtime_process_context& ctx)
 {
-    auto& events = ctx.get_events_for_process();
-    while (!events.empty())
+    auto events = &ctx.get_events_for_process();
+    while (!events->empty())
     {
-        for (auto& one : events)
+        for (auto& one : *events)
             one->process_runtime(&ctx);
-        events = ctx.get_events_for_process();
+        events = &ctx.get_events_for_process();
     }
 }
 
 template <class typeT>
 void runtime_holder<typeT>::process_structs (runtime_process_context& ctx)
 {
-    auto& structs = ctx.get_structs_for_process();
-    while (!structs.empty())
+    auto structs = &ctx.get_structs_for_process();
+    while (!structs->empty())
     {
-        for (auto& one : structs)
+        for (auto& one : *structs)
             one->process_runtime(&ctx);
-        structs = ctx.get_structs_for_process();
+        structs = &ctx.get_structs_for_process();
     }
 }
 
@@ -815,12 +802,12 @@ rx_result runtime_holder<typeT>::remove_target_relation (const string_type& name
 template <class typeT>
 void runtime_holder<typeT>::process_own (runtime_process_context& ctx)
 {
-    auto& own_jobs = ctx.get_for_own_process();
-    while (!own_jobs.empty())
+    auto own_jobs = &ctx.get_for_own_process();
+    while (!own_jobs->empty())
     {
-        for (auto& one : own_jobs)
+        for (auto& one : *own_jobs)
             one->process();
-        own_jobs = ctx.get_for_own_process();
+        own_jobs = &ctx.get_for_own_process();
     }
 }
 
@@ -832,6 +819,12 @@ typename typeT::instance_data_t runtime_holder<typeT>::get_definition_data ()
     def_data.instance_data = instance_data_.get_data();
     def_data.overrides = overrides_;
     return def_data;
+}
+
+template <class typeT>
+rx_result runtime_holder<typeT>::add_implicit_relation (relations::relation_data::smart_ptr data)
+{
+    return relations_.add_implicit_relation(std::move(data));
 }
 
 template class runtime_holder<object_types::object_type>;
@@ -858,4 +851,5 @@ void process_runtime_job<typeT>::process ()
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
+
 

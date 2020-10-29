@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  interfaces\rx_ip_endpoints.h
+*  interfaces\rx_tcp_server.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,26 +28,23 @@
 ****************************************************************************/
 
 
-#ifndef rx_ip_endpoints_h
-#define rx_ip_endpoints_h 1
+#ifndef rx_tcp_server_h
+#define rx_tcp_server_h 1
 
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
-// rx_datagram_io
-#include "lib/rx_datagram_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
 class tcp_server_port;
-class udp_port;
 
 } // namespace ip_endpoints
 } // namespace interfaces
@@ -55,6 +52,7 @@ class udp_port;
 
 
 #include "sys_internal/rx_inf.h"
+#include "system/runtime/address_endpoint.h"
 
 
 namespace rx_internal {
@@ -62,143 +60,6 @@ namespace rx_internal {
 namespace interfaces {
 
 namespace ip_endpoints {
-
-
-
-
-
-class udp_endpoint 
-{
-
-  public:
-      udp_endpoint();
-
-      ~udp_endpoint();
-
-
-      rx_result open (io::ip4_address addr, udp_port* port);
-
-      rx_result close ();
-
-      rx_protocol_stack_endpoint* get_stack_endpoint ();
-
-
-  protected:
-
-  private:
-
-      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
-
-
-
-      udp_port *my_port_;
-
-      rx_protocol_stack_endpoint stack_endpoint_;
-
-
-      io::ip4_address addr_;
-
-
-};
-
-
-
-
-
-
-
-typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl< udp_endpoint , io::ip4_address  > udp_server_base;
-
-
-
-
-
-
-class udp_port : public udp_server_base  
-{
-	DECLARE_CODE_INFO("rx", 0, 0, 2, "\
-UDP port class. implementation of an UDP/IP4 port");
-
-	DECLARE_REFERENCE_PTR(udp_port);
-
-    struct session_data_t
-    {
-        rx_protocol_stack_endpoint* entry;
-        uint32_t last_tick;
-    };
-
-    typedef std::map<io::ip4_address, session_data_t> sessions_type;
-
-	struct socket_holder_t : public rx::io::udp_socket_std_buffer
-	{
-	private:
-		udp_port* whose;
-	protected:
-		void release_buffer(buffer_ptr what)
-		{
-		}
-        bool readed(const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
-        {
-            if (whose)
-                whose->packet_arrived(data, count, addr, identity);
-            return true;
-        }
-        void timer_tick(uint32_t tick)
-        {
-            if (whose)
-                whose->timer_tick(tick);
-        }
-	public:
-		socket_holder_t(udp_port* whose)
-		{
-			this->whose = whose;
-		}
-		void disconnect()
-		{
-			whose = nullptr;
-		}
-	};
-	friend struct udp_port::socket_holder_t;
-
-  public:
-      udp_port();
-
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      rx_protocol_result_t send_function (rx_packet_buffer* buffer, const io::ip4_address& addr);
-
-      void timer_tick (uint32_t tick);
-
-
-  protected:
-
-      bool packet_arrived (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
-
-
-  private:
-
-
-      rx_reference<socket_holder_t> udp_socket_;
-
-      sessions_type sessions_;
-
-
-      locks::slim_lock sessions_lock_;
-
-      uint32_t session_timeout_;
-
-      runtime_handle_t rx_recv_timeout_;
-
-      runtime_handle_t rx_send_timeout_;
-
-
-};
-
 
 
 
@@ -242,6 +103,8 @@ class tcp_server_endpoint
 
       void set_send_timeout (uint32_t val);
 
+      runtime::items::port_runtime* get_port ();
+
 
       const rx_reference<socket_holder_t> get_tcp_socket () const
       {
@@ -250,9 +113,9 @@ class tcp_server_endpoint
 
 
       tcp_server_endpoint(const tcp_server_endpoint&) = delete;
-      tcp_server_endpoint(tcp_server_endpoint&& right) = delete;
+      tcp_server_endpoint(tcp_server_endpoint&& right) = default;
       tcp_server_endpoint& operator=(const tcp_server_endpoint&) = delete;
-      tcp_server_endpoint& operator=(tcp_server_endpoint&&) = delete;
+      tcp_server_endpoint& operator=(tcp_server_endpoint&&) = default;
   protected:
 
   private:
@@ -275,7 +138,7 @@ class tcp_server_endpoint
       io::ip4_address remote_address_;
 
       io::ip4_address local_address_;
-
+      
 
 };
 
@@ -308,7 +171,9 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      void stack_disassembled ();
+      rx_result stop_passive ();
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
   protected:
@@ -317,8 +182,6 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
 
       rx_reference<rx::io::tcp_listent_std_buffer> listen_socket_;
-
-      active_endpoints_type active_endpoints_;
 
 
       runtime_handle_t rx_recv_timeout_;
@@ -338,3 +201,5 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
 
 #endif
+
+

@@ -137,6 +137,42 @@ rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& 
 }
 
 template <>
+rx_result basic_types_algorithm<source_type>::serialize_type(const source_type& whose, base_meta_writer& stream, uint8_t type)
+{
+	if (!whose.meta_info.serialize_meta_data(stream, type, source_type::type_id))
+		return false;
+	if (!stream.start_object("def"))
+		return false;
+	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	ret = filtered_data_algorithm::serialize_complex_attribute(whose.filter_data, stream);
+	if (!ret)
+		return ret;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+template <>
+rx_result basic_types_algorithm<mapper_type>::serialize_type(const mapper_type& whose, base_meta_writer& stream, uint8_t type)
+{
+	if (!whose.meta_info.serialize_meta_data(stream, type, mapper_type::type_id))
+		return false;
+	if (!stream.start_object("def"))
+		return false;
+	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	ret = filtered_data_algorithm::serialize_complex_attribute(whose.filter_data, stream);
+	if (!ret)
+		return ret;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
+
+template <>
 rx_result basic_types_algorithm<variable_type>::deserialize_type(variable_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
@@ -171,7 +207,37 @@ rx_result basic_types_algorithm<struct_type>::deserialize_type(struct_type& whos
 	return true;
 }
 
+template <>
+rx_result basic_types_algorithm<source_type>::deserialize_type(source_type& whose, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("def"))
+		return false;
+	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	ret = filtered_data_algorithm::deserialize_complex_attribute(whose.filter_data, stream, whose.complex_data);
+	if (!ret)
+		return ret;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
 
+template <>
+rx_result basic_types_algorithm<mapper_type>::deserialize_type(mapper_type& whose, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("def"))
+		return false;
+	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	ret = filtered_data_algorithm::deserialize_complex_attribute(whose.filter_data, stream, whose.complex_data);
+	if (!ret)
+		return ret;
+	if (!stream.end_object())
+		return false;
+	return true;
+}
 
 
 template <>
@@ -189,6 +255,23 @@ bool basic_types_algorithm<struct_type>::check_type(struct_type& whose, type_che
 	type_check_source _(whose.meta_info.get_full_path(), &ctx);
 	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
 	ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
+	return ret;
+}
+
+template <>
+bool basic_types_algorithm<source_type>::check_type(source_type& whose, type_check_context& ctx)
+{
+	type_check_source _(whose.meta_info.get_full_path(), &ctx);
+	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
+	ret = ret && filtered_data_algorithm::check_complex_attribute(whose.filter_data, ctx);
+	return ret;
+}
+template <>
+bool basic_types_algorithm<mapper_type>::check_type(mapper_type& whose, type_check_context& ctx)
+{
+	type_check_source _(whose.meta_info.get_full_path(), &ctx);
+	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
+	ret = ret && filtered_data_algorithm::check_complex_attribute(whose.filter_data, ctx);
 	return ret;
 }
 
@@ -215,6 +298,29 @@ rx_result basic_types_algorithm<struct_type>::construct(const struct_type& whose
 
 	return ret;
 }
+
+
+template <>
+rx_result basic_types_algorithm<source_type>::construct(const source_type& whose, construct_context& ctx)
+{
+	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
+	if (ret)
+	{
+		ret = filtered_data_algorithm::construct_complex_attribute(whose.filter_data, whose.complex_data.get_names_cache(), ctx);
+	}
+	return ret;
+}
+template <>
+rx_result basic_types_algorithm<mapper_type>::construct(const mapper_type& whose, construct_context& ctx)
+{
+	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
+	if (ret)
+	{
+		ret = filtered_data_algorithm::construct_complex_attribute(whose.filter_data, whose.complex_data.get_names_cache(), ctx);
+	}
+	return ret;
+}
+
 
 
 template class basic_types_algorithm<basic_types::struct_type>;
@@ -328,6 +434,7 @@ bool object_types_algorithm<typeT>::check_type (typeT& whose, type_check_context
 template <class typeT>
 rx_result object_types_algorithm<typeT>::construct_runtime (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx)
 {
+	ctx.get_directories().add_paths({ whose.meta_info.path });
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
 	{
@@ -431,7 +538,7 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		data.target_base_id = target_base_id;
 		rx_timed_value str_val;
 		str_val.assign_static<string_type>("", ctx.now);
-		data.value = runtime::structure::value_data{ str_val, false };
+		data.value.value = str_val;
 		data.implementation_ = ret_val.value();
 		// this is something i still don't know about
 		// it will have to wait
@@ -468,6 +575,8 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 		return false;
 	if (!stream.write_string("inverse", whose.relation_data.inverse_name))
 		return false;
+	if (!stream.write_bool("dynamic", whose.relation_data.dynamic))
+		return false;
 
 	if (!stream.end_object())
 		return false;
@@ -488,6 +597,8 @@ rx_result relation_type_algorithm::deserialize_type (relation_type& whose, base_
 	if (!stream.read_bool("symmetrical", whose.relation_data.symmetrical))
 		return false;
 	if (!stream.read_string("inverse", whose.relation_data.inverse_name))
+		return false;
+	if (!stream.read_bool("dynamic", whose.relation_data.dynamic))
 		return false;
 
 	if (!stream.end_object())

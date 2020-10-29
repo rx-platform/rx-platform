@@ -37,8 +37,8 @@
 #include "dummy.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_subscription
@@ -57,80 +57,7 @@ class rx_protocol_connection;
 namespace rx_internal {
 
 namespace rx_protocol {
-
-
-
-
-
-
-class rx_json_endpoint 
-{
-	friend class rx_protocol_connection;
-
-  public:
-      rx_json_endpoint();
-
-
-      rx_result send_string (const string_type& what);
-
-      void bind (rx_protocol_connection_ptr conn, std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
-
-
-  protected:
-
-  private:
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
-
-
-
-      rx_reference<rx_protocol_connection> connection_;
-
-      rx_protocol_stack_endpoint stack_entry_;
-
-
-      std::function<void(int64_t)> sent_func_;
-
-      std::function<void(int64_t)> received_func_;
-
-
-};
-
-
-
-
-
-
-class rx_protocol_port : public rx_platform::runtime::items::port_runtime  
-{
-	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
-System protocol port class. Implementation of a rx-platform protocol");
-
-	DECLARE_REFERENCE_PTR(rx_protocol_port);
-
-    typedef std::map<rx_protocol_stack_endpoint*, rx_reference<rx_protocol_connection> > active_endpoints_type;
-
-  public:
-      rx_protocol_port();
-
-
-      void stack_assembled ();
-
-      rx_protocol_stack_endpoint* create_endpoint ();
-
-      void remove_endpoint (rx_protocol_stack_endpoint* what);
-
-
-  protected:
-
-  private:
-
-
-      active_endpoints_type active_endpoints_;
-
-
-};
-
+typedef rx_reference<rx_protocol_connection> rx_protocol_connection_ptr;
 
 
 
@@ -244,6 +171,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
 
 
+
 class rx_protocol_connection : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(rx_protocol_connection);
@@ -252,10 +180,12 @@ class rx_protocol_connection : public rx::pointers::reference_object
     typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
-      rx_protocol_connection();
+      rx_protocol_connection (runtime::items::port_runtime* port);
+
+      ~rx_protocol_connection();
 
 
-      void data_received (const string_type& data, rx_packet_id_type packet_id);
+      void request_received (request_message_ptr&& request);
 
       void data_processed (message_ptr result);
 
@@ -275,6 +205,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
+      void close_endpoint ();
+
 
       const string_type& get_current_directory_path () const
       {
@@ -293,15 +225,26 @@ class rx_protocol_connection : public rx::pointers::reference_object
       }
 
 
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
+      }
+
+
 
   protected:
 
   private:
 
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      rx_protocol_result_t received (recv_protocol_packet packet);
+
+
 
       subscriptions_type subscriptions_;
 
-      rx_json_endpoint endpoint_;
+      rx_protocol_stack_endpoint stack_entry_;
 
 
       rx_directory_ptr current_directory_;
@@ -309,6 +252,43 @@ class rx_protocol_connection : public rx::pointers::reference_object
       string_type current_directory_path_;
 
       rx_thread_handle_t executer_;
+
+      runtime::items::port_runtime* port_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< rx_internal::rx_protocol::rx_protocol_connection  > rx_json_protocol_port_base;
+
+
+
+
+
+
+class rx_json_protocol_port : public rx_json_protocol_port_base  
+{
+	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+System protocol port class. Implementation of a rx-platform JSON protocol");
+
+	DECLARE_REFERENCE_PTR(rx_json_protocol_port);
+
+
+  public:
+      rx_json_protocol_port();
+
+
+      void stack_assembled ();
+
+
+  protected:
+
+  private:
 
 
 };

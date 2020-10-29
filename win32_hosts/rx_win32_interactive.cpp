@@ -55,6 +55,8 @@
 
 #define WINDOWS_TERMINAL_SET_COLOR_ATTRIBUTE(a, c) ((a&0xfff8)|c)
 
+
+
 namespace
 {
 

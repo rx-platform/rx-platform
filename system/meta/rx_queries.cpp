@@ -471,8 +471,8 @@ rx_result port_stack_query::do_query (api::query_result& result, rx_directory_pt
 		if (port_ptr)
 		{
 			;
-			rx_port_ptr stack_top = port_ptr.value()->get_instance_data().stack_data.stack_top;
-			std::vector<rx_port_ptr> up_ports = port_ptr.value()->get_instance_data().stack_data.passive_map.get_registered();
+			rx_port_ptr stack_top = port_ptr.value()->get_instance_data().stack_data.build_map.stack_top;
+			std::vector<rx_port_ptr> up_ports = port_ptr.value()->get_instance_data().stack_data.build_map.get_registered();
 			result.items.reserve(stack_top ? up_ports.size() + 1 : up_ports.size());
 			for (const auto& one : up_ports)
 			{

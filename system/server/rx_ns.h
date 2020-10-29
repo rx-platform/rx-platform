@@ -34,14 +34,14 @@
 
 #include "lib/rx_lock.h"
 
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"
@@ -225,6 +225,10 @@ class rx_platform_directory : public rx::pointers::reference_object
       rx_namespace_item get_sub_item (const string_type& path) const;
 
       rx_result add_item (const rx_namespace_item& what);
+
+      rx_result move_directory (const string_type& source, const string_type& dest);
+
+      rx_result copy_directory (const string_type& source, const string_type& dest);
 
 	  template<class TImpl>
 	  rx_result add_item(TImpl who);

@@ -50,7 +50,7 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 {
 
   public:
-      rx_file_item (const string_type& serialization_type, const string_type& file_path);
+      rx_file_item (const string_type& serialization_type, const string_type& file_path, const meta::meta_data& storage_meta);
 
       ~rx_file_item();
 
@@ -69,6 +69,8 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       const string_type& get_item_reference () const;
 
+      bool preprocess_meta_data (meta::meta_data& data);
+
 
   protected:
 
@@ -81,6 +83,8 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
       rx_time created_time_;
 
       bool valid_;
+
+      meta::meta_data storage_meta_;
 
 
 };
@@ -129,7 +133,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
 
-      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path);
+      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta);
 
       rx_result ensure_path_exsistence (const string_type& path);
 
@@ -159,7 +163,7 @@ class rx_json_file : public rx_file_item
 {
 
   public:
-      rx_json_file (const string_type& file_path);
+      rx_json_file (const string_type& file_path, const meta::meta_data& storage_meta);
 
       ~rx_json_file();
 
@@ -196,7 +200,7 @@ class rx_binary_file : public rx_file_item
 {
 
   public:
-      rx_binary_file (const string_type& file_path);
+      rx_binary_file (const string_type& file_path, const meta::meta_data& storage_meta);
 
       ~rx_binary_file();
 

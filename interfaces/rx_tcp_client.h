@@ -135,9 +135,11 @@ public:
 
       bool tick ();
 
-      rx_result start (tcp_client_port* my_port, const string_type& addr, uint16_t port, const string_type& remote_addr, uint16_t remote_port);
+      rx_result start (const protocol_address* addr, const protocol_address* remote_addr, rx_security_handle_t identity, tcp_client_port* port);
 
       rx_protocol_stack_endpoint* get_stack_endpoint ();
+
+      runtime::items::port_runtime* get_port ();
 
 
   protected:
@@ -186,7 +188,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_client_endpoint  > tcp_client_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_client_endpoint  > tcp_client_base;
 
 
 
@@ -195,7 +197,7 @@ typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_in
 
 class tcp_client_port : public tcp_client_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 TCP Server port class. implementation of an TCP/IP4 client side, connect...");
 
     DECLARE_REFERENCE_PTR(tcp_client_port);
@@ -206,24 +208,18 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
       uint32_t get_reconnect_timeout () const;
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+      rx_result start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+
+      rx_result stop_passive ();
 
 
   protected:
 
   private:
-
-      rx_protocol_stack_endpoint* get_stack_entry ();
-
-
-
-      tcp_client_endpoint session_;
 
 
       runtime_handle_t rx_recv_timeout_;
@@ -231,6 +227,10 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       runtime_handle_t rx_connect_timeout_;
 
       runtime_handle_t rx_reconnect_timeout_;
+
+      io::ip4_address bind_address_;
+
+      io::ip4_address connect_address_;
 
 
 };

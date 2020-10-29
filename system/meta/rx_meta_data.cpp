@@ -470,7 +470,11 @@ meta_data create_meta_for_new(const meta_data& proto)
 	rx_time now(rx_time::now());
 	ret_data.created_time = now;
 	ret_data.modified_time = now;
+	if(!proto.created_time.is_null())
+		ret_data.created_time = proto.created_time;
 	ret_data.version = RX_INITIAL_ITEM_VERSION;
+	if (ret_data.version < proto.version)
+		ret_data.version = proto.version;
 	if (proto.id.is_null())
 		ret_data.id = rx_node_id::generate_new();
 

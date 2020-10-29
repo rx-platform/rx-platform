@@ -1,9 +1,9 @@
 #pragma once
 
 
-#define RX_LIB_MAJOR_VERSION 0
-#define RX_LIB_MINOR_VERSION 21
-#define RX_LIB_BUILD_NUMBER 3
+#define RX_LIB_MAJOR_VERSION 1
+#define RX_LIB_MINOR_VERSION 0
+#define RX_LIB_BUILD_NUMBER 1
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -36,5 +36,7 @@
 // version 0.20.1 introduced function_to_go<refT, Args...>
 // version 0.20.2 finished udp_socket<>
 // version 0.20.3 added tcp_client_socket::bind(addr, port, ...)
+// version 1.0.0 first release version
+// version 1.0.1 add value and add child in runtime data accepts full path
 
 

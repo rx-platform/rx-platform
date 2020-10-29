@@ -281,6 +281,12 @@ rx_result rx_item_implementation<TImpl>::save () const
 	return rx_save_platform_item(*this);
 }
 
+template <class TImpl>
+std::vector<rx_result> rx_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
+{
+	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::disconnect_items(items, monitor, *impl_);
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
@@ -441,6 +447,18 @@ rx_result rx_meta_item_implementation<TImpl>::save () const
 	return rx_save_platform_item(*this);
 }
 
+template <class TImpl>
+std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
+{
+	std::vector<rx_result> result;
+	result.reserve(items.size());
+	for (size_t idx = 0; idx < items.size(); idx++)
+	{
+		result.emplace_back("Not valid for this type!");
+	}
+	return result;
+}
+
 
 // Class rx_internal::internal_ns::internal_directory 
 
@@ -590,6 +608,18 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::save () const
 {
 	return rx_save_platform_item(*this);
+}
+
+template <class TImpl>
+std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
+{
+	std::vector<rx_result> result;
+	result.reserve(items.size());
+	for (size_t idx = 0; idx < items.size(); idx++)
+	{
+		result.emplace_back("Not valid for this type!");
+	}
+	return result;
 }
 
 

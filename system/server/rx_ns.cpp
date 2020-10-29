@@ -619,6 +619,159 @@ rx_result rx_platform_directory::add_item (const rx_namespace_item& what)
 	return ret;
 }
 
+rx_result rx_platform_directory::move_directory (const string_type& source, const string_type& dest)
+{
+	if (source.empty() || dest.empty() || source == dest)
+		return "Invalid directory name!";
+	rx_directory_ptr source_dir_ptr;
+	rx_directory_ptr source_parent_dir_ptr;
+	rx_directory_ptr target_dir_ptr;
+	string_type source_name;
+	string_type target_name;
+	auto idx = source.rfind(RX_DIR_DELIMETER);
+	if (idx != string_type::npos)
+	{// full path
+		source_name = source.substr(idx + 1);
+		auto where_from = get_sub_directory(source.substr(0, idx));
+		if (!where_from)
+			return "Directory not found!";
+		else
+		{
+			source_parent_dir_ptr = where_from;
+			source_dir_ptr = source_parent_dir_ptr->get_sub_directory(source_name);
+			if(!source_dir_ptr)
+				return "Directory not found!";
+		}
+	}
+	else
+	{// local name
+		source_name = source;
+		rx_result ret;
+		structure_lock();
+		auto it = sub_directories_.find(source);
+		if (it != sub_directories_.end())
+		{
+			source_parent_dir_ptr = smart_this();
+			source_dir_ptr = it->second;
+
+			if ((it->second->get_attributes() & namespace_item_delete_access) == namespace_item_null)
+				ret.register_error(RX_ACCESS_DENIED);
+		}
+		else
+		{
+			ret.register_error("Directory does not exists!");
+		}
+		structure_unlock();
+		if(!ret)
+			return ret;
+	}
+	idx = dest.rfind(RX_DIR_DELIMETER);
+	if (idx != string_type::npos)
+	{// plain name just
+		target_name = dest.substr(idx + 1);
+		auto where_to = get_sub_directory(dest.substr(0, idx));
+		if (where_to)
+			target_dir_ptr = where_to;
+		else
+			return "Directory already exists!";
+	}
+	else
+	{// our path
+		target_name = dest;
+		rx_result ret;
+		structure_lock();
+		auto it = sub_directories_.find(dest);
+		if (it != sub_directories_.end())
+		{
+			return "Directory already exists!";
+		}
+		else
+		{
+			target_dir_ptr = smart_this();
+
+			if ((it->second->get_attributes() & namespace_item_write_access) == namespace_item_null)
+				ret.register_error(RX_ACCESS_DENIED);
+		}
+		structure_unlock();
+		if(!ret)
+			return ret;
+	}
+	if (target_dir_ptr == smart_this())
+	{
+		rx_transaction_type transaction;
+		rx_result ret;
+		{
+			// handle source
+			{
+				locks::auto_lock_t _(&source_parent_dir_ptr->structure_lock_);
+				auto it = source_parent_dir_ptr->sub_directories_.find(source_name);
+				if (it != sub_directories_.end())
+				{
+					source_dir_ptr = it->second;
+					source_dir_ptr->parent_ = rx_directory_ptr::null_ptr;
+					sub_directories_.erase(it);
+					transaction.push([source_dir_ptr, source_parent_dir_ptr, source_name]() mutable
+						{
+							locks::auto_lock_t _(&source_parent_dir_ptr->structure_lock_);
+							source_parent_dir_ptr->sub_directories_.emplace(source_name, source_dir_ptr);
+							source_dir_ptr->parent_ = source_parent_dir_ptr;
+						});
+				}
+				else
+				{
+					ret.register_error("Directory does not exists!");
+				}
+			}
+			// now handle the target
+			{
+				locks::auto_lock_t _(&target_dir_ptr->structure_lock_);
+				auto it = target_dir_ptr->sub_directories_.find(target_name);
+				if (it == sub_directories_.end())
+				{
+					source_dir_ptr->parent_ = target_dir_ptr;
+					target_dir_ptr->sub_directories_.emplace(target_name, source_dir_ptr);
+					transaction.push([target_dir_ptr, target_name, source_dir_ptr]() mutable
+						{
+							locks::auto_lock_t _(&target_dir_ptr->structure_lock_);
+							target_dir_ptr->sub_directories_.erase(target_name);
+						});
+				}
+				else
+				{
+					ret.register_error("Directory already exists!");
+				}
+			}
+		}
+		if (ret)
+		{
+			auto storage_result = target_dir_ptr->resolve_storage();
+			if (storage_result)
+			{
+				auto storage_ptr = storage_result.move_value();
+				//storage_ptr->
+			}
+			else
+			{
+				ret.register_errors(storage_result.errors());
+			}
+		}
+		if (ret)
+			transaction.commit();
+		return ret;
+	}
+	else
+	{
+		string_type source_path;
+		source_dir_ptr->fill_path(source_path);
+		return target_dir_ptr->move_directory(source_path, target_name);
+	}
+}
+
+rx_result rx_platform_directory::copy_directory (const string_type& source, const string_type& dest)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
 template<class TImpl>
 rx_result rx_platform_directory::add_item(TImpl who)
 {

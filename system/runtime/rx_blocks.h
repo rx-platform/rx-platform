@@ -83,29 +83,28 @@ filter runtime. basic implementation of an filter runtime");
 
 
   protected:
+
+      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
+
+      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
+
       template<typename valT>
-      valT get_binded_as(runtime_process_context* ctx, runtime_handle_t handle, const valT& default_value) const
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value) const
       {
-          if (ctx)
+          values::rx_simple_value temp_val;
+          auto result = get_value(handle, temp_val);
+          if (result)
           {
-              values::rx_simple_value temp_val;
-              auto result = ctx->get_value(handle, temp_val);
-              if (result)
-              {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
-              }
+              return values::extract_value<valT>(temp_val.get_storage(), default_value);
           }
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_process_context* ctx, runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value)
       {
-          if (ctx)
-          {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = ctx->set_value(handle, std::move(temp_val));
-          }
+          values::rx_simple_value temp_val;
+          temp_val.assign_static<valT>(std::forward<valT>(value));
+          auto result = set_value(handle, std::move(temp_val));
       }
   private:
 
@@ -113,9 +112,9 @@ filter runtime. basic implementation of an filter runtime");
 
       virtual bool supports_output () const;
 
-      virtual rx_result filter_input (rx_value& val, runtime_process_context* ctx);
+      virtual rx_result filter_input (rx_value& val);
 
-      virtual rx_result filter_output (rx_simple_value& val, runtime_process_context* ctx);
+      virtual rx_result filter_output (rx_simple_value& val);
 
 
 
@@ -157,9 +156,20 @@ source runtime. basic implementation of an source runtime");
 
       bool is_output () const;
 
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
 
       static string_type type_name;
 
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_periodic_job(job);
+          return job;
+      }
 
   protected:
 

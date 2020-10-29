@@ -84,7 +84,7 @@ rx_result local_pipe_port::start_listen (const protocol_address* local_address, 
 	if (!result)
 		return result;
 
-	bind_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);	
+	add_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);
 	active_ = true;
 
 	return true;
@@ -94,6 +94,10 @@ void local_pipe_port::stack_disassembled ()
 {
 	if(active_)
 		pipes_.close();
+}
+
+void local_pipe_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
 }
 
 

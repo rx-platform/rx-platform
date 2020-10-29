@@ -38,6 +38,7 @@
 #include "rx_model_algorithms.h"
 #include "system/runtime/rx_runtime_holder.h"
 #include "system/meta/rx_meta_algorithm.h"
+#include "lib/security/rx_security.h"
 using namespace rx;
 
 
@@ -293,7 +294,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 template <class typeT>
 types_repository<typeT>::types_repository()
 {
-	//if constexpr (typeT::has_default_constructor)
+	if constexpr (typeT::has_default_constructor)
 	{
 		default_constructor_ = []()
 		{
@@ -372,7 +373,6 @@ rx_result types_repository<typeT>::register_behavior (const rx_node_id& id, std:
 template <class typeT>
 rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_runtime (typename typeT::instance_data_t&& instance_data, bool prototype)
 {
-	using runtime_behavior_t = typename typeT::runtime_behavior_t;
 	instance_data.meta_info = create_meta_for_new(instance_data.meta_info);
 	meta_data& meta = instance_data.meta_info;
 
@@ -578,6 +578,8 @@ rx_result types_repository<typeT>::delete_runtime (rx_node_id id)
 		}
 		switch (it->second.state)
 		{
+		case runtime_state::runtime_state_checkout:
+			return "Wrong state, object checked out!";
 		case runtime_state::runtime_state_initializing:
 			return "Wrong state, object starting!";
 		case runtime_state::runtime_state_running:
@@ -671,11 +673,18 @@ api::query_result types_repository<typeT>::get_instanced_objects (const rx_node_
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_for_delete (rx_node_id id)
+rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_for_delete (rx_node_id id, const rx_uuid& checkout)
 {
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end())
 	{
+		if (it->second.state == runtime_state::runtime_state_checkout && !checkout.is_null())
+		{
+			if (it->second.checkout.id != checkout)
+				return "Object checked out by "s + security::active_security()->get_full_name() + " .";
+			it->second.state = runtime_state::runtime_state_deleting;
+			return it->second.target;
+		}
 		if (it->second.state == runtime_state::runtime_state_running)
 		{
 			it->second.state = runtime_state::runtime_state_deleting;
@@ -683,6 +692,8 @@ rx_result_with<typename typeT::RTypePtr> types_repository<typeT>::mark_runtime_f
 		}
 		switch (it->second.state)
 		{
+		case runtime_state::runtime_state_checkout:
+			return "Wrong state, object checked out!";
 		case runtime_state::runtime_state_created:
 			return "Wrong state, object just created!";
 		case runtime_state::runtime_state_initializing:
@@ -714,6 +725,8 @@ rx_result types_repository<typeT>::mark_runtime_running (rx_node_id id)
 		case runtime_state::runtime_state_deleting:// this is when delete fails to reset object as running
 			it->second.state = runtime_state::runtime_state_running;
 			return true;
+		case runtime_state::runtime_state_checkout:
+			return "Wrong state, object not initialized!";
 		case runtime_state::runtime_state_running:
 			return "Wrong state, object already running!";
 		case runtime_state::runtime_state_destroyed:
@@ -1323,6 +1336,8 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 	if (!ret)
 		return ret;
 
+	data.value.read_only = !relation_type_ptr->relation_data.dynamic;
+
 	data.implementation_ = ret.value();
 	if (!relation_type_ptr->relation_data.symmetrical)
 	{
@@ -1452,6 +1467,7 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 
 	for (const auto& one : base)
 	{
+
 		auto it = constructors_.find(one);
 		if (it != constructors_.end())
 		{

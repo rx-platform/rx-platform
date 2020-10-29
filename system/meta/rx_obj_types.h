@@ -364,6 +364,8 @@ class relation_type_data
 
       bool symmetrical;
 
+      bool dynamic;
+
 
   protected:
 

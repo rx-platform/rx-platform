@@ -483,6 +483,9 @@ uint16_t update_type_request::type_id = rx_update_type_request_id;
 
 rx_result update_type_request::serialize (base_meta_writer& stream) const
 {
+	if (!stream.write_uuid("checkout", checkout.uuid()))
+		return "Error reading checkout value";
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
@@ -500,6 +503,10 @@ rx_result update_type_request::serialize (base_meta_writer& stream) const
 
 rx_result update_type_request::deserialize (base_meta_reader& stream)
 {
+	rx_uuid_t temp;
+	if (!stream.read_uuid("checkout", temp))
+		return "Error reading checkout value";
+	checkout = temp;
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
@@ -1128,6 +1135,9 @@ uint16_t update_runtime_request::type_id = rx_update_runtime_request_id;
 
 rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 {
+	if (!stream.write_uuid("checkout", checkout.uuid()))
+		return "Error reading checkout value";
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
@@ -1145,6 +1155,10 @@ rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 
 rx_result update_runtime_request::deserialize (base_meta_reader& stream)
 {
+	rx_uuid_t temp;
+	if (!stream.read_uuid("checkout", temp))
+		return "Error reading checkout value";
+	checkout = temp;
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 

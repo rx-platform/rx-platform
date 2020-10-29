@@ -128,6 +128,8 @@ class port_active_behavior
 
       virtual bool is_endpoit_binder () = 0;
 
+      virtual bool is_endpoint_user () = 0;
+
 
   protected:
 

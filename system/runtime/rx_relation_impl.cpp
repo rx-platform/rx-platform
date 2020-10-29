@@ -108,10 +108,9 @@ void relation_runtime::relation_disconnected ()
 {
 }
 
-rx_result relation_runtime::get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref)
+rx_item_reference relation_runtime::get_implicit_reference (const meta::meta_data& info)
 {
-	ref = rx_item_reference::null_ref;
-	return true;
+	return rx_item_reference::null_ref;
 }
 
 relation_runtime::smart_ptr relation_runtime::make_target_relation ()
@@ -124,3 +123,11 @@ relation_runtime::smart_ptr relation_runtime::make_target_relation ()
 } // namespace runtime
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return false;
+
+#endif

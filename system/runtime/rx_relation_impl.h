@@ -75,6 +75,8 @@ class relation_runtime : public rx::pointers::reference_object
 
       virtual rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
+      virtual rx_item_reference get_implicit_reference (const meta::meta_data& info);
+
       virtual relation_runtime::smart_ptr make_target_relation ();
 
 
@@ -99,8 +101,6 @@ class relation_runtime : public rx::pointers::reference_object
       virtual void relation_connected ();
 
       virtual void relation_disconnected ();
-
-      virtual rx_result get_implicit_reference (runtime::runtime_init_context& ctx, rx_item_reference& ref);
 
 
 

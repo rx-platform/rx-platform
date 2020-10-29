@@ -1532,15 +1532,12 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sock
             }
             else
             {
-                int err=errno;
-                char* errstr=strerror(err);
                 remove_pending_op(internal);
                 return RX_ERROR;
             }
         }
         else
         {
-            char* errstr=strerror(err);
             remove_pending_op(internal);
             return RX_ERROR;
         }
@@ -1551,7 +1548,7 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sock
         struct sockaddr_in local_addr;
         socklen_t addr_size=sizeof(local_addr);
         getsockname(ret,(struct sockaddr*)&local_addr,&addr_size);
-        (what->connect_callback)(what->data, 0, addr,(const struct sockaddr*)&local_addr);
+        (what->connect_callback)(what->data, 0, (struct sockaddr*)addr,(struct sockaddr*)&local_addr);
     }
 
     return RX_OK;

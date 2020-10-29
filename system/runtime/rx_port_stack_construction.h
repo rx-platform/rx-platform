@@ -56,6 +56,8 @@ namespace runtime {
 
 namespace io_types {
 
+namespace stack_build {
+
 
 
 
@@ -181,7 +183,7 @@ class stack_builder
 
       static void recursive_send_stack_assembled (rx_port_ptr who);
 
-      static void recursive_send_stack_disassembled_up (rx_port_ptr who);
+      static void recursive_send_stack_disassembled (rx_port_ptr who);
 
       static void recursive_get_stack (rx_port_ptr top, std::vector<rx_port_ptr>& stack);
 
@@ -190,6 +192,7 @@ class stack_builder
 };
 
 
+} // namespace stack_build
 } // namespace io_types
 } // namespace runtime
 } // namespace rx_platform

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\slave_endpoint.cpp
+*  system\runtime\address_endpoint.cpp
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,8 +34,8 @@
 #include "rx_runtime_helpers.h"
 using namespace rx_platform;
 
-// slave_endpoint
-#include "system/runtime/slave_endpoint.h"
+// address_endpoint
+#include "system/runtime/address_endpoint.h"
 
 
 

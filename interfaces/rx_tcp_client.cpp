@@ -82,6 +82,11 @@ void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
         tcp_socket_->disconnect();
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
 
+
+        auto session = rx_create_session(&local_addr_, &remote_addr_, 0, 0, nullptr);
+
+        auto proto_result = rx_notify_disconnected(&stack_endpoint_, &session, RX_PROTOCOL_OK);
+
     }
     if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
     {
@@ -125,6 +130,9 @@ bool tcp_client_endpoint::connected (sockaddr_in* addr, sockaddr_in* local_addr)
         << ".";
     ITF_LOG_TRACE("tcp_client_port", 500, ss.str());
 
+    auto session = rx_create_session(&local_addr_, &remote_addr_, 0, 0, nullptr);
+
+    auto proto_result = rx_notify_connected(&stack_endpoint_, &session);
 
     return true;
 }
@@ -177,11 +185,11 @@ bool tcp_client_endpoint::tick ()
     }
 }
 
-rx_result tcp_client_endpoint::start (tcp_client_port* my_port, const string_type& addr, uint16_t port, const string_type& remote_addr, uint16_t remote_port)
+rx_result tcp_client_endpoint::start (const protocol_address* addr, const protocol_address* remote_addr, rx_security_handle_t identity, tcp_client_port* port)
 {
-    my_port_ = my_port;
-    local_addr_ = io::ip4_address(addr, port);
-    remote_addr_ = io::ip4_address(remote_addr, remote_port);
+    my_port_ = port;
+    local_addr_.parse(addr);
+    remote_addr_.parse(remote_addr);
     timer_ = my_port_->create_timer_function([this]()
         {
             if (!tick())
@@ -214,6 +222,11 @@ rx_protocol_stack_endpoint* tcp_client_endpoint::get_stack_endpoint ()
     return &stack_endpoint_;
 }
 
+runtime::items::port_runtime* tcp_client_endpoint::get_port ()
+{
+    return my_port_;
+}
+
 
 // Class rx_internal::interfaces::ip_endpoints::tcp_client_port 
 
@@ -244,31 +257,16 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
     else
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
 
-    return true;
-}
-
-rx_result tcp_client_port::start_runtime (runtime::runtime_start_context& ctx)
-{
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
 
     string_type remote_addr = ctx.structure.get_root().get_local_as<string_type>("Connection.IPAddress", "");
     uint16_t remote_port = ctx.structure.get_root().get_local_as<uint16_t>("Connection.IPPort", 0);
 
-    auto result = session_.start(this, addr, port, remote_addr, remote_port);
+    bind_address_.parse(addr, port);
+    connect_address_.parse(remote_addr, remote_port);
 
-    return result;
-}
-
-rx_result tcp_client_port::stop_runtime (runtime::runtime_stop_context& ctx)
-{
-    session_.stop();
     return true;
-}
-
-rx_protocol_stack_endpoint* tcp_client_port::get_stack_entry ()
-{
-    return session_.get_stack_endpoint();
 }
 
 uint32_t tcp_client_port::get_reconnect_timeout () const
@@ -279,6 +277,26 @@ uint32_t tcp_client_port::get_reconnect_timeout () const
 rx_result tcp_client_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
     return RX_NOT_SUPPORTED;
+}
+
+rx_result tcp_client_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+{
+    auto session_timeout = get_binded_as(rx_recv_timeout_, 2000);
+    auto ep = std::make_unique<tcp_client_endpoint>();
+    auto result = ep->start(&bind_address_, &connect_address_, get_identity(), this);
+    if (!result)
+    {
+        stop_passive();
+        return result;
+    }
+    result = add_stack_endpoint(ep->get_stack_endpoint(), std::move(ep), &bind_address_, &connect_address_);
+    return result;
+}
+
+rx_result tcp_client_port::stop_passive ()
+{
+    close_all_endpoints();
+    return true;
 }
 
 

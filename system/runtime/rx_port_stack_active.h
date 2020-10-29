@@ -46,6 +46,8 @@ namespace runtime {
 
 namespace io_types {
 
+namespace stack_active {
+
 
 
 
@@ -58,49 +60,13 @@ class active_builder
 
       static rx_result bind_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr);
 
+      static rx_result add_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr);
 
-  protected:
+      static rx_result register_routing_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what);
 
-  private:
+      static rx_result unbind_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what);
 
-
-};
-
-
-
-
-
-
-class extern_behavior : public port_active_behavior  
-{
-
-  public:
-
-      bool is_extern ();
-
-      bool is_endpoit_binder ();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class passive_transport_behavior : public port_active_behavior  
-{
-
-  public:
-
-      bool is_extern ();
-
-      bool is_endpoit_binder ();
+      static void close_all_endpoints (rx_port_ptr who);
 
 
   protected:
@@ -124,6 +90,8 @@ class active_transport_behavior : public port_active_behavior
 
       bool is_endpoit_binder ();
 
+      bool is_endpoint_user ();
+
 
   protected:
 
@@ -146,6 +114,8 @@ class application_behavior : public port_active_behavior
 
       bool is_endpoit_binder ();
 
+      bool is_endpoint_user ();
+
 
   protected:
 
@@ -155,6 +125,55 @@ class application_behavior : public port_active_behavior
 };
 
 
+
+
+
+
+class passive_transport_behavior : public port_active_behavior  
+{
+
+  public:
+
+      bool is_extern ();
+
+      bool is_endpoit_binder ();
+
+      bool is_endpoint_user ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class extern_behavior : public port_active_behavior  
+{
+
+  public:
+
+      bool is_extern ();
+
+      bool is_endpoit_binder ();
+
+      bool is_endpoint_user ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+} // namespace stack_active
 } // namespace io_types
 } // namespace runtime
 } // namespace rx_platform

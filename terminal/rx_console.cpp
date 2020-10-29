@@ -40,6 +40,7 @@
 #include "rx_terminal_version.h"
 #include "rx_commands.h"
 #include "api/rx_platform_api.h"
+#include "rx_con_commands.h"
 
 
 namespace rx_internal {
@@ -82,19 +83,25 @@ console_runtime::console_runtime (runtime::items::port_runtime* port)
         executer_(-1),
         port_(port)
 {
-	printf("****Created console_endpoint\r\n");
+	std::ostringstream ss;
+	ss << "Port "
+		<< " created Console Runtime.";
+	CONSOLE_LOG_TRACE("console_runtime", 900, ss.str());
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");
 #else
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
 #endif
-	executer_ = rx_thread_context();
+	executer_ = port_->get_executer();
 }
 
 
 console_runtime::~console_runtime()
 {
-	printf("****Deleted console_endpoint\r\n");
+	std::ostringstream ss;
+	ss << "Port "
+		<< " deleted Console Runtime.";
+	CONSOLE_LOG_TRACE("console_runtime", 900, ss.str());
 }
 
 
@@ -311,16 +318,19 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 
 void console_runtime::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	if (current_context_)
+	if (stack_entry_.received_function)// if we're connected
 	{
-		current_context_->postpone_done();
-		auto context = current_context_;
-		program_.process_program(current_context_, rx_time::now(), false);
-		if (!context->is_postponed())
+		if (current_context_)
 		{
-			result = current_context_->get_result();
-			current_context_ = nullptr;
-			process_result(result, out_buffer, err_buffer);
+			current_context_->postpone_done();
+			auto context = current_context_;
+			program_.process_program(current_context_, rx_time::now(), false);
+			if (!context->is_postponed())
+			{
+				result = current_context_->get_result();
+				current_context_ = nullptr;
+				process_result(result, out_buffer, err_buffer);
+			}
 		}
 	}
 }
@@ -417,6 +427,11 @@ rx_protocol_result_t console_runtime::connected_function (rx_protocol_stack_endp
 	memory::buffer_ptr err_buffer(pointers::_create_new);
 	self->do_command("welcome", out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
 	return RX_PROTOCOL_OK;
+}
+
+void console_runtime::close_endpoint ()
+{
+	stack_entry_.received_function = nullptr;
 }
 
 
@@ -612,6 +627,17 @@ sl_runtime::program_context* console_program::create_program_context (sl_runtime
 
 console_port::console_port()
 {
+	construct_func = [this]()
+	{
+		auto rt = rx_create_reference<console_runtime>(this);
+		auto entry =  rt->bind_endpoint([this](int64_t count)
+			{
+			},
+			[this](int64_t count)
+			{
+			});
+		return construct_func_type::result_type{ entry, rt };
+	};
 }
 
 
@@ -619,11 +645,6 @@ console_port::console_port()
 void console_port::stack_assembled ()
 {
 	auto result = listen(nullptr, nullptr);
-}
-
-rx_reference<console_runtime> console_port::construct_endpoint ()
-{
-	return rx_create_reference<console_runtime>(this);
 }
 
 

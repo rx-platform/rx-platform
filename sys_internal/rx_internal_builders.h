@@ -253,6 +253,46 @@ class relation_types_builder : public rx_platform_builder
 };
 
 
+
+
+
+
+class simulation_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (rx_directory_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_ports_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (rx_directory_ptr root);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace builders
 } // namespace rx_internal
 

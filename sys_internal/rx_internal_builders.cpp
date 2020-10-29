@@ -298,8 +298,10 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		builders.emplace_back(std::make_unique<relation_types_builder>());
+		builders.emplace_back(std::make_unique<simulation_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
+		builders.emplace_back(std::make_unique<system_ports_builder>());
 	}
 	else
 	{
@@ -465,6 +467,12 @@ rx_result root_folder_builder::do_build (rx_directory_ptr root)
 		ret.register_error("Unable to add directory " RX_NS_SUPPORT_CLASSES_NAME ".");
 		return ret;
 	}
+	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_SIMULATION_CLASSES_NAME));
+	if (!ret)
+	{
+		ret.register_error("Unable to add directory " RX_NS_SIMULATION_CLASSES_NAME ".");
+		return ret;
+	}
 	ret = classes_dir->add_sub_directory(rx_create_reference<internal_directory>(RX_NS_RELATIONS_NAME));
 	if (!ret)
 	{
@@ -617,10 +625,6 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		meta::object_types::relation_attribute rel_attr;
-		rel_attr.name = "Domain";
-		rel_attr.relation_type = RX_NS_DOMAIN_RELATION_ID;
-		rel_attr.target = RX_CLASS_DOMAIN_BASE_ID;
-		obj->object_data.register_relation(rel_attr, obj->complex_data);
 		build_basic_object_type<object_type>(dir, obj);
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_USER_OBJECT_TYPE_NAME
@@ -671,10 +675,6 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		rel_attr.name = "App";
-		rel_attr.relation_type = RX_NS_APPLICATION_RELATION_ID;
-		rel_attr.target = RX_CLASS_APPLICATION_BASE_ID;
-		domain->object_data.register_relation(rel_attr, domain->complex_data);
 		build_basic_domain_type<domain_type>(dir, domain);
 		domain = create_type<domain_type>(meta::object_type_creation_data{
 			RX_USER_DOMAIN_TYPE_NAME
@@ -700,10 +700,6 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		rel_attr.name = "App";
-		rel_attr.relation_type = RX_NS_PORT_APPLICATION_RELATION_ID;
-		rel_attr.target = RX_CLASS_APPLICATION_BASE_ID;
-		port->object_data.register_relation(rel_attr, port->complex_data);
 		build_basic_port_type<port_type>(dir, port);
 		// build relations
 		relation_type_data def_data;
@@ -711,6 +707,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 		def_data.sealed_type = false;
 		def_data.symmetrical = false;
 		def_data.hierarchical = false;
+		def_data.dynamic = true;
 		auto relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_RELATION_BASE_NAME
 			, RX_NS_RELATION_BASE_ID
@@ -1140,7 +1137,8 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		instance_data.meta_info.parent = RX_UNASSIGNED_POOL_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
-		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
+		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
+		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
@@ -1167,7 +1165,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		map->complex_data.register_const_value_static("Port", ""s);
-		add_simple_type_to_configuration<mapper_type>(dir, map, false);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_EXTERN_SOURCE_TYPE_NAME
@@ -1177,7 +1175,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		src->complex_data.register_const_value_static("Port", ""s);
-		add_simple_type_to_configuration<source_type>(dir, src, false);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_REGISTER_SOURCE_TYPE_NAME
@@ -1311,6 +1309,7 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 		def_data.sealed_type = false;
 		def_data.symmetrical = false;
 		def_data.hierarchical = true;
+		def_data.dynamic = false;
 		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
 
 		auto relation = create_type<relation_type>(meta::object_type_creation_data{
@@ -1356,6 +1355,88 @@ rx_result relation_types_builder::do_build (rx_directory_ptr root)
 		relation->relation_data = def_data;
 		add_relation_type_to_configuration(dir, relation);
 	}
+	return true;
+}
+
+
+// Class rx_internal::builders::simulation_types_builder 
+
+
+rx_result simulation_types_builder::do_build (rx_directory_ptr root)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SIMULATION_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		// base mappers and sources
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_SIMULATION_SOURCE_TYPE_NAME
+			, RX_SIMULATION_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_simple_value_static<uint32_t>("Period", false, 50);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_RAMP_SIMULATION_SOURCE_TYPE_NAME
+			, RX_RAMP_SIMULATION_SOURCE_TYPE_ID
+			, RX_SIMULATION_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_simple_value_static<double>("Amplitude", false, 100);
+		src->complex_data.register_simple_value_static<double>("Increment", false, 1);
+		src->complex_data.register_simple_value_static<bool>("Double", false, false);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+	}
+	return true;
+}
+
+
+// Class rx_internal::builders::system_ports_builder 
+
+
+rx_result system_ports_builder::do_build (rx_directory_ptr root)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_PORT_OBJ_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir = root->get_sub_directory(path);
+	if (dir)
+	{
+		runtime_data::port_runtime_data port_instance_data;
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_TCP_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_TCP_ID;
+		port_instance_data.meta_info.parent = RX_TCP_SERVER_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.overrides.add_value_static("Bind.IPPort", 0x7ABC);
+		auto result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUABIN_ID;
+		port_instance_data.meta_info.parent = RX_OPCUA_TRANSPORT_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+		
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
+		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+
+
+	}
+	BUILD_LOG_INFO("system_ports_builder", 900, "System ports built.");
 	return true;
 }
 

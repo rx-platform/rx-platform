@@ -70,15 +70,31 @@ class rx_system_info_response : public rx_message_base
 
       string_type instance;
 
+      rx_time start_time;
+
+      rx_time current_time;
+
       string_type node;
 
       string_type platform;
 
       string_type library;
 
+      string_type platform_host;
+
+      string_type os_host;
+
       string_type os_itf;
 
       string_type os;
+
+      string_type terminal;
+
+      string_type compiler;
+
+      string_type cpu;
+
+      string_type memory;
 
 
   protected:

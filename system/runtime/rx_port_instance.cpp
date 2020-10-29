@@ -40,6 +40,10 @@
 
 #include "rx_runtime_holder.h"
 #include "rx_port_stack_construction.h"
+#include "system/runtime/rx_port_stack_active.h"
+#include "system/runtime/rx_port_stack_passive.h"
+#include "runtime_internal/rx_runtime_relations.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_platform {
@@ -88,6 +92,37 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     RX_ASSERT(what->get_instance_data().my_application_);
     if (what->get_instance_data().my_application_)
     {
+        const auto& app_meta = what->get_instance_data().my_application_->meta_info();
+        auto relation_ptr = rx_create_reference<relations::relation_data>();
+        auto& repository = rx_internal::model::platform_types_manager::instance().get_relations_repository();
+        auto create_result = repository.create_runtime(RX_NS_PORT_APPLICATION_RELATION_ID, "App", *relation_ptr, ctx.directories);
+        if (create_result)
+        {
+            relation_ptr->target_path = app_meta.get_full_path() + RX_OBJECT_DELIMETER + what->meta_info().name;
+            relation_ptr->target_id = app_meta.id;
+            relation_ptr->name = "App";
+            relation_ptr->target_relation_name = what->meta_info().name;
+            rx_timed_value str_val;
+            str_val.assign_static<string_type>(string_type(relation_ptr->target_path), rx_time::now());
+            relation_ptr->value.value = str_val;
+            relation_ptr->value.read_only = true;
+
+            auto result = what->add_implicit_relation(relation_ptr);
+            if (!result)
+            {
+                std::ostringstream ss;
+                ss << "Error adding Port=>App relation for "
+                    << what->meta_info().get_full_path()
+                    << ". "
+                    << result.errors_line();
+                RUNTIME_LOG_ERROR("port_stack_relation", 900, ss.str());
+                return result;
+            }
+        }
+        else
+        {
+            return create_result.errors();
+        }
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
         auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path(), what->get_instance_data().data_.identity);
         // for port we have to have executer cached value
@@ -124,11 +159,11 @@ rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::r
 
 rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
-    auto result = runtime::io_types::stack_builder::disconnect_stack(what);
+    auto result = runtime::io_types::stack_build::stack_builder::disconnect_stack(what);
     if (result)
         RUNTIME_LOG_DEBUG("port_stack_relation", 900, what->meta_info().get_full_path() + " disconnected from stack");
     else
-        RUNTIME_LOG_ERROR("port_stack_relation", 900, what->meta_info().get_full_path() + " not disconnected from stack");
+        RUNTIME_LOG_ERROR("port_stack_relation", 900, what->meta_info().get_full_path() + " error disconnecting stack:" + result.errors_line());
 
     return true;
 }

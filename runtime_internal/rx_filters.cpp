@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -52,7 +52,7 @@ rx_result register_filter_constructors()
 	return true;
 }
 
-// Class rx_internal::sys_runtime::filters::linear_scaling_filter 
+// Class rx_internal::sys_runtime::filters::linear_scaling_filter
 
 
 rx_result linear_scaling_filter::initialize_filter (runtime::runtime_init_context& ctx)
@@ -76,12 +76,12 @@ rx_result linear_scaling_filter::initialize_filter (runtime::runtime_init_contex
 	return true;
 }
 
-rx_result linear_scaling_filter::filter_input (rx_value& val, runtime::runtime_process_context* ctx)
+rx_result linear_scaling_filter::filter_input (rx_value& val)
 {
-	double hi_eu = get_binded_as(ctx, hi_eu_, 0);
-	double low_eu = get_binded_as(ctx, low_eu_, 0);
-	double hi_raw = get_binded_as(ctx, hi_raw_, 0);
-	double low_raw = get_binded_as(ctx, low_raw_, 0);
+	double hi_eu = get_binded_as(hi_eu_, 0);
+	double low_eu = get_binded_as(low_eu_, 0);
+	double hi_raw = get_binded_as(hi_raw_, 0);
+	double low_raw = get_binded_as(low_raw_, 0);
 	double in = val.get_float_value();
 	if (abs(hi_raw - low_raw) == 0)
 	{
@@ -94,12 +94,12 @@ rx_result linear_scaling_filter::filter_input (rx_value& val, runtime::runtime_p
 	return true;
 }
 
-rx_result linear_scaling_filter::filter_output (rx_simple_value& val, runtime::runtime_process_context* ctx)
+rx_result linear_scaling_filter::filter_output (rx_simple_value& val)
 {
-	double hi_eu = get_binded_as(ctx, hi_eu_, 0);
-	double low_eu = get_binded_as(ctx, low_eu_, 0);
-	double hi_raw = get_binded_as(ctx, hi_raw_, 0);
-	double low_raw = get_binded_as(ctx, low_raw_, 0);
+	double hi_eu = get_binded_as(hi_eu_, 0);
+	double low_eu = get_binded_as(low_eu_, 0);
+	double hi_raw = get_binded_as(hi_raw_, 0);
+	double low_raw = get_binded_as(low_raw_, 0);
 	double in = val.get_float_value();
 	if (abs(hi_raw - low_raw) == 0)
 	{
@@ -110,6 +110,25 @@ rx_result linear_scaling_filter::filter_output (rx_simple_value& val, runtime::r
 	if (!val.set_from_float(result, val.get_type()))
 		return "Invalid conversion";
 	return true;
+}
+
+
+// Class rx_internal::sys_runtime::filters::bound_filter
+
+
+rx_result bound_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+  return true;
+}
+
+rx_result bound_filter::filter_input (rx_value& val)
+{
+  return true;
+}
+
+rx_result bound_filter::filter_output (rx_simple_value& val)
+{
+  return true;
 }
 
 

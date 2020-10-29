@@ -51,32 +51,99 @@ namespace io_types {
 
 class port_passive_map 
 {
-    typedef std::pair<io::any_address, io::any_address> addr_pair_t;
-    struct registered_port_data
-    {
-        rx_port_ptr port;
-        addr_pair_t passive_entry;
-        bool binded;
-        std::vector<rx_protocol_stack_endpoint*> endpoints;
-    };
-    typedef std::vector<registered_port_data> registered_type;
+    typedef std::pair<io::any_address, io::any_address> addr_pair_t;    
     typedef std::map<addr_pair_t, rx_port_ptr> passive_map_type;
+    typedef std::map<rx_port_ptr, addr_pair_t> inverse_passive_map_type;
 
   public:
+      port_passive_map();
 
-      rx_result register_port (rx_port_ptr who, rx_port_ptr owner);
 
       rx_result register_passive (rx_port_ptr who, const io::any_address& local_addr, const io::any_address& remote_addr, rx_port_ptr owner);
 
       rx_result unregister_passive (rx_port_ptr who, rx_port_ptr owner);
 
-      rx_result unregister_port (rx_port_ptr who, rx_port_ptr owner);
-
       rx_port_ptr get_binded_port (const io::any_address& local_addr, const io::any_address& remote_addr);
+
+      std::vector<rx_port_ptr> get_binded ();
+
+      bool empty () const;
+
+
+      bool stack_binded;
+
+      rx_port_ptr bind_port;
+
+
+  protected:
+
+  private:
+
+
+      passive_map_type passive_map_;
+
+      inverse_passive_map_type inverse_passive_map_;
+
+      locks::slim_lock map_lock_;
+
+
+};
+
+
+
+
+
+
+class port_active_map 
+{
+    typedef std::map<rx_protocol_stack_endpoint*, rx_port_ptr> endpoints_map_type;
+
+  public:
+
+      rx_result register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner);
+
+      rx_result unregister_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr owner);
+
+      void close_all_endpoints ();
+
+
+  protected:
+
+  private:
+
+
+      endpoints_map_type endpoints_map_;
+
+      endpoints_map_type upper_endpoints_map_;
+
+      locks::slim_lock map_lock_;
+
+
+};
+
+
+
+
+
+
+class port_build_map 
+{
+    typedef std::set<rx_port_ptr> registered_type;
+
+  public:
+      port_build_map();
+
+
+      rx_result register_port (rx_port_ptr who, rx_port_ptr owner);
+
+      rx_result unregister_port (rx_port_ptr who, rx_port_ptr owner);
 
       std::vector<rx_port_ptr> get_registered ();
 
-      std::vector<rx_port_ptr> get_binded ();
+
+      rx_port_ptr stack_top;
+
+      bool stack_ready;
 
 
   protected:
@@ -85,9 +152,6 @@ class port_passive_map
 
       registered_type registered_;
 
-
-
-      passive_map_type passive_map_;
 
 
 };
@@ -104,10 +168,9 @@ class port_stack_data
 
       port_passive_map passive_map;
 
+      port_active_map active_map;
 
-      rx_port_ptr stack_top;
-
-      bool stack_ready;
+      port_build_map build_map;
 
 
   protected:

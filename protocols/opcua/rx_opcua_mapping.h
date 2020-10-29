@@ -33,10 +33,10 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -108,6 +108,8 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
     DECLARE_REFERENCE_PTR(opcua_transport_port);
 
   public:
+      opcua_transport_port();
+
 
       static std::map<rx_node_id, opcua_transport_port::smart_ptr> runtime_instances;
 
@@ -115,9 +117,6 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
   protected:
 
   private:
-
-      std::unique_ptr<opcua_transport_endpoint> construct_endpoint ();
-
 
 
 };

@@ -52,7 +52,7 @@ rx_result register_simulation_constructors();
 
 class local_register_source : public rx_platform::runtime::blocks::source_runtime  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 Local Register Source. Source implementation for register.");
 
     DECLARE_REFERENCE_PTR(local_register_source);
@@ -70,6 +70,85 @@ Local Register Source. Source implementation for register.");
 
       rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
 
+
+
+};
+
+
+
+
+
+
+class periodic_source : public rx_platform::runtime::blocks::source_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Periodic Function Source. Base source implementation for periodic functions.");
+
+    DECLARE_REFERENCE_PTR(periodic_source);
+
+  public:
+      periodic_source();
+
+
+      rx_result start_source (runtime::runtime_start_context& ctx);
+
+      rx_result initialize_source (runtime::runtime_init_context& ctx);
+
+      rx_result stop_source (runtime::runtime_stop_context& ctx);
+
+      virtual void source_tick (rx_time now) = 0;
+
+
+  protected:
+
+  private:
+
+      rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+
+
+
+      rx_timer_ptr timer_;
+
+      uint32_t period_;
+
+      runtime_handle_t period_handle_;
+
+
+};
+
+
+
+
+
+
+class ramp_source : public periodic_source  
+{
+
+  public:
+      ramp_source();
+
+
+      rx_result initialize_source (runtime::runtime_init_context& ctx);
+
+      rx_result start_source (runtime::runtime_start_context& ctx);
+
+      void source_tick (rx_time now);
+
+
+  protected:
+
+  private:
+
+
+      double amplitude_;
+
+      runtime_handle_t amplitude_handle_;
+
+      double increment_;
+
+      runtime_handle_t increment_handle_;
+
+      double current_value_;
 
 
 };

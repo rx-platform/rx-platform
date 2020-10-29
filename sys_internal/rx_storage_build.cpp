@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace builders {
 
 namespace storage {
 
-// Class rx_internal::builders::storage::configuration_storage_builder 
+// Class rx_internal::builders::storage::configuration_storage_builder
 
 configuration_storage_builder::configuration_storage_builder (rx_storage_ptr storage)
       : storage_(storage)
@@ -163,6 +163,14 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
 		return result;
+	bool do_save = false;
+	bool meta_changed = storage->preprocess_meta_data(meta);
+	if (meta_changed)
+	{
+		do_save = true;
+		meta.id = rx_node_id::generate_new();
+		META_LOG_WARNING("configuration_storage_builder", 250, "Created new instance of an object " + meta.get_full_path());
+	}
 
 	directory_creator creator;
 	auto dir = creator.get_or_create_direcotry(root, meta.path);
@@ -172,16 +180,16 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 		{
 			// objects
 		case rx_item_type::rx_object:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<object_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<port_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<application_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<domain_type>());
+			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<domain_type>());
 			break;
 		default:
 			storage->close();
@@ -204,6 +212,15 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 	if (!result)
 		return result;
 
+	bool do_save = false;
+	bool meta_changed = storage->preprocess_meta_data(meta);
+	if (meta_changed)
+	{
+		do_save = true;
+		meta.id = rx_node_id::generate_new();
+		META_LOG_WARNING("configuration_storage_builder", 250, "Created new type " + meta.get_full_path());
+	}
+
 	directory_creator creator;
 	auto dir = creator.get_or_create_direcotry(root, meta.path);
 	if (dir)
@@ -212,44 +229,47 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		{
 		// object types
 		case rx_item_type::rx_object_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<object_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<port_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<application_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<domain_type>());
+			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<domain_type>());
 			break;
 		// simple types
 		case rx_item_type::rx_struct_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<struct_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<struct_type>());
 			break;
 		case rx_item_type::rx_variable_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<variable_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<variable_type>());
 			break;
 		// variable sub-types
 		case rx_item_type::rx_source_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<source_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<source_type>());
 			break;
 		case rx_item_type::rx_filter_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<filter_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<filter_type>());
 			break;
 		case rx_item_type::rx_event_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<event_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<event_type>());
 			break;
 		case rx_item_type::rx_mapper_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), tl::type2type<mapper_type>());
+			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<mapper_type>());
 			break;
 		case rx_item_type::rx_relation_type:
-			result = create_concrete_relation_type_from_storage(meta, stream, dir.value(), std::move(storage));
+			result = create_concrete_relation_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save);
 			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
 		storage->close();
+		if (meta_changed)
+		{
+		}
 	}
 	else
 	{
@@ -269,7 +289,7 @@ void configuration_storage_builder::dump_errors_to_log (const string_array& erro
 
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -294,7 +314,7 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 }
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -318,7 +338,7 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	return result;
 }
 
-rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage)
+rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save)
 {
 	auto created = rx_create_reference<relation_type>();
 	created->meta_info = meta_data;
@@ -343,7 +363,7 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
 {
 	auto init_data = std::make_unique< data::runtime_values_data>();
 	typename T::instance_data_t instance_data;
@@ -366,7 +386,7 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 	return result;
 }
 
-// Class rx_internal::builders::storage::directory_creator 
+// Class rx_internal::builders::storage::directory_creator
 
 
 rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_directory_ptr from, const string_type& path)

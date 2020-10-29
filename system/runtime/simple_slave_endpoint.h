@@ -51,14 +51,19 @@ namespace ports_templates {
 template <typename addrT>
 class simple_slave_routing_translator 
 {
+public: 
+    typedef rx_address_reference_type session_key_type;
+    typedef std::true_type translates_packet;
+    typedef std::false_type translates_session;
+    typedef std::false_type client_master_translator;
 
   public:
-
-      rx_protocol_result_t translate_from_passive (addrT& local_addr, addrT& remote_addr, rx_address_reference_type& local_reference, rx_address_reference_type& remote_reference, rx_address_reference_type& map_reference);
 
       rx_address_reference_type get_reference (const rx_recv_protocol_packet_def* packet);
 
       rx_protocol_result_t translate_packet (const rx_recv_protocol_packet_def* packet, rx_address_reference_type& reference, io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr);
+
+      rx_protocol_result_t translate_session (const rx_session_def* session, rx_address_reference_type& reference, io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr);
 
 
   protected:
@@ -73,15 +78,9 @@ class simple_slave_routing_translator
 
 
 template <typename addrT>
-rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_from_passive (addrT& local_addr, addrT& remote_addr, rx_address_reference_type& local_reference, rx_address_reference_type& remote_reference, rx_address_reference_type& map_reference)
-{
-    return RX_PROTOCOL_INVALID_ADDR;
-}
-
-template <typename addrT>
 rx_address_reference_type simple_slave_routing_translator<addrT>::get_reference (const rx_recv_protocol_packet_def* packet)
 {
-    return packet->to;;
+    return packet->to;
 }
 
 template <typename addrT>
@@ -93,6 +92,13 @@ rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_packet (c
     return RX_PROTOCOL_OK;
 }
 
+template <typename addrT>
+rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_session (const rx_session_def* session, rx_address_reference_type& reference, io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr)
+{
+    RX_ASSERT(false);
+    return RX_PROTOCOL_INVALID_ADDR;
+}
+
 
 } // namespace ports_templates
 } // namespace io_types
@@ -102,3 +108,5 @@ rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_packet (c
 
 
 #endif
+
+

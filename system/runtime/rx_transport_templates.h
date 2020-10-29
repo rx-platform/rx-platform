@@ -33,10 +33,10 @@
 
 
 
-// rx_active_endpoints
-#include "system/runtime/rx_active_endpoints.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_active_endpoints
+#include "system/runtime/rx_active_endpoints.h"
 
 
 
@@ -61,20 +61,20 @@ one<=>one transport port implementation");
     DECLARE_REFERENCE_PTR(transport_port_impl);
 
     typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> > active_endpoints_type;
+public:
+    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >()> construct_func_type;
+    construct_func_type construct_func;
 
   public:
 
-      rx_protocol_stack_endpoint* create_endpoint ();
+      rx_protocol_stack_endpoint* construct_endpoint ();
 
-      void remove_endpoint (rx_protocol_stack_endpoint* what);
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
 
   protected:
 
   private:
-
-      virtual std::unique_ptr<endpointT> construct_endpoint () = 0;
-
 
 
       active_endpoints_type active_endpoints_;
@@ -90,12 +90,16 @@ one<=>one transport port implementation");
 template <typename endpointT, typename routingT>
 class routed_port_endpoint
 {
+  public:
+    typedef rx_reference<routingT> routing_endpoint_ptr;
 
   public:
       routed_port_endpoint (runtime::items::port_runtime* port);
 
+      ~routed_port_endpoint();
 
-      routingT router;
+
+      routing_endpoint_ptr router;
 
 
       std::unique_ptr<endpointT> endpoint;
@@ -124,12 +128,15 @@ one<=>many routed transport port implementation");
 
     typedef routed_port_endpoint<endpointT, routingT> endpoint_type;
     typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpoint_type> > active_endpoints_type;
+public:
+    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >()> construct_func_type;
+    construct_func_type construct_func;
 
   public:
 
-      rx_protocol_stack_endpoint* create_endpoint ();
+      rx_protocol_stack_endpoint* construct_endpoint ();
 
-      void remove_endpoint (rx_protocol_stack_endpoint* what);
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -139,13 +146,12 @@ one<=>many routed transport port implementation");
 
       void stack_disassembled ();
 
+      rx_result stop_passive ();
+
 
   protected:
 
   private:
-
-      virtual std::unique_ptr<endpointT> construct_endpoint () = 0;
-
 
 
       active_endpoints_type active_endpoints_;
@@ -158,34 +164,32 @@ one<=>many routed transport port implementation");
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* transport_port_impl<endpointT>::create_endpoint ()
+rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_endpoint ()
 {
-    auto endpoint_ptr = construct_endpoint();
-    rx_protocol_stack_endpoint* entry = endpoint_ptr->bind([this](int64_t count)
-        {
-        },
-        [this](int64_t count)
-        {
-        });
-    if (entry->closed_function == nullptr)
+    if (!construct_func)
+        return nullptr;
+    auto endpoint_data = construct_func();
+
+    if (endpoint_data.first->closed_function == nullptr)
     {
-        entry->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
         {
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            whose->get_port()->remove_endpoint(entry);
+            whose->get_port()->unbind_stack_endpoint(entry);
         };
     }
-    active_endpoints_.emplace(entry, std::move(endpoint_ptr));
-    auto reg_result = bind_stack_endpoint(entry, nullptr, nullptr);
-    return entry;
+    active_endpoints_.emplace(endpoint_data.first, std::move(endpoint_data.second));
+    return endpoint_data.first;
 }
 
 template <typename endpointT>
-void transport_port_impl<endpointT>::remove_endpoint (rx_protocol_stack_endpoint* what)
+void transport_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
+    {
         active_endpoints_.erase(it);
+    }
 }
 
 
@@ -193,7 +197,13 @@ void transport_port_impl<endpointT>::remove_endpoint (rx_protocol_stack_endpoint
 
 template <typename endpointT, typename routingT>
 routed_port_endpoint<endpointT,routingT>::routed_port_endpoint (runtime::items::port_runtime* port)
-    : router(port)
+    : router(rx_create_reference<routingT>(port))
+{
+}
+
+
+template <typename endpointT, typename routingT>
+routed_port_endpoint<endpointT,routingT>::~routed_port_endpoint()
 {
 }
 
@@ -203,31 +213,45 @@ routed_port_endpoint<endpointT,routingT>::routed_port_endpoint (runtime::items::
 
 
 template <typename endpointT, typename routingT>
-rx_protocol_stack_endpoint* routed_transport_port_impl<endpointT,routingT>::create_endpoint ()
+rx_protocol_stack_endpoint* routed_transport_port_impl<endpointT,routingT>::construct_endpoint ()
 {
     auto endpoint_ptr = std::make_unique<endpoint_type>(this);
-    endpoint_ptr->endpoint = construct_endpoint();
-    rx_protocol_stack_endpoint* entry = endpoint_ptr->endpoint->bind([this](int64_t count)
-        {
-        },
-        [this](int64_t count)
-        {
-        });
-    auto push_result = rx_push_stack(entry, &endpoint_ptr->router.stack);
-    if (push_result)
-    {
+    if (!construct_func)
+        return nullptr;
+    auto endpoint_data = construct_func();
 
+    if (endpoint_data.first->closed_function == nullptr)
+    {
+        endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->get_port()->unbind_stack_endpoint(entry);
+        };
     }
-    active_endpoints_.emplace(&endpoint_ptr->router.stack, std::move(endpoint_ptr));
-    return entry;
+
+    auto push_result = rx_push_stack(endpoint_data.first, &endpoint_ptr->router->stack);
+    if (push_result == RX_PROTOCOL_OK)
+    {
+        auto result = register_routing_endpoint(&endpoint_ptr->router->stack);
+        endpoint_ptr->endpoint = std::move(endpoint_data.second);
+        active_endpoints_.emplace(&endpoint_ptr->router->stack, std::move(endpoint_ptr));
+        return endpoint_data.first;
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 template <typename endpointT, typename routingT>
-void routed_transport_port_impl<endpointT,routingT>::remove_endpoint (rx_protocol_stack_endpoint* what)
+void routed_transport_port_impl<endpointT,routingT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
+    {
+        it->second->router->close_sessions();
         active_endpoints_.erase(it);
+    }
 }
 
 template <typename endpointT, typename routingT>
@@ -245,19 +269,22 @@ rx_result routed_transport_port_impl<endpointT,routingT>::start_connect (const p
 template <typename endpointT, typename routingT>
 void routed_transport_port_impl<endpointT,routingT>::stack_assembled ()
 {
-    listen(nullptr, nullptr);
+    using client_master_t = typename routingT::client_master_translator;
+    if constexpr (client_master_t::value)
+        connect(nullptr, nullptr);
+    else
+        listen(nullptr, nullptr);
 }
 
 template <typename endpointT, typename routingT>
 void routed_transport_port_impl<endpointT,routingT>::stack_disassembled ()
 {
-    if (!active_endpoints_.empty())
-    {
-        for (auto& one : active_endpoints_)
-        {
-            one.second->router.close_sessions();
-        }
-    }
+}
+
+template <typename endpointT, typename routingT>
+rx_result routed_transport_port_impl<endpointT,routingT>::stop_passive ()
+{
+    return true;
 }
 
 

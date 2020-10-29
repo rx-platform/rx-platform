@@ -255,6 +255,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result save () const;
 
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
+
 	  ~rx_item_implementation() = default;
   protected:
 
@@ -322,6 +324,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
+
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:
@@ -416,6 +420,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
+
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:

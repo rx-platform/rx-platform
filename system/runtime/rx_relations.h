@@ -36,10 +36,10 @@
 #include "rx_objbase.h"
 #include "rx_rt_struct.h"
 
-// rx_relation_impl
-#include "system/runtime/rx_relation_impl.h"
 // rx_resolvers
 #include "system/runtime/rx_resolvers.h"
+// rx_relation_impl
+#include "system/runtime/rx_relation_impl.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -120,6 +120,8 @@ class relation_data : public rx::pointers::reference_object
     DECLARE_REFERENCE_PTR(relation_data);
     friend class meta::meta_algorithm::relation_blocks_algorithm;
     friend class rx_internal::model::relations_type_repository;
+    template <class typeT>
+    friend class meta::meta_algorithm::object_types_algorithm;
     enum class relation_state
     {
         idle = 0,
@@ -181,7 +183,7 @@ class relation_data : public rx::pointers::reference_object
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
 
-      relation_data::smart_ptr make_target_relation ();
+      relation_data::smart_ptr make_target_relation (const string_type& path);
 
       virtual rx_result start_target_relation (runtime::runtime_start_context& ctx);
 
@@ -196,13 +198,15 @@ class relation_data : public rx::pointers::reference_object
 
       string_type object_directory;
 
-      string_type target;
+      string_type target_path;
 
       rx_node_id target_id;
 
       string_type target_relation_name;
 
       runtime_handle_t runtime_handle;
+
+      string_type parent_path;
 
       relation_data(const relation_data&) = delete;
       relation_data& operator=(const relation_data&) = delete;
@@ -217,6 +221,8 @@ class relation_data : public rx::pointers::reference_object
       bool runtime_connected (platform_item_ptr&& item);
 
       void runtime_disconnected ();
+
+      rx_result resolve_inverse_name ();
 
 
 
@@ -245,6 +251,7 @@ class relations_holder
 {
     typedef std::vector<relation_data::smart_ptr> source_relations_type;
     typedef std::vector<relation_data::smart_ptr> target_relations_type;
+    typedef std::vector<relation_data::smart_ptr> implicit_relations_type;
     template<class typeT>
     friend class meta::meta_algorithm::object_types_algorithm;
 
@@ -272,6 +279,8 @@ class relations_holder
 
       rx_result_with<relation_data::smart_ptr> remove_target_relation (const string_type& name, runtime::runtime_stop_context& ctx);
 
+      rx_result add_implicit_relation (relations::relation_data::smart_ptr data);
+
 
   protected:
 
@@ -281,6 +290,8 @@ class relations_holder
       source_relations_type source_relations_;
 
       target_relations_type target_relations_;
+
+      implicit_relations_type implicit_relations_;
 
 
 };

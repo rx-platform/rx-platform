@@ -342,6 +342,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 		structure::write_data data;
 		data.transaction_id = trans_id;
 		data.value = std::move(value);
+		data.internal = false;
 		switch (it->second.reference.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:

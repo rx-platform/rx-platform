@@ -151,7 +151,9 @@ const rx_message_type_t rx_execute_item_response_id = 0x8089;
 const rx_message_type_t rx_subscription_items_notification_id = 0x7001;
 const rx_message_type_t rx_subscription_write_done_id = 0x7002;
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
+// keep alive message constant
+const rx_message_type_t rx_keep_alive_message_id = 0xfffe;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // error message constant
 const rx_message_type_t rx_error_message_id = 0xffff;
@@ -369,6 +371,39 @@ class rx_connection_context_response : public rx_message_base
       rx_node_id application_id;
 
       rx_node_id domain_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_keep_alive_message : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
 
 
   protected:

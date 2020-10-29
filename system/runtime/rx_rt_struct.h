@@ -223,12 +223,7 @@ struct write_data
 {
 
 
-      bool is_internal () const
-      {
-        return internal_;
-      }
-
-
+      bool internal;
 
       runtime_transaction_id_t transaction_id;
 
@@ -239,9 +234,6 @@ struct write_data
   protected:
 
   private:
-
-
-      bool internal_;
 
 
 };
@@ -535,13 +527,17 @@ public:
 
       void process_runtime (runtime_process_context* ctx);
 
-      rx_result filter_output (rx_simple_value& val, runtime_process_context* ctx);
+      rx_result filter_output (rx_simple_value& val);
 
-      rx_result filter_input (rx_value& val, runtime_process_context* ctx);
+      rx_result filter_input (rx_value& val);
 
       bool is_input () const;
 
       bool is_output () const;
+
+      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
+
+      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
 
 
       runtime_item::smart_ptr item;
@@ -557,6 +553,8 @@ public:
 
 
       io_capabilities io_;
+
+      runtime_process_context* context_;
 
 
 };
@@ -827,6 +825,10 @@ class source_data
       void source_result_pending (rx_result&& result, runtime_transaction_id_t id);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
 
       runtime_item::smart_ptr item;

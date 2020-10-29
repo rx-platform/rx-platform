@@ -245,6 +245,72 @@ command for cloning system types and objects of this rx-platform instance\r\n\
 };
 
 
+
+
+
+
+class move_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(move_command);
+    struct clone_data_t : public pointers::struct_reference
+    {
+        uint64_t started;
+    };
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for moving (or renaming if you like?) a directories of this rx-platform instance\r\n\
+\
+");
+
+  public:
+      move_command();
+
+      ~move_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class clone_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(clone_command);
+    struct clone_data_t : public pointers::struct_reference
+    {
+        uint64_t started;
+    };
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+    command for making copies of directories of this rx-platform instance\r\n\
+\
+");
+
+  public:
+      clone_command();
+
+      ~clone_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+
+};
+
+
 } // namespace namespace_commands
 } // namespace internal_ns
 } // namespace rx_internal

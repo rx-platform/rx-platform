@@ -133,16 +133,6 @@ platform_item_ptr port_type::get_item_ptr () const
 // Class rx_platform::meta::object_types::relation_attribute 
 
 
-// Class rx_platform::meta::object_types::relation_type_data 
-
-
-rx::data::runtime_values_data& relation_type_data::get_overrides () const
-{
-	static rx::data::runtime_values_data dummy;
-	return dummy;
-}
-
-
 // Class rx_platform::meta::object_types::relation_type 
 
 rx_item_type relation_type::type_id = rx_item_type::rx_relation_type;
@@ -156,6 +146,16 @@ platform_item_ptr relation_type::get_item_ptr () const
 
 void relation_type::set_runtime_data (runtime_data_prototype& prototype, RTypePtr where)
 {
+}
+
+
+// Class rx_platform::meta::object_types::relation_type_data 
+
+
+rx::data::runtime_values_data& relation_type_data::get_overrides () const
+{
+	static rx::data::runtime_values_data dummy;
+	return dummy;
 }
 
 

@@ -76,7 +76,7 @@ typedef std::string string_type;
 #ifdef _DEBUG
 #define RX_ASSERT(v) assert(v)
 #else
-#define RX_ASSERT(v) ((void)(v))
+#define RX_ASSERT(v) ((void)0)
 #endif
 
 #ifndef __cplusplus

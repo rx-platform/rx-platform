@@ -69,6 +69,8 @@ class tar_file_item : public rx_platform::storage_base::rx_storage_item
 
       const string_type& get_item_reference () const;
 
+      bool preprocess_meta_data (meta::meta_data& data);
+
 
   protected:
 

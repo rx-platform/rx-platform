@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -188,7 +188,12 @@ Standard IO class. implementation of an standard IO console port");
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
+      void remove_endpoint(rx_protocol_stack_endpoint* what)
+      {
+
+      }
   protected:
 
   private:

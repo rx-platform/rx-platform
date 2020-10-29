@@ -176,6 +176,11 @@ rx_result rx_code_storage_item::delete_item ()
     return "Delete not valid for this item.";
 }
 
+bool rx_code_storage_item::preprocess_meta_data (meta::meta_data& data)
+{
+    return false;
+}
+
 
 // Class rx_platform::storage_base::rx_code_storage 
 

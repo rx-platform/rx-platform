@@ -164,6 +164,8 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
+      def_blocks::filtered_data_type filter_data;
+
 
       static rx_item_type type_id;
 
@@ -206,6 +208,8 @@ public:
       def_blocks::complex_data_type complex_data;
 
       meta_data meta_info;
+
+      def_blocks::filtered_data_type filter_data;
 
 
       static rx_item_type type_id;

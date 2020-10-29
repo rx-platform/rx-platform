@@ -264,7 +264,7 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 			{
 				for (const auto& one : plugins)
 				{
-					add_result = storages_.system_storage->get_storage(get_host_name(), this);
+					add_result = storages_.system_storage->get_storage(one->get_plugin_name(), this);
 					if (!add_result)
 					{
 						ret.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");

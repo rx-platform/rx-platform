@@ -79,10 +79,11 @@ rx_result rx_source_file::read_string(std::string& buff)
 		RX_ASSERT(false);
 		return "File not opened!";
 	}
-	uint64_t size;
-	if (rx_file_get_size(m_handle, &size) != RX_OK)
+	uint64_t size64;
+	if (rx_file_get_size(m_handle, &size64) != RX_OK)
 		return "Unable to get file size!";
 
+	size_t size = (size_t)size64;
 	char* temp = new char[size];
 
 	uint32_t readed = 0;
@@ -1403,6 +1404,15 @@ string_type get_code_module(const string_type& full)
 rx_mode_type::rx_mode_type()
 {
 	raw_format = 0;
+}
+
+bool rx_mode_type::can_callculate(uint32_t quality) const
+{
+	return (raw_format & RX_MODE_MASK_OFF) == 0;
+}
+bool rx_mode_type::can_callculate(const values::rx_value& value) const
+{
+	return (raw_format & RX_MODE_MASK_OFF) == 0;
 }
 bool rx_mode_type::is_on() const
 {

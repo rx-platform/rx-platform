@@ -40,7 +40,6 @@
 #include "third-party/cxxopts/include/cxxopts.hpp"
 #include "system/server/rx_server.h"
 #include "system/hosting/rx_yaml.h"
-#include "sys_internal/rx_internal_protocol.h"
 #include "rx_pipe_config.h"
 #include "api/rx_meta_api.h"
 #include "terminal/rx_terminal_style.h"
@@ -127,6 +126,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
+			if (config.meta_configuration.instance_name.empty())
+				config.meta_configuration.instance_name = "develop";
 
 			//config.namespace_data.build_system_from_code = true;
 
@@ -143,6 +144,19 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
 			std::cout << "\r\n\r\n";
+
+			std::cout << "Instance Name:";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << config.meta_configuration.instance_name << "\r\n";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
+			std::cout << "Node Name:";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+			std::cout << server_name << "\r\n\r\n";
+			if (supports_ansi())
+				std::cout << ANSI_COLOR_RESET;
 
 			string_array hosts;
 			get_host_info(hosts);
@@ -253,10 +267,10 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 	bool use_std = false;
 
 	bool do_debug_level = false;
-	bool do_trace_level = true;
-	bool do_info_level = true;
-	bool do_warning_level = true;
-	bool do_error_level = true;
+	bool do_trace_level = false;
+	bool do_info_level = false;
+	bool do_warning_level = false;
+	bool do_error_level = false;
 
 	options.add_options()
 		("i,input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
@@ -267,8 +281,8 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
 		("trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
 		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))
-		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_info_level))
-		("e,error", "Show error level content only error and critical events are listed  to standard output", cxxopts::value<bool>(do_info_level))
+		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_warning_level))
+		("e,error", "Show error level content only error and critical events are listed  to standard output", cxxopts::value<bool>(do_error_level))
 
 		;
 
@@ -288,6 +302,9 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			stdout_log_->log_query = log::rx_log_query_type::warining_level;
 		else if (do_error_level)
 			stdout_log_->log_query = log::rx_log_query_type::error_level;
+		else
+			stdout_log_->log_query = log::rx_log_query_type::normal_level;
+
 
 		if (result.count("help"))
 		{

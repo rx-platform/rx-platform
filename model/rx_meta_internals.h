@@ -344,19 +344,27 @@ public:
     typedef typename typeT::RImplPtr RImplPtr;
     typedef typename typeT::runtime_behavior_t RBeh;
 
-	enum class runtime_state
-	{
-		runtime_state_created = 0,
-		runtime_state_initializing = 1,
-		runtime_state_running = 2,
-		runtime_state_deleting = 3,
-		runtime_state_destroyed = 4
+    enum class runtime_state
+    {
+        runtime_state_created = 0,
+        runtime_state_checkout = 1,
+		runtime_state_initializing = 2,
+		runtime_state_running = 3,
+		runtime_state_deleting = 4,
+		runtime_state_destroyed = 5
 	};
+
+    struct checkout_data
+    {
+        rx_uuid id = rx_uuid::null_uuid();
+        string_type user_name;
+    };
 
 	struct runtime_data_t
 	{
 		RTypePtr target;
 		runtime_state state;
+        checkout_data checkout;
 	};
 	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
@@ -395,7 +403,7 @@ public:
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
-      rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id);
+      rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id, const rx_uuid& checkout = rx_uuid::null_uuid());
 
       rx_result mark_runtime_running (rx_node_id id);
 

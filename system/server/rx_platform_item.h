@@ -100,7 +100,11 @@ private:
 
       virtual std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor) = 0;
 
+      virtual std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor) = 0;
+
       virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx) = 0;
+
+      virtual rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor) = 0;
 
       rx_result delete_item () const;
 
@@ -109,8 +113,6 @@ private:
       virtual rx_thread_handle_t get_executer () const = 0;
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) = 0;
-
-      virtual rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor) = 0;
 
       virtual rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const = 0;
 
