@@ -210,8 +210,7 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
       : context_(nullptr),
-        executer_(-1),
-        identity_(0)
+        executer_(-1)
 {
 }
 
@@ -265,7 +264,7 @@ rx_result port_runtime::start_listen (const protocol_address* local_address, con
     return RX_NOT_SUPPORTED;
 }
 
-rx_result port_runtime::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result_with<rx_protocol_stack_endpoint*> port_runtime::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
 	return RX_NOT_SUPPORTED;
 }
@@ -302,6 +301,11 @@ rx_result port_runtime::unbind_stack_endpoint (rx_protocol_stack_endpoint* what)
 	return io_types::stack_active::active_builder::unbind_stack_endpoint(runtime_, what);
 }
 
+rx_result port_runtime::disconnect_stack_endpoint (rx_protocol_stack_endpoint* what)
+{
+	return io_types::stack_active::active_builder::disconnect_stack_endpoint(runtime_, what);
+}
+
 threads::job_thread* port_runtime::get_jobs_queue ()
 {
     return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
@@ -319,6 +323,11 @@ threads::job_thread* port_runtime::get_io_queue ()
 
 void port_runtime::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
 {
+}
+
+rx_result_with<security::security_context_ptr> port_runtime::create_security_context ()
+{
+	return runtime_->get_instance_data().create_security_context(runtime_->meta_info());
 }
 
 

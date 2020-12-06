@@ -65,6 +65,8 @@ public:
 
       rx_protocol_result_t translate_session (const rx_session_def* session, rx_address_reference_type& reference, io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr);
 
+      rx_protocol_result_t create_references (io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr, rx_address_reference_type& reference, rx_address_reference_type& local_ref, rx_address_reference_type& remote_ref);
+
 
   protected:
 
@@ -99,6 +101,15 @@ rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_session (
     return RX_PROTOCOL_INVALID_ADDR;
 }
 
+template <typename addrT>
+rx_protocol_result_t simple_slave_routing_translator<addrT>::create_references (io::numeric_address<addrT>& local_addr, io::numeric_address<addrT>& remote_addr, rx_address_reference_type& reference, rx_address_reference_type& local_ref, rx_address_reference_type& remote_ref)
+{
+    remote_ref = remote_addr.get_address();
+    local_ref = local_addr.get_address();
+    reference = local_ref;
+    return RX_PROTOCOL_OK;
+}
+
 
 } // namespace ports_templates
 } // namespace io_types
@@ -108,5 +119,3 @@ rx_protocol_result_t simple_slave_routing_translator<addrT>::translate_session (
 
 
 #endif
-
-

@@ -68,6 +68,10 @@ class active_builder
 
       static void close_all_endpoints (rx_port_ptr who);
 
+      static rx_result register_connection_endpoints (rx_port_ptr who, rx_protocol_stack_endpoint* what, rx_port_ptr upper_port, rx_protocol_stack_endpoint* upper, const io::any_address& local_addr, const io::any_address& remote_addr);
+
+      static rx_result disconnect_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what);
+
 
   protected:
 

@@ -121,6 +121,8 @@ class runtime_data_prototype
 
 class construct_context 
 {
+    typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
+    typedef std::vector<runtime_data_prototype> runtime_data_type;
  public:
     ~construct_context() = default;
     construct_context(const construct_context&) = delete;
@@ -134,6 +136,20 @@ class construct_context
 
       void reinit ();
 
+      void push_overrides (const string_type& name, const data::runtime_values_data* vals);
+
+      void pop_overrides ();
+
+      const data::runtime_values_data* get_overrides ();
+
+      const string_type& rt_name () const;
+
+      void push_rt_name (const string_type& name);
+
+      runtime_data_prototype pop_rt_name ();
+
+      runtime_data_prototype& runtime_data ();
+
 
       ns::rx_directory_resolver& get_directories ()
       {
@@ -142,12 +158,7 @@ class construct_context
 
 
 
-      runtime_data_prototype runtime_data;
-
-
       rx_time now;
-
-      string_type rt_name;
 
 
   protected:
@@ -155,7 +166,16 @@ class construct_context
   private:
 
 
+      runtime_data_type runtime_data_;
+
+
       ns::rx_directory_resolver directories_;
+
+      string_array rt_names_;
+
+      override_stack_type overrides_stack_;
+
+      data::runtime_values_data overrides_;
 
 
 };

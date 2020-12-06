@@ -41,6 +41,8 @@
 #include "system/server/rx_identity.h"
 // rx_port_instance
 #include "system/runtime/rx_port_instance.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -85,7 +87,7 @@ class object_instance_data
 
       static rx_result after_stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
 
-      const security::security_context_ptr& get_security_context () const;
+      security::security_context_ptr get_security_context () const;
 
 
       const meta::runtime_data::object_data& get_data () const
@@ -150,7 +152,7 @@ class domain_instance_data
 
       static rx_result after_stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
 
-      const security::security_context_ptr& get_security_context () const;
+      security::security_context_ptr get_security_context () const;
 
 
       const meta::runtime_data::domain_data& get_data () const
@@ -222,7 +224,7 @@ class application_instance_data
 
       static rx_result after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
-      const security::security_context_ptr& get_security_context () const;
+      security::security_context_ptr get_security_context () const;
 
 
       const meta::runtime_data::application_data& get_data () const
@@ -252,6 +254,8 @@ class application_instance_data
       security_context_holder identity_;
 
       meta::runtime_data::application_data data_;
+
+      rx_reference<rx::security::security_context> security_ctx_;
 
 
       rx_thread_handle_t executer_;

@@ -170,7 +170,6 @@ source runtime. basic implementation of an source runtime");
           add_periodic_job(job);
           return job;
       }
-
   protected:
 
       rx_result source_value_changed (rx_value&& val);
@@ -187,7 +186,7 @@ source runtime. basic implementation of an source runtime");
 
       virtual bool supports_output () const;
 
-      virtual rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+      virtual rx_result source_write (write_data&& data, runtime_process_context* ctx);
 
 
 
@@ -277,7 +276,7 @@ variable runtime. basic implementation of an variable runtime");
 
       virtual rx_value select_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
 
-      virtual rx_result variable_write (structure::write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
+      virtual rx_result variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
 
 
 
@@ -405,14 +404,31 @@ mapper runtime. basic implementation of an mapper runtime");
 
   protected:
 
-      void mapper_write_pending (values::rx_simple_value&& value, runtime_transaction_id_t id);
+      void mapper_write_pending (write_data&& data);
 
       void map_current_value () const;
+
+      std::vector<rx_value> get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path);
 
 
       rx_value_t get_value_type () const;
 
+      template<typename T>
+      typename std::vector<T> get_mapped_values_as(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, const T& default_value)
+      {
+          using ret_data_t = typename std::vector<T>;
 
+          ret_data_t ret;
+          std::vector<rx_value> raw_values = get_mapped_values(ctx, id, path);
+          if (!raw_values.empty())
+          {
+              for (const auto& raw : raw_values)
+              {
+                  ret.emplace_back(values::extract_value<T>(raw.get_storage(), default_value));
+              }
+          }
+          return ret;
+      }
   private:
 
       virtual bool supports_read () const;

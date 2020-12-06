@@ -324,7 +324,7 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< rx_internal::terminal::console::console_runtime  > console_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< console_runtime  > console_port_base;
 
 
 

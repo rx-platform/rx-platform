@@ -31,10 +31,10 @@
 #include "pch.h"
 
 
-// rx_operational
-#include "system/runtime/rx_operational.h"
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
@@ -81,7 +81,11 @@ runtime_process_context::runtime_process_context (operational::binded_tags& bind
         current_step_(runtime_process_step::idle),
         meta_info(info),
         directory_resolver_(dirs)
+    , points_(points)
 {
+    mode_.turn_off();
+    now = rx_time::now();
+    mode_time_ = now;
 }
 
 
@@ -142,16 +146,19 @@ rx_result runtime_process_context::set_item (const string_type& path, values::rx
 void runtime_process_context::init_state (fire_callback_func_t fire_callback)
 {
     fire_callback_ = fire_callback;
+    mode_.turn_on();
 }
 
 void runtime_process_context::mapper_write_pending (write_data_struct<structure::mapper_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::mapper_inputs>();
     mapper_inputs_.emplace_back(std::move(data));
 }
 
 mapper_writes_type& runtime_process_context::get_mapper_writes ()
 {
+    locks::auto_lock_t _(&context_lock_);
     static mapper_writes_type empty;
     if (should_do_step<runtime_process_step::mapper_inputs>())
         return mapper_inputs_.get_and_swap();
@@ -181,12 +188,14 @@ mapper_updates_type& runtime_process_context::get_mapper_updates ()
 
 void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::source_outputs>();
     source_outputs_.emplace_back(std::move(data));
 }
 
 source_writes_type& runtime_process_context::get_source_writes ()
 {
+    locks::auto_lock_t _(&context_lock_);
     static source_writes_type empty;
     if (should_do_step<runtime_process_step::source_outputs>())
         return source_outputs_.get_and_swap();
@@ -196,12 +205,14 @@ source_writes_type& runtime_process_context::get_source_writes ()
 
 void runtime_process_context::source_update_pending (update_data_struct<structure::source_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::source_inputs>();
     source_inputs_.emplace_back(std::move(data));
 }
 
 source_updates_type& runtime_process_context::get_source_updates ()
 {
+    locks::auto_lock_t _(&context_lock_);
     static source_updates_type empty;
     if (should_do_step<runtime_process_step::source_inputs>())
         return source_inputs_.get_and_swap();
@@ -261,7 +272,8 @@ filters_type& runtime_process_context::get_filters_for_process ()
 
 void runtime_process_context::variable_value_changed (structure::variable_data* whose, const values::rx_value& val)
 {
-    tags_.variable_change(whose, val);
+    rx_value adapted_val = adapt_value(val);
+    tags_.variable_change(whose, std::move(adapted_val));
 }
 
 void runtime_process_context::event_pending (structure::event_data* whose)
@@ -292,8 +304,8 @@ structs_type& runtime_process_context::get_structs_for_process ()
 
 rx_value runtime_process_context::adapt_value (const rx_value& from) const
 {
-    rx_value ret;
-    ret = from;
+    rx_value ret(from);
+    from.get_value(ret, mode_time_, mode_);
     return ret;
 }
 
@@ -432,6 +444,9 @@ source_results_type& runtime_process_context::get_source_results ()
 
 
 // Class rx_platform::runtime::context_job 
+
+
+// Class rx_platform::runtime::write_data 
 
 
 } // namespace runtime

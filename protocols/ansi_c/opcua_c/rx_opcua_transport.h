@@ -64,9 +64,7 @@ enum opcua_message_types
 	opcua_open_msg_type = ('O' << 16) | ('P' << 8) | 'N',
 	opcua_close_msg_type = ('C' << 16) | ('C' << 8) | 'S',
 	// regular messages
-	opcua_regular_msg_type = ('M' << 16) | ('S' << 8) | 'G',
-	// RX IMPLEMENTATION SPECIFIC, NO SECURITY, LOCAL PIPE !!!
-	rx_pipe_msg_type = ('L' << 16) | ('O' << 8) | 'C'
+	opcua_regular_msg_type = ('M' << 16) | ('S' << 8) | 'G'
 };
 
 

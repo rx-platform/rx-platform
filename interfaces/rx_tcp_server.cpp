@@ -56,7 +56,8 @@ namespace ip_endpoints {
 // Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint 
 
 tcp_server_endpoint::tcp_server_endpoint()
-      : my_port_(nullptr)
+      : my_port_(nullptr),
+        identity_(security::security_context_ptr::null_ptr)
 {
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint created.");
     rx_protocol_stack_endpoint* mine_entry = &stack_endpoint_;
@@ -80,14 +81,16 @@ tcp_server_endpoint::~tcp_server_endpoint()
 
 
 
-rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, rx_security_handle_t identity)
+rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity)
 {
+    identity_ = identity;
+    identity_->login();
     my_port_ = my_port;
     tcp_socket_ = rx_create_reference<socket_holder_t>(this, handle, addr, local_addr);
-    tcp_socket_->set_identity(identity);
+    tcp_socket_->set_identity(identity->get_handle());
     remote_address_ = addr;
     local_address_ = local_addr;
-    stack_endpoint_.identity = identity;
+    stack_endpoint_.identity = identity_->get_handle();
     std::ostringstream ss;
     ss << "Client from IP4:"
         << remote_address_.to_string()
@@ -135,8 +138,18 @@ bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_ha
         up.to_addr = &local_address_;
         security::secured_scope ctx(identity);
         auto res = rx_move_packet_up(&stack_endpoint_, up);
-        if(res!=RX_PROTOCOL_OK)
-            return rx_protocol_error_message(res);
+        if (res != RX_PROTOCOL_OK)
+        {
+            std::ostringstream ss;
+            ss << "TCP server endpoint ["
+                << local_address_.to_string()
+                << ", "
+                << remote_address_.to_string()
+                << "] error moving packet up stack:"
+                << rx_protocol_error_message(res);
+            ITF_LOG_ERROR("tcp_server_endpoint", 200, ss.str());
+            return false;
+        }
     }
     return true;
 }
@@ -144,10 +157,17 @@ bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_ha
 rx_protocol_result_t tcp_server_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     tcp_server_endpoint* self = reinterpret_cast<tcp_server_endpoint*>(reference->user_data);
-    auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
-    io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-    bool ret = self->tcp_socket_->write(io_buffer);
-    return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+    if (self->tcp_socket_)
+    {
+        auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
+        io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
+        bool ret = self->tcp_socket_->write(io_buffer);
+        return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+    }
+    else
+    {
+        return RX_PROTOCOL_COLLECT_ERROR;
+    }
 }
 
 rx_protocol_stack_endpoint* tcp_server_endpoint::get_stack_endpoint ()
@@ -204,7 +224,6 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
     whose = nullptr;
     initiate_shutdown();
 }
-
 // Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
 
 
@@ -234,8 +253,13 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
         [this](sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> io::tcp_socket_std_buffer::smart_ptr
         {
              auto new_endpoint = std::make_unique<tcp_server_endpoint>();
-
-            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), identity);
+             auto sec_result = create_security_context();
+             if (!sec_result)
+             {
+                 rx_result ret(sec_result.errors());
+                 ret.register_error("Unable to create security context");
+             }
+            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_result.value());
             if (ret_ptr)
             {
                 uint32_t recv_timeout = get_binded_as(rx_recv_timeout_, 0);
@@ -256,7 +280,6 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
             return ret_ptr.value();
 
         });
-    listen_socket_->set_identity(get_identity());
     if (!bind_address_.is_null())
     {
         auto result = listen_socket_->start_tcpip_4(bind_address_.get_ip4_address(), rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
@@ -318,23 +341,3 @@ void tcp_server_port::extract_bind_address (const data::runtime_values_data& bin
 } // namespace interfaces
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif

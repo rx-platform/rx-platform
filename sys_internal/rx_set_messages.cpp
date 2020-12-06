@@ -41,6 +41,7 @@
 #include "system/server/rx_server.h"
 #include "system/runtime/rx_runtime_holder.h"
 #include "system/meta/rx_meta_algorithm.h"
+#include "system/meta/rx_types.h"
 
 
 namespace rx_internal {
@@ -625,6 +626,8 @@ template <class itemT>
 message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create)
 {
 	rx_node_id id = rx_node_id::null_id;
+
+	auto dummy = rx_create_reference<itemT>();
 
 	auto callback = rx_result_with_callback<typename itemT::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
 	{

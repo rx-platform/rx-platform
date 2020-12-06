@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -357,13 +357,17 @@ system port class. basic implementation of a port");
 
       virtual rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      virtual rx_result start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      virtual rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       virtual rx_result stop_passive ();
 
       virtual rx_protocol_stack_endpoint* construct_endpoint ();
 
+      rx_result register_routing_endpoint (rx_protocol_stack_endpoint* what);
+
       rx_result unbind_stack_endpoint (rx_protocol_stack_endpoint* what);
+
+      rx_result disconnect_stack_endpoint (rx_protocol_stack_endpoint* what);
 
       virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
 
@@ -374,6 +378,8 @@ system port class. basic implementation of a port");
       threads::job_thread* get_io_queue ();
 
       virtual void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+      virtual rx_result_with<security::security_context_ptr> create_security_context ();
 
 
       static rx_item_type get_type_id ()
@@ -390,12 +396,6 @@ system port class. basic implementation of a port");
       void set_executer (rx_thread_handle_t value)
       {
         executer_ = value;
-      }
-
-
-      rx_security_handle_t get_identity () const
-      {
-        return identity_;
       }
 
 
@@ -465,8 +465,6 @@ system port class. basic implementation of a port");
 
       rx_result add_stack_endpoint (rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr);
 
-      rx_result register_routing_endpoint (rx_protocol_stack_endpoint* what);
-
       rx_result close_all_endpoints ();
 
 
@@ -484,8 +482,6 @@ system port class. basic implementation of a port");
 
 
       rx_thread_handle_t executer_;
-
-      rx_security_handle_t identity_;
 
       rx_port_ptr runtime_;
 

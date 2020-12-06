@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Atom" 
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 0
-#define RX_SERVER_BUILD_NUMBER 1
+#define RX_SERVER_BUILD_NUMBER 2
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -25,5 +25,6 @@
 // version 0.24.0 first process runtime algorithm
 // version 0.25.0 port relations done
 // version 1.0.0 first release version
-// version 1.0.1 tcp/ip connection with architect
+// version 1.0.1 tcp/ip connection, housekeeping and rx-architect
+// version 1.0.2 master port and more rx-architect
 

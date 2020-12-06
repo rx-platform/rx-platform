@@ -231,10 +231,22 @@
 
 #define RX_EXTERN_MAPPER_TYPE_NAME "ExternMapper"
 #define RX_EXTERN_MAPPER_TYPE_ID 0xc000033
+#define RX_PARENT_MAPPER_TYPE_NAME "ParentMapper"
+#define RX_PARENT_MAPPER_TYPE_ID 0xc000045
+#define RX_SYSTEM_MAPPER_TYPE_NAME "SystemMapper"
+#define RX_SYSTEM_MAPPER_TYPE_ID 0xc000046
 #define RX_EXTERN_SOURCE_TYPE_NAME "ExternSource"
 #define RX_EXTERN_SOURCE_TYPE_ID 0xc000034
+#define RX_USER_SOURCE_TYPE_NAME "UserSource"
+#define RX_USER_SOURCE_TYPE_ID 0xc00004a
+#define RX_PARENT_SOURCE_TYPE_NAME "ParentSource"
+#define RX_PARENT_SOURCE_TYPE_ID 0xc000047
+#define RX_SYSTEM_SOURCE_TYPE_NAME "SystemSource"
+#define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
 #define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
+#define RX_PLATFORM_SOURCE_TYPE_NAME "PlatformSource"
+#define RX_PLATFORM_SOURCE_TYPE_ID 0xc000049
  
 
 
@@ -257,7 +269,7 @@
 #define RX_NS_SYSTEM_RXJSON_ID 0xc000044
 
 
-// last is 0xc000044!!!! 
+// last is 0xc00004a!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

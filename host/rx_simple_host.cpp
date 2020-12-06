@@ -94,7 +94,11 @@ bool simple_platform_host::break_host (const string_type& msg)
 
 int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_thread_data_t tls = rx_alloc_thread_data();
+
 	debug_break_ = false;
+
+
 
 	rx_result ret = true;// parse_command_line(argc, argv, config);
 	if (ret)
@@ -111,8 +115,9 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 		if (ret)
 		{
 			std::cout << "OK\r\n";
-			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
+
+
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config_.processor.real_time, tls, server_name.c_str());
@@ -146,6 +151,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 			ret = rx::log::log_object::instance().start(config_.management.test_log);
 			if (ret)
 			{
+
 				std::cout << "OK\r\n";
 				char buff[0x20];
 				sprintf(buff, "%d", rx_gate::instance().get_pid());
@@ -155,12 +161,14 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 				ret = register_plugins(plugins);
 				if (ret)
 				{
+
 					std::cout << "OK\r\n";
 
 					std::cout << "Initializing storages...";
 					ret = initialize_storages(config_, plugins);
 					if (ret)
 					{
+
 						std::cout << "OK\r\n";
 
 						HOST_LOG_INFO("Main", 999, "Starting Simple Host...");

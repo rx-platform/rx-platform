@@ -33,6 +33,8 @@
 
 
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_values
@@ -43,10 +45,8 @@ namespace runtime {
 namespace structure {
 class filter_data;
 class source_data;
+
 } // namespace structure
-
-class runtime_process_context;
-
 } // namespace runtime
 } // namespace rx_platform
 
@@ -219,30 +219,6 @@ class fill_context
 
 
 
-struct write_data 
-{
-
-
-      bool internal;
-
-      runtime_transaction_id_t transaction_id;
-
-      rx_simple_value value;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class const_value_data 
 {
@@ -323,7 +299,7 @@ class runtime_item
 
       virtual void collect_data (data::runtime_values_data& data, runtime_value_type type) const = 0;
 
-      virtual void fill_data (const data::runtime_values_data& data, fill_context& ctx) = 0;
+      virtual void fill_data (const data::runtime_values_data& data) = 0;
 
       virtual rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const = 0;
 
@@ -405,7 +381,7 @@ class struct_data
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -460,7 +436,7 @@ public:
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -515,7 +491,7 @@ public:
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -648,11 +624,11 @@ class variable_data
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_value get_value (runtime_process_context* ctx) const;
 
-      void set_value (rx_simple_value&& val, fill_context& ctx);
+      void set_value (rx_simple_value&& val);
 
       rx_result write_value (write_data&& data, variable_write_task* task, runtime_process_context* ctx);
 
@@ -719,7 +695,7 @@ public:
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -731,9 +707,9 @@ public:
 
       void process_update (values::rx_value&& value);
 
-      void process_write (rx_simple_value&& val, runtime_transaction_id_t id);
+      void process_write (write_data&& data);
 
-      void mapper_write_pending (values::rx_simple_value&& value, runtime_transaction_id_t id);
+      void mapper_write_pending (write_data&& data);
 
       rx_value get_mapped_value () const;
 
@@ -751,6 +727,8 @@ public:
       static string_type type_name;
 
       mapper_runtime_ptr mapper_ptr;
+
+      rx_node_id mapper_id;
 
 	  typedef std::unique_ptr<mapper_data> smart_ptr;
   protected:
@@ -798,7 +776,7 @@ class source_data
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -808,11 +786,11 @@ class source_data
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result write_value (structure::write_data&& data);
+      rx_result write_value (write_data&& data);
 
       void process_update (values::rx_value&& value);
 
-      void process_write (rx_simple_value&& val, runtime_transaction_id_t id);
+      void process_write (write_data&& data);
 
       void source_update_pending (values::rx_value&& value);
 
@@ -905,7 +883,7 @@ class runtime_data : public runtime_item
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      void fill_data (const data::runtime_values_data& data, fill_context& ctx);
+      void fill_data (const data::runtime_values_data& data);
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 

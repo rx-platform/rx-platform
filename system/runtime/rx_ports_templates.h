@@ -33,10 +33,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 
 
@@ -120,6 +120,37 @@ standard single endpoint transport port implementation");
 };
 
 
+
+
+
+
+template <typename endpointT>
+class extern_singleton_port_impl : public items::port_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+standard single endpoint transport port implementation");
+
+    DECLARE_REFERENCE_PTR(extern_singleton_port_impl);
+
+    typedef endpointT endpoint_t;
+    typedef typename std::unique_ptr<endpointT> endpoint_ptr_t;
+
+  public:
+
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
+
+
+  protected:
+
+  private:
+
+
+      endpoint_ptr_t active_endpoint_;
+
+
+};
+
+
 // Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl 
 
 
@@ -137,13 +168,13 @@ rx_result extern_routed_port_impl<endpointT,routingT>::add_stack_endpoint (rx_pr
         };
     }
 
-    auto push_result = rx_push_stack(what, &endpoint_ptr->router->stack);
+    auto push_result = rx_push_stack(what, &endpoint_ptr->router(this)->stack);
     if (push_result == RX_PROTOCOL_OK)
     {
-        auto result = register_routing_endpoint(&endpoint_ptr->router->stack);
+        auto result = register_routing_endpoint(&endpoint_ptr->router(this)->stack);
         result = register_routing_endpoint(what);
         endpoint_ptr->endpoint = std::move(ep);
-        active_endpoints_.emplace(&endpoint_ptr->router->stack, std::move(endpoint_ptr));
+        active_endpoints_.emplace(&endpoint_ptr->router(this)->stack, std::move(endpoint_ptr));
         return result;
     }
     else
@@ -158,7 +189,7 @@ void extern_routed_port_impl<endpointT,routingT>::destroy_endpoint (rx_protocol_
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
     {
-        it->second->router->close_sessions();
+        it->second->router(this)->close_sessions();
         active_endpoints_.erase(it);
     }
 }
@@ -195,6 +226,16 @@ void extern_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* 
     {
         active_endpoints_.erase(it);// i just might want something to do with it...
     }
+}
+
+
+// Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl 
+
+
+template <typename endpointT>
+void extern_singleton_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
+    active_endpoint_ = endpoint_ptr_t();
 }
 
 

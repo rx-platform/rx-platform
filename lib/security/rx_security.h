@@ -137,8 +137,9 @@ class security_context : public pointers::reference_object
 };
 
 
-
+// unauthorized 
 security_context_ptr active_security();
+security_context_ptr unauthorized_context();
 void push_security(security_context_ptr ctx);
 void pop_security();
 
@@ -152,7 +153,7 @@ class security_manager
 	typedef std::map<uint64_t, security_context::smart_ptr> active_contexts_type;
 	typedef std::set<uint64_t> active_handles_type;
 
-	friend security_context_ptr active_security();
+	friend security_context_ptr security_context_helper(bool get_unathorized);
 	friend void push_security(security_context_ptr ctx);
 	friend void pop_security();
 

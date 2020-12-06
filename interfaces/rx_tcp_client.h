@@ -44,6 +44,7 @@ namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
 class tcp_client_port;
+class tcp_client_endpoint;
 
 } // namespace ip_endpoints
 } // namespace interfaces
@@ -101,7 +102,11 @@ class tcp_client_endpoint
         }
         bool connect_complete(sockaddr_in* addr, sockaddr_in* local_addr)
         {
-            whose->connected(addr, local_addr);
+            if (whose)
+                whose->connected(addr, local_addr);
+            else
+                return false;
+
             return rx::io::tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
         }
     public:
@@ -128,14 +133,14 @@ public:
   public:
       tcp_client_endpoint();
 
-      tcp_client_endpoint (const string_type& remote_port, const string_type& local_port);
+      ~tcp_client_endpoint();
 
 
       rx_result stop ();
 
       bool tick ();
 
-      rx_result start (const protocol_address* addr, const protocol_address* remote_addr, rx_security_handle_t identity, tcp_client_port* port);
+      rx_result start (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port);
 
       rx_protocol_stack_endpoint* get_stack_endpoint ();
 
@@ -149,8 +154,6 @@ public:
       void disconnected (rx_security_handle_t identity);
 
       bool readed (const void* data, size_t count, rx_security_handle_t identity);
-
-      void bind ();
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
@@ -179,6 +182,8 @@ public:
 
       io::ip4_address remote_addr_;
 
+      security::security_context_ptr identity_;
+
 
 };
 
@@ -188,7 +193,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_client_endpoint  > tcp_client_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< tcp_client_endpoint  > tcp_client_base;
 
 
 
@@ -210,16 +215,19 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
 
       uint32_t get_reconnect_timeout () const;
 
-      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
-
-      rx_result start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       rx_result stop_passive ();
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
   protected:
 
   private:
+
+
+      std::unique_ptr<tcp_client_endpoint> endpoint_;
 
 
       runtime_handle_t rx_recv_timeout_;

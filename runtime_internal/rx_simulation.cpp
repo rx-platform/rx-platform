@@ -63,7 +63,7 @@ local_register_source::local_register_source()
 
 
 
-rx_result local_register_source::source_write (structure::write_data&& data, runtime_process_context* ctx)
+rx_result local_register_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
     rx_value value = rx_value::from_simple(std::move(data.value), rx_time::now());
     value.set_quality(RX_GOOD_QUALITY);
@@ -91,7 +91,7 @@ periodic_source::periodic_source()
 
 
 
-rx_result periodic_source::source_write (structure::write_data&& data, runtime_process_context* ctx)
+rx_result periodic_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }

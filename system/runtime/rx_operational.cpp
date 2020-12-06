@@ -339,7 +339,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
 	{
-		structure::write_data data;
+		write_data data;
 		data.transaction_id = trans_id;
 		data.value = std::move(value);
 		data.internal = false;

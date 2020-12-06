@@ -93,6 +93,8 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
 			continue;
 
+		HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
+
 		string_type settings_buff;
 		rx_source_file file;
 		if (file.open(config_path.c_str()))

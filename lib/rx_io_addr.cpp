@@ -583,7 +583,7 @@ defT numeric_address<defT>::get_address () const
     else
     {
         defT addr = 0;
-        if (extract_numeric_address(this, addr) != RX_PROTOCOL_OK)
+        if (extract_numeric_address(this, addr) == RX_PROTOCOL_OK)
             return addr;
         else
             return 0;

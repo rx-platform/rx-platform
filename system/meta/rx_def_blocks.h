@@ -41,9 +41,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
-class variable_attribute;
 class struct_attribute;
 class mapper_attribute;
+class variable_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -146,8 +146,9 @@ enum rx_subitem_type : uint8_t
 	rx_value_subitem = 1,
 	rx_struct_subitem = 2,
 	rx_variable_subitem = 3,
+    rx_event_subitem = 4,
 
-	rx_first_invalid_subitem = 4,
+	rx_first_invalid_subitem = 5,
 	rx_invalid_subitem = 0xff
 };
 
@@ -321,6 +322,7 @@ class complex_data_type
 	typedef std::vector<simple_value_def> simple_values_type;
 	typedef std::vector<struct_attribute> structs_type;
 	typedef std::vector<variable_attribute> variables_type;
+    typedef std::vector<event_attribute> events_type;
 
     friend class rx_platform::meta::meta_algorithm::complex_data_algorithm;
 
@@ -330,6 +332,8 @@ class complex_data_type
       rx_result register_struct (const string_type& name, const rx_node_id& id);
 
       rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
+
+      rx_result register_event (const string_type& name, const rx_node_id& id);
 
       rx_result register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val);
 
@@ -351,6 +355,12 @@ class complex_data_type
       const rx::data::runtime_values_data& get_overrides () const
       {
         return overrides_;
+      }
+
+
+      const events_type& events () const
+      {
+        return events_;
       }
 
 
@@ -400,6 +410,8 @@ class complex_data_type
       variables_type variables_;
 
       rx::data::runtime_values_data overrides_;
+
+      events_type events_;
 
 
       names_cahce_type names_cache_;
@@ -591,6 +603,73 @@ struct io_attribute
 
 
 
+class filter_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::filter_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+
+	  filter_attribute(const filter_attribute& right) = default;
+	  filter_attribute(filter_attribute&& right) = default;
+	  filter_attribute() = default;
+	  ~filter_attribute() = default;
+
+  public:
+      filter_attribute (const string_type& name, const rx_node_id& id);
+
+      filter_attribute (const string_type& name, const string_type& target_name);
+
+
+      rx_result serialize_definition (base_meta_writer& stream) const;
+
+      rx_result deserialize_definition (base_meta_reader& stream);
+
+      rx_result check (type_check_context& ctx);
+
+      rx_result construct (construct_context& ctx) const;
+
+
+      const io_attribute& get_io () const
+      {
+        return io_;
+      }
+
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      io_attribute io_;
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+
+};
+
+
+
+
+
+
 class mapper_attribute 
 {
   public:
@@ -725,79 +804,11 @@ class source_attribute
 
 
 
-class filter_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::filter_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-
-	  filter_attribute(const filter_attribute& right) = default;
-	  filter_attribute(filter_attribute&& right) = default;
-	  filter_attribute() = default;
-	  ~filter_attribute() = default;
-
-  public:
-      filter_attribute (const string_type& name, const rx_node_id& id);
-
-      filter_attribute (const string_type& name, const string_type& target_name);
-
-
-      rx_result serialize_definition (base_meta_writer& stream) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream);
-
-      rx_result check (type_check_context& ctx);
-
-      rx_result construct (construct_context& ctx) const;
-
-
-      const io_attribute& get_io () const
-      {
-        return io_;
-      }
-
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      io_attribute io_;
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
 
 class variable_data_type 
 {
 	typedef std::vector<source_attribute> sources_type;
 	typedef std::vector<filter_attribute> filters_type;
-	typedef std::vector<event_attribute> events_type;
 
 
     friend class rx_platform::meta::meta_algorithm::variable_data_algorithm;
@@ -808,15 +819,6 @@ class variable_data_type
 
       rx_result register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
 
-      rx_result register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
-
-
-      const events_type& events () const
-      {
-        return events_;
-      }
-
-
 
   protected:
 
@@ -826,8 +828,6 @@ class variable_data_type
       sources_type sources_;
 
       filters_type filters_;
-
-      events_type events_;
 
 
 };

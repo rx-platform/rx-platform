@@ -56,18 +56,22 @@ security_context::security_context()
 
 security_context::~security_context()
 {
+	if(handle_)
+		handle_ = security_manager::instance().context_deactivated(smart_this());
 }
 
 
 
 void security_context::logout ()
 {
-	handle_ = security_manager::instance().context_deactivated(smart_this());
+	if(handle_)
+		handle_ = security_manager::instance().context_deactivated(smart_this());
 }
 
 rx_result security_context::login ()
 {
-	handle_ = security_manager::instance().context_activated(smart_this());
+	if(is_authenticated())
+		handle_ = security_manager::instance().context_activated(smart_this());
 	return true;
 }
 
@@ -201,10 +205,13 @@ security_context_ptr security_manager::get_context (rx_security_handle_t handle)
 	}
 }
 
-
-security_context_ptr active_security()
+// whole purpose of this function is to enable lazy initialization of dummy_ctx
+security_context_ptr security_context_helper(bool get_unathorized)
 {
 	static unathorized_security_context::smart_ptr dummy_ctx(pointers::_create_new);
+	if (get_unathorized)
+		return dummy_ctx;
+
 	rx_security_handle_t handle = rx_security_context();
 	if (!handle)
 	{// nothing active
@@ -219,6 +226,14 @@ security_context_ptr active_security()
 		}
 		return ret;
 	}
+}
+security_context_ptr unauthorized_context()
+{
+	return security_context_helper(true);
+}
+security_context_ptr active_security()
+{
+	return security_context_helper(false);
 }
 void push_security(security_context_ptr ctx)
 {

@@ -33,7 +33,6 @@
 
 
 #include "rx_runtime_helpers.h"
-#include "lib/rx_rt_data.h"
 #include "system/meta/rx_meta_data.h"
 
 
@@ -117,30 +116,38 @@ class process_context_job : public context_job
 };
 
 
-enum class runtime_process_step : uint_fast8_t
+
+
+
+
+struct write_data 
 {
-    idle = 0,
-    status_change = 1,
-    source_inputs = 2,
-    mapper_inputs = 3,
-    tag_inputs = 4,
-    variables = 5,
-    programs = 6,
-    events = 7,
-    filters = 8,
-    structs = 9,
-    own = 10,
-    tag_outputs = 11,
-    mapper_outputs = 12,
-    source_outputs = 13,
-    beyond_last = 14
+
+
+      bool internal;
+
+      runtime_transaction_id_t transaction_id;
+
+      rx_simple_value value;
+
+      bool test;
+
+      rx_security_handle_t identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
 };
+
 template<class T>
 struct write_data_struct
 {
     T* whose;
-    values::rx_simple_value value;
-    runtime_transaction_id_t transaction_id;
+    write_data data;
 };
 
 template<class T>
@@ -164,6 +171,26 @@ struct write_result_struct
         return *this;
     }
 };
+
+enum class runtime_process_step : uint_fast8_t
+{
+    idle = 0,
+    status_change = 1,
+    source_inputs = 2,
+    mapper_inputs = 3,
+    tag_inputs = 4,
+    variables = 5,
+    programs = 6,
+    events = 7,
+    filters = 8,
+    structs = 9,
+    own = 10,
+    tag_outputs = 11,
+    mapper_outputs = 12,
+    source_outputs = 13,
+    beyond_last = 14
+};
+
 template<class T>
 struct update_data_struct
 {
@@ -224,6 +251,7 @@ class runtime_process_context
 {
     typedef std::function<void()> fire_callback_func_t;
     typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;
+    points_type points_;
 
   public:
       runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points);
@@ -375,8 +403,6 @@ class runtime_process_context
 
       operational::binded_tags& binded_;
 
-      points_type points_;
-
 
       runtime_process_step current_step_;
 
@@ -411,6 +437,8 @@ class runtime_process_context
       double_collection<owner_jobs_type> owns_;
 
       ns::rx_directory_resolver* directory_resolver_;
+
+      locks::slim_lock context_lock_;
 
       template<runtime_process_step step>
       void turn_on_pending();

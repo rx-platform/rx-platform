@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 
@@ -93,7 +93,7 @@ class tcp_server_endpoint
       ~tcp_server_endpoint();
 
 
-      rx_result_with<tcp_server_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, rx_security_handle_t identity);
+      rx_result_with<tcp_server_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity);
 
       rx_result close ();
 
@@ -138,7 +138,9 @@ class tcp_server_endpoint
       io::ip4_address remote_address_;
 
       io::ip4_address local_address_;
-      
+
+      security::security_context_ptr identity_;
+
 
 };
 
@@ -201,5 +203,3 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
 
 #endif
-
-

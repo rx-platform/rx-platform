@@ -162,6 +162,8 @@ class waitable
 
       uint32_t wait_handle_us (uint64_t timeout = RX_INFINITE);
 
+      sys_handle_t get_handle () const;
+
 
   protected:
 

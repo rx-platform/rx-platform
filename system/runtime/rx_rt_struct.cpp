@@ -42,6 +42,11 @@
 #include "system/serialization/rx_ser.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
+namespace rx
+{
+rx_security_handle_t rx_security_context();
+}
+
 
 namespace rx_platform {
 
@@ -175,7 +180,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::fill_data (const data::runtime_values_data& data)
 {
 	for (auto one : items)
 	{
@@ -195,7 +200,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.values.find(one.name);
 				if (it != data.values.end())
 				{
-					values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), ctx.now);
+					values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), rx_time::now());
 				}
 			}
 			break;
@@ -205,13 +210,13 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it_vals = data.values.find(one.name);
 				if (it_vals != data.values.end())
 				{
-					variables.collection[one.index >> rt_type_shift].set_value(rx_simple_value(it_vals->second.value), ctx);
+					variables.collection[one.index >> rt_type_shift].set_value(rx_simple_value(it_vals->second.value));
 				}
 				// now check for complex values
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					variables.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					variables.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -220,7 +225,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					structs.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					structs.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -229,7 +234,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					sources.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					sources.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -238,7 +243,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					mappers.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					mappers.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -247,7 +252,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					filters.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					filters.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -256,7 +261,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				auto it = data.children.find(one.name);
 				if (it != data.children.end())
 				{
-					events.collection[one.index >> rt_type_shift].fill_data(it->second, ctx);
+					events.collection[one.index >> rt_type_shift].fill_data(it->second);
 				}
 			}
 			break;
@@ -408,6 +413,13 @@ template <class variables_type, class structs_type, class sources_type, class ma
 rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	rx_result ret(true);
+	if constexpr (has_mappers())
+	{
+		for (auto& one : mappers.collection)
+		{
+			ctx.mappers.push_mapper(one.mapper_id, &one);
+		}
+	}
 	for (auto one : items)
 	{
 		switch (one.index&rt_type_mask)
@@ -456,6 +468,13 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		}
 		if (!ret)
 			break;
+	}
+	if constexpr (has_mappers())
+	{
+		for (auto& one : mappers.collection)
+		{
+			ctx.mappers.pop_mapper(one.mapper_id);
+		}
 	}
 	return ret;
 }
@@ -1080,16 +1099,16 @@ void variable_data::collect_data (data::runtime_values_data& data, runtime_value
 	item->collect_data(data, type);
 }
 
-void variable_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void variable_data::fill_data (const data::runtime_values_data& data)
 {
 	auto it = data.values.find(RX_DEFAULT_VARIABLE_NAME);
 	if (it != data.values.end())
 	{
 		rx_value_t my_type = value.get_type();
-		value = rx_value::from_simple(it->second.value, ctx.now);
+		value = rx_value::from_simple(it->second.value, rx_time::now());
 		value.convert_to(my_type);
 	}
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_value variable_data::get_value (runtime_process_context* ctx) const
@@ -1097,11 +1116,11 @@ rx_value variable_data::get_value (runtime_process_context* ctx) const
 	return ctx->adapt_value(value);
 }
 
-void variable_data::set_value (rx_simple_value&& val, fill_context& ctx)
+void variable_data::set_value (rx_simple_value&& val)
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_value::from_simple(std::move(val), ctx.now);
+		value = rx_value::from_simple(std::move(val), rx_time::now());
 	}
 }
 
@@ -1203,26 +1222,41 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 	if (sources.empty())
 		return;
 	auto prepared_value = variable_ptr->select_variable_input(ctx, sources);
-	if (!prepared_value.convert_to(value.get_type()))
+	if (prepared_value.get_time().is_null())
 		return;
-
-	rx_result result;
-	auto& filters = item->get_filters();
-	if (!filters.empty())
+	if (prepared_value.is_null())
 	{
-		for (auto& filter : filters)
+		rx_value temp_val(value.get_storage());
+		temp_val.set_quality(prepared_value.get_quality());
+		temp_val.set_time(prepared_value.get_time());
+		prepared_value = std::move(temp_val);
+	}
+	if (prepared_value.convert_to(value.get_type()) &&
+		ctx->get_mode().can_callculate(prepared_value))
+	{
+		rx_result result;
+		auto& filters = item->get_filters();
+		if (!filters.empty())
 		{
-			if (filter.is_input())
+			for (auto& filter : filters)
 			{
-				result = filter.filter_input(prepared_value);
-				if (!result)
-					break;
+				if (filter.is_input())
+				{
+					result = filter.filter_input(prepared_value);
+					if (!result)
+						break;
+				}
+			}
+			if (!result)
+			{
+				result.register_error("Unable to filter read value.");
 			}
 		}
-		if (!result)
-		{
-			result.register_error("Unable to filter read value.");
-		}
+	}
+	else
+	{
+
+
 	}
 	if (value != prepared_value)
 	{
@@ -1232,16 +1266,21 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 		// send subscription update
 		ctx->variable_value_changed(this, prepared_value);
 		// send update to mappers
-		auto& mappers = item->get_mappers();		
-		if (mappers.size() == 1)
+
+
+		ctx->get_mode().can_callculate(prepared_value);
 		{
-			mappers[0].value_changed(std::move(prepared_value));
-		}
-		else
-		{
-			for (auto& one : mappers)
+			auto& mappers = item->get_mappers();
+			if (mappers.size() == 1)
 			{
-				one.value_changed(rx_value(prepared_value));
+				mappers[0].value_changed(std::move(prepared_value));
+			}
+			else
+			{
+				for (auto& one : mappers)
+				{
+					one.value_changed(rx_value(prepared_value));
+				}
 			}
 		}
 	}
@@ -1280,9 +1319,9 @@ void struct_data::collect_data (data::runtime_values_data& data, runtime_value_t
 	item->collect_data(data, type);
 }
 
-void struct_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void struct_data::fill_data (const data::runtime_values_data& data)
 {
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_result struct_data::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -1351,20 +1390,22 @@ void mapper_data::collect_data (data::runtime_values_data& data, runtime_value_t
 	item->collect_data(data, type);
 }
 
-void mapper_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void mapper_data::fill_data (const data::runtime_values_data& data)
 {
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	my_variable_ = ctx.variables.get_current_variable();
 	mapper_ptr->container_ = this;
+	ctx.mappers.push_mapper(mapper_id, this);
 	ctx.structure.push_item(*item);
 	auto result = item->initialize_runtime(ctx);
 	if (result)
 		result = mapper_ptr->initialize_mapper(ctx);
 	ctx.structure.pop_item();
+	ctx.mappers.pop_mapper(mapper_id);
 	return result;
 }
 
@@ -1445,14 +1486,15 @@ void mapper_data::process_update (values::rx_value&& value)
 	}
 }
 
-void mapper_data::process_write (rx_simple_value&& val, runtime_transaction_id_t id)
+void mapper_data::process_write (write_data&& data)
 {
 	if (my_variable_)
 	{
-		rx_value prepared_value = rx_value::from_simple(std::move(val), rx_time());
+		auto trans_id = data.transaction_id;
+		rx_value prepared_value = rx_value::from_simple(std::move(data.value), rx_time());
 		if (!prepared_value.convert_to(my_variable_->value.get_type()))
 		{
-			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, id);
+			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id);
 		}
 		else
 		{
@@ -1476,28 +1518,34 @@ void mapper_data::process_write (rx_simple_value&& val, runtime_transaction_id_t
 			}
 			if (!result)
 			{
-				mapper_ptr->mapper_result_received(std::move(result), id);
+				mapper_ptr->mapper_result_received(std::move(result), trans_id);
 			}
 			else
 			{
-				write_data data;
-				data.transaction_id = id;
+				auto task = new mapper_write_task(this, trans_id);
 				data.value = prepared_value.to_simple();
-				auto task = new mapper_write_task(this, id);
 				result = my_variable_->write_value(std::move(data), task, context_);
 				if (!result)
 				{
-					mapper_ptr->mapper_result_received(std::move(result), id);
+					mapper_ptr->mapper_result_received(std::move(result), trans_id);
 				}
 			}
 		}
 	}
 }
 
-void mapper_data::mapper_write_pending (values::rx_simple_value&& value, runtime_transaction_id_t id)
+void mapper_data::mapper_write_pending (write_data&& data)
 {
+	write_data_struct<mapper_data> reg_data;
+	reg_data.whose = this;
+	if (data.identity == 0)
+	{
+		data.identity = rx_security_context();
+	}
+	reg_data.data = std::move(data);
+
 	if (context_)
-		context_->mapper_write_pending({ this, std::move(value), id });
+		context_->mapper_write_pending(std::move(reg_data));
 }
 
 rx_value mapper_data::get_mapped_value () const
@@ -1566,9 +1614,9 @@ void source_data::collect_data (data::runtime_values_data& data, runtime_value_t
 	item->collect_data(data, type);
 }
 
-void source_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void source_data::fill_data (const data::runtime_values_data& data)
 {
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -1619,14 +1667,18 @@ rx_result source_data::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-rx_result source_data::write_value (structure::write_data&& data)
+rx_result source_data::write_value (write_data&& data)
 {
 	if (!context_ || !source_ptr)
 		return RX_ERROR_STOPPED;
 	else if (!source_ptr->is_output())
 		return RX_NOT_SUPPORTED;
 
-	context_->source_write_pending({ this, std::move(data.value), data.transaction_id });
+	write_data_struct<source_data> reg_data;
+	reg_data.whose = this;
+	reg_data.data = std::move(data);
+
+	context_->source_write_pending(std::move(reg_data));
 	return true;
 }
 
@@ -1661,7 +1713,7 @@ void source_data::process_update (values::rx_value&& value)
 	}
 }
 
-void source_data::process_write (rx_simple_value&& val, runtime_transaction_id_t id)
+void source_data::process_write (write_data&& data)
 {
 	RX_ASSERT(source_ptr);
 	if (source_ptr)
@@ -1674,7 +1726,7 @@ void source_data::process_write (rx_simple_value&& val, runtime_transaction_id_t
 			{
 				if (filter.is_input())
 				{
-					result = filter.filter_output(val);
+					result = filter.filter_output(data.value);
 					if (!result)
 						break;
 				}
@@ -1682,12 +1734,14 @@ void source_data::process_write (rx_simple_value&& val, runtime_transaction_id_t
 			if (!result)
 			{
 				result.register_error("Unable to filter output value.");
-			}
+			}		
 		}
-		structure::write_data data;
-		data.value = std::move(val);
-		data.transaction_id = id;
-		source_ptr->source_write(std::move(data), context_);
+		if (result)
+		{
+			result = source_ptr->source_write(std::move(data), context_);
+		}
+		if (!result)
+			source_result_pending(std::move(result), data.transaction_id);
 	}
 }
 
@@ -1761,9 +1815,9 @@ void event_data::collect_data (data::runtime_values_data& data, runtime_value_ty
 	item->collect_data(data, type);
 }
 
-void event_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void event_data::fill_data (const data::runtime_values_data& data)
 {
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -1830,9 +1884,9 @@ void filter_data::collect_data (data::runtime_values_data& data, runtime_value_t
 	item->collect_data(data, type);
 }
 
-void filter_data::fill_data (const data::runtime_values_data& data, fill_context& ctx)
+void filter_data::fill_data (const data::runtime_values_data& data)
 {
-	item->fill_data(data, ctx);
+	item->fill_data(data);
 }
 
 rx_result filter_data::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -2050,12 +2104,10 @@ const runtime_item* runtime_item::get_child_item (const string_type& path) const
 
 fill_context::fill_context (runtime_process_context* ctx)
 	: now(rx_time::now())
+	, context(ctx)
 {
 }
 
-
-
-// Class rx_platform::runtime::structure::write_data 
 
 
 // Class rx_platform::runtime::structure::indirect_value_data 

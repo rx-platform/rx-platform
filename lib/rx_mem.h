@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -154,22 +154,42 @@ class memory_buffer_base : public pointers::reference_object
 	  }
 	  void read_data(string_type& val)
 	  {
-		  uint32_t size;
-		  read_data(size);
-		  val.assign(size, '\0');
-		  read_data(&val[0], size);
+          int size;
+          read_data(size);
+          if (size > 0)
+          {
+              val.assign(size, '\0');
+              read_data(&val[0], size);
+          }
+          else
+          {
+              val.clear();
+          }
 	  }
 	  void read_data(byte_string& val)
 	  {
-		  uint32_t size;
-		  read_data(size);
-		  val.assign(size, '\0');
-		  read_data(&val[0], size);
+          int size;
+          read_data(size);
+          if (size > 0)
+          {
+              val.assign(size, '\0');
+              read_data(&val[0], size);
+          }
+          else
+          {
+              val.clear();
+          }
 	  }
 	  void read_data(rx_uuid_t& val)
 	  {
 		  read_data(&val, sizeof(rx_uuid_t));
 	  }
+      void read_data(rx_uuid& val)
+      {
+          rx_uuid_t temp;
+          read_data(&temp, sizeof(rx_uuid_t));
+          val = temp;
+      }
 	  template<typename T>
 	  void push_data(const T& val)
 	  {
@@ -183,12 +203,17 @@ class memory_buffer_base : public pointers::reference_object
 	  void push_data(const string_type& val)
 	  {
 		  push_data((uint32_t)val.size());
-		  push_data(val.c_str(), val.size());
+          if (!val.empty())
+		    push_data(val.c_str(), val.size());
 	  }
-	  void push_data(const rx_uuid_t& val)
+	  void push_data(const rx_uuid& val)
 	  {
-		  push_data(&val,sizeof(rx_uuid_t));
+		  push_data(&val.uuid(),sizeof(rx_uuid_t));
 	  }
+      void push_data(const rx_uuid_t& val)
+      {
+          push_data(&val, sizeof(rx_uuid_t));
+      }
 	  template<typename T>
 	  T* get_buffer()
 	  {
@@ -213,7 +238,7 @@ class memory_buffer_base : public pointers::reference_object
 	  template<typename T>
 	  void to_buffer(const T& val, std::true_type, std::true_type)
 	  {
-		  if (swap_bytes)
+		  if constexpr (swap_bytes)
 		  {
 			  T temp = rx_byte_swap<T>(val);
 			  push_data(&temp, sizeof(T));
@@ -224,7 +249,7 @@ class memory_buffer_base : public pointers::reference_object
 	  template<typename T>
 	  void to_buffer(const T& val, std::false_type, std::true_type)
 	  {
-		  if (swap_bytes)
+		  if constexpr (swap_bytes)
 		  {
 			  T temp = val;
 			  temp.swap_bytes();
@@ -237,18 +262,18 @@ class memory_buffer_base : public pointers::reference_object
 	  void from_buffer(T& val, std::true_type, std::true_type)
 	  {
 		  read_data(&val, sizeof(T));
-		  if (swap_bytes)
+		  if constexpr (swap_bytes)
 		  {
 			  val = rx_byte_swap<T>(val);
 		  }
 	  }
 	  template<typename T>
-	  void from_buffer(T& val, std::false_type, std::true_type)
+	  void constexpr from_buffer(T& val, std::false_type, std::true_type)
 	  {
 		  read_data(&val, sizeof(T));
-		  if (swap_bytes)
+		  if constexpr (swap_bytes)
 		  {
-			  val.swap_bytes(val);
+			  val.swap_bytes();
 		  }
 	  }
 
@@ -259,7 +284,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator 
+class std_vector_allocator
 {
 
   public:
@@ -327,6 +352,8 @@ class std_strbuff : public memory_buffer_base<allocT, swap_bytes>,
 
   public:
       std_strbuff();
+
+      std_strbuff (const void* ptr, size_t size);
 
       ~std_strbuff();
 
@@ -434,7 +461,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator 
+class backward_simple_allocator
 {
 
   public:
@@ -481,7 +508,7 @@ typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
 
-class page_aligned_buffer 
+class page_aligned_buffer
 {
 
   public:
@@ -516,7 +543,97 @@ class page_aligned_buffer
 };
 
 
-// Parameterized Class rx::memory::memory_buffer_base 
+
+
+
+
+template <class bufferT>
+class binary_istream
+{
+
+  public:
+      binary_istream (bufferT* buffer, uint32_t version)
+            : buffer_(buffer),
+              version_(version)
+      {
+      }
+
+
+      uint32_t get_version () const
+      {
+        return version_;
+      }
+
+      void set_version (uint32_t value)
+      {
+        version_ = value;
+      }
+
+
+
+      template<typename T>
+      binary_istream& operator >> (T& val)
+      {
+          buffer_->read_data(val);
+          return *this;
+      }
+  protected:
+
+  private:
+
+
+      bufferT* buffer_;
+
+      uint32_t version_;
+
+
+};
+
+
+
+
+
+
+template <class bufferT>
+class binary_ostream
+{
+
+  public:
+      binary_ostream (bufferT* buffer, uint32_t version)
+            : buffer_(buffer),
+              version_(version)
+      {
+      }
+
+
+      uint32_t get_version () const
+      {
+        return version_;
+      }
+
+
+
+
+      template<typename T>
+      binary_ostream& operator << (const T& val)
+      {
+          buffer_->push_data(val);
+          return *this;
+      }
+  protected:
+
+  private:
+
+
+      bufferT* buffer_;
+
+      uint32_t version_;
+
+
+};
+
+
+// Parameterized Class rx::memory::memory_buffer_base
 
 template <class allocT, bool swap_bytes>
 memory_buffer_base<allocT,swap_bytes>::memory_buffer_base()
@@ -678,10 +795,16 @@ void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 }
 
 
-// Parameterized Class rx::memory::std_strbuff 
+// Parameterized Class rx::memory::std_strbuff
 
 template <class allocT, bool swap_bytes>
 std_strbuff<allocT,swap_bytes>::std_strbuff()
+{
+}
+
+template <class allocT, bool swap_bytes>
+std_strbuff<allocT,swap_bytes>::std_strbuff (const void* ptr, size_t size)
+    : memory_buffer_base<allocT, swap_bytes>(ptr, size)
 {
 }
 
@@ -732,7 +855,7 @@ char* std_strbuff<allocT,swap_bytes>::egptr () const
 }
 
 
-// Parameterized Class rx::memory::backward_memory_buffer_base 
+// Parameterized Class rx::memory::backward_memory_buffer_base
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)
@@ -800,6 +923,12 @@ void* backward_memory_buffer_base<allocT>::get_data () const
 {
 	return &allocator_.get_char_buffer[allocator_.size() - next_push_];
 }
+
+
+// Parameterized Class rx::memory::binary_istream
+
+
+// Parameterized Class rx::memory::binary_ostream
 
 
 } // namespace memory

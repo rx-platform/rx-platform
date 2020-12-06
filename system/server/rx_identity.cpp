@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@
 
 /*
 security account type:
- 
+
 +--+--+--+--+--+--+--+--+
 | type|    sub-type     |
 +--+--+--+--+--+--+--+--+
@@ -65,19 +65,19 @@ namespace runtime {
 
 namespace items {
 
-// Class rx_platform::runtime::items::security_context_holder 
+// Class rx_platform::runtime::items::security_context_holder
 
 
-rx_result security_context_holder::create_context (const string_type& port, const string_type& location, const byte_string& data)
+rx_result_with<security::security_context_ptr> security_context_holder::create_context (const string_type& port, const string_type& location, const byte_string& data)
 {
     if (data.empty())
-        return true;
+        return security::active_security();
     memory::std_buffer buffer;
     buffer.push_data(&data[0], data.size());
     serialization::std_buffer_reader reader(buffer);
 
     if (!reader.read_byte("type", type_))
-        return false;
+        return "Error reading type";
     if (type_)
     {
         switch (type_ & ACCOUNT_TYPE_MASK)
@@ -98,10 +98,10 @@ rx_result security_context_holder::create_context (const string_type& port, cons
                     }
                     break;
                 default:
-                    return false;// wrong type!?!
+                    return security::active_security();// wrong type!?!
                 }
                 ptr->deserialize(reader);
-                context_ = ptr;
+                return rx_result_with<security::security_context_ptr>(ptr);
             }
             break;
         case USER_ACCOUNT:
@@ -114,23 +114,15 @@ rx_result security_context_holder::create_context (const string_type& port, cons
                     }
                     break;
                 default:
-                    return false;// wrong type!?!
+                    return security::active_security();// wrong type!?!
                 }
             }
             break;
         default:
-            return false;// wrong type!?!
+            return security::active_security();// wrong type!?!
         }
     }
-    if (context_)
-        context_->login();
-    return true;
-}
-
-void security_context_holder::destory_context ()
-{
-    if (context_)
-        context_->logout();
+    return security::active_security();// wtf, just in case!?!
 }
 
 
@@ -138,3 +130,12 @@ void security_context_holder::destory_context ()
 } // namespace runtime
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    if (context_)
+        context_->logout();
+
+#endif

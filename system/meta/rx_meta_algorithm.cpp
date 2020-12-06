@@ -530,10 +530,10 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 	}
 	auto target_base_id = resolve_result.value();
 
-	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, ctx.rt_name, data, ctx.get_directories());
+	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, ctx.rt_name(), data, ctx.get_directories());
 	if (ret_val)
 	{
-		data.target_relation_name = replace_in_string(data.target_relation_name, RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR, ctx.rt_name);
+		data.target_relation_name = replace_in_string(data.target_relation_name, RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR, ctx.rt_name());
 		data.name = whose.name;
 		data.target_base_id = target_base_id;
 		rx_timed_value str_val;

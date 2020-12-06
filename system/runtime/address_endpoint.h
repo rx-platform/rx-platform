@@ -65,6 +65,8 @@ public:
 
       rx_protocol_result_t translate_session (const rx_session_def* session, session_key_type& reference, addrT& local_addr, addrT& remote_addr);
 
+      rx_protocol_result_t create_references (addrT& local_addr, addrT& remote_addr, session_key_type& reference, rx_address_reference_type& local_ref, rx_address_reference_type& remote_ref);
+
 
   protected:
 
@@ -102,6 +104,12 @@ template <typename addrT>
 rx_protocol_result_t address_routing_translator<addrT>::translate_session (const rx_session_def* session, session_key_type& reference, addrT& local_addr, addrT& remote_addr)
 {
     return RX_PROTOCOL_INVALID_ADDR;
+}
+
+template <typename addrT>
+rx_protocol_result_t address_routing_translator<addrT>::create_references (addrT& local_addr, addrT& remote_addr, session_key_type& reference, rx_address_reference_type& local_ref, rx_address_reference_type& remote_ref)
+{
+    return RX_PROTOCOL_OK;
 }
 
 

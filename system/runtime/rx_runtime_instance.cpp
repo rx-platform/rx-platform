@@ -141,7 +141,7 @@ rx_result object_instance_data::after_stop_runtime (rx_object_ptr what, runtime:
     return true;
 }
 
-const security::security_context_ptr& object_instance_data::get_security_context () const
+security::security_context_ptr object_instance_data::get_security_context () const
 {
     if (my_domain_)
     {
@@ -271,7 +271,7 @@ rx_result domain_instance_data::after_stop_runtime (rx_domain_ptr what, runtime:
     return true;
 }
 
-const security::security_context_ptr& domain_instance_data::get_security_context () const
+security::security_context_ptr domain_instance_data::get_security_context () const
 {
     if (my_application_)
     {
@@ -348,6 +348,11 @@ void application_instance_data::get_domains (api::query_result& result)
 
 rx_result application_instance_data::before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
+    auto sec_ctx = what->get_instance_data().identity_.create_context(what->meta_info().get_full_path(), "", what->get_instance_data().data_.identity);
+
+  //what->get_instance_data().security_ctx_
+    if (what->get_instance_data().security_ctx_)
+        what->get_instance_data().security_ctx_->logout();
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     what->get_implementation()->context_ = ctx.context;
     return true;
@@ -366,12 +371,17 @@ rx_result application_instance_data::after_deinit_runtime (rx_application_ptr wh
 
 rx_result application_instance_data::after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
+    if (what->get_instance_data().security_ctx_)
+        what->get_instance_data().security_ctx_->logout();
     return true;
 }
 
-const security::security_context_ptr& application_instance_data::get_security_context () const
+security::security_context_ptr application_instance_data::get_security_context () const
 {
-    return identity_.get_context();
+    if (security_ctx_)
+        return security_ctx_;
+    else
+        return security::unauthorized_context();
 }
 
 //application_instance_data::application_instance_data(application_instance_data&& right)

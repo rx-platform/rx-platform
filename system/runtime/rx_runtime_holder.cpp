@@ -466,8 +466,7 @@ template <class typeT>
 void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
 {
     structure::fill_context ctx(&context_);
-    ctx.context = &context_;
-    item_->fill_data(data, ctx);
+    item_->fill_data(data);
     // now do the relations
     // they create their own context!
     relations_.fill_data(data);
@@ -672,7 +671,7 @@ void runtime_holder<typeT>::process_mapper_inputs (runtime_process_context& ctx)
     while (!mapper_writes->empty())
     {
         for (auto& one : *mapper_writes)
-            one.whose->process_write(std::move(one.value), one.transaction_id);
+            one.whose->process_write(std::move(one.data));
         mapper_writes = &ctx.get_mapper_writes();
     }
 }
@@ -747,7 +746,7 @@ void runtime_holder<typeT>::process_source_outputs (runtime_process_context& ctx
     while (!source_writes->empty())
     {
         for (auto& one : *source_writes)
-            one.whose->process_write(std::move(one.value), one.transaction_id);
+            one.whose->process_write(std::move(one.data));
         source_writes = &ctx.get_source_writes();
     }
 }

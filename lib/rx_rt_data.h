@@ -81,6 +81,10 @@ class runtime_values_data
 
       rx_simple_value get_value (const string_type& path) const;
 
+      bool empty () const;
+
+      void clear ();
+
 
       values_type values;
 

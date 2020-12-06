@@ -106,12 +106,13 @@ template <typename translatorT, typename addrT>
 rx_protocol_result_t routing_endpoint<translatorT,addrT>::recv_packet (recv_protocol_packet* packet)
 {
     using translates_packet_t = typename translatorT::translates_packet;
+    using client_master_t = typename translatorT::client_master_translator;
     auto map_key = translator_.get_reference(packet);
     locks::auto_slim_lock _(&sessions_lock_);
     auto it = active_map_.find(map_key);
     if (it == active_map_.end())
     {
-        if constexpr (translates_packet_t::value)
+        if constexpr (translates_packet_t::value && !client_master_t::value)
         {
             addrT local_addr;
             addrT remote_addr;
@@ -152,60 +153,81 @@ template <typename translatorT, typename addrT>
 rx_protocol_result_t routing_endpoint<translatorT,addrT>::connected (rx_session_def* session)
 {
     using translates_sessiont_t = typename translatorT::translates_session;
-    if constexpr (translates_sessiont_t::value)
+    using client_master_t = typename translatorT::client_master_translator;
+    if constexpr (client_master_t::value)
     {
-        addrT local_addr;
-        addrT remote_addr;
-        session_key_t map_key;
-        auto translate_result = translator_.translate_session(session, map_key, local_addr, remote_addr);
-        if (translate_result != RX_PROTOCOL_OK)
-            return translate_result;
-
-        rx_protocol_stack_endpoint* stack_endpoint = nullptr;
+        if constexpr (translates_sessiont_t::value)
         {
-
-            locks::auto_slim_lock _(&sessions_lock_);
-
-            auto it = active_map_.find(map_key);
-            if (it != active_map_.end())
-                return RX_PROTOCOL_INVALID_ADDR;
-
-            auto session_ptr = std::make_unique<session_endpoint<translatorT, addrT> >(std::move(local_addr), std::move(remote_addr), 0, 0, &stack);
-            session_ptr->router = smart_this();
-            stack_endpoint = &session_ptr->stack;
-            auto reg_result = port_->add_stack_endpoint(stack_endpoint, &local_addr, &remote_addr);
-            if (!reg_result)
-            {
-                return RX_PROTOCOL_INVALID_ADDR;
-            }
-            else
-            {
-                std::ostringstream ss;
-                ss << "Client from address "
-                    << remote_addr.to_string()
-                    << " connected to address "
-                    << local_addr.to_string()
-                    << ".";
-                ITF_LOG_TRACE("routing_endpoint", 500, ss.str());
-                auto emplace_result = active_map_.emplace(map_key, std::move(session_ptr));
-                it = emplace_result.first;
-            }
-        }
-        if (stack_endpoint)
-        {
-            auto next_session = rx_create_session(&local_addr, &remote_addr, 0, 0, session);
-            return rx_notify_connected(stack_endpoint, &next_session);
         }
         else
-        {
-            // this shouldn't happen!!!
-            RX_ASSERT(false);
-            return RX_PROTOCOL_EMPTY;
+        {            
+            for (auto& one : active_map_)
+            {
+                auto result = rx_notify_connected(&one.second->stack, session);
+                if (result != RX_PROTOCOL_OK)
+                    return result;
+            }
+            return RX_PROTOCOL_OK;
         }
+        
     }
     else
     {
-        return RX_PROTOCOL_INVALID_ADDR;
+        if constexpr (translates_sessiont_t::value)
+        {
+            addrT local_addr;
+            addrT remote_addr;
+            session_key_t map_key;
+            auto translate_result = translator_.translate_session(session, map_key, local_addr, remote_addr);
+            if (translate_result != RX_PROTOCOL_OK)
+                return translate_result;
+
+            rx_protocol_stack_endpoint* stack_endpoint = nullptr;
+            {
+
+                locks::auto_slim_lock _(&sessions_lock_);
+
+                auto it = active_map_.find(map_key);
+                if (it != active_map_.end())
+                    return RX_PROTOCOL_INVALID_ADDR;
+
+                auto session_ptr = std::make_unique<session_endpoint<translatorT, addrT> >(local_addr, remote_addr, 0, 0, &stack);
+                session_ptr->router = smart_this();
+                stack_endpoint = &session_ptr->stack;
+                auto reg_result = port_->add_stack_endpoint(stack_endpoint, &local_addr, &remote_addr);
+                if (!reg_result)
+                {
+                    return RX_PROTOCOL_INVALID_ADDR;
+                }
+                else
+                {
+                    std::ostringstream ss;
+                    ss << "Client from address "
+                        << remote_addr.to_string()
+                        << " connected to address "
+                        << local_addr.to_string()
+                        << ".";
+                    ITF_LOG_TRACE("routing_endpoint", 500, ss.str());
+                    auto emplace_result = active_map_.emplace(map_key, std::move(session_ptr));
+                    it = emplace_result.first;
+                }
+            }
+            if (stack_endpoint)
+            {
+                auto next_session = rx_create_session(&local_addr, &remote_addr, 0, 0, session);
+                return rx_notify_connected(stack_endpoint, &next_session);
+            }
+            else
+            {
+                // this shouldn't happen!!!
+                RX_ASSERT(false);
+                return RX_PROTOCOL_EMPTY;
+            }
+        }
+        else
+        {
+            return RX_PROTOCOL_INVALID_ADDR;
+        }
     }
 }
 
@@ -229,20 +251,29 @@ rx_protocol_result_t routing_endpoint<translatorT,addrT>::disconnected (rx_sessi
 template <typename translatorT, typename addrT>
 void routing_endpoint<translatorT,addrT>::closed (rx_protocol_result_t reason)
 {
-    std::vector<rx_protocol_stack_endpoint*> endpoints;
+    using client_master_t = typename translatorT::client_master_translator;
+    if constexpr (client_master_t::value)
     {
-        locks::auto_slim_lock _(&sessions_lock_);
-        auto active_size = active_map_.size();
-        endpoints.reserve(active_size);
-        for (auto& one : active_map_)
-            endpoints.emplace_back(&one.second->stack);
+        rx_pop_stack(&stack);
     }
-    for (auto& one : endpoints)
+    else
     {
-        rx_notify_closed(one, reason);
+        std::vector<rx_protocol_stack_endpoint*> endpoints;
+        {
+            locks::auto_slim_lock _(&sessions_lock_);
+            auto active_size = active_map_.size();
+            endpoints.reserve(active_size);
+            for (auto& one : active_map_)
+                endpoints.emplace_back(&one.second->stack);
+        }
+        for (auto& one : endpoints)
+        {
+            rx_notify_closed(one, reason);
+        }
+        // this will delete the whole endpoint so nothing can be done after it!!!
+        port_->unbind_stack_endpoint(&stack);
+
     }
-    // this will delete the whole endpoint so nothing can be done after it!!!
-    port_->unbind_stack_endpoint(&stack);
 }
 
 template <typename translatorT, typename addrT>
@@ -302,6 +333,46 @@ typename routing_endpoint<translatorT, addrT>::session_key_t routing_endpoint<tr
         auto result = translator_.translate_packet(&packet, ref, local_addr, remote_addr);
         RX_ASSERT(result == RX_PROTOCOL_OK);
         return ref;
+    }
+}
+
+template <typename translatorT, typename addrT>
+rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>::create_session (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+{
+    addrT local_addr;
+    addrT remote_addr;
+    auto result = local_addr.parse(local_address);
+    if (!result)
+        return result.errors();
+    result = remote_addr.parse(remote_address);
+    if (!result)
+        return result.errors();
+    session_key_t map_key;
+    rx_address_reference_type  local_ref;
+    rx_address_reference_type remote_ref;
+    auto translate_result = translator_.create_references(local_addr, remote_addr, map_key, local_ref, remote_ref);
+    if (translate_result != RX_PROTOCOL_OK)
+        return "Jebi ga!!!";
+    auto session_ptr = std::make_unique<session_endpoint<translatorT, addrT> >(local_addr, remote_addr, local_ref, remote_ref, &stack);
+    session_ptr->router = smart_this();
+
+    auto it = active_map_.find(map_key);
+    if (it == active_map_.end())
+    {
+        auto ret = &session_ptr->stack;
+        active_map_.emplace(map_key, std::move(session_ptr));
+        std::ostringstream ss;
+        ss << "Client binded at address "
+            << local_addr.to_string()
+            << " connecting to address "
+            << remote_addr.to_string()
+            << ".";
+        ITF_LOG_TRACE("routing_endpoint", 500, ss.str());
+        return ret;
+    }
+    else
+    {
+        return "Address already occupied";
     }
 }
 

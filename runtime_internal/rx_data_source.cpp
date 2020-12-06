@@ -30,12 +30,18 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
+#include "system/runtime/rx_process_context.h"
+#include "system/runtime/rx_rt_struct.h"
+using namespace rx_platform::runtime;
 
 // rx_data_source
 #include "runtime_internal/rx_data_source.h"
 
 #include "runtime_internal/rx_internal_data_source.h"
 #include "sys_internal/rx_inf.h"
+#include "platform_source.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_internal {
@@ -209,6 +215,10 @@ rx_result data_source_factory::register_internal_sources ()
 {
 	default_ = [] (const string_type& path){return std::make_unique<internal_data_source>(path); };
 	register_data_source("rx", default_);
+	auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_PLATFORM_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<platform_source>();
+		});
 	return true;
 }
 

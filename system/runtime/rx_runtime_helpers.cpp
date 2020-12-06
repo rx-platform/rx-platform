@@ -246,6 +246,53 @@ structure::variable_data* variables_stack::get_current_variable () const
 }
 
 
+// Class rx_platform::runtime::mappers_stack 
+
+
+void mappers_stack::push_mapper (const rx_node_id& id, structure::mapper_data* what)
+{
+	auto it = mappers_.find(id);
+	if (it != mappers_.end())
+	{
+		it->second.push_back(what);
+	}
+	else
+	{
+		auto result = mappers_.emplace(id, mappers_type::mapped_type());
+		result.first->second.push_back(what);
+	}
+}
+
+void mappers_stack::pop_mapper (const rx_node_id& id)
+{
+	auto it = mappers_.find(id);
+	if (it != mappers_.end())
+	{
+		it->second.pop_back();
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
+std::vector<rx_value> mappers_stack::get_mapped_values (const rx_node_id& id, const string_type& path)
+{
+	std::vector<rx_value> ret_value;
+	auto it = mappers_.find(id);
+	if (it != mappers_.end() && !it->second.empty())
+	{
+		for (auto& one : it->second)
+		{
+			rx_simple_value val;
+			if (one->item->get_local_value(path, val))
+				ret_value.emplace_back(rx_value::from_simple(std::move(val), rx_time::now()));
+		}
+	}
+	return ret_value;
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
 

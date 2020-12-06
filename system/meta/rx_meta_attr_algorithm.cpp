@@ -53,7 +53,9 @@ rx_subitem_type parse_subitem_type(const string_type& name)
 	else if (name == RX_CPP_STRUCT_TYPE_NAME)
 		return rx_subitem_type::rx_struct_subitem;
 	else if (name == RX_CPP_VARIABLE_TYPE_NAME)
-		return rx_subitem_type::rx_variable_subitem;
+		return rx_subitem_type::rx_variable_subitem; 
+	else if (name == RX_CPP_EVENT_TYPE_NAME)
+		return rx_subitem_type::rx_event_subitem;
 	else
 		return rx_subitem_type::rx_invalid_subitem;
 }
@@ -69,6 +71,8 @@ string_type get_subitem_type_name(rx_subitem_type type)
 		return RX_CPP_STRUCT_TYPE_NAME;
 	case rx_subitem_type::rx_variable_subitem:
 		return RX_CPP_VARIABLE_TYPE_NAME;
+	case rx_subitem_type::rx_event_subitem:
+		return RX_CPP_EVENT_TYPE_NAME;
 	default:
 		return string_type();
 	}
@@ -115,11 +119,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
 		temp.value().value = whose.get_value(ctx.now);
-		ctx.runtime_data.add_variable(whose.name_, std::move(temp.value()));
+		ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -166,12 +170,12 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
-		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -219,12 +223,13 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
-		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		temp.value().mapper_id = target;
+		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -272,12 +277,12 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
-		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -346,10 +351,10 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, ctx.rt_name, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
-		ctx.runtime_data.add(whose.name_, std::move(temp.value()));
+		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
 		return true;
 	}
 	else
@@ -421,6 +426,27 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 						return false;
 				}
 				if (!whose.variables_[one.second & complex_data_type::index_mask].serialize_definition(stream))
+					return false;
+				if (!stream.end_object())
+					return false;
+			}
+			break;
+		case complex_data_type::events_mask:
+			{
+
+				if (!stream.start_object("item"))
+					return false;
+				if (stream.is_string_based())
+				{
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_event_subitem)))
+						return false;
+				}
+				else
+				{
+					if (!stream.write_byte("type", rx_subitem_type::rx_event_subitem))
+						return false;
+				}
+				if (!whose.events_[one.second & complex_data_type::index_mask].serialize_definition(stream))
 					return false;
 				if (!stream.end_object())
 					return false;
@@ -572,6 +598,21 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 
 			}
 			break;
+		case rx_subitem_type::rx_event_subitem:
+			{
+				meta::def_blocks::event_attribute temp;
+				if (!temp.deserialize_definition(stream))
+					return false;
+				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.events_.size() | complex_data_type::events_mask)));
+				if (ret)
+				{
+					whose.events_.emplace_back(std::move(temp));
+				}
+				else
+					return ret;
+
+			}
+			break;
 		default:
 			return get_subitem_type_name(item_type) + "is unknown type!";
 		}
@@ -593,6 +634,8 @@ bool complex_data_algorithm::check_complex_attribute (complex_data_type& whose, 
 		ret &= one.check(ctx);
 	for (auto& one : whose.variables_)
 		ret &= one.check(ctx);
+	for (auto& one : whose.events_)
+		ret &= one.check(ctx);
 	return ret;
 }
 
@@ -605,7 +648,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// constant values
 		case complex_data_type::complex_data_type::const_values_mask:
 			{
-				ctx.runtime_data.add_const_value(
+				ctx.runtime_data().add_const_value(
 					one.first,
 					whose.const_values_[one.second & complex_data_type::index_mask].get_value());
 			}
@@ -613,7 +656,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// simple values
 		case complex_data_type::simple_values_mask:
 			{
-				ctx.runtime_data.add_value(
+				ctx.runtime_data().add_value(
 					one.first,
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only());
@@ -632,13 +675,26 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			}
 			// variables
 		case complex_data_type::variables_mask:
-			rx_result ret = whose.variables_[one.second & complex_data_type::index_mask].construct(ctx);
-			if (!ret)
 			{
-				ret.register_error("Unable to create variable "s + one.first + "!");
-				return ret;
+				rx_result ret = whose.variables_[one.second & complex_data_type::index_mask].construct(ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create variable "s + one.first + "!");
+					return ret;
+				}
+				break;
 			}
-			break;
+			// events
+		case complex_data_type::events_mask:
+			{
+				rx_result ret = whose.events_[one.second & complex_data_type::index_mask].construct(ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create event "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
 		}
 	}
 	return true;
@@ -677,20 +733,7 @@ rx_result variable_data_algorithm::serialize_complex_attribute (const variable_d
 	}
 	if (!stream.end_array())
 		return false;
-
-	if (!stream.start_array("events", whose.events_.size()))
-		return false;
-	for (const auto& one : whose.events_)
-	{
-		if (!stream.start_object("item"))
-			return false;
-		if (!one.serialize_definition(stream))
-			return false;
-		if (!stream.end_object())
-			return false;
-	}
-	if (!stream.end_array())
-		return false;
+	
 
 	return true;
 }
@@ -740,28 +783,6 @@ rx_result variable_data_algorithm::deserialize_complex_attribute (variable_data_
 		if (!stream.end_object())
 			return false;
 	}
-
-	if (!stream.start_array("events"))
-		return false;
-	while (!stream.array_end())
-	{
-		if (!stream.start_object("item"))
-			return false;
-
-		event_attribute temp;
-		if (!temp.deserialize_definition(stream))
-			return false;
-		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.events_.size() | complex_data_type::events_mask)));
-		if (ret)
-		{
-			whose.events_.emplace_back(std::move(temp));
-		}
-		else
-			return ret;
-
-		if (!stream.end_object())
-			return false;
-	}
 	return true;
 }
 
@@ -772,8 +793,6 @@ bool variable_data_algorithm::check_complex_attribute (variable_data_type& whose
 		ret &= meta_blocks_algorithm<source_attribute>::check_complex_attribute(one, ctx);
 	for (auto& one : whose.filters_)
 		ret &= meta_blocks_algorithm<filter_attribute>::check_complex_attribute(one, ctx);
-	for (auto& one : whose.events_)
-		ret &= meta_blocks_algorithm<event_attribute>::check_complex_attribute(one, ctx);
 	return ret;
 }
 
@@ -801,17 +820,6 @@ rx_result variable_data_algorithm::construct_complex_attribute (const variable_d
 				if (!ret)
 				{
 					ret.register_error("Unable to create filter "s + one.first + "!");
-					return ret;
-				}
-				break;
-			}
-			// events
-		case complex_data_type::events_mask:
-			{
-				rx_result ret = meta_blocks_algorithm<event_attribute>::construct_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], ctx);
-				if (!ret)
-				{
-					ret.register_error("Unable to create event "s + one.first + "!");
 					return ret;
 				}
 				break;

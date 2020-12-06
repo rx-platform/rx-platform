@@ -300,6 +300,8 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 
 int interactive_console_host::console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_thread_data_t tls = rx_alloc_thread_data();
+
 	rx_result ret = setup_console(argc, argv);
 
 	rx_platform::configuration_data_t config;
@@ -314,7 +316,6 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
 			if (config.meta_configuration.instance_name.empty())
 				config.meta_configuration.instance_name = "develop";

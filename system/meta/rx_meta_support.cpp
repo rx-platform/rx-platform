@@ -142,14 +142,71 @@ rx_result_erros_t type_check_context::get_errors () const
 
 construct_context::construct_context (const string_type& name)
       : now(rx_time::now())
-	, rt_name(name)
 {
+	rt_names_.push_back(name);
+	runtime_data_.push_back(runtime_data_prototype());
 }
 
 
 
 void construct_context::reinit ()
 {
+	overrides_.clear();
+	RX_ASSERT(overrides_stack_.empty());
+	while(!overrides_stack_.empty())
+		overrides_stack_.pop();
+}
+
+void construct_context::push_overrides (const string_type& name, const data::runtime_values_data* vals)
+{
+	if (overrides_stack_.empty())
+	{
+		RX_ASSERT(name.empty());
+		overrides_ = *vals;
+		overrides_stack_.push(&overrides_);
+	}
+	else
+	{
+		RX_ASSERT(!name.empty());
+		auto& new_one = overrides_stack_.top()->add_child(name);
+		new_one = *vals;
+		overrides_stack_.push(&new_one);
+	}
+}
+
+void construct_context::pop_overrides ()
+{
+	RX_ASSERT(!overrides_stack_.empty());
+	overrides_stack_.pop();
+}
+
+const data::runtime_values_data* construct_context::get_overrides ()
+{
+	return &overrides_;
+}
+
+const string_type& construct_context::rt_name () const
+{
+	return *rt_names_.rbegin();
+}
+
+void construct_context::push_rt_name (const string_type& name)
+{
+	rt_names_.push_back(name);
+	runtime_data_.push_back(runtime_data_prototype());
+}
+
+runtime_data_prototype construct_context::pop_rt_name ()
+{
+	rt_names_.pop_back();
+	runtime_data_prototype ret = std::move(*runtime_data_.rbegin());
+	runtime_data_.pop_back();
+	return ret;
+}
+
+runtime_data_prototype& construct_context::runtime_data ()
+{
+	return *runtime_data_.rbegin();
 }
 
 

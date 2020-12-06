@@ -53,18 +53,18 @@ port_passive_map::port_passive_map()
 
 
 
-rx_result port_passive_map::register_passive (rx_port_ptr who, const io::any_address& local_addr, const io::any_address& remote_addr, rx_port_ptr owner)
+rx_result port_passive_map::register_passive (rx_port_ptr who, io::any_address& local_addr, io::any_address& remote_addr, rx_port_ptr owner)
 {
     auto it_inv = inverse_passive_map_.find(who);
     if (it_inv == inverse_passive_map_.end())
     {
-        addr_pair_t addrs(local_addr, remote_addr);
         if (local_addr.is_null() && remote_addr.is_null())
         {
             data::runtime_values_data data;
             who->collect_data(data, runtime_value_type::simple_runtime_value);
-            owner->get_implementation()->extract_bind_address(data, addrs.first, addrs.second);
+            owner->get_implementation()->extract_bind_address(data, local_addr, remote_addr);
         }
+        addr_pair_t addrs(local_addr, remote_addr);
         map_lock_.lock();
         auto it = passive_map_.find(addrs);
         if (it != passive_map_.end())

@@ -525,8 +525,14 @@ void rx_init_hal_version()
 	GetSystemInfo(&sys);
 	g_page_size = sys.dwPageSize;
 }
+
+struct WSAData wsaData;
+
 void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
+
+	OutputDebugStringA("rx-platform initializing 1...");
+
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
@@ -586,11 +592,13 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 	}
 	init_fixed_drives();
 
-	struct WSAData wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
 
 	BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
+
+
+	OutputDebugStringA("rx-platform initializing 3...");
 
 #ifndef _DEBUG
 	if (rt)
@@ -1294,10 +1302,12 @@ void init_fixed_drives()
 			UINT type = GetDriveTypeA(drvq);
 			if (DRIVE_FIXED == type)
 			{
+				if (i >= count)
+					break;
 				drives[i] = (char*)malloc(sizeof(char) * 3);
 				strcpy_s(drives[i], sizeof(char) * 3, drv);
+				i++;
 			}
-			i++;
 		}
 	}
 	drives_count = count;

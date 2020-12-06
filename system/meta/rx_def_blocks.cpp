@@ -85,6 +85,16 @@ rx_result complex_data_type::register_variable (const string_type& name, const r
 	return ret;
 }
 
+rx_result complex_data_type::register_event (const string_type& name, const rx_node_id& id)
+{
+	auto ret = check_name(name, (static_cast<int>(events_.size() | complex_data_type::events_mask)));
+	if (ret)
+	{
+		events_.emplace_back(name, id);
+	}
+	return ret;
+}
+
 rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
@@ -221,6 +231,43 @@ rx_result event_attribute::check (type_check_context& ctx)
 rx_result event_attribute::construct (construct_context& ctx) const
 {
 	return meta_blocks_algorithm<event_attribute>::construct_complex_attribute(*this, ctx);
+}
+
+
+// Class rx_platform::meta::def_blocks::filter_attribute 
+
+filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
+      : name_(name)
+	, target_(id)
+{
+}
+
+filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_(target_name)
+{
+}
+
+
+
+rx_result filter_attribute::serialize_definition (base_meta_writer& stream) const
+{
+	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
+}
+
+rx_result filter_attribute::deserialize_definition (base_meta_reader& stream)
+{
+	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
+}
+
+rx_result filter_attribute::check (type_check_context& ctx)
+{
+	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
+}
+
+rx_result filter_attribute::construct (construct_context& ctx) const
+{
+	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
 }
 
 
@@ -475,55 +522,8 @@ rx_result variable_data_type::register_filter (const string_type& name, const rx
 	return ret;
 }
 
-rx_result variable_data_type::register_event (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
-{
-	auto ret = complex_data.check_name(name, (static_cast<int>(events_.size() | complex_data_type::events_mask)));
-	if (ret)
-	{
-		events_.emplace_back(name, id);
-	}
-	return ret;
-}
-
 
 // Class rx_platform::meta::def_blocks::io_attribute 
-
-
-// Class rx_platform::meta::def_blocks::filter_attribute 
-
-filter_attribute::filter_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name)
-	, target_(id)
-{
-}
-
-filter_attribute::filter_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
-	, target_(target_name)
-{
-}
-
-
-
-rx_result filter_attribute::serialize_definition (base_meta_writer& stream) const
-{
-	return meta_blocks_algorithm<filter_attribute>::serialize_complex_attribute(*this, stream);
-}
-
-rx_result filter_attribute::deserialize_definition (base_meta_reader& stream)
-{
-	return meta_blocks_algorithm<filter_attribute>::deserialize_complex_attribute(*this, stream);
-}
-
-rx_result filter_attribute::check (type_check_context& ctx)
-{
-	return meta_blocks_algorithm<filter_attribute>::check_complex_attribute(*this, ctx);
-}
-
-rx_result filter_attribute::construct (construct_context& ctx) const
-{
-	return meta_blocks_algorithm<filter_attribute>::construct_complex_attribute(*this, ctx);
-}
 
 
 // Class rx_platform::meta::def_blocks::filtered_data_type 

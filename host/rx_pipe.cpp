@@ -103,6 +103,8 @@ bool rx_pipe_host::break_host (const string_type& msg)
 
 int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_thread_data_t tls = rx_alloc_thread_data();
+
 	rx_result ret = setup_console(argc, argv);
 	stdout_log_->set_supports_ansi(supports_ansi());
 
@@ -124,18 +126,17 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			rx_thread_data_t tls = rx_alloc_thread_data();
 			string_type server_name = get_default_name();
 			if (config.meta_configuration.instance_name.empty())
 				config.meta_configuration.instance_name = "develop";
 
 			//config.namespace_data.build_system_from_code = true;
-
+			
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-
+			
 			std::cout << "\r\n";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;

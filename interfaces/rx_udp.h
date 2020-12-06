@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_datagram_io
 #include "lib/rx_datagram_io.h"
 
@@ -95,7 +95,7 @@ public:
       ~udp_endpoint();
 
 
-      rx_result open (io::ip4_address addr, uint32_t session_timeout, rx_security_handle_t identity, udp_port* port);
+      rx_result open (io::ip4_address addr, uint32_t session_timeout, security::security_context_ptr identity, udp_port* port);
 
       rx_result close ();
 
@@ -126,6 +126,8 @@ public:
       io::ip4_address bind_address_;
 
       uint32_t session_timeout_;
+
+      security::security_context_ptr identity_;
 
 
 };

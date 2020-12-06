@@ -124,7 +124,6 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
             return create_result.errors();
         }
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
-        auto result = what->get_instance_data().identity_.create_context("", what->meta_info().get_full_path(), what->get_instance_data().data_.identity);
         // for port we have to have executer cached value
         what->get_instance_data().implementation_ = what->get_implementation();
         auto rt_ptr = what->get_instance_data().implementation_;
@@ -134,8 +133,6 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
             rt_ptr->context_ = ctx.context;
             rt_ptr->runtime_ = what;
             rt_ptr->executer_ = what->get_instance_data().executer_;
-            if (what->get_instance_data().identity_.get_context())
-                rt_ptr->identity_ = what->get_instance_data().identity_.get_context()->get_handle();
         }
     }
     else
@@ -153,7 +150,6 @@ rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::r
 rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
 {
     what->get_implementation()->runtime_ = rx_port_ptr::null_ptr;
-    what->get_instance_data().identity_.destory_context();
     return true;
 }
 
@@ -168,9 +164,26 @@ rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::run
     return true;
 }
 
-const security::security_context_ptr& port_instance_data::get_security_context () const
+security::security_context_ptr port_instance_data::create_security_context (const meta::meta_data& meta)
 {
-    return identity_.get_context();
+    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_rx_name(), data_.identity);
+    if (sec_result)
+        return sec_result.value();
+    else
+        return security::unauthorized_context();
+}
+
+security::security_context_ptr port_instance_data::get_security_context () const
+{
+    if (my_application_)
+    {
+        return my_application_->get_instance_data().get_security_context();
+    }
+    else
+    {
+        static security::security_context_ptr g_dummy;
+        return g_dummy;
+    }
 }
 
 

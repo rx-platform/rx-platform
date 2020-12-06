@@ -262,7 +262,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		auto result = one->do_build(root);
 		if (!result)
 		{
-			BUILD_LOG_ERROR("rx_platform_builder", 900, "There were error while building platform user configuration!");
+			BUILD_LOG_ERROR("rx_platform_builder", 900, "Errors occurred while building platform user configuration!");
 		}
 	}
 	for (auto& one : test_builders)
@@ -270,7 +270,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		auto result = one->do_build(root);
 		if (!result)
 		{
-			BUILD_LOG_WARNING("rx_platform_builder", 900, "There were error while building platform test configuration!");
+			BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
 		}
 	}
 	for (auto& one : other_builders)
@@ -726,6 +726,7 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 
 void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what)
 {
+	what->complex_data.register_const_value_static("PID", ""s);
 	what->complex_data.register_const_value_static("Description", ""s);
 	what->complex_data.register_simple_value_static("Note", false, ""s);
 	what->complex_data.register_simple_value_static("LastScanTime", true, 0.0);
@@ -981,7 +982,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Connection", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("Connect", RX_IP_BIND_TYPE_ID);
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
 		port->complex_data.register_struct("Timeouts", RX_CLIENT_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
@@ -1167,6 +1168,24 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		map->complex_data.register_const_value_static("Port", ""s);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_PARENT_MAPPER_TYPE_NAME
+			, RX_PARENT_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_SYSTEM_MAPPER_TYPE_NAME
+			, RX_SYSTEM_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
 		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_EXTERN_SOURCE_TYPE_NAME
 			, RX_EXTERN_SOURCE_TYPE_ID
@@ -1176,6 +1195,43 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			});
 		src->complex_data.register_const_value_static("Port", ""s);
 		add_simple_type_to_configuration<source_type>(dir, src, true);
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_USER_SOURCE_TYPE_NAME
+			, RX_USER_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_PARENT_SOURCE_TYPE_NAME
+			, RX_PARENT_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("Path", ""s);
+		add_simple_type_to_configuration<source_type>(dir, src, false);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_PLATFORM_SOURCE_TYPE_NAME
+			, RX_PLATFORM_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_simple_value_static("Path", false, ""s);
+		add_simple_type_to_configuration<source_type>(dir, src, false);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_SYSTEM_SOURCE_TYPE_NAME
+			, RX_SYSTEM_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_REGISTER_SOURCE_TYPE_NAME
@@ -1414,6 +1470,7 @@ rx_result system_ports_builder::do_build (rx_directory_ptr root)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0x7ABC);
+		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 16000);
 		auto result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_NAME;

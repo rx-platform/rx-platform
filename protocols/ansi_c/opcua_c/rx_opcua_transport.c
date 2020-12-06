@@ -68,35 +68,6 @@ rx_protocol_result_t opcua_parse_regular_message(struct rx_protocol_stack_endpoi
 	rx_protocol_result_t result;
 	opcua_security_simetric_header* sec_header;
 	opcua_sequence_header* sequence_header;
-
-	// check message sizes
-	if (header->message_size <= opcua_regular_headers_size/*at leas one byte in payload, so <= !!!*/ || header->message_size > transport->connection_data.receive_buffer_size)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-
-	// retrieve headers
-	sec_header = (opcua_security_simetric_header*)rx_get_from_packet(buffer, sizeof(opcua_transport_header), &result);
-	if (!sec_header)
-		return result;
-	sequence_header = (opcua_sequence_header*)rx_get_from_packet(buffer, sizeof(opcua_security_simetric_header), &result);
-	if (!sequence_header)
-		return result;
-
-
-	result = RX_PROTOCOL_NOT_IMPLEMENTED;
-
-	return result;
-}
-
-rx_protocol_result_t opcua_parse_error_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
-{
-	return RX_PROTOCOL_NOT_IMPLEMENTED;
-}
-
-rx_protocol_result_t opcua_parse_pipe_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
-{
-	rx_protocol_result_t result;
-	opcua_security_simetric_header* sec_header;
-	opcua_sequence_header* sequence_header;
 	size_t usable_size;
 	const void* buffer_ptr;
 	rx_const_packet_buffer upward_buffer;
@@ -191,6 +162,10 @@ rx_protocol_result_t opcua_parse_pipe_message(struct rx_protocol_stack_endpoint*
 	return result;
 }
 
+rx_protocol_result_t opcua_parse_error_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
+{
+	return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
 
 rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
@@ -232,14 +207,14 @@ rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint*
 			case opcua_regular_msg_type:
 				result = opcua_parse_regular_message(reference, transport, header, packet.buffer, packet.id);
 				break;
-			case rx_pipe_msg_type:
-				result = opcua_parse_pipe_message(reference, transport, header, packet.buffer, packet.id);
-				break;
 			case opcua_error_msg_type:
 				result = opcua_parse_error_message(reference, transport, header, packet.buffer, packet.id);
 				break;
 			case opcua_hello_msg_type:
 				result = opcua_parse_hello_message(reference, transport, header, packet.buffer, packet.id);
+				break;
+			case opcua_reverse_hello_msg_type:
+				result = opcua_parse_reverse_hello_message(reference, transport, header, packet.buffer, packet.id);
 				break;
 			case opcua_open_msg_type:
 				result = opcua_parse_open_message(reference, transport, header, packet.buffer, packet.id);
@@ -257,12 +232,6 @@ rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint*
 			{
 			case opcua_regular_msg_type:
 				result = opcua_parse_regular_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case rx_pipe_msg_type:
-				result = opcua_parse_pipe_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_reverse_hello_msg_type:
-				result = opcua_parse_reverse_hello_message(reference, transport, header, packet.buffer, packet.id);
 				break;
 			case opcua_ack_msg_type:
 				result = opcua_parse_ack_message(reference, transport, header, packet.buffer, packet.id);
@@ -478,10 +447,8 @@ rx_protocol_result_t opcua_bin_bytes_sent(
 
 		result = rx_move_packet_down(reference, pack);//!!!!!!
 		if (result != RX_PROTOCOL_OK)
-		{
-			result = rx_deinit_packet_buffer(&buffer);
 			return result;
-		}
+		rx_deinit_packet_buffer(&buffer);
 	}
 
 	return result;

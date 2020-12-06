@@ -33,6 +33,7 @@
 
 
 #include "lib/rx_values.h"
+using namespace rx::values;
 /////////////////////////////////////////////////////////////
 // logging macros for console library
 #define RUNTIME_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Run",src,lvl,(msg))
@@ -52,6 +53,7 @@ namespace runtime {
 namespace structure {
 class variable_data;
 class runtime_item;
+class mapper_data;
 } // namespace structure
 
 namespace algorithms {
@@ -364,57 +366,6 @@ struct runtime_deinit_context
 };
 
 
-typedef std::map<string_type, runtime_handle_t> binded_tags_type;
-
-
-
-
-
-struct runtime_init_context 
-{
-
-      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories);
-
-
-      runtime_handle_t get_new_handle ();
-
-      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
-
-
-      runtime_path_resolver path;
-
-      variables_stack variables;
-
-      runtime_structure_resolver structure;
-
-      runtime_process_context *context;
-
-      operational::binded_tags *tags;
-
-
-      const meta::meta_data& meta;
-
-      binded_tags_type binded_tags;
-
-      ns::rx_directory_resolver* directories;
-
-      rx_time now;
-
-      rx_reference_ptr anchor;
-
-  public:
-
-  protected:
-
-  private:
-
-
-      runtime_handle_t next_handle_;
-
-
-};
-
-
 
 
 
@@ -466,6 +417,88 @@ struct runtime_stop_context
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+
+class mappers_stack 
+{
+    typedef std::map<rx_node_id, std::vector<structure::mapper_data*> > mappers_type;
+
+  public:
+
+      void push_mapper (const rx_node_id& id, structure::mapper_data* what);
+
+      void pop_mapper (const rx_node_id& id);
+
+      std::vector<rx_value> get_mapped_values (const rx_node_id& id, const string_type& path);
+
+
+  protected:
+
+  private:
+
+
+      mappers_type mappers_;
+
+
+};
+
+
+typedef std::map<string_type, runtime_handle_t> binded_tags_type;
+
+
+
+
+
+struct runtime_init_context 
+{
+
+      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories);
+
+
+      runtime_handle_t get_new_handle ();
+
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
+
+
+      runtime_path_resolver path;
+
+      variables_stack variables;
+
+      runtime_structure_resolver structure;
+
+      runtime_process_context *context;
+
+      operational::binded_tags *tags;
+
+      mappers_stack mappers;
+
+
+      const meta::meta_data& meta;
+
+      binded_tags_type binded_tags;
+
+      ns::rx_directory_resolver* directories;
+
+      rx_time now;
+
+      rx_reference_ptr anchor;
+
+  public:
+
+  protected:
+
+  private:
+
+
+      runtime_handle_t next_handle_;
 
 
 };

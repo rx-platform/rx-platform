@@ -118,7 +118,13 @@ rx_result udp_port::start_listen (const protocol_address* local_address, const p
 {
     auto session_timeout = get_binded_as(rx_recv_timeout_, 2000);
     auto ep = std::make_unique<udp_endpoint>();
-    auto result = ep->open(bind_address_, session_timeout, get_identity(), this);
+    auto sec_result = create_security_context();
+    if (!sec_result)
+    {
+        rx_result ret(sec_result.errors());
+        ret.register_error("Unable to create security context");
+    }
+    auto result = ep->open(bind_address_, session_timeout, sec_result.value(), this);
     if (!result)
     {
         stop_passive();
@@ -170,7 +176,8 @@ bool udp_port::packet_arrived (const void* data, size_t count, const struct sock
 
 udp_endpoint::udp_endpoint()
       : my_port_(nullptr),
-        session_timeout_(5000)
+        session_timeout_(5000),
+        identity_(security::security_context_ptr::null_ptr)
 {
     ITF_LOG_DEBUG("udp_endpoint", 200, "UDP endpoint created.");
     rx_protocol_stack_endpoint* mine_entry = &stack_endpoint_;
@@ -194,8 +201,10 @@ udp_endpoint::~udp_endpoint()
 
 
 
-rx_result udp_endpoint::open (io::ip4_address addr, uint32_t session_timeout, rx_security_handle_t identity, udp_port* port)
+rx_result udp_endpoint::open (io::ip4_address addr, uint32_t session_timeout, security::security_context_ptr identity, udp_port* port)
 {
+    identity_ = identity;
+    identity_->login();
     my_port_ = port;
     udp_socket_ = rx_create_reference<socket_holder_t>(this);
     bind_address_ = addr;
@@ -205,6 +214,7 @@ rx_result udp_endpoint::open (io::ip4_address addr, uint32_t session_timeout, rx
         auto result = udp_socket_->bind_socket_udpip_4(bind_address_.get_ip4_address(), rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
         if (!result)
         {
+            identity->logout();
             char buff[0x100];
             rx_last_os_error("Unable to bind to UDP/IP port.", buff, sizeof(buff));
             std::ostringstream ss;
@@ -214,6 +224,10 @@ rx_result udp_endpoint::open (io::ip4_address addr, uint32_t session_timeout, rx
             for (auto& one : result.errors())
                 ss << one << ";";
             ITF_LOG_ERROR("udp_port", 500, ss.str()); 
+        }
+        else
+        {
+            udp_socket_->set_identity(identity_->get_handle());
         }
         return result;
     }

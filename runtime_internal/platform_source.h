@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\server\rx_identity.h
+*  runtime_internal\platform_source.h
 *
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,49 +28,70 @@
 ****************************************************************************/
 
 
-#ifndef rx_identity_h
-#define rx_identity_h 1
+#ifndef platform_source_h
+#define platform_source_h 1
 
 
 
-// rx_security
-#include "lib/security/rx_security.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace sys_runtime {
 
-namespace items {
-
-
+namespace data_source {
 
 
 
 
-class security_context_holder 
+
+class platform_source : public rx_platform::runtime::blocks::source_runtime  
 {
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Platform Source. Source implementation for platform connection, may include different source types.");
+
+    DECLARE_REFERENCE_PTR(platform_source);
 
   public:
+      platform_source();
 
-      rx_result_with<security::security_context_ptr> create_context (const string_type& port, const string_type& location, const byte_string& data);
+
+      rx_result initialize_source (runtime::runtime_init_context& ctx);
+
+      rx_result start_source (runtime::runtime_start_context& ctx);
+
+      rx_result stop_source (runtime::runtime_stop_context& ctx);
 
 
   protected:
 
   private:
 
+      rx_result connect (const string_type& path);
 
-      uint8_t type_;
+      void disconnect ();
+
+      rx_result source_write (write_data&& data, runtime_process_context* ctx);
+
+
+
+      value_point point_;
+
+
+      runtime_handle_t path_handle_;
 
 
 };
 
 
-} // namespace items
-} // namespace runtime
-} // namespace rx_platform
+} // namespace data_source
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 

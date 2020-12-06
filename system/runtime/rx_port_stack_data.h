@@ -59,7 +59,7 @@ class port_passive_map
       port_passive_map();
 
 
-      rx_result register_passive (rx_port_ptr who, const io::any_address& local_addr, const io::any_address& remote_addr, rx_port_ptr owner);
+      rx_result register_passive (rx_port_ptr who, io::any_address& local_addr, io::any_address& remote_addr, rx_port_ptr owner);
 
       rx_result unregister_passive (rx_port_ptr who, rx_port_ptr owner);
 

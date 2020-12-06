@@ -33,6 +33,8 @@
 
 // rx_data_source
 #include "runtime_internal/rx_data_source.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
@@ -806,8 +808,11 @@ void value_point::get_expression (rx_value& result, char* tok)
 void value_point::parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler)
 {
 	char* token_buff = tbuff;
+	auto path_len = strlen(path);
+	if (path_len == 0)
+		path_len = 0x10;
 	if (!tbuff)
-		token_buff = new char[strlen(path) * 2];
+		token_buff = new char[path_len * 2];
 
 	std::map<string_type, char> vars;
 
@@ -962,9 +967,14 @@ void value_point::parse_and_connect (const char* path, char* tbuff, const rx_tim
 
 	if (!vars.empty())
 	{
+		string_type buffer;
 		for (auto it = vars.begin(); it != vars.end(); it++)
 		{
-			value_handle_type temp = controler->add_item(it->first, rate_);
+			value_handle_type temp = 0;
+			if(translate_path(it->first, buffer))
+				temp = controler->add_item(buffer, rate_);
+			else
+				temp = controler->add_item(it->first, rate_);
 
 			if (temp)
 			{
@@ -1054,9 +1064,31 @@ void value_point::value_changed (value_handle_type handle, const rx_value& val)
 	}
 }
 
+bool value_point::translate_path (const string_type& path, string_type& translated)
+{
+	if (context_)
+	{
+		if (path.size() > 2 && path[0] == RX_OBJECT_DELIMETER && path[1] != RX_DIR_DELIMETER)
+		{
+			translated = context_->meta_info.get_full_path() + path;
+			return true;
+		}
+		else if (path.size() > 1 && path[0] != RX_DIR_DELIMETER)
+		{
+			context_->get_directory_resolver()->resolve_path(path);
+		}
+	}
+	return false;
+}
+
+
+void value_point::set_context (rx_platform::runtime::runtime_process_context * value)
+{
+  context_ = value;
+}
+
 
 } // namespace data_source
 } // namespace sys_runtime
 } // namespace rx_internal
-
 

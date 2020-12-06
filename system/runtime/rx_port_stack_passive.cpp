@@ -67,7 +67,9 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
         return RX_NOT_IMPLEMENTED;
     }
 
-    auto result = top_data.passive_map.register_passive(who, &local_addr, &remote_addr, stack_top);
+    io::any_address local_addr_copy(local_addr);
+    io::any_address remote_addr_copy(remote_addr);
+    auto result = top_data.passive_map.register_passive(who, local_addr_copy, remote_addr_copy, stack_top);
     if (!result)
     {
         return result;
@@ -77,7 +79,7 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
     {
         if (!top_data.passive_map.stack_binded)
         {
-            result = stack_top->get_implementation()->start_listen(&local_addr, &remote_addr);
+            result = stack_top->get_implementation()->start_listen(&local_addr_copy, &remote_addr_copy);
             if (result)
             {
                 top_data.passive_map.stack_binded = true;
@@ -113,6 +115,52 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
     if (!who_data.build_map.stack_ready || !who_data.build_map.stack_top)
         return "Protocol stack not ready";
 
+    auto ep = who->get_implementation()->construct_endpoint();
+    if (ep)
+    {
+        io::any_address local_addr_copy(local_addr);
+        io::any_address remote_addr_copy(remote_addr);
+        auto result = send_connect_down_recursive(who, ep, local_addr_copy, remote_addr_copy);
+        if (result)
+        {
+            result = stack_active::active_builder::register_connection_endpoints(
+                who, ep, who, nullptr, &local_addr_copy, &remote_addr_copy);
+            if (result)
+            {
+                return true;
+            }
+            else
+            {
+                RX_ASSERT(false);
+            }
+        }
+        if (!result)
+        {
+            who->get_implementation()->destroy_endpoint(ep);
+            std::ostringstream ss;
+            ss << "Port "
+                << who->meta_info().get_full_path()
+                << " not connected to "
+                << "["
+                << local_addr_copy.to_string()
+                << ","
+                << remote_addr_copy.to_string()
+                << "];"
+                << result.errors_line();
+            
+            RUNTIME_LOG_ERROR("passive_builder", 200, ss.str());
+        }
+        return result;
+    }
+    else
+    {
+        return "Error constructing endpoint.";
+    }
+}
+
+rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr)
+{
+    auto& who_data = who->get_instance_data().stack_data;
     rx_port_ptr stack_top = who_data.build_map.stack_top;
     auto& top_data = stack_top->get_instance_data().stack_data;
     auto& top_passive_kind = stack_top->get_instance_data().behavior.passive_behavior;
@@ -122,49 +170,79 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
         return RX_NOT_IMPLEMENTED;
     }
 
-    auto result = top_data.passive_map.register_passive(who, &local_addr, &remote_addr, stack_top);
+    auto result = top_data.passive_map.register_passive(who, local_addr, remote_addr, stack_top);
     if (!result)
     {
-        return result;
+        return result.errors();
     }
     who_data.passive_map.bind_port = stack_top;
+    rx_protocol_stack_endpoint* top_ep = nullptr;
     if (top_passive_kind->is_connect_subscriber())
     {
         if (!top_data.passive_map.stack_binded)
         {
-            result = stack_top->get_implementation()->start_connect(&local_addr, &remote_addr, nullptr);
-            if (result)
+            rx_result result;
+            auto connect_result = stack_top->get_implementation()->start_connect(&local_addr, &remote_addr, ep);
+            if (connect_result)
             {
-                top_data.passive_map.stack_binded = true;
+                result = stack_active::active_builder::register_connection_endpoints(stack_top, connect_result.value(), who, ep, &local_addr, &remote_addr);
+                if (result)
+                {
+                    top_data.passive_map.stack_binded = true;
+                    return true;
+                }
             }
             else
             {
-                top_data.passive_map.unregister_passive(who, stack_top);
-                who_data.passive_map.bind_port = rx_port_ptr::null_ptr;
+                result.register_errors(connect_result.errors());
             }
+            who->get_implementation()->destroy_endpoint(ep);
+
+            top_data.passive_map.unregister_passive(who, stack_top);
+            who_data.passive_map.bind_port = rx_port_ptr::null_ptr;
+            return result;
+        }
+        else
+        {
+            return "Invalid state, stack binded";
         }
     }
     else
     {
-        result = send_connect(stack_top, local_addr, remote_addr);
-        if (result)
+
+        top_ep = stack_top->get_implementation()->construct_endpoint();
+        if (top_ep)
         {
-            who_data.passive_map.stack_binded = true;
-            who_data.passive_map.bind_port = stack_top;
+            result = stack_active::active_builder::register_connection_endpoints(
+                stack_top, top_ep, who, ep, &local_addr, &remote_addr);
+            if (result)
+            {
+
+                io::any_address local_addr_copy;
+                io::any_address remote_addr_copy;
+                result = send_connect_down_recursive(stack_top, top_ep, local_addr_copy, remote_addr_copy);
+                if (result)
+                {
+                    who_data.passive_map.stack_binded = true;
+                    who_data.passive_map.bind_port = stack_top;
+                    return true;
+                }
+            }
+            stack_top->get_implementation()->destroy_endpoint(top_ep);
         }
         else
         {
-            top_data.passive_map.unregister_passive(who, stack_top);
-            who_data.passive_map.bind_port = rx_port_ptr::null_ptr;
+            result.register_error("Error constructing endpoint.");
         }
-
+        top_data.passive_map.unregister_passive(who, stack_top);
+        who_data.passive_map.bind_port = rx_port_ptr::null_ptr;
     }
     return result;
 }
 
 rx_result passive_builder::unbind_passive (rx_port_ptr who)
 {
-    auto& who_build_kind = who->get_instance_data().behavior.passive_behavior;   
+    auto& who_build_kind = who->get_instance_data().behavior.passive_behavior;
     bool bottom_port = (who_build_kind->is_connect_subscriber() || who_build_kind->is_listen_subscriber())
         && !(who_build_kind->is_connect_sender() || who_build_kind->is_listen_sender());
     auto next_port = who;
@@ -173,7 +251,7 @@ rx_result passive_builder::unbind_passive (rx_port_ptr who)
         auto& who_data = next_port->get_instance_data().stack_data.passive_map;
         if (!who_data.bind_port)
         {
-            // we are already unbinded 
+            // we are already unbind-ed
             break;
         }
         auto bottom_ptr = who_data.bind_port;
@@ -189,7 +267,7 @@ rx_result passive_builder::unbind_passive (rx_port_ptr who)
         }
         bottom_port = temp_build_kind->is_connect_subscriber() || temp_build_kind->is_listen_subscriber();
         next_port = bottom_ptr;
-        
+
     }
     bottom_port = who_build_kind->is_connect_subscriber() || who_build_kind->is_listen_subscriber();
     if (bottom_port)

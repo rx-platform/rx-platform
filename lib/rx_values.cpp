@@ -163,6 +163,15 @@ bool complex_value_struct::parse_string(const string_type& str)
 
 // Class rx::values::rx_value 
 
+rx_value::rx_value (const rx_value_storage& storage)
+	: default_time_compare_(time_compare_type::skip)
+	, quality_(RX_DEFAULT_VALUE_QUALITY)
+	, origin_(RX_DEFUALT_ORIGIN)
+	, storage_(storage)
+{
+}
+
+
 
 bool rx_value::is_good () const
 {
@@ -275,7 +284,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -283,7 +292,7 @@ rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 	return ret;
 }
 
-rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.move_storage();
@@ -291,7 +300,7 @@ rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }
@@ -387,7 +396,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx_value rx_value::operator + (const rx_value& right) const
+rx::values::rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -396,7 +405,7 @@ rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator - (const rx_value& right) const
+rx::values::rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -405,7 +414,7 @@ rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator * (const rx_value& right) const
+rx::values::rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = quality_;
@@ -414,7 +423,7 @@ rx_value rx_value::operator * (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator / (const rx_value& right) const
+rx::values::rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -423,7 +432,7 @@ rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx_value rx_value::operator % (const rx_value& right) const
+rx::values::rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -444,6 +453,17 @@ bool rx_value::is_dead () const
 rx_value_storage&& rx_value::move_storage ()
 {
 	return std::move(storage_);
+}
+
+void rx_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
+{
+	val = *this;
+	if (mode.is_off())
+		val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	else
+		val.set_good_locally();
+	if (mode.is_test())
+		val.set_test();
 }
 
 
@@ -1910,12 +1930,16 @@ rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) co
 			auto temp = right.get_integer_value();
 			if (temp != 0)
 				result.set_from_integer(get_integer_value() / temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
 		}
 		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
 		{// floating point stuff
 			auto temp = right.get_float_value();
 			if (temp != 0)
 				result.set_from_float(get_float_value() /temp , ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
 		}
 		else if (ret_type == RX_COMPLEX_TYPE)
 		{
@@ -4191,7 +4215,7 @@ rx_timed_value rx_timed_value::from_simple (rx_simple_value&& value, rx_time ts)
 	return ret;
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(storage_);
 }

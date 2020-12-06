@@ -241,9 +241,9 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 }
 	 auto test_type = proto_result.value();
 	 test_type->complex_data.register_simple_value_static("variableVal", false, 66.9);
+	 test_type->complex_data.register_event("eventName", event_id);
 	 test_type->variable_data.register_source("sourceName", source_id, test_type->complex_data);
 	 test_type->variable_data.register_filter("filterName", filter_id, test_type->complex_data);
-	 test_type->variable_data.register_event("eventName", event_id, test_type->complex_data);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<variable_type>::create_type_sync(test_type);
 	 if (result)
 	 {

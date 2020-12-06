@@ -197,7 +197,9 @@ class port_instance_data
 
       static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
-      const security::security_context_ptr& get_security_context () const;
+      security::security_context_ptr create_security_context (const meta::meta_data& meta);
+
+      security::security_context_ptr get_security_context () const;
 
 
       const rx_application_ptr get_my_application () const;

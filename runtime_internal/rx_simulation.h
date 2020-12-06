@@ -68,7 +68,7 @@ Local Register Source. Source implementation for register.");
 
   private:
 
-      rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+      rx_result source_write (write_data&& data, runtime_process_context* ctx);
 
 
 
@@ -103,7 +103,7 @@ Periodic Function Source. Base source implementation for periodic functions.");
 
   private:
 
-      rx_result source_write (structure::write_data&& data, runtime_process_context* ctx);
+      rx_result source_write (write_data&& data, runtime_process_context* ctx);
 
 
 

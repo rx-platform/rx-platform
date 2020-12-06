@@ -119,6 +119,17 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 	return rx_simple_value();
 }
 
+bool runtime_values_data::empty () const
+{
+	return children.empty() && values.empty();
+}
+
+void runtime_values_data::clear ()
+{
+	children.clear();
+	values.clear();
+}
+
 
 } // namespace data
 } // namespace rx

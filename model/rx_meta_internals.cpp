@@ -7,24 +7,24 @@
 *  Copyright (c) 2020 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace rx_internal {
 
 namespace model {
 
-// Class rx_internal::model::platform_types_manager 
+// Class rx_internal::model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 {
@@ -115,7 +115,7 @@ void platform_types_manager::stop ()
 }
 
 
-// Class rx_internal::model::relations_hash_data 
+// Class rx_internal::model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -289,7 +289,7 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 }
 
 
-// Parameterized Class rx_internal::model::types_repository 
+// Parameterized Class rx_internal::model::types_repository
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -387,7 +387,6 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	RBeh behavior;
 
 	rx_node_ids base;
-	std::vector<const data::runtime_values_data*> overrides;
 	base.emplace_back(meta.parent);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
@@ -456,6 +455,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	}
 
 	construct_context ctx(meta.name);
+	std::vector<data::runtime_values_data> overrides;
 	ctx.get_directories().add_paths({meta.path});
 	ret.ptr = rx_create_reference<RType>(meta, instance_data, std::move(behavior));
 	ret.ptr->implementation_ = implementation_ptr;
@@ -464,12 +464,17 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
-			overrides.push_back(&my_class.value()->complex_data.get_overrides());
+			ctx.reinit();
+			std::unique_ptr<data::runtime_values_data> temp_values= std::make_unique<data::runtime_values_data>();
+			ctx.push_overrides("", temp_values.get());
 			auto result = meta::meta_algorithm::object_types_algorithm<typeT>::construct_runtime(*my_class.value(), ret.ptr, ctx);
 			if (!result)
 			{// error constructing object
 				return result.errors();
 			}
+			ctx.pop_overrides();
+			//overrides.push_back(*ctx.get_overrides());
+			overrides.push_back(my_class.value()->complex_data.get_overrides());
 		}
 		else
 		{
@@ -479,13 +484,14 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	}
 	rx_simple_value name_value;
 	name_value.assign_static<string_type>(string_type(meta.name));
-	ctx.runtime_data.add_const_value("Name", name_value);
-	ret.ptr->set_runtime_data(ctx.runtime_data);
+	auto rt_data = ctx.pop_rt_name();
+	rt_data.add_const_value("Name", name_value);
+	ret.ptr->set_runtime_data(rt_data);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)
 	{
-		if (*it)
-			ret.ptr->fill_data(*(*it));
+		if (!it->empty())
+			ret.ptr->fill_data(*it);
 	}
 	ret.ptr->fill_data(instance_data.overrides);
 	ret.ptr->get_overrides() = instance_data.overrides;
@@ -761,7 +767,7 @@ rx_result types_repository<typeT>::type_exists (rx_node_id id) const
 }
 
 
-// Class rx_internal::model::inheritance_hash 
+// Class rx_internal::model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -930,7 +936,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 }
 
 
-// Class rx_internal::model::instance_hash 
+// Class rx_internal::model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -997,7 +1003,7 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 }
 
 
-// Parameterized Class rx_internal::model::simple_types_repository 
+// Parameterized Class rx_internal::model::simple_types_repository
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1056,7 +1062,7 @@ rx_result simple_types_repository<typeT>::register_constructor (const rx_node_id
 }
 
 template <class typeT>
-rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, const rx_directory_resolver& dirs) const
+rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx) const
 {
 	RTypePtr ret;
 	rx_node_ids base;
@@ -1096,24 +1102,38 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 	if (!ret)
 		ret = default_constructor_();
 
-	construct_context ctx(rt_name);
-	ctx.get_directories().add_paths({ "/" });
+	ctx.push_rt_name(rt_name);
+
+	std::vector<data::runtime_values_data> overrides;
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
 		if (my_class)
 		{
+			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
+			ctx.get_directories().add_paths({my_class.value()->meta_info.path});
 			auto result = meta::meta_algorithm::basic_types_algorithm<typeT>::construct(*my_class.value(), ctx);
+
 			if (!result)
 			{// error constructing object
 				return result.errors();
 			}
+			
+			overrides.push_back(my_class.value()->complex_data.get_overrides());
 		}
 		else
 			return my_class.errors();
 	}
-
-	return RDataType(std::move(create_runtime_data(ctx.runtime_data)), std::move(ret));
+	
+	runtime_data_prototype rt = ctx.pop_rt_name();
+	auto runtime = create_runtime_data(rt);
+	// go reverse with overrides
+	for (auto it = overrides.rbegin(); it != overrides.rend(); it++)
+	{
+		if (!it->empty())
+			runtime->fill_data(*it);
+	}
+	return RDataType(std::move(runtime), std::move(ret));
 }
 
 template <class typeT>
@@ -1227,7 +1247,7 @@ rx_result simple_types_repository<typeT>::update_type (typename simple_types_rep
 }
 
 
-// Class rx_internal::model::types_resolver 
+// Class rx_internal::model::types_resolver
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1275,7 +1295,7 @@ rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& dat
 }
 
 
-// Class rx_internal::model::relations_type_repository 
+// Class rx_internal::model::relations_type_repository
 
 relations_type_repository::relations_type_repository()
 {

@@ -465,7 +465,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, const rx_directory_resolver& dirs) const;
+      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx) const;
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 

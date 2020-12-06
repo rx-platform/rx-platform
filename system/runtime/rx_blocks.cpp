@@ -203,10 +203,10 @@ bool mapper_runtime::can_write () const
     return container_ ? container_->can_write() : false;
 }
 
-void mapper_runtime::mapper_write_pending (values::rx_simple_value&& value, runtime_transaction_id_t id)
+void mapper_runtime::mapper_write_pending (write_data&& data)
 {
     if (container_)
-        container_->mapper_write_pending(std::move(value), id);
+        container_->mapper_write_pending(std::move(data));
 }
 
 void mapper_runtime::map_current_value () const
@@ -232,6 +232,11 @@ threads::job_thread* mapper_runtime::get_jobs_queue ()
     {
         return rx_internal::infrastructure::server_runtime::instance().get_executer(container_->);
     }*/
+}
+
+std::vector<rx_value> mapper_runtime::get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+{
+    return ctx.mappers.get_mapped_values(id, path);
 }
 
 
@@ -319,7 +324,7 @@ void source_runtime::source_result_received (rx_result&& result, runtime_transac
         container_->source_result_pending(std::move(result), id);
 }
 
-rx_result source_runtime::source_write (structure::write_data&& data, runtime_process_context* ctx)
+rx_result source_runtime::source_write (write_data&& data, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -432,18 +437,17 @@ rx_value variable_runtime::select_variable_input (runtime_process_context* ctx, 
 {
     rx_value ret;
     for (auto& one : sources)
-    { 
+    {
         if (one.is_input())
         {
             ret = one.get_current_value();
-            if (ret.is_good())
                 return ret;
         }
     }
     return ret;
 }
 
-rx_result variable_runtime::variable_write (structure::write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
+rx_result variable_runtime::variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
 {
     RX_ASSERT(!sources.empty());
     rx_result ret = RX_NOT_SUPPORTED;
@@ -454,12 +458,12 @@ rx_result variable_runtime::variable_write (structure::write_data&& data, runtim
     }
     else
     {
-        structure::write_data data_copy(data);
+        write_data data_copy(data);
         for (auto& one : sources)
         {
             if (one.is_output())
             {
-                ret = one.write_value(structure::write_data(data_copy));
+                ret = one.write_value(write_data(data_copy));
                 if (ret)
                     break;
             }

@@ -43,10 +43,10 @@ namespace rx_platform {
 namespace runtime {
 namespace io_types {
 namespace ports_templates {
+template <typename translatorT, typename addrT> class routing_endpoint;
 template <typename addrT> class simple_master_routing_translator;
 template <typename addrT> class address_routing_translator;
 template <typename addrT> class simple_slave_routing_translator;
-template <typename translatorT, typename addrT> class routing_endpoint;
 
 } // namespace ports_templates
 } // namespace io_types
@@ -136,6 +136,8 @@ class routing_endpoint : public rx::pointers::reference_object
       void remove_session (const session_type* who);
 
       void close_sessions ();
+
+      rx_result_with<rx_protocol_stack_endpoint*> create_session (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
 
       runtime::items::port_runtime* get_port ()

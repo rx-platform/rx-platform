@@ -129,6 +129,11 @@ uint32_t waitable::wait_handle_us (uint64_t timeout)
 	return rx_handle_wait_us(handle_, timeout);
 }
 
+sys_handle_t waitable::get_handle () const
+{
+	return handle_;
+}
+
 
 // Class rx::locks::event 
 

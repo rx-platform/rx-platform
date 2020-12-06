@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 1
 #define RX_LIB_MINOR_VERSION 0
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_BUILD_NUMBER 3
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -38,5 +38,7 @@
 // version 0.20.3 added tcp_client_socket::bind(addr, port, ...)
 // version 1.0.0 first release version
 // version 1.0.1 add value and add child in runtime data accepts full path
+// version 1.0.2 added unauthorized_context() function
+// version 1.0.3 added binary_istream<> and binary_ostream<>
 
 

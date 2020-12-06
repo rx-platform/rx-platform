@@ -35,6 +35,12 @@
 #include "system/server/rx_server.h"
 
 
+namespace rx_platform {
+namespace runtime {
+class runtime_process_context;
+} // namespace runtime
+} // namespace rx_platform
+
 namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
@@ -90,11 +96,16 @@ class value_point
       void value_changed (value_handle_type handle, const rx_value& val);
 
 
+      void set_context (rx_platform::runtime::runtime_process_context * value);
+
+
   protected:
 
   private:
 
       void value_changed (const rx_value& val);
+
+      bool translate_path (const string_type& path, string_type& translated);
 
 
 
@@ -131,6 +142,9 @@ class value_point
       void parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler);
 
 
+      rx_platform::runtime::runtime_process_context *context_;
+
+
       value_point_state state_;
 
       uint32_t rate_;
@@ -154,5 +168,3 @@ class value_point
 
 
 #endif
-
-

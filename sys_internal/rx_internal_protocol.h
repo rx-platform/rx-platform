@@ -35,12 +35,12 @@
 
 // dummy
 #include "dummy.h"
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
@@ -264,7 +264,7 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::application_port_impl< rx_internal::rx_protocol::rx_protocol_connection  > rx_json_protocol_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_protocol_connection  > rx_json_protocol_port_base;
 
 
 
