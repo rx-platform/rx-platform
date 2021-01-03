@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// dummy
+#include "dummy.h"
 // rx_thread
 #include "lib/rx_thread.h"
 

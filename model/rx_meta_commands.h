@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_commands.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -310,7 +310,6 @@ command for updating various objects and types in platform\r\n\
       bool update_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
       template<class T>
       bool update_simple_type(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx, tl::type2type<T>);
-
 
 };
 

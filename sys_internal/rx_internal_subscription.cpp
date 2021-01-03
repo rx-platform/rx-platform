@@ -4,27 +4,27 @@
 *
 *  sys_internal\rx_internal_subscription.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace messages {
 
 namespace subscription_messages {
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_request
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_request 
 
 string_type create_subscription_request::type_name = "createSubsReq";
 
@@ -121,7 +121,7 @@ rx_message_type_t create_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response 
 
 string_type create_subscriptions_response::type_name = "createSubsResp";
 
@@ -165,7 +165,7 @@ rx_message_type_t create_subscriptions_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_request
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_request 
 
 string_type delete_subscription_request::type_name = "delSubsReq";
 
@@ -217,7 +217,7 @@ rx_message_type_t delete_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_request
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_request 
 
 string_type update_subscription_request::type_name = "updSubsReq";
 
@@ -274,7 +274,7 @@ rx_message_type_t update_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_response
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_subscription_response 
 
 string_type delete_subscription_response::type_name = "delSubsResp";
 
@@ -310,7 +310,7 @@ rx_message_type_t delete_subscription_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_response
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_subscription_response 
 
 string_type update_subscription_response::type_name = "updSubsResp";
 
@@ -354,7 +354,7 @@ rx_message_type_t update_subscription_response::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_items_change
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_items_change 
 
 string_type subscription_items_change::type_name = "subsItemsNotif";
 
@@ -424,7 +424,7 @@ rx_message_type_t subscription_items_change::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_write_done
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_write_done 
 
 string_type subscription_write_done::type_name = "subsWriteDone";
 

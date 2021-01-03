@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_yaml.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -167,7 +167,7 @@ rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, stri
 	}
 	if (state == yaml_parsing_state::searching_assigment)
 		return "No assignment (:) symbol!";
-	if (idx_key_start == 0 && idx_key_stop == 0 && idx_value_start == 0 && idx_value_start == 0)
+	if (idx_key_start == 0 && idx_key_stop == 0 && idx_value_start == 0)
 		return true;// empty line
 	if (idx_key_start < idx_key_stop)
 		key = line.substr(idx_key_start, idx_key_stop - idx_key_start);

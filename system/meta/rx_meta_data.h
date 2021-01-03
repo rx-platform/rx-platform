@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_data.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -38,10 +38,10 @@
 
 //#include "system/server/rx_ns.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
 namespace runtime {

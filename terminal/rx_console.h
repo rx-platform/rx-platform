@@ -4,7 +4,7 @@
 *
 *  terminal\rx_console.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,16 +35,16 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
+// sl_script
+#include "soft_logic/sl_script.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// dummy
+#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// sl_script
-#include "soft_logic/sl_script.h"
 
 namespace rx_internal {
 namespace terminal {

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_client.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 

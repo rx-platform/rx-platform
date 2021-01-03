@@ -4,7 +4,7 @@
 *
 *  terminal\rx_con_commands.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -30,7 +30,6 @@
 
 #ifndef rx_con_commands_h
 #define rx_con_commands_h 1
-
 
 
 /////////////////////////////////////////////////////////////

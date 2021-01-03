@@ -4,7 +4,7 @@
 *
 *  system\server\rx_ns.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,14 +34,14 @@
 
 #include "lib/rx_lock.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"

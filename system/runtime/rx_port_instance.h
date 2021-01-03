@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_port_instance.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
+// rx_port_stack_data
+#include "system/runtime/rx_port_stack_data.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
-// rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
 
 namespace rx_platform {
 namespace runtime {

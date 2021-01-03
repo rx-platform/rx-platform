@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_mapping.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"

@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -254,6 +254,7 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 		auto result = options.parse(argc, argv);
 		if (result.count("help"))
 		{
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			restore_console();
 
@@ -267,18 +268,18 @@ bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_pl
 			rx_platform_host::print_offline_manual(RX_INTERACTIVE_HOST, host_directories);
 
 			std::cout << options.help({ "" });
-			std::cout << "\r\n\r\n";
 
 			// don't execute
 			return false;
 		}
 		else if (result.count("version"))
 		{
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			string_type version = rx_gate::instance().get_rx_version();
 
 			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-				<< version << ANSI_COLOR_RESET "\r\n\r\n";
+				<< version << ANSI_COLOR_RESET;
 
 			restore_console();
 
@@ -428,8 +429,6 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		restore_console();
 	}
 	std::cout << "\r\n";
-	if (!ret)
-		std::cout << "\r\nE jebi ga meho 2:)\r\n";
 	return ret ? 0 : -1;
 }
 
@@ -535,6 +534,14 @@ interactive_console_endpoint::interactive_console_endpoint (interactive_console_
 {
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.send_function = &interactive_console_endpoint::send_function;
+	stack_entry_.close_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t reason)->rx_protocol_result_t
+	{
+		if(!rx_gate::instance().is_shutting_down())
+			rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
+		else
+			rx_notify_closed(reference, reason);
+		return RX_PROTOCOL_OK;
+	};
 }
 
 

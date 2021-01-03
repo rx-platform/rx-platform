@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_def_blocks.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,9 +41,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
+class variable_attribute;
 class struct_attribute;
 class mapper_attribute;
-class variable_attribute;
 
 } // namespace def_blocks
 } // namespace meta

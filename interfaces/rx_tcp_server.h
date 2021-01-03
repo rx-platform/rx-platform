@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_server.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 
@@ -150,7 +150,7 @@ class tcp_server_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_server_endpoint  > tcp_server_base;
 
 
 

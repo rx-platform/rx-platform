@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_port_stack_passive.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -68,7 +68,7 @@ class passive_builder
   protected:
 
   private:
-      
+
       static rx_result send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr);
 
       static rx_result send_unbind_up_recursive (rx_port_ptr who);

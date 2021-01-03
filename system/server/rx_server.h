@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -47,10 +47,10 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 namespace rx_platform {
 namespace prog {

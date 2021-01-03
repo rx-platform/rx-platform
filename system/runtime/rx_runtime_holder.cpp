@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -850,5 +850,4 @@ void process_runtime_job<typeT>::process ()
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
-
 

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_operational.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -40,13 +40,10 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace relations {
-class relation_data;
-} // namespace relations
-
 class runtime_process_context;
 namespace relations {
 class relations_holder;
+class relation_data;
 
 } // namespace relations
 } // namespace runtime

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -224,38 +224,88 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	else
 		return errors;
 
-	BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
-	auto storage_ptr = host->get_system_storage(host->get_host_name());
-	if (storage_ptr)
+	if (meta_data.build_system_from_code)
 	{
-		storage::configuration_storage_builder builder(storage_ptr.value());
-		errors = builder.do_build(root);
-		if (!errors)
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
+		auto dir_ptr = root->get_sub_directory(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME);
+		if (dir_ptr)
 		{
-			errors.register_error("Unable to build host "s + host->get_host_name());
+			errors = host->build_host(dir_ptr);
+			if (!errors)
+			{
+				errors.register_error("Unable to build host "s + host->get_host_name());
+				return errors;
+			}
+		}
+		else
+		{
+			errors.register_error("Unable to build host "s + host->get_host_name() + "Invalid directory!");
 			return errors;
 		}
-	}
-	BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
 
-	BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
-	for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
+		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
+		{
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
+			string_type root_path(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR);
+			root_path += one->get_plugin_name();
+			auto dir_ptr = root->get_sub_directory(root_path);
+			if (dir_ptr)
+			{
+				errors = one->build_plugin(dir_ptr);
+				if (!errors)
+				{
+					errors.register_error("Unable to build host "s + host->get_host_name());
+					return errors;
+				}
+			}
+			else
+			{
+				errors.register_error("Unable to build plugin "s + one->get_plugin_name() + "Invalid directory!");
+				return errors;
+			}
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
+		}
+		BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
+	}
+	else
 	{
-		BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
-		auto storage_ptr = host->get_system_storage(one->get_plugin_name());
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
+
+		auto storage_ptr = host->get_system_storage(host->get_host_name());
 		if (storage_ptr)
 		{
 			storage::configuration_storage_builder builder(storage_ptr.value());
 			errors = builder.do_build(root);
 			if (!errors)
 			{
-				errors.register_error("Unable to build plugin "s + one->get_plugin_name());
+				errors.register_error("Unable to build host "s + host->get_host_name());
 				return errors;
 			}
 		}
-		BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
+
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
+		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
+		{
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
+			auto storage_ptr = host->get_system_storage(one->get_plugin_name());
+			if (storage_ptr)
+			{
+				storage::configuration_storage_builder builder(storage_ptr.value());
+				errors = builder.do_build(root);
+				if (!errors)
+				{
+					errors.register_error("Unable to build plugin "s + one->get_plugin_name());
+					return errors;
+				}
+			}
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
+		}
+		BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
+
 	}
-	BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
 
 	for (auto& one : user_builders)
 	{

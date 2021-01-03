@@ -4,7 +4,7 @@
 *
 *  terminal\rx_vt100.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -389,6 +389,21 @@ void vt100_transport::set_echo (bool val)
 {
 }
 
+rx_protocol_result_t vt100_transport::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+	rx_packet_buffer_type buffer;
+	static string_type conn_msg("rx-Terminal connected...\r\n");
+	auto result = rx_init_packet_buffer(&buffer, conn_msg.size(), nullptr);
+	if (result != RX_PROTOCOL_OK)
+		return result;
+	result = rx_push_to_packet(&buffer, &conn_msg[0], conn_msg.size());
+	if (result != RX_PROTOCOL_OK)
+		return result;
+	result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer, 0, 0));
+	result = rx_notify_connected(reference, session);
+	return result;
+}
+
 
 // Class rx_internal::terminal::term_transport::vt100_transport_port 
 
@@ -413,11 +428,3 @@ vt100_transport_port::vt100_transport_port()
 } // namespace terminal
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	
-
-#endif

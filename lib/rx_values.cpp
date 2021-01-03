@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -284,7 +284,7 @@ rx_time rx_value::set_time (rx_time time)
 	return time;
 }
 
-rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
+rx_value rx_value::from_simple (const rx_simple_value& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.get_storage();
@@ -292,7 +292,7 @@ rx::values::rx_value rx_value::from_simple (const rx_simple_value& value, rx_tim
 	return ret;
 }
 
-rx::values::rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
+rx_value rx_value::from_simple (rx_simple_value&& value, rx_time ts)
 {
 	rx_value ret;
 	ret.storage_ = value.move_storage();
@@ -396,7 +396,7 @@ bool rx_value::set_from_integer (int64_t val, rx_value_t type)
 
 }
 
-rx::values::rx_value rx_value::operator + (const rx_value& right) const
+rx_value rx_value::operator + (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -405,7 +405,7 @@ rx::values::rx_value rx_value::operator + (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator - (const rx_value& right) const
+rx_value rx_value::operator - (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -414,7 +414,7 @@ rx::values::rx_value rx_value::operator - (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator * (const rx_value& right) const
+rx_value rx_value::operator * (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = quality_;
@@ -423,7 +423,7 @@ rx::values::rx_value rx_value::operator * (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator / (const rx_value& right) const
+rx_value rx_value::operator / (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;
@@ -432,7 +432,7 @@ rx::values::rx_value rx_value::operator / (const rx_value& right) const
 	return ret;
 }
 
-rx::values::rx_value rx_value::operator % (const rx_value& right) const
+rx_value rx_value::operator % (const rx_value& right) const
 {
 	rx_value ret;
 	ret.quality_ = RX_GOOD_QUALITY;

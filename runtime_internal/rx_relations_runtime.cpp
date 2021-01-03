@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_relations_runtime.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -116,5 +116,4 @@ rx_result remote_relation_connector::browse (const string_type& prefix, const st
 } // namespace relations_runtime
 } // namespace sys_runtime
 } // namespace rx_internal
-
 

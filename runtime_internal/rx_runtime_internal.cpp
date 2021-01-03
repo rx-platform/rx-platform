@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_internal.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -762,5 +762,4 @@ std::vector<platform_item_ptr> runtime_cache::get_items (const rx_node_ids& ids)
 
 } // namespace sys_runtime
 } // namespace rx_internal
-
 

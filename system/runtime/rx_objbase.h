@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_objbase.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// dummy
-#include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// dummy
+#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 

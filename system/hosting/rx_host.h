@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,18 +61,18 @@ struct configuration_data_t;
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
-namespace rx {
-namespace security {
-class security_context;
-} // namespace security
-} // namespace rx
-
 namespace rx_platform {
 namespace library {
 class rx_plugin_base;
-
 } // namespace library
 } // namespace rx_platform
+
+namespace rx {
+namespace security {
+class security_context;
+
+} // namespace security
+} // namespace rx
 
 
 

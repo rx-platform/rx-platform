@@ -4,7 +4,7 @@
 *
 *  lib\security\rx_security.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -56,16 +56,22 @@ security_context::security_context()
 
 security_context::~security_context()
 {
-	if(handle_)
-		handle_ = security_manager::instance().context_deactivated(smart_this());
+	if (handle_)
+	{
+		char buff[0x100];
+		snprintf(buff, sizeof(buff), "User %s, security context deleted without deactivation.", get_full_name().c_str());
+		SECURITY_LOG_CRITICAL("manager", 900, buff);
+	}
 }
 
 
 
 void security_context::logout ()
 {
-	if(handle_)
+	if (handle_)
+	{
 		handle_ = security_manager::instance().context_deactivated(smart_this());
+	}
 }
 
 rx_result security_context::login ()

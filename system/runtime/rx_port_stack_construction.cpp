@@ -4,27 +4,27 @@
 *
 *  system\runtime\rx_port_stack_construction.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -51,7 +51,7 @@ namespace io_types {
 
 namespace stack_build {
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_sender
+// Class rx_platform::runtime::io_types::stack_build::assemble_sender 
 
 
 bool assemble_sender::is_assemble_sender ()
@@ -75,7 +75,7 @@ bool assemble_sender::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_ignorant
+// Class rx_platform::runtime::io_types::stack_build::assemble_ignorant 
 
 
 bool assemble_ignorant::is_assemble_sender ()
@@ -99,7 +99,7 @@ bool assemble_ignorant::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_subscriber
+// Class rx_platform::runtime::io_types::stack_build::assemble_subscriber 
 
 
 bool assemble_subscriber::is_assemble_sender ()
@@ -123,7 +123,7 @@ bool assemble_subscriber::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_sender_subscriber
+// Class rx_platform::runtime::io_types::stack_build::assemble_sender_subscriber 
 
 
 bool assemble_sender_subscriber::is_assemble_sender ()
@@ -147,7 +147,7 @@ bool assemble_sender_subscriber::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::stack_builder
+// Class rx_platform::runtime::io_types::stack_build::stack_builder 
 
 
 rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)

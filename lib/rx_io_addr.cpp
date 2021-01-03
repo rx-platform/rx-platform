@@ -4,27 +4,27 @@
 *
 *  lib\rx_io_addr.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -130,7 +130,7 @@ rx_protocol_result_t extract_numeric_address(const protocol_address* def, uint64
 
 
 
-// Class rx::io::ip4_address
+// Class rx::io::ip4_address 
 
 ip4_address::ip4_address()
 {
@@ -414,7 +414,7 @@ ip4_address& ip4_address::operator=(ip4_address&& right) noexcept
     rx_move_address(this, &right);
     return *this;
 }
-// Parameterized Class rx::io::numeric_address
+// Parameterized Class rx::io::numeric_address 
 
 template <typename defT>
 numeric_address<defT>::numeric_address()
@@ -653,7 +653,7 @@ template class numeric_address<uint8_t>;
 template class numeric_address<uint16_t>;
 template class numeric_address<uint32_t>;
 template class numeric_address<uint64_t>;
-// Class rx::io::any_address
+// Class rx::io::any_address 
 
 any_address::any_address()
 {

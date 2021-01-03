@@ -4,7 +4,7 @@
 *
 *  terminal\rx_con_commands.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,6 +34,7 @@
 // rx_con_commands
 #include "terminal/rx_con_commands.h"
 
+#include "terminal/parser3000.h"
 #include "terminal/rx_terminal_style.h"
 #include "testing/testing.h"
 
@@ -325,6 +326,7 @@ log_command::~log_command()
 
 bool log_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	bool ret = true;
 	string_type sub_command;
 	in >> sub_command;
 	if (sub_command.empty())
@@ -333,11 +335,11 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 	}
 	else if (sub_command == "test")
 	{// testing stuff
-		do_test_command(in, out, err, ctx);
+		ret = do_test_command(in, out, err, ctx);
 	}
 	else if (sub_command == "read")
 	{// testing stuff
-		do_read_command(in, out, err, ctx);
+		ret = do_read_command(in, out, err, ctx);
 	}
 	else if (sub_command == "help")
 	{
@@ -349,7 +351,7 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 			<< " is unknown command type.";
 		return false;
 	}
-	return true;
+	return ret;
 }
 
 bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
@@ -437,57 +439,83 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 
 bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	using parser_t = urke::parser::parser3000;
 	log::log_query_type query;
 	query.type = log::rx_log_query_type::normal_level;
-	string_type log_name;
-	string_type options;
-	string_type pattern;
+	string_type log_name = "last";
+	bool trace = false;
+	bool debug = false;
+	bool warning = false;
+	bool error = false;
+	bool help = false;
+	bool version = false;
+	string_type pattern = "*";
+	int count = 40;
 
-	in >> log_name;
+	
 
-	in >> pattern;
-	query.pattern = pattern;
+	parser_t parser;
+	parser.add_bit_option('e', "error", &error, "Reads error events.");
+	parser.add_bit_option('h', "help", &help, "Prints help.");
+	parser.add_bit_option('v', "version", &version, "Prints version of the command.");
+	parser.add_bit_option('t', "trace", &trace, "Reads trace events.");
+	parser.add_bit_option('d', "debug", &debug, "Reads debug events.");
+	parser.add_bit_option('w', "warning", &warning, "Reads warning events.");
+	parser.add_string_option('f', "filter", &pattern, "Search pattern filter.");
+	parser.add_int_option('c', "count", &count, "Count of events.");
+	parser.add_string_option('l', "log", &log_name, "Specifies log to be read (default is last).");
 
-	query.count = 20;
-	in >> options;
-	if (!options.empty())
+	auto ret = parser.parse(in, err);
+	if (ret)
 	{
-		auto temp = atoi(options.c_str());
-		if (temp > 0)
-			query.count = temp;
-		in >> options;
-		if (options == "-t")
-			query.type = log::rx_log_query_type::trace_level;
-		if (options == "-d")
-			query.type = log::rx_log_query_type::debug_level;
-		if (options == "-w")
-			query.type = log::rx_log_query_type::warining_level;
-		if (options == "-e")
-			query.type = log::rx_log_query_type::error_level;
-	}
-	auto ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
+		if (help)
 		{
-			auto& out = ctx->get_stdout();
-			auto& err = ctx->get_stdout();
-			if (result)
-			{
-				list_log_options options;
-				options.list_level = false;
-				options.list_code = false;
-				options.list_library = false;
-				options.list_source = false;
-				options.list_dates = false;
-				dump_log_items(result.value(), options, out, 1000);
-				ctx->send_results(true);
-				
-			}
-			else
-			{
-				dump_error_result(err, result);
-				ctx->send_results(false);
-			}
+			parser.print_help("log read", out);
+			return true;
 		}
-	);
+		else if(version)
+		{
+			out << "E jebi ga meho da nadjem sve";
+			return true;
+		}
+		else
+		{
+			query.pattern = pattern;
+			query.type = log::rx_log_query_type::normal_level;
+			if (trace)
+				query.type = log::rx_log_query_type::trace_level;
+			if (debug)
+				query.type = log::rx_log_query_type::debug_level;
+			if (warning)
+				query.type = log::rx_log_query_type::warining_level;
+			if (error)
+				query.type = log::rx_log_query_type::error_level;
+			query.count = count;
+
+			auto ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
+				{
+					auto& out = ctx->get_stdout();
+					auto& err = ctx->get_stdout();
+					if (result)
+					{
+						list_log_options options;
+						options.list_level = false;
+						options.list_code = false;
+						options.list_library = false;
+						options.list_source = false;
+						options.list_dates = false;
+						dump_log_items(result.value(), options, out, 1000);
+						ctx->send_results(true);
+
+					}
+					else
+					{
+						dump_error_result(err, result);
+						ctx->send_results(false);
+					}
+				});
+		}
+	}
 	if (ret)
 	{
 		ctx->set_waiting();
@@ -495,7 +523,6 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	}
 	else
 	{
-		dump_error_result(err, ret);
 		return false;
 	}
 }

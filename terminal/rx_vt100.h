@@ -4,7 +4,7 @@
 *
 *  terminal\rx_vt100.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 
 
@@ -117,6 +117,8 @@ class vt100_transport
       bool move_history_down (string_type& to_echo);
 
       static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
 
 
 

@@ -4,27 +4,27 @@
 *
 *  lib\rx_mem.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of rx-platform
 *
-*
+*  
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -284,7 +284,7 @@ class memory_buffer_base : public pointers::reference_object
 
 
 
-class std_vector_allocator
+class std_vector_allocator 
 {
 
   public:
@@ -461,7 +461,7 @@ class backward_memory_buffer_base : public pointers::reference_object
 
 
 
-class backward_simple_allocator
+class backward_simple_allocator 
 {
 
   public:
@@ -508,7 +508,7 @@ typedef backward_memory_buffer_base< backward_simple_allocator  > back_buffer;
 
 
 
-class page_aligned_buffer
+class page_aligned_buffer 
 {
 
   public:
@@ -548,7 +548,7 @@ class page_aligned_buffer
 
 
 template <class bufferT>
-class binary_istream
+class binary_istream 
 {
 
   public:
@@ -595,7 +595,7 @@ class binary_istream
 
 
 template <class bufferT>
-class binary_ostream
+class binary_ostream 
 {
 
   public:
@@ -633,7 +633,7 @@ class binary_ostream
 };
 
 
-// Parameterized Class rx::memory::memory_buffer_base
+// Parameterized Class rx::memory::memory_buffer_base 
 
 template <class allocT, bool swap_bytes>
 memory_buffer_base<allocT,swap_bytes>::memory_buffer_base()
@@ -795,7 +795,7 @@ void memory_buffer_base<allocT,swap_bytes>::dump_to_stream (std::ostream& out)
 }
 
 
-// Parameterized Class rx::memory::std_strbuff
+// Parameterized Class rx::memory::std_strbuff 
 
 template <class allocT, bool swap_bytes>
 std_strbuff<allocT,swap_bytes>::std_strbuff()
@@ -855,7 +855,7 @@ char* std_strbuff<allocT,swap_bytes>::egptr () const
 }
 
 
-// Parameterized Class rx::memory::backward_memory_buffer_base
+// Parameterized Class rx::memory::backward_memory_buffer_base 
 
 template <class allocT>
 backward_memory_buffer_base<allocT>::backward_memory_buffer_base (size_t size)
@@ -925,10 +925,10 @@ void* backward_memory_buffer_base<allocT>::get_data () const
 }
 
 
-// Parameterized Class rx::memory::binary_istream
+// Parameterized Class rx::memory::binary_istream 
 
 
-// Parameterized Class rx::memory::binary_ostream
+// Parameterized Class rx::memory::binary_ostream 
 
 
 } // namespace memory

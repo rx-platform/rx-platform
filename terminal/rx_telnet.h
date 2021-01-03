@@ -4,7 +4,7 @@
 *
 *  terminal\rx_telnet.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
 // rx_vt100
 #include "terminal/rx_vt100.h"
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 
 
 

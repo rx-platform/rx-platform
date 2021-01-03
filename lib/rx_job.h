@@ -4,7 +4,7 @@
 *
 *  lib\rx_job.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
-// rx_func_to_go
-#include "lib/rx_func_to_go.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_func_to_go
+#include "lib/rx_func_to_go.h"
 
 
 

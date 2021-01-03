@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_protocol.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// dummy
+#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_protocol_messages

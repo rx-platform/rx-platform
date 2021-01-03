@@ -4,7 +4,7 @@
 *
 *  host\rx_anonymus_pipes.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,6 +33,8 @@
 
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
+// rx_pipe
+#include "host/rx_pipe.h"
 
 #include "system/runtime/rx_operational.h"
 #include "system/server/rx_server.h"
@@ -46,9 +48,10 @@ namespace pipe {
 
 // Class host::pipe::local_pipe_port 
 
-local_pipe_port::local_pipe_port (const pipe_client_t& pipes)
+local_pipe_port::local_pipe_port (const pipe_client_t& pipes, rx_pipe_host* host)
       : pipe_handles_(pipes),
         active_(false)
+	, pipes_(host)
 {
 }
 
@@ -152,16 +155,15 @@ void anonymus_pipe_client::close_pipe ()
 
 // Class host::pipe::anonymus_pipe_endpoint 
 
-anonymus_pipe_endpoint::anonymus_pipe_endpoint()
-      : binded(false)
+anonymus_pipe_endpoint::anonymus_pipe_endpoint (rx_pipe_host* host)
+      : host_(host),
+        binded(false)
 	, pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
 {
-
 	rx_init_stack_entry(&stack_entry_, this);
 
 	stack_entry_.send_function = &anonymus_pipe_endpoint::send_function;
-	stack_entry_.stack_changed_function= &anonymus_pipe_endpoint::stack_changed_function;
-
+	stack_entry_.stack_changed_function = &anonymus_pipe_endpoint::stack_changed_function;
 }
 
 

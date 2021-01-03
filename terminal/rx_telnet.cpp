@@ -4,7 +4,7 @@
 *
 *  terminal\rx_telnet.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -367,11 +367,3 @@ telnet_transport_port::telnet_transport_port()
 } // namespace terminal
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return std::make_unique<telnet_transport>(this);
-
-#endif

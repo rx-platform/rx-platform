@@ -19,7 +19,8 @@ public:
 			"===================\r\n"
 			"Pisao kod za:\r\n"
 			"   - base64\r\n"
-			"   - parser komandne linije " ANSI_COLOR_RED ANSI_COLOR_BOLD "KOJI JOS UVEK NE RADI!!!" ANSI_COLOR_RESET
+			"   - parser komandne linije " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "parser3000" ANSI_COLOR_RESET "\r\n"
+			"   - ASCII tabele " ANSI_COLOR_CYAN ANSI_COLOR_BOLD "RADI SE NA TOME!!!" ANSI_COLOR_RESET
 			"\r\n\r\n";
 		return true;
 	}

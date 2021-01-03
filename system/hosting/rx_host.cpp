@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -127,6 +127,8 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 					else if (row.first == "storage.test"
 						&& config.storage.test_storage_reference.empty())
 						config.storage.test_storage_reference = row.second;
+					else if (row.first == "instance.name")
+						config.meta_configuration.instance_name = row.second;
 					else if (row.first == "other.manuals" && config.other.manuals_path.empty())
 						config.other.manuals_path = row.second;
 					else if (row.first == "other.logs" && config.management.logs_directory.empty())

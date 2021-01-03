@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relation_impl.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -123,11 +123,3 @@ relation_runtime::smart_ptr relation_runtime::make_target_relation ()
 } // namespace runtime
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return false;
-
-#endif

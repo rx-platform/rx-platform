@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -45,27 +45,28 @@ using namespace rx::values;
 
 
 namespace rx_platform {
+namespace runtime {
+class runtime_process_context;
+namespace operational {
+class binded_tags;
+} // namespace operational
+
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
+} // namespace runtime
+
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
 namespace structure {
-class variable_data;
 class runtime_item;
 class mapper_data;
+class variable_data;
+
 } // namespace structure
-
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-
-namespace operational {
-class binded_tags;
-} // namespace operational
-
-class runtime_process_context;
-
 } // namespace runtime
 } // namespace rx_platform
 

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_server.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -76,6 +76,8 @@ tcp_server_endpoint::tcp_server_endpoint()
 
 tcp_server_endpoint::~tcp_server_endpoint()
 {
+    if(identity_)
+        identity_->logout();
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint destroyed.");
 }
 

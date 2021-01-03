@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_active_endpoints.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,10 +43,10 @@ namespace rx_platform {
 namespace runtime {
 namespace io_types {
 namespace ports_templates {
-template <typename translatorT, typename addrT> class routing_endpoint;
 template <typename addrT> class simple_master_routing_translator;
 template <typename addrT> class address_routing_translator;
 template <typename addrT> class simple_slave_routing_translator;
+template <typename translatorT, typename addrT> class routing_endpoint;
 
 } // namespace ports_templates
 } // namespace io_types

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_subscription_items.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -806,5 +806,4 @@ rx_result item_result_data::deserialize (base_meta_reader& stream)
 } // namespace messages
 } // namespace rx_protocol
 } // namespace rx_internal
-
 

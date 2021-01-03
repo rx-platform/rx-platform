@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_udp.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_datagram_io
 #include "lib/rx_datagram_io.h"
 
@@ -138,7 +138,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl< rx_internal::interfaces::ip_endpoints::udp_endpoint , runtime::io_types::ports_templates::routing_endpoint<runtime::io_types::ports_templates::address_routing_translator<io::ip4_address>, io::ip4_address>  > udp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl< udp_endpoint , runtime::io_types::ports_templates::routing_endpoint<runtime::io_types::ports_templates::address_routing_translator<io::ip4_address>, io::ip4_address>  > udp_server_base;
 
 
 

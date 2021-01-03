@@ -4,7 +4,7 @@
 *
 *  host\rx_pipe.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -319,7 +319,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			rx_platform_host::print_offline_manual(RX_PIPE_HOST, host_directories);
 
 			std::cout << options.help({ "" });
-			std::cout << "\r\n\r\n";
+			std::cout << "\r\n";
 
 			// don't execute
 			return false;
@@ -330,7 +330,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			string_type version = rx_gate::instance().get_rx_version();
 
 			std::cout << "\r\n"
-				<< version << "\r\n\r\n";
+				<< version << "\r\n";
 
 			// don't execute
 			return false;
@@ -342,7 +342,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			read_handle = (intptr_t)in;
 			write_handle = (intptr_t)err;
 		}
-		else if (read_handle == 0 || write_handle == 0)
+		if (read_handle == 0 || write_handle == 0)
 		{
 			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
 				<< "\r\nUse --input and --output or --std options to specify handles."
@@ -381,7 +381,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	if (!result)
 		HOST_LOG_WARNING("Main", 999, "Error registering local pipe port constructor:"s + result.errors()[0]);
 
-	pipe_port_ = rx_create_reference<local_pipe_port>(pipes);
+	pipe_port_ = rx_create_reference<local_pipe_port>(pipes, this);
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing rx-platform...";

@@ -4,7 +4,7 @@
 *
 *  terminal\rx_console.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -129,8 +129,12 @@ void console_runtime::get_prompt (string_type& prompt)
 
 void console_runtime::get_wellcome (string_type& wellcome)
 {
-	wellcome = g_console_welcome;
-	wellcome += ANSI_COLOR_BOLD ANSI_COLOR_GREEN ">>>> Running ";
+	wellcome.clear();
+	wellcome += ">Connecting terminal as ";
+	wellcome += security::active_security()->get_full_name();
+	wellcome += "...\r\n\r\n";
+	wellcome += g_console_welcome;	
+	wellcome += "\r\n\r\n" ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
 	wellcome += get_console_terminal();
 	wellcome += "\r\n";
 	wellcome += "";
@@ -216,7 +220,7 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
 		out << "bye...\r\n";
-		rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
+		rx_close(&stack_entry_, RX_PROTOCOL_OK);
 		ret = true;
 	}
 	else if (line == "hello")

@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_relations.cpp
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -265,15 +265,3 @@ rx_item_reference port_app_relation::get_implicit_reference (const meta::meta_da
 } // namespace sys_runtime
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-    return true;
-
-    return true;
-
-    return true;
-
-#endif

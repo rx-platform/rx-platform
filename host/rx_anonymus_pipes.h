@@ -4,7 +4,7 @@
 *
 *  host\rx_anonymus_pipes.h
 *
-*  Copyright (c) 2020 ENSACO Solutions doo
+*  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,16 +34,17 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
 namespace host {
 namespace pipe {
 class anonymus_pipe_client;
+class rx_pipe_host;
 
 } // namespace pipe
 } // namespace host
@@ -101,7 +102,7 @@ class anonymus_pipe_endpoint
 {
 
   public:
-      anonymus_pipe_endpoint();
+      anonymus_pipe_endpoint (rx_pipe_host* host);
 
 
       void receive_loop (std::function<void(int64_t)> received_func);
@@ -130,6 +131,8 @@ class anonymus_pipe_endpoint
 
       rx_protocol_stack_endpoint stack_entry_;
 
+      rx_pipe_host *host_;
+
 
       std::function<void(int64_t)> sent_func_;
 
@@ -144,12 +147,12 @@ class anonymus_pipe_endpoint
 class local_pipe_port : public rx_platform::runtime::items::port_runtime  
 {
 	DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-Local Pipe class. implementation of an local pipe port port");
+Local Pipe class. implementation of an local pipe port");
 
 	DECLARE_REFERENCE_PTR(local_pipe_port);
 
   public:
-      local_pipe_port (const pipe_client_t& pipes);
+      local_pipe_port (const pipe_client_t& pipes, rx_pipe_host* host);
 
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
