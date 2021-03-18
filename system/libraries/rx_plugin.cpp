@@ -69,6 +69,9 @@ plugin_manager& plugin_manager::instance ()
 }
 
 
+// Class rx_platform::library::plugin_builder 
+
+
 } // namespace library
 } // namespace rx_platform
 

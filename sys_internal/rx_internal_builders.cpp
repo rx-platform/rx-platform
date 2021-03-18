@@ -140,11 +140,11 @@ void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::sma
 }
 
 template<class T>
-rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance_data_t&& data, tl::type2type<T>
+rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance_data_t&& data, data::runtime_values_data&& runtime_data, tl::type2type<T>
 , std::function<void(typename T::RTypePtr)> result_f = std::function<void(typename T::RTypePtr)>())
 {
 	data.meta_info = create_meta_for_new(data.meta_info);
-	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(data));
+	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(data), std::move(runtime_data));
 	return true;
 	if (create_result)
 	{
@@ -200,6 +200,9 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	auto other_builders = get_other_builders(data, host);
 
 
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building platform...");
+
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building system...");
 	for (auto& one : sys_builders)
 	{
 		auto result = one->do_build(root);
@@ -210,7 +213,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			return errors;
 		}
 	}
-	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system!");
+	BUILD_LOG_INFO("rx_platform_builder", 900, "System built.");
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system...");
 	errors = root->add_sub_directory(rx_create_reference<unassigned_directory>());
 	if (!errors)
 	{
@@ -219,18 +223,21 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	errors = buid_unassigned(root, host, data);
 	if (errors)
-		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built!");
+		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built.");
 	// unassigned is critical so an error in building system is fatal
 	else
 		return errors;
 
 	if (meta_data.build_system_from_code)
+	//@@@@STUPID but have to be turned off for a while, hence the @'s :)
 	{
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
 		auto dir_ptr = root->get_sub_directory(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_HOST_NAME);
 		if (dir_ptr)
 		{
-			errors = host->build_host(dir_ptr);
+			hosting::host_platform_builder host_builder;
+			host_builder.host_root = dir_ptr;
+			errors = host->build_host(host_builder);
 			if (!errors)
 			{
 				errors.register_error("Unable to build host "s + host->get_host_name());
@@ -253,10 +260,12 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			auto dir_ptr = root->get_sub_directory(root_path);
 			if (dir_ptr)
 			{
-				errors = one->build_plugin(dir_ptr);
+				library::plugin_builder builder;
+				builder.plugin_root = dir_ptr;
+				errors = one->build_plugin(builder);
 				if (!errors)
 				{
-					errors.register_error("Unable to build host "s + host->get_host_name());
+					errors.register_error("Unable to build plugin "s + one->get_plugin_name());
 					return errors;
 				}
 			}
@@ -307,6 +316,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 
 	}
 
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Building user items...");
+
 	for (auto& one : user_builders)
 	{
 		auto result = one->do_build(root);
@@ -315,12 +326,17 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Errors occurred while building platform user configuration!");
 		}
 	}
-	for (auto& one : test_builders)
+	BUILD_LOG_INFO("rx_platform_builder", 900, "User items built.");
+
+	if (!test_builders.empty())
 	{
-		auto result = one->do_build(root);
-		if (!result)
+		for (auto& one : test_builders)
 		{
-			BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
+			auto result = one->do_build(root);
+			if (!result)
+			{
+				BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
+			}
 		}
 	}
 	for (auto& one : other_builders)
@@ -331,6 +347,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			BUILD_LOG_WARNING("rx_platform_builder", 900, "Error building platform additional configuration!");
 		}
 	}
+
+	BUILD_LOG_INFO("rx_platform_builder", 900, "Platform built, initializing...");
 
 	return true;
 }
@@ -441,7 +459,7 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 		app_instance_data.meta_info.path = full_path;
 		app_instance_data.instance_data.processor = 1;
 		app_instance_data.instance_data.priority = rx_domain_priority::low;
-		auto result = add_object_to_configuration(dir, std::move(app_instance_data), tl::type2type<application_type>());
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned application!");
@@ -454,9 +472,9 @@ rx_result rx_platform_builder::buid_unassigned (platform_root::smart_ptr root, h
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.processor = 1;
-		instance_data.instance_data.app_id = RX_NS_SYSTEM_UNASS_APP_ID;
+		instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_UNASS_APP_PATH);
 		instance_data.instance_data.priority = rx_domain_priority::low;
-		auto result2 = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<domain_type>());
+		auto result2 = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
 		if (!result2)
 		{
 			result2.register_error("Unable to add unassigned domain!");
@@ -685,8 +703,8 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, obj, false);
 		obj = create_type<object_type>(meta::object_type_creation_data{
-			RX_SYSTEM_OBJECT_TYPE_NAME
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			RX_INTERNAL_OBJECT_TYPE_NAME
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, RX_CLASS_OBJECT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -711,8 +729,8 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, app, false);
 		app = create_type<application_type>(meta::object_type_creation_data{
-			RX_SYSTEM_APP_TYPE_NAME
-			, RX_SYSTEM_APP_TYPE_ID
+			RX_INTERNAL_APP_TYPE_NAME
+			, RX_INTERNAL_APP_TYPE_ID
 			, RX_CLASS_APPLICATION_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -735,8 +753,8 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			});
 		add_type_to_configuration(dir, domain, false);
 		domain = create_type<domain_type>(meta::object_type_creation_data{
-			RX_SYSTEM_DOMAIN_TYPE_NAME
-			, RX_SYSTEM_DOMAIN_TYPE_ID
+			RX_INTERNAL_DOMAIN_TYPE_NAME
+			, RX_INTERNAL_DOMAIN_TYPE_ID
 			, RX_CLASS_DOMAIN_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -778,10 +796,10 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 {
 	what->complex_data.register_const_value_static("PID", ""s);
 	what->complex_data.register_const_value_static("Description", ""s);
-	what->complex_data.register_simple_value_static("Note", false, ""s);
-	what->complex_data.register_simple_value_static("LastScanTime", true, 0.0);
-	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", true, 0);
-	what->complex_data.register_simple_value_static("MaxScanTime", true, 0.0);
+	what->complex_data.register_simple_value_static("Note", ""s, false, true);
+	what->complex_data.register_simple_value_static("LastScanTime", 0.0, true, false);
+	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", 0, true, false);
+	what->complex_data.register_simple_value_static("MaxScanTime", 0.0, true, false);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 template<class T>
@@ -826,7 +844,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		auto app = create_type<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_APP_TYPE_NAME
 			, RX_NS_SYSTEM_APP_TYPE_ID
-			, RX_SYSTEM_APP_TYPE_ID
+			, RX_INTERNAL_APP_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -834,17 +852,32 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		auto dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_DOM_TYPE_NAME
 			, RX_NS_SYSTEM_DOM_TYPE_ID
-			, RX_SYSTEM_DOMAIN_TYPE_ID
+			, RX_INTERNAL_DOMAIN_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		add_type_to_configuration(dir, dom, false);		
-		
+		dom = create_type<domain_type>(meta::object_type_creation_data{
+			RX_HOST_DOMAIN_TYPE_NAME
+			, RX_HOST_DOMAIN_TYPE_ID
+			, RX_INTERNAL_DOMAIN_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, dom, false);
 		// unassigned application and domain types
 		app = create_type<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_UNASS_APP_TYPE_NAME
 			, RX_NS_SYSTEM_UNASS_APP_TYPE_ID
-			, RX_SYSTEM_APP_TYPE_ID
+			, RX_INTERNAL_APP_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, app, false);
+		app = create_type<application_type>(meta::object_type_creation_data{
+			RX_HOST_APP_TYPE_NAME
+			, RX_HOST_APP_TYPE_ID
+			, RX_INTERNAL_APP_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -852,7 +885,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_UNASS_TYPE_NAME
 			, RX_NS_SYSTEM_UNASS_TYPE_ID
-			, RX_SYSTEM_DOMAIN_TYPE_ID
+			, RX_INTERNAL_DOMAIN_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -861,7 +894,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_COMMANDS_MANAGER_TYPE_NAME
 			, RX_COMMANDS_MANAGER_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -869,7 +902,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_NS_SERVER_RT_TYPE_NAME
 			, RX_NS_SERVER_RT_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -879,7 +912,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_POOL_TYPE_NAME
 			, RX_POOL_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -890,7 +923,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_PHYSICAL_THREAD_TYPE_NAME
 			, RX_PHYSICAL_THREAD_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -919,7 +952,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_LOG_TYPE_NAME
 			, RX_LOG_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -928,7 +961,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_IO_MANAGER_TYPE_NAME
 			, RX_IO_MANAGER_TYPE_ID
-			, RX_SYSTEM_OBJECT_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -1141,7 +1174,7 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		app_instance_data.meta_info.path = full_path;
 		app_instance_data.instance_data.processor = 0;
 		app_instance_data.instance_data.priority = rx_domain_priority::normal;
-		auto result = add_object_to_configuration(dir, std::move(app_instance_data), tl::type2type<application_type>());
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
 
 		runtime_data::domain_runtime_data domain_instance_data;
 		domain_instance_data.meta_info.name = RX_NS_SYSTEM_DOM_NAME;
@@ -1150,9 +1183,9 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		domain_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		domain_instance_data.meta_info.path = full_path;
 		domain_instance_data.instance_data.processor = -1;
-		domain_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		domain_instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_APP_PATH);
 		domain_instance_data.instance_data.priority = rx_domain_priority::normal;
-		result = add_object_to_configuration(dir, std::move(domain_instance_data), tl::type2type<domain_type>());
+		result = add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
 
 		runtime_data::object_runtime_data instance_data;
 		instance_data.meta_info.name = RX_NS_SERVER_RT_NAME;
@@ -1160,8 +1193,8 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		instance_data.meta_info.parent = RX_NS_SERVER_RT_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
-		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
+		instance_data.instance_data.domain_ref = rx_item_reference(RX_NS_SYSTEM_DOM_PATH);
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 		// we did the move so make another object
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = IO_POOL_NAME;
@@ -1169,8 +1202,8 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		instance_data.meta_info.parent = RX_POOL_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
-		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
+		instance_data.instance_data.domain_ref = rx_item_reference(RX_NS_SYSTEM_DOM_PATH);
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = META_POOL_NAME;
@@ -1178,8 +1211,8 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		instance_data.meta_info.parent = RX_META_POOL_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
-		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
+		instance_data.instance_data.domain_ref = rx_item_reference(RX_NS_SYSTEM_DOM_PATH);
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 
 
 		instance_data = runtime_data::object_runtime_data();
@@ -1188,8 +1221,8 @@ rx_result system_objects_builder::do_build (rx_directory_ptr root)
 		instance_data.meta_info.parent = RX_UNASSIGNED_POOL_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
-		instance_data.instance_data.domain_id = RX_NS_SYSTEM_DOM_ID;
-		result = add_object_to_configuration(dir, std::move(instance_data), tl::type2type<object_type>());
+		instance_data.instance_data.domain_ref = rx_item_reference(RX_NS_SYSTEM_DOM_PATH);
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
@@ -1271,7 +1304,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static("Path", false, ""s);
+		src->complex_data.register_simple_value_static("Path", ""s, false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
@@ -1300,10 +1333,10 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		filter->complex_data.register_simple_value_static("HiEU", false, 100.0);
-		filter->complex_data.register_simple_value_static("LowEU", false, 0.0);
-		filter->complex_data.register_simple_value_static("HiRaw", false, 10.0);
-		filter->complex_data.register_simple_value_static("LowRaw", false, 0.0);
+		filter->complex_data.register_simple_value_static("HiEU", 100.0, false, true);
+		filter->complex_data.register_simple_value_static("LowEU", 0.0, false, true);
+		filter->complex_data.register_simple_value_static("HiRaw", 10.0, false, true);
+		filter->complex_data.register_simple_value_static("LowRaw", 0.0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		// port related helper structures
@@ -1314,9 +1347,9 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_simple_value_static("Connected", true, false);
-		what->complex_data.register_simple_value_static<int64_t>("RxPackets", false, 0);
-		what->complex_data.register_simple_value_static<int64_t>("TxPackets", false, 0);
+		what->complex_data.register_simple_value_static("Connected", false, true, false);
+		what->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1326,8 +1359,8 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_simple_value_static<int64_t>("RxBytes", false, 0);
-		what->complex_data.register_simple_value_static<int64_t>("TxBytes", false, 0);
+		what->complex_data.register_simple_value_static<int64_t>("RxBytes", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("TxBytes", 0, false, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1348,8 +1381,8 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_simple_value_static<uint32_t>("ReceiveTimeout", false, 10000);
-		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", false, 1000);
+		what->complex_data.register_simple_value_static<uint32_t>("ReceiveTimeout", 10000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", 1000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1359,7 +1392,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_simple_value_static<uint32_t>("ConnectTimeout", false, 5000);
+		what->complex_data.register_simple_value_static<uint32_t>("ConnectTimeout", 5000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1380,8 +1413,8 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		what->complex_data.register_const_value_static("ThreadId", (uint32_t)0);
-		what->complex_data.register_simple_value_static("Queue", true, (uint16_t)0);
-		what->complex_data.register_simple_value_static("MaxQueue", true, (uint16_t)0);
+		what->complex_data.register_simple_value_static("Queue", (uint16_t)0, true, false);
+		what->complex_data.register_simple_value_static("MaxQueue", (uint16_t)0, true, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1483,7 +1516,7 @@ rx_result simulation_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static<uint32_t>("Period", false, 50);
+		src->complex_data.register_simple_value_static<uint32_t>("Period", 50, false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, true);
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_RAMP_SIMULATION_SOURCE_TYPE_NAME
@@ -1492,9 +1525,9 @@ rx_result simulation_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static<double>("Amplitude", false, 100);
-		src->complex_data.register_simple_value_static<double>("Increment", false, 1);
-		src->complex_data.register_simple_value_static<bool>("Double", false, false);
+		src->complex_data.register_simple_value_static<double>("Amplitude", 100, false, true);
+		src->complex_data.register_simple_value_static<double>("Increment", 1, false, true);
+		src->complex_data.register_simple_value_static<bool>("Double", false, false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, true);
 
 	}
@@ -1518,28 +1551,28 @@ rx_result system_ports_builder::do_build (rx_directory_ptr root)
 		port_instance_data.meta_info.parent = RX_TCP_SERVER_PORT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
-		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_APP_PATH);
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0x7ABC);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 16000);
-		auto result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+		auto result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUABIN_ID;
 		port_instance_data.meta_info.parent = RX_OPCUA_TRANSPORT_PORT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
-		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_APP_PATH);
 		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 		
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
 		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
-		port_instance_data.instance_data.app_id = RX_NS_SYSTEM_APP_ID;
+		port_instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_APP_PATH);
 		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 
 	}

@@ -35,8 +35,6 @@
 
 // rx_pipe
 #include "host/rx_pipe.h"
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
 
 
 
@@ -46,12 +44,11 @@ namespace win32 {
 
 
 
-
 class win32_pipe_host : public host::pipe::rx_pipe_host  
 {
 
   public:
-      win32_pipe_host (hosting::rx_host_storages& storage);
+      win32_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~win32_pipe_host();
 

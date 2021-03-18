@@ -156,7 +156,7 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     std::ostringstream out3;
     out3 << rx_gate::instance().get_os_info() << " [PID:" << rx_gate::instance().get_pid() << "]";
     response->os = out3.str();
-    string_array hosts;
+    hosting::hosts_type hosts;
     rx_gate::instance().get_host()->get_host_info(hosts);
     if (hosts.size() > 0)
         response->os_host = hosts[0];

@@ -36,10 +36,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_log
-#include "lib/rx_log.h"
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
+// rx_log
+#include "lib/rx_log.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -106,7 +106,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      rx_pipe_host (hosting::rx_host_storages& storage);
+      rx_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~rx_pipe_host();
 
@@ -129,7 +129,7 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
       bool is_canceling () const;
 
-      rx_result build_host (rx_directory_ptr root);
+      rx_result build_host (hosting::host_platform_builder& builder);
 
       string_type get_host_manual () const;
 
@@ -138,6 +138,8 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
       virtual void restore_console ();
 
       virtual rx_result setup_console (int argc, char* argv[]);
+
+      void pipe_run_result (rx_result result);
 
 
   protected:

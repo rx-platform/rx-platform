@@ -99,7 +99,7 @@ struct domain_data
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      rx_node_id app_id;
+      rx_item_reference app_ref;
 
       int processor;
 
@@ -128,7 +128,7 @@ struct object_data
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      rx_node_id domain_id;
+      rx_item_reference domain_ref;
 
   public:
 
@@ -153,7 +153,7 @@ struct port_data
       bool deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      rx_node_id app_id;
+      rx_item_reference app_ref;
 
       byte_string identity;
 

@@ -94,6 +94,29 @@ runtime_values_data& runtime_values_data::add_child (const string_type& name)
 	}
 }
 
+runtime_values_data& runtime_values_data::add_child (const string_type& name, runtime_values_data&& data)
+{
+	auto idx = name.find(".");
+
+	if (idx == string_type::npos)
+	{// our value
+		return children.emplace(name, std::move(data)).first->second;
+	}
+	else
+	{
+		auto child_it = children.find(name.substr(0, idx));
+		if (child_it != children.end())
+		{
+			return child_it->second.add_child(name.substr(idx + 1), std::move(data));
+		}
+		else
+		{
+			auto& vals = add_child(name.substr(0, idx));
+			return vals.add_child(name.substr(idx + 1), std::move(data));
+		}
+	}
+}
+
 rx_simple_value runtime_values_data::get_value (const string_type& path) const
 {
 	if (path.empty())

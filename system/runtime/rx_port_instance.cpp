@@ -105,7 +105,7 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
             rx_timed_value str_val;
             str_val.assign_static<string_type>(string_type(relation_ptr->target_path), rx_time::now());
             relation_ptr->value.value = str_val;
-            relation_ptr->value.read_only = true;
+            relation_ptr->value.value_opt[runtime::structure::value_data::opt_readonly] = true;
 
             auto result = what->add_implicit_relation(relation_ptr);
             if (!result)

@@ -37,10 +37,10 @@
 #include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
@@ -207,6 +207,10 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       void close_endpoint ();
 
+      message_ptr set_context (api::rx_context ctx, const messages::rx_connection_context_request& req);
+
+      rx_result request_stream_version (uint32_t sversion);
+
 
       const string_type& get_current_directory_path () const
       {
@@ -228,6 +232,12 @@ class rx_protocol_connection : public rx::pointers::reference_object
       runtime::items::port_runtime* get_port ()
       {
         return port_;
+      }
+
+
+      uint32_t get_stream_version () const
+      {
+        return stream_version_;
       }
 
 
@@ -255,6 +265,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       runtime::items::port_runtime* port_;
 
+      uint32_t stream_version_;
+
 
 };
 
@@ -264,7 +276,7 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_protocol_connection  > rx_json_protocol_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::rx_protocol::rx_protocol_connection  > rx_json_protocol_port_base;
 
 
 

@@ -412,7 +412,7 @@ public:
 	  void assign(double val);
 	  void assign(std::complex<double> val);
 
-	  void assign(rx_time_struct val);
+	  void assign(rx_time val);
 	  void assign(rx_uuid val);
 
 	  void assign(string_type&& val);

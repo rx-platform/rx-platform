@@ -184,6 +184,10 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	return true;
 }
 
+void cd_command::register_suggestions (const string_type& line, suggestions_type& suggestions)
+{
+}
+
 
 // Class rx_internal::internal_ns::namespace_commands::dir_command 
 

@@ -280,14 +280,14 @@ namespace win32 {
 
 // Class win32::win32_console_host 
 
-win32_console_host::win32_console_host (hosting::rx_host_storages& storage)
+win32_console_host::win32_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : out_handle_(NULL),
         in_handle_(NULL),
         supports_ansi_(false),
         default_attribute_(0),
         no_ansi_(false),
         use_ansi_(false)
-	, host::interactive::interactive_console_host(storage)
+	, host::interactive::interactive_console_host(storages)
 {
 }
 

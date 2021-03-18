@@ -375,31 +375,31 @@ public:
       types_repository();
 
 
-      typename types_repository<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
-
-      rx_result register_type (typename types_repository<typeT>::Tptr what);
-
       rx_result register_constructor (const rx_node_id& id, std::function<RImplPtr()> f);
 
       rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> f);
 
       rx_result register_behavior (const rx_node_id& id, std::function<RBeh()> f);
 
-      rx_result_with<create_runtime_result<typeT> > create_runtime (typename typeT::instance_data_t&& instance_data, bool prototype = false);
-
-      api::query_result get_derived_types (const rx_node_id& id) const;
-
-      rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
+      rx_result_with<create_runtime_result<typeT> > create_runtime (typename typeT::instance_data_t&& instance_data, data::runtime_values_data&& runtime_data, bool prototype = false);
 
       rx_result_with<typename types_repository<typeT>::RTypePtr> get_runtime (const rx_node_id& id, bool only_running = true) const;
 
       rx_result delete_runtime (rx_node_id id);
 
+      api::query_result get_derived_types (const rx_node_id& id) const;
+
+      rx_result register_type (typename types_repository<typeT>::Tptr what);
+
+      rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
+
+      rx_result update_type (types_repository<typeT>::Tptr what);
+
+      typename types_repository<typeT>::TdefRes get_type_definition (const rx_node_id& id) const;
+
       rx_result delete_type (rx_node_id id);
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
-
-      rx_result update_type (types_repository<typeT>::Tptr what);
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 

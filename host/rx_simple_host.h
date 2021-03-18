@@ -35,10 +35,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_thread
-#include "lib/rx_thread.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_thread
+#include "lib/rx_thread.h"
 
 #include "system/server/rx_server.h"
 
@@ -100,7 +100,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      simple_platform_host (hosting::rx_host_storages& storage);
+      simple_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~simple_platform_host();
 
@@ -131,7 +131,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
       string_type just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 
-      rx_result build_host (rx_directory_ptr root);
+      rx_result build_host (hosting::host_platform_builder& builder);
 
       string_type get_host_manual () const;
 

@@ -431,7 +431,7 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
 				{
 					if (!ctx->is_postponed())
-						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), result);
+						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
 				})
 			, context);
 

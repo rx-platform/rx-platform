@@ -159,18 +159,23 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 			current_line_ = current_line_ + ch;
 		break;
 	case '\t':
-	{
-		string_type offered;//!! = m_consumer->line_asked(current_line_);
-		if (!offered.empty())
 		{
+			if (!current_line_.empty() && eof)
+			{
+				string_type buffer(current_line_ + '\t');
+				line = current_line_;
+				string_type offered;//!! = m_consumer->line_asked(current_line_);
+				if (!offered.empty())
+				{
 
-			to_echo += "\033[1G\033[M";
-			to_echo += offered;
-			current_idx_ = string_type::npos;
-			current_line_ = offered;
-		}
-	}
-	break;
+					to_echo += "\033[1G\033[M";
+					to_echo += offered;
+					current_idx_ = string_type::npos;
+					current_line_ = offered;
+				}
+			}
+		}	
+		break;
 	default:
 		if (ch >= 0x20)
 		{

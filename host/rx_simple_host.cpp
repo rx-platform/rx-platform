@@ -45,10 +45,10 @@ namespace simple {
 
 // Class host::simple::simple_platform_host 
 
-simple_platform_host::simple_platform_host (hosting::rx_host_storages& storage)
+simple_platform_host::simple_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : exit_(false),
         debug_break_(false)
-	, hosting::rx_platform_host(storage)
+	, hosting::rx_platform_host(storages)
 {
 }
 
@@ -321,7 +321,7 @@ int simple_platform_host::parse_command_line (int argc, char* argv[], rx_platfor
 	return true;
 }
 
-rx_result simple_platform_host::build_host (rx_directory_ptr root)
+rx_result simple_platform_host::build_host (hosting::host_platform_builder& builder)
 {
 	return true;
 }
@@ -345,23 +345,8 @@ int simple_platform_host::start_platform ()
 
 			//if (dump_storage_references_)
 			{
-				string_type sys_info = get_storages().system_storage->get_storage_info();
-				string_type sys_ref = get_storages().system_storage->get_storage_reference();
-				string_type user_info = get_storages().user_storage->get_storage_info();
-				string_type user_ref = get_storages().user_storage->get_storage_reference();
-
-				std::cout << "\r\nStorage Information:\r\n============================\r\n";
-				std::cout << "System Storage: " << sys_info << "\r\n";
-				std::cout << "System Reference: " << sys_ref << "\r\n";
-				std::cout << "User Storage: " << user_info << "\r\n";
-				std::cout << "User Reference: " << user_ref << "\r\n";
-				if (get_storages().test_storage)
-				{
-					string_type test_info = get_storages().test_storage->get_storage_info();
-					string_type test_ref = get_storages().test_storage->get_storage_reference();
-					std::cout << "Test Storage: " << test_info << "\r\n";
-					std::cout << "Test Reference: " << test_ref << "\r\n";
-				}
+				dump_storage_references(std::cout);
+				
 			}
 
 			std::cout << "\r\nrx-platform Comm Module is running.";

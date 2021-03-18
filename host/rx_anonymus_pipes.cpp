@@ -64,14 +64,31 @@ rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ct
 	return true;
 }
 
-void local_pipe_port::receive_loop ()
+rx_result local_pipe_port::receive_loop (rx_pipe_host* host)
 {
+	auto ticks = rx_get_tick_count();
 	while (!active_)
+	{
 		rx_ms_sleep(50);
+		if ((rx_get_tick_count() - ticks) > 2000u)
+		{
+			break;
+		}
+	}
+	if (!active_)// if we break the loop?
+	{
+		host->pipe_run_result("Waiting for pipe connection timeouted.");
+		return true;
+	}
+
+	host->pipe_run_result(true);
+
 
 	pipes_.receive_loop([this] (size_t count)
 		{
 		});
+
+	return true;
 }
 
 rx_result local_pipe_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)

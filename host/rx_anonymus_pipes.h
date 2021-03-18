@@ -34,10 +34,10 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -157,7 +157,7 @@ Local Pipe class. implementation of an local pipe port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      void receive_loop ();
+      rx_result receive_loop (rx_pipe_host* host);
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 

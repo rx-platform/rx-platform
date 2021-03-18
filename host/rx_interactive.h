@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -69,7 +69,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 {
 
   public:
-      interactive_console_host (hosting::rx_host_storages& storage);
+      interactive_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~interactive_console_host();
 
@@ -96,7 +96,7 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       static string_type get_interactive_info ();
 
-      rx_result build_host (rx_directory_ptr root);
+      rx_result build_host (hosting::host_platform_builder& builder);
 
       string_type get_host_manual () const;
 
@@ -107,6 +107,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
       virtual bool write_stdout (const void* data, size_t size) = 0;
 
       bool write_stdout (const string_type& lines);
+
+      void console_run_result (rx_result result);
 
 
   protected:

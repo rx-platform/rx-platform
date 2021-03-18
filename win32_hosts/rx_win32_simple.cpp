@@ -28,7 +28,7 @@
 ****************************************************************************/
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 #include "rx_win32_simple_version.h"
 #include "rx_win32_common.h"
@@ -42,9 +42,9 @@ namespace win32 {
 
 // Class win32::win32_simple_host 
 
-win32_simple_host::win32_simple_host (hosting::rx_host_storages& storage)
+win32_simple_host::win32_simple_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : supports_ansi_(false)
-	, host::simple::simple_platform_host(storage)
+	, host::simple::simple_platform_host(storages)
 {
 }
 

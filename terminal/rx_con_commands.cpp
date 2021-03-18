@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of rx-platform
 *
-*  
+*
 *  rx-platform is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  rx-platform is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with rx-platform. It is also available in any rx-platform console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -107,7 +107,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class rx_internal::terminal::console::console_commands::info_command 
+// Class rx_internal::terminal::console::console_commands::info_command
 
 info_command::info_command()
   : server_command("info")
@@ -187,7 +187,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 }
 
 
-// Class rx_internal::terminal::console::console_commands::code_command 
+// Class rx_internal::terminal::console::console_commands::code_command
 
 code_command::code_command()
   : item_query_command("code")
@@ -209,7 +209,7 @@ bool code_command::do_with_item (platform_item_ptr&& item, std::ostream& out, st
 }
 
 
-// Class rx_internal::terminal::console::console_commands::rx_name_command 
+// Class rx_internal::terminal::console::console_commands::rx_name_command
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -263,7 +263,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::terminal::console::console_commands::cls_command 
+// Class rx_internal::terminal::console::console_commands::cls_command
 
 cls_command::cls_command()
   : server_command("cls")
@@ -284,7 +284,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class rx_internal::terminal::console::console_commands::shutdown_command 
+// Class rx_internal::terminal::console::console_commands::shutdown_command
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -310,7 +310,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class rx_internal::terminal::console::console_commands::log_command 
+// Class rx_internal::terminal::console::console_commands::log_command
 
 log_command::log_command()
 	: server_command("log")
@@ -441,18 +441,19 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 {
 	using parser_t = urke::parser::parser3000;
 	log::log_query_type query;
-	query.type = log::rx_log_query_type::normal_level;
+	query.type = log::rx_log_normal_level;
 	string_type log_name = "last";
 	bool trace = false;
 	bool debug = false;
 	bool warning = false;
 	bool error = false;
 	bool help = false;
+	bool acceding = false;
 	bool version = false;
 	string_type pattern = "*";
 	int count = 40;
 
-	
+
 
 	parser_t parser;
 	parser.add_bit_option('e', "error", &error, "Reads error events.");
@@ -481,18 +482,20 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 		else
 		{
 			query.pattern = pattern;
-			query.type = log::rx_log_query_type::normal_level;
+			query.type = log::rx_log_normal_level;
 			if (trace)
-				query.type = log::rx_log_query_type::trace_level;
+				query.type = log::rx_log_trace_level;
 			if (debug)
-				query.type = log::rx_log_query_type::debug_level;
+				query.type = log::rx_log_debug_level;
 			if (warning)
-				query.type = log::rx_log_query_type::warining_level;
+				query.type = log::rx_log_warining_level;
 			if (error)
-				query.type = log::rx_log_query_type::error_level;
+				query.type = log::rx_log_error_level;
+			if (acceding)
+				query.type = query.type | log::rx_log_acceding;
 			query.count = count;
 
-			auto ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
+			ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
 				{
 					auto& out = ctx->get_stdout();
 					auto& err = ctx->get_stdout();
@@ -599,7 +602,7 @@ void log_command::log_fired (console_context_ptr ctx)
 }
 
 
-// Class rx_internal::terminal::console::console_commands::sec_command 
+// Class rx_internal::terminal::console::console_commands::sec_command
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -694,7 +697,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class rx_internal::terminal::console::console_commands::time_command 
+// Class rx_internal::terminal::console::console_commands::time_command
 
 time_command::time_command()
 	: server_command("time")
@@ -716,7 +719,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::terminal::console::console_commands::sleep_command 
+// Class rx_internal::terminal::console::console_commands::sleep_command
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -773,7 +776,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class rx_internal::terminal::console::console_commands::def_command 
+// Class rx_internal::terminal::console::console_commands::def_command
 
 def_command::def_command()
 	: item_query_command("def")
@@ -798,7 +801,7 @@ bool def_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std
 }
 
 
-// Class rx_internal::terminal::console::console_commands::item_query_command 
+// Class rx_internal::terminal::console::console_commands::item_query_command
 
 item_query_command::item_query_command (const string_type& console_name)
 	: server_command(console_name)
@@ -868,7 +871,7 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 }
 
 
-// Class rx_internal::terminal::console::console_commands::phyton_command 
+// Class rx_internal::terminal::console::console_commands::phyton_command
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -889,7 +892,7 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 	in >> sub_command;
 	if (sub_command.empty())
 	{// "jbg prazno
-		err << "It,s not over yet, be more paitent...";
+		err << "It,s not over yet, be more patient...";
 		return false;
 	}
 	else if (sub_command == "version" || sub_command == "ver")
@@ -911,7 +914,7 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 }
 
 
-// Class rx_internal::terminal::console::console_commands::license_command 
+// Class rx_internal::terminal::console::console_commands::license_command
 
 license_command::license_command()
 	: server_command("license")
@@ -950,7 +953,7 @@ bool license_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::terminal::console::console_commands::help_command 
+// Class rx_internal::terminal::console::console_commands::help_command
 
 help_command::help_command()
 	: server_command("help")

@@ -95,12 +95,12 @@ rx_result complex_data_type::register_event (const string_type& name, const rx_n
 	return ret;
 }
 
-rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, rx_simple_value&& val)
+rx_result complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
 	if (ret)
 	{
-		simple_values_.emplace_back(name, read_only, std::move(val));
+		simple_values_.emplace_back(name, std::move(val), read_only, persistent);
 	}
 	return ret;
 }
@@ -115,12 +115,12 @@ rx_result complex_data_type::register_const_value (const string_type& name, rx_s
 	return ret;
 }
 
-rx_result complex_data_type::register_simple_value (const string_type& name, bool read_only, const rx_simple_value& val)
+rx_result complex_data_type::register_simple_value (const string_type& name, const rx_simple_value& val, bool read_only, bool persistent)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
 	if(ret)
 	{
-		simple_values_.emplace_back(name, read_only, val);
+		simple_values_.emplace_back(name, val, read_only, persistent);
 	}
 	return ret;
 }
@@ -334,17 +334,19 @@ rx_result mapper_attribute::construct (construct_context& ctx) const
 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
-simple_value_def::simple_value_def (const string_type& name, bool read_only, rx_simple_value&& value)
+simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
 	: name_(name)
 	, storage_(std::move(value))
 	, read_only_(read_only)
+	, persistent_(persistent)
 {
 }
 
-simple_value_def::simple_value_def (const string_type& name, bool read_only, const rx_simple_value& value)
+simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent)
 	: name_(name)
 	, storage_(value)
 	, read_only_(read_only)
+	, persistent_(persistent)
 {
 }
 
@@ -358,6 +360,11 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 		return false;
 	if (!storage_.serialize("value", stream))
 		return false;
+	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
+	{
+		if (!stream.write_bool("persist", persistent_))
+			return false;
+	}
 	return true;
 }
 
@@ -369,6 +376,11 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 		return false;
 	if (!storage_.deserialize("value", stream))
 		return false;
+	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
+	{
+		if (!stream.read_bool("persist", persistent_))
+			return false;
+	}
 	return true;
 }
 

@@ -45,14 +45,14 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace relations {
-class relation_connector;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class object_runtime_algorithms;
-
 } // namespace algorithms
+
+namespace relations {
+class relation_connector;
+
+} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 
@@ -165,7 +165,7 @@ class relation_data : public rx::pointers::reference_object
 
       virtual rx_result stop_relation (runtime::runtime_stop_context& ctx);
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, runtime_process_context* ctx);
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
@@ -267,7 +267,7 @@ class relations_holder
 
       virtual rx_result stop_relations (runtime::runtime_stop_context& ctx);
 
-      void fill_data (const data::runtime_values_data& data);
+      void fill_data (const data::runtime_values_data& data, runtime_process_context* ctx);
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 

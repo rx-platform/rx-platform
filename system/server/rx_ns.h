@@ -36,12 +36,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"
@@ -161,6 +161,7 @@ class rx_namespace_item
 
 typedef std::vector<rx_namespace_item> platform_items_type;
 
+using suggestions_type = std::set<string_type>;
 
 
 
@@ -229,6 +230,8 @@ class rx_platform_directory : public rx::pointers::reference_object
       rx_result move_directory (const string_type& source, const string_type& dest);
 
       rx_result copy_directory (const string_type& source, const string_type& dest);
+
+      virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
 	  template<class TImpl>
 	  rx_result add_item(TImpl who);

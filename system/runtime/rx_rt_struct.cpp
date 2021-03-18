@@ -36,6 +36,7 @@
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
+#include "rx_library.h"
 #include "rx_blocks.h"
 #include "rx_objbase.h"
 #include "rx_relations.h"
@@ -96,11 +97,14 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		{
 		case rt_const_index_type:
 			// const value
-			data.add_value(one.name, const_values[(one.index >> rt_type_shift)].value);
+			if (type != runtime_value_type::persistent_runtime_value)
+				data.add_value(one.name, const_values[(one.index >> rt_type_shift)].value);
 			break;
 		case rt_value_index_type:
 			// simple value
-			data.add_value(one.name, values[(one.index >> rt_type_shift)].value.to_simple());
+			if (type != runtime_value_type::persistent_runtime_value
+				|| values[(one.index >> rt_type_shift)].value_opt[value_data::opt_persistent])
+				data.add_value(one.name, values[(one.index >> rt_type_shift)].value.to_simple());
 			break;
 		case rt_variable_index_type:
 			if constexpr (has_variables())
@@ -111,8 +115,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				}
 				else
 				{
-					auto& result = data.add_child(one.name);
-					variables.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+					data::runtime_values_data child_data;
+					variables.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+					if(!child_data.empty())
+						data.add_child(one.name, std::move(child_data));
 				}
 			}
 			break;
@@ -120,8 +126,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 			{
 				if constexpr (has_structs())
 				{
-					auto& result = data.add_child(one.name);
-					structs.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+					data::runtime_values_data child_data;
+					structs.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+					if (!child_data.empty())
+						data.add_child(one.name, std::move(child_data));
 				}
 			}
 			break;
@@ -131,8 +139,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				{
 					if ((type & runtime_value_type::sources_runtime_value) == runtime_value_type::sources_runtime_value)
 					{
-						auto& result = data.add_child(one.name);
-						sources.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+						data::runtime_values_data child_data;
+						sources.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
 					}
 				}
 			}
@@ -143,8 +153,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				{
 					if ((type & runtime_value_type::mappers_runtime_value) == runtime_value_type::mappers_runtime_value)
 					{
-						auto& result = data.add_child(one.name);
-						mappers.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+						data::runtime_values_data child_data;
+						mappers.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
 					}
 				}
 			}
@@ -155,8 +167,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				{
 					if ((type & runtime_value_type::filters_runtime_value) == runtime_value_type::filters_runtime_value)
 					{
-						auto& result = data.add_child(one.name);
-						filters.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+						data::runtime_values_data child_data;
+						filters.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
 					}
 				}
 			}
@@ -167,8 +181,10 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				{
 					if ((type & runtime_value_type::events_runtime_value) == runtime_value_type::events_runtime_value)
 					{
-						auto& result = data.add_child(one.name);
-						events.collection[(one.index >> rt_type_shift)].collect_data(result, type);
+						data::runtime_values_data child_data;
+						events.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
 					}
 				}
 			}
@@ -277,29 +293,6 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	if (path.empty())
 	{// our value
 		rx_result result;
-#ifdef RX_MIN_MEMORY
-		if (!json_cache_.empty())
-		{
-			value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
-		}
-		else
-		{
-			serialization::json_writer writer;
-			writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-			result = serialize_value(writer, runtime_value_type::simple_runtime_value);
-			if (result)
-			{
-#ifdef _DEBUG
-				if (writer.get_string(const_cast<string_type&>(json_cache_), true))
-				{
-#else
-				writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false);
-#endif
-				value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
-				}
-			}
-		}
-#else
 		serialization::json_writer writer;
 		writer.write_header(STREAMING_TYPE_MESSAGE, 0);
 		data::runtime_values_data data;
@@ -322,7 +315,6 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			}
 		}
 		return result;
-#endif
 	}
 	else
 	{
@@ -1095,7 +1087,8 @@ variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr
 
 void variable_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
+	if (type != runtime_value_type::persistent_runtime_value)
+		data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
 	item->collect_data(data, type);
 }
 
@@ -2044,13 +2037,15 @@ void value_data::object_state_changed (runtime_process_context* ctx)
 		value.set_time(ctx->get_mode_time());
 }
 
-rx_result value_data::write_value (write_data&& data)
+rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx)
 {
-	if (read_only && !data.internal)
+	if (value_opt[runtime::structure::value_data::opt_readonly] && !data.internal)
 		return "Access Denied!";
 	if (data.value.convert_to(value.get_type()))
 	{
 		value = rx_timed_value::from_simple(std::move(data.value), rx_time::now());
+		if (value_opt[runtime::structure::value_data::opt_persistent])
+			ctx->runtime_dirty();
 		return true;
 	}
 	else
@@ -2064,11 +2059,13 @@ rx_simple_value value_data::simple_get_value () const
 	return value.to_simple();
 }
 
-rx_result value_data::simple_set_value (rx_simple_value&& val)
+rx_result value_data::simple_set_value (rx_simple_value&& val, runtime_process_context* ctx)
 {
 	if (val.convert_to(value.get_type()))
 	{
 		value = rx_timed_value::from_simple(std::move(val), rx_time::now());
+		if (value_opt[runtime::structure::value_data::opt_persistent])
+			ctx->runtime_dirty();
 		return true;
 	}
 	else

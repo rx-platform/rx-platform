@@ -55,7 +55,8 @@ namespace serialization {
 
 // Class rx_platform::serialization::json_reader 
 
-json_reader::json_reader()
+json_reader::json_reader (int version)
+	: base_meta_reader(version)
 {
 }
 
@@ -715,8 +716,12 @@ bool json_reader::parse_version_string (uint32_t& result, const string_type& ver
 
 bool json_reader::read_init_values (const char* name, data::runtime_values_data& values)
 {
-	if (!start_object(name))
-		return false;
+	if (name)
+	{
+		if (!start_object(name))
+			return false;
+	}
+
 	// now enumerate objects
 	int index = 0;
 	Json::Value& val = get_current_value(index);
@@ -727,9 +732,11 @@ bool json_reader::read_init_values (const char* name, data::runtime_values_data&
 	if (!internal_read_init_values(values, val))
 		return false;
 
-
-	if (!end_object())
-		return false;
+	if (name)
+	{
+		if (!end_object())
+			return false;
+	}
 	return true;
 }
 

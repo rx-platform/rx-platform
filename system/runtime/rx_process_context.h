@@ -337,6 +337,10 @@ class runtime_process_context
 
       source_results_type& get_source_results ();
 
+      void runtime_dirty ();
+
+      bool should_save ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -439,6 +443,8 @@ class runtime_process_context
       ns::rx_directory_resolver* directory_resolver_;
 
       locks::slim_lock context_lock_;
+
+      std::atomic<bool> serialize_value_;
 
       template<runtime_process_step step>
       void turn_on_pending();

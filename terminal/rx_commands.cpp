@@ -247,6 +247,10 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 		sub_items.emplace_back(one.second);
 }
 
+void server_command_manager::register_suggestions (const string_type& line, suggestions_type& suggestions)
+{
+}
+
 
 // Class rx_internal::terminal::commands::echo_server_command 
 
@@ -381,6 +385,10 @@ void server_command::dump_error_result (std::ostream& err, const rx_result& resu
 {
 	for (const auto& one : result.errors())
 		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
+}
+
+void server_command::register_suggestions (const string_type& line, suggestions_type& suggestions)
+{
 }
 
 

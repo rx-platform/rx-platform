@@ -225,7 +225,7 @@ class types_model_algorithm
 
       static void create_type (typename typeT::smart_ptr prototype, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
+      static void update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
       static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
@@ -240,7 +240,7 @@ class types_model_algorithm
 
       static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, bool increment_version);
+      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
@@ -265,7 +265,7 @@ class simple_types_model_algorithm
 
       static void create_type (typename typeT::smart_ptr prototype, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
+      static void update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
       static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
@@ -280,7 +280,7 @@ class simple_types_model_algorithm
 
       static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, bool increment_version);
+      static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
@@ -305,17 +305,17 @@ class runtime_model_algorithm
 
       static void get_runtime (const rx_item_reference& item_reference, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void create_runtime (instanceT&& instance_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
+      static void create_runtime (instanceT&& instance_data, data::runtime_values_data&& runtime_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
       static void create_prototype (instanceT&& instance_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void update_runtime (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
+      static void update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
       static void delete_runtime (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
       static rx_result init_runtime (typename typeT::RTypePtr what);
 
-      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (instanceT&& instance_data);
+      static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data);
 
 
   protected:
@@ -326,7 +326,7 @@ class runtime_model_algorithm
 
       static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (instanceT&& instance_data);
 
-      static void update_runtime_sync (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target);
+      static void update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target);
 
       static rx_result delete_runtime_sync (const rx_item_reference& item_reference, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback);
 
@@ -348,7 +348,7 @@ class relation_types_algorithm
 
       static void create_type (relation_type::smart_ptr prototype, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
-      static void update_type (relation_type::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
+      static void update_type (relation_type::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
       static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
 
@@ -363,7 +363,7 @@ class relation_types_algorithm
 
       static rx_result_with<relation_type::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, bool increment_version);
+      static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, rx_update_type_data update_data);
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 

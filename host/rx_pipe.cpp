@@ -51,16 +51,16 @@ namespace pipe {
 
 // Class host::pipe::rx_pipe_host 
 
-rx_pipe_host::rx_pipe_host (hosting::rx_host_storages& storage)
+rx_pipe_host::rx_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : exit_(false),
         dump_start_log_(false),
         dump_storage_references_(false),
         debug_stop_(false)
-	, hosting::rx_platform_host(storage)
+	, hosting::rx_platform_host(storages)
 	, stdout_log_(rx_create_reference< rx_pipe_stdout_log_subscriber>())
 {
 	//opcua_bin_init_client_transport(&transport_, 0x1000, 10);
-	RX_ASSERT(stdout_log_->log_query == log::rx_log_query_type::normal_level);// just in case, i got a hunch ;)
+	RX_ASSERT(stdout_log_->log_query == log::rx_log_normal_level);// just in case, i got a hunch ;)
 }
 
 
@@ -263,8 +263,10 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 
 	cxxopts::Options options("rx-pipe", "");
 
-	intptr_t read_handle(0);
-	intptr_t write_handle(0);
+	const intptr_t c_invalid_handle = (intptr_t)(-1);
+
+	intptr_t read_handle(c_invalid_handle);
+	intptr_t write_handle(c_invalid_handle);
 	bool use_std = false;
 
 	bool do_debug_level = false;
@@ -294,17 +296,17 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 		auto result = options.parse(argc, argv);
 		debug_stop_ = do_debug_level;
 		if (do_debug_level)
-			stdout_log_->log_query = log::rx_log_query_type::debug_level;
+			stdout_log_->log_query = log::rx_log_debug_level;
 		else if (do_trace_level)
-			stdout_log_->log_query = log::rx_log_query_type::trace_level;
+			stdout_log_->log_query = log::rx_log_trace_level;
 		else if (do_info_level)
-			stdout_log_->log_query = log::rx_log_query_type::normal_level;
+			stdout_log_->log_query = log::rx_log_normal_level;
 		else if (do_warning_level)
-			stdout_log_->log_query = log::rx_log_query_type::warining_level;
+			stdout_log_->log_query = log::rx_log_warining_level;
 		else if (do_error_level)
-			stdout_log_->log_query = log::rx_log_query_type::error_level;
+			stdout_log_->log_query = log::rx_log_error_level;
 		else
-			stdout_log_->log_query = log::rx_log_query_type::normal_level;
+			stdout_log_->log_query = log::rx_log_normal_level;
 
 
 		if (result.count("help"))
@@ -342,7 +344,7 @@ bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::conf
 			read_handle = (intptr_t)in;
 			write_handle = (intptr_t)err;
 		}
-		if (read_handle == 0 || write_handle == 0)
+		if (read_handle == c_invalid_handle || write_handle == c_invalid_handle)
 		{
 			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
 				<< "\r\nUse --input and --output or --std options to specify handles."
@@ -398,63 +400,21 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			std::cout << "Starting pipe communication...";
 
-			result = true;// pipe_port_->open();
-			if (result)
+			result = pipe_port_->receive_loop(this);
+			if (!result)
 			{
-				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-				if (dump_storage_references_)
-				{
-					string_type sys_info = get_storages().system_storage->get_storage_info();
-					string_type sys_ref = get_storages().system_storage->get_storage_reference();
-					string_type user_info = get_storages().user_storage->get_storage_info();
-					string_type user_ref = get_storages().user_storage->get_storage_reference();
-
-					std::cout << "\r\nStorage Information:\r\n============================\r\n";
-					std::cout << "System Storage: " << sys_info << "\r\n";
-					std::cout << "System Reference: " << sys_ref << "\r\n";
-					std::cout << "User Storage: " << user_info << "\r\n";
-					std::cout << "User Reference: " << user_ref << "\r\n";
-					if (get_storages().test_storage)
-					{
-						string_type test_info = get_storages().test_storage->get_storage_info();
-						string_type test_ref = get_storages().test_storage->get_storage_reference();
-						std::cout << "Test Storage: " << test_info << "\r\n";
-						std::cout << "Test Reference: " << test_ref << "\r\n";
-					}
-				}
-				std::cout << "\r\n";
-				if (dump_start_log_)
-					std::cout << "\r\nStartup log START"
-								<< "\r\n=============================================\r\n";
-				stdout_log_->release_log(dump_start_log_);
-				if (dump_start_log_)
-					std::cout
-					<< "=============================================\r\n"
-					<< "Startup log END\r\n\r\n";
-
-				auto user = security::active_security()->get_full_name();
-
-				pipe_port_->receive_loop();
-
-				stdout_log_->suspend_log();
-
-				std::cout << "Exited loop....\r\n";
-
-				std::cout << "Stopping rx-platform...";
-				result = rx_platform::rx_gate::instance().stop();
-				if (result)
-					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-				else
-				{
-					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
-					rx_dump_error_result(std::cout, result);
-				}
-
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Local Pipe:\r\n";
+				rx_dump_error_result(std::cout, result);
 			}
+			stdout_log_->suspend_log();
+
+			std::cout << "Stopping rx-platform...";
+			result = rx_platform::rx_gate::instance().stop();
+			if (result)
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			else
 			{
-				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing pipe endpoint!\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 		}
@@ -476,14 +436,141 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	else
 	{
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
-		rx_dump_error_result(std::cout, result);
+		rx_dump_error_result(std::cout, sec_result);
 	}
 	HOST_LOG_INFO("Main", 999, "Closing console...");
 }
 
-rx_result rx_pipe_host::build_host (rx_directory_ptr root)
+rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 {
+#ifndef RX_MIN_MEMORY
+	auto dir_result = builder.host_root->add_sub_directory(rx_create_reference<ns::rx_platform_directory>("types", namespace_item_attributes::namespace_item_internal_access));
+
+	auto detail_struct_type = rx_create_reference<meta::basic_types::struct_type>();
+	detail_struct_type->meta_info.name = RX_LOCAL_PIPE_DETAILS_TYPE_NAME;
+	detail_struct_type->meta_info.id = rx_node_id(RX_LOCAL_PIPE_DETAILS_TYPE_ID, 2);
+	detail_struct_type->meta_info.parent = rx_node_id(RX_CLASS_STRUCT_BASE_ID);
+	detail_struct_type->meta_info.path = "/sys/host/types";
+	detail_struct_type->meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	detail_struct_type->complex_data.register_const_value_static<int64_t>("InPipe", -1);
+	detail_struct_type->complex_data.register_const_value_static<int64_t>("OutPipe", -1);
+
+	auto result = register_host_simple_type<meta::basic_types::struct_type>(builder.host_root, detail_struct_type);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_LOCAL_PIPE_DETAILS_TYPE_NAME " struct type.");
+		return result;
+	}
+
+	rx_port_type_ptr interactive_port_type = rx_create_reference<meta::object_types::port_type>();
+	interactive_port_type->meta_info.name = RX_LOCAL_PIPE_TYPE_NAME;
+	interactive_port_type->meta_info.id = rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2);
+	interactive_port_type->meta_info.parent = rx_node_id(RX_EXTERNAL_PORT_TYPE_ID);
+	interactive_port_type->meta_info.path = "/sys/host/types";
+	interactive_port_type->meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	interactive_port_type->complex_data.register_struct("Pipe", rx_node_id(RX_LOCAL_PIPE_DETAILS_TYPE_ID, 2));
+
+	result = register_host_type<meta::object_types::port_type>(builder.host_root, interactive_port_type);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_LOCAL_PIPE_TYPE_NAME " port type.");
+		return result;
+	}
+
+	meta::runtime_data::application_runtime_data app_inst_data;
+	app_inst_data.meta_info.name = RX_HOST_APP_NAME;
+	app_inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	app_inst_data.meta_info.parent = rx_node_id(RX_HOST_APP_TYPE_ID);
+	app_inst_data.meta_info.path = "/sys/host";
+	app_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	app_inst_data.instance_data.priority = rx_domain_priority::normal;
+	app_inst_data.instance_data.processor = 0;
+
+	result = register_host_runtime<meta::object_types::application_type>(builder.host_root, app_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_APP_NAME " application runtime.");
+		return result;
+	}
+
+	meta::runtime_data::domain_runtime_data domain_inst_data;
+	domain_inst_data.meta_info.name = RX_HOST_DOMAIN_NAME;
+	domain_inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_DOMAIN_ID, 2);
+	domain_inst_data.meta_info.parent = rx_node_id(RX_HOST_DOMAIN_TYPE_ID);
+	domain_inst_data.meta_info.path = "/sys/host";
+	domain_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	domain_inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
+	domain_inst_data.instance_data.processor = -1;
+
+	result = register_host_runtime<meta::object_types::domain_type>(builder.host_root, domain_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
+		return result;
+	}
+
+
+	meta::runtime_data::port_runtime_data inst_data;
+	inst_data.meta_info.name = RX_LOCAL_PIPE_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_ID, 2);
+	inst_data.meta_info.parent = rx_node_id(RX_LOCAL_PIPE_TYPE_ID, 2);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_LOCAL_PIPE_NAME " port runtime.");
+		return result;
+	}
+
+	inst_data = meta::runtime_data::port_runtime_data();
+	inst_data.meta_info.name = RX_LOCAL_PIPE_TRANSPORT_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_TRANSPORT_ID, 2);
+	inst_data.meta_info.parent = rx_node_id(RX_OPCUA_TRANSPORT_PORT_TYPE_ID);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+
+	inst_data.overrides.add_value_static<string_type>("StackTop", RX_LOCAL_PIPE_NAME);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_LOCAL_PIPE_TRANSPORT_NAME " port runtime.");
+		return result;
+	}
+
+	inst_data = meta::runtime_data::port_runtime_data();
+	inst_data.meta_info.name = RX_LOCAL_PIPE_PROTOCOL_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_PROTOCOL_ID, 2);
+	inst_data.meta_info.parent = rx_node_id(RX_RX_JSON_TYPE_ID);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+
+	inst_data.overrides.add_value_static<string_type>("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_LOCAL_PIPE_PROTOCOL_NAME " port runtime.");
+		return result;
+	}
+
 	return true;
+#else
+	return "Not implemented for small memory footprint";
+#endif
 }
 
 string_type rx_pipe_host::get_host_manual () const
@@ -503,6 +590,36 @@ void rx_pipe_host::restore_console ()
 rx_result rx_pipe_host::setup_console (int argc, char* argv[])
 {
 	return true;
+}
+
+void rx_pipe_host::pipe_run_result (rx_result result)
+{
+	if (result)
+	{
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+		if (dump_storage_references_)
+		{
+			dump_storage_references(std::cout);
+		}
+		std::cout << "\r\n";
+		if (dump_start_log_)
+			std::cout << "\r\nStartup log START"
+			<< "\r\n=============================================\r\n";
+		stdout_log_->release_log(dump_start_log_);
+		if (dump_start_log_)
+			std::cout
+			<< "=============================================\r\n"
+			<< "Startup log END\r\n\r\n";
+	}
+	else
+	{
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Local Pipe:\r\n";
+		rx_dump_error_result(std::cout, result);
+		std::cout << "\r\n";
+		stdout_log_->release_log(dump_start_log_);
+		std::cout << "\r\n";
+	}
 }
 
 const char* get_log_type_string(log::log_event_type type)
@@ -530,7 +647,7 @@ const char* get_log_type_string(log::log_event_type type)
 rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber (bool supports_ansi)
       : running_(false),
         supports_ansi_(false),
-        log_query(log::rx_log_query_type::normal_level)
+        log_query(log::rx_log_normal_level)
 {
 }
 

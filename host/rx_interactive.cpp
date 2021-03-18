@@ -53,9 +53,9 @@ namespace interactive {
 
 // Class host::interactive::interactive_console_host 
 
-interactive_console_host::interactive_console_host (hosting::rx_host_storages& storage)
+interactive_console_host::interactive_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : exit_(false)
-	, hosting::rx_platform_host(storage)
+	, hosting::rx_platform_host(storages)
 {
 	//startup_script_ = "test run meta/construct-wide\n";
 	//startup_script_ = "test run -a\n";
@@ -101,9 +101,8 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			std::cout << "Starting interactive console...";
-			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			result = interactive_port_->run_interactive(this);
 
+			result = interactive_port_->run_interactive(this);
 			if (!result)
 			{
 				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
@@ -138,6 +137,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	{
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
 		rx_dump_error_result(std::cout, init_result);
+		result = init_result.errors();
 	}
 
 	HOST_LOG_INFO("Main", 999, "Closing console...");
@@ -403,7 +403,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 						log::log_query_type query;
 						query.count = 20;
 						log::log_events_type events;
-						query.type = log::rx_log_query_type::error_level;
+						query.type = log::rx_log_error_level;
 						//rx::log::log_object::instance().read_log(query, events);
 						//!!!
 
@@ -451,9 +451,134 @@ string_type interactive_console_host::get_interactive_info ()
 	return ret;
 }
 
-rx_result interactive_console_host::build_host (rx_directory_ptr root)
+rx_result interactive_console_host::build_host (hosting::host_platform_builder& builder)
 {
+#ifndef RX_MIN_MEMORY
+	auto dir_result = builder.host_root->add_sub_directory(rx_create_reference<ns::rx_platform_directory>("types", namespace_item_attributes::namespace_item_internal_access));
+	
+	auto detail_struct_type = rx_create_reference<meta::basic_types::struct_type>();
+	detail_struct_type->meta_info.name = RX_STD_IO_DETAILS_TYPE_NAME;
+	detail_struct_type->meta_info.id = rx_node_id(RX_STD_IO_DETAILS_TYPE_ID, 3);
+	detail_struct_type->meta_info.parent = rx_node_id(RX_CLASS_STRUCT_BASE_ID);
+	detail_struct_type->meta_info.path = "/sys/host/types";
+	detail_struct_type->meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	detail_struct_type->complex_data.register_const_value_static("supportsANSI", false);
+	auto result = register_host_simple_type<meta::basic_types::struct_type>(builder.host_root, detail_struct_type);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_STD_IO_DETAILS_TYPE_NAME " struct type.");
+		return result;
+	}
+
+	rx_port_type_ptr interactive_port_type = rx_create_reference<meta::object_types::port_type>();
+	interactive_port_type->meta_info.name = RX_STD_IO_TYPE_NAME;
+	interactive_port_type->meta_info.id = rx_node_id(RX_STD_IO_TYPE_ID , 3);
+	interactive_port_type->meta_info.parent = rx_node_id(RX_EXTERNAL_PORT_TYPE_ID);
+	interactive_port_type->meta_info.path = "/sys/host/types";
+	interactive_port_type->meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	interactive_port_type->complex_data.register_struct("IODetails", rx_node_id(RX_STD_IO_DETAILS_TYPE_ID, 3));
+
+	result = register_host_type<meta::object_types::port_type>(builder.host_root, interactive_port_type);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_STD_IO_TYPE_NAME " port type.");
+		return result;
+	}
+
+	meta::runtime_data::application_runtime_data app_inst_data;
+	app_inst_data.meta_info.name = RX_HOST_APP_NAME;
+	app_inst_data.meta_info.id = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	app_inst_data.meta_info.parent = rx_node_id(RX_HOST_APP_TYPE_ID);
+	app_inst_data.meta_info.path = "/sys/host";
+	app_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	app_inst_data.instance_data.priority = rx_domain_priority::normal;
+	app_inst_data.instance_data.processor = 0;
+
+	result = register_host_runtime<meta::object_types::application_type>(builder.host_root, app_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_APP_NAME " application runtime.");
+		return result;
+	}
+
+	meta::runtime_data::domain_runtime_data domain_inst_data;
+	domain_inst_data.meta_info.name = RX_HOST_DOMAIN_NAME;
+	domain_inst_data.meta_info.id = rx_node_id(RX_INTERACTIVE_DOMAIN_ID, 3);
+	domain_inst_data.meta_info.parent = rx_node_id(RX_HOST_DOMAIN_TYPE_ID);
+	domain_inst_data.meta_info.path = "/sys/host";
+	domain_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	domain_inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
+	domain_inst_data.instance_data.processor = -1;
+
+	result = register_host_runtime<meta::object_types::domain_type>(builder.host_root, domain_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
+		return result;
+	}
+
+
+	meta::runtime_data::port_runtime_data inst_data;
+	inst_data.meta_info.name = RX_STD_IO_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_STD_IO_ID, 3);
+	inst_data.meta_info.parent = rx_node_id(RX_STD_IO_TYPE_ID, 3);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_STD_IO_NAME " port runtime.");
+		return result;
+	}
+
+	inst_data = meta::runtime_data::port_runtime_data();
+	inst_data.meta_info.name = RX_STD_VT100_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_STD_VT100_ID, 3);
+	inst_data.meta_info.parent = rx_node_id(RX_VT00_TYPE_ID);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+
+	inst_data.overrides.add_value_static<string_type>("StackTop", RX_STD_IO_NAME);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_STD_VT100_NAME " port runtime.");
+		return result;
+	}
+
+	inst_data = meta::runtime_data::port_runtime_data();
+	inst_data.meta_info.name = RX_STD_CONSOLE_NAME;
+	inst_data.meta_info.id = rx_node_id(RX_STD_CONSOLE_ID, 3);
+	inst_data.meta_info.parent = rx_node_id(RX_CONSOLE_TYPE_ID);
+	inst_data.meta_info.path = "/sys/host";
+	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+
+	inst_data.overrides.add_value_static<string_type>("StackTop", RX_STD_VT100_NAME);
+
+	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_STD_CONSOLE_NAME " port runtime.");
+		return result;
+	}
+
 	return true;
+#else
+	return "Not implemented for small memory footprint";
+#endif
 }
 
 string_type interactive_console_host::get_host_manual () const
@@ -469,6 +594,20 @@ string_type interactive_console_host::get_host_name ()
 bool interactive_console_host::write_stdout (const string_type& lines)
 {
 	return write_stdout(lines.c_str(), lines.size());
+}
+
+void interactive_console_host::console_run_result (rx_result result)
+{
+	if (result)
+	{
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+	}
+	else
+	{
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Local Pipe:\r\n";
+		rx_dump_error_result(std::cout, result);
+		std::cout << "\r\n";
+	}
 }
 
 
@@ -489,16 +628,30 @@ rx_result interactive_console_port::initialize_runtime (runtime::runtime_init_co
 
 rx_result interactive_console_port::run_interactive (interactive_console_host* host)
 {
-	host->write_stdout(RX_LICENSE_MESSAGE);
-
-	while (!listening_)
+	auto ticks = rx_get_tick_count();
+	while (!listening_ && !host->exit())
+	{
 		rx_ms_sleep(50);
+		if ((rx_get_tick_count() - ticks) > 2000u)
+		{
+			break;
+		}
+	}
+	if (!listening_)// if we break the loop?
+	{
+		host->console_run_result("Waiting for port creation timeouted.");
+		return true;
+	}
+
+	host->console_run_result(true);
+
+	host->write_stdout(RX_LICENSE_MESSAGE);
 
 	add_stack_endpoint(&endpoint_.stack_entry_, nullptr, nullptr);
 	auto result = endpoint_.run_interactive([this](size_t count)
 		{
 
-		});	
+		});
 
 	return result;
 }

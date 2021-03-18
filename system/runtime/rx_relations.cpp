@@ -161,7 +161,7 @@ rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-void relation_data::fill_data (const data::runtime_values_data& data)
+void relation_data::fill_data (const data::runtime_values_data& data, runtime_process_context* ctx)
 {
 	auto it = data.values.find(name);
 	if (it != data.values.end())
@@ -170,7 +170,7 @@ void relation_data::fill_data (const data::runtime_values_data& data)
 	}
 	rx_simple_value val;
 	val.assign_static(target_path);
-	value.simple_set_value(std::move(val));
+	value.set_value(std::move(val), ctx->now);
 }
 
 void relation_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
@@ -316,7 +316,7 @@ relation_data::smart_ptr relation_data::make_target_relation (const string_type&
 	rx_timed_value str_val;
 	str_val.assign_static<string_type>(string_type(ret->target_path), rx_time::now());
 	ret->value.value = str_val;
-	ret->value.read_only = true;
+	ret->value.value_opt[runtime::structure::value_data::opt_readonly] = true;
 	return ret;
 }
 
@@ -499,27 +499,38 @@ rx_result relations_holder::stop_relations (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-void relations_holder::fill_data (const data::runtime_values_data& data)
+void relations_holder::fill_data (const data::runtime_values_data& data, runtime_process_context* ctx)
 {
 	for (auto& one : source_relations_)
 	{
-		one->fill_data(data);
+		one->fill_data(data, ctx);
 	}
 }
 
 void relations_holder::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	for (const auto& one : source_relations_)
+	if (type != runtime_value_type::persistent_runtime_value)
 	{
-		one->collect_data(data, type);
+		for (const auto& one : source_relations_)
+		{
+			one->collect_data(data, type);
+		}
+		for (const auto& one : implicit_relations_)
+		{
+			one->collect_data(data, type);
+		}
+		for (const auto& one : target_relations_)
+		{
+			one->collect_data(data, type);
+		}
 	}
-	for (const auto& one : implicit_relations_)
+	else // type == runtime_value_type::persistent_runtime_value
 	{
-		one->collect_data(data, type);
-	}
-	for (const auto& one : target_relations_)
-	{
-		one->collect_data(data, type);
+		for (const auto& one : source_relations_)
+		{
+			if(one->value.value_opt[structure::value_data::opt_persistent])
+				one->collect_data(data, type);
+		}
 	}
 }
 

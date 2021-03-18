@@ -349,7 +349,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			return "Can't write to const value!";
 		case rt_value_ref_type::rt_value:
 			{
-				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(data));
+				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_);
 				if (result)
 				{
 					auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
@@ -368,7 +368,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			}
 		case rt_value_ref_type::rt_relation:
 			{
-				auto result = it->second.reference.ref_value_ptr.relation->value.write_value(std::move(data));
+				auto result = it->second.reference.ref_value_ptr.relation->value.write_value(std::move(data), context_);
 				if (result)
 				{
 					auto val = it->second.reference.ref_value_ptr.relation->value.get_value(context_);
@@ -553,7 +553,7 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 			return true;
 		case rt_value_ref_type::rt_value:
 			{
-				auto result= it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val));
+				auto result= it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val), ctx);
 				if (result)
 				{
 					auto new_value = it_handles->second.ref_value_ptr.value->get_value(ctx);

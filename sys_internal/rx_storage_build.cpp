@@ -76,77 +76,125 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 		return "Storage not initialized!";
 
 	using storage_items = std::vector<rx_storage_item_ptr>;
-	storage_items items;
+	storage_items items, type_items, instance_items;
+	std::map<string_type, rx_storage_item_ptr> runtime_items;
 	auto result = storage.list_storage(items);
 	if (result)
 	{
 		for (auto& item : items)
 		{
-			result = item->open_for_read();
-			if (result)
+			if (item)
 			{
-				auto& stream = item->read_stream();
-				int type = 0;
-				result = stream.read_header(type);
-				if (result)
+				switch (item->get_storage_type())
 				{
-					switch (type)
-					{
-					case STREAMING_TYPE_TYPE:
-						result = create_type_from_storage(stream, std::move(item), root);
-						break;
-					case STREAMING_TYPE_OBJECT:
-						item->close();
-						continue;
-					default:
-						item->close();
-						result = "Invalid serialization type!";
-					}
+				case rx_storage_item_type::type:
+					type_items.emplace_back(std::move(item));
+					break;
+				case rx_storage_item_type::instance:
+					instance_items.emplace_back(std::move(item));
+					break;
+				case rx_storage_item_type::runtime:
+					runtime_items.emplace(item->get_item_path(), std::move(item));
+					break;
+				default:
+					RX_ASSERT(false);
 				}
-				else
-					result.register_error("Error in deserialization from " + item->get_item_reference());
 			}
-			else
-			{// we had an error
-				result.register_error("Error in opening item " + item->get_item_reference());
-			}
-			if (!result)
-				dump_errors_to_log(result.errors());
 		}
-		for (auto& item : items)
+		// first create all types
+		for (auto& item : type_items)
 		{
-			result = item->open_for_read();
-			if (result)
+			if (item->get_storage_type() == rx_storage_item_type::type)
 			{
-				auto& stream = item->read_stream();
-				int type = 0;
-				result = stream.read_header(type);
+				result = item->open_for_read();
 				if (result)
 				{
-					switch (type)
+					auto& stream = item->read_stream();
+					int type = 0;
+					result = stream.read_header(type);
+					if (result)
 					{
-					case STREAMING_TYPE_TYPE:
-						item->close();
-						continue;
-						break;
-					case STREAMING_TYPE_OBJECT:
-						result = create_object_from_storage(stream, std::move(item), root);
-						item->close();
-						break;
-					default:
-						item->close();
-						result = "Invalid serialization type!";
+						switch (type)
+						{
+						case STREAMING_TYPE_TYPE:
+							result = create_type_from_storage(item, root);
+							break;
+						case STREAMING_TYPE_OBJECT:
+							continue;
+						default:
+							result = "Invalid serialization type!";
+						}
 					}
+					else
+						result.register_error("Error in deserialization from " + item->get_item_reference());
+
+					item->close_read();
 				}
 				else
-					result.register_error("Error in deserialization from " + item->get_item_reference());
+				{// we had an error
+					result.register_error("Error in opening item " + item->get_item_reference());
+				}
+				if (!result)
+					dump_errors_to_log(result.errors());
 			}
-			else
-			{// we had an error
-				result.register_error("Error in opening item " + item->get_item_reference());
+		}
+		// then create runtime instances
+		for (auto& item : instance_items)
+		{
+			if (item)
+			{
+				if (item->get_storage_type() == rx_storage_item_type::instance)
+				{
+					result = item->open_for_read();
+					if (result)
+					{
+						auto& stream = item->read_stream();
+						int type = 0;
+						result = stream.read_header(type);
+						if (result)
+						{
+							switch (type)
+							{
+							case STREAMING_TYPE_TYPE:
+								continue;
+								break;
+							case STREAMING_TYPE_OBJECT:
+								{
+									auto jbg = item->get_item_path();
+									auto rt_it = runtime_items.find(item->get_item_path());
+									if (rt_it != runtime_items.end())
+									{
+										auto rt_result = rt_it->second->open_for_read();
+										if (rt_result)
+										{
+											result = create_object_from_storage(item, rt_it->second, root);
+											rt_it->second->close_read();
+										}
+									}
+									else
+									{
+										rx_storage_item_ptr null_storage_ptr;
+										result = create_object_from_storage(item, null_storage_ptr, root);
+									}
+								}
+								break;
+							default:
+								result = "Invalid serialization type!";
+							}
+						}
+						else
+							result.register_error("Error in deserialization from " + item->get_item_reference());
+
+						item->close_read();
+					}
+					else
+					{// we had an error
+						result.register_error("Error in opening item " + item->get_item_reference());
+					}
+					if (!result)
+						dump_errors_to_log(result.errors());
+				}
 			}
-			if (!result)
-				dump_errors_to_log(result.errors());
 		}
 	}
 	else
@@ -156,11 +204,11 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 	return result;
 }
 
-rx_result configuration_storage_builder::create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root)
+rx_result configuration_storage_builder::create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
-	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
+	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
 		return result;
 	bool do_save = false;
@@ -180,19 +228,18 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 		{
 			// objects
 		case rx_item_type::rx_object:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<object_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<port_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<application_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain:
-			result = create_concrete_object_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<domain_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<domain_type>());
 			break;
 		default:
-			storage->close();
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
 	}
@@ -204,11 +251,11 @@ rx_result configuration_storage_builder::create_object_from_storage (base_meta_r
 	return result;
 }
 
-rx_result configuration_storage_builder::create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root)
+rx_result configuration_storage_builder::create_type_from_storage (rx_storage_item_ptr& storage, rx_directory_ptr root)
 {
 	meta::meta_data meta;
 	rx_item_type target_type;
-	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, target_type);
+	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_TYPE, target_type);
 	if (!result)
 		return result;
 
@@ -229,44 +276,44 @@ rx_result configuration_storage_builder::create_type_from_storage (base_meta_rea
 		{
 		// object types
 		case rx_item_type::rx_object_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<object_type>());
+			result = create_concrete_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<object_type>());
 			break;
 		case rx_item_type::rx_port_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<port_type>());
+			result = create_concrete_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<port_type>());
 			break;
 		case rx_item_type::rx_application_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<application_type>());
+			result = create_concrete_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<application_type>());
 			break;
 		case rx_item_type::rx_domain_type:
-			result = create_concrete_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<domain_type>());
+			result = create_concrete_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<domain_type>());
 			break;
 		// simple types
 		case rx_item_type::rx_struct_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<struct_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<struct_type>());
 			break;
 		case rx_item_type::rx_variable_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<variable_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<variable_type>());
 			break;
 		// variable sub-types
 		case rx_item_type::rx_source_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<source_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<source_type>());
 			break;
 		case rx_item_type::rx_filter_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<filter_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<filter_type>());
 			break;
 		case rx_item_type::rx_event_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<event_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<event_type>());
 			break;
 		case rx_item_type::rx_mapper_type:
-			result = create_concrete_simple_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save, tl::type2type<mapper_type>());
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<mapper_type>());
 			break;
 		case rx_item_type::rx_relation_type:
-			result = create_concrete_relation_type_from_storage(meta, stream, dir.value(), std::move(storage), do_save);
+			result = create_concrete_relation_type_from_storage(meta, storage, dir.value(), do_save);
 			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
-		storage->close();
+		storage->close_read();
 		if (meta_changed)
 		{
 		}
@@ -289,13 +336,13 @@ void configuration_storage_builder::dump_errors_to_log (const string_array& erro
 
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
 	created->meta_info = meta;
-	auto result = algorithm_type::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
-	storage->close();
+	auto result = algorithm_type::deserialize_type(*created, storage->read_stream(), STREAMING_TYPE_TYPE);
+	storage->close_read();
 	if (result)
 	{
 		auto create_result = model::algorithms::types_model_algorithm<T>::create_type_sync(created);
@@ -314,13 +361,13 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_
 }
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
 	created->meta_info = meta;
-	auto result = algorithm_type::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
-	storage->close();
+	auto result = algorithm_type::deserialize_type(*created, storage->read_stream(), STREAMING_TYPE_TYPE);
+	storage->close_read();
 	if (result)
 	{
 		auto create_result = model::algorithms::simple_types_model_algorithm<T>::create_type_sync(created);
@@ -338,12 +385,12 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	return result;
 }
 
-rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save)
+rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
 {
 	auto created = rx_create_reference<relation_type>();
-	created->meta_info = meta_data;
-	auto result = meta::meta_algorithm::relation_type_algorithm::deserialize_type(*created, stream, STREAMING_TYPE_TYPE);
-	storage->close();
+	created->meta_info = meta;
+	auto result = meta::meta_algorithm::relation_type_algorithm::deserialize_type(*created, storage->read_stream(), STREAMING_TYPE_TYPE);
+	storage->close_read();
 	if (result)
 	{
 		auto create_result = model::algorithms::relation_types_algorithm::create_type_sync(created);
@@ -354,7 +401,7 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 		}
 		else
 		{
-			create_result.register_error("Error creating "s + rx_item_type_name(relation_type::type_id) + " " + meta_data.get_full_path());
+			create_result.register_error("Error creating "s + rx_item_type_name(relation_type::type_id) + " " + meta.get_full_path());
 			return create_result.errors();
 		}
 	}
@@ -363,15 +410,20 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_object_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
-	auto init_data = std::make_unique< data::runtime_values_data>();
+	data::runtime_values_data runtime_data;
 	typename T::instance_data_t instance_data;
-	auto result = instance_data.deserialize(stream, STREAMING_TYPE_TYPE, meta);
-	storage->close();
+	auto result = instance_data.deserialize(storage->read_stream(), STREAMING_TYPE_OBJECT, meta);
 	if (result)
 	{
-		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(instance_data));
+		if (runtime_storage)
+		{
+			runtime_storage->read_stream().read_init_values(nullptr, runtime_data);
+			RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Readed runtime "s + rx_item_type_name(T::RImplType::type_id) + " "s + meta.get_full_path());
+				
+		}
+		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(instance_data), std::move(runtime_data));
 		if (create_result)
 		{
 			auto rx_type_item = create_result.value()->get_item_ptr();

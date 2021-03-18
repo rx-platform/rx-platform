@@ -69,8 +69,8 @@ void rx_platform_storage::deinit_storage ()
 
 // Class rx_platform::storage_base::rx_storage_item 
 
-rx_storage_item::rx_storage_item (const string_type& serialization_type)
-      : serialization_type_(serialization_type)
+rx_storage_item::rx_storage_item (rx_storage_item_type storage_type)
+      : storage_type_(storage_type)
 {
 }
 
@@ -81,53 +81,23 @@ rx_storage_item::~rx_storage_item()
 
 
 
-// Class rx_platform::storage_base::rx_platform_storage_holder 
+// Class rx_platform::storage_base::rx_platform_storage_type 
 
-rx_platform_storage_holder::rx_platform_storage_holder()
+rx_platform_storage_type::rx_platform_storage_type()
 {
 }
 
 
-rx_platform_storage_holder::~rx_platform_storage_holder()
+rx_platform_storage_type::~rx_platform_storage_type()
 {
 }
 
-
-
-void rx_platform_storage_holder::deinit_storage ()
-{
-	for (auto one : initialized_storages_)
-	{
-		one.second->deinit_storage();
-	}
-	initialized_storages_.clear();
-}
-
-rx_result_with<rx_storage_ptr> rx_platform_storage_holder::get_storage (const string_type& name, hosting::rx_platform_host* host)
-{
-	auto it = initialized_storages_.find(name);
-	if (it != initialized_storages_.end())
-	{
-		return it->second;
-	}
-	else if(rx_gate::instance().get_platform_status() == rx_platform_status::initializing)
-	{
-		auto result = get_and_init_storage(name, host);
-		if (result)
-			initialized_storages_.emplace(name, result.value());
-		return result;
-	}
-	else
-	{
-		return "Storage "s + name + "not found!";
-	}
-}
 
 
 // Class rx_platform::storage_base::rx_code_storage_item 
 
 rx_code_storage_item::rx_code_storage_item()
-    : rx_storage_item(RX_BINARY_SERIALIZATION_TYPE)
+    : rx_storage_item(rx_storage_item_type::none)
 {
 }
 
@@ -161,8 +131,14 @@ rx_result rx_code_storage_item::open_for_write ()
     return "Storage can not be defined for this item";
 }
 
-void rx_code_storage_item::close ()
+rx_result rx_code_storage_item::close_read ()
 {
+    return "Storage can not be defined for this item";
+}
+
+rx_result rx_code_storage_item::commit_write ()
+{
+    return "Storage can not be defined for this item";
 }
 
 const string_type& rx_code_storage_item::get_item_reference () const
@@ -179,6 +155,12 @@ rx_result rx_code_storage_item::delete_item ()
 bool rx_code_storage_item::preprocess_meta_data (meta::meta_data& data)
 {
     return false;
+}
+
+string_type rx_code_storage_item::get_item_path () const
+{
+    static string_type name(RX_CODE_STORAGE_NAME);
+    return name;
 }
 
 
@@ -205,15 +187,90 @@ bool rx_code_storage::is_valid_storage () const
     return true;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_code_storage::get_item_storage (const meta::meta_data& data)
+rx_result_with<rx_storage_item_ptr> rx_code_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
 {
     rx_storage_item_ptr ret = std::make_unique<rx_code_storage_item>();
     return ret;
 }
 
+rx_result_with<rx_storage_item_ptr> rx_code_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+{
+    return "Not implemented for this storage type.";
+}
+
 string_type rx_code_storage::get_storage_reference ()
 {
     return RX_CODE_STORAGE_NAME;
+}
+
+rx_result split_storage_reference(const string_type full_ref, string_type& type, string_type& reference)
+{
+    if (full_ref.empty())
+        return RX_NULL_ITEM_NAME " reference.";
+
+    auto idx = full_ref.find("://");
+    if (idx == string_type::npos)
+    {
+        // nothing useful found, use default
+        type = "file";
+        reference = full_ref;
+    }
+    else
+    {
+        type = full_ref.substr(0, idx);
+        reference = full_ref.substr(idx + 3);
+        if (reference.empty())
+            return RX_NULL_ITEM_NAME " reference.";
+    }
+    return true;
+}
+// Class rx_platform::storage_base::rx_storage_connection 
+
+
+rx_result_with<rx_storage_ptr> rx_storage_connection::get_storage (const string_type& name, hosting::rx_platform_host* host)
+{
+    auto it = initialized_storages_.find(name);
+    if (it != initialized_storages_.end())
+    {
+        return it->second;
+    }
+    else if (rx_gate::instance().get_platform_status() == rx_platform_status::initializing)
+    {
+        auto result = get_and_init_storage(name, host);
+        if (result)
+            initialized_storages_.emplace(name, result.value());
+        return result;
+    }
+    else
+    {
+        return "Storage "s + name + "not found!";
+    }
+}
+
+rx_result rx_storage_connection::init_connection (const string_type& storage_reference, hosting::rx_platform_host* host)
+{
+    return true;
+}
+
+rx_result rx_storage_connection::deinit_connection ()
+{
+    for (auto one : initialized_storages_)
+    {
+        one.second->deinit_storage();
+    }
+    initialized_storages_.clear();
+    return true;
+}
+
+std::vector<std::pair<string_type, string_type> > rx_storage_connection::get_mounted_storages () const
+{
+    std::vector<std::pair<string_type, string_type> > ret;
+    ret.reserve(initialized_storages_.size());
+    for (const auto& one : initialized_storages_)
+    {
+        ret.emplace_back(one.first, one.second->get_base_path());
+    }
+    return ret;
 }
 
 

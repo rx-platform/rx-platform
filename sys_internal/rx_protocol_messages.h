@@ -276,7 +276,7 @@ class rx_request_message : public rx_message_base
 
       virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn) = 0;
 
-      static rx_result_with<request_message_ptr> create_request_from_json (const string_type& data, rx_request_id_t& request_id);
+      static rx_result_with<request_message_ptr> create_request_from_stream (rx_request_id_t& request_id, base_meta_reader& reader);
 
       static rx_result init_request_messages ();
 
@@ -303,6 +303,39 @@ class rx_request_message : public rx_message_base
 
 
 
+class rx_keep_alive_message : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class rx_connection_context_request : public rx_request_message  
 {
 
@@ -319,8 +352,6 @@ class rx_connection_context_request : public rx_request_message
       rx_message_type_t get_type_id ();
 
 
-      rx_item_type item_type;
-
       static string_type type_name;
 
       static rx_message_type_t type_id;
@@ -330,6 +361,8 @@ class rx_connection_context_request : public rx_request_message
       string_type application;
 
       string_type domain;
+
+      uint32_t stream_version;
 
 
   protected:
@@ -372,38 +405,7 @@ class rx_connection_context_response : public rx_message_base
 
       rx_node_id domain_id;
 
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_keep_alive_message : public rx_request_message  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
+      uint32_t stream_version;
 
 
   protected:

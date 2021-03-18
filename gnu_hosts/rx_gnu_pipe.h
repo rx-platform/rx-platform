@@ -51,7 +51,7 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
 {
 
   public:
-      gnu_pipe_host (hosting::rx_host_storages& storage);
+      gnu_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~gnu_pipe_host();
 

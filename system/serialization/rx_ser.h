@@ -68,7 +68,7 @@ class json_reader : public rx::base_meta_reader
 	typedef std::stack<json_read_stack_data, std::vector<json_read_stack_data> > stack_type;
 
   public:
-      json_reader();
+      json_reader (int version = RX_CURRENT_SERIALIZE_VERSION);
 
       ~json_reader();
 
@@ -266,7 +266,7 @@ class binary_reader : public rx::base_meta_reader
 	typedef std::stack<binary_read_stack_data, std::vector<binary_read_stack_data> > stack_type;
 
   public:
-      binary_reader (buffer_type& buffer);
+      binary_reader (buffer_type& buffer, int version = RX_CURRENT_SERIALIZE_VERSION);
 
       ~binary_reader();
 
@@ -452,8 +452,9 @@ typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 // Parameterized Class rx_platform::serialization::binary_reader 
 
 template <typename allocT, bool swap_bytes>
-binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer)
+binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
       : buffer_(buffer)
+    , base_meta_reader(version)
 {
 }
 

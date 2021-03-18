@@ -42,9 +42,9 @@ namespace win32 {
 
 // Class win32::win32_pipe_host 
 
-win32_pipe_host::win32_pipe_host (hosting::rx_host_storages& storage)
+win32_pipe_host::win32_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : supports_ansi_(false)
-	, rx_pipe_host(storage)
+	, rx_pipe_host(storages)
 {
 }
 

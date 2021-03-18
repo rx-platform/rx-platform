@@ -129,7 +129,7 @@ rx_item_reference domain_relation::get_implicit_reference (const meta::meta_data
         return rx_item_reference();
     }
     from_ = result.value();
-    return from_->get_instance_data().get_data().domain_id;
+    return from_->get_instance_data().get_data().domain_ref;
 }
 
 
@@ -193,7 +193,7 @@ rx_item_reference application_relation::get_implicit_reference (const meta::meta
         return rx_item_reference();
     }
     from_ = result.value();
-    return from_->get_instance_data().get_data().app_id;
+    return from_->get_instance_data().get_data().app_ref;
 }
 
 
@@ -257,7 +257,7 @@ rx_item_reference port_app_relation::get_implicit_reference (const meta::meta_da
         return rx_item_reference();
     }
     from_ = result.value();
-    return from_->get_instance_data().get_data().app_id;
+    return from_->get_instance_data().get_data().app_ref;
 }
 
 

@@ -188,8 +188,24 @@ bool domain_data::serialize (base_meta_writer& stream, uint8_t type) const
         return false;
     if (!stream.write_byte("priority", (uint8_t)priority))
         return false;
-    if (!stream.write_id("app", app_id))
-        return false;
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.write_item_reference("app", app_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        if (app_ref.is_node_id())
+        {
+            if (!stream.write_id("app", app_ref.get_node_id()))
+                return false;
+        }
+        else
+        {
+            if (!stream.write_id("app", rx_node_id::null_id))
+                return false;
+        }
+    }
     if (!stream.end_object())
         return false;
     return true;
@@ -205,8 +221,19 @@ bool domain_data::deserialize (base_meta_reader& stream, uint8_t type)
     if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
         return false;
     priority = (rx_domain_priority)temp;
-    if (!stream.read_id("app", app_id))
-        return false;
+
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.read_item_reference("app", app_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        rx_node_id id;
+        if (!stream.read_id("app", id))
+            return false;
+        app_ref = id;
+    }
     if (!stream.end_object())
         return false;
     return true;
@@ -220,8 +247,24 @@ bool object_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
         return false;
-    if (!stream.write_id("domain", domain_id))
-        return false;
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.write_item_reference("domain", domain_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        if (domain_ref.is_node_id())
+        {
+            if (!stream.write_id("domain", domain_ref.get_node_id()))
+                return false;
+        }
+        else
+        {
+            if (!stream.write_id("domain", rx_node_id::null_id))
+                return false;
+        }
+    }
     if (!stream.end_object())
         return false;
     return true;
@@ -231,8 +274,18 @@ bool object_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
         return false;
-    if (!stream.read_id("domain", domain_id))
-        return false;
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.read_item_reference("domain", domain_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        rx_node_id id;
+        if (!stream.read_id("domain", id))
+            return false;
+        domain_ref = id;
+    }
     if (!stream.end_object())
         return false;
     return true;
@@ -246,8 +299,24 @@ bool port_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
         return false;
-    if (!stream.write_id("app", app_id))
-        return false;
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.write_item_reference("app", app_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        if (app_ref.is_node_id())
+        {
+            if (!stream.write_id("app", app_ref.get_node_id()))
+                return false;
+        }
+        else
+        {
+            if (!stream.write_id("app", rx_node_id::null_id))
+                return false;
+        }
+    }
     if (identity.empty())
     {
         if (!stream.write_bytes("identity", nullptr, 0))
@@ -267,8 +336,18 @@ bool port_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
         return false;
-    if (!stream.read_id("app", app_id))
-        return false;
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.read_item_reference("app", app_ref))
+            return false;
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        rx_node_id id;
+        if (!stream.read_id("app", id))
+            return false;
+        app_ref = id;
+    }
     if (!stream.read_bytes("identity", identity))
         return false;
     if (!stream.end_object())

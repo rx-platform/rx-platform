@@ -42,8 +42,8 @@ namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_runtime_creator_base;
 class protocol_type_creator_base;
+class protocol_runtime_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -144,7 +144,7 @@ class protocol_type_creator_base
       virtual ~protocol_type_creator_base();
 
 
-      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create) = 0;
+      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data) = 0;
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
@@ -169,7 +169,7 @@ class protocol_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -275,7 +275,7 @@ class update_type_request : public rx_request_message
 
       static uint16_t type_id;
 
-      rx_uuid checkout;
+      rx_update_type_data update_data;
 
 
   protected:
@@ -327,7 +327,7 @@ class protocol_simple_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -354,7 +354,7 @@ class protocol_relation_type_creator : public protocol_type_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -455,7 +455,7 @@ class protocol_runtime_creator_base
       //	0 - prototype runtime
       //	1 - create runtime
       //	2 - update runtime
-      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type) = 0;
+      virtual message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type, const rx_update_runtime_data* data) = 0;
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
@@ -480,7 +480,7 @@ class protocol_runtime_creator : public protocol_runtime_creator_base
 
   public:
 
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type);
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type, const rx_update_runtime_data* data);
 
       rx_result serialize (base_meta_writer& stream) const;
 
@@ -586,7 +586,7 @@ class update_runtime_request : public rx_request_message
 
       static uint16_t type_id;
 
-      rx_uuid checkout;
+      rx_update_runtime_data update_data;
 
 
   protected:

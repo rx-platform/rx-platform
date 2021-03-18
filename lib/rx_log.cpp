@@ -114,23 +114,23 @@ void log_event_data::dump_to_stream_simple(std::ostream& stream) const
 }
 bool log_event_data::is_included(log_query_type query) const
 {
-	switch (query.type)
+	switch (query.type & rx_log_level_mask)
 	{
-	case rx_log_query_type::debug_level:
+	case rx_log_debug_level:
 		break;// pass all
-	case rx_log_query_type::trace_level:
+	case rx_log_trace_level:
 		if (event_type < log_event_type::trace)
 			return false;
 		break;
-	case rx_log_query_type::normal_level:
+	case rx_log_normal_level:
 		if (event_type < log_event_type::info)
 			return false;
 		break;
-	case rx_log_query_type::warining_level:
+	case rx_log_warining_level:
 		if (event_type < log_event_type::warning)
 			return false;
 		break;
-	case rx_log_query_type::error_level:
+	case rx_log_error_level:
 		if (event_type < log_event_type::error)
 			return false;
 		break;
@@ -441,6 +441,7 @@ void cache_log_subscriber::log_event (log_event_type event_type, const string_ty
 
 rx_result cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
 {
+	bool acc = (query.type & rx_log_acceding) != 0;
 	result.data.reserve(0x20);
 	locks::auto_lock dummy(&cache_lock_);
 	auto start_it = events_cache_.begin();
@@ -458,7 +459,8 @@ rx_result cache_log_subscriber::read_log (const log_query_type& query, log_event
 	uint32_t count = 0;
 	if (!events_cache_.empty())
 	{
-		events_cache_type::const_iterator it = end_it;
+		events_cache_type::const_iterator it = acc ? start_it : end_it;
+
 		if (start_it != end_it)
 		{
 			do

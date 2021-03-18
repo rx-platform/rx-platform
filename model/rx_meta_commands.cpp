@@ -298,7 +298,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 					return false;
 				}
 				proto.overrides = init_data;
-				auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto),
+				auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto), 
 					rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
@@ -1533,6 +1533,8 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 
 	typename T::RTypePtr object_ptr;
 
+
+	rx_update_runtime_data update_data;
 	
 	// try to acquire definition
 	if (as_command == "with")
@@ -1548,7 +1550,7 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 				ctx->get_current_directory()->fill_path(path);
 				auto proto = create_runtime_prototype<T>(name, base_reference, path);
 				proto.overrides = init_data;
-				auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), false,
+				auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), update_data,
 					rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 						{
 							if (!result)
@@ -1595,7 +1597,7 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 		string_type path;
 		ctx->get_current_directory()->fill_path(path);
 		auto proto = create_runtime_prototype<T>(name, base_reference, path);
-		auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), false,
+		auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), update_data,
 			rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
 				{
 					if (!result)

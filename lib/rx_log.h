@@ -109,13 +109,17 @@ enum class log_event_type
 };
 const char* event_type_to_string(log_event_type type);
 
-enum class rx_log_query_type
+enum rx_log_query_type
 {
-    debug_level = 0,
-    trace_level = 1,
-    normal_level = 2,
-    warining_level = 3,
-    error_level = 4,
+    rx_log_debug_level = 0,
+    rx_log_trace_level = 1,
+    rx_log_normal_level = 2,
+    rx_log_warining_level = 3,
+    rx_log_error_level = 4,
+
+    // other that can be masked
+    rx_log_level_mask = 0x7,
+    rx_log_acceding = 0x80
 };
 
 struct log_query_type

@@ -35,8 +35,6 @@
 
 // rx_simple_host
 #include "host/rx_simple_host.h"
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
 
 
 
@@ -46,12 +44,11 @@ namespace win32 {
 
 
 
-
 class win32_simple_host : public host::simple::simple_platform_host  
 {
 
   public:
-      win32_simple_host (hosting::rx_host_storages& storage);
+      win32_simple_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~win32_simple_host();
 

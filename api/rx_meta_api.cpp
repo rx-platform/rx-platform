@@ -74,7 +74,9 @@ rx_result rx_create_runtime(
 	, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
 	instance_data.meta_info = create_meta_for_new(instance_data.meta_info);
-	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime(std::move(instance_data), std::move(callback));
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime(std::move(instance_data)
+		, data::runtime_values_data()
+		, std::move(callback));
 	return true;
 }
 
@@ -90,21 +92,21 @@ template rx_result rx_create_runtime<port_type>(runtime_data::port_runtime_data 
 
 template<class typeT>
 rx_result rx_update_runtime(
-	typename typeT::instance_data_t instance_data, bool increment_version
+	typename typeT::instance_data_t instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
 	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::update_runtime(
-		std::move(instance_data), increment_version, std::move(callback));
+		std::move(instance_data), update_data, std::move(callback));
 	return true;
 }
 
-template rx_result rx_update_runtime<object_type>(runtime_data::object_runtime_data instance_data, bool increment_version
+template rx_result rx_update_runtime<object_type>(runtime_data::object_runtime_data instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<rx_object_ptr>&& callback);
-template rx_result rx_update_runtime<domain_type>(runtime_data::domain_runtime_data instance_data, bool increment_version
+template rx_result rx_update_runtime<domain_type>(runtime_data::domain_runtime_data instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<rx_domain_ptr>&& callback);
-template rx_result rx_update_runtime<application_type>(runtime_data::application_runtime_data instance_data, bool increment_version
+template rx_result rx_update_runtime<application_type>(runtime_data::application_runtime_data instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<rx_application_ptr>&& callback);
-template rx_result rx_update_runtime<port_type>(runtime_data::port_runtime_data instance_data, bool increment_version
+template rx_result rx_update_runtime<port_type>(runtime_data::port_runtime_data instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<rx_port_ptr>&& callback);
 
 
@@ -161,19 +163,19 @@ template rx_result rx_create_type<application_type>(application_type::smart_ptr 
 	, rx_result_with_callback<application_type::smart_ptr>&& callback);
 
 template<class typeT>
-rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_version
+rx_result rx_update_type(typename typeT::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
 {
-	rx_internal::model::algorithms::types_model_algorithm<typeT>::update_type(prototype, increment_version, std::move(callback));
+	rx_internal::model::algorithms::types_model_algorithm<typeT>::update_type(prototype, std::move(update_data), std::move(callback));
 	return true;
 }
-template rx_result rx_update_type<object_type>(object_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_type<object_type>(object_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<object_type::smart_ptr>&&);
-template rx_result rx_update_type<domain_type>(domain_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_type<domain_type>(domain_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<domain_type::smart_ptr>&&);
-template rx_result rx_update_type<port_type>(port_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_type<port_type>(port_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<port_type::smart_ptr>&& callback);
-template rx_result rx_update_type<application_type>(application_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_type<application_type>(application_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<application_type::smart_ptr>&& callback);
 
 
@@ -203,26 +205,26 @@ template rx_result rx_create_simple_type<mapper_type>(mapper_type::smart_ptr pro
 
 
 template<class typeT>
-rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
+rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
 {
 	rx_internal::model::algorithms::simple_types_model_algorithm<typeT>::update_type(
-		prototype, increment_version, std::move(callback));
+		prototype, std::move(update_data), std::move(callback));
 	return true;
 }
-template rx_result rx_update_simple_type<struct_type>(struct_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<struct_type>(struct_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<struct_type::smart_ptr>&& callback);
-template rx_result rx_update_simple_type<variable_type>(variable_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<variable_type>(variable_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<variable_type::smart_ptr>&& callback);
 
-template rx_result rx_update_simple_type<source_type>(source_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<source_type>(source_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<source_type::smart_ptr>&& callback);
-template rx_result rx_update_simple_type<filter_type>(filter_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<filter_type>(filter_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<filter_type::smart_ptr>&& callback);
-template rx_result rx_update_simple_type<event_type>(event_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<event_type>(event_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<event_type::smart_ptr>&& callback);
 
-template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr prototype, bool increment_version
+template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<mapper_type::smart_ptr>&& callback);
 
 
@@ -235,11 +237,11 @@ rx_result rx_create_relation_type(typename relation_type::smart_ptr prototype //
 	return true;
 }
 
-rx_result rx_update_relation_type(typename relation_type::smart_ptr prototype, bool increment_version
+rx_result rx_update_relation_type(typename relation_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
 {
 	rx_internal::model::algorithms::relation_types_algorithm::update_type(
-		prototype, increment_version, std::move(callback));
+		prototype, std::move(update_data), std::move(callback));
 	return true;
 }
 

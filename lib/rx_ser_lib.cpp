@@ -77,13 +77,14 @@ base_meta_writer & base_meta_writer::operator=(const base_meta_writer &right)
 
 // Class rx::base_meta_reader 
 
-base_meta_reader::base_meta_reader()
-{
-}
-
 base_meta_reader::base_meta_reader(const base_meta_reader &right)
 {
 	RX_ASSERT(false);
+}
+
+base_meta_reader::base_meta_reader (int version)
+	: version_(version)
+{
 }
 
 

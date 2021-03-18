@@ -107,12 +107,13 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     string_type full_path = whose.meta_info().get_full_path();
 
     security::secured_scope _(whose.instance_data_.get_security_context());
-    if (whose.scan_time_item_)
-        whose.set_binded_as(whose.scan_time_item_, whose.last_scan_time_);
-    if (whose.loop_count_item_)
-        whose.set_binded_as(whose.loop_count_item_, whose.loop_count_);
+    whose.loop_count_.commit();
+    whose.last_scan_time_.commit();
 
     auto old_tick = rx_get_us_ticks();
+
+    // persistence handling receive side
+
     size_t lap_count = 0;
     do
     {
@@ -153,13 +154,13 @@ void object_runtime_algorithms<typeT>::process_runtime (typename typeT::RType& w
     whose.last_scan_time_ = (double)diff / 1000.0;
     whose.loop_count_ += lap_count;
 
+    // persistence handling send side
+    if (whose.context_.should_save())
+        save_runtime(whose);
     
-
     if (whose.max_scan_time_ < whose.last_scan_time_)
     {
         whose.max_scan_time_ = whose.last_scan_time_;
-        if (whose.max_scan_time_item_)
-            whose.set_binded_as(whose.max_scan_time_item_, whose.max_scan_time_);
     }
 }
 
@@ -231,6 +232,36 @@ rx_result object_runtime_algorithms<typeT>::write_value (const string_type& path
     return result;
 }
 
+template <class typeT>
+void object_runtime_algorithms<typeT>::save_runtime (typename typeT::RType& whose)
+{
+    auto storage_result = whose.meta_info_.resolve_storage();
+    if (storage_result)
+    {
+        auto item_result = storage_result.value()->get_runtime_storage(whose.meta_info_, whose.get_type_id());
+        if (item_result)
+        {
+            auto result = item_result.value()->open_for_write();
+            if (result)
+            {
+                item_result.value()->write_stream().write_header(STREAMING_TYPE_MESSAGE, 0);
+                result = whose.serialize_value(item_result.value()->write_stream(), runtime_value_type::persistent_runtime_value);
+                if(result)
+                    result = item_result.value()->commit_write();
+                RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Saved "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+            }
+            else
+            {
+                RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+            }
+        }
+        else
+        {
+            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+        }
+    }
+}
+
 
 
 template <>
@@ -288,13 +319,10 @@ template class object_runtime_algorithms<object_types::application_type>;
 
 template <class typeT>
 runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
-      : scan_time_item_(0),
+      : job_pending_(false),
         last_scan_time_(-1),
         max_scan_time_(0),
-        max_scan_time_item_(0),
-        job_pending_(false),
-        loop_count_(0),
-        loop_count_item_(0)
+        loop_count_(0)
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
     , points_(std::make_unique<std::vector<value_point> >())
@@ -353,7 +381,6 @@ template <class typeT>
 rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
     ctx.anchor = smart_this();
-    directories_.add_paths({ meta_info_.path });
     context_.init_state([this]
         {
             object_runtime_algorithms<typeT>::fire_job(*this);
@@ -363,15 +390,15 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     auto result = item_->initialize_runtime(ctx);
     if (result)
     {
-        auto bind_result = ctx.tags->bind_item("Object.LastScanTime", ctx);
-        if (bind_result)
-            scan_time_item_ = bind_result.value();
-        bind_result = ctx.tags->bind_item("Object.MaxScanTime", ctx);
-        if (bind_result)
-            max_scan_time_item_ = bind_result.value();
-        bind_result = ctx.tags->bind_item("Object.LoopCount", ctx);
-        if (bind_result)
-            loop_count_item_ = bind_result.value();
+        auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
+        if (!bind_result)
+            RX_ASSERT(false);
+        bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
+        if (!bind_result)
+            RX_ASSERT(false);
+        bind_result = loop_count_.bind("Object.LoopCount", ctx);
+        if (!bind_result)
+            RX_ASSERT(false);
 
         result = relations_.initialize_relations(ctx);
         if (result)
@@ -469,7 +496,7 @@ void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
     item_->fill_data(data);
     // now do the relations
     // they create their own context!
-    relations_.fill_data(data);
+    relations_.fill_data(data, &context_);
 }
 
 template <class typeT>
@@ -485,10 +512,10 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
     rx_result result;
     if (path.empty())
     {// our value
-#ifdef RX_MIN_MEMORY
+#ifndef RX_MIN_MEMORY
         if (!json_cache_.empty())
         {
-            value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
+            value.assign_static<string_type>(string_type(json_cache_), meta_info_.modified_time);
         }
         else
         {
@@ -499,12 +526,10 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
             {
 #ifdef _DEBUG
                 if (writer.get_string(const_cast<string_type&>(json_cache_), true))
-                {
 #else
-                writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false);
+                if (writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false))
 #endif
-                value.assign_static<string_type>(string_type(json_cache_), meta_info_.get_modified_time());
-                }
+                    value.assign_static<string_type>(string_type(json_cache_), meta_info_.modified_time);
             }
         }
 #else
@@ -521,9 +546,23 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
         }
 #endif
     }
+    if (path == "Storage")
+    {// our runtime value
+        serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        result = serialize_value(writer, runtime_value_type::persistent_runtime_value);
+        if (result)
+        {
+            string_type temp_str;
+            if (writer.get_string(const_cast<string_type&>(temp_str), true))
+            {
+                value.assign_static<string_type>(string_type(temp_str), meta_info_.modified_time);
+            }
+        }
+    }
     else
     {
-        result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
+        auto result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
         if (!result)
         {// check relations
             result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_));

@@ -56,6 +56,27 @@ namespace library {
 
 
 
+class plugin_builder 
+{
+
+  public:
+
+      rx_directory_ptr plugin_root;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
 class rx_plugin_base 
 {
 
@@ -71,7 +92,7 @@ class rx_plugin_base
 
       virtual rx_result deinit_plugin () = 0;
 
-      virtual rx_result build_plugin (rx_directory_ptr root) = 0;
+      virtual rx_result build_plugin (plugin_builder& builder) = 0;
 
       virtual string_type get_plugin_name () = 0;
 

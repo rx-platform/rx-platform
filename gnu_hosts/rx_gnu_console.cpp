@@ -64,8 +64,8 @@ namespace gnu {
 
 // Class gnu::gnu_console_host 
 
-gnu_console_host::gnu_console_host (hosting::rx_host_storages& storage)
-	: host::interactive::interactive_console_host(storage)
+gnu_console_host::gnu_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
+	: host::interactive::interactive_console_host(storages)
 {
 }
 

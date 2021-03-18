@@ -202,6 +202,13 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 		synchronized_cancel_command(out_buffer, err_buffer, ctx);
 		return;
 	}
+	else if (line == "\t")
+	{
+
+		commands::suggestions_type suggestions;
+		terminal::commands::server_command_manager::instance()->register_suggestions("", suggestions);
+
+	}
 
 	bool ret = false;
 	
@@ -251,7 +258,7 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 		out << man << "\r\n";
 
 		out << "Hosts stack details:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-		string_array hosts;
+		hosting::hosts_type hosts;
 		rx_gate::instance().get_host()->get_host_info(hosts);
 		for (const auto& one : hosts)
 		{
@@ -262,22 +269,9 @@ void console_runtime::synchronized_do_command (const string_type& line, memory::
 	else if (line == "storage")
 	{
 		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(err_buffer.unsafe_ptr());
-
 		out << "Storage Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
-		string_type sys_info = rx_gate::instance().get_host()->get_storages().system_storage->get_storage_info();
-		string_type sys_ref = rx_gate::instance().get_host()->get_storages().system_storage->get_storage_reference();
-		string_type user_info = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_info();
-		string_type user_ref = rx_gate::instance().get_host()->get_storages().user_storage->get_storage_reference();
-		out << ANSI_COLOR_GREEN "System Storage" ANSI_COLOR_RESET "\r\nReference: " << sys_ref << "\r\nVersion: " << sys_info << "\r\n\r\n";
-		out << ANSI_COLOR_GREEN "User Storage" ANSI_COLOR_RESET "\r\nReference: " << user_ref << "\r\nVersion: " << user_info << "\r\n\r\n";
-
-		if (rx_gate::instance().get_host()->get_storages().test_storage)
-		{
-			string_type test_info = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_info();
-			string_type test_ref = rx_gate::instance().get_host()->get_storages().test_storage->get_storage_reference();
-			out << ANSI_COLOR_GREEN "Test Storage" ANSI_COLOR_RESET "\r\nReference: " << test_ref << "\r\nVersion: " << test_info << "\r\n";
-		}
+		rx_gate::instance().get_host()->dump_storage_references(out);
+		out << "\r\n";
 		ret = true;
 	}
 	else if (line == "welcome")
@@ -326,14 +320,22 @@ void console_runtime::process_event (bool result, memory::buffer_ptr out_buffer,
 	{
 		if (current_context_)
 		{
-			current_context_->postpone_done();
-			auto context = current_context_;
-			program_.process_program(current_context_, rx_time::now(), false);
-			if (!context->is_postponed())
+			if (done)
 			{
-				result = current_context_->get_result();
 				current_context_ = nullptr;
 				process_result(result, out_buffer, err_buffer);
+			}
+			else
+			{
+				current_context_->postpone_done();
+				auto context = current_context_;
+				program_.process_program(current_context_, rx_time::now(), false);
+				if (!context->is_postponed())
+				{
+					result = current_context_->get_result();
+					current_context_ = nullptr;
+					process_result(result, out_buffer, err_buffer);
+				}
 			}
 		}
 	}
@@ -500,7 +502,7 @@ bool console_program_context::postpone (uint32_t interval)
 		rx_post_delayed_function(client_, interval, 
 			[out_ptr, err_ptr](decltype(client_) client)
 			{
-				client->process_event(true, out_ptr, err_ptr, true);
+				client->process_event(true, out_ptr, err_ptr, false);
 			}, client_);
 	}
 	else
@@ -510,7 +512,7 @@ bool console_program_context::postpone (uint32_t interval)
 		rx_post_function(client_,
 			[out_ptr, err_ptr](decltype(client_) client)
 			{
-				client->process_event(true, out_ptr, err_ptr, true);
+				client->process_event(true, out_ptr, err_ptr, false);
 			}
 			, client_);
 	}
@@ -599,18 +601,28 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 	}
 	if (!first.empty())
 	{
-		server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
-		if (command)
+		if (line != "\t")
 		{
-			if (!command->console_execute(in, out, err, ctx))
+			// regular command handling here
+			server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
+			if (command)
+			{
+				if (!command->console_execute(in, out, err, ctx))
+					return false;
+			}
+			else
+			{
+				err << "Syntax Error!\r\nCommand:" << first << " not existing!";
+				err.flush();
 				return false;
+			}
 		}
 		else
 		{
-			err << "Syntax Error!\r\nCommand:" << first << " not existing!";
-			err.flush();
-			return false;
+			commands::suggestions_type suggestions;
+			terminal::commands::server_command_manager::instance()->register_suggestions("", suggestions);
 		}
+		
 	}
 	if (ctx->should_next_line())
 	{

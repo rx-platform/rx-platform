@@ -69,7 +69,7 @@ class runtime_data_prototype
 
       void add_const_value (const string_type& name, rx_simple_value value);
 
-      void add_value (const string_type& name, rx_timed_value value, bool read_only);
+      void add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent);
 
       void add (const string_type& name, runtime::structure::mapper_data&& value);
 
@@ -146,7 +146,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      runtime_data_prototype pop_rt_name ();
+      rx_platform::meta::runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 

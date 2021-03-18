@@ -255,7 +255,7 @@ rx_message_type_t delete_type_response::get_type_id ()
 
 
 template <class itemT>
-message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create)
+message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
 	rx_node_id id = rx_node_id::null_id;
 
@@ -286,11 +286,22 @@ message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protoc
 
 	});
 	rx_result result;
-	if(create)
+	if (create)
+	{
 		result = api::meta::rx_create_type<itemT>(item, std::move(callback));
+	}
 	else
-		result = api::meta::rx_update_type<itemT>(item, false, std::move(callback));
-
+	{
+		if (data)
+		{
+			result = api::meta::rx_update_type<itemT>(item, *data, std::move(callback));
+		}
+		else
+		{
+			RX_ASSERT(false);
+			result = "No update data provided!";
+		}
+	}
 	if (!result)
 	{
 		auto ret_value = std::make_unique<error_message>(result, 13, request);
@@ -429,7 +440,7 @@ message_ptr set_type_request::do_job (api::rx_context ctx, rx_protocol_connectio
 {
 	if (creator_)
 	{
-		return creator_->do_job(ctx, conn, request_id, true);
+		return creator_->do_job(ctx, conn, request_id, true, nullptr);
 	}
 	else
 	{
@@ -484,8 +495,17 @@ uint16_t update_type_request::type_id = rx_update_type_request_id;
 
 rx_result update_type_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("checkout", checkout.uuid()))
-		return "Error reading checkout value";
+	if (!stream.start_object("update"))
+		return "Error starting update object";
+
+	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
+		return "Error writing checkout value";
+
+	if (!stream.write_bool("version", update_data.increment_version))
+		return "Error reading increment version value";
+
+	if (!stream.end_object())
+		return "Error ending update object";
 
 	if (!stream.start_object("item"))
 		return "Error starting item object";
@@ -504,10 +524,20 @@ rx_result update_type_request::serialize (base_meta_writer& stream) const
 
 rx_result update_type_request::deserialize (base_meta_reader& stream)
 {
+	if (!stream.start_object("update"))
+		return "Error starting update object";
+
 	rx_uuid_t temp;
 	if (!stream.read_uuid("checkout", temp))
 		return "Error reading checkout value";
-	checkout = temp;
+	update_data.checkout = temp;
+
+	if (!stream.read_bool("version", update_data.increment_version))
+		return "Error reading increment version value";
+
+	if (!stream.end_object())
+		return "Error ending update object";
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
@@ -573,7 +603,7 @@ message_ptr update_type_request::do_job (api::rx_context ctx, rx_protocol_connec
 {
 	if (updater_)
 	{
-		return updater_->do_job(ctx, conn, request_id, false);
+		return updater_->do_job(ctx, conn, request_id, false, &update_data);
 	}
 	else
 	{
@@ -623,7 +653,7 @@ rx_message_type_t update_type_response<itemT>::get_type_id ()
 
 
 template <class itemT>
-message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create)
+message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
 	rx_node_id id = rx_node_id::null_id;
 
@@ -657,9 +687,21 @@ message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx
 	});
 	rx_result result;
 	if (create)
+	{
 		result = api::meta::rx_create_simple_type<itemT>(item, std::move(callback));
+	}
 	else
-		result = api::meta::rx_update_simple_type<itemT>(item, false, std::move(callback));
+	{
+		if (data)
+		{
+			result = api::meta::rx_update_simple_type<itemT>(item, *data, std::move(callback));
+		}
+		else
+		{
+			RX_ASSERT(false);
+			result = "No update data provided!";
+		}
+	}
 
 	if (!result)
 	{
@@ -701,7 +743,7 @@ rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& st
 // Class rx_internal::rx_protocol::messages::set_messages::protocol_relation_type_creator 
 
 
-message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create)
+message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
 	rx_node_id id = rx_node_id::null_id;
 
@@ -735,7 +777,17 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 	if (create)
 		result = api::meta::rx_create_relation_type(item, std::move(callback));
 	else
-		result = api::meta::rx_update_relation_type(item, false, std::move(callback));
+	{
+		if (data)
+		{
+			result = api::meta::rx_update_relation_type(item, std::move(*data), std::move(callback));
+		}
+		else
+		{
+			RX_ASSERT(false);
+			result = "No update data provided!";
+		}
+	}
 
 	if (!result)
 	{
@@ -926,7 +978,7 @@ rx_message_type_t delete_runtime_response::get_type_id ()
 
 
 template <class itemT>
-message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type)
+message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type, const rx_update_runtime_data* data)
 {
 	rx_node_id id = rx_node_id::null_id;
 
@@ -982,7 +1034,15 @@ message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_pro
 		result = api::meta::rx_create_runtime<itemT>(std::move(item), std::move(callback));
 		break;
 	case 2:// update
-		result = api::meta::rx_update_runtime<itemT>(std::move(item), false, std::move(callback));
+		if (data)
+		{
+			result = api::meta::rx_update_runtime<itemT>(std::move(item), *data, std::move(callback));
+		}
+		else
+		{
+			RX_ASSERT(false);
+			result = "Update data not provided!";
+		}
 		break;
 	default:
 		result = "Unexpected create_type error!";
@@ -1083,7 +1143,7 @@ message_ptr set_runtime_request::do_job (api::rx_context ctx, rx_protocol_connec
 {
 	if (creator_)
 	{
-		return creator_->do_job(ctx, conn, request_id, 1);
+		return creator_->do_job(ctx, conn, request_id, 1, nullptr);
 	}
 	else
 	{
@@ -1138,8 +1198,23 @@ uint16_t update_runtime_request::type_id = rx_update_runtime_request_id;
 
 rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("checkout", checkout.uuid()))
-		return "Error reading checkout value";
+	if (!stream.start_object("update"))
+		return "Error starting update object";
+
+	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
+		return "Error writing checkout value";
+
+	if (!stream.write_bool("version", update_data.increment_version))
+		return "Error writing increment version value";
+
+	if (!stream.write_bool("reinit", update_data.initialize_data))
+		return "Error writing increment initialize data value";
+
+	if (!stream.write_bool("release", update_data.release_forced))
+		return "Error writing release forced data value";
+
+	if (!stream.end_object())
+		return "Error ending update object";
 
 	if (!stream.start_object("item"))
 		return "Error starting item object";
@@ -1158,10 +1233,26 @@ rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 
 rx_result update_runtime_request::deserialize (base_meta_reader& stream)
 {
+	if (!stream.start_object("update"))
+		return "Error starting update object";
+
 	rx_uuid_t temp;
 	if (!stream.read_uuid("checkout", temp))
 		return "Error reading checkout value";
-	checkout = temp;
+	update_data.checkout = temp;
+
+	if (!stream.read_bool("version", update_data.increment_version))
+		return "Error reading increment version value";
+
+	if (!stream.read_bool("reinit", update_data.initialize_data))
+		return "Error reading increment initialize data value";
+
+	if (!stream.read_bool("release", update_data.release_forced))
+		return "Error reading release forced data value";
+
+	if (!stream.end_object())
+		return "Error ending update object";
+
 	if (!stream.start_object("item"))
 		return "Error starting item object";
 
@@ -1203,7 +1294,7 @@ message_ptr update_runtime_request::do_job (api::rx_context ctx, rx_protocol_con
 {
 	if (updater_)
 	{
-		return updater_->do_job(ctx, conn, request_id, 2);
+		return updater_->do_job(ctx, conn, request_id, 2, &update_data);
 	}
 	else
 	{
@@ -1340,7 +1431,7 @@ message_ptr prototype_runtime_request::do_job (api::rx_context ctx, rx_protocol_
 {
 	if (creator_)
 	{
-		return creator_->do_job(ctx, conn, request_id, 0);
+		return creator_->do_job(ctx, conn, request_id, 0, nullptr);
 	}
 	else
 	{

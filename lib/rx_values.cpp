@@ -1071,6 +1071,13 @@ string_type rx_value_storage::to_string (bool simple) const
 		return "\""s + *value_.string_value + "\"";
 	case RX_UUID_TYPE:
 		return value_.uuid_value->to_string();
+
+	case RX_TIME_TYPE:
+		{
+			rx_time temp;
+			temp = value_.time_value;
+			return temp.get_string();
+		}
 	default:
 		return "not valid jet";
 	}
@@ -2066,7 +2073,7 @@ void rx_value_storage::assign(std::complex<double> val)
 	value_.complex_value = new complex_value_struct{ val.real(), val.imag() };
 #endif
 }
-void rx_value_storage::assign(rx_time_struct val)
+void rx_value_storage::assign(rx_time val)
 {
 	value_.time_value = val;
 }

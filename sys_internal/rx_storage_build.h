@@ -68,9 +68,9 @@ class configuration_storage_builder : public rx_platform_builder
 
   private:
 
-      rx_result create_object_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root);
+      rx_result create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root);
 
-      rx_result create_type_from_storage (base_meta_reader& stream, rx_storage_item_ptr&& storage, rx_directory_ptr root);
+      rx_result create_type_from_storage (rx_storage_item_ptr& storage, rx_directory_ptr root);
 
       void dump_errors_to_log (const string_array& errors);
 
@@ -79,12 +79,17 @@ class configuration_storage_builder : public rx_platform_builder
       rx_storage_ptr storage_;
 
 	  template<class T>
-	  rx_result create_concrete_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>);
+	  rx_result create_concrete_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
+          , rx_directory_ptr dir, bool save, tl::type2type<T>);
 	  template<class T>
-	  rx_result create_concrete_simple_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>);
-	  rx_result create_concrete_relation_type_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save);
+	  rx_result create_concrete_simple_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
+          , rx_directory_ptr dir, bool save, tl::type2type<T>);
+	  rx_result create_concrete_relation_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
+          , rx_directory_ptr dir, bool save);
 	  template<class T>
-	  rx_result create_concrete_object_from_storage(meta::meta_data& meta_data, base_meta_reader& stream, rx_directory_ptr dir, rx_storage_item_ptr&& storage, bool save, tl::type2type<T>);
+	  rx_result create_concrete_object_from_storage(meta::meta_data& meta
+          , rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage
+          , rx_directory_ptr dir, bool save, tl::type2type<T>);
 };
 
 

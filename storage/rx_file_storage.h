@@ -36,21 +36,36 @@
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
+namespace storage {
+namespace files {
+class rx_simple_file;
+class rx_runtime_file;
+class rx_binary_file;
+class rx_json_file;
+
+} // namespace files
+} // namespace storage
+
+
+using storage_base::rx_storage_connection;
 
 
 namespace storage {
 
 namespace files {
+string_type get_file_storage_info();
 
 
 
 
 
+
+template <class fileT, class streamT>
 class rx_file_item : public rx_platform::storage_base::rx_storage_item  
 {
 
   public:
-      rx_file_item (const string_type& serialization_type, const string_type& file_path, const meta::meta_data& storage_meta);
+      rx_file_item (const string_type& file_path, const meta::meta_data& storage_meta, rx_storage_item_type storage_type = rx_storage_item_type::none);
 
       ~rx_file_item();
 
@@ -65,17 +80,26 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       string_type get_file_path () const;
 
-      static string_type get_file_storage_info ();
-
       const string_type& get_item_reference () const;
 
       bool preprocess_meta_data (meta::meta_data& data);
 
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      rx_result close_read ();
+
+      rx_result commit_write ();
+
+      string_type get_item_path () const;
+
 
   protected:
-
-      string_type file_path_;
-
 
   private:
 
@@ -85,6 +109,10 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
       bool valid_;
 
       meta::meta_data storage_meta_;
+
+      streamT item_data_;
+
+      string_type file_path_;
 
 
 };
@@ -124,7 +152,9 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       bool is_valid_storage () const;
 
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
 
 
   protected:
@@ -133,15 +163,17 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
 
-      std::unique_ptr<rx_file_item> get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta);
+      rx_storage_item_ptr get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta);
 
       rx_result ensure_path_exsistence (const string_type& path);
 
       rx_result recursive_create_directory (const string_type& path);
 
-      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base);
+      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
 
       void add_file_path (const meta::meta_data& data, const string_type& path);
+
+      string_type get_runtime_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
 
 
 
@@ -151,79 +183,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       items_cache_type items_cache_;
 
-
-};
-
-
-
-
-
-
-class rx_json_file : public rx_file_item  
-{
-
-  public:
-      rx_json_file (const string_type& file_path, const meta::meta_data& storage_meta);
-
-      ~rx_json_file();
-
-
-      base_meta_reader& read_stream ();
-
-      base_meta_writer& write_stream ();
-
-      rx_result open_for_read ();
-
-      rx_result open_for_write ();
-
-      void close ();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<rx_platform::serialization::json_reader> reader_;
-
-      std::unique_ptr<rx_platform::serialization::json_writer> writer_;
-
-
-};
-
-
-
-
-
-
-class rx_binary_file : public rx_file_item  
-{
-
-  public:
-      rx_binary_file (const string_type& file_path, const meta::meta_data& storage_meta);
-
-      ~rx_binary_file();
-
-
-      base_meta_reader& read_stream ();
-
-      base_meta_writer& write_stream ();
-
-      rx_result open_for_read ();
-
-      rx_result open_for_write ();
-
-      void close ();
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<rx_platform::serialization::std_buffer_reader> reader_;
-
-      std::unique_ptr<rx_platform::serialization::std_buffer_writer> writer_;
+      items_cache_type runtime_cache_;
 
 
 };
@@ -234,16 +194,18 @@ class rx_binary_file : public rx_file_item
 
 
 
-class file_system_storage_holder : public rx_platform::storage_base::rx_platform_storage_holder  
+class file_system_storage_connection : public rx_platform::storage_base::rx_storage_connection  
 {
 
   public:
+      ~file_system_storage_connection();
 
-      string_type get_storage_info ();
 
-      rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
+      string_type get_storage_info () const;
 
-      string_type get_storage_reference ();
+      rx_result init_connection (const string_type& storage_reference, hosting::rx_platform_host* host);
+
+      string_type get_storage_reference () const;
 
 
   protected:
@@ -255,6 +217,31 @@ class file_system_storage_holder : public rx_platform::storage_base::rx_platform
 
 
       string_type root_path_;
+
+
+};
+
+
+
+
+
+
+
+class file_system_storage_type : public rx_platform::storage_base::rx_platform_storage_type  
+{
+
+  public:
+
+      string_type get_storage_info ();
+
+      rx_storage_connection::smart_ptr construct_storage_connection ();
+
+      string_type get_reference_prefix () const;
+
+
+  protected:
+
+  private:
 
 
 };

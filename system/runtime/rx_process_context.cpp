@@ -80,7 +80,8 @@ runtime_process_context::runtime_process_context (operational::binded_tags& bind
         binded_(binded),
         current_step_(runtime_process_step::idle),
         meta_info(info),
-        directory_resolver_(dirs)
+        directory_resolver_(dirs),
+        serialize_value_(false)
     , points_(points)
 {
     mode_.turn_off();
@@ -437,6 +438,16 @@ source_results_type& runtime_process_context::get_source_results ()
         return source_results_.get_and_swap();
     else
         return empty;
+}
+
+void runtime_process_context::runtime_dirty ()
+{
+    serialize_value_ = true;
+}
+
+bool runtime_process_context::should_save ()
+{
+    return serialize_value_.exchange(false);
 }
 
 

@@ -44,17 +44,17 @@
 #include "system/storage_base/rx_storage.h"
 
 namespace rx_platform {
-namespace runtime {
-namespace items {
-class object_runtime;
-} // namespace items
-} // namespace runtime
-
 namespace meta {
 struct type_creation_data;
 struct object_type_creation_data;
-
 } // namespace meta
+
+namespace runtime {
+namespace items {
+class object_runtime;
+
+} // namespace items
+} // namespace runtime
 } // namespace rx_platform
 
 
@@ -62,6 +62,23 @@ using namespace rx_platform;
 
 
 namespace rx_platform {
+bool rx_is_runtime(rx_item_type type);
+
+
+struct rx_update_runtime_data
+{
+    rx_uuid checkout;
+    bool increment_version = false;
+    bool initialize_data = false;
+    bool release_forced = false;
+};
+
+
+struct rx_update_type_data
+{
+    rx_uuid checkout;
+    bool increment_version = false;
+};
 
 
 enum class rx_object_command_t
@@ -100,33 +117,6 @@ struct runtime_item_attribute
     }
 };
 
-enum rx_item_type : uint8_t
-{
-	rx_directory = 0,
-	rx_application = 1,
-	rx_application_type = 2,
-	rx_domain = 3,
-	rx_domain_type = 4,
-	rx_object = 5,
-	rx_object_type = 6,
-	rx_port = 7,
-	rx_port_type = 8,
-	rx_struct_type = 9,
-	rx_variable_type = 10,
-	rx_source_type = 11,
-	rx_filter_type = 12,
-	rx_event_type = 13,
-	rx_mapper_type = 14,
-	rx_relation_type = 15,
-	rx_program = 16,
-	rx_method = 17,
-	rx_relation = 18,
-
-	rx_first_invalid = 19,
-
-	rx_test_case_type = 0xfe,
-	rx_invalid_type = 0xff
-};
 
 enum rx_item_state : uint8_t
 {
@@ -218,7 +208,7 @@ class meta_data
 
       string_type path;
 
-      rx_node_id parent;
+      rx_item_reference parent;
 
       rx_time created_time;
 

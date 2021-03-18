@@ -104,7 +104,7 @@ bool storage_list_test::run_test (std::istream& in, std::ostream& out, std::ostr
 		{
 			rx_row_type row
 			{
-				rx_table_cell_struct("[" + one->get_serialization_type() + "]", ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET),
+				rx_table_cell_struct("["  "aaaaaa"  "]", ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET),
 				rx_table_cell_struct("jjj", ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET)
 			};
 			table.emplace_back(std::move(row));

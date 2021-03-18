@@ -35,6 +35,12 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
+// rx_logic
+#include "system/logic/rx_logic.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_relations
@@ -45,12 +51,6 @@
 #include "system/runtime/rx_rt_struct.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_logic
-#include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -90,6 +90,139 @@ namespace runtime {
 
 namespace algorithms {
 
+template <typename typeT>
+struct local_value
+{
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+public:
+    local_value() = default;
+    ~local_value() = default;
+    local_value(const local_value&) = default;
+    local_value(local_value&&) = default;
+    local_value& operator=(const local_value&) = default;
+    local_value& operator=(local_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        auto result = ctx.bind_item(path);
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    local_value& operator=(typeT right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            ctx_->set_binded_as<typeT>(handle_, std::move(right));
+        }
+        return this;
+    }
+};
+template <typename typeT, bool manual = false>
+struct owned_value
+{
+    typeT val_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+
+    void internal_commit()
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            typeT temp(val_);
+            ctx_->set_binded_as<typeT>(handle_, std::move(temp));
+        }
+    }
+public:
+    owned_value() = default;
+    ~owned_value() = default;
+    owned_value(const owned_value&) = default;
+    owned_value(owned_value&&) = default;
+    owned_value& operator=(const owned_value&) = default;
+    owned_value& operator=(owned_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        auto result = ctx.bind_item(path);
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            operator=(val_);
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    owned_value(const typeT& right)
+    {
+        val_ = right;
+    }
+    owned_value(typeT&& right)
+    {
+        val_ = std::move(right);
+    }
+    owned_value& operator=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ = right;
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    owned_value& operator=(typeT&& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ = std::move(right);
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    owned_value& operator+=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ += right;  
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    operator typeT()
+    {
+        return val_;
+    }
+    void commit()
+    {
+        if constexpr (manual)
+        {
+            internal_commit();
+        }
+        else
+        {
+            RX_ASSERT(false);
+        }
+    }
+};
+
 
 
 
@@ -113,6 +246,8 @@ class object_runtime_algorithms
       static std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
 
       static rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose);
+
+      static void save_runtime (typename typeT::RType& whose);
 
 
   protected:
@@ -159,6 +294,8 @@ template <class typeT>
 class runtime_holder : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(runtime_holder);
+
+    typedef data::runtime_values_data persistent_data_type;
 
     typedef std::vector<relations::relation_data> relations_type;
     typedef typename typeT::instance_data_t instance_data_t;
@@ -336,14 +473,8 @@ public:
 
       points_type points_;
 
+      persistent_data_type persistent_;
 
-      runtime_handle_t scan_time_item_;
-
-      double last_scan_time_;
-
-      double max_scan_time_;
-
-      runtime_handle_t max_scan_time_item_;
 
       meta::meta_data meta_info_;
 
@@ -357,9 +488,13 @@ public:
 
       string_type json_cache_;
 
-      size_t loop_count_;
+      memory::std_buffer binary_cache_;
 
-      runtime_handle_t loop_count_item_;
+      owned_value<double, true> last_scan_time_;
+
+      owned_value<double> max_scan_time_;
+
+      owned_value<size_t, true> loop_count_;
 
 
 };

@@ -61,6 +61,9 @@ changes current active directory");
       ~cd_command();
 
 
+      virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
+
+
   protected:
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);

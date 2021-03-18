@@ -418,13 +418,13 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 	return prototype;
 }
 template<class typeCache, class typeT>
-rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, bool increment_version, rx_transaction_type& transaction)
+rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_update_type_data update_data, rx_transaction_type& transaction)
 {
 	using algorithm_type = typename typeT::pointee_type::algorithm_type;
 
 	rx_directory_ptr dir = rx_gate::instance().get_root_directory();
 
-	prototype->meta_info.increment_version(increment_version);
+	prototype->meta_info.increment_version(update_data.increment_version);
 	type_check_context ctx;
 	ctx.get_directories().add_paths({ prototype->meta_info.path });
 	auto result = algorithm_type::check_type(*prototype, ctx);
@@ -590,7 +590,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_thr
 	return true;
 }
 template<class typeCache>
-rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, rx_transaction_type& transaction)
+rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, data::runtime_values_data runtime_data, rx_transaction_type& transaction)
 {
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
@@ -608,13 +608,13 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 		auto cancel_reserve = dir->cancel_reserve(runtime_name);
 		});
 
-	auto ret_value = cache.create_runtime(std::move(instance_data));
+	auto ret_value = cache.create_runtime(std::move(instance_data), std::move(runtime_data));
 	if (!ret_value)
 	{// error, didn't created runtime
 		ret_value.register_error("Unable to create runtime in repository.");
 		return ret_value.errors();
 	}
-	
+		
 	result = dir->add_item(ret_value.value().ptr->get_item_ptr());
 	if (!result)
 	{
@@ -834,9 +834,9 @@ void types_model_algorithm<typeT>::create_type (typename typeT::smart_ptr protot
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
+void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &update_type_sync, std::move(callback), prototype, increment_version);
+	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &update_type_sync, std::move(callback), prototype, std::move(update_data));
 }
 
 template <class typeT>
@@ -887,10 +887,10 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::create_t
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, bool increment_version)
+rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data)
 {
 	rx_transaction_type transaction;
-	auto result = update_some_type(platform_types_manager::instance().get_type_repository<typeT>(), prototype, increment_version, transaction);
+	auto result = update_some_type(platform_types_manager::instance().get_type_repository<typeT>(), prototype, std::move(update_data), transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -952,9 +952,9 @@ void simple_types_model_algorithm<typeT>::create_type (typename typeT::smart_ptr
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
+void simple_types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &update_type_sync, std::move(callback), prototype, increment_version);
+	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &update_type_sync, std::move(callback), prototype, std::move(update_data));
 }
 
 template <class typeT>
@@ -1006,10 +1006,10 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::c
 }
 
 template <class typeT>
-rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, bool increment_version)
+rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data)
 {
 	rx_transaction_type transaction;
-	auto result = update_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), prototype, increment_version, transaction);
+	auto result = update_some_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), prototype, std::move(update_data), transaction);
 	if (result)
 	{
 		transaction.commit();
@@ -1065,9 +1065,9 @@ void runtime_model_algorithm<typeT>::get_runtime (const rx_item_reference& item_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::create_runtime (instanceT&& instance_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
+void runtime_model_algorithm<typeT>::create_runtime (instanceT&& instance_data, data::runtime_values_data&& runtime_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &runtime_model_algorithm<typeT>::create_runtime_sync, std::move(callback), std::move(instance_data));
+	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, &runtime_model_algorithm<typeT>::create_runtime_sync, std::move(callback), std::move(instance_data), std::move(runtime_data));
 }
 
 template <class typeT>
@@ -1078,10 +1078,10 @@ void runtime_model_algorithm<typeT>::create_prototype (instanceT&& instance_data
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::update_runtime (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
+void runtime_model_algorithm<typeT>::update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
 	rx_post_function_to(RX_DOMAIN_META, callback.anchor, &runtime_model_algorithm<typeT>::update_runtime_sync
-		, std::move(instance_data), increment_version, std::move(callback), rx_thread_context());
+		, std::move(instance_data), std::move(update_data), std::move(callback), rx_thread_context());
 
 }
 
@@ -1133,11 +1133,11 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (instanceT&& instance_data)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data)
 {
 	rx_transaction_type transaction;
 	auto result = create_some_runtime<types_repository<typeT> >(platform_types_manager::instance().get_type_repository<typeT>()
-		, std::move(instance_data), transaction);
+		, std::move(instance_data), std::move(runtime_data), transaction);
 	if (result)
 	{
 		rx_node_id item_id = result.value().ptr->meta_info().id;
@@ -1169,7 +1169,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 template <class typeT>
 rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_prototype_sync (instanceT&& instance_data)
 {
-	auto ret = platform_types_manager::instance().get_type_repository<typeT>().create_runtime(std::move(instance_data), true);
+	auto ret = platform_types_manager::instance().get_type_repository<typeT>().create_runtime(std::move(instance_data), data::runtime_values_data(), true);
 	if (ret)
 		return ret.value().ptr;
 	else
@@ -1177,7 +1177,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_data, bool increment_version, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target)
+void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target)
 {
 	using ret_type = rx_result_with<typename typeT::RTypePtr>;
 	auto id = instance_data.meta_info.id;
@@ -1230,7 +1230,8 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		rx_post_packed_to(result_target, std::move(callback));
 		return;
 	}
-	
+	data::runtime_values_data runtime_data;
+	rx_storage_item_ptr runtime_storage;
 	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(old_meta.path);
 	if (dir)
 		dir->delete_item(old_meta.name);
@@ -1239,24 +1240,44 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		auto storage_result = instance_data.meta_info.resolve_storage();
 		if (storage_result)
 		{
-			auto item_result = storage_result.value()->get_item_storage(old_meta);
+			auto temp_result = storage_result.value()->get_runtime_storage(instance_data.meta_info, typeT::type_id);
+			if (temp_result)
+			{
+				if (update_data.initialize_data)
+					temp_result.value()->delete_item();
+				else
+					runtime_storage = temp_result.move_value();
+				
+			}
+
+			auto item_result = storage_result.value()->get_item_storage(old_meta, obj_ptr.value()->get_type_id());
 			if (item_result)
 			{
+				
 				item_result.value()->delete_item();
 				META_LOG_TRACE("runtime_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + old_meta.get_full_path());
 			}
 		}
 	}
+	if (runtime_storage)
+	{
+		auto rt_result = runtime_storage->open_for_read();
+		if (rt_result)
+		{
+			runtime_storage->read_stream().read_init_values(nullptr, runtime_data);
+			runtime_storage->close_read();
+		}
+	}
 	if (instance_data.meta_info.version <= old_meta.version)
 	{
 		instance_data.meta_info.version = old_meta.version;
-		instance_data.meta_info.increment_version(increment_version);
+		instance_data.meta_info.increment_version(update_data.increment_version);
 	}
 	
 	///////////////////////////////////////////////////////////////////////////
 	// now prepare runtime for creations
 	auto create_result = create_some_runtime(platform_types_manager::instance().get_type_repository<typeT>()
-		, std::move(instance_data), transaction);
+		, std::move(instance_data), std::move(runtime_data), transaction);
 
 	if (!create_result)
 	{
@@ -1273,7 +1294,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 	auto result = sys_runtime::platform_runtime_manager::instance().deinit_runtime<typeT>(obj_ptr.value()
 			, anchor, rx_thread_context(), [
 					result_target
-					, increment_version
+					, update_data = std::move(update_data)
 					, instance_data = std::move(instance_data)
 					, transaction_ptr
 					, create_data = create_result.value()
@@ -1347,11 +1368,11 @@ void relation_types_algorithm::create_type (relation_type::smart_ptr prototype, 
         , prototype);
 }
 
-void relation_types_algorithm::update_type (relation_type::smart_ptr prototype, bool increment_version, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
+void relation_types_algorithm::update_type (relation_type::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
 {
 	using result_t = rx_result_with<typename relation_type::smart_ptr>;
 	std::function<result_t(void)> func = [=]() {
-		return update_type_sync(prototype, increment_version);
+		return update_type_sync(prototype, std::move(update_data));
 	};
 	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, std::move(func), std::move(callback));
 }
@@ -1399,10 +1420,10 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::create_type_s
 	return result;
 }
 
-rx_result_with<relation_type::smart_ptr> relation_types_algorithm::update_type_sync (relation_type::smart_ptr prototype, bool increment_version)
+rx_result_with<relation_type::smart_ptr> relation_types_algorithm::update_type_sync (relation_type::smart_ptr prototype, rx_update_type_data update_data)
 {
 	rx_transaction_type transaction;
-	auto result = update_some_type(platform_types_manager::instance().get_relations_repository(), prototype, increment_version, transaction);
+	auto result = update_some_type(platform_types_manager::instance().get_relations_repository(), prototype, std::move(update_data), transaction);
 	if (result)
 	{
 		transaction.commit();

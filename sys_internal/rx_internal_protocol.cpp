@@ -258,7 +258,8 @@ rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >
 rx_protocol_connection::rx_protocol_connection (runtime::items::port_runtime* port)
       : current_directory_path_("/world"),
         executer_(-1),
-        port_(port)
+        port_(port),
+        stream_version_(0)
 {
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_protocol_connection::received_function;
@@ -279,10 +280,21 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 	api::rx_context ctx;
 	ctx.directory = current_directory_;
 	ctx.object = smart_this();
-	auto result_msg = request->do_job(ctx, smart_this());
+	message_ptr result_msg;
+	if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
+	{
+		result_msg = std::make_unique<messages::error_message>("No connection context."s, 99, request->request_id);
+	}
+	else
+	{
+		result_msg = request->do_job(ctx, smart_this());
+	}
 	if (result_msg)
 	{
-		serialization::json_writer writter;
+		uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
+		if (stream_version_)
+			temp_version = stream_version_;
+		serialization::json_writer writter(temp_version);
 		auto result = serialize_message(writter, request->request_id, *result_msg);
 		if (result)
 		{
@@ -313,7 +325,8 @@ void rx_protocol_connection::data_processed (message_ptr result)
 {
 	if (current_directory_) // check if we are closed...
 	{
-		serialization::json_writer writter;
+		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
+		serialization::json_writer writter(temp_version);
 		auto res = serialize_message(writter, result->request_id, *result);
 		if (res)
 		{
@@ -468,12 +481,19 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 	if (num_id != 0x7fff)// has to be exact value
 		return RX_PROTOCOL_PARSING_ERROR;
 	
+	
 	string_type json;
 	result = received.read_string(json);
 	if (result)
 	{
+		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
+
 		messages::rx_request_id_t request_id = 0;
-		auto request = messages::rx_request_message::create_request_from_json(json, request_id);
+		// read the header first
+		serialization::json_reader reader(temp_version);
+		if (!reader.parse_data(json))
+			return RX_PROTOCOL_PARSING_ERROR;
+		auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
 		if (request)
 		{
 			rx_post_function_to(get_executer(), smart_this(),
@@ -485,7 +505,7 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 		{
 			auto result_msg = std::make_unique<messages::error_message>(std::move(request), 21, request_id);
 
-			serialization::json_writer writter;
+			serialization::json_writer writter(temp_version);
 			auto result = serialize_message(writter, request_id, *result_msg);
 			if (result)
 			{
@@ -517,6 +537,41 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 void rx_protocol_connection::close_endpoint ()
 {
 	current_directory_ = rx_directory_ptr::null_ptr;
+}
+
+message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_request& req)
+{
+	auto request_id = req.request_id;
+	if (req.stream_version)
+	{
+		auto result = request_stream_version(req.stream_version);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<messages::error_message>(result, 13, request_id);
+			return ret_value;
+		}
+	}
+	if (!req.directory.empty())
+	{
+		auto result = set_current_directory(req.directory);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<messages::error_message>(result, 13, request_id);
+			return ret_value;
+		}
+	}
+	auto response = std::make_unique<messages::rx_connection_context_response>();
+	response->directory = get_current_directory_path();
+	response->stream_version = get_stream_version();
+	return response;
+}
+
+rx_result rx_protocol_connection::request_stream_version (uint32_t sversion)
+{
+	if (sversion == 0)
+		return RX_INVALID_ARGUMENT;
+	stream_version_ = std::min<uint32_t>(sversion, RX_CURRENT_SERIALIZE_VERSION);
+	return true;
 }
 
 

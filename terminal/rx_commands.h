@@ -91,6 +91,7 @@ typedef rx::pointers::reference<commands::server_command> server_command_ptr;
 namespace commands {
 typedef pointers::reference<server_command> command_ptr;
 
+using rx_platform::ns::suggestions_type;
 
 
 
@@ -129,6 +130,8 @@ class server_command : public rx_platform::logic::program_runtime
       virtual string_type get_help () const;
 
       static void dump_error_result (std::ostream& err, const rx_result& result);
+
+      virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
 
       const string_type& get_console_name () const
@@ -204,6 +207,8 @@ bin folder in file hierarcyh\
       void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       void get_commands (std::vector<command_ptr>& sub_items) const;
+
+      void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
 
   protected:

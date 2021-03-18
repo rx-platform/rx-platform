@@ -44,8 +44,10 @@ using namespace rx;
 // streaming version
 
 #define RX_FIRST_SERIZALIZE_VERSION 0x00009
+#define RX_PARENT_REF_VERSION 0x10000
+#define RX_PERSISTENCE_VERSION 0x10001
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_FIRST_SERIZALIZE_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_PERSISTENCE_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header
@@ -169,7 +171,7 @@ class base_meta_reader
 {
 
   public:
-      base_meta_reader();
+      base_meta_reader (int version);
 
       virtual ~base_meta_reader();
 

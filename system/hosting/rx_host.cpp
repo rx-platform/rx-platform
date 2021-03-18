@@ -44,6 +44,8 @@
 #include "sys_internal/rx_plugin_manager.h"
 #include "model/rx_meta_internals.h"
 #include "terminal/rx_con_commands.h"
+#include "model/rx_model_algorithms.h"
+#include "sys_internal/rx_storage_build.h"
 
 
 namespace rx_platform {
@@ -69,6 +71,66 @@ template rx_result register_host_simple_constructor<filter_type>(const rx_node_i
 template rx_result register_host_simple_constructor<variable_type>(const rx_node_id& id, std::function<runtime::variable_runtime_ptr()> f);
 template rx_result register_host_simple_constructor<event_type>(const rx_node_id& id, std::function<runtime::event_runtime_ptr()> f);
 template rx_result register_host_simple_constructor<struct_type>(const rx_node_id& id, std::function<runtime::struct_runtime_ptr()> f);
+
+
+template<typename typeT>
+rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_ptr what)
+{
+	if (what->meta_info.created_time.is_null())
+		what->meta_info.created_time = rx_time::now();
+
+	if (what->meta_info.modified_time.is_null())
+		what->meta_info.modified_time = rx_time::now();
+
+	auto result = rx_internal::model::algorithms::types_model_algorithm<typeT>::create_type_sync(what);
+	if (!result)
+		return result.errors();
+	else
+		return true;
+}
+template rx_result register_host_type<object_type>(rx_directory_ptr host_root, rx_object_type_ptr what);
+template rx_result register_host_type<domain_type>(rx_directory_ptr host_root, rx_domain_type_ptr what);
+template rx_result register_host_type<port_type>(rx_directory_ptr host_root, rx_port_type_ptr what);
+template rx_result register_host_type<application_type>(rx_directory_ptr host_root, rx_application_type_ptr what);
+
+template<typename typeT>
+rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::smart_ptr what)
+{
+	if (what->meta_info.created_time.is_null())
+		what->meta_info.created_time = rx_time::now();
+
+	if (what->meta_info.modified_time.is_null())
+		what->meta_info.modified_time = rx_time::now();
+
+	auto result = rx_internal::model::algorithms::simple_types_model_algorithm<typeT>::create_type_sync(what);
+	if (!result)
+		return result.errors();
+	else
+		return true;
+}
+template rx_result register_host_simple_type<mapper_type>(rx_directory_ptr host_root, mapper_type::smart_ptr what);
+template rx_result register_host_simple_type<source_type>(rx_directory_ptr host_root, source_type::smart_ptr what);
+template rx_result register_host_simple_type<filter_type>(rx_directory_ptr host_root, filter_type::smart_ptr what);
+template rx_result register_host_simple_type<variable_type>(rx_directory_ptr host_root, variable_type::smart_ptr what);
+template rx_result register_host_simple_type<event_type>(rx_directory_ptr host_root, event_type::smart_ptr what);
+template rx_result register_host_simple_type<struct_type>(rx_directory_ptr host_root, struct_type::smart_ptr what);
+
+
+template<typename typeT>
+rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
+{
+	auto result = rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime_sync(
+		typename typeT::instance_data_t(instance_data)
+		, data ? data::runtime_values_data(*data) : data::runtime_values_data());
+	if (!result)
+		return result.errors();
+	else
+		return true;
+}
+template rx_result register_host_runtime<object_type>(rx_directory_ptr host_root, const object_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<domain_type>(rx_directory_ptr host_root, const domain_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<port_type>(rx_directory_ptr host_root, const port_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<application_type>(rx_directory_ptr host_root, const application_type::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 namespace hosting {
 namespace
@@ -127,7 +189,8 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 					else if (row.first == "storage.test"
 						&& config.storage.test_storage_reference.empty())
 						config.storage.test_storage_reference = row.second;
-					else if (row.first == "instance.name")
+					else if (row.first == "instance.name"
+						&& config.meta_configuration.instance_name.empty())
 						config.meta_configuration.instance_name = row.second;
 					else if (row.first == "other.manuals" && config.other.manuals_path.empty())
 						config.other.manuals_path = row.second;
@@ -163,10 +226,11 @@ rx_platform_host::rx_platform_host(const rx_platform_host &right)
 	RX_ASSERT(false);
 }
 
-rx_platform_host::rx_platform_host (rx_host_storages& storage)
+rx_platform_host::rx_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : parent_(nullptr)
-	, storages_(storage)
 {
+	for (auto one : storages)
+		storages_.storage_types.emplace(one->get_reference_prefix(), one);
 }
 
 
@@ -183,7 +247,7 @@ rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
 
 
 
-void rx_platform_host::get_host_info (string_array& hosts)
+void rx_platform_host::get_host_info (hosts_type hosts)
 {
 }
 
@@ -242,65 +306,104 @@ rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_p
 
 rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config, const std::vector<library::rx_plugin_base*>& plugins)
 {
-	rx_result ret;
+	rx_result result;
+
+	HOST_LOG_INFO("Base", 999, "Initializing storages");
+
 	if (config.storage.system_storage_reference.empty())
-		ret = "No valid system storage reference!";
-	else
-		ret = storages_.system_storage->init_storage(config.storage.system_storage_reference, this);
-	if (ret)
 	{
+		result = "No valid system storage reference!";
+	}
+	else
+	{
+		result = init_storage("sys", config.storage.system_storage_reference);
+		
+	}
+	if (result)
+	{
+
 		if (config.storage.user_storage_reference.empty())
-			ret = "No valid user storage reference!";
+			result = "No valid user storage reference!";
 		else
-			ret = storages_.user_storage->init_storage(config.storage.user_storage_reference, this);
-		if (ret)
+			result = init_storage("usr", config.storage.user_storage_reference);
+		if (result)
 		{
-			if (storages_.test_storage && !config.storage.test_storage_reference.empty())
+			if (!config.storage.test_storage_reference.empty())
 			{
-				ret = storages_.test_storage->init_storage(config.storage.test_storage_reference, this);
-				if (!ret)
+				result = init_storage("tst", config.storage.test_storage_reference);
+				if (!result)
 				{
-					ret.register_error("Error initializing test storage!");
+					result.register_error("Error initializing test storage!");
 				}
 			}
-			auto add_result = storages_.system_storage->get_storage(get_host_name(), this);
+			auto add_result = storages_.registered_connections["sys"]->get_storage(get_host_name(), this);
 			if (add_result)
 			{
 				for (const auto& one : plugins)
 				{
-					add_result = storages_.system_storage->get_storage(one->get_plugin_name(), this);
+					add_result = storages_.registered_connections["sys"]->get_storage(one->get_plugin_name(), this);
 					if (!add_result)
 					{
-						ret.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");
-						ret.register_errors(add_result.errors());
+						result.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");
+						result.register_errors(add_result.errors());
 						break;
 					}
 				}
 			}
 			else
 			{
-				ret.register_error("Unable to initialize host storage.");
-				ret.register_errors(add_result.errors());
+				result.register_error("Unable to initialize host storage.");
+				result.register_errors(add_result.errors());
 			}
 		}
 		else
 		{
-			ret.register_error("Error initializing user storage!");
+			result.register_error("Error initializing user storage!");
 		}
 	}
 	else
 	{
-		ret.register_error("Error initializing system storage!");
+		result.register_error("Error initializing system storage!");
 	}
-	return ret;
+	return result;
 }
 
 void rx_platform_host::deinitialize_storages ()
 {
-	if(storages_.test_storage)
-		storages_.test_storage->deinit_storage();
-	storages_.user_storage->deinit_storage();
-	storages_.system_storage->deinit_storage();
+	for (auto& one : storages_.registered_connections)
+		one.second->deinit_connection();
+}
+
+rx_result rx_platform_host::init_storage (const string_type& name, const string_type& full_reference)
+{
+	string_type type;
+	string_type reference;
+	auto result = storage_base::split_storage_reference(full_reference, type, reference);
+	if (result)
+	{
+		auto temp_ptr = storages_.storage_types[type]->construct_storage_connection();
+		RX_ASSERT(temp_ptr);
+		if (temp_ptr)
+		{
+			result = temp_ptr->init_connection(reference, this);
+			if (result)
+			{
+				storages_.registered_connections.emplace(name, std::move(temp_ptr));
+				if (result)
+				{
+					std::ostringstream ss;
+					ss << "Initialized storage [" << name
+						<< "] with reference: " << full_reference;
+					HOST_LOG_INFO("Base", 999, ss.str());
+				}
+			}
+		}
+		else
+		{
+			result = type + " is not valid storage type.";
+		}
+	}
+	return result;
 }
 
 void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
@@ -383,18 +486,19 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_system_storage (const string_type& name)
 {
-	return storages_.system_storage->get_storage(name, this);
+	return storages_.registered_connections["sys"]->get_storage(name, this);
 }
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_user_storage (const string_type& name)
 {
-	return storages_.user_storage->get_storage(name, this);
+	return storages_.registered_connections["usr"]->get_storage(name, this);
 }
 
 rx_result_with<rx_storage_ptr> rx_platform_host::get_test_storage (const string_type& name)
 {
-	if (storages_.test_storage)
-		return storages_.test_storage->get_storage(name, this);
+	auto it = storages_.registered_connections.find("tst");
+	if(it != storages_.registered_connections.end())
+		return it->second->get_storage(name, this);
 	else
 		return "Test storage not active.";
 }
@@ -410,8 +514,42 @@ void rx_platform_host::dump_log_items (const log::log_events_type& items, std::o
 	rx_internal::terminal::console::console_commands::log_command::dump_log_items(items, options, out, -1);
 }
 
+void rx_platform_host::dump_storage_references (std::ostream& out)
+{
+	out << "\r\n";
+	for (const auto& one : storages_.registered_connections)
+	{
+		out << one.first << ":["
+			<< one.second->get_storage_info() << "]\r\n"
+			<< one.second->get_storage_reference() << "\r\n\r\n";
+
+		auto conns = one.second->get_mounted_storages();
+		rx_table_type table(conns.size() + 1);
+
+
+		table[0].emplace_back("Name");
+		table[0].emplace_back("Mount Point");
+
+		size_t idx = 1;
+		for (auto& one : conns)
+		{
+			table[idx].emplace_back(one.first.empty() ? "default" : one.first);
+			table[idx].emplace_back(one.second.empty() ? RX_NULL_ITEM_NAME : one.second);
+			idx++;
+		}
+
+		rx_dump_table(table, out, true, false);
+
+		out << "\r\n\r\n";
+
+	}
+}
+
 
 // Class rx_platform::hosting::configuration_reader 
+
+
+// Class rx_platform::hosting::host_platform_builder 
 
 
 } // namespace hosting

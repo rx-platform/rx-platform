@@ -659,7 +659,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 				ctx.runtime_data().add_value(
 					one.first,
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
-					whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only());
+					whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
+					whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
 			}
 			break;
 			// structures

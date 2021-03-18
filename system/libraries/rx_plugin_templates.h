@@ -109,6 +109,13 @@ rx_result register_plugin_simple_constructor(library::rx_plugin_base* plugin
     , const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
 
+template<typename typeT>
+rx_result register_plugin_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, typename typeT::smart_ptr what);
+template<typename typeT>
+rx_result register_plugin_simple_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, typename typeT::smart_ptr what);
+
+template<typename typeT>
+rx_result register_plugin_runtime(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 } // rx_platform
 

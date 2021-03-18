@@ -148,7 +148,7 @@ class tar_file_storage : public rx_platform::storage_base::rx_platform_storage
 
 
 
-class tar_file_storage_holder : public rx_platform::storage_base::rx_platform_storage_holder  
+class tar_file_storage_holder : public rx_platform::storage_base::rx_platform_storage_type  
 {
 
   public:

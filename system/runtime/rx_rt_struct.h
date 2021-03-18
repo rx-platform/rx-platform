@@ -253,6 +253,9 @@ class const_value_data
 
 class value_data 
 {
+public:
+    constexpr static int opt_readonly = 0;
+    constexpr static int opt_persistent = 1;
 
   public:
 
@@ -262,11 +265,11 @@ class value_data
 
       void object_state_changed (runtime_process_context* ctx);
 
-      rx_result write_value (write_data&& data);
+      rx_result write_value (write_data&& data, runtime_process_context* ctx);
 
       rx_simple_value simple_get_value () const;
 
-      rx_result simple_set_value (rx_simple_value&& val);
+      rx_result simple_set_value (rx_simple_value&& val, runtime_process_context* ctx);
 
 
       rx::values::rx_timed_value value;
@@ -274,7 +277,7 @@ class value_data
 
       static string_type type_name;
 
-      bool read_only;
+      std::bitset<32> value_opt;
 
 
   protected:

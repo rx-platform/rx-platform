@@ -33,6 +33,7 @@
 
 
 #include "system/meta/rx_obj_types.h"
+#include "system/storage_base/rx_storage.h"
 
 
 // adding command line parsing library
@@ -58,21 +59,19 @@ struct configuration_data_t;
 #define SAFE_ANSI_STATUS_OK (supports_ansi() ? ANSI_STATUS_OK : "OK")
 
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
-
-namespace rx_platform {
-namespace library {
-class rx_plugin_base;
-} // namespace library
-} // namespace rx_platform
 
 namespace rx {
 namespace security {
 class security_context;
-
 } // namespace security
 } // namespace rx
+
+namespace rx_platform {
+namespace library {
+class rx_plugin_base;
+
+} // namespace library
+} // namespace rx_platform
 
 
 
@@ -82,6 +81,14 @@ template<typename typeT>
 rx_result register_host_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
 template<typename typeT>
 rx_result register_host_simple_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
+
+template<typename typeT>
+rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_ptr what);
+template<typename typeT>
+rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::smart_ptr what);
+
+template<typename typeT>
+rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,11 +117,30 @@ class configuration_reader
 };
 
 
+
+
+
+
+class host_platform_builder 
+{
+
+  public:
+
+      rx_directory_ptr host_root;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 struct rx_host_storages
 {
-	storage_base::rx_platform_storage_holder* system_storage = nullptr;
-	storage_base::rx_platform_storage_holder* user_storage = nullptr;
-	storage_base::rx_platform_storage_holder* test_storage = nullptr;
+	std::map<string_type, storage_base::rx_platform_storage_type*> storage_types;
+    std::map < string_type, storage_base::rx_storage_connection::smart_ptr> registered_connections;
 };
 typedef cxxopts::Options command_line_options_t;
 struct rx_host_directories
@@ -152,6 +178,7 @@ struct rx_host_directories
 			logs = std::move(from.logs);
 	}
 };
+using hosts_type = string_array;
 
 
 
@@ -163,12 +190,12 @@ class rx_platform_host
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
-      rx_platform_host (rx_host_storages& storage);
+      rx_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       virtual ~rx_platform_host();
 
 
-      virtual void get_host_info (string_array& hosts);
+      virtual void get_host_info (hosts_type hosts);
 
       virtual void server_started_event ();
 
@@ -192,7 +219,7 @@ class rx_platform_host
 
       virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
 
-      virtual rx_result build_host (rx_directory_ptr root) = 0;
+      virtual rx_result build_host (host_platform_builder& builder) = 0;
 
       string_type get_manual (string_type what) const;
 
@@ -213,6 +240,8 @@ class rx_platform_host
       virtual string_type get_full_path (const string_type& path) = 0;
 
       virtual bool supports_ansi () const = 0;
+
+      void dump_storage_references (std::ostream& out);
 
 
       rx_platform_host * get_parent ()
@@ -246,6 +275,9 @@ class rx_platform_host
       rx_platform_host(const rx_platform_host &right);
 
       rx_platform_host & operator=(const rx_platform_host &right);
+
+
+      rx_result init_storage (const string_type& name, const string_type& full_reference);
 
 
 

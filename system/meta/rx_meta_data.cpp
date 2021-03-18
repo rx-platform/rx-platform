@@ -45,6 +45,50 @@
 
 
 namespace rx_platform {
+bool rx_is_runtime(rx_item_type type)
+{
+	switch (type)
+	{
+	case rx_item_type::rx_directory:
+		return false;
+
+	case rx_item_type::rx_application:
+		return true;
+	case rx_item_type::rx_application_type:
+		return false;
+	case rx_item_type::rx_domain:
+		return true;
+	case rx_item_type::rx_domain_type:
+		return false;
+	case rx_item_type::rx_object:
+		return true;
+	case rx_item_type::rx_object_type:
+		return false;
+	case rx_item_type::rx_port:
+		return true;
+	case rx_item_type::rx_port_type:
+		return false;
+
+	case rx_item_type::rx_struct_type:
+	case rx_item_type::rx_variable_type:
+	case rx_item_type::rx_source_type:
+	case rx_item_type::rx_filter_type:
+	case rx_item_type::rx_event_type:
+	case rx_item_type::rx_mapper_type:
+		return false;
+
+	case rx_item_type::rx_program:
+		return false;
+	case rx_item_type::rx_method:
+		return false;
+
+	case rx_item_type::rx_relation_type:
+		return false;
+
+	default:
+		return false;
+	}
+}
 string_type rx_item_type_name(rx_item_type type)
 {
 	switch (type)
@@ -240,8 +284,24 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return false;
 	if (!stream.write_byte("attrs", (uint8_t)attributes))
 		return false;
-	if (!stream.write_id("superId", parent))
-		return false;
+	if (stream.get_version() >= RX_PARENT_REF_VERSION)
+	{
+		if (!stream.write_item_reference("super", parent))
+			return false;
+	}
+	else
+	{// old version <= RX_FIRST_SERIZALIZE_VERSION
+		if (parent.is_node_id())
+		{
+			if (!stream.write_id("superId", parent.get_node_id()))
+				return false;
+		}
+		else
+		{
+			if (!stream.write_id("superId", rx_node_id::null_id))
+				return false;
+		}
+	}
 	if (!stream.write_time("created", created_time))
 		return false;
 	if (!stream.write_time("modified", modified_time))
@@ -285,8 +345,18 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 	if (!stream.read_byte("attrs", temp_byte))
 		return false;
 	attributes = (namespace_item_attributes)temp_byte;
-	if (!stream.read_id("superId", parent))
-		return false;
+	if (stream.get_version() >= RX_PARENT_REF_VERSION)
+	{
+		if (!stream.read_item_reference("super", parent))
+			return false;
+	}
+	else
+	{// old version <= RX_FIRST_SERIZALIZE_VERSION
+		rx_node_id parent_id;
+		if (!stream.read_id("superId", parent_id))
+			return false;
+		parent = parent_id;
+	}
 	if (!stream.read_time("created", created_time))
 		return false;
 	if (!stream.read_time("modified", modified_time))

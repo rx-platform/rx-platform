@@ -35,8 +35,6 @@
 
 // rx_interactive
 #include "host/rx_interactive.h"
-// rx_win32_file_sys
-#include "win32_hosts/rx_win32_file_sys.h"
 
 using rx_platform::hosting::rx_host_directories;
 
@@ -47,13 +45,12 @@ namespace win32 {
 
 
 
-
 class win32_console_host : public host::interactive::interactive_console_host  
 {
 	typedef std::tuple<double> win32_console_types;
 
   public:
-      win32_console_host (hosting::rx_host_storages& storage);
+      win32_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~win32_console_host();
 

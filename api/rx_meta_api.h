@@ -39,6 +39,8 @@
 
 namespace rx_platform
 {
+
+
 namespace api
 {
 namespace meta
@@ -56,7 +58,7 @@ rx_result rx_create_runtime(
 
 template<class typeT>
 rx_result rx_update_runtime(
-	typename typeT::instance_data_t instance_data, bool increment_version
+	typename typeT::instance_data_t instance_data, rx_update_runtime_data update_data
 	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
 
@@ -75,7 +77,7 @@ rx_result rx_create_type(
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 template<class typeT>
-rx_result rx_update_type(typename typeT::smart_ptr prototype, bool increment_version
+rx_result rx_update_type(typename typeT::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 
@@ -85,14 +87,14 @@ rx_result rx_create_simple_type(
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 template<class typeT>
-rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, bool increment_version
+rx_result rx_update_simple_type(typename typeT::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
 rx_result rx_create_relation_type(
 	object_types::relation_type::smart_ptr prototype // prototype
 	, rx_result_with_callback<object_types::relation_type::smart_ptr>&& callback);
 
-rx_result rx_update_relation_type(object_types::relation_type::smart_ptr prototype, bool increment_version
+rx_result rx_update_relation_type(object_types::relation_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<object_types::relation_type::smart_ptr>&& callback);
 
 

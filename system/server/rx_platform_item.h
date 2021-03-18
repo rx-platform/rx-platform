@@ -58,6 +58,8 @@ enum class runtime_value_type
     full_runtime_value      = 0x1f,
 
     resolved_runtime_value  = 0x20,
+
+    persistent_runtime_value = 0x40,
 };
 
 namespace ns {

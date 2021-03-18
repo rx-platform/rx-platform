@@ -54,7 +54,7 @@ rx_result rx_platform_item::delete_item () const
 	auto storage_result = meta.resolve_storage();
 	if (storage_result)
 	{
-		auto item_result = storage_result.value()->get_item_storage(meta);
+		auto item_result = storage_result.value()->get_item_storage(meta, get_type_id());
 		if (!item_result)
 		{
 			item_result.register_error("Error saving item "s + meta.get_full_path());

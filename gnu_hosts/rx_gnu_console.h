@@ -51,7 +51,7 @@ class gnu_console_host : public host::interactive::interactive_console_host
 {
 
   public:
-      gnu_console_host (hosting::rx_host_storages& storage);
+      gnu_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
       ~gnu_console_host();
 

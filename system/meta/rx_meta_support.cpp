@@ -196,7 +196,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_data_.push_back(runtime_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_data_.rbegin());
@@ -223,12 +223,16 @@ void runtime_data_prototype::add_const_value (const string_type& name, rx_simple
 	}
 }
 
-void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only)
+void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent)
 {
 	if (check_name(name))
 	{
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
-		values.push_back({ value, read_only });
+		value_data temp_val;
+		temp_val.value = std::move(value);
+		temp_val.value_opt[value_data::opt_readonly] = read_only;
+		temp_val.value_opt[value_data::opt_persistent] = persistent;
+		values.emplace_back(std::move(temp_val));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
 	}
 }

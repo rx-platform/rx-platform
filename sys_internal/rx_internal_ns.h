@@ -62,7 +62,7 @@ rx_result rx_save_platform_item(itemT& item)
     auto storage_result = meta.resolve_storage();
     if (storage_result)
     {
-        auto item_result = storage_result.value()->get_item_storage(meta);
+        auto item_result = storage_result.value()->get_item_storage(meta, item.get_type_id());
         if (!item_result)
         {
             item_result.register_error("Error saving item "s + meta.path);
@@ -72,7 +72,8 @@ rx_result rx_save_platform_item(itemT& item)
         if (result)
         {
             result = item.serialize(item_result.value()->write_stream());
-            item_result.value()->close();
+            if(result)
+                result = item_result.value()->commit_write();
         }
         return result;
     }

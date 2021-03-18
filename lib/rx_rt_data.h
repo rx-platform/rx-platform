@@ -79,6 +79,8 @@ class runtime_values_data
 
       runtime_values_data& add_child (const string_type& name);
 
+      runtime_values_data& add_child (const string_type& name, runtime_values_data&& data);
+
       rx_simple_value get_value (const string_type& path) const;
 
       bool empty () const;

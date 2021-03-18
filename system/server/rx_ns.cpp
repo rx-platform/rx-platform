@@ -772,6 +772,10 @@ rx_result rx_platform_directory::copy_directory (const string_type& source, cons
 	return RX_NOT_IMPLEMENTED;
 }
 
+void rx_platform_directory::register_suggestions (const string_type& line, suggestions_type& suggestions)
+{
+}
+
 template<class TImpl>
 rx_result rx_platform_directory::add_item(TImpl who)
 {

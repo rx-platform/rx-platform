@@ -4,8 +4,8 @@
 
 #define RX_SERVER_NAME "Atom" 
 #define RX_SERVER_MAJOR_VERSION 1
-#define RX_SERVER_MINOR_VERSION 0
-#define RX_SERVER_BUILD_NUMBER 3
+#define RX_SERVER_MINOR_VERSION 1
+#define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -27,4 +27,5 @@
 // version 1.0.0 first release version
 // version 1.0.1 tcp/ip connection, housekeeping and rx-architect
 // version 1.0.2 master port and more rx-architect
+// version 1.1.0 domain, application and parent types are now item reference instead of node id
 
