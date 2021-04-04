@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -247,7 +247,7 @@ rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
 
 
 
-void rx_platform_host::get_host_info (hosts_type hosts)
+void rx_platform_host::get_host_info (hosts_type& hosts)
 {
 }
 
@@ -287,6 +287,25 @@ rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_p
 	rx_result ret = fill_host_directories(temp_directories);
 	if (!ret)
 		return ret;
+
+	if (!temp_directories.copyright_file.empty())
+	{
+		sys_handle_t file = rx_file(temp_directories.copyright_file.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			uint64_t size = 0;
+			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
+			{
+				copyright_cache_.assign(size, ' ');
+				if (RX_OK != rx_file_read(file, &copyright_cache_[0], (uint32_t)size, nullptr))
+				{
+					copyright_cache_.clear();
+				}
+			}
+			rx_file_close(file);
+		}
+	}
+	lic_path_ = temp_directories.license_file;
 
 	ret = do_read_config_files(temp_directories, get_host_name(), reader, config);
 
@@ -414,7 +433,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
 		("t,test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
 		("y,system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
-		("n,name", "rx-platform Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
+		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
 		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("v,version", "Displays platform version")
@@ -543,6 +562,34 @@ void rx_platform_host::dump_storage_references (std::ostream& out)
 		out << "\r\n\r\n";
 
 	}
+}
+
+const string_type& rx_platform_host::get_license ()
+{
+	static string_type lic_cahce;
+	if (lic_cahce.empty())
+	{
+		sys_handle_t file = rx_file(lic_path_.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			uint64_t size = 0;
+			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
+			{
+				lic_cahce.assign(size, ' ');
+				if (RX_OK != rx_file_read(file, &lic_cahce[0], (uint32_t)size, nullptr))
+				{
+					lic_cahce.clear();
+				}
+			}
+			rx_file_close(file);
+		}
+	}
+	return lic_cahce;
+}
+
+const string_type& rx_platform_host::get_copyright ()
+{
+	return copyright_cache_;
 }
 
 

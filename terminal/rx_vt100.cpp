@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -339,16 +339,36 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpo
 {
 	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference->user_data);
 	string_type to_echo;
-	string_array lines;
+	string_array lines_buffers;
+	string_array::reverse_iterator current_line_it;
 	size_t i = 0;
 	auto buffer = packet.buffer;
 
 	for (; i < buffer->size; i++)
 	{
 		string_type line;
-		self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
+		auto is_normal = self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
 		if (!line.empty())
-			lines.emplace_back(std::move(line));
+		{
+			if (!is_normal)
+			{// this is cancel, or tab, or something like that so leave it up
+				if(!lines_buffers.empty())
+					(*current_line_it) += RX_LINE_END;// handle previous lines
+				lines_buffers.emplace_back(std::move(line));// no new line
+				current_line_it = lines_buffers.rbegin();
+			}
+			if (lines_buffers.empty())
+			{
+				lines_buffers.emplace_back(std::move(line) + RX_LINE_END);
+				current_line_it = lines_buffers.rbegin();
+			}
+			else
+			{
+				(*current_line_it)+=((std::move(line) + RX_LINE_END));
+				current_line_it = lines_buffers.rbegin();
+			}
+		}
+			//lines_buffer += (std::move(line) + RX_LINE_END);
 	}
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
 	if (self->send_echo_ && !to_echo.empty())
@@ -367,16 +387,16 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpo
 		if (result == RX_PROTOCOL_OK)
 			send_buffer.detach(nullptr);
 	}
-	if (result == RX_PROTOCOL_OK && !lines.empty())
+	if (result == RX_PROTOCOL_OK && !lines_buffers.empty())
 	{
-		for (const auto& one : lines)
+		for (const auto& one : lines_buffers)
 		{
 			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
 			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
 
 			recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
 			result = rx_move_packet_up(reference, packet);
-			if (result != RX_PROTOCOL_OK)
+			if (!result)
 				break;
 		}
 	}

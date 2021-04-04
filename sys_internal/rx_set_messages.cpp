@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -130,6 +130,12 @@ message_ptr delete_type_request::do_job (api::rx_context ctx, rx_protocol_connec
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::event_type>());
 	case rx_item_type::rx_mapper_type:
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::mapper_type>());
+	case rx_item_type::rx_program_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::program_type>());
+	case rx_item_type::rx_display_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::display_type>());
+	case rx_item_type::rx_method_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::method_type>());
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
@@ -421,6 +427,19 @@ rx_result set_type_request::deserialize (base_meta_reader& stream)
 	case rx_item_type::rx_mapper_type:
 		creator_ = std::make_unique<protocol_simple_type_creator<basic_types::mapper_type> >();
 		break;
+		// logic
+	case rx_item_type::rx_program_type:
+		creator_ = std::make_unique<protocol_simple_type_creator<basic_types::program_type> >();
+		break;
+	case rx_item_type::rx_method_type:
+		creator_ = std::make_unique<protocol_simple_type_creator<basic_types::method_type> >();
+		break;
+	case rx_item_type::rx_display_type:
+		creator_ = std::make_unique<protocol_simple_type_creator<basic_types::display_type> >();
+		break;
+	case rx_item_type::rx_data_type:
+		creator_ = std::make_unique<protocol_data_type_creator>();
+		break;
 		// relations
 	default:
 		return "Unknown type: "s + rx_item_type_name(target_type);
@@ -584,6 +603,19 @@ rx_result update_type_request::deserialize (base_meta_reader& stream)
 		// mappings
 	case rx_item_type::rx_mapper_type:
 		updater_ = std::make_unique<protocol_simple_type_creator<basic_types::mapper_type> >();
+		break;
+		// logic
+	case rx_item_type::rx_program_type:
+		updater_ = std::make_unique<protocol_simple_type_creator<basic_types::program_type> >();
+		break;
+	case rx_item_type::rx_method_type:
+		updater_ = std::make_unique<protocol_simple_type_creator<basic_types::method_type> >();
+		break;
+	case rx_item_type::rx_display_type:
+		updater_ = std::make_unique<protocol_simple_type_creator<basic_types::display_type> >();
+		break;
+	case rx_item_type::rx_data_type:
+		updater_ = std::make_unique<protocol_data_type_creator>();
 		break;
 	default:
 		return "Unknown type: "s + rx_item_type_name(target_type);
@@ -815,6 +847,94 @@ rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream,
 {
 	using algorithm_type = object_types::relation_type::algorithm_type;
 	item = rx_create_reference<object_types::relation_type>();
+	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	item->meta_info = meta;
+	return result;
+}
+
+
+// Class rx_internal::rx_protocol::messages::set_messages::protocol_data_type_creator 
+
+
+message_ptr protocol_data_type_creator::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
+{
+	rx_node_id id = rx_node_id::null_id;
+
+	auto dummy = rx_create_reference<data_type>();
+
+	auto callback = rx_result_with_callback<data_type::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<data_type::smart_ptr>&& result) mutable
+		{
+			if (result)
+			{
+				if (create)
+				{
+					auto response = std::make_unique<set_type_response<data_type> >();
+					response->item = result.value();
+					response->request_id = request;
+					conn->data_processed(std::move(response));
+				}
+				else
+				{
+					auto response = std::make_unique<update_type_response<data_type> >();
+					response->item = result.value();
+					response->request_id = request;
+					conn->data_processed(std::move(response));
+				}
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(result, 14, request);
+				conn->data_processed(std::move(ret_value));
+			}
+
+		});
+	rx_result result;
+	if (create)
+	{
+		result = api::meta::rx_create_data_type(item, std::move(callback));
+	}
+	else
+	{
+		if (data)
+		{
+			result = api::meta::rx_update_data_type(item, *data, std::move(callback));
+		}
+		else
+		{
+			RX_ASSERT(false);
+			result = "No update data provided!";
+		}
+	}
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+rx_result protocol_data_type_creator::serialize (base_meta_writer& stream) const
+{
+	using algorithm_type = typename data_type::algorithm_type;
+
+	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
+	if (!result)
+		return result;
+	return true;
+}
+
+rx_result protocol_data_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+{
+	using algorithm_type = typename data_type::algorithm_type;
+
+	item = rx_create_reference<data_type>();
 	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;

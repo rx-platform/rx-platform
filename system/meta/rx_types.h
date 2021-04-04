@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -50,6 +50,7 @@ namespace meta_algorithm
 {
 template<class typeT>
 class basic_types_algorithm;
+class data_types_algorithm;
 }
 
 namespace basic_types {
@@ -61,7 +62,7 @@ namespace basic_types {
 class event_type : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(event_type);
-	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
+	DECLARE_CODE_INFO("rx", 0, 9, 1, "\
 implementation of event type");
 public:
 	typedef runtime::structure::event_data RDataType;
@@ -87,6 +88,8 @@ public:
 
 
       static rx_item_type type_id;
+
+      rx_item_reference arguments;
 
 
   protected:
@@ -317,19 +320,202 @@ public:
 };
 
 
+
+
+
+
+class method_type : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(method_type);
+    DECLARE_CODE_INFO("rx", 0, 9, 1, "\
+implementation of method type");
+public:
+    typedef runtime::logic_blocks::method_data RDataType;
+    typedef logic::method_runtime RType;
+    typedef method_runtime_ptr RTypePtr;
+    typedef meta_algorithm::basic_types_algorithm<method_type> algorithm_type;
+
+  public:
+
+      platform_item_ptr get_item_ptr () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      def_blocks::complex_data_type complex_data;
+
+      meta_data meta_info;
+
+
+      static rx_item_type type_id;
+
+      rx_item_reference inputs;
+
+      rx_item_reference outputs;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class program_type : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(program_type);
+    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+implementation of method type");
+public:
+    typedef runtime::logic_blocks::program_data RDataType;
+    typedef logic::program_runtime RType;
+    typedef program_runtime_ptr RTypePtr;
+    typedef meta_algorithm::basic_types_algorithm<program_type> algorithm_type;
+
+  public:
+
+      platform_item_ptr get_item_ptr () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      meta_data meta_info;
+
+      def_blocks::complex_data_type complex_data;
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class display_type : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(display_type);
+    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+implementation of display type");
+public:
+    typedef runtime::display_blocks::display_data RDataType;
+    typedef displays::display_runtime RType;
+    typedef display_runtime_ptr RTypePtr;
+    typedef meta_algorithm::basic_types_algorithm<display_type> algorithm_type;
+
+  public:
+
+      platform_item_ptr get_item_ptr () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      meta_data meta_info;
+
+      def_blocks::complex_data_type complex_data;
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class data_type : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(data_type);
+    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+rx-platform implementation of data type");
+public:
+    typedef std::vector<def_blocks::const_value_def> values_type;
+    typedef std::vector<def_blocks::data_attribute> children_type;
+
+    typedef runtime::structure::block_data RDataType;
+    typedef meta_algorithm::data_types_algorithm algorithm_type;
+
+    friend class meta_algorithm::data_types_algorithm;
+
+  public:
+
+      platform_item_ptr get_item_ptr () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      meta_data meta_info;
+
+      def_blocks::data_type_def complex_data;
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace basic_types
 } // namespace meta
 } // namespace rx_platform
 
 namespace rx_platform {
 namespace meta {
-	
+
 typedef pointers::reference<basic_types::mapper_type> mapper_type_ptr;
 typedef pointers::reference<basic_types::struct_type> struct_type_ptr;
 typedef pointers::reference<basic_types::variable_type> variable_type_ptr;
 typedef pointers::reference<basic_types::source_type> source_type_ptr;
 typedef pointers::reference<basic_types::event_type> event_type_ptr;
 typedef pointers::reference<basic_types::filter_type> filter_type_ptr;
+typedef pointers::reference<basic_types::data_type> data_type_ptr;
+typedef pointers::reference<basic_types::method_type> method_type_ptr;
+typedef pointers::reference<basic_types::program_type> program_type_ptr;
+typedef pointers::reference<basic_types::display_type> display_type_ptr;
 
 } // namespace meta
 } // namespace server rx_platform

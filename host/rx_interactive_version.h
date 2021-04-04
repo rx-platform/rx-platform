@@ -3,7 +3,7 @@
 #include "version/rx_version.h"
 
 #define RX_INTERACTIVE_HOST "rx-interactive"
-#define RX_INTERACTIVE_HOST_NAME "rx-platform Interactive Console"
+#define RX_INTERACTIVE_HOST_NAME "{rx-platform} Interactive Console"
 #define RX_INTERACTIVE_HOST_MAJOR_VERSION 1
 #define RX_INTERACTIVE_HOST_MINOR_VERSION 0
 #define RX_INTERACTIVE_HOST_BUILD_NUMBER 1

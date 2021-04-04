@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -149,6 +149,8 @@ struct rx_host_directories
 	string_type system_config;
 	string_type user_config;
 	string_type local_folder;
+    string_type copyright_file;
+    string_type license_file;
 	// storage files locations
 	string_type system_storage;
 	string_type user_storage;
@@ -195,7 +197,7 @@ class rx_platform_host
       virtual ~rx_platform_host();
 
 
-      virtual void get_host_info (hosts_type hosts);
+      virtual void get_host_info (hosts_type& hosts);
 
       virtual void server_started_event ();
 
@@ -243,6 +245,10 @@ class rx_platform_host
 
       void dump_storage_references (std::ostream& out);
 
+      const string_type& get_license ();
+
+      const string_type& get_copyright ();
+
 
       rx_platform_host * get_parent ()
       {
@@ -287,6 +293,10 @@ class rx_platform_host
       string_type manuals_path_;
 
       rx_host_storages storages_;
+
+      string_type copyright_cache_;
+
+      string_type lic_path_;
 
 
 };

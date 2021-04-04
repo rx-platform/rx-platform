@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -39,6 +39,10 @@
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_display_blocks
+#include "system/runtime/rx_display_blocks.h"
+// rx_runtime_logic
+#include "system/runtime/rx_runtime_logic.h"
 
 #include "system/server/rx_ns.h"
 
@@ -109,73 +113,6 @@ class runtime_data_prototype
 
       bool check_name (const string_type& name) const;
 
-
-
-};
-
-
-
-
-
-
-
-class construct_context 
-{
-    typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
-    typedef std::vector<runtime_data_prototype> runtime_data_type;
- public:
-    ~construct_context() = default;
-    construct_context(const construct_context&) = delete;
-    construct_context(construct_context&&) = delete;
-    construct_context& operator=(const construct_context&) = delete;
-    construct_context& operator=(construct_context&&) = delete;
-
-  public:
-      construct_context (const string_type& name);
-
-
-      void reinit ();
-
-      void push_overrides (const string_type& name, const data::runtime_values_data* vals);
-
-      void pop_overrides ();
-
-      const data::runtime_values_data* get_overrides ();
-
-      const string_type& rt_name () const;
-
-      void push_rt_name (const string_type& name);
-
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
-
-      runtime_data_prototype& runtime_data ();
-
-
-      ns::rx_directory_resolver& get_directories ()
-      {
-        return directories_;
-      }
-
-
-
-      rx_time now;
-
-
-  protected:
-
-  private:
-
-
-      runtime_data_type runtime_data_;
-
-
-      ns::rx_directory_resolver directories_;
-
-      string_array rt_names_;
-
-      override_stack_type overrides_stack_;
-
-      data::runtime_values_data overrides_;
 
 
 };
@@ -420,6 +357,206 @@ class type_check_source
 
 
       type_check_context *ctx_;
+
+
+};
+
+
+
+
+
+
+class method_data_prototype 
+{
+
+  public:
+
+      runtime::logic_blocks::method_data method;
+
+      runtime_data_prototype runtime_data;
+
+
+      string_type name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class program_data_prototype 
+{
+
+  public:
+
+      runtime::logic_blocks::program_data program;
+
+      runtime_data_prototype runtime_data;
+
+
+      string_type name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class display_data_prototype 
+{
+
+  public:
+
+      runtime::display_blocks::display_data display;
+
+      runtime_data_prototype runtime_data;
+
+
+      string_type name;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class object_data_prototype 
+{
+  public:
+
+      typedef typename std::vector<method_data_prototype> methods_type;
+      typedef typename std::vector<program_data_prototype> programs_type;
+      typedef typename std::vector<display_data_prototype> displays_type;
+
+  public:
+
+      runtime_data_prototype runtime_data;
+
+      methods_type methods;
+
+      programs_type programs;
+
+      displays_type displays;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class construct_context 
+{
+    enum class active_state_t
+    {
+        regular = 0,
+        in_method = 1,
+        in_program = 2,
+        in_display = 3
+    };
+    typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
+    typedef std::vector<object_data_prototype> runtime_data_type;
+ public:
+    ~construct_context() = default;
+    construct_context(const construct_context&) = delete;
+    construct_context(construct_context&&) = delete;
+    construct_context& operator=(const construct_context&) = delete;
+    construct_context& operator=(construct_context&&) = delete;
+
+  public:
+      construct_context (const string_type& name);
+
+
+      void reinit ();
+
+      void push_overrides (const string_type& name, const data::runtime_values_data* vals);
+
+      void pop_overrides ();
+
+      const data::runtime_values_data* get_overrides ();
+
+      const string_type& rt_name () const;
+
+      void push_rt_name (const string_type& name);
+
+      runtime_data_prototype pop_rt_name ();
+
+      runtime_data_prototype& runtime_data ();
+
+      void start_program (const string_type& name);
+
+      void start_method (const string_type& name);
+
+      void end_program ();
+
+      void end_method ();
+
+      runtime::logic_blocks::method_data& method_data ();
+
+      runtime::logic_blocks::program_data& program_data ();
+
+      void start_display (const string_type& name);
+
+      void end_display ();
+
+      runtime::display_blocks::display_data& display_data ();
+
+
+      ns::rx_directory_resolver& get_directories ()
+      {
+        return directories_;
+      }
+
+
+
+      rx_time now;
+
+
+  protected:
+
+  private:
+
+
+      runtime_data_type runtime_data_;
+
+
+      ns::rx_directory_resolver directories_;
+
+      string_array rt_names_;
+
+      override_stack_type overrides_stack_;
+
+      data::runtime_values_data overrides_;
+
+      active_state_t state_;
 
 
 };

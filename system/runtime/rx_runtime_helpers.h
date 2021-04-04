@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -45,17 +45,6 @@ using namespace rx::values;
 
 
 namespace rx_platform {
-namespace runtime {
-class runtime_process_context;
-namespace operational {
-class binded_tags;
-} // namespace operational
-
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-} // namespace runtime
-
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
@@ -65,8 +54,18 @@ namespace structure {
 class runtime_item;
 class mapper_data;
 class variable_data;
-
 } // namespace structure
+
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
+
+namespace operational {
+class binded_tags;
+} // namespace operational
+
+class runtime_process_context;
+
 } // namespace runtime
 } // namespace rx_platform
 
@@ -79,8 +78,16 @@ namespace rx_platform {
 namespace logic
 {
 class program_runtime;
+class method_runtime;
 }
 typedef rx_reference<logic::program_runtime> program_runtime_ptr;
+typedef rx_reference<logic::method_runtime> method_runtime_ptr;
+
+namespace displays
+{
+class display_runtime;
+}
+typedef rx_reference<displays::display_runtime> display_runtime_ptr;
 
 namespace api
 {
@@ -468,6 +475,8 @@ struct runtime_init_context
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path);
 
+      rx_result set_item (const string_type& path, rx_simple_value&& value);
+
 
       runtime_path_resolver path;
 
@@ -493,7 +502,15 @@ struct runtime_init_context
       rx_reference_ptr anchor;
 
   public:
+      template<typename T>
+      rx_result set_item_static(const string_type& path, T&& value)
+      {
+          rx_simple_value temp;
+          temp.assign_static<T>(std::forward<T>(value));
+          auto result = set_item(path, std::move(temp));
 
+          return result;
+      }
   protected:
 
   private:

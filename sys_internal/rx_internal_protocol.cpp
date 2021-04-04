@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -38,6 +38,7 @@
 #include "system/runtime/rx_io_buffers.h"
 #include "rx_internal_subscription.h"
 #include "rx_subscription_items.h"
+#include "model/rx_meta_internals.h"
 
 
 namespace rx_internal {
@@ -259,7 +260,7 @@ rx_protocol_connection::rx_protocol_connection (runtime::items::port_runtime* po
       : current_directory_path_("/world"),
         executer_(-1),
         port_(port),
-        stream_version_(0)
+        stream_version_(RX_CURRENT_SERIALIZE_VERSION)
 {
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_protocol_connection::received_function;
@@ -451,6 +452,13 @@ rx_result rx_protocol_connection::remove_items (const rx_uuid& id, std::vector<r
 
 rx_protocol_stack_endpoint* rx_protocol_connection::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
 {
+	model::platform_types_manager::instance().get_types_resolver().register_subscriber(smart_this(), [this](model::resolver_event_data data)
+		{
+			auto msg = std::make_unique<messages::rx_connection_notify_message>();
+			msg->changed_id = data.id;
+			msg->changed_path = data.path;
+			data_processed(std::move(msg));
+		});
 	return &stack_entry_;
 }
 

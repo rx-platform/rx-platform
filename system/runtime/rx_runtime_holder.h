@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -35,12 +35,6 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
-// rx_logic
-#include "system/logic/rx_logic.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_relations
@@ -51,6 +45,14 @@
 #include "system/runtime/rx_rt_struct.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
+// rx_ns
+#include "system/server/rx_ns.h"
+// rx_display_blocks
+#include "system/runtime/rx_display_blocks.h"
+// rx_runtime_logic
+#include "system/runtime/rx_runtime_logic.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -301,6 +303,7 @@ class runtime_holder : public rx::pointers::reference_object
     typedef typename typeT::instance_data_t instance_data_t;
 
     friend class object_runtime_algorithms<typeT>;
+    friend class meta::meta_algorithm::object_data_algorithm<typeT>;
     friend class meta::meta_algorithm::object_types_algorithm<typeT>;
     friend class rx_internal::model::algorithms::runtime_model_algorithm<typeT>;
     friend class rx_internal::model::types_repository<typeT>;
@@ -457,7 +460,7 @@ public:
 
       operational::binded_tags binded_tags_;
 
-      programs_type programs_;
+      logic_blocks::logic_holder logic_;
 
       structure::runtime_item::smart_ptr item_;
 
@@ -474,6 +477,8 @@ public:
       points_type points_;
 
       persistent_data_type persistent_;
+
+      display_blocks::displays_holder displays_;
 
 
       meta::meta_data meta_info_;

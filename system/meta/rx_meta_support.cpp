@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -141,10 +141,11 @@ rx_result_erros_t type_check_context::get_errors () const
 // Class rx_platform::meta::construct_context 
 
 construct_context::construct_context (const string_type& name)
-      : now(rx_time::now())
+      : now(rx_time::now()),
+        state_(active_state_t::regular)
 {
 	rt_names_.push_back(name);
-	runtime_data_.push_back(runtime_data_prototype());
+	runtime_data_.push_back(object_data_prototype());
 }
 
 
@@ -193,20 +194,94 @@ const string_type& construct_context::rt_name () const
 void construct_context::push_rt_name (const string_type& name)
 {
 	rt_names_.push_back(name);
-	runtime_data_.push_back(runtime_data_prototype());
+	runtime_data_.push_back(object_data_prototype());
 }
 
-rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
+runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
-	runtime_data_prototype ret = std::move(*runtime_data_.rbegin());
+	runtime_data_prototype ret = std::move(runtime_data_.rbegin()->runtime_data);
 	runtime_data_.pop_back();
 	return ret;
 }
 
 runtime_data_prototype& construct_context::runtime_data ()
 {
-	return *runtime_data_.rbegin();
+	switch (state_)
+	{
+	case active_state_t::regular:
+		return runtime_data_.rbegin()->runtime_data;
+	case active_state_t::in_method:
+		return runtime_data_.rbegin()->methods.rbegin()->runtime_data;
+	case active_state_t::in_program:
+		return runtime_data_.rbegin()->programs.rbegin()->runtime_data;
+	default:
+		RX_ASSERT(false);
+		return runtime_data_.rbegin()->runtime_data;
+	}
+}
+
+void construct_context::start_program (const string_type& name)
+{
+	RX_ASSERT(state_ == active_state_t::regular);
+	program_data_prototype temp;
+	temp.name = name;
+	runtime_data_.rbegin()->programs.emplace_back(std::move(temp));
+	state_ = active_state_t::in_program;
+}
+
+void construct_context::start_method (const string_type& name)
+{
+	RX_ASSERT(state_ == active_state_t::regular);
+	method_data_prototype temp;
+	temp.name = name;
+	runtime_data_.rbegin()->methods.emplace_back(std::move(temp));
+	state_ = active_state_t::in_method;
+}
+
+void construct_context::end_program ()
+{
+	RX_ASSERT(state_ == active_state_t::in_program);
+	state_ = active_state_t::regular;
+}
+
+void construct_context::end_method ()
+{
+	RX_ASSERT(state_ == active_state_t::in_method);
+	state_ = active_state_t::regular;
+}
+
+runtime::logic_blocks::method_data& construct_context::method_data ()
+{
+	RX_ASSERT(state_ == active_state_t::in_method);
+	return runtime_data_.rbegin()->methods.rbegin()->method;
+}
+
+runtime::logic_blocks::program_data& construct_context::program_data ()
+{
+	RX_ASSERT(state_ == active_state_t::in_program);
+	return runtime_data_.rbegin()->programs.rbegin()->program;
+}
+
+void construct_context::start_display (const string_type& name)
+{
+	RX_ASSERT(state_ == active_state_t::regular);
+	display_data_prototype temp;
+	temp.name = name;
+	runtime_data_.rbegin()->displays.emplace_back(std::move(temp));
+	state_ = active_state_t::in_display;
+}
+
+void construct_context::end_display ()
+{
+	RX_ASSERT(state_ == active_state_t::in_display);
+	state_ = active_state_t::regular;
+}
+
+runtime::display_blocks::display_data& construct_context::display_data ()
+{
+	RX_ASSERT(state_ == active_state_t::in_display);
+	return runtime_data_.rbegin()->displays.rbegin()->display;
 }
 
 
@@ -524,6 +599,18 @@ type_check_source::~type_check_source()
 	ctx_->pop_source();
 }
 
+
+
+// Class rx_platform::meta::object_data_prototype 
+
+
+// Class rx_platform::meta::method_data_prototype 
+
+
+// Class rx_platform::meta::program_data_prototype 
+
+
+// Class rx_platform::meta::display_data_prototype 
 
 
 } // namespace meta

@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -85,6 +85,8 @@ class configuration_storage_builder : public rx_platform_builder
 	  rx_result create_concrete_simple_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
           , rx_directory_ptr dir, bool save, tl::type2type<T>);
 	  rx_result create_concrete_relation_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
+          , rx_directory_ptr dir, bool save);
+      rx_result create_concrete_data_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage
           , rx_directory_ptr dir, bool save);
 	  template<class T>
 	  rx_result create_concrete_object_from_storage(meta::meta_data& meta

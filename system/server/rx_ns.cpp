@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -127,12 +127,24 @@ rx_platform_directory::~rx_platform_directory()
 void rx_platform_directory::get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const
 {
 	locks::const_auto_slim_lock dummy(&structure_lock_);
+	bool is_pattern_empty = pattern.empty();
+	const char* c_pattern = is_pattern_empty ? nullptr : pattern.c_str();
 	for (const auto& one : sub_directories_)
 	{
+		if (!is_pattern_empty)
+		{
+			if (!match_pattern(one.first.c_str(), c_pattern, 0))
+				continue;
+		}
 		sub_directories.emplace_back(one.second);
 	}
 	for (const auto& one : sub_items_)
 	{
+		if (!is_pattern_empty)
+		{
+			if (!match_pattern(one.first.c_str(), c_pattern, 0))
+				continue;
+		}
 		sub_items.emplace_back(one.second);
 	}
 }
@@ -936,7 +948,7 @@ bool rx_namespace_item::is_object () const
 bool rx_namespace_item::is_type () const
 {
 	return type_ == rx_application_type || type_ == rx_object_type || type_ == rx_domain_type
-		|| (type_ >= rx_port_type && type_ <= rx_mapper_type) || type_ == rx_relation_type;
+		|| (type_ >= rx_port_type && type_ <= rx_mapper_type) || (type_ >= rx_relation_type && type_ <= rx_method_type);
 }
 
 

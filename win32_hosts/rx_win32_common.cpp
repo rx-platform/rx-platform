@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -65,13 +65,18 @@ rx_result build_directories(rx_host_directories& data)
 		if (buff[0] == '"')
 		{
 			data.system_config = rx::rx_combine_paths(&buff[1], "rx-platform/config");
-			data.system_storage = rx::rx_combine_paths(&buff[1], "rx-platform/storage/rx-system-storage");
+			data.system_storage = rx::rx_combine_paths(&buff[1], "rx-platform/storage/rx-system-storage");//copyright_file
+			data.copyright_file = rx::rx_combine_paths(&buff[1], "rx-platform/config/COPYRIGHT");
+			data.license_file = rx::rx_combine_paths(&buff[1], "rx-platform/config/LICENSE");
+
 			data.manuals = rx::rx_combine_paths(&buff[1], "rx-platform/man");
 		}
 		else
 		{
 			data.system_config = rx::rx_combine_paths(buff, "rx-platform/config");
 			data.system_storage = rx::rx_combine_paths(buff, "rx-platform/storage/rx-system-storage");
+			data.license_file = rx::rx_combine_paths(buff, "rx-platform/config/LICENSE");
+			data.copyright_file = rx::rx_combine_paths(buff, "rx-platform/config/COPYRIGHT");
 			data.manuals = rx::rx_combine_paths(buff, "rx-platform/man");
 		}
 		if (GetEnvironmentVariableA("LocalAppData", buff, sizeof(buff)))
@@ -95,6 +100,10 @@ rx_result build_directories(rx_host_directories& data)
 	else
 	{
 		return rx_result::create_from_last_os_error("Unable to read ENV %ProgramData%");
+	}
+	if (data.license_file.empty() || rx_file_exsist(data.license_file.c_str()) == 0)
+	{
+		data.license_file = get_full_path("license.txt");
 	}
 	return true;
 }

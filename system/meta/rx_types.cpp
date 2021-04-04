@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -121,6 +121,50 @@ platform_item_ptr variable_type::get_item_ptr () const
 {
   return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 
+}
+
+
+// Class rx_platform::meta::basic_types::method_type 
+
+rx_item_type method_type::type_id = rx_item_type::rx_method_type;
+
+
+platform_item_ptr method_type::get_item_ptr () const
+{
+	return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+}
+
+
+// Class rx_platform::meta::basic_types::program_type 
+
+rx_item_type program_type::type_id = rx_item_type::rx_program_type;
+
+
+platform_item_ptr program_type::get_item_ptr () const
+{
+	return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+}
+
+
+// Class rx_platform::meta::basic_types::display_type 
+
+rx_item_type display_type::type_id = rx_item_type::rx_display_type;
+
+
+platform_item_ptr display_type::get_item_ptr () const
+{
+	return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+}
+
+
+// Class rx_platform::meta::basic_types::data_type 
+
+rx_item_type data_type::type_id = rx_item_type::rx_data_type;
+
+
+platform_item_ptr data_type::get_item_ptr () const
+{
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 }
 
 

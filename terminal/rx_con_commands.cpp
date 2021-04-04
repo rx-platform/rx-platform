@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform}
 *
-*  This file is part of rx-platform
-*
-*
-*  rx-platform is free software: you can redistribute it and/or modify
+*  
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
-*  rx-platform is distributed in the hope that it will be useful,
+*  
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with rx-platform. It is also available in any rx-platform console
+*  
+*  You should have received a copy of the GNU General Public License  
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -107,7 +107,7 @@ void fill_context_attributes(security::security_context_ptr ctx,string_type& val
 
 }
 
-// Class rx_internal::terminal::console::console_commands::info_command
+// Class rx_internal::terminal::console::console_commands::info_command 
 
 info_command::info_command()
   : server_command("info")
@@ -187,7 +187,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 }
 
 
-// Class rx_internal::terminal::console::console_commands::code_command
+// Class rx_internal::terminal::console::console_commands::code_command 
 
 code_command::code_command()
   : item_query_command("code")
@@ -209,7 +209,7 @@ bool code_command::do_with_item (platform_item_ptr&& item, std::ostream& out, st
 }
 
 
-// Class rx_internal::terminal::console::console_commands::rx_name_command
+// Class rx_internal::terminal::console::console_commands::rx_name_command 
 
 rx_name_command::rx_name_command()
   : server_command("pname")
@@ -263,7 +263,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::terminal::console::console_commands::cls_command
+// Class rx_internal::terminal::console::console_commands::cls_command 
 
 cls_command::cls_command()
   : server_command("cls")
@@ -284,7 +284,7 @@ bool cls_command::do_console_command (std::istream& in, std::ostream& out, std::
 }
 
 
-// Class rx_internal::terminal::console::console_commands::shutdown_command
+// Class rx_internal::terminal::console::console_commands::shutdown_command 
 
 shutdown_command::shutdown_command()
   : server_command("shutdown")
@@ -310,7 +310,7 @@ bool shutdown_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class rx_internal::terminal::console::console_commands::log_command
+// Class rx_internal::terminal::console::console_commands::log_command 
 
 log_command::log_command()
 	: server_command("log")
@@ -456,12 +456,12 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 
 
 	parser_t parser;
-	parser.add_bit_option('e', "error", &error, "Reads error events.");
+	parser.add_bit_option('e', "error", &error, "Reads error level content, only error and critical events are returned.");
 	parser.add_bit_option('h', "help", &help, "Prints help.");
 	parser.add_bit_option('v', "version", &version, "Prints version of the command.");
-	parser.add_bit_option('t', "trace", &trace, "Reads trace events.");
-	parser.add_bit_option('d', "debug", &debug, "Reads debug events.");
-	parser.add_bit_option('w', "warning", &warning, "Reads warning events.");
+	parser.add_bit_option('t', "trace", &trace, "Reads trace level content, all but debug events are returned.");
+	parser.add_bit_option('d', "debug", &debug, "Reads debug level content, all events are returned.");
+	parser.add_bit_option('w', "warning", &warning, "Reads warning level content only warning error and critical events are returned.");
 	parser.add_string_option('f', "filter", &pattern, "Search pattern filter.");
 	parser.add_int_option('c', "count", &count, "Count of events.");
 	parser.add_string_option('l', "log", &log_name, "Specifies log to be read (default is last).");
@@ -602,7 +602,7 @@ void log_command::log_fired (console_context_ptr ctx)
 }
 
 
-// Class rx_internal::terminal::console::console_commands::sec_command
+// Class rx_internal::terminal::console::console_commands::sec_command 
 
 sec_command::sec_command()
 	: server_command("sec")
@@ -697,7 +697,7 @@ bool sec_command::do_active_command (std::istream& in, std::ostream& out, std::o
 }
 
 
-// Class rx_internal::terminal::console::console_commands::time_command
+// Class rx_internal::terminal::console::console_commands::time_command 
 
 time_command::time_command()
 	: server_command("time")
@@ -719,7 +719,7 @@ bool time_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::terminal::console::console_commands::sleep_command
+// Class rx_internal::terminal::console::console_commands::sleep_command 
 
 sleep_command::sleep_command()
 	: server_command("sleep")
@@ -776,7 +776,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 }
 
 
-// Class rx_internal::terminal::console::console_commands::def_command
+// Class rx_internal::terminal::console::console_commands::def_command 
 
 def_command::def_command()
 	: item_query_command("def")
@@ -801,7 +801,7 @@ bool def_command::do_with_item (platform_item_ptr&& item, std::ostream& out, std
 }
 
 
-// Class rx_internal::terminal::console::console_commands::item_query_command
+// Class rx_internal::terminal::console::console_commands::item_query_command 
 
 item_query_command::item_query_command (const string_type& console_name)
 	: server_command(console_name)
@@ -848,18 +848,26 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 				}
 				else
 				{
-					dump_error_result(err, data);
-					return false;
+					return data.errors();
 				}
 			}
-			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
+			, rx_result_callback(context.object, [ctx, this](rx_result&& result) mutable
 				{
-					bool arg = result;
-					ctx->get_client()->process_event(arg, ctx->get_out(), ctx->get_err(), true);
+					if (!result)
+					{
+						auto& err = ctx->get_stderr();
+						dump_error_result(err, result);
+					}
+					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
 				}), context);
 		if (result)
 		{
 			ctx->set_waiting();
+		}
+		else
+		{
+			auto& err = ctx->get_stderr();
+			dump_error_result(err, result);
 		}
 		return result;
 	}
@@ -871,7 +879,7 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 }
 
 
-// Class rx_internal::terminal::console::console_commands::phyton_command
+// Class rx_internal::terminal::console::console_commands::phyton_command 
 
 phyton_command::phyton_command()
 	: server_command("python")
@@ -914,7 +922,7 @@ bool phyton_command::do_console_command (std::istream& in, std::ostream& out, st
 }
 
 
-// Class rx_internal::terminal::console::console_commands::license_command
+// Class rx_internal::terminal::console::console_commands::license_command 
 
 license_command::license_command()
 	: server_command("license")
@@ -930,30 +938,21 @@ license_command::~license_command()
 
 bool license_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	auto storage = rx_gate::instance().get_host()->get_system_storage("sys");
-	if (storage)
+	const string_type& lic_info = rx_gate::instance().get_host()->get_license();
+	if (lic_info.empty())
 	{
-		const string_type& lic_info = "aaaa";//storage->get_license();
-		if (lic_info.empty())
-		{
-			err << "No valid LICENSE file in directory!!!";
-			return false;
-		}
-		else
-		{
-			out << lic_info;
-			return true;
-		}
+		err << "No valid " ANSI_COLOR_BOLD ANSI_COLOR_RED " LICENSE " ANSI_COLOR_RESET " for {rx-platform}.";
+		return false;
 	}
 	else
 	{
-		err << "No LICENSE!!!";
-		return false;
+		out << lic_info;
+		return true;
 	}
 }
 
 
-// Class rx_internal::terminal::console::console_commands::help_command
+// Class rx_internal::terminal::console::console_commands::help_command 
 
 help_command::help_command()
 	: server_command("help")
@@ -1026,6 +1025,37 @@ string_type help_command::get_help () const
 		}
 	}
 	return help.c_str();
+}
+
+
+// Class rx_internal::terminal::console::console_commands::copyright_command 
+
+copyright_command::copyright_command()
+	: server_command("copyright")
+{
+}
+
+
+copyright_command::~copyright_command()
+{
+}
+
+
+
+bool copyright_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	const string_type& lic_info = rx_gate::instance().get_host()->get_copyright();
+	if (lic_info.empty())
+	{
+		err << "Copyright information not found, please check {rx-platform} "
+			<< ANSI_COLOR_BOLD ANSI_COLOR_RED " LICENSE information" ANSI_COLOR_RESET ".";
+		return false;
+	}
+	else
+	{
+		out << lic_info;
+		return true;
+	}
 }
 
 

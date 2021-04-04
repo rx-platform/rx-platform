@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -202,6 +202,13 @@ template rx_result rx_create_simple_type<event_type>(event_type::smart_ptr proto
 template rx_result rx_create_simple_type<mapper_type>(mapper_type::smart_ptr prototype
 	, rx_result_with_callback<mapper_type::smart_ptr>&& callback);
 
+template rx_result rx_create_simple_type<program_type>(program_type::smart_ptr prototype
+	, rx_result_with_callback<program_type::smart_ptr>&& callback);
+template rx_result rx_create_simple_type<method_type>(method_type::smart_ptr prototype
+	, rx_result_with_callback<method_type::smart_ptr>&& callback);
+template rx_result rx_create_simple_type<display_type>(display_type::smart_ptr prototype
+	, rx_result_with_callback<display_type::smart_ptr>&& callback);
+
 
 
 template<class typeT>
@@ -227,6 +234,13 @@ template rx_result rx_update_simple_type<event_type>(event_type::smart_ptr proto
 template rx_result rx_update_simple_type<mapper_type>(mapper_type::smart_ptr prototype, rx_update_type_data update_data
 	, rx_result_with_callback<mapper_type::smart_ptr>&& callback);
 
+template rx_result rx_update_simple_type<program_type>(program_type::smart_ptr prototype, rx_update_type_data update_data
+	, rx_result_with_callback<program_type::smart_ptr>&& callback);
+template rx_result rx_update_simple_type<method_type>(method_type::smart_ptr prototype, rx_update_type_data update_data
+	, rx_result_with_callback<method_type::smart_ptr>&& callback);
+template rx_result rx_update_simple_type<display_type>(display_type::smart_ptr prototype, rx_update_type_data update_data
+	, rx_result_with_callback<display_type::smart_ptr>&& callback);
+
 
 
 rx_result rx_create_relation_type(typename relation_type::smart_ptr prototype // prototype
@@ -241,6 +255,23 @@ rx_result rx_update_relation_type(typename relation_type::smart_ptr prototype, r
 	, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
 {
 	rx_internal::model::algorithms::relation_types_algorithm::update_type(
+		prototype, std::move(update_data), std::move(callback));
+	return true;
+}
+
+
+rx_result rx_create_data_type(typename data_type::smart_ptr prototype // prototype
+	, rx_result_with_callback<typename data_type::smart_ptr>&& callback)
+{
+	prototype->meta_info = create_meta_for_new(prototype->meta_info);
+	rx_internal::model::algorithms::data_types_model_algorithm::create_type(prototype, std::move(callback));
+	return true;
+}
+
+rx_result rx_update_data_type(typename data_type::smart_ptr prototype, rx_update_type_data update_data
+	, rx_result_with_callback<typename data_type::smart_ptr>&& callback)
+{
+	rx_internal::model::algorithms::data_types_model_algorithm::update_type(
 		prototype, std::move(update_data), std::move(callback));
 	return true;
 }
@@ -347,10 +378,24 @@ template rx_result rx_get_simple_type<event_type>(const rx_item_reference& ref
 template rx_result rx_get_simple_type<mapper_type>(const rx_item_reference& ref
 	, rx_result_with_callback<mapper_type::smart_ptr>&& callback);
 
+template rx_result rx_get_simple_type<program_type>(const rx_item_reference& ref
+	, rx_result_with_callback<program_type::smart_ptr>&& callback);
+template rx_result rx_get_simple_type<method_type>(const rx_item_reference& ref
+	, rx_result_with_callback<method_type::smart_ptr>&& callback);
+template rx_result rx_get_simple_type<display_type>(const rx_item_reference& ref
+	, rx_result_with_callback<display_type::smart_ptr>&& callback);
+
 rx_result rx_get_relation_type(const rx_item_reference& ref
 	, rx_result_with_callback<relation_type::smart_ptr>&& callback)
 {
 	rx_internal::model::algorithms::relation_types_algorithm::get_type(ref, std::move(callback));
+	return true;
+}
+
+rx_result rx_get_data_type(const rx_item_reference& ref
+	, rx_result_with_callback<data_type::smart_ptr>&& callback)
+{
+	rx_internal::model::algorithms::data_types_model_algorithm::get_type(ref, std::move(callback));
 	return true;
 }
 
@@ -393,6 +438,12 @@ template rx_result rx_delete_simple_type<filter_type>(const rx_item_reference& r
 template rx_result rx_delete_simple_type<event_type>(const rx_item_reference& ref
 	, rx_result_callback&& callback);
 template rx_result rx_delete_simple_type<mapper_type>(const rx_item_reference& ref
+	, rx_result_callback&& callback);
+template rx_result rx_delete_simple_type<program_type>(const rx_item_reference& ref
+	, rx_result_callback&& callback);
+template rx_result rx_delete_simple_type<method_type>(const rx_item_reference& ref
+	, rx_result_callback&& callback);
+template rx_result rx_delete_simple_type<display_type>(const rx_item_reference& ref
 	, rx_result_callback&& callback);
 
 

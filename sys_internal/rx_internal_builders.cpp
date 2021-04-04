@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -620,6 +620,16 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
+		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_CLASS_DATA_BASE_NAME
+			, RX_CLASS_DATA_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		model::platform_types_manager::instance().get_data_types_repository().register_type(dtype);
+		dir->add_item(dtype->get_item_ptr());
+
 		//build base types, user extensible
 		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_CLASS_STRUCT_BASE_NAME
@@ -673,6 +683,33 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			});
 		src->complex_data.register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::source_type>(dir, src);
+
+		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
+			RX_CLASS_METHOD_BASE_NAME
+			, RX_CLASS_METHOD_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::method_type>(dir, met);
+
+		auto prog = create_type<basic_types::program_type>(meta::type_creation_data{
+			RX_CLASS_PROGRAM_BASE_NAME
+			, RX_CLASS_PROGRAM_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::program_type>(dir, prog);
+
+		auto disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_CLASS_DISPLAY_BASE_NAME
+			, RX_CLASS_DISPLAY_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			}); 
+		build_basic_type<basic_types::display_type>(dir, disp);
 
 		//build general data for runtime objects
 		str = create_type<basic_types::struct_type>(meta::type_creation_data{
@@ -840,6 +877,16 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 	auto dir = root->get_sub_directory(path);
 	if (dir)
 	{
+		// system subtypes
+		auto ev = create_type<event_type>(meta::object_type_creation_data{
+			RX_NS_CHANGED_DATA_EVENT_NAME
+			, RX_NS_CHANGED_DATA_EVENT_ID
+			, RX_CLASS_EVENT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		ev->arguments = rx_node_id(RX_NS_CHANGED_DATA_ID);
+		add_simple_type_to_configuration(dir, ev, false);
 		// system application and domain types
 		auto app = create_type<application_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_APP_TYPE_NAME
@@ -848,6 +895,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		app->complex_data.register_event(event_attribute("ItemChanged", RX_NS_CHANGED_DATA_EVENT_ID));
 		add_type_to_configuration(dir, app, false);		
 		auto dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_DOM_TYPE_NAME
@@ -890,6 +938,19 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_type_to_configuration(dir, dom, false);
+		// data types used by system classes
+		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_NS_CHANGED_DATA_NAME
+			, RX_NS_CHANGED_DATA_ID
+			, RX_CLASS_DATA_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		dtype->complex_data.register_value_static("TS", rx_time::now());
+		dtype->complex_data.register_value_static("Id", rx_node_id());
+		dtype->complex_data.register_value_static("Path", ""s);
+		model::platform_types_manager::instance().get_data_types_repository().register_type(dtype);
+		dir->add_item(dtype->get_item_ptr());
 		// other system object types
 		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_COMMANDS_MANAGER_TYPE_NAME
@@ -1261,6 +1322,16 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_EXTERN_PARENT_MAPPER_TYPE_NAME
+			, RX_EXTERN_PARENT_MAPPER_TYPE_ID
+			, RX_PARENT_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("Port", ""s);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_SYSTEM_MAPPER_TYPE_NAME
 			, RX_SYSTEM_MAPPER_TYPE_ID
 			, RX_CLASS_MAPPER_BASE_ID
@@ -1295,6 +1366,16 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		src->complex_data.register_const_value_static("Path", ""s);
+		add_simple_type_to_configuration<source_type>(dir, src, false);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_EXTERN_PARENT_SOURCE_TYPE_NAME
+			, RX_EXTERN_PARENT_SOURCE_TYPE_ID
+			, RX_PARENT_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("Port", ""s);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{

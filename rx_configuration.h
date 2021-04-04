@@ -16,6 +16,9 @@
 #define RX_MACRO_SYMBOL '$'
 #define RX_MACRO_SYMBOL_STR "$"
 
+#define RX_LINE_END "\n"
+#define RX_LINE_END_CH '\n'
+
 // directories stuff
 #define RX_NS_WORLD_NAME "world"
 #define RX_NS_STORAGE_NAME "storage"
@@ -60,6 +63,16 @@
 #define RX_CLASS_MAPPER_BASE_ID 0x00000009
 #define RX_CLASS_FILTER_BASE_NAME "FilterBase"
 #define RX_CLASS_FILTER_BASE_ID 0x0000000a
+
+
+#define RX_CLASS_METHOD_BASE_NAME "MethodBase"
+#define RX_CLASS_METHOD_BASE_ID 0x00000013
+#define RX_CLASS_PROGRAM_BASE_NAME "ProgramBase"
+#define RX_CLASS_PROGRAM_BASE_ID 0x00000014
+#define RX_CLASS_DATA_BASE_NAME "DataTypeBase"
+#define RX_CLASS_DATA_BASE_ID 0x00000015
+#define RX_CLASS_DISPLAY_BASE_NAME "DisplayBase"
+#define RX_CLASS_DISPLAY_BASE_ID 0x00000016
 
 
 // objects stuff
@@ -245,6 +258,8 @@
 #define RX_EXTERN_MAPPER_TYPE_ID 0xc000033
 #define RX_PARENT_MAPPER_TYPE_NAME "ParentMapper"
 #define RX_PARENT_MAPPER_TYPE_ID 0xc000045
+#define RX_EXTERN_PARENT_MAPPER_TYPE_NAME "ExternParentMapper"
+#define RX_EXTERN_PARENT_MAPPER_TYPE_ID 0xc00004d
 #define RX_SYSTEM_MAPPER_TYPE_NAME "SystemMapper"
 #define RX_SYSTEM_MAPPER_TYPE_ID 0xc000046
 #define RX_EXTERN_SOURCE_TYPE_NAME "ExternSource"
@@ -253,6 +268,8 @@
 #define RX_USER_SOURCE_TYPE_ID 0xc00004a
 #define RX_PARENT_SOURCE_TYPE_NAME "ParentSource"
 #define RX_PARENT_SOURCE_TYPE_ID 0xc000047
+#define RX_EXTERN_PARENT_SOURCE_TYPE_NAME "ExternParentSource"
+#define RX_EXTERN_PARENT_SOURCE_TYPE_ID 0xc00004e
 #define RX_SYSTEM_SOURCE_TYPE_NAME "SystemSource"
 #define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
@@ -281,7 +298,13 @@
 #define RX_NS_SYSTEM_RXJSON_ID 0xc000044
 
 
-// last is 0xc00004c!!!! 
+#define RX_NS_CHANGED_DATA_NAME "ItemChangeDetails"
+#define RX_NS_CHANGED_DATA_ID 0xc00004f
+#define RX_NS_CHANGED_DATA_EVENT_NAME "ItemChangeEvent"
+#define RX_NS_CHANGED_DATA_EVENT_ID 0xc000050
+
+
+// last is 0xc000050!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
@@ -297,8 +320,6 @@
 
 #define RX_CPP_DIRECORY_TYPE_NAME "directory"
 #define RX_CPP_COMMAND_TYPE_NAME "command"
-#define RX_CPP_PROGRAM_TYPE_NAME "program"
-#define RX_CPP_METHOD_TYPE_NAME "method"
 
 #define RX_CONST_VALUE_TYPE_NAME "const_value"
 #define RX_VALUE_TYPE_NAME "value"
@@ -319,6 +340,15 @@
 #define RX_CPP_RELATION_CLASS_TYPE_NAME "relation_type"
 #define RX_CPP_RELATION_TYPE_NAME "relation"
 #define RX_CPP_RELATION_TARGET_TYPE_NAME "relation_target"
+
+#define RX_CPP_METHOD_CLASS_TYPE_NAME "method_type"
+#define RX_CPP_METHOD_TYPE_NAME "method"
+#define RX_CPP_PROGRAM_CLASS_TYPE_NAME "program_type"
+#define RX_CPP_PROGRAM_TYPE_NAME "program"
+#define RX_CPP_DATA_CLASS_TYPE_NAME "data_type"
+#define RX_CPP_DATA_TYPE_NAME "data"
+#define RX_CPP_DISPLAY_CLASS_TYPE_NAME "display_type"
+#define RX_CPP_DISPLAY_TYPE_NAME "display"
 
 //Main messages
 #define RX_ACCESS_DENIED "*ACCESS DENIED*"

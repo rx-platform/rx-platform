@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -361,16 +361,10 @@ bool runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) c
 
     if (!stream.write_init_values("overrides", overrides_))
         return false;
-    if (!stream.start_array("programs", programs_.size()))
-        return false;
-    for (const auto& one : programs_)
-    {
-        if (!one->save_program(stream, type))
-            return false;
-    }
-    if (!stream.end_array())
-        return false;
 
+    if (!logic_.serialize(stream, type))
+        return false;
+    
     if (!stream.end_object())
         return false;
 
@@ -403,12 +397,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
         result = relations_.initialize_relations(ctx);
         if (result)
         {
-            for (auto& one : programs_)
-            {
-                result = one->initialize_runtime(ctx);
-                if (!result)
-                    break;
-            }
+            logic_.initialize_logic(ctx);
         }
     }
     if (result)
@@ -423,18 +412,16 @@ template <class typeT>
 rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& ctx)
 {
     rx_result result = implementation_->deinitialize_runtime(ctx);
-    for (auto& one : programs_)
-    {
-        result = one->deinitialize_runtime(ctx);
-        if (!result)
-            break;
-    }
     if (result)
     {
-        result = relations_.deinitialize_relations(ctx);
+        result = logic_.deinitialize_logic(ctx);
         if (result)
         {
-            result = item_->deinitialize_runtime(ctx);
+            result = relations_.deinitialize_relations(ctx);
+            if (result)
+            {
+                result = item_->deinitialize_runtime(ctx);
+            }
         }
     }
     return result;
@@ -450,12 +437,7 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
         result = relations_.start_relations(ctx);
         if (result)
         {
-            for (auto& one : programs_)
-            {
-                result = one->start_runtime(ctx);
-                if (!result)
-                    break;
-            }
+            result = logic_.start_logic(ctx);
         }
     }
     if (result)
@@ -470,19 +452,16 @@ template <class typeT>
 rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
 {
     rx_result result = implementation_->stop_runtime(ctx);
-    for (auto& one : programs_)
-    {
-        result = one->stop_runtime(ctx);
-        if (!result)
-            break;
-    }
     if (result)
     {
-
-        result = relations_.stop_relations(ctx);
+        result = logic_.stop_logic(ctx);
         if (result)
         {
-            result = item_->stop_runtime(ctx);
+            result = relations_.stop_relations(ctx);
+            if (result)
+            {
+                result = item_->stop_runtime(ctx);
+            }
         }
     }
     connected_tags_.runtime_stopped(rx_time::now());
@@ -495,14 +474,15 @@ void runtime_holder<typeT>::fill_data (const data::runtime_values_data& data)
     structure::fill_context ctx(&context_);
     item_->fill_data(data);
     // now do the relations
-    // they create their own context!
     relations_.fill_data(data, &context_);
+    logic_.fill_data(data, &context_);
 }
 
 template <class typeT>
 void runtime_holder<typeT>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
     item_->collect_data(data, type);
+    logic_.collect_data(data, type);
     relations_.collect_data(data, type);
 }
 
@@ -565,7 +545,12 @@ rx_result runtime_holder<typeT>::read_value (const string_type& path, rx_value& 
         auto result = item_->get_value(path, value, const_cast<runtime_process_context*>(&context_));
         if (!result)
         {// check relations
-            result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_));
+            bool not_found = true;
+            result = relations_.get_value(path, value, const_cast<runtime_process_context*>(&context_), not_found);
+            if (not_found)
+            {
+                result = logic_.get_value(path, value, const_cast<runtime_process_context*>(&context_), not_found);
+            }
         }
     }
 
@@ -598,7 +583,12 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
         auto ret = item_->browse_items(filter, prefix, items, &context_);
         if (ret)
         {
-            ret = relations_.browse(prefix, "", filter, items);
+            bool not_found = true;
+            ret = relations_.browse(prefix, "", filter, items, not_found);
+            if (ret)
+            {
+                logic_.browse(prefix, "", filter, items, not_found);
+            }
         }
         return ret;
     }
@@ -606,14 +596,19 @@ rx_result runtime_holder<typeT>::browse (const string_type& prefix, const string
     {
         string_type current_path(path + RX_OBJECT_DELIMETER);
         const auto& sub_item = item_->get_child_item(path);
-        if (!sub_item)
+        if (sub_item)
         {
-            auto ret = relations_.browse(prefix, path, filter, items);
+            auto ret = sub_item->browse_items(filter, prefix + current_path, items, &context_);
             return ret;
         }
         else
         {
-            auto ret = sub_item->browse_items(filter, prefix + current_path, items, &context_);
+            bool not_found = true;
+            auto ret = relations_.browse(prefix, path, filter, items, not_found);
+            if (not_found)
+            {
+                ret = logic_.browse(prefix, path, filter, items, not_found);
+            }
             return ret;
         }
     }

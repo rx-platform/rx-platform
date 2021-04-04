@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -266,7 +266,7 @@ class binary_reader : public rx::base_meta_reader
 	typedef std::stack<binary_read_stack_data, std::vector<binary_read_stack_data> > stack_type;
 
   public:
-      binary_reader (buffer_type& buffer, int version = RX_CURRENT_SERIALIZE_VERSION);
+      binary_reader (buffer_type& buffer);
 
       ~binary_reader();
 
@@ -452,9 +452,9 @@ typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 // Parameterized Class rx_platform::serialization::binary_reader 
 
 template <typename allocT, bool swap_bytes>
-binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
+binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer)
       : buffer_(buffer)
-    , base_meta_reader(version)
+    , base_meta_reader(RX_CURRENT_SERIALIZE_VERSION)
 {
 }
 

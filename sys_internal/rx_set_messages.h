@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -42,8 +42,8 @@ namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_type_creator_base;
 class protocol_runtime_creator_base;
+class protocol_type_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -362,6 +362,33 @@ class protocol_relation_type_creator : public protocol_type_creator_base
 
 
       object_types::relation_type::smart_ptr item;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class protocol_data_type_creator : public protocol_type_creator_base  
+{
+
+  public:
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data);
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+
+
+      data_type_ptr item;
 
 
   protected:

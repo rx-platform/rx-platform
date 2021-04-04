@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -310,6 +310,18 @@ rx_result configuration_storage_builder::create_type_from_storage (rx_storage_it
 		case rx_item_type::rx_relation_type:
 			result = create_concrete_relation_type_from_storage(meta, storage, dir.value(), do_save);
 			break;
+		case rx_item_type::rx_method_type:
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<method_type>());
+			break;
+		case rx_item_type::rx_program_type:
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<program_type>());
+			break;
+		case rx_item_type::rx_display_type:
+			result = create_concrete_simple_type_from_storage(meta, storage, dir.value(), do_save, tl::type2type<display_type>());
+			break;
+		case rx_item_type::rx_data_type:
+			result = create_concrete_data_type_from_storage(meta, storage, dir.value(), do_save);
+			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);
 		}
@@ -408,6 +420,29 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 	return result;
 }
 
+
+rx_result configuration_storage_builder::create_concrete_data_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
+{
+	auto created = rx_create_reference<data_type>();
+	created->meta_info = meta;
+	auto result = meta::meta_algorithm::data_types_algorithm::deserialize_type(*created, storage->read_stream(), STREAMING_TYPE_TYPE);
+	storage->close_read();
+	if (result)
+	{
+		auto create_result = model::algorithms::data_types_model_algorithm::create_type_sync(created);
+		if (create_result)
+		{
+			auto rx_type_item = create_result.value()->get_item_ptr();
+			return true;
+		}
+		else
+		{
+			create_result.register_error("Error creating "s + rx_item_type_name(data_type::type_id) + " " + meta.get_full_path());
+			return create_result.errors();
+		}
+	}
+	return result;
+}
 
 template<class T>
 rx_result configuration_storage_builder::create_concrete_object_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>)

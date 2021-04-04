@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -271,6 +271,16 @@ message_ptr get_type_request::do_job (api::rx_context ctx, rx_protocol_connectio
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::event_type>());
 	case rx_item_type::rx_mapper_type:
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::mapper_type>());
+	case rx_item_type::rx_program_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::program_type>());
+	case rx_item_type::rx_method_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::method_type>());
+	case rx_item_type::rx_display_type:
+		return do_simple_job(ctx, conn, tl::type2type<basic_types::display_type>());
+
+	case rx_item_type::rx_data_type:
+		return do_data_job(ctx, conn);
+
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
@@ -389,6 +399,43 @@ message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_c
 	});
 
 	rx_result result = api::meta::rx_get_relation_type(reference, std::move(callback));
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+message_ptr get_type_request::do_data_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = rx_function_to_go<rx_result_with<typename basic_types::data_type::smart_ptr>&&>(ctx.object, [request_id, conn](rx_result_with<typename basic_types::data_type::smart_ptr>&& result) mutable
+		{
+			if (result)
+			{
+				auto response = std::make_unique<get_type_response<basic_types::data_type> >();
+				response->item = result.move_value();
+				response->request_id = request_id;
+				conn->data_processed(std::move(response));
+
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(std::move(result), 14, request_id);
+				conn->data_processed(std::move(ret_value));
+			}
+
+		});
+
+	rx_result result = api::meta::rx_get_data_type(reference, std::move(callback));
 
 	if (!result)
 	{

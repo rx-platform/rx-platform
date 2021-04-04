@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -129,6 +129,22 @@ rx_result derived_types_query::do_query (api::query_result& result, rx_directory
 	{
 		return do_relation_query(result, dir);
 	}
+	else if (type_name == "program")
+	{
+		return do_simple_query(result, dir, tl::type2type<basic_types::program_type>());
+	}
+	else if (type_name == "method")
+	{
+		return do_simple_query(result, dir, tl::type2type<basic_types::method_type>());
+	}
+	else if (type_name == "display")
+	{
+		return do_simple_query(result, dir, tl::type2type<basic_types::display_type>());
+	}
+	else if (type_name == "data")
+	{
+		return do_data_query(result, dir);
+	}
 	else
 	{
 		return type_name + " is unknown type name!";
@@ -178,6 +194,21 @@ rx_result derived_types_query::do_relation_query(api::query_result& result, rx_d
 		id = item.get_meta().id;
 	}
 	result = rx_internal::model::platform_types_manager::instance().get_relations_repository().get_derived_types(id);
+
+	return result.success;
+}
+rx_result derived_types_query::do_data_query(api::query_result& result, rx_directory_ptr dir)
+{
+
+	rx_node_id id = rx_node_id::null_id;
+	if (!base_type.empty())
+	{
+		auto item = dir->get_sub_item(base_type);
+		if (!item)
+			return base_type + " not found!";
+		id = item.get_meta().id;
+	}
+	result = rx_internal::model::platform_types_manager::instance().get_data_types_repository().get_derived_types(id);
 
 	return result.success;
 }
@@ -275,7 +306,7 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 {
 	auto type = rx_parse_type_name(type_name);
 	switch (type)
-	{
+	{// useful  suggested suggestion 
 	case rx_item_type::rx_application:
 		{
 			rx_internal::sys_runtime::platform_runtime_manager::instance().get_applications(result, subfolder);

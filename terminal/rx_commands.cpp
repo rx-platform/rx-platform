@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -141,6 +141,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<console::console_commands::def_command>());
 	register_command(rx_create_reference<console::console_commands::phyton_command>());
 	register_command(rx_create_reference<console::console_commands::license_command>());
+	register_command(rx_create_reference<console::console_commands::copyright_command>());
 	register_command(rx_create_reference<console::console_commands::help_command>());
 	// namespace commands
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::dir_command>());
@@ -288,7 +289,7 @@ server_command::server_command (const string_type& name)
         console_name_(name),
         security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
-	, program_runtime(name, name.c_str(), true)
+	, program_runtime(name, name.c_str())
 {
 }
 
@@ -343,11 +344,6 @@ rx_time server_command::get_created_time () const
 bool server_command::generate_json (std::ostream& def, std::ostream& err) const
 {
 	return false;
-}
-
-platform_item_ptr server_command::get_item_ptr () const
-{
-	return std::make_unique<rx_internal::internal_ns::rx_other_implementation<smart_ptr> >(smart_this());
 }
 
 string_type server_command::get_name () const

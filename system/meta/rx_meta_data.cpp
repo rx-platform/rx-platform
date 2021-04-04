@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -77,9 +77,11 @@ bool rx_is_runtime(rx_item_type type)
 	case rx_item_type::rx_mapper_type:
 		return false;
 
-	case rx_item_type::rx_program:
+	case rx_item_type::rx_display_type:
 		return false;
-	case rx_item_type::rx_method:
+	case rx_item_type::rx_program_type:
+		return false;
+	case rx_item_type::rx_method_type:
 		return false;
 
 	case rx_item_type::rx_relation_type:
@@ -126,10 +128,15 @@ string_type rx_item_type_name(rx_item_type type)
 	case rx_item_type::rx_mapper_type:
 		return RX_CPP_MAPPER_CLASS_TYPE_NAME;
 
-	case rx_item_type::rx_program:
-		return RX_CPP_PROGRAM_TYPE_NAME;
-	case rx_item_type::rx_method:
-		return RX_CPP_METHOD_TYPE_NAME;
+	case rx_item_type::rx_display_type:
+		return RX_CPP_DISPLAY_CLASS_TYPE_NAME;
+
+	case rx_item_type::rx_program_type:
+		return RX_CPP_PROGRAM_CLASS_TYPE_NAME;
+	case rx_item_type::rx_method_type:
+		return RX_CPP_METHOD_CLASS_TYPE_NAME;
+	case rx_item_type::rx_data_type:
+		return RX_CPP_DATA_CLASS_TYPE_NAME;
 
 	case rx_item_type::rx_relation_type:
 		return RX_CPP_RELATION_CLASS_TYPE_NAME;
@@ -162,6 +169,12 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 		case relation_attribute_type:
 			return RX_CPP_RELATION_TYPE_NAME;
 		case relation_target_attribute_type:
+			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+		case method_attribute_type:
+			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+		case program_attribute_type:
+			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+		case data_attribute_type:
 			return RX_CPP_RELATION_TARGET_TYPE_NAME;
 		default:
 			return "Unknown attribute type!!!";
@@ -202,10 +215,16 @@ rx_item_type rx_parse_type_name(const string_type name)
 	else if (name == RX_CPP_MAPPER_CLASS_TYPE_NAME)
 		return rx_item_type::rx_mapper_type;
 
-	else if (name == RX_CPP_PROGRAM_TYPE_NAME)
-		return rx_item_type::rx_program;
-	else if (name == RX_CPP_METHOD_TYPE_NAME)
-		return rx_item_type::rx_method;
+	else if (name == RX_CPP_DISPLAY_CLASS_TYPE_NAME)
+		return rx_item_type::rx_display_type;
+
+	else if (name == RX_CPP_PROGRAM_CLASS_TYPE_NAME)
+		return rx_item_type::rx_program_type;
+	else if (name == RX_CPP_METHOD_CLASS_TYPE_NAME)
+		return rx_item_type::rx_method_type;
+
+	else if(name==RX_CPP_DATA_CLASS_TYPE_NAME)
+		return rx_item_type::rx_data_type;
 
 	else if (name == RX_CPP_RELATION_CLASS_TYPE_NAME)
 		return rx_item_type::rx_relation_type;

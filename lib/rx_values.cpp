@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -2105,6 +2105,14 @@ void rx_value_storage::assign(const byte_string& val)
 {
 	value_.bytes_value = new byte_string(val);
 }
+void rx_value_storage::assign(const rx_node_id& val)
+{
+	value_.node_id_value = new rx_node_id(val);
+}
+void rx_value_storage::assign(rx_node_id&& val)
+{
+	value_.node_id_value = new rx_node_id(std::move(val));
+}
 void rx_value_storage::assign(bit_string&& val)
 {
 	value_.bits_value = new bit_string(std::move(val));
@@ -2409,6 +2417,14 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 		}
 		case RX_DOUBLE_TYPE:
 			return reader.read_double("val", who.double_value);
+		case RX_NODE_ID_TYPE:
+			{
+				rx_node_id val;
+				if (!reader.read_id("val", val))
+					return false;
+				who.node_id_value = new rx_node_id(std::move(val));
+				return true;
+			}
 		case RX_STRING_TYPE:
 		{
 			string_type val;

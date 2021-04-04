@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -65,8 +65,6 @@ class relation_runtime : public rx::pointers::reference_object
       virtual ~relation_runtime();
 
 
-      string_type get_type_name () const;
-
       virtual rx_result initialize_relation (runtime::runtime_init_context& ctx);
 
       virtual rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
@@ -78,18 +76,6 @@ class relation_runtime : public rx::pointers::reference_object
       virtual rx_item_reference get_implicit_reference (const meta::meta_data& info);
 
       virtual relation_runtime::smart_ptr make_target_relation ();
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static string_type type_name;
-
-      static rx_item_type type_id;
 
 
   protected:

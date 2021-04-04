@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -59,7 +59,7 @@ simple_platform_host::~simple_platform_host()
 
 
 
-void simple_platform_host::get_host_info (string_array& hosts)
+void simple_platform_host::get_host_info (hosts_type& hosts)
 {
 	hosts.emplace_back(get_simple_info());
 	rx_platform_host::get_host_info(hosts);
@@ -123,7 +123,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 			rx_initialize_os(config_.processor.real_time, tls, server_name.c_str());
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
-				<< "rx-platform "
+				<< "{rx-platform} "
 				<< rx_gate::instance().get_rx_version()
 				<< "\r\n\r\n";
 			string_array hosts;
@@ -155,7 +155,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 				std::cout << "OK\r\n";
 				char buff[0x20];
 				sprintf(buff, "%d", rx_gate::instance().get_pid());
-				HOST_LOG_INFO("Main", 900, "rx-platform running on PID "s + buff);
+				HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
 
 				std::cout << "Registering plug-ins...";
 				ret = register_plugins(plugins);
@@ -298,7 +298,7 @@ string_type simple_platform_host::just_parse_command_line (int argc, char* argv[
 	string_type server_name;
 
 	std::cout << "\r\n"
-		<< "rx-platform Simple Host"
+		<< "{rx-platform} Simple Host"
 		<< "\r\n======================================\r\n";
 
 	bool ret = parse_command_line(argc, argv, config);

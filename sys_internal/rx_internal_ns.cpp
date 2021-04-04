@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -702,8 +702,6 @@ template class rx_internal::internal_ns::rx_item_implementation<rx_application_p
 template class rx_internal::internal_ns::rx_item_implementation<rx_object_ptr>;
 template class rx_internal::internal_ns::rx_item_implementation<rx_port_ptr>;
 template class rx_internal::internal_ns::rx_other_implementation<testing::test_case::smart_ptr>;
-template class rx_internal::internal_ns::rx_other_implementation<rx_internal::terminal::server_command_ptr>;
-template class rx_internal::internal_ns::rx_other_implementation<program_runtime_ptr>;
 
 template class rx_internal::internal_ns::rx_meta_item_implementation<rx_application_type_ptr>;
 template class rx_internal::internal_ns::rx_meta_item_implementation<rx_domain_type_ptr>;
@@ -717,3 +715,8 @@ template class rx_internal::internal_ns::rx_meta_item_implementation<variable_ty
 template class rx_internal::internal_ns::rx_meta_item_implementation<event_type_ptr>;
 template class rx_internal::internal_ns::rx_meta_item_implementation<filter_type_ptr>;
 template class rx_internal::internal_ns::rx_meta_item_implementation<source_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<method_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<program_type_ptr>;
+template class rx_internal::internal_ns::rx_meta_item_implementation<display_type_ptr>;
+
+template class rx_internal::internal_ns::rx_meta_item_implementation<data_type_ptr>;

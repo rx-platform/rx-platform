@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -130,15 +130,18 @@ void console_runtime::get_prompt (string_type& prompt)
 void console_runtime::get_wellcome (string_type& wellcome)
 {
 	wellcome.clear();
-	wellcome += ">Connecting terminal as ";
-	wellcome += security::active_security()->get_full_name();
-	wellcome += "...\r\n\r\n";
-	wellcome += g_console_welcome;	
-	wellcome += "\r\n\r\n" ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
-	wellcome += get_console_terminal();
-	wellcome += "\r\n";
-	wellcome += "";
-	wellcome += RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
+	std::ostringstream ss;
+	ss << "\r\n";
+	ss << g_console_welcome;	
+	ss << "\r\n\r\n" ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
+	ss << get_console_terminal()
+		<< "\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
+	ss << "Type " 
+		<< ANSI_COLOR_YELLOW "\"help\"" ANSI_COLOR_RESET ", "
+		<< ANSI_COLOR_YELLOW "\"copyright\"" ANSI_COLOR_RESET ", or "
+		<< ANSI_COLOR_YELLOW "\"license\"" ANSI_COLOR_RESET " for more information."
+		<< "\r\n";
+	wellcome = ss.str();
 }
 
 const string_type& console_runtime::get_console_terminal ()
@@ -421,7 +424,25 @@ rx_protocol_result_t console_runtime::received_function (rx_protocol_stack_endpo
 	{
 		memory::buffer_ptr out_buffer(pointers::_create_new);
 		memory::buffer_ptr err_buffer(pointers::_create_new);
-		self->do_command(std::move(line), out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
+		auto idx = line.find(RX_LINE_END_CH);
+		if (idx != string_type::npos)
+		{// we have more then one line at once
+			string_array lines;
+			size_t idx_first = 0;
+			do
+			{
+				lines.emplace_back(line.substr(idx_first, idx - idx_first));
+				idx_first = idx;
+				idx_first++;
+				idx = line.find(RX_LINE_END_CH, idx + 1);
+			} while (idx != string_type::npos);
+			
+			self->do_commands(std::move(lines), out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
+		}
+		else
+		{
+			self->do_command(std::move(line), out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
+		}
 	}
 	return RX_PROTOCOL_OK;
 }
@@ -431,6 +452,13 @@ rx_protocol_result_t console_runtime::connected_function (rx_protocol_stack_endp
 	console_runtime* self = reinterpret_cast<console_runtime*>(reference->user_data);
 	memory::buffer_ptr out_buffer(pointers::_create_new);
 	memory::buffer_ptr err_buffer(pointers::_create_new);
+
+	std::ostream out(out_buffer.unsafe_ptr());
+	out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW ">>>" ANSI_COLOR_RESET "Connecting terminal as ";
+	out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN
+		<< security::active_security()->get_full_name()
+		<< ANSI_COLOR_RESET;
+	out << "...\r\n";
 	self->do_command("welcome", out_buffer, err_buffer, rx_create_reference<security::unathorized_security_context>());
 	return RX_PROTOCOL_OK;
 }

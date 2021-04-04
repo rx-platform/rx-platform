@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -143,7 +143,7 @@ private:\
 
 void init_compiled_meta_types();
 
-typedef TYPELIST_6(variable_type, source_type, event_type, filter_type, mapper_type, struct_type) simple_rx_types;
+typedef TYPELIST_9(variable_type, source_type, event_type, filter_type, mapper_type, program_type, struct_type, method_type, display_type) simple_rx_types;
 typedef TYPELIST_4(object_type, port_type, application_type, domain_type) object_rx_types;
 //typedef TYPELIST_11(reference_type, port_class, object_class, variable_class, source_class, event_class, filter_class, mapper_class, application_class, domain_class, struct_class) full_rx_types;
 
@@ -496,6 +496,18 @@ public:
 };
 
 
+enum class resolver_event_verb
+{
+    created,
+    updated,
+    deleted
+};
+struct resolver_event_data
+{
+    resolver_event_verb verb;
+    rx_node_id id;
+    string_type path;
+};
 
 
 
@@ -508,6 +520,40 @@ class types_resolver
 		meta_data data;
 	};
 	typedef std::map<rx_node_id, resolver_data> types_hash_t;
+    struct resolver_subscriber_data
+    {
+        rx_thread_handle_t notify_thread;
+        std::function<void(resolver_event_data)> callback;
+    };
+    std::map<rx_reference_ptr, resolver_subscriber_data> subscribers_;
+  public:
+    template<typename Tptr>
+    void register_subscriber(Tptr who, std::function<void(resolver_event_data)> callback)
+    {
+        rx_post_function_to(RX_DOMAIN_META, who, [this, who, callback] {
+            rx_reference_ptr anchor = who;
+            auto it = subscribers_.find(anchor);
+            if (it == subscribers_.end())
+            {
+                resolver_subscriber_data data;
+                data.callback = std::move(callback);
+                data.notify_thread = who->get_executer();
+                subscribers_.emplace(anchor, std::move(data));
+            }
+            });
+    }
+    template<typename Tptr>
+    void unregister_subscriber(Tptr who)
+    {
+        rx_post_function_to(RX_DOMAIN_META, who, [this, who] {
+            rx_reference_ptr anchor = who;
+            auto it = subscribers_.find(anchor);
+            if (it != subscribers_.end())
+            {
+                subscribers_.erase(it);
+            }
+            });
+    }
 
   public:
 
@@ -520,6 +566,8 @@ class types_resolver
       rx_result remove_id (const rx_node_id& id);
 
       rx_item_type get_item_data (const rx_node_id& id, meta_data& data) const;
+
+      rx_result update_id (const rx_node_id& id);
 
 
   protected:
@@ -613,6 +661,62 @@ public:
       constructors_type constructors_;
 
       std::function<RTypePtr()> default_constructor_;
+};
+
+
+
+
+
+
+class data_type_repository 
+{
+    data_type_repository(const data_type_repository&) = delete;
+    data_type_repository(data_type_repository&&) = delete;
+    void operator=(const data_type_repository&) = delete;
+    void operator=(data_type_repository&&) = delete;
+
+public:
+    typedef data_type HType;
+    typedef typename data_type::RDataType RDataType;
+    typedef typename data_type::smart_ptr Tptr;
+    typedef rx_result_with<Tptr> TdefRes;
+
+    typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+
+  public:
+      data_type_repository();
+
+
+      data_type_repository::TdefRes get_type_definition (const rx_node_id& id) const;
+
+      rx_result register_type (data_type_repository::Tptr what);
+
+      rx_result_with<data_type_repository::RDataType> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
+
+      api::query_result get_derived_types (const rx_node_id& id) const;
+
+      rx_result check_type (const rx_node_id& id, type_check_context& ctx) const;
+
+      rx_result delete_type (rx_node_id id);
+
+      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
+      rx_result update_type (data_type_repository::Tptr what);
+
+      rx_result type_exists (rx_node_id id) const;
+
+
+  protected:
+
+  private:
+
+
+      inheritance_hash inheritance_hash_;
+
+
+      registered_types_type registered_types_;
+
+
 };
 
 
@@ -739,6 +843,10 @@ class platform_types_manager
 	  {
 		  return relations_repository_;
 	  }
+      data_type_repository& get_data_types_repository()
+      {
+          return data_types_repository_;
+      }
 	  template<class T>
 	  types_repository<T>& get_type_repository()
 	  {
@@ -759,6 +867,8 @@ class platform_types_manager
       types_resolver types_resolver_;
 
       relations_type_repository relations_repository_;
+
+      data_type_repository data_types_repository_;
 
 	  template <class typeT>
 	  friend class algorithms::types_model_algorithm;

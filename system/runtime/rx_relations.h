@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -122,6 +122,8 @@ class relation_data : public rx::pointers::reference_object
     friend class rx_internal::model::relations_type_repository;
     template <class typeT>
     friend class meta::meta_algorithm::object_types_algorithm;
+    template <class typeT>
+    friend class meta::meta_algorithm::object_data_algorithm;
     enum class relation_state
     {
         idle = 0,
@@ -210,8 +212,8 @@ class relation_data : public rx::pointers::reference_object
 
       relation_data(const relation_data&) = delete;
       relation_data& operator=(const relation_data&) = delete;
-      relation_data(relation_data&&) = default;
-      relation_data& operator=(relation_data&&) = default;
+      relation_data(relation_data&&) noexcept = default;
+      relation_data& operator=(relation_data&&) noexcept = default;
   protected:
 
   private:
@@ -254,10 +256,12 @@ class relations_holder
     typedef std::vector<relation_data::smart_ptr> implicit_relations_type;
     template<class typeT>
     friend class meta::meta_algorithm::object_types_algorithm;
+    template<class typeT>
+    friend class meta::meta_algorithm::object_data_algorithm;
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const;
 
       virtual rx_result initialize_relations (runtime::runtime_init_context& ctx);
 
@@ -271,7 +275,7 @@ class relations_holder
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine);
 
       relation_data::smart_ptr get_relation (const string_type& name);
 

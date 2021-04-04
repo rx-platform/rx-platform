@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -531,7 +531,7 @@ struct WSAData wsaData;
 void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 {
 
-	OutputDebugStringA("rx-platform initializing 1...");
+	OutputDebugStringA("{rx-platform} initializing 1...");
 
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
@@ -598,7 +598,7 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 	BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
 
 
-	OutputDebugStringA("rx-platform initializing 3...");
+	OutputDebugStringA("{rx-platform} initializing 3...");
 
 #ifndef _DEBUG
 	if (rt)

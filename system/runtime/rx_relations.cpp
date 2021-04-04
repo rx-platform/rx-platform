@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -405,13 +405,14 @@ rx_result relation_data::resolve_inverse_name ()
 // Class rx_platform::runtime::relations::relations_holder 
 
 
-rx_result relations_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+rx_result relations_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const
 {
 	// check relations, but only for exact name
 	for (const auto& one : source_relations_)
 	{
 		if (one->name == path)
 		{
+			not_mine = false;
 			val = one->value.get_value(ctx);
 			return true;
 		}
@@ -420,10 +421,12 @@ rx_result relations_holder::get_value (const string_type& path, rx_value& val, r
 	{
 		if (one->name == path)
 		{
+			not_mine = false;
 			val = one->value.get_value(ctx);
 			return true;
 		}
 	}
+	not_mine = true;
 	return path + " not found!";
 }
 
@@ -534,7 +537,7 @@ void relations_holder::collect_data (data::runtime_values_data& data, runtime_va
 	}
 }
 
-rx_result relations_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+rx_result relations_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine)
 {
 	if (path.empty())
 	{
@@ -565,6 +568,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 			attr.value.assign_static<string_type>(string_type(one->target_path));
 			items.push_back(attr);
 		}
+		not_mine = false;
 		return true;
 	}
 	else
@@ -585,6 +589,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		{
 			if (one->name == sub_path)
 			{
+				not_mine = false;
 				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
 			}
 		}
@@ -592,6 +597,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		{
 			if (one->name == sub_path)
 			{
+				not_mine = false;
 				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
 			}
 		}
@@ -599,9 +605,11 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		{
 			if (one->name == sub_path)
 			{
+				not_mine = false;
 				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
 			}
 		}
+		not_mine = true;
 		return path + " not found";
 	}
 }

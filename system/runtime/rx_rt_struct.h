@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -1569,6 +1569,33 @@ class mapper_write_task : public variable_write_task
 
 
       runtime_transaction_id_t transaction_id_;
+
+
+};
+
+
+
+
+
+
+class block_data 
+{
+    typedef const_size_vector<const_value_data> values_type;
+    typedef const_size_vector<block_data> children_type;
+
+  public:
+
+      values_type values;
+
+      children_type children;
+
+      operator bool() const
+      {
+          return values.empty() && children.empty();
+      }
+  protected:
+
+  private:
 
 
 };

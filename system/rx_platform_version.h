@@ -2,9 +2,9 @@
 
 #include "version/rx_version.h"
 
-#define RX_SERVER_NAME "Atom" 
+#define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
-#define RX_SERVER_MINOR_VERSION 1
+#define RX_SERVER_MINOR_VERSION 2
 #define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
@@ -28,4 +28,6 @@
 // version 1.0.1 tcp/ip connection, housekeeping and rx-architect
 // version 1.0.2 master port and more rx-architect
 // version 1.1.0 domain, application and parent types are now item reference instead of node id
+// version 1.1.1 code creation process done with plugins implementing it
+// version 1.2.0 data_type and block_data added to platform
 

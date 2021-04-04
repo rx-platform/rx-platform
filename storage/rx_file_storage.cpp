@@ -8,21 +8,21 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -94,32 +94,6 @@ sys_handle_t file_system_storage::get_host_console_script_file (const string_typ
 	string_type full_path = rx_combine_paths(root_ + "_script/", path);
 	sys_handle_t file = rx_file(full_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	return file;
-}
-
-const string_type& file_system_storage::get_license ()
-{
-	static string_type lic_cached;
-	static bool tried_get = false;
-	if (!tried_get)
-	{
-		tried_get = true;
-		string_type lic_path = rx_combine_paths(root_, "rx-system-storage/LICENSE");
-		sys_handle_t file = rx_file(lic_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-		if (file)
-		{
-			uint64_t size = 0;
-			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
-			{
-				lic_cached.assign(size, ' ');
-				if (RX_OK != rx_file_read(file, &lic_cached[0], (uint32_t)size, nullptr))
-				{
-					lic_cached.clear();
-				}
-			}
-			rx_file_close(file);
-		}
-	}
-	return lic_cached;
 }
 
 rx_result file_system_storage::init_storage (const string_type& storage_reference, hosting::rx_platform_host* host)
@@ -384,7 +358,7 @@ string_type file_system_storage::get_runtime_file_path (const meta::meta_data& d
 		if (idx != string_type::npos)
 			file_path = rx_combine_paths(root + RX_FILE_STORAGE_RUNTIME_DIR, data.path.substr(idx + 1));
 		else
-			file_path = root;
+			file_path = root + RX_FILE_STORAGE_RUNTIME_DIR;
 		file_path = rx_combine_paths(file_path, data.name + "." + RX_RUNTIME_JSON_FILE_EXTENSION);
 		runtime_cache_.emplace(data.get_full_path(), file_path);
 		return file_path;
