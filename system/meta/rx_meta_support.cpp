@@ -36,6 +36,7 @@
 
 #include "system/runtime/rx_rt_struct.h"
 #include "system/runtime/rx_blocks.h"
+#include "rx_def_blocks.h"
 using namespace rx_platform::runtime::structure;
 
 
@@ -611,6 +612,55 @@ type_check_source::~type_check_source()
 
 
 // Class rx_platform::meta::display_data_prototype 
+
+
+// Class rx_platform::meta::data_blocks_prototype 
+
+
+void data_blocks_prototype::add (const string_type& name, data_blocks_prototype&& value)
+{
+	if (check_name(name))
+	{
+		members_index_type new_idx = static_cast<members_index_type>(children.size());
+		children.emplace_back(std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_data_index_type });
+	}
+}
+
+void data_blocks_prototype::add_value (const string_type& name, rx_simple_value val)
+{
+	if (check_name(name))
+	{
+		members_index_type new_idx = static_cast<members_index_type>(values.size());
+		values.push_back({ val });
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
+	}
+}
+
+bool data_blocks_prototype::check_name (const string_type& name) const
+{
+	for (const auto& one : items)
+	{
+		if (one.name == name)
+			return false;
+	}
+	return true;
+}
+
+runtime::structure::block_data data_blocks_prototype::create_runtime ()
+{
+	runtime::structure::block_data ret;
+	std::vector<block_data> complex_items;
+	complex_items.reserve(children.size());
+	for (auto& one : children)
+	{
+		complex_items.emplace_back(one.create_runtime());
+	}
+	ret.items = const_size_vector<index_data>(std::move(items));
+	ret.values = const_size_vector<const_value_data>(std::move(values));
+	ret.children = const_size_vector<block_data>(std::move(complex_items));
+	return ret;
+}
 
 
 } // namespace meta

@@ -37,12 +37,12 @@
 #define RX_NO_INVERSE_NAME_FOUND 0x802
 
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_display_blocks
 #include "system/runtime/rx_display_blocks.h"
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 #include "system/server/rx_ns.h"
 
@@ -557,6 +557,49 @@ class construct_context
       data::runtime_values_data overrides_;
 
       active_state_t state_;
+
+
+};
+
+
+
+
+
+
+class data_blocks_prototype 
+{
+    typedef std::vector<runtime::structure::const_value_data> values_type;
+    typedef std::vector<data_blocks_prototype> children_type;
+
+    typedef std::vector<runtime::structure::index_data> items_type;
+
+  public:
+
+      void add (const string_type& name, data_blocks_prototype&& value);
+
+      void add_value (const string_type& name, rx_simple_value val);
+
+      runtime::structure::block_data create_runtime ();
+
+
+      items_type items;
+
+      values_type values;
+
+      children_type children;
+
+      bool success;
+
+      operator bool() const
+      {
+          return success;
+      }
+  protected:
+
+  private:
+
+      bool check_name (const string_type& name) const;
+
 
 
 };

@@ -149,7 +149,8 @@ typedef DWORD(__stdcall *
 	);
 
 
-uint64_t g_res;
+uint64_t g_res_m;
+uint64_t g_res_u;
 uint64_t g_start;
 
 int rx_os_get_system_time(struct rx_time_struct_t* st)
@@ -555,7 +556,8 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 	LARGE_INTEGER start;
 	QueryPerformanceFrequency(&res);
 	QueryPerformanceCounter(&start);
-	g_res = res.QuadPart;
+	g_res_m = ((1ULL << 32) * 1'000ULL) / res.QuadPart;
+	g_res_u = ((1ULL << 32) * 1'000'000ULL) / res.QuadPart;
 	g_start = start.QuadPart;
 
 	DWORD err = 0;
@@ -1251,17 +1253,24 @@ uint32_t rx_get_tick_count()
 {
 	LARGE_INTEGER ret;
 	QueryPerformanceCounter(&ret);
-	uint64_t now = ret.QuadPart;
-	DWORD tick = (DWORD)(now * 1000L / g_res);
-	return tick;
+	uint64_t low_ticks = ret.LowPart;
+	uint64_t high_ticks = ret.HighPart;
+	low_ticks *= g_res_m;
+	high_ticks *= g_res_m;
+
+	return (uint32_t)((low_ticks >> 32) + high_ticks);
 }
 uint64_t rx_get_us_ticks()
 {
 
 	LARGE_INTEGER ret;
 	QueryPerformanceCounter(&ret);
-	uint64_t now = ret.QuadPart;
-	return (now * 1000000L / g_res);
+	uint64_t low_ticks = ret.LowPart;
+	uint64_t high_ticks = ret.HighPart;
+	low_ticks *= g_res_u;
+	high_ticks *= g_res_u;
+
+	return (low_ticks >> 32) + high_ticks;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

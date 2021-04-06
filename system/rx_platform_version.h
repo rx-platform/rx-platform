@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 2
-#define RX_SERVER_BUILD_NUMBER 0
+#define RX_SERVER_BUILD_NUMBER 1
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -29,5 +29,6 @@
 // version 1.0.2 master port and more rx-architect
 // version 1.1.0 domain, application and parent types are now item reference instead of node id
 // version 1.1.1 code creation process done with plugins implementing it
-// version 1.2.0 data_type and block_data added to platform
+// version 1.2.0 data_type, display_type and method_type added to platform
+// version 1.2.1 block_data implemented in runtime
 

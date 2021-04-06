@@ -325,16 +325,27 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		{
 			mine = path.substr(0, idx);
 			bellow = path.substr(idx + 1);
-		}
-		else
-		{
-			mine = path;
-			bellow = "";
-		}
-		auto& sub_item = get_sub_item(mine, false);
-		if (sub_item)
-		{
-			return sub_item->get_value(bellow, val, ctx);
+			auto idx = internal_get_index(mine);
+			if (idx && is_complex_index(idx))
+			{
+				switch (idx & rt_type_mask)
+				{
+				case rt_variable_index_type:
+					return variables.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				case rt_struct_index_type:
+					return structs.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				case rt_source_index_type:
+					return sources.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				case rt_mapper_index_type:
+					return mappers.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				case rt_filter_index_type:
+					return filters.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				case rt_event_index_type:
+					return events.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				default:
+					RX_ASSERT(false);
+				}
+			}
 		}
 		else// its' ours
 		{
@@ -374,31 +385,6 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	}
 	for (auto& one : values)
 		one.object_state_changed(ctx);
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_index (const string_type& name) const
-{
-	for (const auto& one : items)
-	{
-		if (one.name == name)
-			return one.index;
-	}
-	return 0;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_value_index (members_index_type idx) const
-{
-	auto temp = idx & rt_type_mask;
-	return temp == rt_const_index_type || temp == rt_value_index_type || temp == rt_variable_index_type;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_complex_index (members_index_type idx) const
-{
-	auto temp = idx & rt_type_mask;
-	return temp != rt_const_index_type && temp != rt_value_index_type && temp;
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
@@ -616,60 +602,6 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-const runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_sub_item (const string_type& path, bool include_vars) const
-{
-	static runtime_item::smart_ptr g_empty;
-
-	auto idx = internal_get_index(path);
-	if (idx && ((include_vars && is_complex_index(idx)) || (!include_vars && !is_value_index(idx))))
-	{
-		switch (idx&rt_type_mask)
-		{
-		case rt_variable_index_type:
-			return variables.collection[idx >> rt_type_shift].item;
-		case rt_struct_index_type:
-			return structs.collection[idx >> rt_type_shift].item;
-		case rt_source_index_type:
-			return sources.collection[idx >> rt_type_shift].item;
-		case rt_mapper_index_type:
-			return mappers.collection[idx >> rt_type_shift].item;
-		case rt_filter_index_type:
-			return filters.collection[idx >> rt_type_shift].item;
-		case rt_event_index_type:
-			return events.collection[idx >> rt_type_shift].item;
-		}
-	}
-	return g_empty;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_item::smart_ptr& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_sub_item (const string_type& path, bool include_vars)
-{
-	static runtime_item::smart_ptr g_empty;
-
-	auto idx = internal_get_index(path);
-	if (idx && is_complex_index(idx))
-	{
-		switch (idx&rt_type_mask)
-		{
-		case rt_variable_index_type:
-			return variables.collection[idx >> rt_type_shift].item;
-		case rt_struct_index_type:
-			return structs.collection[idx >> rt_type_shift].item;
-		case rt_source_index_type:
-			return sources.collection[idx >> rt_type_shift].item;
-		case rt_mapper_index_type:
-			return mappers.collection[idx >> rt_type_shift].item;
-		case rt_filter_index_type:
-			return filters.collection[idx >> rt_type_shift].item;
-		case rt_event_index_type:
-			return events.collection[idx >> rt_type_shift].item;
-		}
-	}
-	return g_empty;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_value_ref (const string_type& path, rt_value_ref& ref)
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
@@ -678,9 +610,27 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto& sub_item = get_sub_item(mine);
-		if (sub_item)
-			return sub_item->get_value_ref(bellow, ref);
+		auto idx = internal_get_index(mine);
+		if (idx && is_complex_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_variable_index_type:
+				return variables.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			case rt_struct_index_type:
+				return structs.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			case rt_source_index_type:
+				return sources.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			case rt_mapper_index_type:
+				return mappers.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			case rt_filter_index_type:
+				return filters.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			case rt_event_index_type:
+				return events.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			default:
+				RX_ASSERT(false);
+			}
+		}
 	}
 	else// its' ours
 	{
@@ -710,63 +660,110 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::browse_items (const string_type& filter, const string_type& current_path, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
 {
-	for (const auto& one : this->items)
+	if (path.empty())
 	{
-		runtime_item_attribute one_attr;
-		switch (one.index&rt_type_mask)
+		for (const auto& one : this->items)
 		{
-		case rt_const_index_type:
-			one_attr.name = one.name;
-			one_attr.value = const_values[(one.index >> rt_type_shift)].get_value(ctx);
-			one_attr.type = rx_attribute_type::const_attribute_type;
-			break;
-		case rt_value_index_type:
-			one_attr.name = one.name;
-			one_attr.value = values[(one.index >> rt_type_shift)].get_value(ctx);
-			one_attr.type = rx_attribute_type::value_attribute_type;
-			break;
-		case rt_variable_index_type:
-			one_attr.name = one.name;
-			if constexpr (has_variables())
-				one_attr.value = variables.collection[(one.index >> rt_type_shift)].get_value(ctx);
-			one_attr.type = rx_attribute_type::variable_attribute_type;
-			break;
-		case rt_struct_index_type:
-			one_attr.name = one.name;
-			one_attr.type = rx_attribute_type::struct_attribute_type;
-			break;
-		case rt_source_index_type:
-			one_attr.name = one.name;
-			one_attr.type = rx_attribute_type::source_attribute_type;
-			break;
-		case rt_mapper_index_type:
-			one_attr.name = one.name;
-			one_attr.type = rx_attribute_type::mapper_attribute_type;
-			break;
-		case rt_filter_index_type:
-			one_attr.name = one.name;
-			one_attr.type = rx_attribute_type::filter_attribute_type;
-			break;
-		case rt_event_index_type:
-			one_attr.name = one.name;
-			one_attr.type = rx_attribute_type::event_attribute_type;
-			break;
-		default:
-			one_attr.type = rx_attribute_type::invalid_attribute_type_type;
+			runtime_item_attribute one_attr;
+			switch (one.index & rt_type_mask)
+			{
+			case rt_const_index_type:
+				one_attr.name = one.name;
+				one_attr.value = const_values[(one.index >> rt_type_shift)].get_value(ctx);
+				one_attr.type = rx_attribute_type::const_attribute_type;
+				break;
+			case rt_value_index_type:
+				one_attr.name = one.name;
+				one_attr.value = values[(one.index >> rt_type_shift)].get_value(ctx);
+				one_attr.type = rx_attribute_type::value_attribute_type;
+				break;
+			case rt_variable_index_type:
+				one_attr.name = one.name;
+				if constexpr (has_variables())
+					one_attr.value = variables.collection[(one.index >> rt_type_shift)].get_value(ctx);
+				one_attr.type = rx_attribute_type::variable_attribute_type;
+				break;
+			case rt_struct_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::struct_attribute_type;
+				break;
+			case rt_source_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::source_attribute_type;
+				break;
+			case rt_mapper_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::mapper_attribute_type;
+				break;
+			case rt_filter_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::filter_attribute_type;
+				break;
+			case rt_event_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::event_attribute_type;
+				break;
+			default:
+				RX_ASSERT(false);
+				one_attr.type = rx_attribute_type::invalid_attribute_type_type;
+			}
+			if (one_attr.type != rx_attribute_type::invalid_attribute_type_type)
+			{
+				if(prefix.empty())
+					one_attr.full_path = one.name;
+				else
+					one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one.name;
+
+				items.emplace_back(std::move(one_attr));
+			}
 		}
-		if (one_attr.type != rx_attribute_type::invalid_attribute_type_type)
-		{
-			one_attr.full_path = current_path + one.name;
-			items.emplace_back(std::move(one_attr));
-		}
+		return true;
 	}
-	return true;
+	else
+	{
+		size_t idx = path.find(RX_OBJECT_DELIMETER);
+		string_type mine;
+		string_type bellow;
+		if (idx != string_type::npos)
+		{// bellow us, split it
+			mine = path.substr(0, idx);
+			bellow = path.substr(idx + 1);
+		}
+		else
+		{
+			mine = path;
+		}
+		auto item_idx = internal_get_index(mine);
+		if (item_idx && is_complex_index(item_idx))
+		{
+			string_type prefix_bellow = prefix.empty() ? mine : prefix + RX_OBJECT_DELIMETER + mine;
+			switch (item_idx & rt_type_mask)
+			{
+				case rt_variable_index_type:
+					return variables.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_struct_index_type:
+					return structs.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_source_index_type:
+					return sources.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_mapper_index_type:
+					return mappers.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_filter_index_type:
+					return filters.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_event_index_type:
+					return events.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				default:
+					RX_ASSERT(false);
+			}
+		}
+		return prefix + path + " not found!";
+	}
+	
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-const runtime_item* runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::faster_get_child_item (const char* path, size_t& idx) const
+const runtime_item* runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_child_item (const char* path, size_t& idx) const
 {
 	const runtime_item* ret = nullptr;
 	size_t start_idx = idx;
@@ -803,6 +800,8 @@ const runtime_item* runtime_data<variables_type,structs_type,sources_type,mapper
 			case rt_event_index_type:
 				ret = events.collection[one.index >> rt_type_shift].item.get();
 				break;
+			default:
+				RX_ASSERT(false);
 			}
 		}
 		if (ret)
@@ -898,9 +897,27 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto& sub_item = get_sub_item(mine);
-		if (sub_item)
-			return sub_item->get_local_value(bellow, val);
+		auto idx = internal_get_index(mine);
+		if (idx && is_complex_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_variable_index_type:
+				return variables.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			case rt_struct_index_type:
+				return structs.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			case rt_source_index_type:
+				return sources.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			case rt_mapper_index_type:
+				return mappers.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			case rt_filter_index_type:
+				return filters.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			case rt_event_index_type:
+				return events.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+			default:
+				RX_ASSERT(false);
+			}
+		}
 	}
 	else// its' ours
 	{
@@ -915,10 +932,54 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			case rt_value_index_type:
 				val = values[idx >> rt_type_shift].simple_get_value();
 				return true;
+			case rt_variable_index_type:
+				break;// nothing to do, variables are not treated as local
+			default:
+				RX_ASSERT(false);
 			}
 		}
 	}
 	return path + " not found!";
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_index (const string_type& name) const
+{
+	for (const auto& one : items)
+	{
+		if (one.name == name)
+			return one.index;
+	}
+	return 0;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_value_index (members_index_type idx) const
+{
+	auto temp = idx & rt_type_mask;
+	return temp == rt_const_index_type || temp == rt_value_index_type || temp == rt_variable_index_type;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_complex_index (members_index_type idx) const
+{
+	auto temp = idx & rt_type_mask;
+	return temp != rt_const_index_type && temp != rt_value_index_type && temp;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_this_yours (const string_type& path) const
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{
+		return internal_get_index(path) != 0;
+	}
+	else
+	{
+		return internal_get_index(path.substr(0, idx)) != 0;
+	}
+	return false;
 }
 
 
@@ -1076,7 +1137,7 @@ variable_data::variable_data()
 	pending_tasks_ = std::make_unique< std::map<runtime_transaction_id_t, variable_write_task*> >();
 }
 
-variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var)
+variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype)
 	: item(std::move(rt))
 	, variable_ptr(std::move(var))
 {
@@ -1290,6 +1351,48 @@ void variable_data::process_result (runtime_transaction_id_t id, rx_result&& res
 	}
 }
 
+rx_result variable_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	if (path.empty())
+	{
+		val = get_value(ctx);
+		return true;
+	}
+	else
+	{
+		return item->get_value(path, val, ctx);
+	}
+}
+
+rx_result variable_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	if (path.empty())
+	{
+		ref.ref_type = rt_value_ref_type::rt_variable;
+		ref.ref_value_ptr.variable = this;
+		return true;
+	}
+	else
+	{
+		return item->get_value_ref(path, ref);
+	}
+}
+
+rx_result variable_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* variable_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result variable_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
+}
+
 
 // Class rx_platform::runtime::structure::struct_data 
 
@@ -1299,7 +1402,7 @@ struct_data::struct_data()
 {
 }
 
-struct_data::struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var)
+struct_data::struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var, const struct_data& prototype)
 	: item(std::move(rt))
 	, struct_ptr(std::move(var))
 {
@@ -1357,6 +1460,31 @@ void struct_data::process_runtime (runtime_process_context* ctx)
 {
 }
 
+rx_result struct_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	return item->get_value(path, val, ctx);
+}
+
+rx_result struct_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item->get_value_ref(path, ref);
+}
+
+rx_result struct_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* struct_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result struct_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
+}
+
 
 // Class rx_platform::runtime::structure::mapper_data 
 
@@ -1368,7 +1496,7 @@ mapper_data::mapper_data()
 {
 }
 
-mapper_data::mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var)
+mapper_data::mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var, const mapper_data& prototype)
       : my_variable_(nullptr),
         context_(nullptr)
 	, item(std::move(rt))
@@ -1581,6 +1709,31 @@ void mapper_data::process_write_result (rx_result&& result, runtime_transaction_
 	}
 }
 
+rx_result mapper_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	return item->get_value(path, val, ctx);
+}
+
+rx_result mapper_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item->get_value_ref(path, ref);
+}
+
+rx_result mapper_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* mapper_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result mapper_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
+}
+
 
 // Class rx_platform::runtime::structure::source_data 
 
@@ -1592,7 +1745,7 @@ source_data::source_data()
 {
 }
 
-source_data::source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var)
+source_data::source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var, const source_data& prototype)
       : my_variable_(nullptr),
         context_(nullptr)
 	, item(std::move(rt))
@@ -1786,6 +1939,31 @@ void source_data::add_periodic_job (jobs::periodic_job::smart_ptr job)
 	rx_internal::infrastructure::server_runtime::instance().append_calculation_job(job);
 }
 
+rx_result source_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	return item->get_value(path, val, ctx);
+}
+
+rx_result source_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item->get_value_ref(path, ref);
+}
+
+rx_result source_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* source_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result source_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
+}
+
 
 // Class rx_platform::runtime::structure::event_data 
 
@@ -1795,9 +1973,10 @@ event_data::event_data()
 {
 }
 
-event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var)
+event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, const event_data& prototype)
 	: item(std::move(rt))
 	, event_ptr(std::move(var))
+	, arguments(std::move(prototype.arguments))
 {
 }
 
@@ -1853,6 +2032,115 @@ void event_data::process_runtime (runtime_process_context* ctx)
 {
 }
 
+rx_result event_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	if (path.empty())
+	{
+		return "Prazno jebi ga!!!";
+	}
+	else
+	{
+		auto idx = path.find(RX_OBJECT_DELIMETER);
+		string_type sub_path;
+		string_type rest_path;
+		if (idx != string_type::npos)
+		{
+			sub_path = path.substr(0, idx);
+			rest_path = path.substr(idx + 1);
+		}
+		else
+		{
+			sub_path = path;
+		}
+		if (sub_path == "Args")
+		{
+			return arguments.get_value( rest_path, val, ctx);
+		}
+		else
+		{
+			return item->get_value(path, val, ctx);
+		}
+	}
+}
+
+rx_result event_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	if (path.empty())
+	{
+		return "Prazno jebi ga!!!";
+	}
+	else
+	{
+		auto idx = path.find(RX_OBJECT_DELIMETER);
+		string_type sub_path;
+		string_type rest_path;
+		if (idx != string_type::npos)
+		{
+			sub_path = path.substr(0, idx);
+			rest_path = path.substr(idx + 1);
+		}
+		else
+		{
+			sub_path = path;
+		}
+		if (sub_path == "Args")
+		{
+			return arguments.get_value_ref(rest_path, ref);
+		}
+		else
+		{
+			return item->get_value_ref(path, ref);
+		}
+	}
+}
+
+rx_result event_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	if (path.empty())
+	{
+		runtime_item_attribute args_attr;
+		args_attr.name = "Args";
+		args_attr.type = rx_attribute_type::data_attribute_type;
+		args_attr.full_path = prefix.empty() ? args_attr.name : prefix+RX_OBJECT_DELIMETER + args_attr.name;
+		items.emplace_back(std::move(args_attr));
+		return item->browse_items(prefix, path, filter, items, ctx);
+	}
+	else
+	{
+		auto idx = path.find(RX_OBJECT_DELIMETER);
+		string_type sub_path;
+		string_type rest_path;
+		if (idx != string_type::npos)
+		{
+			sub_path = path.substr(0, idx);
+			rest_path = path.substr(idx + 1);
+		}
+		else
+		{
+			sub_path = path;
+		}
+		if (sub_path == "Args")
+		{
+			string_type bellow_prefix = prefix.empty() ? sub_path : prefix + RX_OBJECT_DELIMETER + sub_path;
+			return arguments.browse_items(bellow_prefix, rest_path, filter, items, ctx);
+		}
+		else
+		{
+			return item->browse_items(prefix, path, filter, items, ctx);
+		}
+	}
+}
+
+const runtime_item* event_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result event_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
+}
+
 
 // Class rx_platform::runtime::structure::filter_data 
 
@@ -1863,7 +2151,7 @@ filter_data::filter_data()
 {
 }
 
-filter_data::filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var)
+filter_data::filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var, const filter_data& prototype)
       : context_(nullptr)
 	, item(std::move(rt))
 	, filter_ptr(std::move(var))
@@ -1972,6 +2260,31 @@ rx_result filter_data::set_value (runtime_handle_t handle, values::rx_simple_val
 		RX_ASSERT(false);
 		return "Context not binded!";
 	}
+}
+
+rx_result filter_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	return item->get_value(path, val, ctx);
+}
+
+rx_result filter_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	return item->get_value_ref(path, ref);
+}
+
+rx_result filter_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* filter_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	return item->internal_get_child_item(path, idx);
+}
+
+rx_result filter_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return item->get_local_value(path, val);
 }
 
 
@@ -2089,22 +2402,12 @@ const runtime_item* runtime_item::get_child_item (const string_type& path) const
 	size_t end = path.size();
 	do
 	{
-		ret = ret->faster_get_child_item(c_path, idx);
+		ret = ret->internal_get_child_item(c_path, idx);
 		idx++;
 	} while (ret && idx< end);
 
 	return ret;
 }
-
-
-// Class rx_platform::runtime::structure::fill_context 
-
-fill_context::fill_context (runtime_process_context* ctx)
-	: now(rx_time::now())
-	, context(ctx)
-{
-}
-
 
 
 // Class rx_platform::runtime::structure::indirect_value_data 
@@ -2165,6 +2468,388 @@ void mapper_write_task::process_result (runtime_transaction_id_t id, rx_result&&
 
 
 // Class rx_platform::runtime::structure::block_data 
+
+
+void block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+{
+	for (const auto& one : items)
+	{
+		switch (one.index & rt_type_mask)
+		{
+			case rt_const_index_type:
+				// simple value
+				data.add_value(one.name, values[(one.index >> rt_type_shift)].value);
+				break;
+			case rt_data_index_type:
+				{
+					data::runtime_values_data child_data;
+					children[(one.index >> rt_type_shift)].collect_data(child_data, type);
+					if (!child_data.empty())
+						data.add_child(one.name, std::move(child_data));
+				}
+				break;
+			default:
+				RX_ASSERT(false);
+		}
+	}
+}
+
+void block_data::fill_data (const data::runtime_values_data& data)
+{
+	for (auto one : items)
+	{
+		switch (one.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{// simple value
+				auto it = data.values.find(one.name);
+				if (it != data.values.end())
+				{
+					values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value));
+				}
+			}
+			break;
+		case rt_data_index_type:
+			{// child value
+				auto it = data.children.find(one.name);
+				if (it != data.children.end())
+				{
+					children[one.index >> rt_type_shift].fill_data(it->second);
+				}
+			}
+			break;
+		default:
+			RX_ASSERT(false);
+		}
+	}
+}
+
+rx_result block_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	if (path.empty())
+	{// our value
+		rx_result result;
+		serialization::json_writer writer;
+		writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+		data::runtime_values_data data;
+		collect_data(data, runtime_value_type::simple_runtime_value);
+		if (!writer.write_init_values(nullptr, data))
+		{
+			result = "Error writing values to the stream";
+		}
+		else
+		{
+			string_type temp_str;
+			if (writer.get_string(const_cast<string_type&>(temp_str), true))
+			{
+				val.assign_static<string_type>(string_type(temp_str), ctx->now);
+				result = true;
+			}
+			else
+			{
+				result = "Retrieving string from JSON stream";
+			}
+		}
+		return result;
+	}
+	else
+	{
+		string_type mine;
+		string_type bellow;
+		size_t idx = path.find(RX_OBJECT_DELIMETER);
+		if (idx != string_type::npos)
+		{
+			mine = path.substr(0, idx);
+			bellow = path.substr(idx + 1);
+			auto idx = internal_get_index(mine);
+			if (idx && is_complex_index(idx))
+			{
+				switch (idx & rt_type_mask)
+				{
+				case rt_data_index_type:
+					return children[idx >> rt_type_shift].get_value(bellow, val, ctx);
+				default:
+					RX_ASSERT(false);
+				}
+			}
+		}
+		else// its' ours
+		{
+			auto idx = internal_get_index(path);
+			if (idx && is_value_index(idx))
+			{
+				switch (idx & rt_type_mask)
+				{
+				case rt_const_index_type:
+					val = values[idx >> rt_type_shift].get_value(ctx);
+					return true; 
+				default:
+						RX_ASSERT(false);
+				}
+			}
+		}
+		return mine + " not found!";
+	}
+}
+
+void block_data::object_state_changed (runtime_process_context* ctx)
+{
+	// nothing to do for data
+}
+
+rx_result block_data::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	string_type mine;
+	if (idx != string_type::npos)
+	{// bellow us, split it
+		mine = path.substr(0, idx);
+		string_type bellow = path.substr(idx + 1);
+		auto idx = internal_get_index(mine);
+		if (idx && is_complex_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_data_index_type:
+				return children[idx >> rt_type_shift].get_value_ref(bellow, ref);
+			default:
+				RX_ASSERT(false);
+			}
+		}
+	}
+	else// its' ours
+	{
+		auto idx = internal_get_index(path);
+		if (idx && is_value_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_const_index_type:
+				ref.ref_type = rt_value_ref_type::rt_const_value;
+				ref.ref_value_ptr.const_value = &values[idx >> rt_type_shift];
+				return true;
+			default:
+				RX_ASSERT(false);// has to be because of is_value_index;
+			}
+		}
+	}
+	return path + " not found!";
+}
+
+rx_result block_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	if (path.empty())
+	{
+		for (const auto& one : this->items)
+		{
+			runtime_item_attribute one_attr;
+			switch (one.index & rt_type_mask)
+			{
+			case rt_const_index_type:
+				one_attr.name = one.name;
+				one_attr.value = values[(one.index >> rt_type_shift)].get_value(ctx);
+				one_attr.type = rx_attribute_type::const_attribute_type;
+				break;
+			case rt_data_index_type:
+				one_attr.name = one.name;
+				one_attr.type = rx_attribute_type::data_attribute_type;
+				break;
+			default:
+				RX_ASSERT(false);
+				one_attr.type = rx_attribute_type::invalid_attribute_type_type;
+			}
+			if (one_attr.type != rx_attribute_type::invalid_attribute_type_type)
+			{
+				one_attr.full_path = prefix + path + RX_OBJECT_DELIMETER + one.name;
+				items.emplace_back(std::move(one_attr));
+			}
+		}
+		return true;
+	}
+	else
+	{
+		size_t idx = path.find(RX_OBJECT_DELIMETER);
+		string_type mine;
+		string_type bellow;
+		if (idx != string_type::npos)
+		{// bellow us, split it
+			mine = path.substr(0, idx);
+			bellow = path.substr(idx + 1);
+		}
+		else
+		{
+			mine = path;
+		}
+		auto item_idx = internal_get_index(mine);
+		if (item_idx && is_complex_index(item_idx))
+		{
+			string_type prefix_bellow = prefix.empty() ? mine : prefix + RX_OBJECT_DELIMETER + mine;
+			switch (item_idx & rt_type_mask)
+			{
+			case rt_data_index_type:
+				return children[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+			default:
+				RX_ASSERT(false);
+
+			}
+		}
+		return prefix + path + " not found!";
+	}
+}
+
+const runtime_item* block_data::internal_get_child_item (const char* path, size_t& idx) const
+{
+	const runtime_item* ret = nullptr;
+	size_t start_idx = idx;
+	// find our part
+	while (path[idx] != RX_OBJECT_DELIMETER && path[idx] != '\0') idx++;
+	// check for empty
+	size_t name_size = idx - start_idx;
+	if (name_size == 0)
+		return nullptr;
+	// now compare it
+	for (const auto& one : this->items)
+	{
+		// hard-core memcmp ;)
+		if (is_complex_index(one.index) && !one.name.empty() && name_size == one.name.size()
+			&& memcmp(&path[start_idx], one.name.c_str(), name_size) == 0)
+		{
+			switch (one.index & rt_type_mask)
+			{
+			case rt_data_index_type:
+				ret = &children[one.index >> rt_type_shift];
+				break;
+			default:
+				RX_ASSERT(false);
+			}
+		}
+		if (ret)
+			break;
+	}
+	return ret;
+}
+
+rx_result block_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return true;// nothing to do for data
+}
+
+rx_result block_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return true;// nothing to do for data
+}
+
+rx_result block_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return true;// nothing to do for data
+}
+
+rx_result block_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;// nothing to do for data
+}
+
+runtime_filters_type& block_data::get_filters ()
+{
+	return g_empty_filters;
+}
+
+runtime_sources_type& block_data::get_sources ()
+{
+	return g_empty_sources;
+}
+
+runtime_mappers_type& block_data::get_mappers ()
+{
+	return g_empty_mappers;
+}
+
+runtime_events_type& block_data::get_events ()
+{
+	return g_empty_events;
+}
+
+runtime_variables_type& block_data::get_variables ()
+{
+	return g_empty_variables;
+}
+
+runtime_structs_type& block_data::get_structs ()
+{
+	return g_empty_structs;
+}
+
+rx_result block_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	string_type mine;
+	if (idx != string_type::npos)
+	{// bellow us, split it
+		mine = path.substr(0, idx);
+		string_type bellow = path.substr(idx + 1);
+		auto idx = internal_get_index(mine);
+		if (idx && is_complex_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_data_index_type:
+				return children[idx >> rt_type_shift].get_local_value(bellow, val);
+			default:
+				RX_ASSERT(false);
+			}
+		}
+	}
+	else// its' ours
+	{
+		auto idx = internal_get_index(path);
+		if (idx && is_value_index(idx))
+		{
+			switch (idx & rt_type_mask)
+			{
+			case rt_const_index_type:
+				val = values[idx >> rt_type_shift].simple_get_value();
+				return true;
+			default:
+				RX_ASSERT(false);
+			}
+		}
+	}
+	return path + " not found!";
+}
+
+members_index_type block_data::internal_get_index (const string_type& name) const
+{
+	for (const auto& one : items)
+	{
+		if (one.name == name)
+			return one.index;
+	}
+	return 0;
+}
+
+bool block_data::is_value_index (members_index_type idx) const
+{
+	return (idx & rt_type_mask) == rt_const_index_type;
+}
+
+bool block_data::is_complex_index (members_index_type idx) const
+{
+	return (idx & rt_type_mask) == rt_data_index_type;
+}
+
+bool block_data::is_this_yours (const string_type& path) const
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{
+		return internal_get_index(path) != 0;
+	}
+	else
+	{
+		return internal_get_index(path.substr(0, idx)) != 0;
+	}
+	return false;
+}
 
 
 } // namespace structure

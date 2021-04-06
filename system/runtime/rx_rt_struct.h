@@ -105,6 +105,7 @@ constexpr uint_fast8_t rt_source_index_type		= 0x05;
 constexpr uint_fast8_t rt_mapper_index_type		= 0x06;
 constexpr uint_fast8_t rt_filter_index_type		= 0x07;
 constexpr uint_fast8_t rt_event_index_type		= 0x08;
+constexpr uint_fast8_t rt_data_index_type       = 0x09;
 
 constexpr uint_fast8_t rt_bit_none			= 0x00;
 constexpr uint_fast8_t rt_bit_has_variables	= 0x01;
@@ -116,8 +117,8 @@ constexpr uint_fast8_t rt_bit_has_events	= 0x20;
 
 typedef uint_fast16_t members_index_type;
 
-constexpr members_index_type rt_type_shift = 8;
-constexpr members_index_type rt_type_mask = 0xff;
+constexpr members_index_type rt_type_shift = 0xc;
+constexpr members_index_type rt_type_mask = 0xfff;
 
 struct index_data
 {
@@ -175,41 +176,6 @@ class has
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class fill_context 
-{
-
-  public:
-      fill_context (runtime_process_context* ctx);
-
-
-      const string_type& get_current_path () const
-      {
-        return current_path_;
-      }
-
-
-
-      runtime_process_context *context;
-
-
-      rx_time now;
-
-
-  protected:
-
-  private:
-
-
-      string_type current_path_;
 
 
 };
@@ -320,7 +286,9 @@ class runtime_item
 
       const runtime_item* get_child_item (const string_type& path) const;
 
-      virtual rx_result browse_items (const string_type& filter, const string_type& current_path, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const = 0;
+      virtual rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const = 0;
+
+      virtual const runtime_item* internal_get_child_item (const char* path, size_t& idx) const = 0;
 
       virtual runtime_filters_type& get_filters () = 0;
 
@@ -336,6 +304,8 @@ class runtime_item
 
       virtual rx_result get_local_value (const string_type& path, rx_simple_value& val) const = 0;
 
+      virtual bool is_this_yours (const string_type& path) const = 0;
+
 	  template<typename T>
 	  T get_local_as(const string_type& path, const T& default_value)
 	  {
@@ -348,9 +318,6 @@ class runtime_item
 		  return default_value;
 	  }
   protected:
-
-      virtual const runtime_item* faster_get_child_item (const char* path, size_t& idx) const = 0;
-
 
   private:
 
@@ -379,7 +346,7 @@ class struct_data
   public:
       struct_data();
 
-      struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var);
+      struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var, const struct_data& prototype);
 
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
@@ -395,6 +362,14 @@ class struct_data
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
       void process_runtime (runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
 
       runtime_item::smart_ptr item;
@@ -406,60 +381,8 @@ class struct_data
 	  typedef std::unique_ptr<struct_data> smart_ptr;
   protected:
 
-  private:
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
 
-
-};
-
-
-
-
-
-
-
-class event_data 
-{
-public:
-	~event_data() = default;
-	event_data(const event_data&) = delete;
-	event_data(event_data&&) noexcept = default;
-	event_data& operator=(const event_data&) = delete;
-	event_data& operator=(event_data&&) noexcept = default;
-	operator bool() const
-	{
-		return event_ptr;
-	}
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::event_attribute>;
-
-  public:
-      event_data();
-
-      event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void process_runtime (runtime_process_context* ctx);
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      event_runtime_ptr event_ptr;
-
-	  typedef std::unique_ptr<event_data> smart_ptr;
-  protected:
 
   private:
 
@@ -489,7 +412,7 @@ public:
   public:
       filter_data();
 
-      filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var);
+      filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var, const filter_data& prototype);
 
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
@@ -518,6 +441,14 @@ public:
 
       rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
 
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
 
       runtime_item::smart_ptr item;
 
@@ -527,6 +458,9 @@ public:
 
 	  typedef std::unique_ptr<filter_data> smart_ptr;
   protected:
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
 
   private:
 
@@ -622,7 +556,7 @@ class variable_data
   public:
       variable_data();
 
-      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var);
+      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype);
 
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
@@ -646,6 +580,16 @@ class variable_data
       void process_runtime (runtime_process_context* ctx);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
 
       rx::values::rx_value value;
@@ -693,7 +637,7 @@ public:
   public:
       mapper_data();
 
-      mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var);
+      mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var, const mapper_data& prototype);
 
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
@@ -724,6 +668,14 @@ public:
 
       void process_write_result (rx_result&& result, runtime_transaction_id_t id);
 
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
 
       runtime_item::smart_ptr item;
 
@@ -735,6 +687,9 @@ public:
 
 	  typedef std::unique_ptr<mapper_data> smart_ptr;
   protected:
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
 
   private:
 
@@ -774,7 +729,7 @@ class source_data
   public:
       source_data();
 
-      source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var);
+      source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var, const source_data& prototype);
 
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
@@ -811,6 +766,14 @@ class source_data
 
       void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
 
       runtime_item::smart_ptr item;
 
@@ -820,6 +783,9 @@ class source_data
 
 	  typedef std::unique_ptr<source_data> smart_ptr;
   protected:
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
 
   private:
 
@@ -832,6 +798,178 @@ class source_data
       rx_value current_value_;
 
       io_capabilities io_;
+
+
+};
+
+
+
+
+
+
+class mapper_write_task : public variable_write_task  
+{
+
+  public:
+      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
+
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+
+  protected:
+
+  private:
+
+
+      mapper_data *my_mapper_;
+
+
+      runtime_transaction_id_t transaction_id_;
+
+
+};
+
+
+
+
+
+
+class block_data : public runtime_item  
+{
+    typedef const_size_vector<const_value_data> values_type;
+    typedef const_size_vector<block_data> children_type;
+
+    typedef const_size_vector<index_data> items_type;
+
+
+  public:
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      runtime_filters_type& get_filters ();
+
+      runtime_sources_type& get_sources ();
+
+      runtime_mappers_type& get_mappers ();
+
+      runtime_events_type& get_events ();
+
+      runtime_variables_type& get_variables ();
+
+      runtime_structs_type& get_structs ();
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      bool is_this_yours (const string_type& path) const;
+
+
+      values_type values;
+
+      children_type children;
+
+
+      items_type items;
+
+  protected:
+
+  private:
+
+      members_index_type internal_get_index (const string_type& name) const;
+
+      bool is_value_index (members_index_type idx) const;
+
+      bool is_complex_index (members_index_type idx) const;
+
+
+
+};
+
+
+
+
+
+
+
+class event_data 
+{
+public:
+	~event_data() = default;
+	event_data(const event_data&) = delete;
+	event_data(event_data&&) noexcept = default;
+	event_data& operator=(const event_data&) = delete;
+	event_data& operator=(event_data&&) noexcept = default;
+	operator bool() const
+	{
+		return event_ptr;
+	}
+    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::event_attribute>;
+
+  public:
+      event_data();
+
+      event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, const event_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_runtime (runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+
+      block_data arguments;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      event_runtime_ptr event_ptr;
+
+	  typedef std::unique_ptr<event_data> smart_ptr;
+  protected:
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+
+
+  private:
 
 
 };
@@ -902,7 +1040,9 @@ class runtime_data : public runtime_item
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
-      rx_result browse_items (const string_type& filter, const string_type& current_path, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
 
       runtime_filters_type& get_filters ();
 
@@ -917,6 +1057,8 @@ class runtime_data : public runtime_item
       runtime_structs_type& get_structs ();
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      bool is_this_yours (const string_type& path) const;
 
 
       variables_type variables;
@@ -941,9 +1083,6 @@ class runtime_data : public runtime_item
 
   protected:
 
-      const runtime_item* faster_get_child_item (const char* path, size_t& idx) const;
-
-
   private:
 
       members_index_type internal_get_index (const string_type& name) const;
@@ -951,10 +1090,6 @@ class runtime_data : public runtime_item
       bool is_value_index (members_index_type idx) const;
 
       bool is_complex_index (members_index_type idx) const;
-
-      const runtime_item::smart_ptr& get_sub_item (const string_type& path, bool include_vars = true) const;
-
-      runtime_item::smart_ptr& get_sub_item (const string_type& path, bool include_vars = true);
 
 
 
@@ -1544,61 +1679,6 @@ typedef runtime_data<
 
 // ugly function for creating data holder depending on runtime type
 runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id);
-
-
-
-
-
-
-class mapper_write_task : public variable_write_task  
-{
-
-  public:
-      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
-
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-
-  protected:
-
-  private:
-
-
-      mapper_data *my_mapper_;
-
-
-      runtime_transaction_id_t transaction_id_;
-
-
-};
-
-
-
-
-
-
-class block_data 
-{
-    typedef const_size_vector<const_value_data> values_type;
-    typedef const_size_vector<block_data> children_type;
-
-  public:
-
-      values_type values;
-
-      children_type children;
-
-      operator bool() const
-      {
-          return values.empty() && children.empty();
-      }
-  protected:
-
-  private:
-
-
-};
 
 
 } // namespace structure

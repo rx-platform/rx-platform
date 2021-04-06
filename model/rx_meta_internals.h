@@ -691,7 +691,7 @@ public:
 
       rx_result register_type (data_type_repository::Tptr what);
 
-      rx_result_with<data_type_repository::RDataType> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
+      rx_result_with<data_blocks_prototype> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 

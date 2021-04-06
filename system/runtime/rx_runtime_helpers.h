@@ -131,7 +131,9 @@ namespace algorithms
 template <class typeT>
 class runtime_holder;
 template <class typeT>
-class object_runtime_algorithms;
+class runtime_holder_algorithms;
+template <class typeT>
+class runtime_scan_algorithms;
 }
 }
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::domain_type> > rx_domain_ptr;
@@ -230,6 +232,7 @@ struct rt_value_ref
 };
 
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
+
 
 
 

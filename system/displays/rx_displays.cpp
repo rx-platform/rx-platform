@@ -77,24 +77,24 @@ bool display_runtime::load_display (base_meta_reader& stream, uint8_t type)
 	return false;
 }
 
-rx_result display_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+rx_result display_runtime::initialize_display (runtime::runtime_init_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
-rx_result display_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+rx_result display_runtime::deinitialize_display (runtime::runtime_deinit_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
-rx_result display_runtime::start_runtime (runtime::runtime_start_context& ctx)
+rx_result display_runtime::start_display (runtime::runtime_start_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
-rx_result display_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+rx_result display_runtime::stop_display (runtime::runtime_stop_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 

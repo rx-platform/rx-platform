@@ -31,8 +31,8 @@
 #include "pch.h"
 
 
-// rx_runtime_holder
-#include "system/runtime/rx_runtime_holder.h"
+// rx_holder_algorithms
+#include "system/runtime/rx_holder_algorithms.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 
@@ -405,14 +405,13 @@ rx_result relation_data::resolve_inverse_name ()
 // Class rx_platform::runtime::relations::relations_holder 
 
 
-rx_result relations_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const
+rx_result relations_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
 {
 	// check relations, but only for exact name
 	for (const auto& one : source_relations_)
 	{
 		if (one->name == path)
 		{
-			not_mine = false;
 			val = one->value.get_value(ctx);
 			return true;
 		}
@@ -421,12 +420,10 @@ rx_result relations_holder::get_value (const string_type& path, rx_value& val, r
 	{
 		if (one->name == path)
 		{
-			not_mine = false;
 			val = one->value.get_value(ctx);
 			return true;
 		}
 	}
-	not_mine = true;
 	return path + " not found!";
 }
 
@@ -537,14 +534,14 @@ void relations_holder::collect_data (data::runtime_values_data& data, runtime_va
 	}
 }
 
-rx_result relations_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine)
+rx_result relations_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
 	if (path.empty())
 	{
 		for (auto& one : source_relations_)
 		{
 			runtime_item_attribute attr;
-			attr.full_path = prefix + one->name;
+			attr.full_path = prefix.empty() ? one->name : prefix + RX_OBJECT_DELIMETER + one->name;
 			attr.name = one->name;
 			attr.type = rx_attribute_type::relation_attribute_type;
 			attr.value.assign_static<string_type>(string_type(one->target_path));
@@ -553,7 +550,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		for (auto& one : implicit_relations_)
 		{
 			runtime_item_attribute attr;
-			attr.full_path = prefix + one->name;
+			attr.full_path = prefix.empty() ? one->name : prefix + RX_OBJECT_DELIMETER + one->name;
 			attr.name = one->name;
 			attr.type = rx_attribute_type::relation_target_attribute_type;
 			attr.value.assign_static<string_type>(string_type(one->target_path));
@@ -562,13 +559,12 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		for (auto& one : target_relations_)
 		{
 			runtime_item_attribute attr;
-			attr.full_path = prefix + one->name;
+			attr.full_path = prefix.empty() ? one->name : prefix + RX_OBJECT_DELIMETER + one->name;
 			attr.name = one->name;
 			attr.type = rx_attribute_type::relation_target_attribute_type;
 			attr.value.assign_static<string_type>(string_type(one->target_path));
 			items.push_back(attr);
 		}
-		not_mine = false;
 		return true;
 	}
 	else
@@ -585,31 +581,28 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		{
 			sub_path = path;
 		}
+		string_type bellow_prefix = prefix.empty() ? sub_path : prefix + RX_OBJECT_DELIMETER + sub_path;
 		for (auto& one : source_relations_)
 		{
 			if (one->name == sub_path)
 			{
-				not_mine = false;
-				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+				return one->browse(bellow_prefix, rest_path, filter, items);
 			}
 		}
 		for (auto& one : implicit_relations_)
 		{
 			if (one->name == sub_path)
 			{
-				not_mine = false;
-				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+				return one->browse(bellow_prefix, rest_path, filter, items);
 			}
 		}
 		for (auto& one : target_relations_)
 		{
 			if (one->name == sub_path)
 			{
-				not_mine = false;
-				return one->browse(prefix + sub_path + RX_OBJECT_DELIMETER, rest_path, filter, items);
+				return one->browse(bellow_prefix, rest_path, filter, items);
 			}
 		}
-		not_mine = true;
 		return path + " not found";
 	}
 }
@@ -679,6 +672,86 @@ rx_result relations_holder::add_implicit_relation (relations::relation_data::sma
 	}
 	implicit_relations_.emplace_back(std::move(data));
 	return true;
+}
+
+bool relations_holder::is_this_yours (const string_type& path) const
+{
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	if (idx == string_type::npos)
+	{
+		for (const auto& one : implicit_relations_)
+		{
+			if (one->name == path)
+				return true;
+		}
+		for (const auto& one : source_relations_)
+		{
+			if (one->name == path)
+				return true;
+		}
+		for (const auto& one : target_relations_)
+		{
+			if (one->name == path)
+				return true;
+		}
+	}
+	else
+	{
+		size_t len = idx;
+		for (const auto& one : implicit_relations_)
+		{
+			if (one->name.size() == len && memcmp(one->name.c_str(), path.c_str(), len) == 0)
+				return true;
+		}
+		for (const auto& one : source_relations_)
+		{
+			if (one->name.size() == len && memcmp(one->name.c_str(), path.c_str(), len) == 0)
+				return true;
+		}
+		for (const auto& one : target_relations_)
+		{
+			if (one->name.size() == len && memcmp(one->name.c_str(), path.c_str(), len) == 0)
+				return true;
+		}
+	}
+	return false;
+}
+
+rx_result relations_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+	relation_data* ret = nullptr;
+
+	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	string_type name;
+	if (idx == string_type::npos)
+	{
+		for (auto& one : implicit_relations_)
+		{
+			if (one->name == path)
+				ret = one.unsafe_ptr();
+		}
+		for (auto& one : source_relations_)
+		{
+			if (one->name == path)
+				ret = one.unsafe_ptr();
+		}
+		for (auto& one : target_relations_)
+		{
+			if (one->name == path)
+				ret = one.unsafe_ptr();
+		}
+	}
+
+	if (ret)
+	{
+		ref.ref_type = rt_value_ref_type::rt_relation;
+		ref.ref_value_ptr.relation = ret;
+		return true;
+	}
+	else
+	{
+		return path + " not found!";
+	}
 }
 
 

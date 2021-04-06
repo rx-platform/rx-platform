@@ -172,7 +172,7 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 
 			rx_post_function_to(what->get_executer(), what, [](rx_object_ptr whose)
 				{
-					auto ctx = whose->create_start_context();
+					auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::object_type>::create_start_context(*whose);
 					auto result = start_runtime(whose, ctx);
 					if (result)
 					{
@@ -188,17 +188,15 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 		}
 		else
 		{
-			result = "Unable to initialize domain runtime";
+			result.register_error("Unable to initialize domain runtime");
 		}
 	}
 	else
 	{
-		result = "Unable to initialize instance_data";
+		result.register_error("Unable to initialize instance_data");
 	}
 	if (!result)
 	{
-		for (const auto& error : result.errors())
-			RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
 		RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_object) + " "s + what->meta_info().name).c_str() + result.errors_line());
 	}
 
@@ -361,7 +359,7 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 
 			rx_post_function_to(what->get_executer(), what,[](rx_domain_ptr whose)
 				{
-					runtime::runtime_start_context start_ctx = whose->create_start_context();
+					auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::domain_type>::create_start_context(*whose);
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
@@ -376,12 +374,12 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		}
 		else
 		{
-			result = "Unable to initialize domain runtime";
+			result.register_error("Unable to initialize domain runtime");
 		}
 	}
 	else
 	{
-		result = "Unable to initialize instance_data";
+		result.register_error("Unable to initialize instance_data");
 	}
 	if (!result)
 	{
@@ -553,7 +551,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 
 			rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose)
 				{
-					runtime::runtime_start_context start_ctx = whose->create_start_context();
+					auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>::create_start_context(*whose);
 					auto result = start_runtime(whose, start_ctx);
 					if (result)
 					{
@@ -731,7 +729,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 				runtime::operational::binded_tags* binded = ctx.tags;
 				rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, runtime::operational::binded_tags* binded)
 					{
-						runtime::runtime_start_context start_ctx = whose->create_start_context();
+						auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*whose);
 						auto result = start_runtime(whose, start_ctx, binded);
 						if (result)
 						{
@@ -745,12 +743,12 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 			}
 			else
 			{
-				ret = "Unable to initialize application runtime";
+				ret.register_error("Unable to initialize application runtime");
 			}
 		}
 		else
 		{
-			ret = "Unable to initialize instance_data";
+			ret.register_error("Unable to initialize instance_data");
 		}
 	}
 	else

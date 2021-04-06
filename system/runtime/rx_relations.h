@@ -46,7 +46,7 @@
 namespace rx_platform {
 namespace runtime {
 namespace algorithms {
-template <class typeT> class object_runtime_algorithms;
+template <class typeT> class runtime_holder_algorithms;
 } // namespace algorithms
 
 namespace relations {
@@ -261,7 +261,7 @@ class relations_holder
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const;
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
       virtual rx_result initialize_relations (runtime::runtime_init_context& ctx);
 
@@ -275,7 +275,7 @@ class relations_holder
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       relation_data::smart_ptr get_relation (const string_type& name);
 
@@ -284,6 +284,10 @@ class relations_holder
       rx_result_with<relation_data::smart_ptr> remove_target_relation (const string_type& name, runtime::runtime_stop_context& ctx);
 
       rx_result add_implicit_relation (relations::relation_data::smart_ptr data);
+
+      bool is_this_yours (const string_type& path) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
 
   protected:

@@ -35,6 +35,8 @@
 #include "rx_runtime_helpers.h"
 #include "rx_rt_struct.h"
 
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
 
@@ -65,7 +67,7 @@ public:
     }
 
   public:
-      program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var);
+      program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype);
 
 
       program_runtime_ptr program_ptr;
@@ -103,10 +105,14 @@ public:
     }
 
   public:
-      method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var);
+      method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, const method_data& prototype);
 
 
       method_runtime_ptr method_ptr;
+
+      structure::block_data inputs;
+
+      structure::block_data outputs;
 
 
       structure::runtime_item::smart_ptr item;
@@ -133,7 +139,7 @@ class logic_holder
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const;
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
       virtual rx_result initialize_logic (runtime::runtime_init_context& ctx);
 
@@ -147,11 +153,17 @@ class logic_holder
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      bool is_this_yours (const string_type& path) const;
+
+      void process_programs (runtime_process_context& ctx);
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
 
   protected:

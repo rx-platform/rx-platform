@@ -805,7 +805,9 @@ public:
     typedef meta_algorithm::data_blocks_algorithm AlgorithmType;
 
     data_attribute(const data_attribute& right) = default;
-    data_attribute(data_attribute&& right) = default;
+    data_attribute(data_attribute&& right) noexcept = default;
+    data_attribute& operator=(const data_attribute & right) = default;
+    data_attribute& operator=(data_attribute && right) noexcept = default;
     data_attribute() = default;
     ~data_attribute() = default;
 

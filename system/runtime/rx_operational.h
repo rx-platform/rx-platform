@@ -224,6 +224,38 @@ class connected_tags
 
 
 
+class connected_write_task : public structure::variable_write_task  
+{
+
+  public:
+      connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
+
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+
+  protected:
+
+  private:
+
+
+      connected_tags *parent_;
+
+
+      runtime_transaction_id_t id_;
+
+      tags_callback_ptr callback_;
+
+      runtime_handle_t item_;
+
+
+};
+
+
+
+
+
+
 
 class binded_tags 
 {
@@ -285,38 +317,6 @@ class binded_tags
 
 
       handles_map_type handles_map_;
-
-
-};
-
-
-
-
-
-
-class connected_write_task : public structure::variable_write_task  
-{
-
-  public:
-      connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
-
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-
-  protected:
-
-  private:
-
-
-      connected_tags *parent_;
-
-
-      runtime_transaction_id_t id_;
-
-      tags_callback_ptr callback_;
-
-      runtime_handle_t item_;
 
 
 };

@@ -100,6 +100,10 @@ rx_result program_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 	return RX_NOT_IMPLEMENTED;
 }
 
+void program_runtime::process_program (runtime::runtime_process_context& ctx)
+{
+}
+
 
 sl_runtime::sl_program_holder& program_runtime::my_program ()
 {

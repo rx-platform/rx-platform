@@ -209,9 +209,33 @@ bool data_types_algorithm::check_type (data_type& whose, type_check_context& ctx
 	return true;
 }
 
-rx_result data_types_algorithm::construct_runtime (const data_type& whose, typename data_type::RDataType& what, construct_context& ctx)
+rx_result data_types_algorithm::construct_runtime (const data_type& whose, data_blocks_prototype& what, construct_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	rx_result ret = true;
+	// first pass, create structure
+	for (const auto& one : whose.complex_data.names_cache_)
+	{
+		switch (one.second & data_type_def::type_mask)
+		{
+		case data_type_def::simple_values_mask:
+			{
+				what.add_value(one.first
+					, whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+			}
+			break;
+		case data_type_def::child_values_mask:
+			{
+				data_blocks_prototype child_data;
+				ret = data_blocks_algorithm::construct_data_attribute(
+					whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
+				if (!ret)
+					return ret;
+				what.add(one.first, std::move(child_data));
+			}
+			break;
+		}
+	}
+	return ret;
 }
 
 
@@ -255,7 +279,7 @@ bool basic_types_algorithm<typeT>::check_type (typeT& whose, type_check_context&
 }
 
 template <class typeT>
-rx_result basic_types_algorithm<typeT>::construct (const typeT& whose, construct_context& ctx)
+rx_result basic_types_algorithm<typeT>::construct (const typeT& whose, construct_context& ctx, typename typeT::RDataType& prototype)
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	return ret;
@@ -498,7 +522,7 @@ bool basic_types_algorithm<event_type>::check_type(event_type& whose, type_check
 
 
 template <>
-rx_result basic_types_algorithm<variable_type>::construct(const variable_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<variable_type>::construct(const variable_type& whose, construct_context& ctx, variable_type::RDataType& prototype)
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
@@ -511,7 +535,7 @@ rx_result basic_types_algorithm<variable_type>::construct(const variable_type& w
 }
 
 template <>
-rx_result basic_types_algorithm<struct_type>::construct(const struct_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<struct_type>::construct(const struct_type& whose, construct_context& ctx, struct_type::RDataType& prototype)
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
@@ -522,7 +546,7 @@ rx_result basic_types_algorithm<struct_type>::construct(const struct_type& whose
 
 
 template <>
-rx_result basic_types_algorithm<source_type>::construct(const source_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<source_type>::construct(const source_type& whose, construct_context& ctx, source_type::RDataType& prototype)
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
@@ -532,12 +556,35 @@ rx_result basic_types_algorithm<source_type>::construct(const source_type& whose
 	return ret;
 }
 template <>
-rx_result basic_types_algorithm<mapper_type>::construct(const mapper_type& whose, construct_context& ctx)
+rx_result basic_types_algorithm<mapper_type>::construct(const mapper_type& whose, construct_context& ctx, mapper_type::RDataType& prototype)
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
 	{
 		ret = filtered_data_algorithm::construct_complex_attribute(whose.filter_data, whose.complex_data.get_names_cache(), ctx);
+	}
+	return ret;
+}
+
+template <>
+rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, construct_context& ctx, event_type::RDataType& prototype)
+{
+	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
+	if (ret)
+	{
+		if (prototype.arguments.values.empty() && prototype.arguments.children.empty() &&  !whose.arguments.is_null())
+		{
+			data_blocks_prototype data_proto;
+			data_attribute attr;
+			if (whose.arguments.is_node_id())
+				attr = std::move(data_attribute("Args", whose.arguments.get_node_id()));
+			else
+				attr = std::move(data_attribute("Args", whose.arguments.get_path()));
+			
+			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+			if (ret)
+				prototype.arguments = data_proto.create_runtime();
+		}
 	}
 	return ret;
 }

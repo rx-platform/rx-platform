@@ -192,8 +192,9 @@ class log_command : public commands::server_command
 
 	DECLARE_REFERENCE_PTR(log_command);
 
-	DECLARE_CONSOLE_CODE_INFO( 0,5,0, "\
-all about doing stuff with log");
+	DECLARE_CONSOLE_CODE_INFO( 0,9,1, "\
+all about doing stuff with log,\r\n\
+pretty much implemented read to be useful!");
 
   public:
       log_command();

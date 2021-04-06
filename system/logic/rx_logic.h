@@ -34,12 +34,12 @@
 
 #include "system/meta/rx_meta_data.h"
 
+// soft_plc
+#include "soft_logic/soft_plc.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
 
 
 
@@ -81,6 +81,8 @@ public:
       virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_program (runtime::runtime_process_context& ctx);
 
 
       sl_runtime::sl_program_holder& my_program ();

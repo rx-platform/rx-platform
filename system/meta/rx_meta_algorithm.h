@@ -98,7 +98,7 @@ class data_types_algorithm
 
       static bool check_type (data_type& whose, type_check_context& ctx);
 
-      static rx_result construct_runtime (const data_type& whose, typename data_type::RDataType& what, construct_context& ctx);
+      static rx_result construct_runtime (const data_type& whose, data_blocks_prototype& what, construct_context& ctx);
 
 
   protected:
@@ -125,7 +125,7 @@ class basic_types_algorithm
 
       static bool check_type (typeT& whose, type_check_context& ctx);
 
-      static rx_result construct (const typeT& whose, construct_context& ctx);
+      static rx_result construct (const typeT& whose, construct_context& ctx, typename typeT::RDataType& prototype);
 
 
   protected:

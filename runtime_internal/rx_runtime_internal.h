@@ -235,7 +235,7 @@ class platform_runtime_manager
 	  rx_result init_runtime(typename typeT::RTypePtr what)
 	  {
           auto result = algorithms::create_runtime_structure<typeT>(what);
-          auto ctx = what->create_init_context();
+          auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
 		  result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }

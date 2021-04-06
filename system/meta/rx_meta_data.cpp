@@ -171,11 +171,11 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 		case relation_target_attribute_type:
 			return RX_CPP_RELATION_TARGET_TYPE_NAME;
 		case method_attribute_type:
-			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+			return RX_CPP_METHOD_TYPE_NAME;
 		case program_attribute_type:
-			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+			return RX_CPP_PROGRAM_TYPE_NAME;
 		case data_attribute_type:
-			return RX_CPP_RELATION_TARGET_TYPE_NAME;
+			return RX_CPP_DATA_TYPE_NAME;
 		default:
 			return "Unknown attribute type!!!";
 	}

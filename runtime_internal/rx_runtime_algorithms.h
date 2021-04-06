@@ -38,7 +38,7 @@
 
 #include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
-#include "system/runtime/rx_runtime_holder.h"
+#include "system/runtime/rx_holder_algorithms.h"
 #include "lib/rx_func_to_go.h"
 
 

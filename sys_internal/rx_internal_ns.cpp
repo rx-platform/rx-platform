@@ -39,6 +39,7 @@
 #include "sys_internal/rx_internal_builders.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_meta_algorithm.h"
+#include "system/runtime/rx_holder_algorithms.h"
 
 
 namespace rx_internal {
@@ -192,13 +193,13 @@ void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const st
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
 {
-	return impl_->read_value(path, value);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_value(path, value, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
 {
-	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
 }
 
 template <class TImpl>
@@ -210,19 +211,19 @@ rx_result rx_item_implementation<TImpl>::do_command (rx_object_command_t command
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
 {
-	return impl_->browse(prefix, path, filter, items);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::browse(prefix, path, filter, items, *impl_);
 }
 
 template <class TImpl>
 std::vector<rx_result_with<runtime_handle_t> > rx_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
 {
-	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
 {
-	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -260,19 +261,19 @@ rx_thread_handle_t rx_item_implementation<TImpl>::get_executer () const
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
 {
-    return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
+    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
-    return impl_->serialize_value(stream, type);
+    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::serialize_runtime_value(stream, type, *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
 {
-    return impl_->deserialize_value(stream, type);
+	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
@@ -284,7 +285,7 @@ rx_result rx_item_implementation<TImpl>::save () const
 template <class TImpl>
 std::vector<rx_result> rx_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
 {
-	return runtime::algorithms::object_runtime_algorithms<typename TImpl::pointee_type::DefType>::disconnect_items(items, monitor, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::disconnect_items(items, monitor, *impl_);
 }
 
 

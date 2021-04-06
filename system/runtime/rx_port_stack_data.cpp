@@ -36,6 +36,9 @@
 
 #include "rx_objbase.h"
 #include "rx_runtime_holder.h"
+#include "rx_holder_algorithms.h"
+
+using port_algorithm_t = rx_platform::runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>;
 
 
 namespace rx_platform {
@@ -61,7 +64,7 @@ rx_result port_passive_map::register_passive (rx_port_ptr who, io::any_address& 
         if (local_addr.is_null() && remote_addr.is_null())
         {
             data::runtime_values_data data;
-            who->collect_data(data, runtime_value_type::simple_runtime_value);
+            port_algorithm_t::collect_data(data, runtime_value_type::simple_runtime_value, *who);
             owner->get_implementation()->extract_bind_address(data, local_addr, remote_addr);
         }
         addr_pair_t addrs(local_addr, remote_addr);

@@ -66,13 +66,13 @@ class display_runtime : public rx::pointers::reference_object
 
       bool load_display (base_meta_reader& stream, uint8_t type);
 
-      virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_display (runtime::runtime_init_context& ctx);
 
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+      virtual rx_result deinitialize_display (runtime::runtime_deinit_context& ctx);
 
-      virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
+      virtual rx_result start_display (runtime::runtime_start_context& ctx);
 
-      virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+      virtual rx_result stop_display (runtime::runtime_stop_context& ctx);
 
 
   protected:

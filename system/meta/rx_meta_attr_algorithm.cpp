@@ -700,7 +700,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 		switch (one.second & complex_data_type::type_mask)
 		{
 			// constant values
-		case complex_data_type::complex_data_type::const_values_mask:
+		case complex_data_type::const_values_mask:
 			{
 				ctx.runtime_data().add_const_value(
 					one.first,
@@ -742,7 +742,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// events
 		case complex_data_type::events_mask:
 			{
-				rx_result ret = event_blocks_algorithm::construct_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], ctx);
+				rx_result ret = event_attribute::AlgorithmType::construct_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], ctx);
 				if (!ret)
 				{
 					ret.register_error("Unable to create event "s + one.first + "!");
@@ -993,9 +993,27 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 		return ctx.is_check_ok();
 }
 
-rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, data_blocks_prototype& data, construct_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.target_, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.name_, ctx, ctx.get_directories());
+	if (temp)
+	{
+		data = temp.move_value();
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
 }
 
 rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs)
@@ -1019,15 +1037,13 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 
 rx_result event_blocks_algorithm::serialize_complex_attribute (const def_blocks::event_attribute& whose, base_meta_writer& stream)
 {
-	auto ret = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(whose, stream);
-	if (ret)
+	
+	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
-		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
-		{
-			if (!stream.write_item_reference("args", whose.arguments_))
-				return false;
-		}
+		if (!stream.write_item_reference("args", whose.arguments_))
+			return false;
 	}
+	auto ret = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(whose, stream);
 	return ret;
 }
 
@@ -1068,7 +1084,7 @@ rx_result event_blocks_algorithm::construct_complex_attribute (const def_blocks:
 	auto ret = meta_blocks_algorithm<event_attribute>::construct_complex_attribute(whose, ctx);
 	if (ret)
 	{
-
+		
 	}
 	return ret;
 }

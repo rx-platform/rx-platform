@@ -36,6 +36,7 @@
 
 #define DECLARE_CODE_INFO(subsytem,major, minor, build,comment) \
 public:\
+	static constexpr  std::array<int, 3> code_version() { return {major, minor, build}; }\
 	string_type get_class_name () const\
 	{\
 		return string_type(get_code_behind()->class_name);\

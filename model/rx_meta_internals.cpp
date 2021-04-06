@@ -36,7 +36,7 @@
 
 #include "runtime_internal/rx_runtime_internal.h"
 #include "rx_model_algorithms.h"
-#include "system/runtime/rx_runtime_holder.h"
+#include "system/runtime/rx_holder_algorithms.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "lib/security/rx_security.h"
 using namespace rx;
@@ -494,19 +494,17 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	ts_value.assign_static(now, now);
 	auto rt_data = ctx.pop_rt_name();
 	rt_data.add_const_value("Name", name_value);
-	ret.ptr->set_runtime_data(rt_data);
+	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)
 	{
 		if (!it->empty())
-			ret.ptr->fill_data(*it);
+			runtime::algorithms::runtime_holder_algorithms<typeT>::fill_data(*it, *ret.ptr);
 	}
-	ret.ptr->fill_data(instance_data.overrides);
+	runtime::algorithms::runtime_holder_algorithms<typeT>::fill_data(instance_data.overrides, *ret.ptr);
 	if (!runtime_data.empty())// quick check won't harm 
-		ret.ptr->fill_data(runtime_data);
+		runtime::algorithms::runtime_holder_algorithms<typeT>::fill_data(runtime_data, *ret.ptr);
 	ret.ptr->get_overrides() = instance_data.overrides;
-
-
 	ret.ptr->directories_.add_paths({ ret.ptr->meta_info_.path });
 
 	if (!prototype)
@@ -1212,6 +1210,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 	ctx.push_rt_name(rt_name);
 
 	std::vector<data::runtime_values_data> overrides;
+	RDataType rt_prototype;
 	for (auto one_id : base)
 	{
 		auto my_class = get_type_definition(one_id);
@@ -1219,7 +1218,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		{
 			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
 			ctx.get_directories().add_paths({my_class.value()->meta_info.path});
-			auto result = meta::meta_algorithm::basic_types_algorithm<typeT>::construct(*my_class.value(), ctx);
+			auto result = meta::meta_algorithm::basic_types_algorithm<typeT>::construct(*my_class.value(), ctx, rt_prototype);
 
 			if (!result)
 			{// error constructing object
@@ -1240,7 +1239,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		if (!it->empty())
 			runtime->fill_data(*it);
 	}
-	return RDataType(std::move(runtime), std::move(ret));
+	return RDataType(std::move(runtime), std::move(ret), rt_prototype);
 }
 
 template <class typeT>
@@ -1770,7 +1769,7 @@ rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 	}
 }
 
-rx_result_with<data_type_repository::RDataType> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
+rx_result_with<data_blocks_prototype> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
 {
 	runtime::structure::block_data ret;
 	rx_node_ids base;
@@ -1819,7 +1818,8 @@ rx_result_with<data_type_repository::RDataType> data_type_repository::create_dat
 
 	ctx.push_rt_name(rt_name);
 
-	runtime::structure::block_data ret_data;
+	data_blocks_prototype ret_data;
+	ret_data.success = false;
 
 	std::vector<data::runtime_values_data> overrides;
 	for (auto one_id : base)
@@ -1850,6 +1850,7 @@ rx_result_with<data_type_repository::RDataType> data_type_repository::create_dat
 		if (!it->empty())
 			runtime->fill_data(*it);
 	}
+	ret_data.success = true;
 	return ret_data;
 }
 

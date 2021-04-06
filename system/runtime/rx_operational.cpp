@@ -54,6 +54,24 @@ namespace operational {
 // Class rx_platform::runtime::operational::rx_tags_callback 
 
 
+// Class rx_platform::runtime::operational::connected_write_task 
+
+connected_write_task::connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item)
+      : parent_(parent),
+        id_(id),
+        callback_(callback),
+        item_(item)
+{
+}
+
+
+
+void connected_write_task::process_result (runtime_transaction_id_t id, rx_result&& result)
+{
+	parent_->write_result_arrived(callback_, write_result_data{ id_, item_, std::move(result) });
+}
+
+
 // Class rx_platform::runtime::operational::connected_tags 
 
 connected_tags::connected_tags()
@@ -702,24 +720,6 @@ rx_result binded_tags::internal_set_item (const string_type& path, rx_simple_val
 	default:
 		return "Unsupported type!.";
 	}
-}
-
-
-// Class rx_platform::runtime::operational::connected_write_task 
-
-connected_write_task::connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item)
-      : parent_(parent),
-        id_(id),
-        callback_(callback),
-        item_(item)
-{
-}
-
-
-
-void connected_write_task::process_result (runtime_transaction_id_t id, rx_result&& result)
-{
-	parent_->write_result_arrived(callback_, write_result_data{ id_, item_, std::move(result) });
 }
 
 

@@ -476,7 +476,11 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 		}
 		else if(version)
 		{
-			out << "E jebi ga meho da nadjem sve";
+			auto version = code_version();
+			out << "Version "
+				<< version[0] << ". "
+				<< version[1] << ". "
+				<< version[2] << ".";
 			return true;
 		}
 		else

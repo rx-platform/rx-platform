@@ -45,7 +45,7 @@ namespace logic_blocks {
 // Class rx_platform::runtime::logic_blocks::logic_holder 
 
 
-rx_result logic_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const
+rx_result logic_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -140,15 +140,84 @@ rx_result logic_holder::stop_logic (runtime::runtime_stop_context& ctx)
 
 void logic_holder::fill_data (const data::runtime_values_data& data, runtime_process_context* ctx)
 {
+    for (auto& one : runtime_programs_)
+    {
+        one.item->fill_data(data);
+    }
+    for (auto& one : runtime_methods_)
+    {
+        one.item->fill_data(data);
+    }
 }
 
 void logic_holder::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
+    for (const auto& one : runtime_programs_)
+    {
+        data::runtime_values_data one_data;
+        one.item->collect_data(one_data, type);
+        data.add_child(one.name, std::move(one_data));
+    }
+    for (const auto& one : runtime_methods_)
+    {
+        data::runtime_values_data one_data;
+        one.item->collect_data(one_data, type);
+        data.add_child(one.name, std::move(one_data));
+    }
 }
 
-rx_result logic_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine)
+rx_result logic_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)
 {
-    return RX_NOT_IMPLEMENTED;
+    rx_result ret = true;
+    
+    if (path.empty())
+    {
+        for (auto& one : runtime_programs_)
+        {
+            runtime_item_attribute args_attr;
+            args_attr.name = one.name;
+            args_attr.type = rx_attribute_type::program_attribute_type;
+            args_attr.full_path = prefix + RX_OBJECT_DELIMETER + args_attr.name;
+            items.emplace_back(std::move(args_attr));
+        }
+        for (auto& one : runtime_methods_)
+        {
+            runtime_item_attribute args_attr;
+            args_attr.name = one.name;
+            args_attr.type = rx_attribute_type::method_attribute_type;
+            args_attr.full_path = prefix + RX_OBJECT_DELIMETER + args_attr.name;
+            items.emplace_back(std::move(args_attr));
+        }
+    }
+    else if (!runtime_programs_.empty() || !runtime_methods_.empty())
+    {
+        auto idx = path.find(RX_OBJECT_DELIMETER);
+        string_type mine;
+        string_type bellow;
+        if (idx == string_type::npos)
+        {
+            mine = path;
+        }
+        else
+        {
+            mine = path.substr(0, idx);
+            bellow = path.substr(idx + 1);
+        }
+        string_type new_prefix(prefix + RX_OBJECT_DELIMETER + mine);
+        for (auto& one : runtime_programs_)
+        {
+            ret = one.item->browse_items(new_prefix, bellow, filter, items, ctx);
+            if (!ret)
+                break;
+        }
+        for (auto& one : runtime_methods_)
+        {
+            ret = one.item->browse_items(new_prefix, bellow, filter, items, ctx);
+            if (!ret)
+                break;
+        }
+    }
+    return ret;
 }
 
 bool logic_holder::serialize (base_meta_writer& stream, uint8_t type) const
@@ -172,10 +241,72 @@ bool logic_holder::deserialize (base_meta_reader& stream, uint8_t type)
     return true;
 }
 
+bool logic_holder::is_this_yours (const string_type& path) const
+{
+    size_t idx = path.find(RX_OBJECT_DELIMETER);
+    if (idx == string_type::npos)
+    {
+        for (const auto& one : runtime_programs_)
+        {
+            if (one.name == path)
+                return true;
+        }
+        for (const auto& one : runtime_methods_)
+        {
+            if (one.name == path)
+                return true;
+        }
+    }
+    else
+    {
+        size_t len = idx;
+        for (const auto& one : runtime_programs_)
+        {
+            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+                return true;
+        }
+        for (const auto& one : runtime_methods_)
+        {
+            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+                return true;
+        }
+    }
+    return false;
+}
+
+void logic_holder::process_programs (runtime_process_context& ctx)
+{
+}
+
+rx_result logic_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
+{
+    size_t idx = path.find(RX_OBJECT_DELIMETER);
+    string_type name;
+    if (idx != string_type::npos)
+    {
+        size_t len = idx;
+        for (const auto& one : runtime_programs_)
+        {
+            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            {
+                return one.item->get_value_ref(&path.c_str()[idx + 1], ref);
+            }
+        }
+        for (const auto& one : runtime_methods_)
+        {
+            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            {
+                return one.item->get_value_ref(&path.c_str()[idx + 1], ref);
+            }
+        }
+    }
+    return path + " not found!";
+}
+
 
 // Class rx_platform::runtime::logic_blocks::program_data 
 
-program_data::program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var)
+program_data::program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype)
     : program_ptr(std::move(var))
     , item(std::move(rt))
 {
@@ -185,7 +316,7 @@ program_data::program_data (structure::runtime_item::smart_ptr&& rt, program_run
 
 // Class rx_platform::runtime::logic_blocks::method_data 
 
-method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var)
+method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, const method_data& prototype)
     : method_ptr(std::move(var))
     , item(std::move(rt))
 {

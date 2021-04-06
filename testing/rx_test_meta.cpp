@@ -39,7 +39,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "system/server/rx_server.h"
 #include "model/rx_model_algorithms.h"
-#include "system/runtime/rx_runtime_holder.h"
+#include "system/runtime/rx_holder_algorithms.h"
 #include "api/rx_namespace_api.h"
 
 
@@ -204,9 +204,9 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 				 out << json_str;
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
-				 test_object->collect_data(init_data, runtime_value_type::simple_runtime_value);
+				 runtime::algorithms::runtime_holder_algorithms<object_type>::collect_data(init_data, runtime_value_type::simple_runtime_value, *test_object);
 				 init_data.children["structName"].values["structVal"].value.assign_static(113);
-				 test_object->fill_data(init_data);
+				 runtime::algorithms::runtime_holder_algorithms<object_type>::fill_data(init_data, *test_object);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;
 				 json_str = test_object->get_item_ptr()->get_definition_as_json();

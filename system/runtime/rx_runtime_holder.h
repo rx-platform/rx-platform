@@ -35,14 +35,10 @@
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
 
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_callback
@@ -53,22 +49,16 @@
 #include "system/runtime/rx_display_blocks.h"
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_job
 #include "lib/rx_job.h"
-
-namespace rx_internal {
-namespace sys_runtime {
-namespace data_source {
-class value_point;
-
-} // namespace data_source
-} // namespace sys_runtime
-} // namespace rx_internal
-
+// rx_tag_blocks
+#include "system/runtime/rx_tag_blocks.h"
 
 #include "system/meta/rx_obj_types.h"
 namespace rx_internal
@@ -91,174 +81,6 @@ namespace rx_platform {
 namespace runtime {
 
 namespace algorithms {
-
-template <typename typeT>
-struct local_value
-{
-    runtime_handle_t handle_ = 0;
-    runtime_process_context* ctx_ = nullptr;
-public:
-    local_value() = default;
-    ~local_value() = default;
-    local_value(const local_value&) = default;
-    local_value(local_value&&) = default;
-    local_value& operator=(const local_value&) = default;
-    local_value& operator=(local_value&&) = default;
-    rx_result bind(const string_type& path, runtime_init_context& ctx)
-    {
-        auto result = ctx.bind_item(path);
-        if (result)
-        {
-            ctx_ = ctx.context;
-            handle_ = result.move_value();
-            return true;
-        }
-        else
-        {
-            return result.errors();
-        }
-    }
-    local_value& operator=(typeT right)
-    {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            ctx_->set_binded_as<typeT>(handle_, std::move(right));
-        }
-        return this;
-    }
-};
-template <typename typeT, bool manual = false>
-struct owned_value
-{
-    typeT val_;
-    runtime_handle_t handle_ = 0;
-    runtime_process_context* ctx_ = nullptr;
-
-    void internal_commit()
-    {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            typeT temp(val_);
-            ctx_->set_binded_as<typeT>(handle_, std::move(temp));
-        }
-    }
-public:
-    owned_value() = default;
-    ~owned_value() = default;
-    owned_value(const owned_value&) = default;
-    owned_value(owned_value&&) = default;
-    owned_value& operator=(const owned_value&) = default;
-    owned_value& operator=(owned_value&&) = default;
-    rx_result bind(const string_type& path, runtime_init_context& ctx)
-    {
-        auto result = ctx.bind_item(path);
-        if (result)
-        {
-            ctx_ = ctx.context;
-            handle_ = result.move_value();
-            operator=(val_);
-            return true;
-        }
-        else
-        {
-            return result.errors();
-        }
-    }
-    owned_value(const typeT& right)
-    {
-        val_ = right;
-    }
-    owned_value(typeT&& right)
-    {
-        val_ = std::move(right);
-    }
-    owned_value& operator=(const typeT& right)
-    {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            val_ = right;
-            if constexpr (!manual)
-            {
-                internal_commit();
-            }
-        }
-        return *this;
-    }
-    owned_value& operator=(typeT&& right)
-    {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            val_ = std::move(right);
-            if constexpr (!manual)
-            {
-                internal_commit();
-            }
-        }
-        return *this;
-    }
-    owned_value& operator+=(const typeT& right)
-    {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            val_ += right;  
-            if constexpr (!manual)
-            {
-                internal_commit();
-            }
-        }
-        return *this;
-    }
-    operator typeT()
-    {
-        return val_;
-    }
-    void commit()
-    {
-        if constexpr (manual)
-        {
-            internal_commit();
-        }
-        else
-        {
-            RX_ASSERT(false);
-        }
-    }
-};
-
-
-
-
-
-template <class typeT>
-class object_runtime_algorithms 
-{
-
-  public:
-
-      static std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
-
-      static void process_runtime (typename typeT::RType& whose);
-
-      static rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
-
-      static void fire_job (typename typeT::RType& whose);
-
-      static rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
-
-      static std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose);
-
-      static rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose);
-
-      static void save_runtime (typename typeT::RType& whose);
-
-
-  protected:
-
-  private:
-
-
-};
-
 
 
 
@@ -302,14 +124,12 @@ class runtime_holder : public rx::pointers::reference_object
     typedef std::vector<relations::relation_data> relations_type;
     typedef typename typeT::instance_data_t instance_data_t;
 
-    friend class object_runtime_algorithms<typeT>;
     friend class meta::meta_algorithm::object_data_algorithm<typeT>;
-    friend class meta::meta_algorithm::object_types_algorithm<typeT>;
+    friend class runtime_holder_algorithms<typeT>;
+    friend class runtime_scan_algorithms<typeT>;
     friend class rx_internal::model::algorithms::runtime_model_algorithm<typeT>;
     friend class rx_internal::model::types_repository<typeT>;
 
-
-    typedef std::unique_ptr<std::vector<rx_internal::sys_runtime::data_source::value_point> > points_type;
 public:
     typedef typeT DefType;
     typedef typename typeT::RImplPtr ImplPtr;
@@ -331,35 +151,15 @@ public:
 
       rx_result stop_runtime (runtime_stop_context& ctx);
 
-      void fill_data (const data::runtime_values_data& data);
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      rx_result read_value (const string_type& path, rx_value& value) const;
-
       rx_result do_command (rx_object_command_t command_type);
-
-      void set_runtime_data (meta::runtime_data_prototype& prototype);
-
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
       meta::meta_data& meta_info ();
 
       platform_item_ptr get_item_ptr () const;
 
-      runtime_init_context create_init_context ();
-
-      runtime_start_context create_start_context ();
-
       typename runtime_holder<typeT>::ImplPtr get_implementation ();
 
       rx_thread_handle_t get_executer () const;
-
-      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
-
-      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       const typename typeT::runtime_data_t& get_instance_data () const;
 
@@ -397,29 +197,6 @@ public:
       }
 
 
-      template<typename valT>
-      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
-      {
-          values::rx_simple_value temp_val;
-          auto result = binded_tags_.get_value(handle, temp_val);
-          if (result)
-          {
-              return values::extract_value<valT>(temp_val.get_storage(), default_value);
-          }
-          return default_value;
-      }
-      template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
-      {
-          values::rx_simple_value temp_val;
-          temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto result = binded_tags_.set_value(handle, std::move(temp_val), connected_tags_, &context_);
-      }
-      template<typename valT>
-      valT get_local_as(const string_type& path, const valT& default_value)
-      {
-          return item_->get_local_as<valT>(path, default_value);
-      }
       constexpr static rx_item_type get_type_id()
       {
           return typeT::RImplType::type_id;
@@ -428,41 +205,8 @@ public:
 
   private:
 
-      void process_status_change (runtime_process_context& ctx);
-
-      void process_source_inputs (runtime_process_context& ctx);
-
-      void process_mapper_inputs (runtime_process_context& ctx);
-
-      void process_subscription_inputs (runtime_process_context& ctx);
-
-      void process_variables (runtime_process_context& ctx);
-
-      void process_programs (runtime_process_context& ctx);
-
-      void process_filters (runtime_process_context& ctx);
-
-      void process_subscription_outputs (runtime_process_context& ctx);
-
-      void process_mapper_outputs (runtime_process_context& ctx);
-
-      void process_source_outputs (runtime_process_context& ctx);
-
-      void process_events (runtime_process_context& ctx);
-
-      void process_structs (runtime_process_context& ctx);
-
-      void process_own (runtime_process_context& ctx);
-
-
-
-      operational::connected_tags connected_tags_;
-
-      operational::binded_tags binded_tags_;
 
       logic_blocks::logic_holder logic_;
-
-      structure::runtime_item::smart_ptr item_;
 
       relations::relations_holder relations_;
 
@@ -474,11 +218,11 @@ public:
 
       ns::rx_directory_resolver directories_;
 
-      points_type points_;
-
       persistent_data_type persistent_;
 
       display_blocks::displays_holder displays_;
+
+      tag_blocks::tags_holder tags_;
 
 
       meta::meta_data meta_info_;

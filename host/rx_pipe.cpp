@@ -111,9 +111,11 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 	rx_platform::configuration_data_t config;
 	pipe_client_t pipes;
 	memzero(&pipes, sizeof(pipes));
+	std::cout << "Parsing command line...";
 	ret = parse_command_line(argc, argv, config, pipes);
 	if (ret)
 	{
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		if (debug_stop_)
 		{
 			std::cout << "Press <ENTER> to continue...\r\n";

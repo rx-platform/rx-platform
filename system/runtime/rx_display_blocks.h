@@ -64,7 +64,7 @@ public:
     }
 
   public:
-      display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var);
+      display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype);
 
 
       display_runtime_ptr display_ptr;
@@ -89,10 +89,11 @@ public:
 
 class displays_holder 
 {
+    typedef const_size_vector<display_data> displays_type;
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx, bool& not_mine) const;
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
       virtual rx_result initialize_displays (runtime::runtime_init_context& ctx);
 
@@ -106,11 +107,15 @@ class displays_holder
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, bool& not_mine);
+      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
 
       bool serialize (base_meta_writer& stream, uint8_t type) const;
 
       bool deserialize (base_meta_reader& stream, uint8_t type);
+
+      bool is_this_yours (const string_type& path) const;
+
+      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
 
   protected:
@@ -118,7 +123,7 @@ class displays_holder
   private:
 
 
-      display_data displays_;
+      displays_type displays_;
 
 
 };
