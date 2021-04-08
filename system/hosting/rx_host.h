@@ -188,7 +188,6 @@ using hosts_type = string_array;
 
 class rx_platform_host 
 {
-
 	typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
@@ -219,8 +218,6 @@ class rx_platform_host
 
       virtual bool exit () const = 0;
 
-      virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
-
       virtual rx_result build_host (host_platform_builder& builder) = 0;
 
       string_type get_manual (string_type what) const;
@@ -229,7 +226,7 @@ class rx_platform_host
 
       virtual string_type get_host_name () = 0;
 
-      static void print_offline_manual (const string_type& host, const rx_host_directories& dirs);
+      void print_offline_manual (const string_type& host, const rx_host_directories& dirs);
 
       rx_result_with<rx_storage_ptr> get_system_storage (const string_type& name);
 
@@ -266,7 +263,13 @@ class rx_platform_host
 
   protected:
 
-      rx_result read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config);
+      rx_result parse_config_files (rx_platform::configuration_data_t& config);
+
+      virtual void read_config_options (const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config);
+
+      bool parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config);
+
+      virtual void add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config);
 
       rx_result initialize_storages (rx_platform::configuration_data_t& config, const std::vector<library::rx_plugin_base*>& plugins);
 

@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
+// dummy
+#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// dummy
-#include "dummy.h"
 // rx_thread
 #include "lib/rx_thread.h"
 
@@ -114,8 +114,6 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
   protected:
 
       rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
-
-      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
 
 
   private:

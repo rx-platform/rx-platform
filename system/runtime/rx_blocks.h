@@ -176,9 +176,27 @@ source runtime. basic implementation of an source runtime");
 
       void source_result_received (rx_result&& result, runtime_transaction_id_t id);
 
+      std::vector<rx_value> get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path);
+
 
       rx_value_t get_value_type () const;
 
+      template<typename T>
+      typename std::vector<T> get_sourced_values_as(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, const T& default_value)
+      {
+          using ret_data_t = typename std::vector<T>;
+
+          ret_data_t ret;
+          std::vector<rx_value> raw_values = get_sourced_values(ctx, id, path);
+          if (!raw_values.empty())
+          {
+              for (const auto& raw : raw_values)
+              {
+                  ret.emplace_back(values::extract_value<T>(raw.get_storage(), default_value));
+              }
+          }
+          return ret;
+      }
 
   private:
 

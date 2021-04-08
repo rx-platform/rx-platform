@@ -48,6 +48,25 @@
 namespace host {
 
 namespace pipe {
+namespace
+{
+// helper data for pipe host and command line options
+const intptr_t c_invalid_handle = (intptr_t)(-1);
+
+intptr_t read_handle(c_invalid_handle);
+intptr_t write_handle(c_invalid_handle);
+bool use_std = false;
+
+bool do_debug_level = false;
+bool do_trace_level = false;
+bool do_info_level = false;
+bool do_warning_level = false;
+bool do_error_level = false;
+
+
+pipe_client_t pipes;
+
+}
 
 // Class host::pipe::rx_pipe_host 
 
@@ -109,22 +128,56 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 	stdout_log_->set_supports_ansi(supports_ansi());
 
 	rx_platform::configuration_data_t config;
-	pipe_client_t pipes;
 	memzero(&pipes, sizeof(pipes));
 	std::cout << "Parsing command line...";
-	ret = parse_command_line(argc, argv, config, pipes);
+	ret = parse_command_line(argc, argv, "rx-pipe", config);
 	if (ret)
 	{
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+		debug_stop_ = do_debug_level;
+		if (do_debug_level)
+			stdout_log_->log_query = log::rx_log_debug_level;
+		else if (do_trace_level)
+			stdout_log_->log_query = log::rx_log_trace_level;
+		else if (do_info_level)
+			stdout_log_->log_query = log::rx_log_normal_level;
+		else if (do_warning_level)
+			stdout_log_->log_query = log::rx_log_warining_level;
+		else if (do_error_level)
+			stdout_log_->log_query = log::rx_log_error_level;
+		else
+			stdout_log_->log_query = log::rx_log_normal_level;
+
+		if (use_std)
+		{
+			sys_handle_t in, out, err;
+			get_stdio_handles(in, out, err);
+			read_handle = (intptr_t)in;
+			write_handle = (intptr_t)err;
+		}
+		if (read_handle == c_invalid_handle || write_handle == c_invalid_handle)
+		{
+			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
+				<< "\r\nUse --input and --output or --std options to specify handles."
+				<< "\r\nUse --help for more details"
+				<< "\r\n\r\nExiting...\r\n";
+
+			restore_console();
+
+			return false;
+		}
+		pipes.client_read = (sys_handle_t)read_handle;
+		pipes.client_write = (sys_handle_t)write_handle;
+
 		if (debug_stop_)
 		{
 			std::cout << "Press <ENTER> to continue...\r\n";
 			string_type dummy;
 			std::getline(std::cin, dummy);
 		}
-		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
-		ret = read_config_file(reader, config);
+		ret = parse_config_files(config);
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -135,7 +188,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			//config.namespace_data.build_system_from_code = true;
 			
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, server_name.c_str());
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			
@@ -258,114 +311,6 @@ string_type rx_pipe_host::get_pipe_info ()
 bool rx_pipe_host::is_canceling () const
 {
 	return false;
-}
-
-bool rx_pipe_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes)
-{
-
-	cxxopts::Options options("rx-pipe", "");
-
-	const intptr_t c_invalid_handle = (intptr_t)(-1);
-
-	intptr_t read_handle(c_invalid_handle);
-	intptr_t write_handle(c_invalid_handle);
-	bool use_std = false;
-
-	bool do_debug_level = false;
-	bool do_trace_level = false;
-	bool do_info_level = false;
-	bool do_warning_level = false;
-	bool do_error_level = false;
-
-	options.add_options()
-		("i,input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
-		("o,output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
-		("std", "Use stdin and stderr for communication", cxxopts::value<bool>(use_std))
-		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
-		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
-		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
-		("trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
-		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))
-		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_warning_level))
-		("e,error", "Show error level content only error and critical events are listed  to standard output", cxxopts::value<bool>(do_error_level))
-
-		;
-
-	add_command_line_options(options, config);
-
-	try
-	{
-		auto result = options.parse(argc, argv);
-		debug_stop_ = do_debug_level;
-		if (do_debug_level)
-			stdout_log_->log_query = log::rx_log_debug_level;
-		else if (do_trace_level)
-			stdout_log_->log_query = log::rx_log_trace_level;
-		else if (do_info_level)
-			stdout_log_->log_query = log::rx_log_normal_level;
-		else if (do_warning_level)
-			stdout_log_->log_query = log::rx_log_warining_level;
-		else if (do_error_level)
-			stdout_log_->log_query = log::rx_log_error_level;
-		else
-			stdout_log_->log_query = log::rx_log_normal_level;
-
-
-		if (result.count("help"))
-		{
-			// fill paths
-			hosting::rx_host_directories host_directories;
-			rx_result fill_result = fill_host_directories(host_directories);
-			if (!fill_result)
-			{
-				std::cout << "\r\nERROR\r\n";
-			}
-			rx_platform_host::print_offline_manual(RX_PIPE_HOST, host_directories);
-
-			std::cout << options.help({ "" });
-			std::cout << "\r\n";
-
-			// don't execute
-			return false;
-		}
-		else if (result.count("version"))
-		{
-
-			string_type version = rx_gate::instance().get_rx_version();
-
-			std::cout << "\r\n"
-				<< version << "\r\n";
-
-			// don't execute
-			return false;
-		}
-		else if (use_std)
-		{
-            sys_handle_t in, out, err;
-            get_stdio_handles(in,out,err);
-			read_handle = (intptr_t)in;
-			write_handle = (intptr_t)err;
-		}
-		if (read_handle == c_invalid_handle || write_handle == c_invalid_handle)
-		{
-			std::cout << "\r\nThis is a child process and I/O handles have to be supplied"
-				<< "\r\nUse --input and --output or --std options to specify handles."
-				<< "\r\nUse --help for more details"
-				<< "\r\n\r\nExiting...\r\n";
-
-			return false;
-		}
-		pipes.client_read = (sys_handle_t)read_handle;
-		pipes.client_write = (sys_handle_t)write_handle;
-		return true;
-	}
-	catch (std::exception& ex)
-	{
-		std::cout <<  "\r\nError parsing command line:\r\n"
-			<< ex.what() << "\r\n";
-
-		return false;
-	}
 }
 
 void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins)
@@ -624,6 +569,29 @@ void rx_pipe_host::pipe_run_result (rx_result result)
 	}
 }
 
+void rx_pipe_host::add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config)
+{
+	rx_platform_host::add_command_line_options(options, config);
+
+	options.add_options()
+		("i,input", "Handle of the input pipe for this child process", cxxopts::value<intptr_t>(read_handle))
+		("o,output", "Handle of the output pipe for this child process", cxxopts::value<intptr_t>(write_handle))
+		("std", "Use stdin and stderr for communication", cxxopts::value<bool>(use_std))
+		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
+		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
+		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
+		("t,trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
+		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))
+		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_warning_level))
+		("e,error", "Show error level content only error and critical events are listed  to standard output", cxxopts::value<bool>(do_error_level))
+		;
+}
+
+void rx_pipe_host::read_config_options (const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
+{
+	rx_platform_host::read_config_options(options, config);
+}
+
 const char* get_log_type_string(log::log_event_type type)
 {
 	switch (type)
@@ -725,3 +693,71 @@ string_type rx_pipe_stdout_log_subscriber::get_name () const
 } // namespace pipe
 } // namespace host
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+
+	cxxopts::Options options("rx-pipe", "");
+
+
+	add_command_line_options(options, config);
+
+	try
+	{
+		auto result = options.parse(argc, argv);
+		debug_stop_ = do_debug_level;
+		if (do_debug_level)
+			stdout_log_->log_query = log::rx_log_debug_level;
+		else if (do_trace_level)
+			stdout_log_->log_query = log::rx_log_trace_level;
+		else if (do_info_level)
+			stdout_log_->log_query = log::rx_log_normal_level;
+		else if (do_warning_level)
+			stdout_log_->log_query = log::rx_log_warining_level;
+		else if (do_error_level)
+			stdout_log_->log_query = log::rx_log_error_level;
+		else
+			stdout_log_->log_query = log::rx_log_normal_level;
+
+
+		if (result.count("help"))
+		{
+			// fill paths
+			hosting::rx_host_directories host_directories;
+			rx_result fill_result = fill_host_directories(host_directories);
+			if (!fill_result)
+			{
+				std::cout << "\r\nERROR\r\n";
+			}
+			rx_platform_host::print_offline_manual(RX_PIPE_HOST, host_directories);
+
+			std::cout << options.help({ "" });
+			std::cout << "\r\n";
+
+			// don't execute
+			return false;
+		}
+		else if (result.count("version"))
+		{
+
+			string_type version = rx_gate::instance().get_rx_version();
+
+			std::cout << "\r\n"
+				<< version << "\r\n";
+
+			// don't execute
+			return false;
+		}
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		std::cout <<  "\r\nError parsing command line:\r\n"
+			<< ex.what() << "\r\n";
+
+		return false;
+	}
+
+#endif

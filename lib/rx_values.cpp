@@ -460,8 +460,6 @@ void rx_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type&
 	val = *this;
 	if (mode.is_off())
 		val.set_quality(RX_BAD_QUALITY_OFFLINE);
-	else
-		val.set_good_locally();
 	if (mode.is_test())
 		val.set_test();
 }

@@ -343,6 +343,11 @@ void source_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
         container_->add_periodic_job(job);
 }
 
+std::vector<rx_value> source_runtime::get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+{
+    return ctx.sources.get_sourced_values(id, path);
+}
+
 
 rx_value_t source_runtime::get_value_type () const
 {

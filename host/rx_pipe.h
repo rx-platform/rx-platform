@@ -36,10 +36,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_anonymus_pipes
-#include "host/rx_anonymus_pipes.h"
 // rx_log
 #include "lib/rx_log.h"
+// rx_anonymus_pipes
+#include "host/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -144,9 +144,11 @@ class rx_pipe_host : public rx_platform::hosting::rx_platform_host
 
   protected:
 
-      bool parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config, pipe_client_t& pipes);
-
       void pipe_loop (configuration_data_t& config, const pipe_client_t& pipes, std::vector<library::rx_plugin_base*>& plugins);
+
+      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
+
+      virtual void read_config_options (const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config);
 
 
   private:

@@ -71,17 +71,6 @@ rx_result register_plugin_constructor(library::rx_plugin_base* plugin
         }
         else
         {
-            locks::auto_slim_lock _(g_runtime_lock);
-
-            auto it = container->find(new_id);
-            if (it != container->end())
-            {
-                std::ostringstream ss;
-                ss << "Instance " << new_id.to_string()
-                    << " is already registered";
-                return ret;
-            }
-
             ret.ptr = new_ptr;
         }
         ret.register_f = [container, new_ptr](const rx_node_id& id)

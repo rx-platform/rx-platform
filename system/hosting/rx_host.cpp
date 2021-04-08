@@ -135,13 +135,96 @@ template rx_result register_host_runtime<application_type>(rx_directory_ptr host
 namespace hosting {
 namespace
 {
-rx_result do_read_config_files(const rx_host_directories& host_directories, const string_type host_name, configuration_reader& reader, rx_platform::configuration_data_t& config)
+void read_base_config_options(const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
 {
+	for (auto& row : options)
+	{
+		if (row.first == "storage.system"
+			&& config.storage.system_storage_reference.empty())
+			config.storage.system_storage_reference = row.second;
+		else if (row.first == "storage.user"
+			&& config.storage.user_storage_reference.empty())
+			config.storage.user_storage_reference = row.second;
+		else if (row.first == "storage.test"
+			&& config.storage.test_storage_reference.empty())
+			config.storage.test_storage_reference = row.second;
+		else if (row.first == "instance.name"
+			&& config.meta_configuration.instance_name.empty())
+			config.meta_configuration.instance_name = row.second;
+		else if (row.first == "other.manuals" && config.other.manuals_path.empty())
+			config.other.manuals_path = row.second;
+		else if (row.first == "other.logs" && config.management.logs_directory.empty())
+			config.management.logs_directory = row.second;
+		else if (row.first == "processor.real-time" && !config.processor.real_time)
+			config.processor.real_time = true;
+		else if (row.first == "processor.no-hd-timer" && !config.processor.no_hd_timer)
+			config.processor.no_hd_timer = true;
+	}
+}
+}
+
+// Class rx_platform::hosting::rx_platform_host 
+
+rx_platform_host::rx_platform_host(const rx_platform_host &right)
+      : parent_(nullptr)
+{
+	RX_ASSERT(false);
+}
+
+rx_platform_host::rx_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
+      : parent_(nullptr)
+{
+	for (auto one : storages)
+		storages_.storage_types.emplace(one->get_reference_prefix(), one);
+}
+
+
+rx_platform_host::~rx_platform_host()
+{
+}
+
+
+rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
+{
+	RX_ASSERT(false);
+	return *this;
+}
+
+
+
+rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_t& config)
+{
+	// fill paths
+	rx_host_directories host_directories;
+	rx_result ret = fill_host_directories(host_directories);
+	if (!ret)
+		return ret;
+
+	if (!host_directories.copyright_file.empty())
+	{
+		sys_handle_t file = rx_file(host_directories.copyright_file.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			uint64_t size = 0;
+			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
+			{
+				copyright_cache_.assign(size, ' ');
+				if (RX_OK != rx_file_read(file, &copyright_cache_[0], (uint32_t)size, nullptr))
+				{
+					copyright_cache_.clear();
+				}
+			}
+			rx_file_close(file);
+		}
+	}
+	lic_path_ = host_directories.license_file;
+
+	simplified_yaml_reader reader;
+
 	string_type platform_file_name("rx-platform.yml");
-	string_type host_file_name(host_name + ".yml");
-	rx_result ret = false;
+	string_type host_file_name(get_host_name() + ".yml");
 	bool one_success = false;
-	
+
 	string_array paths{
 			rx_combine_paths(host_directories.local_folder, host_file_name),
 			rx_combine_paths(host_directories.local_folder, platform_file_name),
@@ -178,26 +261,7 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 			ret = reader.parse_configuration(settings_buff, config_values);
 			if (ret)
 			{
-				for (auto& row : config_values)
-				{
-					if (row.first == "storage.system"
-						&& config.storage.system_storage_reference.empty())
-						config.storage.system_storage_reference = row.second;
-					else if (row.first == "storage.user"
-						&& config.storage.user_storage_reference.empty())
-						config.storage.user_storage_reference = row.second;
-					else if (row.first == "storage.test"
-						&& config.storage.test_storage_reference.empty())
-						config.storage.test_storage_reference = row.second;
-					else if (row.first == "instance.name"
-						&& config.meta_configuration.instance_name.empty())
-						config.meta_configuration.instance_name = row.second;
-					else if (row.first == "other.manuals" && config.other.manuals_path.empty())
-						config.other.manuals_path = row.second;
-					else if (row.first == "other.logs" && config.management.logs_directory.empty())
-						config.management.logs_directory = row.second;
-				}
-				one_success = true;
+				read_config_options(config_values, config);
 			}
 			else
 			{
@@ -211,41 +275,101 @@ rx_result do_read_config_files(const rx_host_directories& host_directories, cons
 	}
 	if (one_success)
 	{
+
+		if (config.storage.system_storage_reference.empty())
+			config.storage.system_storage_reference = host_directories.system_storage;
+		if (config.storage.user_storage_reference.empty())
+			config.storage.user_storage_reference = host_directories.user_storage;
+		if (config.other.manuals_path.empty())
+			config.other.manuals_path = host_directories.manuals;
+
+		manuals_path_ = config.other.manuals_path;
+
 		return true;
 	}
 	else
 		return ret;
 }
-}
 
-// Class rx_platform::hosting::rx_platform_host 
-
-rx_platform_host::rx_platform_host(const rx_platform_host &right)
-      : parent_(nullptr)
+void rx_platform_host::read_config_options (const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
 {
-	RX_ASSERT(false);
+	read_base_config_options(options, config);
 }
 
-rx_platform_host::rx_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
-      : parent_(nullptr)
+bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config)
 {
-	for (auto one : storages)
-		storages_.storage_types.emplace(one->get_reference_prefix(), one);
+	cxxopts::Options options("rx-interactive", "");
+
+	add_command_line_options(options, config);
+
+	try
+	{
+		auto result = options.parse(argc, argv);
+		if (result.count("help"))
+		{
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+			// fill paths
+			hosting::rx_host_directories host_directories;
+			rx_result fill_result = fill_host_directories(host_directories);
+			if (!fill_result)
+			{
+				std::cout << "\r\nERROR\r\n";
+			}
+			rx_platform_host::print_offline_manual(help_name, host_directories);
+
+			std::cout << options.help({ "" });
+
+			// don't execute
+			return false;
+		}
+		else if (result.count("version"))
+		{
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+			string_type version = rx_gate::instance().get_rx_version();
+
+			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< version << ANSI_COLOR_RESET;
+
+			// don't execute
+			return false;
+		}
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		std::cout << ANSI_STATUS_ERROR "\r\nError parsing command line:\r\n"
+			<< ex.what() << "\r\n";
+
+
+		return false;
+	}
 }
 
-
-rx_platform_host::~rx_platform_host()
+void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
 {
+	options.add_options()
+		("io", "I/O pool thread pool size", cxxopts::value<int>(config.processor.io_pool_size))
+		("workers", "Workers pool thread pool size", cxxopts::value<int>(config.processor.workers_pool_size))
+		("slow", "Slow pool thread pool size", cxxopts::value<int>(config.processor.slow_pool_size))
+		("unassigned", "Use dedicated unassigned thread", cxxopts::value<bool>(config.processor.has_unassigned_pool))
+		("calculation", "Use dedicated calculation timer", cxxopts::value<bool>(config.processor.has_calculation_timer))
+		("no-hd-timer", "Do not use high definition timer", cxxopts::value<bool>(config.processor.no_hd_timer))
+		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
+		
+		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
+		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
+		("test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
+		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
+		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
+		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
+		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
+		("v,version", "Displays platform version")
+		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
+		("h,help", "Print help")
+		;
 }
-
-
-rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
-{
-	RX_ASSERT(false);
-	return *this;
-}
-
-
 
 void rx_platform_host::get_host_info (hosts_type& hosts)
 {
@@ -277,49 +401,6 @@ std::vector<ETH_interface> rx_platform_host::get_ETH_interfaces (const string_ty
 std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
 	std::vector<IP_interface> ret;
-	return ret;
-}
-
-rx_result rx_platform_host::read_config_file (configuration_reader& reader, rx_platform::configuration_data_t& config)
-{
-	// fill paths
-	rx_host_directories temp_directories;
-	rx_result ret = fill_host_directories(temp_directories);
-	if (!ret)
-		return ret;
-
-	if (!temp_directories.copyright_file.empty())
-	{
-		sys_handle_t file = rx_file(temp_directories.copyright_file.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-		if (file)
-		{
-			uint64_t size = 0;
-			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
-			{
-				copyright_cache_.assign(size, ' ');
-				if (RX_OK != rx_file_read(file, &copyright_cache_[0], (uint32_t)size, nullptr))
-				{
-					copyright_cache_.clear();
-				}
-			}
-			rx_file_close(file);
-		}
-	}
-	lic_path_ = temp_directories.license_file;
-
-	ret = do_read_config_files(temp_directories, get_host_name(), reader, config);
-
-	if (config.storage.system_storage_reference.empty())
-		config.storage.system_storage_reference = temp_directories.system_storage;
-	if (config.storage.user_storage_reference.empty())
-		config.storage.user_storage_reference = temp_directories.user_storage;
-	if (config.other.manuals_path.empty())
-		config.other.manuals_path = temp_directories.manuals;
-
-	manuals_path_ = config.other.manuals_path;
-
-	
-
 	return ret;
 }
 
@@ -425,23 +506,6 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 	return result;
 }
 
-void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
-{
-	options.add_options()
-		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
-		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
-		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
-		("t,test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
-		("y,system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
-		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
-		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
-		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
-		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
-		("h,help", "Print help")
-		;
-}
-
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_result ret;
@@ -474,8 +538,7 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 {
 	rx_platform::configuration_data_t config;
 
-	rx_platform::hosting::simplified_yaml_reader reader;
-	auto result = do_read_config_files(dirs, host, reader, config);
+	auto result = parse_config_files(config);
 	if (!result)
 	{
 		std::cout << "Error parsing config files";

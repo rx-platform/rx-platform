@@ -79,8 +79,6 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       bool supports_ansi () const;
 
-      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
-
       string_type get_full_path (const string_type& path);
 
 	  template<class tupleType>
@@ -91,6 +89,8 @@ class win32_console_host : public host::interactive::interactive_console_host
   protected:
 
       rx_result fill_host_directories (rx_host_directories& data);
+
+      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
 
 
   private:

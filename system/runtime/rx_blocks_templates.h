@@ -133,6 +133,7 @@ class extern_source_impl : public source_runtime
         }
         void runtime_disconnected()
         {
+            my_source->internal_port_disconnected();
         }
         rx_reference_ptr get_reference()
         {

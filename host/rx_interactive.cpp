@@ -242,63 +242,6 @@ std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const str
 			return ret;
 }
 
-bool interactive_console_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
-{
-
-	cxxopts::Options options("rx-interactive", "");
-
-	add_command_line_options(options, config);
-
-	try
-	{
-		auto result = options.parse(argc, argv);
-		if (result.count("help"))
-		{
-			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-			restore_console();
-
-			// fill paths
-			hosting::rx_host_directories host_directories;
-			rx_result fill_result = fill_host_directories(host_directories);
-			if (!fill_result)
-			{
-				std::cout << "\r\nERROR\r\n";
-			}
-			rx_platform_host::print_offline_manual(RX_INTERACTIVE_HOST, host_directories);
-
-			std::cout << options.help({ "" });
-
-			// don't execute
-			return false;
-		}
-		else if (result.count("version"))
-		{
-			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-			string_type version = rx_gate::instance().get_rx_version();
-
-			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
-				<< version << ANSI_COLOR_RESET;
-
-			restore_console();
-
-			// don't execute
-			return false;
-		}
-		return true;
-	}
-	catch (std::exception& ex)
-	{
-		std::cout << ANSI_STATUS_ERROR "\r\nError parsing command line:\r\n"
-			<< ex.what() << "\r\n";
-
-		restore_console();
-
-		return false;
-	}
-}
-
 int interactive_console_host::console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_thread_data_t tls = rx_alloc_thread_data();
@@ -307,13 +250,12 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 
 	rx_platform::configuration_data_t config;
 	std::cout << "Parsing command line...";
-	ret = parse_command_line(argc, argv, config);
+	ret = parse_command_line(argc, argv, "rx-interactive", config);
 	if (ret)
 	{
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
-		ret = read_config_file(reader, config);
+		ret = parse_config_files(config);
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -322,7 +264,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 				config.meta_configuration.instance_name = "develop";
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, tls, server_name.c_str());
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, server_name.c_str());
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			std::cout << "\r\n";
@@ -395,21 +337,6 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
-					if (!ret)
-					{// we had error, dump log
-
-						std::cout << "\r\n\r\nStartup log entries:\r\n";
-
-						log::log_query_type query;
-						query.count = 20;
-						log::log_events_type events;
-						query.type = log::rx_log_error_level;
-						//rx::log::log_object::instance().read_log(query, events);
-						//!!!
-
-						hosting::rx_platform_host::dump_log_items(events, std::cout);
-
-					}
 				}
 				else
 				{
@@ -417,6 +344,22 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
+			}
+
+			if (!ret)
+			{// we had error, dump log
+
+				std::cout << "\r\n\r\nStartup log entries:\r\n";
+
+				log::log_query_type query;
+				query.count = 20;
+				log::log_events_type events;
+				query.type = log::rx_log_error_level;
+				//rx::log::log_object::instance().read_log(query, events);
+				//!!!
+
+				hosting::rx_platform_host::dump_log_items(events, std::cout);
+
 			}
 
 			rx_deinitialize_os();
@@ -604,7 +547,7 @@ void interactive_console_host::console_run_result (rx_result result)
 	}
 	else
 	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Local Pipe:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
 		rx_dump_error_result(std::cout, result);
 		std::cout << "\r\n";
 	}

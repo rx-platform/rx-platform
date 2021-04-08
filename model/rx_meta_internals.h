@@ -76,22 +76,11 @@ rx_result register_internal_constructor(library::rx_plugin_base* plugin
         {
             std::ostringstream ss;
             ss << "Instance " << new_id.to_string()
-                << " could not be created for class";
+                << " could not be created for class"; 
             return ret;
         }
         else
         {
-            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
-
-            auto it = container->find(new_id);
-            if (it != container->end())
-            {
-                std::ostringstream ss;
-                ss << "Instance " << new_id.to_string()
-                    << " is already registered";
-                return ret;
-            }
-
             ret.ptr = new_ptr;
         }
         ret.register_f = [container, new_ptr](const rx_node_id& id)

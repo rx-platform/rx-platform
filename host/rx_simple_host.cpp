@@ -92,26 +92,26 @@ bool simple_platform_host::break_host (const string_type& msg)
 	return true;
 }
 
-int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
+int simple_platform_host::initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_thread_data_t tls = rx_alloc_thread_data();
 
 	debug_break_ = false;
 
-
-
-	rx_result ret = true;// parse_command_line(argc, argv, config);
+	std::cout << "Reading configuration file...";
+	std::cout << "Parsing command line...";
+	rx_result ret = parse_command_line(argc, argv, help_name, config_);
 	if (ret)
 	{
+		std::cout << "OK\r\n";
 		if (debug_break_)
 		{
 			std::cout << "Press <ENTER> to continue...\r\n";
 			string_type dummy;
 			std::getline(std::cin, dummy);
 		}
-		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
-		ret = read_config_file(reader, config_);
+		ret = parse_config_files(config_);
 		if (ret)
 		{
 			std::cout << "OK\r\n";
@@ -120,7 +120,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], log::log_
 
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config_.processor.real_time, tls, server_name.c_str());
+			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, server_name.c_str());
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
 				<< "{rx-platform} "
@@ -301,12 +301,11 @@ string_type simple_platform_host::just_parse_command_line (int argc, char* argv[
 		<< "{rx-platform} Simple Host"
 		<< "\r\n======================================\r\n";
 
-	bool ret = parse_command_line(argc, argv, config);
+	bool ret = parse_command_line(argc, argv, "rx-simple", config);
 	if (ret)
 	{
-		rx_platform::hosting::simplified_yaml_reader reader;
 		std::cout << "Reading configuration file...";
-		ret = read_config_file(reader, config);
+		ret = parse_config_files(config);
 		if (ret)
 		{
 			std::cout << "OK\r\n";
@@ -314,11 +313,6 @@ string_type simple_platform_host::just_parse_command_line (int argc, char* argv[
 		}
 	}
 	return server_name;
-}
-
-int simple_platform_host::parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
-{
-	return true;
 }
 
 rx_result simple_platform_host::build_host (hosting::host_platform_builder& builder)

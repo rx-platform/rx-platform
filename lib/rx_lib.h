@@ -262,7 +262,7 @@ public:
 	{
 		if (*this)
 			return "";
-		else if (errors_->empty())
+		else if (!errors_ || errors_->empty())
 			return "No specific errors, it's just empty.!";
 		std::ostringstream ss;
 		for (const auto& one : *errors_)

@@ -398,6 +398,13 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			ctx.mappers.push_mapper(one.mapper_id, &one);
 		}
 	}
+	if constexpr (has_sources())
+	{
+		for (auto& one : sources.collection)
+		{
+			ctx.sources.push_source(one.source_id, &one);
+		}
+	}
 	for (auto one : items)
 	{
 		switch (one.index&rt_type_mask)
@@ -452,6 +459,13 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		for (auto& one : mappers.collection)
 		{
 			ctx.mappers.pop_mapper(one.mapper_id);
+		}
+	}
+	if constexpr (has_sources())
+	{
+		for (auto& one : sources.collection)
+		{
+			ctx.sources.pop_source(one.source_id);
 		}
 	}
 	return ret;

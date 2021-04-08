@@ -285,7 +285,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
 #ifdef _DEBUG
                 if (writer.get_string(const_cast<string_type&>(whose.json_cache_), true))
 #else
-                if (writer.get_string(const_cast<runtime_holder<typeT>*>(this)->json_cache_, false))
+                if (writer.get_string(const_cast<string_type&>(whose.json_cache_), false))
 #endif
                     value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
             }

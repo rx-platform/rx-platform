@@ -431,7 +431,7 @@ string_type rx_result::errors_line(char delim) const
 {
 	if (*this)
 		return "";
-	else if (result_value_->empty())
+	else if (!result_value_ || result_value_->empty())
 		return "No specific errors!";
 	std::ostringstream ss;
 	for (const auto& one : *result_value_)

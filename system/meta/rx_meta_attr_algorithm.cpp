@@ -179,6 +179,7 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
+		temp.value().source_id = target;
 		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
 		return true;
 	}

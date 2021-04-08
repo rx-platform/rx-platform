@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_BUILD_NUMBER 2
 
 /*********************************************************************************
 
@@ -34,5 +34,6 @@
 0.12.1. added addresses to connect callback
 1.0.0 first release version
 1.0.1 resolved stuff with get_us_ticks and overflow
+1.0.2 implemented hd-timer option
 
 *********************************************************************************/

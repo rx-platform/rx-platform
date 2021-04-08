@@ -335,6 +335,7 @@ void init_fixed_drives();
 int rx_big_endian = 0;
 rx_thread_data_t rx_tls = 0;
 const char* rx_server_name = NULL;
+int rx_hd_timer = 1;
 const char* rx_get_server_name()
 {
 	return rx_server_name;
@@ -529,7 +530,7 @@ void rx_init_hal_version()
 
 struct WSAData wsaData;
 
-void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_name)
 {
 
 	OutputDebugStringA("{rx-platform} initializing 1...");
@@ -539,6 +540,7 @@ void rx_initialize_os(int rt, rx_thread_data_t tls, const char* server_name)
 
 	rx_server_name = server_name;
 	rx_tls = tls;
+	rx_hd_timer = hdt;
 	rx_pid = GetCurrentProcessId();
 	// determine big endian or little endian
 	union {
@@ -1251,26 +1253,39 @@ void rx_usleep(uint64_t timeout)
 }
 uint32_t rx_get_tick_count()
 {
-	LARGE_INTEGER ret;
-	QueryPerformanceCounter(&ret);
-	uint64_t low_ticks = ret.LowPart;
-	uint64_t high_ticks = ret.HighPart;
-	low_ticks *= g_res_m;
-	high_ticks *= g_res_m;
+	if (rx_hd_timer)
+	{
+		LARGE_INTEGER ret;
+		QueryPerformanceCounter(&ret);
+		uint64_t low_ticks = ret.LowPart;
+		uint64_t high_ticks = ret.HighPart;
+		low_ticks *= g_res_m;
+		high_ticks *= g_res_m;
+		return (uint32_t)((low_ticks >> 32) + high_ticks);
+	}
+	else
+	{
+		return GetTickCount();
+	}
 
-	return (uint32_t)((low_ticks >> 32) + high_ticks);
 }
 uint64_t rx_get_us_ticks()
 {
+	if (rx_hd_timer)
+	{
+		LARGE_INTEGER ret;
+		QueryPerformanceCounter(&ret);
+		uint64_t low_ticks = ret.LowPart;
+		uint64_t high_ticks = ret.HighPart;
+		low_ticks *= g_res_u;
+		high_ticks *= g_res_u;
 
-	LARGE_INTEGER ret;
-	QueryPerformanceCounter(&ret);
-	uint64_t low_ticks = ret.LowPart;
-	uint64_t high_ticks = ret.HighPart;
-	low_ticks *= g_res_u;
-	high_ticks *= g_res_u;
-
-	return (low_ticks >> 32) + high_ticks;
+		return (low_ticks >> 32) + high_ticks;
+	}
+	else
+	{
+		return GetTickCount64() * 1000ULL;
+	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -298,6 +298,53 @@ std::vector<rx_value> mappers_stack::get_mapped_values (const rx_node_id& id, co
 }
 
 
+// Class rx_platform::runtime::sources_stack 
+
+
+void sources_stack::push_source (const rx_node_id& id, structure::source_data* what)
+{
+	auto it = sources_.find(id);
+	if (it != sources_.end())
+	{
+		it->second.push_back(what);
+	}
+	else
+	{
+		auto result = sources_.emplace(id, sources_type::mapped_type());
+		result.first->second.push_back(what);
+	}
+}
+
+void sources_stack::pop_source (const rx_node_id& id)
+{
+	auto it = sources_.find(id);
+	if (it != sources_.end())
+	{
+		it->second.pop_back();
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
+std::vector<rx_value> sources_stack::get_sourced_values (const rx_node_id& id, const string_type& path)
+{
+	std::vector<rx_value> ret_value;
+	auto it = sources_.find(id);
+	if (it != sources_.end() && !it->second.empty())
+	{
+		for (auto& one : it->second)
+		{
+			rx_simple_value val;
+			if (one->item->get_local_value(path, val))
+				ret_value.emplace_back(rx_value::from_simple(std::move(val), rx_time::now()));
+		}
+	}
+	return ret_value;
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
 

@@ -781,6 +781,8 @@ class source_data
 
       source_runtime_ptr source_ptr;
 
+      rx_node_id source_id;
+
 	  typedef std::unique_ptr<source_data> smart_ptr;
   protected:
 
@@ -890,6 +892,7 @@ class block_data : public runtime_item
 
 
       items_type items;
+
 
   protected:
 

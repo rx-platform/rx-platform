@@ -35,10 +35,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -118,7 +118,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int initialize_platform (int argc, char* argv[], log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
+      int initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
 
       static string_type get_simple_info ();
 
@@ -146,9 +146,6 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
 
   protected:
-
-      int parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config);
-
 
   private:
 

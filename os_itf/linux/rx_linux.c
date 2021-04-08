@@ -95,13 +95,14 @@ const char* rx_get_server_name()
 const char* g_ositf_version = "ERROR!!!";
 char ver_buffer[0x100];
 rx_pid_t rx_pid;
+rx_hd_timer = 1;
 
 void rx_init_hal_version()
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 }
-void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls,const char* server_name)
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
@@ -109,6 +110,7 @@ void rx_initialize_os(int rt, rx_thread_data_t tls,const char* server_name)
 
     rx_server_name=server_name;
 	rx_tls = tls;
+	rx_hd_timer = hdt;
 	rx_pid= getpid();
 	// determine big endian or little endian
 	union {

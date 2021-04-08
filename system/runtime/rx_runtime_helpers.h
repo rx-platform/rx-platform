@@ -52,17 +52,18 @@ class rx_directory_resolver;
 namespace runtime {
 namespace structure {
 class runtime_item;
+class source_data;
 class mapper_data;
 class variable_data;
 } // namespace structure
 
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-
 namespace operational {
 class binded_tags;
 } // namespace operational
+
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
 
 class runtime_process_context;
 
@@ -462,6 +463,35 @@ class mappers_stack
 };
 
 
+
+
+
+
+
+class sources_stack 
+{
+    typedef std::map<rx_node_id, std::vector<structure::source_data*> > sources_type;
+
+  public:
+
+      void push_source (const rx_node_id& id, structure::source_data* what);
+
+      void pop_source (const rx_node_id& id);
+
+      std::vector<rx_value> get_sourced_values (const rx_node_id& id, const string_type& path);
+
+
+  protected:
+
+  private:
+
+
+      sources_type sources_;
+
+
+};
+
+
 typedef std::map<string_type, runtime_handle_t> binded_tags_type;
 
 
@@ -492,6 +522,8 @@ struct runtime_init_context
       operational::binded_tags *tags;
 
       mappers_stack mappers;
+
+      sources_stack sources;
 
 
       const meta::meta_data& meta;

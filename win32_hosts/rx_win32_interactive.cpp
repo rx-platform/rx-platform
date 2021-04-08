@@ -575,17 +575,17 @@ bool win32_console_host::supports_ansi () const
 		return supports_ansi_;
 }
 
+string_type win32_console_host::get_full_path (const string_type& path)
+{
+	return get_full_path_from_relative(path);
+}
+
 void win32_console_host::add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config)
 {
 	interactive_console_host::add_command_line_options(options, config);
 	options.add_options()
 		("use-ansi", "Force use of the ANSI escape sequences even when these are not supported.", cxxopts::value<bool>(use_ansi_))
 		("no-ansi", "Force not to use the ANSI escape sequences even when these are supported.", cxxopts::value<bool>(no_ansi_));
-}
-
-string_type win32_console_host::get_full_path (const string_type& path)
-{
-	return get_full_path_from_relative(path);
 }
 
 
