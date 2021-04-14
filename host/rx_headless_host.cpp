@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_simple_host.cpp
+*  host\rx_headless_host.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -30,10 +30,10 @@
 
 #include "pch.h"
 
-#include "rx_simple_version.h"
+#include "rx_headless_version.h"
 
-// rx_simple_host
-#include "host/rx_simple_host.h"
+// rx_headless_host
+#include "host/rx_headless_host.h"
 
 #include "system/hosting/rx_yaml.h"
 #include "terminal/rx_terminal_style.h"
@@ -41,11 +41,11 @@
 
 namespace host {
 
-namespace simple {
+namespace headless {
 
-// Class host::simple::simple_platform_host 
+// Class host::headless::headless_platform_host 
 
-simple_platform_host::simple_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
+headless_platform_host::headless_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : exit_(false),
         debug_break_(false)
 	, hosting::rx_platform_host(storages)
@@ -53,46 +53,46 @@ simple_platform_host::simple_platform_host (const std::vector<storage_base::rx_p
 }
 
 
-simple_platform_host::~simple_platform_host()
+headless_platform_host::~headless_platform_host()
 {
 }
 
 
 
-void simple_platform_host::get_host_info (hosts_type& hosts)
+void headless_platform_host::get_host_info (hosts_type& hosts)
 {
-	hosts.emplace_back(get_simple_info());
+	hosts.emplace_back(get_headless_info());
 	rx_platform_host::get_host_info(hosts);
 }
 
-void simple_platform_host::server_started_event ()
+void headless_platform_host::server_started_event ()
 {
 }
 
-bool simple_platform_host::shutdown (const string_type& msg)
+bool headless_platform_host::shutdown (const string_type& msg)
 {
 	exit_ = true;
 	rx_gate::instance().get_host()->break_host("");
 	return true;
 }
 
-bool simple_platform_host::exit () const
+bool headless_platform_host::exit () const
 {
 	return exit_;
 }
 
-bool simple_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
+bool headless_platform_host::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, const security::security_context& ctx)
 {
 	return true;
 }
 
-bool simple_platform_host::break_host (const string_type& msg)
+bool headless_platform_host::break_host (const string_type& msg)
 {
 
 	return true;
 }
 
-int simple_platform_host::initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
+int headless_platform_host::initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_thread_data_t tls = rx_alloc_thread_data();
 
@@ -171,7 +171,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], const cha
 
 						std::cout << "OK\r\n";
 
-						HOST_LOG_INFO("Main", 999, "Starting Simple Host...");
+						HOST_LOG_INFO("Main", 999, "Starting Headless Host...");
 
 						if (!config_.management.telnet_port)// set to the last default if not set
 							config_.management.telnet_port = 12345;
@@ -188,7 +188,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], const cha
 						if (ret)
 						{
 							HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-							std::cout << "Initializing rx-platform...";
+							std::cout << "Initializing{rx-platform} ...";
 							auto result = rx_platform::rx_gate::instance().initialize(this, config_);
 							if (result)
 							{
@@ -199,7 +199,7 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], const cha
 							}
 							else
 							{
-								std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
+								std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
 								rx_dump_error_result(std::cout, result);
 							}
 						}
@@ -235,43 +235,43 @@ int simple_platform_host::initialize_platform (int argc, char* argv[], const cha
 	return 0;
 }
 
-string_type simple_platform_host::get_simple_info ()
+string_type headless_platform_host::get_headless_info ()
 {
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_SIMPLE_HOST_NAME, RX_SIMPLE_HOST_MAJOR_VERSION, RX_SIMPLE_HOST_MINOR_VERSION, RX_SIMPLE_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_HEADLESS_HOST_NAME, RX_HEADLESS_HOST_MAJOR_VERSION, RX_HEADLESS_HOST_MINOR_VERSION, RX_HEADLESS_HOST_BUILD_NUMBER);
 	}
 	return ret;
 }
 
-bool simple_platform_host::is_canceling () const
+bool headless_platform_host::is_canceling () const
 {
 	return false;
 }
 
-bool simple_platform_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
+bool headless_platform_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
 	return false;
 }
 
-bool simple_platform_host::write_stdout (const void* data, size_t size)
+bool headless_platform_host::write_stdout (const void* data, size_t size)
 {
 	return true;
 }
 
-int simple_platform_host::deinitialize_platform ()
+int headless_platform_host::deinitialize_platform ()
 {
 
-	auto result = remove_simple_thread_security();
+	auto result = remove_headless_thread_security();
 
-	std::cout << "Stopping rx-platform...";
+	std::cout << "Stopping {rx-platform} ...";
 	result = rx_platform::rx_gate::instance().stop();
 	if (result)
 		std::cout << "OK\r\n";
 	else
 	{
-		std::cout << "ERROR\r\nError stopping rx-platform:\r\n";
+		std::cout << "ERROR\r\nError stopping {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	if (debug_break_)
@@ -283,25 +283,25 @@ int simple_platform_host::deinitialize_platform ()
 	return 1;
 }
 
-rx_result simple_platform_host::set_simple_thread_security ()
+rx_result headless_platform_host::set_headless_thread_security ()
 {
 	return true;// just use the host security context
 }
 
-rx_result simple_platform_host::remove_simple_thread_security ()
+rx_result headless_platform_host::remove_headless_thread_security ()
 {
 	return true;
 }
 
-string_type simple_platform_host::just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
+string_type headless_platform_host::just_parse_command_line (int argc, char* argv[], rx_platform::configuration_data_t& config)
 {
 	string_type server_name;
 
 	std::cout << "\r\n"
-		<< "{rx-platform} Simple Host"
+		<< "{rx-platform} Headless Host"
 		<< "\r\n======================================\r\n";
 
-	bool ret = parse_command_line(argc, argv, "rx-simple", config);
+	bool ret = parse_command_line(argc, argv, "rx-headless", config);
 	if (ret)
 	{
 		std::cout << "Reading configuration file...";
@@ -315,24 +315,24 @@ string_type simple_platform_host::just_parse_command_line (int argc, char* argv[
 	return server_name;
 }
 
-rx_result simple_platform_host::build_host (hosting::host_platform_builder& builder)
+rx_result headless_platform_host::build_host (hosting::host_platform_builder& builder)
 {
 	return true;
 }
 
-string_type simple_platform_host::get_host_manual () const
+string_type headless_platform_host::get_host_manual () const
 {
-	return rx_platform_host::get_manual("hosts/rx-simple");
+	return rx_platform_host::get_manual("hosts/rx-headless");
 }
 
-int simple_platform_host::start_platform ()
+int headless_platform_host::start_platform ()
 {
 	HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-	std::cout << "Starting rx-platform...";
+	std::cout << "Starting {rx-platform} ...";
 	auto result = rx_platform::rx_gate::instance().start(this, config_);
 	if (result)
 	{
-		result = set_simple_thread_security();
+		result = set_headless_thread_security();
 		if (result)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -343,34 +343,34 @@ int simple_platform_host::start_platform ()
 				
 			}
 
-			std::cout << "\r\nrx-platform Comm Module is running.";
+			std::cout << "\r\n{rx-platform} Headless Module is running.";
 			std::cout << "\r\n=================================\r\n";
 			return 1;
 		}
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	else
 	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
-	std::cout << "De-initializing rx-platform...";
+	std::cout << "De-initializing{rx-platform} ...";
 	if(host_security_context_)
 		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
 	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	return 0;
 }
 
-int simple_platform_host::stop_platform ()
+int headless_platform_host::stop_platform ()
 {
-	std::cout << "De-initializing rx-platform...";
+	std::cout << "De-initializing{rx-platform} ...";
 	rx_result result;
 	if (host_security_context_)
 		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
@@ -378,7 +378,7 @@ int simple_platform_host::stop_platform ()
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
 	{
-		std::cout << "ERROR\r\nError deinitialize rx-platform:\r\n";
+		std::cout << "ERROR\r\nError deinitialize {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
 	thread_synchronizer_.deinit_callback();
@@ -391,21 +391,21 @@ int simple_platform_host::stop_platform ()
 	return 1;
 }
 
-string_type simple_platform_host::get_host_name ()
+string_type headless_platform_host::get_host_name ()
 {
 	return RX_SIMPLE_HOST;
 }
 
-rx_result simple_platform_host::register_constructors ()
+rx_result headless_platform_host::register_constructors ()
 {
 	return true;
 }
 
 
-// Class host::simple::simple_security 
+// Class host::headless::headless_security 
 
 
-// Class host::simple::rx_thread_synchronizer 
+// Class host::headless::rx_thread_synchronizer 
 
 
 void rx_thread_synchronizer::append (jobs::job_ptr pjob)
@@ -422,6 +422,6 @@ void rx_thread_synchronizer::deinit_callback ()
 }
 
 
-} // namespace simple
+} // namespace headless
 } // namespace host
 

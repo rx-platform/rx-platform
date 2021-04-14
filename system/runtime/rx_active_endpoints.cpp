@@ -59,7 +59,8 @@ namespace ports_templates {
 
 template <typename translatorT, typename addrT>
 routing_endpoint<translatorT,addrT>::routing_endpoint (runtime::items::port_runtime* port)
-      : port_(port)
+      : port_(port),
+        connected_(false)
 {
     std::ostringstream ss;
     ss << "Routing endpoint at "
@@ -160,7 +161,9 @@ rx_protocol_result_t routing_endpoint<translatorT,addrT>::connected (rx_session_
         {
         }
         else
-        {            
+        {
+            locks::auto_slim_lock _(&sessions_lock_);
+            connected_ = true;
             for (auto& one : active_map_)
             {
                 auto result = rx_notify_connected(&one.second->stack, session);
@@ -235,6 +238,7 @@ template <typename translatorT, typename addrT>
 rx_protocol_result_t routing_endpoint<translatorT,addrT>::disconnected (rx_session_def* session, rx_protocol_result_t reason)
 {
     locks::auto_slim_lock _(&sessions_lock_);
+    connected_ = false;
     auto active_size = active_map_.size();
     if (active_size)
     {
@@ -254,11 +258,12 @@ void routing_endpoint<translatorT,addrT>::closed (rx_protocol_result_t reason)
     using client_master_t = typename translatorT::client_master_translator;
     if constexpr (client_master_t::value)
     {
-        rx_pop_stack(&stack);
+        port_->unbind_stack_endpoint(&stack);
     }
     else
     {
-        std::vector<rx_protocol_stack_endpoint*> endpoints;
+        port_->destroy_endpoint(&stack);
+        /*std::vector<rx_protocol_stack_endpoint*> endpoints;
         {
             locks::auto_slim_lock _(&sessions_lock_);
             auto active_size = active_map_.size();
@@ -269,9 +274,9 @@ void routing_endpoint<translatorT,addrT>::closed (rx_protocol_result_t reason)
         for (auto& one : endpoints)
         {
             rx_notify_closed(one, reason);
-        }
+        }*/
         // this will delete the whole endpoint so nothing can be done after it!!!
-        port_->unbind_stack_endpoint(&stack);
+       // port_->unbind_stack_endpoint(&stack);
 
     }
 }
@@ -339,6 +344,9 @@ typename routing_endpoint<translatorT, addrT>::session_key_t routing_endpoint<tr
 template <typename translatorT, typename addrT>
 rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>::create_session (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
+    using translates_packet_t = typename translatorT::translates_packet;
+    using client_master_t = typename translatorT::client_master_translator;
+
     addrT local_addr;
     addrT remote_addr;
     auto result = local_addr.parse(local_address);
@@ -360,7 +368,7 @@ rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>:
     if (it == active_map_.end())
     {
         auto ret = &session_ptr->stack;
-        active_map_.emplace(map_key, std::move(session_ptr));
+        auto emplace_result = active_map_.emplace(map_key, std::move(session_ptr));
         std::ostringstream ss;
         ss << "Client binded at address "
             << local_addr.to_string()
@@ -368,6 +376,16 @@ rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>:
             << remote_addr.to_string()
             << ".";
         ITF_LOG_TRACE("routing_endpoint", 500, ss.str());
+        if constexpr (client_master_t::value && translates_packet_t::value)
+        {
+            if (connected_)
+            {
+                // we are already connected so send connected up
+                rx_session session = rx_create_session(&local_addr, &remote_addr, local_ref, remote_ref, nullptr);
+                rx_notify_connected(&emplace_result.first->second->stack, &session);
+            }
+        }
+
         return ret;
     }
     else

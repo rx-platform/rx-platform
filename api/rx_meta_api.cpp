@@ -447,13 +447,20 @@ template rx_result rx_delete_simple_type<display_type>(const rx_item_reference& 
 	, rx_result_callback&& callback);
 
 
-template<class T>
 rx_result rx_delete_relation_type(const rx_item_reference& ref
 	, rx_result_callback&& callback)
 {
 	rx_internal::model::algorithms::relation_types_algorithm::delete_type(ref, std::move(callback));
 	return true;
 }
+
+rx_result rx_delete_data_type(const rx_item_reference& ref
+	, rx_result_callback&& callback)
+{
+	rx_internal::model::algorithms::data_types_model_algorithm::delete_type(ref, std::move(callback));
+	return true;
+}
+
 
 struct item_transaction_data
 {

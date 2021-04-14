@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -135,6 +135,33 @@ template rx_result register_host_runtime<application_type>(rx_directory_ptr host
 namespace hosting {
 namespace
 {
+bool get_bool_value(const string_type val)
+{
+    if(val=="True"
+        || val=="true"
+        || val == "T"
+        || val == "t"
+        || val == "TRUE"
+        || val =="1"
+        || val == "Yes"
+        || val == "yes"
+        || val == "YES"
+        || val == "Y")
+        return true;
+    else if(val=="False"
+        || val=="false"
+        || val == "F"
+        || val == "f"
+        || val == "FALSE"
+        || val =="0"
+        || val == "No"
+        || val == "no"
+        || val == "NO"
+        || val == "N")
+        return false;
+    // for now this is allowed
+    return false;
+}
 void read_base_config_options(const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
 {
 	for (auto& row : options)
@@ -155,15 +182,17 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.manuals_path = row.second;
 		else if (row.first == "other.logs" && config.management.logs_directory.empty())
 			config.management.logs_directory = row.second;
-		else if (row.first == "processor.real-time" && !config.processor.real_time)
+		else if (row.first == "processor.real-time" && !config.processor.real_time && get_bool_value(row.second))
 			config.processor.real_time = true;
-		else if (row.first == "processor.no-hd-timer" && !config.processor.no_hd_timer)
+		else if (row.first == "processor.no-hd-timer" && !config.processor.no_hd_timer && get_bool_value(row.second))
 			config.processor.no_hd_timer = true;
+		else if (row.first == "instance.code" && !config.meta_configuration.build_system_from_code && get_bool_value(row.second))
+			config.meta_configuration.build_system_from_code = true;
 	}
 }
 }
 
-// Class rx_platform::hosting::rx_platform_host 
+// Class rx_platform::hosting::rx_platform_host
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -357,7 +386,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("calculation", "Use dedicated calculation timer", cxxopts::value<bool>(config.processor.has_calculation_timer))
 		("no-hd-timer", "Do not use high definition timer", cxxopts::value<bool>(config.processor.no_hd_timer))
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
-		
+
 		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
 		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
 		("test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
@@ -417,7 +446,7 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	else
 	{
 		result = init_storage("sys", config.storage.system_storage_reference);
-		
+
 	}
 	if (result)
 	{
@@ -656,10 +685,10 @@ const string_type& rx_platform_host::get_copyright ()
 }
 
 
-// Class rx_platform::hosting::configuration_reader 
+// Class rx_platform::hosting::configuration_reader
 
 
-// Class rx_platform::hosting::host_platform_builder 
+// Class rx_platform::hosting::host_platform_builder
 
 
 } // namespace hosting

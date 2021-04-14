@@ -333,14 +333,14 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	pipe_port_ = rx_create_reference<local_pipe_port>(pipes, this);
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-	std::cout << "Initializing rx-platform...";
+	std::cout << "Initializing {rx-platform}...";
 	auto sec_result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (sec_result)
 	{
 		security::secured_scope _(sec_result.value());
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-		std::cout << "Starting rx-platform...";
+		std::cout << "Starting {rx-platform} ...";
 		result = rx_platform::rx_gate::instance().start(this, config);
 		if (result)
 		{
@@ -355,34 +355,34 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			}
 			stdout_log_->suspend_log();
 
-			std::cout << "Stopping rx-platform...";
+			std::cout << "Stopping {rx-platform} ...";
 			result = rx_platform::rx_gate::instance().stop();
 			if (result)
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			else
 			{
-				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize {rx-platform}:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 		}
 		else
 		{
-			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
-		std::cout << "De-initializing rx-platform...";
+		std::cout << "De-initializing {rx-platform} ...";
 		result = rx_platform::rx_gate::instance().deinitialize(sec_result.value());
 		if (result)
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
 		{
-			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize {rx-platform}:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 	}
 	else
 	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, sec_result);
 	}
 	HOST_LOG_INFO("Main", 999, "Closing console...");

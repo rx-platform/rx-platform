@@ -68,7 +68,7 @@ tcp_client_endpoint::tcp_client_endpoint()
 
 tcp_client_endpoint::~tcp_client_endpoint()
 {
-    ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint destroyed.");
+    ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP client endpoint destroyed.");
 }
 
 

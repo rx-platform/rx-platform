@@ -680,6 +680,9 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 	{
 		RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting object "s
 			+ what->meta_info().get_full_path() + " to unassigned application.");
+	}
+	if(connect_unassigned)
+	{
 		auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
 		if (application_ptr)
 		{

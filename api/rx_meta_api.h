@@ -137,6 +137,9 @@ rx_result rx_delete_simple_type(const rx_item_reference& ref
 rx_result rx_delete_relation_type(const rx_item_reference& ref
 	, rx_result_callback&& callback);
 
+rx_result rx_delete_data_type(const rx_item_reference& ref
+	, rx_result_callback&& callback);
+
 }
 }
 }

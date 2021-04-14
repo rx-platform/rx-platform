@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  host\rx_simple_host.h
+*  host\rx_headless_host.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,8 +28,8 @@
 ****************************************************************************/
 
 
-#ifndef rx_simple_host_h
-#define rx_simple_host_h 1
+#ifndef rx_headless_host_h
+#define rx_headless_host_h 1
 
 
 
@@ -46,13 +46,13 @@ using rx_platform::hosting::hosts_type;
 
 namespace host {
 
-namespace simple {
+namespace headless {
 
 
 
 
 
-class simple_security 
+class headless_security 
 {
 
   public:
@@ -97,13 +97,13 @@ class rx_thread_synchronizer : public rx::threads::job_thread
 
 
 
-class simple_platform_host : public rx_platform::hosting::rx_platform_host  
+class headless_platform_host : public rx_platform::hosting::rx_platform_host  
 {
 
   public:
-      simple_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
+      headless_platform_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
 
-      ~simple_platform_host();
+      ~headless_platform_host();
 
 
       void get_host_info (hosts_type& hosts);
@@ -120,7 +120,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
       int initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
 
-      static string_type get_simple_info ();
+      static string_type get_headless_info ();
 
       bool is_canceling () const;
 
@@ -149,9 +149,9 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 
   private:
 
-      virtual rx_result set_simple_thread_security ();
+      virtual rx_result set_headless_thread_security ();
 
-      virtual rx_result remove_simple_thread_security ();
+      virtual rx_result remove_headless_thread_security ();
 
 
 
@@ -170,7 +170,7 @@ class simple_platform_host : public rx_platform::hosting::rx_platform_host
 };
 
 
-} // namespace simple
+} // namespace headless
 } // namespace host
 
 

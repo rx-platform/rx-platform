@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_simple.h
+*  host\rx_headless_host_config.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,59 +28,13 @@
 ****************************************************************************/
 
 
-#ifndef rx_win32_simple_h
-#define rx_win32_simple_h 1
-
-
-
-// rx_simple_host
-#include "host/rx_simple_host.h"
-
-
-
-namespace win32 {
+#ifndef rx_headless_host_config_h
+#define rx_headless_host_config_h 1
 
 
 
 
 
-class win32_simple_host : public host::simple::simple_platform_host  
-{
-
-  public:
-      win32_simple_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
-
-      ~win32_simple_host();
-
-
-      string_type get_default_name () const;
-
-      void get_host_info (string_array& hosts);
-
-      string_type get_full_path (const string_type& path);
-
-      bool supports_ansi () const;
-
-      rx_result setup_console (int argc, char* argv[]);
-
-
-  protected:
-
-      static string_type get_win32_simple_info ();
-
-      rx_result fill_host_directories (rx_host_directories& data);
-
-
-  private:
-
-
-      bool supports_ansi_;
-
-
-};
-
-
-} // namespace win32
 
 
 

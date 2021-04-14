@@ -72,6 +72,11 @@ rx_result platform_root::insert_cached_item (const string_type& name, const rx_n
 	return cache_.insert_cached_item(name, item);
 }
 
+rx_result platform_root::remove_cached_item (const string_type& name, const rx_namespace_item& item)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
 
 // Class rx_internal::internal_ns::user_directory 
 

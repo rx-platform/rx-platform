@@ -549,12 +549,7 @@ rx_namespace_item rx_platform_directory::get_sub_item (const string_type& path) 
 {
 	size_t idx = path.rfind(RX_DIR_DELIMETER);
 	if (idx == string_type::npos)
-	{// plain item
-		auto ret_item = rx_internal::internal_ns::platform_root::get_cached_item(path);
-		if (ret_item)
-		{// found it in cache, return!
-			return ret_item;
-		}
+	{// plain item		
 		locks::const_auto_slim_lock dummy(&structure_lock_);
 		auto it = sub_items_.find(path);
 		if (it != sub_items_.end())

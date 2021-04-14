@@ -176,11 +176,12 @@ void physical_job_thread::end (uint32_t timeout)
 
 void physical_job_thread::append (job_ptr pjob)
 {
-	locks::auto_lock dummy(&lock_);
-
-	bool was_empty = queue_.empty();
-
-	queue_.push(pjob);
+	bool was_empty = false;
+	{
+		locks::auto_lock dummy(&lock_);
+		was_empty = queue_.empty();
+		queue_.push(pjob);
+	}
 
 	if (was_empty)
 		has_job_.set();

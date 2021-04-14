@@ -175,6 +175,8 @@ class routing_endpoint : public rx::pointers::reference_object
 
       locks::slim_lock sessions_lock_;
 
+      bool connected_;
+
 
 };
 

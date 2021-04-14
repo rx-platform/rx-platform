@@ -110,6 +110,8 @@ contains root server folders\
 
       static rx_result insert_cached_item (const string_type& name, const rx_namespace_item& item);
 
+      static rx_result remove_cached_item (const string_type& name, const rx_namespace_item& item);
+
 
   protected:
 

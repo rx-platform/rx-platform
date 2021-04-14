@@ -271,10 +271,15 @@ rx_result_with<rx_node_id> resolve_some_reference(const rx_item_reference& ref, 
 	}
 	else
 	{
-		auto item = directories.resolve_path(ref.get_path());
+
+		auto item = rx_internal::internal_ns::platform_root::get_cached_item(ref.get_path());
 		if (!item)
-		{
-			return ref.get_path() + " does not exists!";
+		{// found it in cache, return!
+			item = directories.resolve_path(ref.get_path());
+			if (!item)
+			{
+				return ref.get_path() + " does not exists!";
+			}
 		}
 		ret = item.get_meta().id;
 		if (ret.is_null())

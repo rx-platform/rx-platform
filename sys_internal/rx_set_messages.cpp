@@ -136,6 +136,10 @@ message_ptr delete_type_request::do_job (api::rx_context ctx, rx_protocol_connec
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::display_type>());
 	case rx_item_type::rx_method_type:
 		return do_simple_job(ctx, conn, tl::type2type<basic_types::method_type>());
+	case rx_item_type::rx_relation_type:
+		return do_relation_job(ctx, conn);
+	case rx_item_type::rx_data_type:
+		return do_data_job(ctx, conn);
 	default:
 		{
 			auto ret_value = std::make_unique<error_message>(rx_item_type_name(item_type) + " is unknown type", 15, request_id);
@@ -215,6 +219,77 @@ message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_
 	});
 
 	rx_result result = api::meta::rx_delete_simple_type<T>(reference, std::move(callback));
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+message_ptr delete_type_request::do_relation_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
+		{
+			if (result)
+			{
+				auto response = std::make_unique<delete_type_response>();
+				response->request_id = request_id;
+				conn->data_processed(std::move(response));
+
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+				conn->data_processed(std::move(ret_value));
+			}
+
+		});
+
+	rx_result result = api::meta::rx_delete_relation_type(reference, std::move(callback));
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+message_ptr delete_type_request::do_data_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id::null_id;
+
+	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
+		{
+			if (result)
+			{
+				auto response = std::make_unique<delete_type_response>();
+				response->request_id = request_id;
+				conn->data_processed(std::move(response));
+
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+				conn->data_processed(std::move(ret_value));
+			}
+
+		});
+
+	rx_result result = api::meta::rx_delete_data_type(reference, std::move(callback));
 
 	if (!result)
 	{

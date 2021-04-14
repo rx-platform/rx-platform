@@ -505,14 +505,25 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 					auto& err = ctx->get_stdout();
 					if (result)
 					{
-						list_log_options options;
-						options.list_level = false;
-						options.list_code = false;
-						options.list_library = false;
-						options.list_source = false;
-						options.list_dates = false;
-						dump_log_items(result.value(), options, out, 1000);
-						ctx->send_results(true);
+						if (!result.value().data.empty())
+						{
+
+							out << "total "
+								<< result.value().data.size() << "\r\n";
+							list_log_options options;
+							options.list_level = false;
+							options.list_code = false;
+							options.list_library = false;
+							options.list_source = false;
+							options.list_dates = false;
+							dump_log_items(result.value(), options, out, 1000);
+							ctx->send_results(true);
+						}
+						else
+						{
+							out << "\r\nLog results are empty.\r\n";
+							ctx->send_results(false);
+						}
 
 					}
 					else
@@ -534,7 +545,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	}
 }
 
-void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count)
+void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count, bool header)
 {
 	size_t first_index = 0;
 	size_t full_count = items.data.size();
@@ -544,20 +555,26 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 		first_index = full_count - (size_t)count - 1;
 		rows_count = full_count - first_index + 1;
 	}
-	rx_table_type table(rows_count + 1);
-	table[0].emplace_back("Time");
-	table[0].emplace_back("Type");
-	if (options.list_source)
-		table[0].emplace_back("Source");
-	if (options.list_level)
-		table[0].emplace_back("Level");
-	if (options.list_library)
-		table[0].emplace_back("Library");
-	table[0].emplace_back("Message");
-	if (options.list_code)
-		table[0].emplace_back("Source Code");
+	size_t table_size = rows_count;
+	if (header)
+		table_size++;
+	rx_table_type table(table_size);
+	if (header)
+	{
+		table[0].emplace_back("Time");
+		table[0].emplace_back("Type");
+		if (options.list_source)
+			table[0].emplace_back("Source");
+		if (options.list_level)
+			table[0].emplace_back("Level");
+		if (options.list_library)
+			table[0].emplace_back("Library");
+		table[0].emplace_back("Message");
+		if (options.list_code)
+			table[0].emplace_back("Source Code");
+	}
 
-	size_t idx = 1;
+	size_t idx = header ? 1 : 0;
 
 	for (auto i = first_index; i < full_count; i++)
 	{
@@ -576,8 +593,7 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 			table[idx].emplace_back(one.code);
 		idx++;
 	}
-
-	rx_dump_table(table, out, true, false);
+	rx_dump_table(table, out, false, false);
 }
 
 rx_table_cell_struct log_command::create_log_type_cell (log::log_event_type type)

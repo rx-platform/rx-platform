@@ -103,6 +103,7 @@ rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what)
 		{
 			what->downward->upward = NULL;
 			what->downward = NULL;
+			return RX_PROTOCOL_OK;
 		}
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;

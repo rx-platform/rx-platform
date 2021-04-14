@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  win32_hosts\rx_win32_simple.cpp
+*  win32_hosts\rx_win32_headless.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -30,70 +30,70 @@
 
 #include "pch.h"
 
-#include "rx_win32_simple_version.h"
+#include "rx_win32_headless_version.h"
 #include "rx_win32_common.h"
 
-// rx_win32_simple
-#include "win32_hosts/rx_win32_simple.h"
+// rx_win32_headless
+#include "win32_hosts/rx_win32_headless.h"
 
 
 
 namespace win32 {
 
-// Class win32::win32_simple_host 
+// Class win32::win32_headless_host 
 
-win32_simple_host::win32_simple_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
+win32_headless_host::win32_headless_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : supports_ansi_(false)
-	, host::simple::simple_platform_host(storages)
+	, host::headless::headless_platform_host(storages)
 {
 }
 
 
-win32_simple_host::~win32_simple_host()
+win32_headless_host::~win32_headless_host()
 {
 }
 
 
 
-string_type win32_simple_host::get_default_name () const
+string_type win32_headless_host::get_default_name () const
 {
 	string_type ret;
 	get_win_host_name(ret);
 	return ret;
 }
 
-void win32_simple_host::get_host_info (string_array& hosts)
+void win32_headless_host::get_host_info (string_array& hosts)
 {
-	hosts.emplace_back(get_win32_simple_info());
-	host::simple::simple_platform_host::get_host_info(hosts);
+	hosts.emplace_back(get_win32_headless_info());
+	host::headless::headless_platform_host::get_host_info(hosts);
 }
 
-string_type win32_simple_host::get_win32_simple_info ()
+string_type win32_headless_host::get_win32_headless_info ()
 {
 	static string_type ret;
 	if (ret.empty())
 	{
-		ASSIGN_MODULE_VERSION(ret, RX_WIN32_PIPE_HOST_NAME, RX_WIN32_PIPE_HOST_MAJOR_VERSION, RX_WIN32_PIPE_HOST_MINOR_VERSION, RX_WIN32_PIPE_HOST_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(ret, RX_WIN32_HEADLESS_HOST_NAME, RX_WIN32_HEADLESS_HOST_MAJOR_VERSION, RX_WIN32_HEADLESS_HOST_MINOR_VERSION, RX_WIN32_HEADLESS_HOST_BUILD_NUMBER);
 	}
 	return ret;
 }
 
-rx_result win32_simple_host::fill_host_directories (rx_host_directories& data)
+rx_result win32_headless_host::fill_host_directories (rx_host_directories& data)
 {
 	return build_directories(data);
 }
 
-string_type win32_simple_host::get_full_path (const string_type& path)
+string_type win32_headless_host::get_full_path (const string_type& path)
 {
     return get_full_path_from_relative(path);
 }
 
-bool win32_simple_host::supports_ansi () const
+bool win32_headless_host::supports_ansi () const
 {
 	return supports_ansi_;
 }
 
-rx_result win32_simple_host::setup_console (int argc, char* argv[])
+rx_result win32_headless_host::setup_console (int argc, char* argv[])
 {
 	auto out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 

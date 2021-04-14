@@ -202,7 +202,7 @@ pretty much implemented read to be useful!");
       ~log_command();
 
 
-      static void dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count);
+      static void dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count, bool header = false);
 
 
   protected:

@@ -87,14 +87,14 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	interactive_port_ = rx_create_reference<interactive_console_port>(this);
 
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-	std::cout << "Initializing rx-platform...";
+	std::cout << "Initializing {rx-platform}...";
 	auto init_result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (init_result)
 	{
 		security::secured_scope _(init_result.value());
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-		std::cout << "Starting rx-platform...";
+		std::cout << "Starting {rx-platform}...";
 		result = rx_platform::rx_gate::instance().start(this, config);
 		if (result)
 		{
@@ -108,34 +108,34 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
-			std::cout << "Stopping rx-platform...";
+			std::cout << "Stopping {rx-platform}...";
 			result = rx_platform::rx_gate::instance().stop();
 			if(result)
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 			else
 			{
-				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError stopping rx-platform:\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError stopping {rx-platform}:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
 		}
 		else
 		{
-			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
-		std::cout << "De-initializing rx-platform...";
+		std::cout << "De-initializing {rx-platform}...";
 		result = rx_platform::rx_gate::instance().deinitialize(init_result.value());
 		if (result)
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
 		{
-			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize rx-platform:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError deinitialize {rx-platform}:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 	}
 	else
 	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing rx-platform:\r\n";
+		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, init_result);
 		result = init_result.errors();
 	}

@@ -69,6 +69,20 @@ public:
 		else
 			data_ = nullptr;
 	}
+	explicit const_size_vector(const T* vals, size_t size)
+	{
+		size_ = size;
+		if (size_)
+		{
+			data_ = this->allocate(size_);
+			for (size_t i = 0; i < size_; i++)
+			{
+				new(&data_[i++]) T(vals[i]);
+			}
+		}
+		else
+			data_ = nullptr;
+	}
 	const_size_vector(std::initializer_list<T> init_list)
 	{
 		size_ = init_list.size();
@@ -95,6 +109,21 @@ public:
 			for (auto& one : from)
 			{
 				new(&data_[idx++]) T(std::move(one));
+			}
+		}
+		else
+			data_ = nullptr;
+	}
+	explicit const_size_vector(const std::vector<T>& from)
+	{
+		size_ = from.size();
+		if (size_)
+		{
+			data_ = this->allocate(size_);
+			size_t idx = 0;
+			for (const auto& one : from)
+			{
+				new(&data_[idx++]) T(one);
 			}
 		}
 		else

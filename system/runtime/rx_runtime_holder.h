@@ -34,6 +34,7 @@
 
 #include "system/meta/rx_meta_support.h"
 #include "system/server/rx_platform_item.h"
+#include "rx_value_templates.h"
 
 // rx_relations
 #include "system/runtime/rx_relations.h"
