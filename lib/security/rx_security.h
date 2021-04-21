@@ -55,6 +55,12 @@ using namespace rx;
 
 
 namespace rx {
+
+namespace security {
+class security_context;
+typedef pointers::reference<security_context> security_context_ptr;
+}
+
 typedef std::uint_fast16_t sec_error_num_t;
 
 namespace security {

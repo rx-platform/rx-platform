@@ -60,7 +60,27 @@ char g_console_welcome[] = "\r\n\
 ";
 */
 
-char g_console_welcome[] = ANSI_COLOR_YELLOW "\
+char g_console_welcome[] = ANSI_COLOR_YELLOW "\r\n\r\n\
+                          ,p@@Np,								\r\n\
+                     ,gg@@@@@@@@@@@@@gg,						\r\n\
+               ,g@@@NNNNNN@@@@NNN@@@@@NNN@bg,					\r\n\
+         ,gg@@@@@@@@@@T   '\\@@, 'V ,@@@@@@@@@@Np,				\r\n\
+    ,g@@@@@@@@@@@@@@@K  $@   @@@\\ | g@@@@@@@@@@@@@@@@@g			\r\n\
+   '%@@@@@@@@@@@@@@@K  f*'  ]@@@@@  @@@@@@@@@@@@@@@@@@@P		\r\n\
+   gpR*N@@@@@@@@@@@@K  g,  %@@@@@'  \\@@@@@@@@@@@@@@@R'Nmg		\r\n\
+  JK  gP''%B@@@@@@@K  $@@b  %@@P  /@, 'B@@@@@@@@@P'*%w- $-		\r\n\
+  _@  @     g@%@@@@,,,$@@@,,,$C,,g@@@p,/$@@@@N@,     ]P Rw,		\r\n\
+%Q-,gM'   ]| _,gP*@@@@@@@@@@@@@@@@@@@@@@@@**w,  ]P    *g, ]@	\r\n\
+         |[  ]|  *'N@@@@@@@@@@@@@@@@N'^     ]|  |_      *** 	\r\n\
+        pP'  ]      ;pP'*B@@@@@@@@@*''Nw     ]|  '*mg			\r\n\
+        'Nwg**      @  ]@'<'N@@P''*w   ]r      '%gg* 			\r\n\
+                    $. ]|          |[  $p						\r\n\
+                 pP'  ,@            @p  *'Np					\r\n\
+                 '%wgP'              '*Ng@'						\r\n\
+" ANSI_COLOR_RESET;
+
+
+char g_console_welcome_old[] = ANSI_COLOR_YELLOW "\
         ____________________\r\n\
        / ____     _  __    /\\\r\n\
       / / __ \\   | |/ /   / /\\\r\n\
@@ -83,10 +103,7 @@ console_runtime::console_runtime (runtime::items::port_runtime* port)
         executer_(-1),
         port_(port)
 {
-	std::ostringstream ss;
-	ss << "Port "
-		<< " created Console Runtime.";
-	CONSOLE_LOG_TRACE("console_runtime", 900, ss.str());
+	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint created.");
 #ifdef _DEBUG
 	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");
 #else
@@ -98,10 +115,7 @@ console_runtime::console_runtime (runtime::items::port_runtime* port)
 
 console_runtime::~console_runtime()
 {
-	std::ostringstream ss;
-	ss << "Port "
-		<< " deleted Console Runtime.";
-	CONSOLE_LOG_TRACE("console_runtime", 900, ss.str());
+	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint destroyed.");
 }
 
 
@@ -133,10 +147,10 @@ void console_runtime::get_wellcome (string_type& wellcome)
 	std::ostringstream ss;
 	ss << "\r\n";
 	ss << g_console_welcome;	
-	ss << "\r\n\r\n" ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
+	ss << "\r\n\r\n       " ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
 	ss << get_console_terminal()
-		<< "\r\n" RX_CONSOLE_HEADER_LINE "\r\n" ANSI_COLOR_RESET;
-	ss << "Type " 
+		<< ANSI_COLOR_RESET "\r\n\r\n" ;
+	ss << ">Type " 
 		<< ANSI_COLOR_YELLOW "\"help\"" ANSI_COLOR_RESET ", "
 		<< ANSI_COLOR_YELLOW "\"copyright\"" ANSI_COLOR_RESET ", or "
 		<< ANSI_COLOR_YELLOW "\"license\"" ANSI_COLOR_RESET " for more information."
@@ -453,7 +467,8 @@ rx_protocol_result_t console_runtime::connected_function (rx_protocol_stack_endp
 	memory::buffer_ptr out_buffer(pointers::_create_new);
 	memory::buffer_ptr err_buffer(pointers::_create_new);
 
-	std::ostream out(out_buffer.unsafe_ptr());
+	std::ostream out(out_buffer.unsafe_ptr()); 
+	out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW ">>>" ANSI_COLOR_RESET "Hello!\r\n";
 	out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW ">>>" ANSI_COLOR_RESET "Connecting terminal as ";
 	out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN
 		<< security::active_security()->get_full_name()

@@ -290,6 +290,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			ret = reader.parse_configuration(settings_buff, config_values);
 			if (ret)
 			{
+				one_success = true;
 				read_config_options(config_values, config);
 			}
 			else
@@ -327,6 +328,13 @@ void rx_platform_host::read_config_options (const std::map<string_type, string_t
 
 bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config)
 {
+
+	// had to do stuff, but if we do not have actual command line
+	// it must be safe to send 0, nullptr as command line arguments
+	// parsers tend do misbehave if send those arguments
+	if (argv == nullptr || argc == 0)
+		return true;// no command line options, so skip it!
+
 	cxxopts::Options options("rx-interactive", "");
 
 	add_command_line_options(options, config);
@@ -347,7 +355,9 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 			}
 			rx_platform_host::print_offline_manual(help_name, host_directories);
 
-			std::cout << options.help({ "" });
+			std::ostringstream ss;
+			ss << options.help({ "" });
+			std::cout << ss.str();
 
 			// don't execute
 			return false;
@@ -582,13 +592,13 @@ void rx_platform_host::print_offline_manual (const string_type& host, const rx_h
 		result = file.read_string(man);
 		if (!result)
 		{
-			std::cout << "Error reading file";
+			std::cout << "Error reading file" << result.errors_line();
 			return;
 		}
 	}
 	else
 	{
-		std::cout << "Error reading file";
+		std::cout << "Error reading file" << result.errors_line();
 		return;
 	}
 	std::cout << man;

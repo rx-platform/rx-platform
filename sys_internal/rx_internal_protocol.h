@@ -53,6 +53,15 @@ class rx_protocol_connection;
 
 
 
+/////////////////////////////////////////////////////////////
+// logging macros for opcua library
+#define RXCOMM_LOG_INFO(src,lvl,msg) RX_LOG_INFO("RXCOMM",src,lvl,msg)
+#define RXCOMM_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("RXCOMM",src,lvl,msg)
+#define RXCOMM_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("RXCOMM",src,lvl,msg)
+#define RXCOMM_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("RXCOMM",src,lvl,msg)
+#define RXCOMM_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("RXCOMM",src,lvl,msg)
+#define RXCOMM_LOG_TRACE(src,lvl,msg) RX_TRACE("RXCOMM",src,lvl,msg)
+
 
 namespace rx_internal {
 

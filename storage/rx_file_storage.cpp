@@ -478,12 +478,15 @@ rx_result rx_file_item<fileT,streamT>::open_for_read ()
 		if constexpr (streamT::string_based)
 		{
 			string_type data;
-			if (file.read_string(data))
+			result = file.read_string(data);
+			if (result)
 			{
 				result = item_data_.open_for_read(data, file_path_);
 			}
 			else
-				result = "Error reading file "s + file_path_ + "!";
+			{
+				result.register_error("Error reading file "s + file_path_ + "!");
+			}
 		}
 		else
 		{
@@ -492,7 +495,7 @@ rx_result rx_file_item<fileT,streamT>::open_for_read ()
 	}
 	else
 	{
-		result = "Unable to open file "s + file_path_ + "!";
+		result.register_error("Unable to open file "s + file_path_ + "!");
 	}
 	return result;
 }

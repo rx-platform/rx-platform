@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -65,7 +65,7 @@ namespace runtime {
 
 
 
-class context_job
+class context_job 
 {
 
   public:
@@ -120,7 +120,7 @@ class process_context_job : public context_job
 
 
 
-struct write_data
+struct write_data 
 {
 
 
@@ -198,6 +198,12 @@ struct update_data_struct
     values::rx_value value;
 };
 
+struct remotes_data
+{
+    runtime_handle_t handle;
+    values::rx_simple_value value;
+};
+
 template<class T>
 class double_collection
 {
@@ -236,6 +242,7 @@ typedef std::vector<update_data_struct<structure::source_data> > source_updates_
 typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_type;
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
+typedef std::vector<remotes_data> remotes_data_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
 typedef std::vector<structure::filter_data*> filters_type;
@@ -248,7 +255,7 @@ typedef std::vector<method_runtime_ptr> methods_type;
 
 
 
-class runtime_process_context
+class runtime_process_context 
 {
     typedef std::function<void()> fire_callback_func_t;
     typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;
@@ -342,6 +349,10 @@ class runtime_process_context
 
       bool should_save ();
 
+      void from_remote_pending (remotes_data data);
+
+      remotes_data_type& get_from_remote ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -392,6 +403,14 @@ class runtime_process_context
           values::rx_simple_value temp_val;
           temp_val.assign_static<valT>(std::forward<valT>(value));
           auto result = this->set_value(handle, std::move(temp_val));
+      }
+      template<typename valT>
+      void set_remote_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          remotes_data data;
+          data.handle = handle;
+          data.value.assign_static<valT>(std::forward<valT>(value));
+          this->from_remote_pending(std::move(data));
       }
       template<typename funcT, typename... Args>
       void send_own(funcT&& func, Args... args)
@@ -446,6 +465,8 @@ class runtime_process_context
       locks::slim_lock context_lock_;
 
       std::atomic<bool> serialize_value_;
+
+      double_collection<remotes_data_type> from_remote_;
 
       template<runtime_process_step step>
       void turn_on_pending();

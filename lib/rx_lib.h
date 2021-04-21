@@ -59,6 +59,7 @@ string_type _not_implemented_func(const char* fname);
 
 namespace rx
 {
+
 class base_meta_writer;
 class base_meta_reader;
 namespace values

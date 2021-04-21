@@ -833,6 +833,37 @@ bool json_reader::read_value (const char* name, rx_simple_value& val)
 	return true;
 }
 
+bool json_reader::read_value_type (const char* name, rx_value_t& val)
+{
+	if (get_version() >= RX_VALUE_TYPE_VERSION)
+	{
+		string_type str_type;
+		auto ret = read_string(name, str_type);
+		if (!ret)
+			return ret;
+		rx_value_t type;
+		auto parse_result = rx_parse_value_type_name(str_type, type);
+		if (parse_result)
+		{
+			val = type;
+			return true;
+		}
+		else
+		{
+			return parse_result;
+		}
+	}
+	else
+	{
+		uint8_t temp;
+		auto ret = read_byte(name, temp);
+		if (!ret)
+			return false;
+		val = temp;
+		return true;
+	}
+}
+
 
 // Class rx_platform::serialization::json_writer 
 
@@ -1276,6 +1307,19 @@ bool json_writer::write_value (const char* name, const rx_simple_value& val)
 	if (!val.serialize(name, *this))
 		return false;
 	return true;
+}
+
+bool json_writer::write_value_type (const char* name, rx_value_t val)
+{
+	if (get_version() >= RX_VALUE_TYPE_VERSION)
+	{
+		string_type str_type = rx_get_value_type_name(val);
+		return write_string(name, str_type);
+	}
+	else
+	{
+		return write_byte(name, val);
+	}
 }
 
 

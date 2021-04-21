@@ -1428,7 +1428,9 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_simple_value_static("Connected", false, true, false);
+		what->complex_data.register_simple_value_static("Binded", false, true, false);
+		what->complex_data.register_simple_value_static("Assembled", false, true, false);
+		what->complex_data.register_simple_value_static<int16_t>("Endpoints", 0, true, false);
 		what->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
 		what->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);

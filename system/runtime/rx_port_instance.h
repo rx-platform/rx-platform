@@ -33,12 +33,12 @@
 
 
 
+// rx_port_stack_data
+#include "system/runtime/rx_port_stack_data.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
-// rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
 
 namespace rx_platform {
 namespace runtime {

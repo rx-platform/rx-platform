@@ -47,6 +47,7 @@ using namespace rx;
 #define RX_PARENT_REF_VERSION 0x10000
 #define RX_PERSISTENCE_VERSION 0x10001
 #define RX_EVENT_METHOD_DATA_VERSION 0x10002
+#define RX_VALUE_TYPE_VERSION 0x10003
 
 #define RX_CURRENT_SERIALIZE_VERSION RX_EVENT_METHOD_DATA_VERSION
 
@@ -134,6 +135,8 @@ public:
       virtual bool write_item_reference (const char* name, const rx_item_reference& ref) = 0;
 
       virtual bool write_value (const char* name, const rx_simple_value& val) = 0;
+
+      virtual bool write_value_type (const char* name, rx_value_t val) = 0;
 
 
       const size_t get_version () const
@@ -224,6 +227,8 @@ class base_meta_reader
       virtual bool read_item_reference (const char* name, rx_item_reference& ref) = 0;
 
       virtual bool read_value (const char* name, rx_simple_value& val) = 0;
+
+      virtual bool read_value_type (const char* name, rx_value_t& val) = 0;
 
 
       const uint32_t get_version () const

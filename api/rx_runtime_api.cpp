@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_process_context.h"
 
 // rx_runtime_api
 #include "api/rx_runtime_api.h"

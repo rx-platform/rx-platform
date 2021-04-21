@@ -88,6 +88,8 @@ class runtime_scan_algorithms
 
       static void process_own (typename typeT::RType& whose, runtime_process_context& ctx);
 
+      static void process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx);
+
 
 
 };

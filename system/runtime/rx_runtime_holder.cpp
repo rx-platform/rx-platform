@@ -62,23 +62,6 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
     }
 }
 
-// Parameterized Class rx_platform::runtime::algorithms::process_runtime_job 
-
-template <class typeT>
-process_runtime_job<typeT>::process_runtime_job (typename typeT::RTypePtr whose)
-      : whose_(whose)
-{
-}
-
-
-
-template <class typeT>
-void process_runtime_job<typeT>::process ()
-{
-    runtime_scan_algorithms<typeT>::process_runtime(*whose_);
-}
-
-
 // Parameterized Class rx_platform::runtime::algorithms::runtime_holder 
 
 template <class typeT>
@@ -320,6 +303,23 @@ template class runtime_holder<object_types::object_type>;
 template class runtime_holder<object_types::domain_type>;
 template class runtime_holder<object_types::port_type>;
 template class runtime_holder<object_types::application_type>;
+// Parameterized Class rx_platform::runtime::algorithms::process_runtime_job 
+
+template <class typeT>
+process_runtime_job<typeT>::process_runtime_job (typename typeT::RTypePtr whose)
+      : whose_(whose)
+{
+}
+
+
+
+template <class typeT>
+void process_runtime_job<typeT>::process ()
+{
+    runtime_scan_algorithms<typeT>::process_runtime(*whose_);
+}
+
+
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform

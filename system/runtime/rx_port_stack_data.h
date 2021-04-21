@@ -34,6 +34,7 @@
 
 #include "lib/rx_io_addr.h"
 #include "rx_runtime_helpers.h"
+#include "rx_value_templates.h"
 using namespace rx_platform;
 
 
@@ -70,7 +71,7 @@ class port_passive_map
       bool empty () const;
 
 
-      bool stack_binded;
+      remote_owned_value<bool> stack_binded;
 
       rx_port_ptr bind_port;
 
@@ -107,14 +108,15 @@ class port_active_map
       void close_all_endpoints ();
 
 
+      remote_owned_value<int16_t> active_endpoints;
+
+
   protected:
 
   private:
 
 
       endpoints_map_type endpoints_map_;
-
-      endpoints_map_type upper_endpoints_map_;
 
       locks::slim_lock map_lock_;
 
@@ -143,7 +145,7 @@ class port_build_map
 
       rx_port_ptr stack_top;
 
-      bool stack_ready;
+      owned_value<bool> stack_ready;
 
 
   protected:
@@ -165,6 +167,9 @@ class port_stack_data
 {
 
   public:
+
+      rx_result init_runtime_data (runtime::runtime_init_context& ctx);
+
 
       port_passive_map passive_map;
 

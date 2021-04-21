@@ -46,6 +46,7 @@ namespace opcua {
 opcua_transport_endpoint::opcua_transport_endpoint (runtime::items::port_runtime* port)
       : port_(port)
 {
+    OPCUA_LOG_DEBUG("tcp_server_endpoint", 200, "OPC UA server endpoint created.");
     opcua_transport_protocol_type* mine_entry = this;
     rx_protocol_result_t res = opcua_bin_init_pipe_transport(mine_entry, 0x10000, 0x10);
     if (res == RX_PROTOCOL_OK)
@@ -53,6 +54,12 @@ opcua_transport_endpoint::opcua_transport_endpoint (runtime::items::port_runtime
         mine_entry->stack_entry.received_function = &opcua_transport_endpoint::received_function;
         mine_entry->stack_entry.send_function = &opcua_transport_endpoint::send_function;
     }
+}
+
+
+opcua_transport_endpoint::~opcua_transport_endpoint()
+{
+    OPCUA_LOG_DEBUG("tcp_server_endpoint", 200, "OPC UA server endpoint destroyed.");
 }
 
 

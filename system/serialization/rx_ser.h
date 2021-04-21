@@ -34,10 +34,10 @@
 
 #include "third-party/jsoncpp/json/json.h"
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 #define RX_JSON_SERIALIZATION_TYPE "json"
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
@@ -124,6 +124,8 @@ class json_reader : public rx::base_meta_reader
       bool read_item_reference (const char* name, rx_item_reference& ref);
 
       bool read_value (const char* name, rx_simple_value& val);
+
+      bool read_value_type (const char* name, rx_value_t& val);
 
 
   protected:
@@ -225,6 +227,8 @@ class json_writer : public rx::base_meta_writer
 
       bool write_value (const char* name, const rx_simple_value& val);
 
+      bool write_value_type (const char* name, rx_value_t val);
+
 
   protected:
 
@@ -321,6 +325,8 @@ class binary_reader : public rx::base_meta_reader
 
       bool read_value (const char* name, rx_simple_value& val);
 
+      bool read_value_type (const char* name, rx_value_t& val);
+
 
   protected:
 
@@ -412,6 +418,8 @@ class binary_writer : public rx::base_meta_writer
       bool write_item_reference (const char* name, const rx_item_reference& ref);
 
       bool write_value (const char* name, const rx_simple_value& val);
+
+      bool write_value_type (const char* name, rx_value_t val);
 
 		bool is_string()
 		{
@@ -754,6 +762,12 @@ bool binary_reader<allocT,swap_bytes>::read_value (const char* name, rx_simple_v
     return false;
 }
 
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_value_type (const char* name, rx_value_t& val)
+{
+    return false;
+}
+
 
 // Parameterized Class rx_platform::serialization::binary_writer 
 
@@ -996,6 +1010,12 @@ bool binary_writer<allocT,swap_bytes>::write_item_reference (const char* name, c
 
 template <typename allocT, bool swap_bytes>
 bool binary_writer<allocT,swap_bytes>::write_value (const char* name, const rx_simple_value& val)
+{
+    return false;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::write_value_type (const char* name, rx_value_t val)
 {
     return false;
 }

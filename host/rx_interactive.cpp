@@ -369,8 +369,8 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError reading configuration file\r\n";
 			rx_dump_error_result(std::cout, ret);
 		}
-		restore_console();
 	}
+	restore_console();
 	std::cout << "\r\n";
 	return ret ? 0 : -1;
 }

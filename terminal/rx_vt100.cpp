@@ -46,22 +46,20 @@ namespace term_transport {
 
 // Class rx_internal::terminal::term_transport::vt100_transport 
 
-vt100_transport::vt100_transport (runtime::items::port_runtime* port, bool to_echo)
+vt100_transport::vt100_transport (bool to_echo)
       : state_(parser_normal),
         current_idx_(string_type::npos),
         password_mode_(false),
         history_it_(history_.begin()),
         had_first_(false),
         opened_brackets_(0),
-        send_echo_(to_echo),
-        port_(port)
+        send_echo(to_echo)
 {
-	std::ostringstream ss;
-	ss << "Port "
-		<< " created VT100 Transport Endpoint.";
-	CONSOLE_LOG_TRACE("vt100_transport", 900, ss.str());
-	rx_init_stack_entry(&stack_entry_, this);
-	stack_entry_.received_function = &vt100_transport::received_function;
+}
+
+
+vt100_transport::~vt100_transport()
+{
 }
 
 
@@ -335,9 +333,58 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
-rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+void vt100_transport::set_echo (bool val)
 {
-	vt100_transport* self = reinterpret_cast<vt100_transport*>(reference->user_data);
+}
+
+
+// Class rx_internal::terminal::term_transport::vt100_transport_port 
+
+vt100_transport_port::vt100_transport_port()
+{
+	construct_func = [this]()
+	{
+		auto rt = std::make_unique<vt100_transport_endpoint>(this);
+		auto entry = rt->bind([this](int64_t count)
+			{
+			},
+			[this](int64_t count)
+			{
+			});
+		return construct_func_type::result_type{ entry, std::move(rt) };
+	};
+}
+
+
+
+// Class rx_internal::terminal::term_transport::vt100_transport_endpoint 
+
+vt100_transport_endpoint::vt100_transport_endpoint (runtime::items::port_runtime* port, bool to_echo)
+      : port_(port)
+{
+	CONSOLE_LOG_TRACE("vt100_transport", 900, "Telnet Transport endpoint created.");
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &vt100_transport_endpoint::received_function;
+}
+
+
+vt100_transport_endpoint::~vt100_transport_endpoint()
+{
+	CONSOLE_LOG_TRACE("vt100_transport", 900, "Telnet Transport endpoint destroyed.");
+}
+
+
+
+rx_protocol_stack_endpoint* vt100_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+{
+	sent_func_ = sent_func;
+	received_func_ = received_func;
+	return &stack_entry_;
+}
+
+rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+	vt100_transport_endpoint* self = reinterpret_cast<vt100_transport_endpoint*>(reference->user_data);
 	string_type to_echo;
 	string_array lines_buffers;
 	string_array::reverse_iterator current_line_it;
@@ -347,12 +394,12 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpo
 	for (; i < buffer->size; i++)
 	{
 		string_type line;
-		auto is_normal = self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
+		auto is_normal = self->vt100_.char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
 		if (!line.empty())
 		{
 			if (!is_normal)
 			{// this is cancel, or tab, or something like that so leave it up
-				if(!lines_buffers.empty())
+				if (!lines_buffers.empty())
 					(*current_line_it) += RX_LINE_END;// handle previous lines
 				lines_buffers.emplace_back(std::move(line));// no new line
 				current_line_it = lines_buffers.rbegin();
@@ -364,14 +411,14 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpo
 			}
 			else
 			{
-				(*current_line_it)+=((std::move(line) + RX_LINE_END));
+				(*current_line_it) += ((std::move(line) + RX_LINE_END));
 				current_line_it = lines_buffers.rbegin();
 			}
 		}
-			//lines_buffer += (std::move(line) + RX_LINE_END);
+		//lines_buffer += (std::move(line) + RX_LINE_END);
 	}
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
-	if (self->send_echo_ && !to_echo.empty())
+	if (self->vt100_.send_echo && !to_echo.empty())
 	{
 		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
 		auto temp = send_buffer.write_chars(to_echo);
@@ -403,18 +450,7 @@ rx_protocol_result_t vt100_transport::received_function (rx_protocol_stack_endpo
 	return result;
 }
 
-rx_protocol_stack_endpoint* vt100_transport::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
-{
-	sent_func_ = sent_func;
-	received_func_ = received_func;
-	return &stack_entry_;
-}
-
-void vt100_transport::set_echo (bool val)
-{
-}
-
-rx_protocol_result_t vt100_transport::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+rx_protocol_result_t vt100_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
 	rx_packet_buffer_type buffer;
 	static string_type conn_msg("rx-Terminal connected...\r\n");
@@ -428,25 +464,6 @@ rx_protocol_result_t vt100_transport::connected_function (rx_protocol_stack_endp
 	result = rx_notify_connected(reference, session);
 	return result;
 }
-
-
-// Class rx_internal::terminal::term_transport::vt100_transport_port 
-
-vt100_transport_port::vt100_transport_port()
-{
-	construct_func = [this]()
-	{
-		auto rt = std::make_unique<vt100_transport>(this);
-		auto entry = rt->bind([this](int64_t count)
-			{
-			},
-			[this](int64_t count)
-			{
-			});
-		return construct_func_type::result_type{ entry, std::move(rt) };
-	};
-}
-
 
 
 } // namespace term_transport

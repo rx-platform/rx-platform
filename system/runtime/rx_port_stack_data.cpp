@@ -209,15 +209,27 @@ bool port_passive_map::empty () const
 // Class rx_platform::runtime::io_types::port_stack_data 
 
 
+rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx)
+{
+    passive_map.stack_binded.bind("Status.Binded", ctx);
+    build_map.stack_ready.bind("Status.Assembled", ctx);
+    active_map.active_endpoints.bind("Status.Endpoints", ctx);
+    return true;
+}
+
+
 // Class rx_platform::runtime::io_types::port_active_map 
 
 
 rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner)
 {
+    int16_t count;
     {
         locks::auto_slim_lock _(&map_lock_);
         endpoints_map_.emplace(what, whose);
+        count = (int16_t)endpoints_map_.size();
     }
+    active_endpoints = count;
     if(whose)
         RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint for " + whose->meta_info().get_full_path());
     else
@@ -228,13 +240,16 @@ rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, 
 
 rx_result port_active_map::unregister_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr owner)
 {
+    int16_t count;
     map_lock_.lock();
     auto it = endpoints_map_.find(what);
     if (it != endpoints_map_.end())
     {
         auto whose = it->second;
         endpoints_map_.erase(what);
+        count = (int16_t)endpoints_map_.size();
         map_lock_.unlock();
+        active_endpoints = count;
         if(whose)
             RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint for " + whose->meta_info().get_full_path());
         else
@@ -264,6 +279,7 @@ void port_active_map::close_all_endpoints ()
                 ep = endpoints_map_.begin()->first;
             }
             map_lock_.unlock();
+            active_endpoints = 0;
             if (ep)
                 rx_close(ep, RX_PROTOCOL_OK);
             else
@@ -308,6 +324,7 @@ rx_result port_build_map::unregister_port (rx_port_ptr who, rx_port_ptr owner)
     if (it != registered_.end())
     {
         registered_.erase(it);
+        stack_ready = !registered_.empty();
         RUNTIME_LOG_DEBUG("port_build_map", 900, "Port " + who->meta_info().get_full_path() + " disconnected from " + owner->meta_info().get_full_path());
         return true;
     }

@@ -59,6 +59,7 @@
 #define RX_SIMPLE_VALUE_MASK	0x1f
 
 
+
 // value types for object and class types
 #define RX_DEFINITION_TYPE_MASK	0x60
 #define RX_BINARY_VALUE			0x00
@@ -169,6 +170,11 @@ using namespace rx;
 
 
 namespace rx {
+
+typedef std::uint_fast8_t rx_value_t;
+rx_result rx_parse_value_type_name(const string_type& strtype, rx_value_t& type);
+string_type rx_get_value_type_name(rx_value_t type);
+
 enum class time_compare_type
 {
 	skip,
@@ -178,7 +184,6 @@ enum class time_compare_type
 
 namespace values {
 const size_t rx_pointer_optimization_size = 2*sizeof(void*);
-typedef std::uint_fast8_t rx_value_t;
 class rx_value;
 
 template<typename typeT>

@@ -547,6 +547,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 		result = what->initialize_runtime(ctx);
 		if (result)
 		{
+			result = what->get_instance_data().stack_data.init_runtime_data(ctx);
 			RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_full_path());
 
 			rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose)

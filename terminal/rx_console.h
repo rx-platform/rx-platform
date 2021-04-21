@@ -333,7 +333,7 @@ typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl<
 
 class console_port : public console_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 3, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 Console port. implementation of an console port");
 
     DECLARE_REFERENCE_PTR(console_port);

@@ -50,6 +50,16 @@ using namespace rx_platform::meta::def_blocks;
 
 
 namespace rx_platform {
+namespace runtime
+{
+namespace items
+{
+class application_instance_data;
+class port_instance_data;
+class domain_instance_data;
+class port_instance_data;
+}
+}
 
 namespace meta {
 class construct_context;

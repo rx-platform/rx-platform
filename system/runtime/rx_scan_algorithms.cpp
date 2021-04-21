@@ -68,6 +68,9 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     do
     {
         /////////////////////////////////////////////////////////////////////////////////////////////////
+        // REMOTE UPDATES
+        process_from_remotes(whose, whose.context_);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
         // STATUS
         process_status_change(whose, whose.context_);
         /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -257,6 +260,19 @@ void runtime_scan_algorithms<typeT>::process_own (typename typeT::RType& whose, 
         for (auto& one : *own_jobs)
             one->process();
         own_jobs = &ctx.get_for_own_process();
+    }
+}
+
+template <class typeT>
+void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    auto remote_updates = &ctx.get_from_remote();
+    if (!remote_updates->empty())
+    {
+        for (auto& one : *remote_updates)
+        {
+            ctx.set_value(one.handle, std::move(one.value));
+        }
     }
 }
 

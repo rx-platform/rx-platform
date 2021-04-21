@@ -262,6 +262,7 @@ rx_protocol_connection::rx_protocol_connection (runtime::items::port_runtime* po
         port_(port),
         stream_version_(RX_CURRENT_SERIALIZE_VERSION)
 {
+	RXCOMM_LOG_DEBUG("rx_protocol_connection", 200, "{rx-platform} communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_protocol_connection::received_function;
 
@@ -272,6 +273,7 @@ rx_protocol_connection::rx_protocol_connection (runtime::items::port_runtime* po
 
 rx_protocol_connection::~rx_protocol_connection()
 {
+	RXCOMM_LOG_DEBUG("rx_protocol_connection", 200, "{rx-platform} communication server endpoint destroyed.");
 }
 
 
@@ -545,6 +547,9 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 void rx_protocol_connection::close_endpoint ()
 {
 	current_directory_ = rx_directory_ptr::null_ptr;
+	for (auto& one : subscriptions_)
+		one.second->destroy();
+	subscriptions_.clear();
 }
 
 message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_request& req)

@@ -64,11 +64,19 @@ tcp_server_endpoint::tcp_server_endpoint()
     rx_init_stack_entry(mine_entry, this);
     mine_entry->send_function = &tcp_server_endpoint::send_function;
 
+
     mine_entry->close_function = [] (rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
     {
         tcp_server_endpoint* me = reinterpret_cast<tcp_server_endpoint*>(ref->user_data);
-        me->close();
-        rx_notify_closed(&me->stack_endpoint_, 0);
+        if (me->tcp_socket_)
+        {
+            bool ret = me->tcp_socket_->write(buffer_ptr::null_ptr);
+            return RX_PROTOCOL_OK;
+        }
+        else
+        {
+            return RX_PROTOCOL_WRONG_STATE;
+        }
         return RX_PROTOCOL_OK;
     };
 }
@@ -111,6 +119,7 @@ rx_result tcp_server_endpoint::close ()
         tcp_socket_->disconnect();
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
     }
+    rx_notify_closed(&stack_endpoint_, 0);
     return true;
 }
 

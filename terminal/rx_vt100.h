@@ -69,14 +69,14 @@ class vt100_transport
 	typedef std::list<string_type> history_type;
 
   public:
-      vt100_transport (runtime::items::port_runtime* port, bool to_echo = true);
+      vt100_transport (bool to_echo = true);
+
+      ~vt100_transport();
 
 
       bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
 
       void add_to_history (const string_type& line);
-
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
       void set_echo (bool val);
 
@@ -87,11 +87,8 @@ class vt100_transport
       }
 
 
-      runtime::items::port_runtime* get_port ()
-      {
-        return port_;
-      }
 
+      bool send_echo;
 
 
   protected:
@@ -116,13 +113,6 @@ class vt100_transport
 
       bool move_history_down (string_type& to_echo);
 
-      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
-
-      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
-
-
-
-      rx_protocol_stack_endpoint stack_entry_;
 
 
       parser_state state_;
@@ -141,13 +131,58 @@ class vt100_transport
 
       int opened_brackets_;
 
+
+};
+
+
+
+
+
+
+class vt100_transport_endpoint 
+{
+public:
+    vt100_transport_endpoint(const vt100_transport_endpoint& right) = delete;
+    vt100_transport_endpoint& operator=(const vt100_transport_endpoint& right) = delete;
+    vt100_transport_endpoint(vt100_transport_endpoint&& right) = delete;
+    vt100_transport_endpoint& operator=(vt100_transport_endpoint&& right) = delete;
+
+  public:
+      vt100_transport_endpoint (runtime::items::port_runtime* port, bool to_echo = true);
+
+      ~vt100_transport_endpoint();
+
+
+      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
+
+
+      vt100_transport vt100_;
+
+      rx_protocol_stack_endpoint stack_entry_;
+
+
+      runtime::items::port_runtime* port_;
+
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
-
-      bool send_echo_;
-
-      runtime::items::port_runtime* port_;
 
 
 };
@@ -158,7 +193,7 @@ class vt100_transport
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport  > vt100_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport_endpoint  > vt100_port_base;
 
 
 
@@ -167,7 +202,7 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt
 
 class vt100_transport_port : public vt100_port_base  
 {
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 VT100 terminal. implementation of VT100 transport protocol port.");
 
 	DECLARE_REFERENCE_PTR(vt100_transport_port);

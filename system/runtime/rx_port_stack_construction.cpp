@@ -177,6 +177,7 @@ rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)
     auto result = top_data.build_map.register_port(who, top);
     if (result)
     {
+        top_data.build_map.stack_ready = true;
         if (top_build_kind->is_assemble_sender() || top_data.build_map.stack_ready)
             stack_builder::recursive_send_stack_assembled(who);
     }

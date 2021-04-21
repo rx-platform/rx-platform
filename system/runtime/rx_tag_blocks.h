@@ -32,6 +32,7 @@
 #define rx_tag_blocks_h 1
 
 
+#include "rx_relations.h"
 
 // rx_operational
 #include "system/runtime/rx_operational.h"

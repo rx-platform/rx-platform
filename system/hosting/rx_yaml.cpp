@@ -70,6 +70,7 @@ rx_result simplified_yaml_reader::parse_configuration (const string_type& input_
 			return result;
 		if (!key.empty())
 			config_values.emplace(key, value);
+		line.clear();
 	}
 	return true;
 }

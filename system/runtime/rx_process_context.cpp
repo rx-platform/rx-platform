@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -73,7 +73,7 @@ bool runtime_process_context::should_do_step()
     }
 }
 
-// Class rx_platform::runtime::runtime_process_context 
+// Class rx_platform::runtime::runtime_process_context
 
 runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
       : tags_(tags),
@@ -189,7 +189,6 @@ mapper_updates_type& runtime_process_context::get_mapper_updates ()
 
 void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
 {
-    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::source_outputs>();
     source_outputs_.emplace_back(std::move(data));
 }
@@ -213,8 +212,8 @@ void runtime_process_context::source_update_pending (update_data_struct<structur
 
 source_updates_type& runtime_process_context::get_source_updates ()
 {
-    locks::auto_lock_t _(&context_lock_);
     static source_updates_type empty;
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::source_inputs>())
         return source_inputs_.get_and_swap();
     else
@@ -426,6 +425,7 @@ runtime_handle_t runtime_process_context::connect (const string_type& path, uint
 
 void runtime_process_context::source_result_pending (write_result_struct<structure::source_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::source_inputs>();
     source_results_.emplace_back(std::move(data));
 }
@@ -433,6 +433,7 @@ void runtime_process_context::source_result_pending (write_result_struct<structu
 source_results_type& runtime_process_context::get_source_results ()
 {
     static source_results_type empty;
+    locks::auto_lock_t _(&context_lock_);
     RX_ASSERT(current_step_ == runtime_process_step::source_inputs);
     if (current_step_ == runtime_process_step::source_inputs)
         return source_results_.get_and_swap();
@@ -450,14 +451,31 @@ bool runtime_process_context::should_save ()
     return serialize_value_.exchange(false);
 }
 
+void runtime_process_context::from_remote_pending (remotes_data data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    from_remote_.emplace_back(std::move(data));
+    fire_callback_();
+}
 
-// Parameterized Class rx_platform::runtime::process_context_job 
+remotes_data_type& runtime_process_context::get_from_remote ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    return from_remote_.get_and_swap();
+}
+
+rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)
+{
+    return ctx->set_value(handle, std::move(val));
+}
+
+// Parameterized Class rx_platform::runtime::process_context_job
 
 
-// Class rx_platform::runtime::context_job 
+// Class rx_platform::runtime::context_job
 
 
-// Class rx_platform::runtime::write_data 
+// Class rx_platform::runtime::write_data
 
 
 } // namespace runtime

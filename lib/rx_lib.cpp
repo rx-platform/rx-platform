@@ -65,12 +65,18 @@ rx_source_file::rx_source_file()
 rx_result rx_source_file::open(const char* file_name)
 {
 	m_handle = rx_file(file_name, RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	return m_handle != 0;
+	if (m_handle != 0)
+		return true;
+	else
+		return rx_result::create_from_last_os_error("Error opening file "s + file_name + " for read");
 }
 rx_result rx_source_file::open_write(const char* file_name)
 {
 	m_handle = rx_file(file_name, RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
-	return m_handle != 0;
+	if (m_handle != 0)
+		return true;
+	else
+		return rx_result::create_from_last_os_error("Error opening file "s + file_name + " for write");
 }
 rx_result rx_source_file::read_string(std::string& buff)
 {
@@ -81,7 +87,7 @@ rx_result rx_source_file::read_string(std::string& buff)
 	}
 	uint64_t size64;
 	if (rx_file_get_size(m_handle, &size64) != RX_OK)
-		return "Unable to get file size!";
+		return rx_result::create_from_last_os_error("Unable to get file size!");
 
 	size_t size = (size_t)size64;
 	char* temp = new char[size];
@@ -96,7 +102,7 @@ rx_result rx_source_file::read_string(std::string& buff)
 	else
 	{
 		delete[] temp;
-		return "Error reading file!";
+		return rx_result::create_from_last_os_error("Error reading file!");
 	}
 }
 rx_result rx_source_file::write_string(const std::string& buff)
@@ -115,7 +121,7 @@ rx_result rx_source_file::write_string(const std::string& buff)
 	}
 	else
 	{
-		return "Error writing to file!";
+		return rx_result::create_from_last_os_error("Error writing to file!");
 	}
 }
 rx_source_file::~rx_source_file()

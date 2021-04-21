@@ -36,6 +36,14 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
+// rx_tag_blocks
+#include "system/runtime/rx_tag_blocks.h"
+// rx_display_blocks
+#include "system/runtime/rx_display_blocks.h"
+// rx_runtime_logic
+#include "system/runtime/rx_runtime_logic.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_operational
@@ -46,20 +54,12 @@
 #include "system/callbacks/rx_callback.h"
 // rx_ns
 #include "system/server/rx_ns.h"
-// rx_display_blocks
-#include "system/runtime/rx_display_blocks.h"
-// rx_runtime_logic
-#include "system/runtime/rx_runtime_logic.h"
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
+// rx_job
+#include "lib/rx_job.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_job
-#include "lib/rx_job.h"
-// rx_tag_blocks
-#include "system/runtime/rx_tag_blocks.h"
 
 #include "system/meta/rx_obj_types.h"
 namespace rx_internal

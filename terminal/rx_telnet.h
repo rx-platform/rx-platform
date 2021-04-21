@@ -73,14 +73,48 @@ private:
     };
 
   public:
-      telnet_transport (runtime::items::port_runtime* port);
+      telnet_transport();
 
       ~telnet_transport();
 
 
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
-
       bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
+
+
+      bool send_echo;
+
+
+  protected:
+
+  private:
+
+      bool handle_telnet (const char ch, string_type& to_echo);
+
+
+
+      vt100_transport vt100_;
+
+
+      telnet_parser_state telnet_state_;
+
+
+};
+
+
+
+
+
+
+class telnet_transport_endpoint 
+{
+
+  public:
+      telnet_transport_endpoint (runtime::items::port_runtime* port);
+
+      ~telnet_transport_endpoint();
+
+
+      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
 
       runtime::items::port_runtime* get_port ()
@@ -98,24 +132,18 @@ private:
 
       static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
 
-      bool handle_telnet (const char ch, string_type& to_echo);
 
 
-
-      vt100_transport vt100_;
+      telnet_transport telnet_;
 
       rx_protocol_stack_endpoint stack_entry_;
 
 
+      runtime::items::port_runtime* port_;
+
       std::function<void(int64_t)> sent_func_;
 
       std::function<void(int64_t)> received_func_;
-
-      bool send_echo_;
-
-      telnet_parser_state telnet_state_;
-
-      runtime::items::port_runtime* port_;
 
 
 };
@@ -126,7 +154,7 @@ private:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< telnet_transport  > telnet_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< telnet_transport_endpoint  > telnet_port_base;
 
 
 
@@ -135,7 +163,7 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< te
 
 class telnet_transport_port : public telnet_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 
     DECLARE_REFERENCE_PTR(telnet_transport_port);

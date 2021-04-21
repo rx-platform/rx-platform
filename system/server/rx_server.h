@@ -46,6 +46,7 @@
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
+#include "lib/security/rx_security.h"
 
 // rx_host
 #include "system/hosting/rx_host.h"

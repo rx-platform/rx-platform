@@ -82,6 +82,7 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
             result = stack_top->get_implementation()->start_listen(&local_addr_copy, &remote_addr_copy);
             if (result)
             {
+                who_data.passive_map.stack_binded = true;
                 top_data.passive_map.stack_binded = true;
             }
             else
@@ -188,6 +189,7 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
                 result = stack_active::active_builder::register_connection_endpoints(stack_top, connect_result.value(), who, ep, &local_addr, &remote_addr);
                 if (result)
                 {
+                    who_data.passive_map.stack_binded = true;
                     top_data.passive_map.stack_binded = true;
                     return true;
                 }

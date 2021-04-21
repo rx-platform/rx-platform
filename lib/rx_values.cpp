@@ -59,6 +59,149 @@ void fill_quality_string(values::rx_value val, string_type& str)
 	if (val.is_substituted())
 		str[4] = 's';
 }
+string_type rx_get_value_type_name(rx_value_t type)
+{
+	switch (type)
+	{
+	case RX_NULL_TYPE:
+		return "null"s;
+	case RX_BOOL_TYPE:
+		return "bit"s;
+	case RX_INT8_TYPE:
+		return "int8";
+	case RX_UINT8_TYPE:
+		return "uint8"s;
+	case RX_INT16_TYPE:
+		return "int16";
+	case RX_UINT16_TYPE:
+		return "uint16"s;
+	case RX_INT32_TYPE:
+		return "int32";
+	case RX_UINT32_TYPE:
+		return "uint32"s;
+	case RX_INT64_TYPE:
+		return "int64";
+	case RX_UINT64_TYPE:
+		return "uint64"s;
+	case RX_FLOAT_TYPE:
+		return "float32";
+	case RX_DOUBLE_TYPE:
+		return "float64"s;
+	case RX_STRING_TYPE:
+		return "string";
+	case RX_TIME_TYPE:
+		return "time";
+	case RX_UUID_TYPE:
+		return "uuid";
+	case RX_BYTES_TYPE:
+		return "bytes";
+	case RX_NODE_ID_TYPE:
+		return "nodeid";
+	case RX_COMPLEX_TYPE:
+		return "complex";
+	default:
+		RX_ASSERT(false);// shouldn't happened
+		return "internal error unknown type!!!";
+	}
+}
+
+rx_result rx_parse_value_type_name(const string_type& strtype, rx_value_t& type)
+{
+	if (strtype == "null")
+	{
+		type = RX_NULL_TYPE;
+		return true;
+	}
+	else if (strtype == "bit")
+	{
+		type = RX_BOOL_TYPE;
+		return true;
+	}
+	else if (strtype == "int8")
+	{
+		type = RX_INT8_TYPE;
+		return true;
+	}
+	else if (strtype == "uint8")
+	{
+		type = RX_UINT8_TYPE;
+		return true;
+	}
+	else if (strtype == "int16")
+	{
+		type = RX_INT16_TYPE;
+		return true;
+	}
+	else if (strtype == "uint16")
+	{
+		type = RX_UINT16_TYPE;
+		return true;
+	}
+	else if (strtype == "int32")
+	{
+		type = RX_INT32_TYPE;
+		return true;
+	}
+	else if (strtype == "uint32")
+	{
+		type = RX_UINT32_TYPE;
+		return true;
+	}
+	else if (strtype == "int64")
+	{
+		type = RX_INT64_TYPE;
+		return true;
+	}
+	else if (strtype == "uint64")
+	{
+		type = RX_UINT64_TYPE;
+		return true;
+	}
+	else if (strtype == "float32")
+	{
+		type = RX_FLOAT_TYPE;
+		return true;
+	}
+	else if (strtype == "float64")
+	{
+		type = RX_DOUBLE_TYPE;
+		return true;
+	}
+	else if (strtype == "string")
+	{
+		type = RX_STRING_TYPE;
+		return true;
+	}
+	else if (strtype == "time")
+	{
+		type = RX_TIME_TYPE;
+		return true;
+	}
+	else if (strtype == "uuid")
+	{
+		type = RX_UUID_TYPE;
+		return true;
+	}
+	else if (strtype == "nodeid")
+	{
+		type = RX_NODE_ID_TYPE;
+		return true;
+	}
+	else if (strtype == "complex")
+	{
+		type = RX_COMPLEX_TYPE;
+		return true;
+	}
+	else if (strtype == "bytes")
+	{
+		type = RX_BYTES_TYPE;
+		return true;
+	}
+	else
+	{
+		return strtype + " is unknown value type!";
+	}
+}
 
 namespace values {
 template<>
@@ -935,7 +1078,7 @@ bool rx_value_storage::operator>=(const rx_value_storage &right) const
 
 bool rx_value_storage::serialize (base_meta_writer& writer) const
 {
-	if (!writer.write_byte("type", value_type_))
+	if (!writer.write_value_type("type", value_type_))
 		return false;
 	if (!serialize_value(writer, value_, value_type_, "val"))
 		return false;
@@ -947,7 +1090,7 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 	// first destroy eventual values already inside
 	destroy_value(value_, value_type_);
 	value_type_ = RX_NULL_TYPE;
-	if (!reader.read_byte("type", value_type_))
+	if (!reader.read_value_type("type", value_type_))
 		return false;
 	if (!deserialize_value(reader, value_, value_type_))
 		return false;
@@ -1116,9 +1259,13 @@ string_type rx_value_storage::get_type_string () const
 {
 	if (value_type_&RX_ARRAY_VALUE_MASK)
 	{
-		return get_type_string();
+		return rx_get_value_type_name(value_type_ & RX_SIMPLE_VALUE_MASK) + "[]";
 	}
-	switch (value_type_&RX_SIMPLE_VALUE_MASK)
+	else
+	{
+		return rx_get_value_type_name(value_type_ & RX_SIMPLE_VALUE_MASK);
+	}
+/*	switch (value_type_&RX_SIMPLE_VALUE_MASK)
 	{
 	case RX_NULL_TYPE:
 		return "null"s;
@@ -1127,19 +1274,19 @@ string_type rx_value_storage::get_type_string () const
 	case RX_INT8_TYPE:
 		return "int8";
 	case RX_UINT8_TYPE:
-		return "unsigned int8"s;
+		return "uint8"s;
 	case RX_INT16_TYPE:
 		return "int16";
 	case RX_UINT16_TYPE:
-		return "unsigned int16"s;
+		return "uint16"s;
 	case RX_INT32_TYPE:
 		return "int32";
 	case RX_UINT32_TYPE:
-		return "unsigned int32"s;
+		return "uint32"s;
 	case RX_INT64_TYPE:
 		return "int64";
 	case RX_UINT64_TYPE:
-		return "unsigned int64"s;
+		return "uint64"s;
 	case RX_FLOAT_TYPE:
 		return "float32";
 	case RX_DOUBLE_TYPE:
@@ -1153,7 +1300,7 @@ string_type rx_value_storage::get_type_string () const
 	case RX_BYTES_TYPE:
 		return "bytes";
 	case RX_NODE_ID_TYPE:
-		return "node id";
+		return "nodeid";
 	case RX_COMPLEX_TYPE:
 		return "complex";
 	case RX_CLASS_TYPE:
@@ -1193,7 +1340,7 @@ string_type rx_value_storage::get_type_string () const
 	default:
 		RX_ASSERT(false);// shouldn't happened
 		return "internal error unknown type!!!";
-	}
+	}*/
 }
 
 bool rx_value_storage::expresion_equality (const rx_value_storage& right) const

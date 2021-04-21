@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,11 +34,13 @@
 
 
 
+#include "rx_process_context.h"
 
 namespace rx_platform
 {
 namespace runtime
 {
+
 template <typename typeT>
 struct local_value
 {
@@ -78,7 +80,9 @@ public:
     {
         if (ctx_ && handle_)// just in case both of them...
         {
-            ctx_->set_binded_as<typeT>(handle_, std::move(right));
+            values::rx_simple_value temp_val;
+            temp_val.assign_static<typeT>(std::forward<typeT>(right));
+            ctx_->set_value(handle_, std::move(right));
         }
         return this;
     }
@@ -189,6 +193,157 @@ public:
         {
             RX_ASSERT(false);
         }
+    }
+};
+
+template <typename typeT, bool manual = false>
+struct remote_owned_value
+{
+    typeT val_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+
+    void internal_commit()
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            typeT temp(val_);
+            ctx_->set_remote_binded_as<typeT>(handle_, std::move(temp));
+        }
+    }
+public:
+    remote_owned_value() = default;
+    ~remote_owned_value() = default;
+    remote_owned_value(const remote_owned_value&) = default;
+    remote_owned_value(remote_owned_value&&) = default;
+    remote_owned_value& operator=(const remote_owned_value&) = default;
+    remote_owned_value& operator=(remote_owned_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        auto result = ctx.bind_item(path);
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            operator=(val_);
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    remote_owned_value(const typeT& right)
+    {
+        val_ = right;
+    }
+    remote_owned_value(typeT&& right)
+    {
+        val_ = std::move(right);
+    }
+    remote_owned_value& operator=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ = right;
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    remote_owned_value& operator=(typeT&& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ = std::move(right);
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    remote_owned_value& operator+=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ += right;
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    operator typeT()
+    {
+        return val_;
+    }
+    void commit()
+    {
+        if constexpr (manual)
+        {
+            internal_commit();
+        }
+        else
+        {
+            RX_ASSERT(false);
+        }
+    }
+};
+
+
+template <typename typeT>
+struct remote_local_value
+{
+    typeT value_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+public:
+    remote_local_value() = default;
+    ~remote_local_value() = default;
+    remote_local_value(const remote_local_value&) = default;
+    remote_local_value(remote_local_value&&) = default;
+    remote_local_value& operator=(const remote_local_value&) = default;
+    remote_local_value& operator=(remote_local_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        auto result = ctx.bind_item(path);
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            value_ = ctx_->get_binded_as(handle_, value_);
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    remote_local_value(const typeT& right)
+    {
+        value_ = right;
+    }
+    remote_local_value(typeT&& right)
+    {
+        value_ = std::move(right);
+    }
+    remote_local_value& operator=(typeT right)
+    {
+        value_ = right;
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            typeT temp(value_);
+            ctx_->set_remote_binded_as<typeT>(handle_, std::move(temp));
+        }
+        return this;
+    }
+    operator typeT()
+    {
+        return value_;
     }
 };
 

@@ -42,6 +42,16 @@
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
 
+/////////////////////////////////////////////////////////////
+// logging macros for opcua library
+#define OPCUA_LOG_INFO(src,lvl,msg) RX_LOG_INFO("OPCUA",src,lvl,msg)
+#define OPCUA_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("OPCUA",src,lvl,msg)
+#define OPCUA_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("OPCUA",src,lvl,msg)
+#define OPCUA_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("OPCUA",src,lvl,msg)
+#define OPCUA_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("OPCUA",src,lvl,msg)
+#define OPCUA_LOG_TRACE(src,lvl,msg) RX_TRACE("OPCUA",src,lvl,msg)
+
+
 namespace protocols {
 
 namespace opcua {
@@ -56,6 +66,8 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
   public:
       opcua_transport_endpoint (runtime::items::port_runtime* port);
+
+      ~opcua_transport_endpoint();
 
 
       rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
@@ -93,7 +105,7 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_transport_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport_endpoint  > opcua_transport_base;
 
 
 
