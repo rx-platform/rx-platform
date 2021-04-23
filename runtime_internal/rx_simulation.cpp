@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_value_templates.h"
 
 // rx_simulation
 #include "runtime_internal/rx_simulation.h"
@@ -84,8 +85,7 @@ rx_result local_register_source::start_source (runtime::runtime_start_context& c
 // Class rx_internal::sys_runtime::simulation::periodic_source 
 
 periodic_source::periodic_source()
-      : period_(0),
-        period_handle_(0)
+      : period_(200)
 {
 }
 
@@ -98,9 +98,6 @@ rx_result periodic_source::source_write (write_data&& data, runtime_process_cont
 
 rx_result periodic_source::start_source (runtime::runtime_start_context& ctx)
 {
-    if(period_handle_)
-        period_ = ctx.context->get_binded_as<uint32_t>(period_handle_, 0);
-
     timer_ = create_timer_function([this]()
         {
             source_tick(rx_time::now());
@@ -114,12 +111,8 @@ rx_result periodic_source::start_source (runtime::runtime_start_context& ctx)
 
 rx_result periodic_source::initialize_source (runtime::runtime_init_context& ctx)
 {
-    auto result = ctx.bind_item(".Period");
-    if (result)
-    {
-        period_handle_ = result.value();
-    }
-    return true;
+    auto result = period_.bind(".Period", ctx);    
+    return result;
 }
 
 rx_result periodic_source::stop_source (runtime::runtime_stop_context& ctx)
@@ -137,9 +130,7 @@ rx_result periodic_source::stop_source (runtime::runtime_stop_context& ctx)
 
 ramp_source::ramp_source()
       : amplitude_(100.0),
-        amplitude_handle_(0),
         increment_(1.0),
-        increment_handle_(0),
         current_value_(0.0)
 {
 }
@@ -151,12 +142,16 @@ rx_result ramp_source::initialize_source (runtime::runtime_init_context& ctx)
     auto result = periodic_source::initialize_source(ctx);
     if (!result)
         return result;
-    auto bind_result = ctx.bind_item(".Amplitude");
-    if (bind_result)
-        amplitude_handle_ = bind_result.value();
-    bind_result = ctx.bind_item(".Increment");
-    if (bind_result)
-        increment_handle_ = bind_result.value();
+    auto bind_result = amplitude_.bind(".Amplitude", ctx);
+    if (!bind_result)
+    {
+
+    }
+    bind_result = increment_.bind(".Increment", ctx);
+    if (!bind_result)
+    {
+
+    }
     return true;
 }
 
@@ -165,10 +160,6 @@ rx_result ramp_source::start_source (runtime::runtime_start_context& ctx)
     auto result = periodic_source::start_source(ctx);
     if (!result)
         return result;
-    if (amplitude_handle_)
-        amplitude_ = ctx.context->get_binded_as(amplitude_handle_, amplitude_);
-    if (increment_handle_)
-        increment_ = ctx.context->get_binded_as(increment_handle_, increment_);
     return true;
 }
 

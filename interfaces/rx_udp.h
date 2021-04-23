@@ -190,11 +190,11 @@ UDP port class. implementation of an UDP/IP4 port");
 
 
 
-      runtime_handle_t rx_recv_timeout_;
-
-      runtime_handle_t rx_send_timeout_;
-
       io::ip4_address bind_address_;
+
+      runtime::local_value<uint32_t> recv_timeout_;
+
+      runtime::local_value<uint32_t> send_timeout_;
 
 
 };

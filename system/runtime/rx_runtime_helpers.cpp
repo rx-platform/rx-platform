@@ -80,7 +80,7 @@ bool io_capabilities::get_output () const
 
 // Class rx_platform::runtime::runtime_init_context 
 
-runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories)
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories)
       : context(context),
         next_handle_(0x80000000),
         meta(meta),
@@ -98,9 +98,9 @@ runtime_handle_t runtime_init_context::get_new_handle ()
 	return next_handle_++;
 }
 
-rx_result_with<runtime_handle_t> runtime_init_context::bind_item (const string_type& path)
+rx_result_with<runtime_handle_t> runtime_init_context::bind_item (const string_type& path, tag_blocks::binded_callback_t callback)
 {
-	return tags->bind_item(path, *this);
+	return tags->bind_item(path, *this, callback);
 }
 
 rx_result runtime_init_context::set_item (const string_type& path, rx_simple_value&& value)

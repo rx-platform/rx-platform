@@ -30,12 +30,13 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
+#include "model/rx_meta_internals.h"
+#include "system/runtime/rx_value_templates.h"
 
 // rx_filters
 #include "runtime_internal/rx_filters.h"
 
-#include "system/runtime/rx_runtime_helpers.h"
-#include "model/rx_meta_internals.h"
 
 
 namespace rx_internal {
@@ -57,31 +58,27 @@ rx_result register_filter_constructors()
 
 rx_result linear_scaling_filter::initialize_filter (runtime::runtime_init_context& ctx)
 {
-	auto result = ctx.bind_item(".HiEU");
+	auto result = hi_eu_.bind(".HiEU", ctx);
 	if (!result)
 		return result.errors();
-	hi_eu_ = result.value();
-	result = ctx.bind_item(".LowEU");
+	result = low_eu_.bind(".LowEU", ctx);
 	if (!result)
 		return result.errors();
-	low_eu_ = result.value();
-	result = ctx.bind_item(".HiRaw");
+	result = hi_raw_.bind(".HiRaw", ctx);
 	if (!result)
 		return result.errors();
-	hi_raw_ = result.value();
-	result = ctx.bind_item(".LowRaw");
+	result = low_raw_.bind(".LowRaw", ctx);
 	if (!result)
 		return result.errors();
-	low_raw_ = result.value();
 	return true;
 }
 
 rx_result linear_scaling_filter::filter_input (rx_value& val)
 {
-	double hi_eu = get_binded_as(hi_eu_, 0);
-	double low_eu = get_binded_as(low_eu_, 0);
-	double hi_raw = get_binded_as(hi_raw_, 0);
-	double low_raw = get_binded_as(low_raw_, 0);
+	double hi_eu = hi_eu_;
+	double low_eu = low_eu_;
+	double hi_raw = hi_raw_;
+	double low_raw = low_raw_;
 	double in = val.get_float_value();
 	if (abs(hi_raw - low_raw) == 0)
 	{
@@ -96,10 +93,10 @@ rx_result linear_scaling_filter::filter_input (rx_value& val)
 
 rx_result linear_scaling_filter::filter_output (rx_simple_value& val)
 {
-	double hi_eu = get_binded_as(hi_eu_, 0);
-	double low_eu = get_binded_as(low_eu_, 0);
-	double hi_raw = get_binded_as(hi_raw_, 0);
-	double low_raw = get_binded_as(low_raw_, 0);
+	double hi_eu = hi_eu_;
+	double low_eu = low_eu_;
+	double hi_raw = hi_raw_;
+	double low_raw = low_raw_;
 	double in = val.get_float_value();
 	if (abs(hi_raw - low_raw) == 0)
 	{

@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// dummy
+#include "dummy.h"
 // rx_thread
 #include "lib/rx_thread.h"
 

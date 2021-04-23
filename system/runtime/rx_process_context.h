@@ -38,10 +38,10 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace operational {
+namespace tag_blocks {
 class binded_tags;
 class connected_tags;
-} // namespace operational
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -257,12 +257,17 @@ typedef std::vector<method_runtime_ptr> methods_type;
 
 class runtime_process_context 
 {
+    template<typename typeT>
+    friend class algorithms::runtime_holder_algorithms;
+    template<typename typeT>
+    friend class algorithms::runtime_scan_algorithms;
+
     typedef std::function<void()> fire_callback_func_t;
     typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;
     points_type points_;
 
   public:
-      runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points);
 
 
       bool should_repeat ();
@@ -423,9 +428,9 @@ class runtime_process_context
   private:
 
 
-      operational::connected_tags& tags_;
+      tag_blocks::connected_tags& tags_;
 
-      operational::binded_tags& binded_;
+      tag_blocks::binded_tags& binded_;
 
 
       runtime_process_step current_step_;

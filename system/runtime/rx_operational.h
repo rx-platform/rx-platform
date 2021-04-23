@@ -56,7 +56,7 @@ namespace rx_platform {
 
 namespace runtime {
 
-namespace operational {
+namespace tag_blocks {
 
 
 struct update_item
@@ -84,6 +84,7 @@ struct write_tag_data
     rx_simple_value value;
     tags_callback_ptr callback;
 };
+
 
 
 
@@ -224,43 +225,11 @@ class connected_tags
 
 
 
-class connected_write_task : public structure::variable_write_task  
-{
-
-  public:
-      connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
-
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-
-  protected:
-
-  private:
-
-
-      connected_tags *parent_;
-
-
-      runtime_transaction_id_t id_;
-
-      tags_callback_ptr callback_;
-
-      runtime_handle_t item_;
-
-
-};
-
-
-
-
-
-
 
 class binded_tags 
 {
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
-	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
+	typedef std::map<structure::value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > values_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
 
   public:
@@ -269,13 +238,13 @@ class binded_tags
       ~binded_tags();
 
 
-      rx_result_with<runtime_handle_t> bind_tag (const rt_value_ref& ref, runtime_handle_t handle);
+      rx_result_with<runtime_handle_t> bind_tag (const rt_value_ref& ref, runtime_handle_t handle, binded_callback_t callback = binded_callback_t());
 
       rx_result get_value (runtime_handle_t handle, rx_simple_value& val) const;
 
       rx_result set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags, runtime_process_context* ctx);
 
-      rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx);
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx, binded_callback_t callback);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
 
@@ -322,7 +291,39 @@ class binded_tags
 };
 
 
-} // namespace operational
+
+
+
+
+class connected_write_task : public structure::variable_write_task  
+{
+
+  public:
+      connected_write_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
+
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+
+  protected:
+
+  private:
+
+
+      connected_tags *parent_;
+
+
+      runtime_transaction_id_t id_;
+
+      tags_callback_ptr callback_;
+
+      runtime_handle_t item_;
+
+
+};
+
+
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 

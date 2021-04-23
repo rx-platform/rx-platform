@@ -223,6 +223,9 @@ public:
     constexpr static int opt_readonly = 0;
     constexpr static int opt_persistent = 1;
 
+    // internal status for state ignorant values (On, Test, Status Simulate)
+    constexpr static int opt_state_ignorant = 30;
+
   public:
 
       rx_value get_value (runtime_process_context* ctx) const;

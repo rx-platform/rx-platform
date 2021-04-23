@@ -240,16 +240,12 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto bind_result = ctx.bind_item("Timeouts.ReceiveTimeout");
-    if (bind_result)
-        rx_recv_timeout_ = bind_result.value();
-    else
+    auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
+    if (!bind_result)
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
-    bind_result = ctx.bind_item("Timeouts.SendTimeout");
-    if (bind_result)
-        rx_send_timeout_ = bind_result.value();
-    else
-        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.SendTimeout");
+    bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
@@ -273,12 +269,10 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
             auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_result.value());
             if (ret_ptr)
             {
-                uint32_t recv_timeout = get_binded_as(rx_recv_timeout_, 0);
-                uint32_t send_timeout = get_binded_as(rx_send_timeout_, 0);
-                if (recv_timeout)
-                    new_endpoint->set_receive_timeout(recv_timeout);
-                if (send_timeout)
-                    new_endpoint->set_send_timeout(send_timeout);
+                if (recv_timeout_)
+                    new_endpoint->set_receive_timeout(recv_timeout_);
+                if (send_timeout_)
+                    new_endpoint->set_send_timeout(send_timeout_);
                 io::ip4_address local_addr(mine);
                 io::ip4_address remote_addr(his);
                 auto stack_ptr = new_endpoint->get_stack_endpoint();

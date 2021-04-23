@@ -564,9 +564,10 @@ void rx_pipe_host::pipe_run_result (rx_result result)
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Local Pipe:\r\n";
 		rx_dump_error_result(std::cout, result);
 		std::cout << "\r\n";
-		stdout_log_->release_log(dump_start_log_);
+		stdout_log_->release_log(true);
 		std::cout << "\r\n";
 	}
+	host_started();
 }
 
 void rx_pipe_host::add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config)

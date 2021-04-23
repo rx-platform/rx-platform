@@ -169,7 +169,7 @@ class application_algorithms
 
   private:
 
-      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::operational::binded_tags* binded);
+      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::tag_blocks::binded_tags* binded);
 
       static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 

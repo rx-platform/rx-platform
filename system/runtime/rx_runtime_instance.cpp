@@ -126,7 +126,7 @@ rx_result object_instance_data::before_init_runtime (rx_object_ptr what, runtime
     return true;
 }
 
-rx_result object_instance_data::before_start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
+rx_result object_instance_data::before_start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded)
 {
     return true;
 }
@@ -256,7 +256,7 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
     return true;
 }
 
-rx_result domain_instance_data::before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
+rx_result domain_instance_data::before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded)
 {
     return true;
 }
@@ -358,7 +358,7 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
     return true;
 }
 
-rx_result application_instance_data::before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
+rx_result application_instance_data::before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded)
 {
     auto result = binded->set_item_static<int>("CPU", (int)rx_internal::infrastructure::server_runtime::instance().get_CPU(what->get_instance_data().executer_), ctx);
     return true;

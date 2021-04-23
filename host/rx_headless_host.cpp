@@ -345,6 +345,9 @@ int headless_platform_host::start_platform ()
 
 			std::cout << "\r\n{rx-platform} Headless Module is running.";
 			std::cout << "\r\n=================================\r\n";
+
+			host_started();
+
 			return 1;
 		}
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";

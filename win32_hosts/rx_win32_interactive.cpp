@@ -331,11 +331,11 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 	ctrl.nLength = sizeof(ctrl);
 	ctrl.dwCtrlWakeupMask = (1 << 4) | (1 << 26) | (1 << 3);
 	bool has = false;
-	while (!has)
+	while (!has && !exit())
 	{
 		read = 0;
-		INPUT_RECORD input;
-		BOOL peek = PeekConsoleInput(in_handle_, &input, 1, &read);
+		INPUT_RECORD inputs[0x10];
+		BOOL peek = PeekConsoleInput(in_handle_, inputs, sizeof(inputs)/sizeof(inputs[0]), &read);
 		if (!peek)
 		{
 			RX_ASSERT(false);
@@ -344,22 +344,27 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 		{
 			if (read)
 			{
-				has = true;
-				if (input.EventType == KEY_EVENT)
+				for (DWORD i=0; i<read; i++)
 				{
-					if (input.Event.KeyEvent.bKeyDown && input.Event.KeyEvent.wVirtualKeyCode == VK_LEFT)
+					if (inputs[i].EventType == KEY_EVENT)
 					{
-						strcpy(&chars[0], "\033[D");
-						count += 3;
+						has = true;
+						if (inputs[i].Event.KeyEvent.bKeyDown && inputs[i].Event.KeyEvent.wVirtualKeyCode == VK_LEFT)
+						{
+							strcpy(&chars[0], "\033[D");
+							count += 3;
+						}
 					}
 				}
 			}
-			else
+			if(!has)
 				Sleep(20);
 		}	
-	}
-	if (is_canceling())
+	}if (exit())
+		return true;
+	else if (is_canceling())
 		return false;
+	
 	bool ret = (FALSE != ReadFile(in_handle_, &chars[count], 0x100 - (DWORD)count, &read, NULL));
 	//bool ret = (FALSE != ReadConsole(in_handle_, &chars[0], 0x100, &read, &ctrl));
 	count += read;

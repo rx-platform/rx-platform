@@ -2347,7 +2347,18 @@ string_type value_data::type_name = RX_VALUE_TYPE_NAME;
 
 rx_value value_data::get_value (runtime_process_context* ctx) const
 {
-	return ctx->adapt_value(value);
+	if (value_opt[opt_state_ignorant])
+	{
+		static rx_mode_type on_mode;
+		
+		rx_value ret(value.get_storage());
+		value.get_value(ret, ctx->get_mode_time(), on_mode);
+		return ret;
+	}
+	else
+	{
+		return ctx->adapt_value(value);
+	}
 }
 
 void value_data::set_value (rx_simple_value&& val, const rx_time& time)

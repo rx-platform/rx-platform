@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -73,9 +73,9 @@ bool runtime_process_context::should_do_step()
     }
 }
 
-// Class rx_platform::runtime::runtime_process_context
+// Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (operational::binded_tags& binded, operational::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
@@ -468,14 +468,13 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 {
     return ctx->set_value(handle, std::move(val));
 }
-
-// Parameterized Class rx_platform::runtime::process_context_job
-
-
-// Class rx_platform::runtime::context_job
+// Parameterized Class rx_platform::runtime::process_context_job 
 
 
-// Class rx_platform::runtime::write_data
+// Class rx_platform::runtime::context_job 
+
+
+// Class rx_platform::runtime::write_data 
 
 
 } // namespace runtime

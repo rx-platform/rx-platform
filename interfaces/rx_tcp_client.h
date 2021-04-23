@@ -230,11 +230,13 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       std::unique_ptr<tcp_client_endpoint> endpoint_;
 
 
-      runtime_handle_t rx_recv_timeout_;
+      runtime::local_value<uint32_t> recv_timeout_;
 
-      runtime_handle_t rx_connect_timeout_;
+      runtime::local_value<uint32_t> send_timeout_;
 
-      runtime_handle_t rx_reconnect_timeout_;
+      runtime::local_value<uint32_t> connect_timeout_;
+
+      runtime::local_value<uint32_t> reconnect_timeout_;
 
       io::ip4_address bind_address_;
 

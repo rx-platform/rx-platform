@@ -45,7 +45,7 @@
 
 using namespace rx_platform;
 using namespace rx::values;
-using namespace rx_platform::runtime::operational;
+using namespace rx_platform::runtime::tag_blocks;
 
 
 namespace rx_internal {
@@ -206,7 +206,7 @@ class subscription_write_transaction
 
 
 
-class rx_subscription : public rx_platform::runtime::operational::rx_tags_callback  
+class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callback  
 {
 	DECLARE_REFERENCE_PTR(rx_subscription);
 

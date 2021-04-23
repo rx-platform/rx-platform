@@ -109,9 +109,7 @@ Periodic Function Source. Base source implementation for periodic functions.");
 
       rx_timer_ptr timer_;
 
-      uint32_t period_;
-
-      runtime_handle_t period_handle_;
+      runtime::local_value<uint32_t> period_;
 
 
 };
@@ -140,13 +138,9 @@ class ramp_source : public periodic_source
   private:
 
 
-      double amplitude_;
+      runtime::local_value<double> amplitude_;
 
-      runtime_handle_t amplitude_handle_;
-
-      double increment_;
-
-      runtime_handle_t increment_handle_;
+      runtime::local_value<double> increment_;
 
       double current_value_;
 

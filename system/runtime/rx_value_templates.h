@@ -44,7 +44,9 @@ namespace runtime
 template <typename typeT>
 struct local_value
 {
-    typeT def_;
+    using callback_t = std::function<void(const typeT&)>;
+    callback_t callback_;
+    typeT value_;
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
 public:
@@ -54,13 +56,22 @@ public:
     local_value(local_value&&) = default;
     local_value& operator=(const local_value&) = default;
     local_value& operator=(local_value&&) = default;
-    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
     {
-        auto result = ctx.bind_item(path);
+        callback_ = callback;
+        auto result = ctx.bind_item(path, [this](const rx_value& val)
+            {
+                value_ = values::extract_value(val.get_storage(), value_);
+                if (callback_)
+                {
+                    callback_(value_);
+                }
+            });
         if (result)
         {
             ctx_ = ctx.context;
             handle_ = result.move_value();
+            value_ = ctx_->get_binded_as(handle_, value_);
             return true;
         }
         else
@@ -70,11 +81,11 @@ public:
     }
     local_value(const typeT& right)
     {
-        def_ = right;
+        value_ = right;
     }
     local_value(typeT&& right)
     {
-        def_ = std::move(right);
+        value_ = std::move(right);
     }
     local_value& operator=(typeT right)
     {
@@ -86,16 +97,9 @@ public:
         }
         return this;
     }
-    operator typeT()
+    operator typeT() const
     {
-        if (ctx_ && handle_)// just in case both of them...
-        {
-            return ctx_->get_binded_as<typeT>(handle_, def_);
-        }
-        else
-        {
-            return def_;
-        }
+        return value_;
     }
 };
 template <typename typeT, bool manual = false>
@@ -122,7 +126,7 @@ public:
     owned_value& operator=(owned_value&&) = default;
     rx_result bind(const string_type& path, runtime_init_context& ctx)
     {
-        auto result = ctx.bind_item(path);
+        auto result = ctx.bind_item(path, runtime::tag_blocks::binded_callback_t());
         if (result)
         {
             ctx_ = ctx.context;
@@ -220,7 +224,7 @@ public:
     remote_owned_value& operator=(remote_owned_value&&) = default;
     rx_result bind(const string_type& path, runtime_init_context& ctx)
     {
-        auto result = ctx.bind_item(path);
+        auto result = ctx.bind_item(path, runtime::tag_blocks::binded_callback_t());
         if (result)
         {
             ctx_ = ctx.context;
@@ -295,9 +299,12 @@ public:
 };
 
 
-template <typename typeT>
+template <typename typeT, typename lockT = locks::slim_lock>
 struct remote_local_value
 {
+    using callback_t = std::function<void(const typeT&)>;
+    callback_t callback_;
+    lockT lock_;
     typeT value_;
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
@@ -308,9 +315,21 @@ public:
     remote_local_value(remote_local_value&&) = default;
     remote_local_value& operator=(const remote_local_value&) = default;
     remote_local_value& operator=(remote_local_value&&) = default;
-    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
     {
-        auto result = ctx.bind_item(path);
+        auto result = ctx.bind_item(path, [this](const rx_value& val)
+            {
+                typeT temp_val;
+                {
+                    locks::auto_lock_t<lockT> _(&lock_);
+                    value_ = values::extract_value(val.get_storage(), value_);
+                    temp_val = value_;
+                }
+                if (callback_)
+                {
+                    callback_(temp_val);
+                }
+            });
         if (result)
         {
             ctx_ = ctx.context;
@@ -333,16 +352,20 @@ public:
     }
     remote_local_value& operator=(typeT right)
     {
-        value_ = right;
+        {
+            locks::auto_lock_t<lockT> _(&lock_);
+            value_ = right;
+        }
         if (ctx_ && handle_)// just in case both of them...
         {
-            typeT temp(value_);
+            typeT temp(right);
             ctx_->set_remote_binded_as<typeT>(handle_, std::move(temp));
         }
         return this;
     }
     operator typeT()
     {
+        locks::auto_lock_t<lockT> _(&lock_);
         return value_;
     }
 };

@@ -142,7 +142,7 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     return true;
 }
 
-rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, operational::binded_tags* binded)
+rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded)
 {
     return true;
 }

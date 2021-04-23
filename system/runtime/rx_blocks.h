@@ -197,7 +197,6 @@ source runtime. basic implementation of an source runtime");
           }
           return ret;
       }
-
   private:
 
       virtual bool supports_input () const;

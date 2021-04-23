@@ -49,7 +49,7 @@ namespace data_source {
 // Class rx_internal::sys_runtime::data_source::platform_source 
 
 platform_source::platform_source()
-      : path_handle_(0)
+      : path_("")
 {
 }
 
@@ -58,23 +58,15 @@ platform_source::platform_source()
 rx_result platform_source::initialize_source (runtime::runtime_init_context& ctx)
 {
     point_.set_context(ctx.context);
-    auto result = ctx.bind_item(".Path");
-    if (result)
-    {
-        path_handle_ = result.value();
-    }
+    auto result = path_.bind(".Path", ctx);
+    
     return true;
 }
 
 rx_result platform_source::start_source (runtime::runtime_start_context& ctx)
 {
-    if (path_handle_)
-    {
-        auto path = ctx.context->get_binded_as(path_handle_, ""s);
-        auto result = connect(path);
-        return result;
-    }
-	return true;
+    auto result = connect(path_);
+    return result;
 }
 
 rx_result platform_source::stop_source (runtime::runtime_stop_context& ctx)

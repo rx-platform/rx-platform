@@ -83,7 +83,7 @@ Platform Source. Source implementation for platform connection, may include diff
       value_point point_;
 
 
-      runtime_handle_t path_handle_;
+      runtime::local_value<string_type> path_;
 
 
 };

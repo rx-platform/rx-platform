@@ -47,8 +47,8 @@ namespace ip_endpoints {
 // Class rx_internal::interfaces::ip_endpoints::udp_port 
 
 udp_port::udp_port()
-      : rx_recv_timeout_(0),
-        rx_send_timeout_(0)
+      : recv_timeout_(2000),
+        send_timeout_(1000)
 {
 }
 
@@ -61,16 +61,12 @@ udp_port::~udp_port()
 
 rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto bind_result = ctx.bind_item("Timeouts.ReceiveTimeout");
-    if (bind_result)
-        rx_recv_timeout_ = bind_result.value();
-    else
+    auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
+    if (!bind_result)
         RUNTIME_LOG_ERROR("udp_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
-    bind_result = ctx.bind_item("Timeouts.SendTimeout");
-    if (bind_result)
-        rx_send_timeout_ = bind_result.value();
-    else
-        RUNTIME_LOG_ERROR("udp_port", 200, "Unable to bind to value Timeouts.SendTimeout");
+    bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("udp_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
@@ -116,7 +112,6 @@ void udp_port::timer_tick (uint32_t tick)
 
 rx_result udp_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    auto session_timeout = get_binded_as(rx_recv_timeout_, 2000);
     auto ep = std::make_unique<udp_endpoint>();
     auto sec_result = create_security_context();
     if (!sec_result)
@@ -124,7 +119,7 @@ rx_result udp_port::start_listen (const protocol_address* local_address, const p
         rx_result ret(sec_result.errors());
         ret.register_error("Unable to create security context");
     }
-    auto result = ep->open(bind_address_, session_timeout, sec_result.value(), this);
+    auto result = ep->open(bind_address_, recv_timeout_, sec_result.value(), this);
     if (!result)
     {
         stop_passive();

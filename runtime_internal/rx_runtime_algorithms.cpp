@@ -730,8 +730,8 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 			{
 				RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
 
-				runtime::operational::binded_tags* binded = ctx.tags;
-				rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, runtime::operational::binded_tags* binded)
+				runtime::tag_blocks::binded_tags* binded = ctx.tags;
+				rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, runtime::tag_blocks::binded_tags* binded)
 					{
 						auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*whose);
 						auto result = start_runtime(whose, start_ctx, binded);
@@ -766,7 +766,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	return ret;
 }
 
-rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::operational::binded_tags* binded)
+rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::tag_blocks::binded_tags* binded)
 {
 	auto ret = what->get_instance_data().before_start_runtime(what, ctx, binded);
 	ret = what->start_runtime(ctx);

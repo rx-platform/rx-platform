@@ -240,9 +240,13 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       string_type get_definition_as_json () const;
 
@@ -250,15 +254,11 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_thread_handle_t get_executer () const;
 
-      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
-
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
-
-      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
 	  ~rx_item_implementation() = default;
   protected:
@@ -310,9 +310,13 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       string_type get_definition_as_json () const;
 
@@ -320,15 +324,11 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_thread_handle_t get_executer () const;
 
-      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
-
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
-
-      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:
@@ -406,9 +406,13 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx);
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       string_type get_definition_as_json () const;
 
@@ -416,15 +420,11 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_thread_handle_t get_executer () const;
 
-      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor);
-
       rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
-
-      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor);
 
 
   protected:

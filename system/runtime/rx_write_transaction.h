@@ -48,7 +48,7 @@ namespace algorithms {
 
 
 
-class write_item_transaction : public operational::rx_tags_callback  
+class write_item_transaction : public tag_blocks::rx_tags_callback  
 {
     DECLARE_REFERENCE_PTR(write_item_transaction);
 
@@ -56,9 +56,9 @@ class write_item_transaction : public operational::rx_tags_callback
       write_item_transaction (rx_result_callback&& callback, rx_thread_handle_t whose);
 
 
-      void items_changed (const std::vector<operational::update_item>& items);
+      void items_changed (const std::vector<tag_blocks::update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<operational::update_item>&& items);
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<tag_blocks::update_item>&& items);
 
       rx_thread_handle_t get_target ();
 

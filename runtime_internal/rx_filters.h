@@ -71,13 +71,13 @@ Implementation of linear scaling for input and output.");
 
 
 
-      runtime_handle_t hi_raw_;
+      runtime::local_value<double> hi_raw_;
 
-      runtime_handle_t low_raw_;
+      runtime::local_value<double> low_raw_;
 
-      runtime_handle_t hi_eu_;
+      runtime::local_value<double> hi_eu_;
 
-      runtime_handle_t low_eu_;
+      runtime::local_value<double> low_eu_;
 
 
 };
@@ -105,9 +105,9 @@ class bound_filter : public rx_platform::runtime::blocks::filter_runtime
 
 
 
-      runtime_handle_t hi_bound_;
+      runtime::local_value<double> hi_bound_;
 
-      runtime_handle_t low_bound_;
+      runtime::local_value<double> low_bound_;
 
 
 };

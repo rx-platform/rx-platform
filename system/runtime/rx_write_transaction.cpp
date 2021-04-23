@@ -52,11 +52,11 @@ write_item_transaction::write_item_transaction (rx_result_callback&& callback, r
 
 
 
-void write_item_transaction::items_changed (const std::vector<operational::update_item>& items)
+void write_item_transaction::items_changed (const std::vector<tag_blocks::update_item>& items)
 {
 }
 
-void write_item_transaction::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<operational::update_item>&& items)
+void write_item_transaction::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<tag_blocks::update_item>&& items)
 {
 }
 

@@ -59,6 +59,8 @@ struct configuration_data_t;
 #define SAFE_ANSI_STATUS_OK (supports_ansi() ? ANSI_STATUS_OK : "OK")
 
 
+// rx_log
+#include "lib/rx_log.h"
 
 namespace rx {
 namespace security {
@@ -132,6 +134,40 @@ class host_platform_builder
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class startup_log_subscriber : public rx::log::log_subscriber  
+{
+    typedef std::vector<log::log_event_data> pending_events_type;
+
+  public:
+
+      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+
+      rx_result read_log (const log::log_query_type& query, log::log_events_type& result);
+
+      string_type get_name () const;
+
+      void started ();
+
+
+  protected:
+
+  private:
+
+
+      pending_events_type pending_events_;
+
+      locks::slim_lock pending_lock_;
+
+      bool started_;
 
 
 };
@@ -246,6 +282,8 @@ class rx_platform_host
 
       const string_type& get_copyright ();
 
+      void host_started ();
+
 
       rx_platform_host * get_parent ()
       {
@@ -279,6 +317,8 @@ class rx_platform_host
 
       virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
 
+      void dump_startup_log (std::ostream& out);
+
 
   private:
       rx_platform_host(const rx_platform_host &right);
@@ -291,6 +331,8 @@ class rx_platform_host
 
 
       rx_platform_host *parent_;
+
+      rx_reference<startup_log_subscriber> startup_log_;
 
 
       string_type manuals_path_;

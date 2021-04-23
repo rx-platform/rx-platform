@@ -57,9 +57,9 @@ class mapper_data;
 class variable_data;
 } // namespace structure
 
-namespace operational {
+namespace tag_blocks {
 class binded_tags;
-} // namespace operational
+} // namespace tag_blocks
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
@@ -185,12 +185,13 @@ typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
 typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
 typedef rx::pointers::reference<relations::relation_runtime> relation_runtime_ptr;
 
-namespace operational
+namespace tag_blocks
 {
 class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
+typedef std::function<void(const rx_value&)> binded_callback_t;
 }
-using operational::tags_callback_ptr;
+using tag_blocks::tags_callback_ptr;
 namespace structure {
 class const_value_data;
 class value_data;
@@ -501,12 +502,12 @@ typedef std::map<string_type, runtime_handle_t> binded_tags_type;
 struct runtime_init_context 
 {
 
-      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, operational::binded_tags* binded, ns::rx_directory_resolver* directories);
+      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories);
 
 
       runtime_handle_t get_new_handle ();
 
-      rx_result_with<runtime_handle_t> bind_item (const string_type& path);
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path, tag_blocks::binded_callback_t callback);
 
       rx_result set_item (const string_type& path, rx_simple_value&& value);
 
@@ -519,7 +520,7 @@ struct runtime_init_context
 
       runtime_process_context *context;
 
-      operational::binded_tags *tags;
+      tag_blocks::binded_tags *tags;
 
       mappers_stack mappers;
 

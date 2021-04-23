@@ -203,7 +203,7 @@ rx_result relation_data::browse (const string_type& prefix, const string_type& p
 	}
 }
 
-rx_result relation_data::read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
+rx_result relation_data::read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx)
 {
 	if (connector_)
 	{
@@ -216,7 +216,7 @@ rx_result relation_data::read_tag (runtime_handle_t item, operational::tags_call
 	}
 }
 
-rx_result relation_data::write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx)
+rx_result relation_data::write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx)
 {
 	if (connector_)
 	{

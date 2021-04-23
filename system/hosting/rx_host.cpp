@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -192,7 +192,7 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 }
 }
 
-// Class rx_platform::hosting::rx_platform_host
+// Class rx_platform::hosting::rx_platform_host 
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -547,6 +547,8 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
 {
+	startup_log_ = rx_create_reference<startup_log_subscriber>();
+	rx::log::log_object::instance().register_subscriber(startup_log_);
 	rx_result ret;
 	for (auto one : plugins)
 	{
@@ -694,11 +696,66 @@ const string_type& rx_platform_host::get_copyright ()
 	return copyright_cache_;
 }
 
+void rx_platform_host::host_started ()
+{
+	startup_log_->started();
+}
 
-// Class rx_platform::hosting::configuration_reader
+void rx_platform_host::dump_startup_log (std::ostream& out)
+{
+	std::cout << "Startup log entries:\r\n";
+
+	log::log_query_type query;
+	query.count = 10000;
+	log::log_events_type events;
+	query.type = log::rx_log_error_level;
+	startup_log_->read_log(query, events);
+
+	hosting::rx_platform_host::dump_log_items(events, out);
+}
 
 
-// Class rx_platform::hosting::host_platform_builder
+// Class rx_platform::hosting::configuration_reader 
+
+
+// Class rx_platform::hosting::host_platform_builder 
+
+
+// Class rx_platform::hosting::startup_log_subscriber 
+
+
+void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+{
+	if (started_)
+		return;
+
+	log::log_event_data one = { event_type,library,source,level,code,message,when };
+	
+	locks::auto_slim_lock _(&pending_lock_);
+	pending_events_.emplace_back(std::move(one));
+}
+
+rx_result startup_log_subscriber::read_log (const log::log_query_type& query, log::log_events_type& result)
+{
+	locks::auto_slim_lock _(&pending_lock_);
+	for (const auto& one : pending_events_)
+	{
+		if (one.is_included(query))
+			result.data.emplace_back(one);
+	}
+	result.succeeded = true;
+	return true;
+}
+
+string_type startup_log_subscriber::get_name () const
+{
+	return "startup";
+}
+
+void startup_log_subscriber::started ()
+{
+	started_ = true;
+}
 
 
 } // namespace hosting

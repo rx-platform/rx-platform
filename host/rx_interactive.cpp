@@ -348,18 +348,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 
 			if (!ret)
 			{// we had error, dump log
-
-				std::cout << "\r\n\r\nStartup log entries:\r\n";
-
-				log::log_query_type query;
-				query.count = 20;
-				log::log_events_type events;
-				query.type = log::rx_log_error_level;
-				//rx::log::log_object::instance().read_log(query, events);
-				//!!!
-
-				hosting::rx_platform_host::dump_log_items(events, std::cout);
-
+				dump_startup_log(std::cout);
 			}
 
 			rx_deinitialize_os();
@@ -550,7 +539,9 @@ void interactive_console_host::console_run_result (rx_result result)
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
 		rx_dump_error_result(std::cout, result);
 		std::cout << "\r\n";
+		dump_startup_log(std::cout);
 	}
+	host_started();
 }
 
 
@@ -723,4 +714,5 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 
 } // namespace interactive
 } // namespace host
+
 

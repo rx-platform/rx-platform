@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -46,11 +46,11 @@ namespace runtime {
 
 namespace algorithms {
 
-// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms
+// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms 
 
 
 template <class typeT>
-std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<typeT>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<typeT>::connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
 
@@ -80,7 +80,7 @@ std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<typeT>:
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+rx_result runtime_holder_algorithms<typeT>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
     for (const auto& item : items)
@@ -102,7 +102,7 @@ void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
     for (const auto& item : items)
@@ -114,7 +114,7 @@ rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_
 }
 
 template <class typeT>
-std::vector<rx_result> runtime_holder_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, typename typeT::RType& whose)
+std::vector<rx_result> runtime_holder_algorithms<typeT>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
     if (!items.empty())
@@ -346,7 +346,7 @@ rx_result runtime_holder_algorithms<typeT>::serialize_runtime_value (base_meta_w
 }
 
 template <>
-std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::object_types::relation_type>::connect_items(const string_array& paths, runtime::operational::tags_callback_ptr monitor, meta::object_types::relation_type::RType& whose)
+std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::object_types::relation_type>::connect_items(const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor, meta::object_types::relation_type::RType& whose)
 {
     using connect_result_t = std::vector<rx_result_with<runtime_handle_t> >;
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint 
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint
 
 tcp_client_endpoint::tcp_client_endpoint()
       : my_port_(nullptr),
@@ -198,8 +198,11 @@ bool tcp_client_endpoint::tick ()
             }
             if (!result)
             {
-                tcp_socket_->disconnect();
-                tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+                if(tcp_socket_)
+                {
+                    tcp_socket_->disconnect();
+                    tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+                }
                 current_state_ = tcp_state::not_connected;
                 return true;
             }
@@ -271,12 +274,13 @@ runtime::items::port_runtime* tcp_client_endpoint::get_port ()
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_port 
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_port
 
 tcp_client_port::tcp_client_port()
-      : rx_recv_timeout_(0),
-        rx_connect_timeout_(0),
-        rx_reconnect_timeout_(0)
+      : recv_timeout_(2000),
+        send_timeout_(1000),
+        connect_timeout_(2000),
+        reconnect_timeout_(5000)
 {
 }
 
@@ -284,21 +288,18 @@ tcp_client_port::tcp_client_port()
 
 rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto bind_result = ctx.bind_item("Timeouts.ReceiveTimeout");
-    if (bind_result)
-        rx_recv_timeout_ = bind_result.value();
-    else
-        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
-    bind_result = ctx.bind_item("Timeouts.ConnectTimeout");
-    if (bind_result)
-        rx_connect_timeout_ = bind_result.value();
-    else
-        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");
-    bind_result = ctx.bind_item("Timeouts.ReconnectTimeout");
-    if (bind_result)
-        rx_reconnect_timeout_ = bind_result.value();
-    else
-        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
+    auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+    bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+    bind_result = connect_timeout_.bind("Timeouts.ConnectTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");
+    bind_result = reconnect_timeout_.bind("Timeouts.ReconnectTimeout", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
@@ -314,12 +315,12 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
 
 uint32_t tcp_client_port::get_reconnect_timeout () const
 {
-    return get_binded_as<uint32_t>(rx_reconnect_timeout_, 5000);
+    return (uint32_t)reconnect_timeout_;
 }
 
 rx_result_with<rx_protocol_stack_endpoint*> tcp_client_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
-    auto session_timeout = get_binded_as(rx_recv_timeout_, 2000);
+    auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<tcp_client_endpoint>();
     auto sec_result = create_security_context();
     if (!sec_result)

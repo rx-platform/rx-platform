@@ -837,6 +837,10 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data.register_simple_value_static("LastScanTime", 0.0, true, false);
 	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", 0, true, false);
 	what->complex_data.register_simple_value_static("MaxScanTime", 0.0, true, false);
+	what->complex_data.register_simple_value_static("On", true, false, true);
+	what->complex_data.register_simple_value_static("Test", false, false, true);
+	what->complex_data.register_simple_value_static("Blocked", false, false, true);
+	what->complex_data.register_simple_value_static("Simulate", false, false, true);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 template<class T>
@@ -1414,9 +1418,9 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		filter->complex_data.register_simple_value_static("HiEU", 100.0, false, true);
+		filter->complex_data.register_simple_value_static("HiEU", 10.0, false, true);
 		filter->complex_data.register_simple_value_static("LowEU", 0.0, false, true);
-		filter->complex_data.register_simple_value_static("HiRaw", 10.0, false, true);
+		filter->complex_data.register_simple_value_static("HiRaw", 100.0, false, true);
 		filter->complex_data.register_simple_value_static("LowRaw", 0.0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 

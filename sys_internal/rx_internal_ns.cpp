@@ -220,15 +220,27 @@ rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, cons
 }
 
 template <class TImpl>
-std::vector<rx_result_with<runtime_handle_t> > rx_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
+std::vector<rx_result_with<runtime_handle_t> > rx_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::connect_items(paths, monitor, *impl_);
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result> rx_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::disconnect_items(items, monitor, *impl_);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -264,12 +276,6 @@ rx_thread_handle_t rx_item_implementation<TImpl>::get_executer () const
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
-{
-    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
-}
-
-template <class TImpl>
 rx_result rx_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
     return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::serialize_runtime_value(stream, type, *impl_);
@@ -285,12 +291,6 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::save () const
 {
 	return rx_save_platform_item(*this);
-}
-
-template <class TImpl>
-std::vector<rx_result> rx_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
-{
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::disconnect_items(items, monitor, *impl_);
 }
 
 
@@ -375,7 +375,7 @@ rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& prefix,
 }
 
 template <class TImpl>
-std::vector<rx_result_with<runtime_handle_t> > rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
+std::vector<rx_result_with<runtime_handle_t> > rx_meta_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor)
 {
     std::vector<rx_result_with<runtime_handle_t> > result;
     result.reserve(paths.size());
@@ -387,9 +387,27 @@ std::vector<rx_result_with<runtime_handle_t> > rx_meta_item_implementation<TImpl
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	std::vector<rx_result> result;
+	result.reserve(items.size());
+	for (size_t idx = 0; idx < items.size(); idx++)
+	{
+		result.emplace_back("Not valid for this type!");
+	}
+	return result;
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
@@ -430,12 +448,6 @@ rx_thread_handle_t rx_meta_item_implementation<TImpl>::get_executer () const
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
-{
-    return RX_NOT_IMPLEMENTED;
-}
-
-template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
     return "Not valid for this type!";
@@ -451,18 +463,6 @@ template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::save () const
 {
 	return rx_save_platform_item(*this);
-}
-
-template <class TImpl>
-std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
-{
-	std::vector<rx_result> result;
-	result.reserve(items.size());
-	for (size_t idx = 0; idx < items.size(); idx++)
-	{
-		result.emplace_back("Not valid for this type!");
-	}
-	return result;
 }
 
 
@@ -557,7 +557,7 @@ rx_result rx_other_implementation<TImpl>::browse (const string_type& prefix, con
 }
 
 template <class TImpl>
-std::vector<rx_result_with<runtime_handle_t> > rx_other_implementation<TImpl>::connect_items (const string_array& paths, runtime::operational::tags_callback_ptr monitor)
+std::vector<rx_result_with<runtime_handle_t> > rx_other_implementation<TImpl>::connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor)
 {
     std::vector<rx_result_with<runtime_handle_t> > result;
     result.reserve(paths.size());
@@ -569,9 +569,27 @@ std::vector<rx_result_with<runtime_handle_t> > rx_other_implementation<TImpl>::c
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor, api::rx_context ctx)
+std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	std::vector<rx_result> result;
+	result.reserve(items.size());
+	for (size_t idx = 0; idx < items.size(); idx++)
+	{
+		result.emplace_back("Not valid for this type!");
+	}
+	return result;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
 {
 	return "Not valid for this type!";
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
@@ -593,12 +611,6 @@ rx_thread_handle_t rx_other_implementation<TImpl>::get_executer () const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::operational::tags_callback_ptr monitor)
-{
-    return RX_NOT_IMPLEMENTED;
-}
-
-template <class TImpl>
 rx_result rx_other_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
     return "Not valid for this type!";
@@ -614,18 +626,6 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::save () const
 {
 	return rx_save_platform_item(*this);
-}
-
-template <class TImpl>
-std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::operational::tags_callback_ptr monitor)
-{
-	std::vector<rx_result> result;
-	result.reserve(items.size());
-	for (size_t idx = 0; idx < items.size(); idx++)
-	{
-		result.emplace_back("Not valid for this type!");
-	}
-	return result;
 }
 
 

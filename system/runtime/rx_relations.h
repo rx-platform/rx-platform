@@ -91,9 +91,9 @@ class relation_connector
       virtual ~relation_connector();
 
 
-      virtual rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+      virtual rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
 
-      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
 
       virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
 
@@ -177,9 +177,9 @@ class relation_data : public rx::pointers::reference_object
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
 
-      rx_result read_tag (runtime_handle_t item, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
+      rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, operational::tags_callback_ptr monitor, runtime_process_context* ctx);
+      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx);
 
       rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
 

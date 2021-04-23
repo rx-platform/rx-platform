@@ -40,7 +40,7 @@
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_runtime_holder.h"
-using rx_platform::runtime::operational::update_item;
+using rx_platform::runtime::tag_blocks::update_item;
 
 
 namespace rx_internal {

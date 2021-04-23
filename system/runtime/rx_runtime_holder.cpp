@@ -66,10 +66,7 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 
 template <class typeT>
 runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
-      : job_pending_(false),
-        last_scan_time_(-1),
-        max_scan_time_(0),
-        loop_count_(0)
+      : job_pending_(false)
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
     , context_(runtime_holder_algorithms<typeT>::create_context(*this))
@@ -128,23 +125,17 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     auto result = tags_.initialize_runtime(ctx, &relations_);
     if (result)
     {
-        auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
-        if (!bind_result)
-            RX_ASSERT(false);
-        bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
-        if (!bind_result)
-            RX_ASSERT(false);
-        bind_result = loop_count_.bind("Object.LoopCount", ctx);
-        if (!bind_result)
-            RX_ASSERT(false);
-
-        result = relations_.initialize_relations(ctx);
+        result = common_tags_.initialize_runtime(ctx);
         if (result)
         {
-            result = logic_.initialize_logic(ctx);
+            result = relations_.initialize_relations(ctx);
             if (result)
             {
-                result = displays_.initialize_displays(ctx);
+                result = logic_.initialize_logic(ctx);
+                if (result)
+                {
+                    result = displays_.initialize_displays(ctx);
+                }
             }
         }
     }
@@ -317,6 +308,42 @@ template <class typeT>
 void process_runtime_job<typeT>::process ()
 {
     runtime_scan_algorithms<typeT>::process_runtime(*whose_);
+}
+
+
+// Class rx_platform::runtime::algorithms::common_runtime_tags 
+
+
+rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
+{
+    auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
+    if (bind_result)
+    {
+        bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
+        if (bind_result)
+        {
+            bind_result = loop_count_.bind("Object.LoopCount", ctx);
+            if (bind_result)
+            {
+                bind_result = on_.bind("Object.On", ctx);
+                if (bind_result)
+                {
+                    bind_result = test_.bind("Object.Test", ctx);
+                    if (bind_result)
+                    {
+                        bind_result = blocked_.bind("Object.Blocked", ctx);
+                        if (bind_result)
+                        {
+                            bind_result = simulate_.bind("Object.Simulate", ctx);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (!bind_result)
+        bind_result.register_error("Unable to bind to common tag.");
+    return bind_result;
 }
 
 

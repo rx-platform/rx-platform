@@ -198,7 +198,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_data_.push_back(object_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(runtime_data_.rbegin()->runtime_data);
