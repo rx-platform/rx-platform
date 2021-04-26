@@ -1,5 +1,5 @@
 
-![perica](https://rx-platform.github.io/images/favicon-64.png)
+![perica](https://rx-platform.github.io/images/favicon-128.png)
 
 
 ## The Mission
