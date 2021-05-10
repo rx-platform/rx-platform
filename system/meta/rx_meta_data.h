@@ -162,6 +162,53 @@ struct query_result_detail;
 struct query_result;
 }
 
+namespace meta
+{
+
+namespace object_types
+{
+class object_type;
+class application_type;
+class domain_type;
+class port_type;
+class relation_type;
+
+}
+namespace basic_types
+{
+class variable_type;
+class event_type;
+class filter_type;
+class source_type;
+class mapper_type;
+class struct_type;
+class data_type;
+class method_type;
+class program_type;
+class display_type;
+}
+
+}
+
+typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
+typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;
+typedef pointers::reference<meta::object_types::application_type> rx_application_type_ptr;
+typedef pointers::reference<meta::object_types::port_type> rx_port_type_ptr;
+typedef pointers::reference<meta::object_types::relation_type> relation_type_ptr;
+
+
+typedef pointers::reference<meta::basic_types::mapper_type> mapper_type_ptr;
+typedef pointers::reference<meta::basic_types::struct_type> struct_type_ptr;
+typedef pointers::reference<meta::basic_types::variable_type> variable_type_ptr;
+typedef pointers::reference<meta::basic_types::source_type> source_type_ptr;
+typedef pointers::reference<meta::basic_types::event_type> event_type_ptr;
+typedef pointers::reference<meta::basic_types::filter_type> filter_type_ptr;
+typedef pointers::reference<meta::basic_types::data_type> data_type_ptr;
+typedef pointers::reference<meta::basic_types::method_type> method_type_ptr;
+typedef pointers::reference<meta::basic_types::program_type> program_type_ptr;
+typedef pointers::reference<meta::basic_types::display_type> display_type_ptr;
+
+
 
 namespace meta {
 

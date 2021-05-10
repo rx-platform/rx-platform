@@ -225,7 +225,9 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 	{
 		rx_result ret(resolve_result.errors());
 		ret.register_error("Unable to resolve attribute");
-		return ret;
+		META_LOG_WARNING("meta_blocks_algorithm", 900, ret.errors_line());
+		ctx.register_warining({ ret.errors_line() });
+		return true;
 	}
 	target = resolve_result.value();
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
@@ -239,7 +241,9 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 	}
 	else
 	{
-		return temp.errors();
+		META_LOG_WARNING("meta_blocks_algorithm", 900, temp.errors_line());
+		ctx.register_warining({ temp.errors_line() });
+		return true;
 	}
 }
 

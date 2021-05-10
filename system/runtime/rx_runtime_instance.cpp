@@ -85,6 +85,7 @@ rx_result object_instance_data::before_init_runtime (rx_object_ptr what, runtime
     if (what->get_instance_data().my_domain_)
     {
         what->get_instance_data().executer_ = what->get_instance_data().my_domain_->get_executer();
+        what->get_implementation()->executer_ = what->get_instance_data().executer_;
 
         const auto& app_meta = what->get_instance_data().my_domain_->meta_info();
         auto relation_ptr = rx_create_reference<relations::relation_data>();
@@ -215,6 +216,7 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
             what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_domain_processor(what->get_instance_data());
         else
             what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+        what->get_implementation()->executer_ = what->get_instance_data().executer_;
 
         const auto& app_meta = what->get_instance_data().my_application_->meta_info();
         auto relation_ptr = rx_create_reference<relations::relation_data>();
@@ -355,6 +357,7 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
         what->get_instance_data().security_ctx_->logout();
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     what->get_implementation()->context_ = ctx.context;
+    what->get_implementation()->executer_ = what->get_instance_data().executer_;
     return true;
 }
 

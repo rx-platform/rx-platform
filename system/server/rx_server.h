@@ -48,10 +48,10 @@
 #include "system/libraries/rx_plugin.h"
 #include "lib/security/rx_security.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 namespace rx_platform {
 namespace prog {
@@ -85,6 +85,9 @@ struct io_manager_data_t
 struct general_data_t
 {
 	string_type manuals_path;
+    string_type http_path;
+    uint16_t http_port;
+    uint16_t rx_port;
 };
 struct runtime_data_t
 {
@@ -234,6 +237,12 @@ class rx_gate
       }
 
 
+      const configuration_data_t& get_configuration () const
+      {
+        return configuration_;
+      }
+
+
 
 	  template <class typeT>
 	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
@@ -279,6 +288,8 @@ class rx_gate
       bool shutting_down_;
 
       rx_platform_status platform_status_;
+
+      configuration_data_t configuration_;
 
 
 };

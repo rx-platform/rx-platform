@@ -39,6 +39,10 @@
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_resolvers
+#include "system/runtime/rx_resolvers.h"
+// rx_relations
+#include "system/runtime/rx_relations.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 // rx_runtime_helpers
@@ -172,8 +176,9 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 
 // Class rx_platform::runtime::runtime_start_context 
 
-runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories)
+runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories, relations::relations_holder* relations)
       : context(context),
+        relations_(relations),
         directories(directories),
         now(rx_time::now())
     , structure(root)
@@ -185,6 +190,11 @@ runtime_start_context::runtime_start_context (structure::runtime_item& root, run
 runtime_handle_t runtime_start_context::connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback)
 {
 	return context->connect(path, rate, callback, *this);
+}
+
+rx_result runtime_start_context::register_relation_subscriber (const string_type& name, relation_subscriber* who)
+{
+	return relations_->register_relation_subscriber(name, who);
 }
 
 

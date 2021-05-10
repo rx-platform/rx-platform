@@ -96,6 +96,28 @@ class runtime_holder_algorithms
 };
 
 
+
+
+
+
+class runtime_relation_algorithms 
+{
+
+  public:
+
+      static void notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx);
+
+      static void notify_relation_disconnected (const string_type& name, runtime_process_context* ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform

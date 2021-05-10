@@ -51,6 +51,39 @@ namespace ports_templates {
 
 
 template <typename endpointT>
+class master_client_port_impl : public items::port_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+standard many<=>many master/client protocol port implementation");
+
+    DECLARE_REFERENCE_PTR(master_client_port_impl);
+public:
+    typedef std::function<std::pair<rx_protocol_stack_endpoint*, rx_reference<endpointT> >()> construct_func_type;
+    construct_func_type construct_func;
+
+  public:
+
+      rx_protocol_stack_endpoint* construct_endpoint ();
+
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<endpointT> active_endpoint_;
+
+
+};
+
+
+
+
+
+
+template <typename endpointT>
 class slave_server_port_impl : public items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 1, 0, "\
@@ -113,37 +146,33 @@ public:
 };
 
 
-
-
+// Parameterized Class rx_platform::runtime::io_types::ports_templates::master_client_port_impl 
 
 
 template <typename endpointT>
-class master_client_port_impl : public items::port_runtime  
+rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_endpoint ()
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard many<=>many master/client protocol port implementation");
+    if (!construct_func)
+        return nullptr;
+    auto endpoint_data = construct_func();
 
-    DECLARE_REFERENCE_PTR(master_client_port_impl);
-public:
-    typedef std::function<std::pair<rx_protocol_stack_endpoint*, rx_reference<endpointT> >()> construct_func_type;
-    construct_func_type construct_func;
+    if (endpoint_data.first->closed_function == nullptr)
+    {
+        endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->get_port()->disconnect_stack_endpoint(entry);
+        };
+    }
+    active_endpoint_ = std::move(endpoint_data.second);
+    return endpoint_data.first;
+}
 
-  public:
-
-      rx_protocol_stack_endpoint* construct_endpoint ();
-
-      void destroy_endpoint (rx_protocol_stack_endpoint* what);
-
-
-  protected:
-
-  private:
-
-
-      rx_reference<endpointT> active_endpoint_;
-
-
-};
+template <typename endpointT>
+void master_client_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
+    active_endpoint_ = rx_reference<endpointT>();
+}
 
 
 // Parameterized Class rx_platform::runtime::io_types::ports_templates::slave_server_port_impl 
@@ -187,35 +216,6 @@ rx_reference<endpointT> slave_server_port_impl<endpointT>::get_endpoint (rx_prot
         return it->second;
     else
         return rx_reference<endpointT>::null_ptr;
-}
-
-
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::master_client_port_impl 
-
-
-template <typename endpointT>
-rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_endpoint ()
-{
-    if (!construct_func)
-        return nullptr;
-    auto endpoint_data = construct_func();
-
-    if (endpoint_data.first->closed_function == nullptr)
-    {
-        endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
-        {
-            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            whose->get_port()->disconnect_stack_endpoint(entry);
-        };
-    }
-    active_endpoint_ = std::move(endpoint_data.second);
-    return endpoint_data.first;
-}
-
-template <typename endpointT>
-void master_client_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
-{
-    active_endpoint_ = rx_reference<endpointT>();
 }
 
 

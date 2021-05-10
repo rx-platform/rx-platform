@@ -286,6 +286,7 @@ void relation_data::try_resolve ()
 		{
 			my_state_ = relation_state::same_domain;
 
+			algorithms::runtime_relation_algorithms::notify_relation_connected(name, item_ptr, context_);
 			connector_ = std::make_unique<local_relation_connector>(std::move(item_ptr));
 			implementation_->relation_connected();
 			if (!is_target_)
@@ -362,9 +363,13 @@ bool relation_data::runtime_connected (platform_item_ptr&& item)
 
 void relation_data::runtime_disconnected ()
 {
-	implementation_->relation_disconnected();
-	if (my_state_ != relation_state::stopping)
-		my_state_ = relation_state::idle;
+	if (my_state_ != relation_state::idle || my_state_ == relation_state::stopping)
+	{
+		implementation_->relation_disconnected();
+		if (my_state_ != relation_state::stopping)
+			my_state_ = relation_state::idle;
+		algorithms::runtime_relation_algorithms::notify_relation_disconnected(name, context_);
+	}
 }
 
 rx_result relation_data::resolve_inverse_name ()
@@ -752,6 +757,28 @@ rx_result relations_holder::get_value_ref (const string_type& path, rt_value_ref
 	{
 		return path + " not found!";
 	}
+}
+
+rx_result relations_holder::register_relation_subscriber (const string_type& name, relation_subscriber* who)
+{
+	auto it = relation_subscribers_.find(name);
+	if (it != relation_subscribers_.end())
+	{
+		it->second.emplace_back(who);
+		return true;
+	}
+	else
+	{
+		for (auto& one : source_relations_)
+		{
+			if (one->name == name)
+			{
+				relation_subscribers_[name].emplace_back(who);
+				return true;
+			}
+		}
+	}
+	return "Invalid relation name!";
 }
 
 

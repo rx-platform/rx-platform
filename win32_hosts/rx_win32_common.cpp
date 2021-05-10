@@ -68,6 +68,7 @@ rx_result build_directories(rx_host_directories& data)
 			data.system_storage = rx::rx_combine_paths(&buff[1], "rx-platform/storage/rx-system-storage");//copyright_file
 			data.copyright_file = rx::rx_combine_paths(&buff[1], "rx-platform/config/COPYRIGHT");
 			data.license_file = rx::rx_combine_paths(&buff[1], "rx-platform/config/LICENSE");
+			data.http = rx::rx_combine_paths(&buff[1], "rx-platform/http");
 
 			data.manuals = rx::rx_combine_paths(&buff[1], "rx-platform/man");
 		}
@@ -78,6 +79,7 @@ rx_result build_directories(rx_host_directories& data)
 			data.license_file = rx::rx_combine_paths(buff, "rx-platform/config/LICENSE");
 			data.copyright_file = rx::rx_combine_paths(buff, "rx-platform/config/COPYRIGHT");
 			data.manuals = rx::rx_combine_paths(buff, "rx-platform/man");
+			data.http = rx::rx_combine_paths(buff, "rx-platform/http");
 		}
 		if (GetEnvironmentVariableA("LocalAppData", buff, sizeof(buff)))
 		{

@@ -990,10 +990,9 @@ bool help_command::do_console_command (std::istream& in, std::ostream& out, std:
 {
 	string_type command_name;
 	in >> command_name;
-	out << "Printing help...\r\n";
 	if (command_name.empty())
 	{
-		out << RX_CONSOLE_HEADER_LINE "\r\n";
+		out << "\r\n";
 		out << get_help();
 		return true;
 	}
@@ -1024,7 +1023,22 @@ string_type help_command::get_help () const
 		if (help.empty())
 		{
 			std::ostringstream out;
-			out << "Well, this is a list of commands:\r\n\r\n";
+			out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "{rx-platform}" ANSI_COLOR_RESET
+				<< " is a software framework that can be used in any\r\n"
+				<< "kind of projects involving industrial process.\r\n"
+				<< "It enables Rapid Application Development of several types of products:\r\n"
+				<< "   - MES Systems\r\n   - Gateways\r\n   - HMI\r\n"
+				<< "   - Simulation Tools\r\n   - IoT and Industrial IoT Applications...\r\n\r\n";
+
+			out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "{rx-platform}" ANSI_COLOR_RESET
+				<< " is free software: you can redistribute it and/or \r\n"
+				<< "modify it under the terms of the GNU General Public License\r\n"
+				<< "as published by the Free Software Foundation, either \r\n"
+				<< "version 3 of the License, or (at your option) any later version.\r\n"
+				<< "Commercial support is available at "
+				<< ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "<https://ensaco.rs>" ANSI_COLOR_RESET ".\r\n"
+				<< "\r\nThis is a list of commands:\r\n\r\n";
+
 
 			std::vector<server_command_ptr> commands;
 			commands::server_command_manager::instance()->get_commands(commands);

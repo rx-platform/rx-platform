@@ -125,10 +125,25 @@ object class. basic implementation of an object");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
 
       static rx_item_type get_type_id ()
       {
         return type_id;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 
@@ -159,12 +174,22 @@ object class. basic implementation of an object");
               auto result = context_->set_value(handle, std::move(temp_val));
           }
       }
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_periodic_job(job);
+          return job;
+      }
   protected:
 
   private:
 
 
       runtime_process_context *context_;
+
+
+      rx_thread_handle_t executer_;
 
 
 };
@@ -198,12 +223,25 @@ system application class. basic implementation of a application");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      virtual int get_executer ();
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
 
       static rx_item_type get_type_id ()
       {
         return type_id;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 
@@ -240,6 +278,9 @@ system application class. basic implementation of a application");
 
 
       runtime_process_context *context_;
+
+
+      rx_thread_handle_t executer_;
 
 
 };
@@ -273,12 +314,25 @@ system domain class. basic implementation of a domain");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      virtual int get_executer ();
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
 
       static rx_item_type get_type_id ()
       {
         return type_id;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 
@@ -315,6 +369,9 @@ system domain class. basic implementation of a domain");
 
 
       runtime_process_context *context_;
+
+
+      rx_thread_handle_t executer_;
 
 
 };

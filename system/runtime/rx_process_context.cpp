@@ -477,6 +477,9 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 // Class rx_platform::runtime::write_data 
 
 
+// Class rx_platform::runtime::relation_subscriber 
+
+
 } // namespace runtime
 } // namespace rx_platform
 

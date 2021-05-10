@@ -36,6 +36,8 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -52,8 +54,6 @@
 #include "system/runtime/rx_objbase.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -105,45 +105,6 @@ class process_runtime_job : public rx::jobs::job
 
 
       typename typeT::RTypePtr whose_;
-
-
-};
-
-
-
-
-
-
-class common_runtime_tags 
-{
-    template<typename typeT>
-    friend class runtime_holder_algorithms;
-    template<typename typeT>
-    friend class runtime_scan_algorithms;
-
-  public:
-
-      rx_result initialize_runtime (runtime_init_context& ctx);
-
-
-  protected:
-
-  private:
-
-
-      owned_value<double, true> last_scan_time_;
-
-      owned_value<double> max_scan_time_;
-
-      owned_value<size_t, true> loop_count_;
-
-      local_value<bool> on_;
-
-      local_value<bool> test_;
-
-      local_value<bool> blocked_;
-
-      local_value<bool> simulate_;
 
 
 };
@@ -264,8 +225,6 @@ public:
 
       tag_blocks::tags_holder tags_;
 
-      common_runtime_tags common_tags_;
-
 
       meta::meta_data meta_info_;
 
@@ -290,5 +249,12 @@ public:
 } // namespace rx_platform
 
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
 
 #endif

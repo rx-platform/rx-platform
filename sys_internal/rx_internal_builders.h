@@ -168,6 +168,7 @@ class system_types_builder : public rx_platform_builder
   protected:
 
   private:
+      void build_instance_info_struct_type(rx_directory_ptr dir, struct_type_ptr what);
 
 
 };

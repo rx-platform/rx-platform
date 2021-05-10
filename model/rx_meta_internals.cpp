@@ -1517,6 +1517,17 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 	if (!ret)
 		return ret;
 
+	if (!relation_type_ptr->relation_data.target.is_null())
+	{
+		rx_directory_resolver rel_dirs;
+		rel_dirs.add_paths({ relation_type_ptr->meta_info.path });
+		auto resolve_result = algorithms::resolve_reference(relation_type_ptr->relation_data.target, rel_dirs);
+		if (resolve_result)
+		{
+			data.target_base_id = resolve_result.move_value();
+		}
+	}
+
 	data.value.value_opt[runtime::structure::value_data::opt_readonly] = !relation_type_ptr->relation_data.dynamic;
 
 	data.implementation_ = ret.value();

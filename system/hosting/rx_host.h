@@ -89,6 +89,9 @@ rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_p
 template<typename typeT>
 rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::smart_ptr what);
 
+rx_result register_host_relation_type(rx_directory_ptr host_root, relation_type_ptr what);
+rx_result register_host_data_type(rx_directory_ptr host_root, data_type_ptr what);
+
 template<typename typeT>
 rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
 
@@ -194,6 +197,8 @@ struct rx_host_directories
 	string_type manuals;
 	// log files location
 	string_type logs;
+    // web files location
+    string_type http;
 
 	void fill_missing(rx_host_directories&& from)
 	{
@@ -211,6 +216,9 @@ struct rx_host_directories
 
 		if (manuals.empty())
 			manuals = std::move(from.manuals);
+
+        if (http.empty())
+            http = std::move(from.http);
 
 		if (logs.empty())
 			logs = std::move(from.logs);

@@ -57,8 +57,8 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     string_type full_path = whose.meta_info().get_full_path();
 
     security::secured_scope _(whose.instance_data_.get_security_context());
-    whose.common_tags_.loop_count_.commit();
-    whose.common_tags_.last_scan_time_.commit();
+    whose.tags_.common_tags_.loop_count_.commit();
+    whose.tags_.common_tags_.last_scan_time_.commit();
 
     auto old_tick = rx_get_us_ticks();
 
@@ -67,7 +67,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     size_t lap_count = 0;
     do
     {
-        bool on = whose.common_tags_.on_;
+        bool on = whose.tags_.common_tags_.on_;
         if (on != whose.context_.mode_.is_on())
         {
             if (on)
@@ -119,16 +119,16 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     } while (whose.context_.should_repeat());
 
     auto diff = rx_get_us_ticks() - old_tick;
-    whose.common_tags_.last_scan_time_ = (double)diff / 1000.0;
-    whose.common_tags_.loop_count_ += lap_count;
+    whose.tags_.common_tags_.last_scan_time_ = (double)diff / 1000.0;
+    whose.tags_.common_tags_.loop_count_ += lap_count;
 
     // persistence handling send side
     if (whose.context_.should_save())
         runtime_holder_algorithms<typeT>::save_runtime(whose);
 
-    if (whose.common_tags_.max_scan_time_ < whose.common_tags_.last_scan_time_)
+    if (whose.tags_.common_tags_.max_scan_time_ < whose.tags_.common_tags_.last_scan_time_)
     {
-        whose.common_tags_.max_scan_time_ = whose.common_tags_.last_scan_time_;
+        whose.tags_.common_tags_.max_scan_time_ = whose.tags_.common_tags_.last_scan_time_;
     }
 }
 

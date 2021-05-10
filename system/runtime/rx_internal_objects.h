@@ -162,6 +162,44 @@ this domain is for unassigned objects.it always has bad quality");
 };
 
 
+
+
+
+
+class system_object : public runtime::items::object_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+System object implementation");
+    DECLARE_REFERENCE_PTR(system_object);
+
+  public:
+      system_object();
+
+      ~system_object();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      static system_object::smart_ptr instance ();
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      runtime::owned_value<rx_time> current_time_;
+
+      rx_timer_ptr timer_;
+
+
+};
+
+
 } // namespace sys_objects
 } // namespace rx_platform
 

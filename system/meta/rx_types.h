@@ -503,22 +503,6 @@ public:
 } // namespace meta
 } // namespace rx_platform
 
-namespace rx_platform {
-namespace meta {
-
-typedef pointers::reference<basic_types::mapper_type> mapper_type_ptr;
-typedef pointers::reference<basic_types::struct_type> struct_type_ptr;
-typedef pointers::reference<basic_types::variable_type> variable_type_ptr;
-typedef pointers::reference<basic_types::source_type> source_type_ptr;
-typedef pointers::reference<basic_types::event_type> event_type_ptr;
-typedef pointers::reference<basic_types::filter_type> filter_type_ptr;
-typedef pointers::reference<basic_types::data_type> data_type_ptr;
-typedef pointers::reference<basic_types::method_type> method_type_ptr;
-typedef pointers::reference<basic_types::program_type> program_type_ptr;
-typedef pointers::reference<basic_types::display_type> display_type_ptr;
-
-} // namespace meta
-} // namespace server rx_platform
 
 
 #endif

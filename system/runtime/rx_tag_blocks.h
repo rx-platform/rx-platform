@@ -65,6 +65,45 @@ namespace tag_blocks {
 
 
 
+class common_runtime_tags 
+{
+    template<typename typeT>
+    friend class algorithms::runtime_holder_algorithms;
+    template<typename typeT>
+    friend class algorithms::runtime_scan_algorithms;
+
+  public:
+
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      owned_value<double, true> last_scan_time_;
+
+      owned_value<double> max_scan_time_;
+
+      owned_value<size_t, true> loop_count_;
+
+      local_value<bool> on_;
+
+      local_value<bool> test_;
+
+      local_value<bool> blocked_;
+
+      local_value<bool> simulate_;
+
+
+};
+
+
+
+
+
+
 
 class tags_holder 
 {
@@ -140,6 +179,8 @@ class tags_holder
       points_type points_;
 
       binded_tags binded_tags_;
+
+      common_runtime_tags common_tags_;
 
 
 };

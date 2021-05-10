@@ -342,6 +342,43 @@ void tcp_server_port::extract_bind_address (const data::runtime_values_data& bin
 }
 
 
+// Class rx_internal::interfaces::ip_endpoints::system_rx_port 
+
+
+uint16_t system_rx_port::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.rx_port;
+    if (ret == 0)
+        ret = 0x7ABC;
+    return ret;
+}
+
+
+// Class rx_internal::interfaces::ip_endpoints::system_server_port_base 
+
+
+rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    auto port = get_configuration_port();
+    if(port)
+        ctx.set_item_static("Bind.IPPort", port);
+    auto result = tcp_server_port::initialize_runtime(ctx);
+    return result;
+}
+
+
+// Class rx_internal::interfaces::ip_endpoints::system_http_port 
+
+
+uint16_t system_http_port::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.http_port;
+    if (ret == 0)
+        ret = 0x7ABD;
+    return ret;
+}
+
+
 } // namespace ip_endpoints
 } // namespace interfaces
 } // namespace rx_internal

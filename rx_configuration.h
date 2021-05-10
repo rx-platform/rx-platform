@@ -86,6 +86,7 @@
 
 #define RX_HOST_APP_NAME "HostApp"
 #define RX_HOST_DOMAIN_NAME "HostDomain"
+#define RX_HOST_OBJECT_NAME "Host"
 
 
 #define RX_NS_RELATION_BASE_NAME "RelationBase"
@@ -93,6 +94,9 @@
 
 #define RX_NS_PORT_STACK_NAME "PortStack"
 #define RX_NS_PORT_STACK_ID 0x0000000f
+
+#define RX_NS_PORT_REF_NAME "PortReference"
+#define RX_NS_PORT_REF_ID 0x00000017
 
 #define RX_NS_APPLICATION_RELATION_NAME "Application"
 #define RX_NS_APPLICATION_RELATION_ID 0x00000010
@@ -129,11 +133,17 @@
 
 #define META_POOL_NAME "MetaPool"
 #define META_POOL_ID 0x8000019
-
+#define RX_NS_SYSTEM_NAME "System"
+#define RX_NS_SYSTEM_ID 0x800001a
 
 // system objects type stuff
 #define RX_NS_SYSTEM_APP_TYPE_NAME "SysAppType"
 #define RX_NS_SYSTEM_APP_TYPE_ID 0xc000000
+
+#define RX_NS_SYSTEM_TYPE_NAME "SystemType"
+#define RX_NS_SYSTEM_TYPE_ID 0xc000054
+#define RX_NS_SYSTEM_INFO_TYPE_NAME "SystemInfo"
+#define RX_NS_SYSTEM_INFO_TYPE_ID 0xc000055
 #define RX_NS_SYSTEM_DOM_TYPE_NAME "SysDomainType"
 #define RX_NS_SYSTEM_DOM_TYPE_ID 0xc000001
 
@@ -149,6 +159,10 @@
 #define RX_HOST_APP_TYPE_ID 0xc00004b
 #define RX_HOST_DOMAIN_TYPE_NAME "HostDomainType"
 #define RX_HOST_DOMAIN_TYPE_ID 0xc00004c
+#define RX_NS_HOST_INFO_NAME "HostInfo"
+#define RX_NS_HOST_INFO_ID 0xc000056
+#define RX_NS_HOST_TYPE_NAME "HostType"
+#define RX_NS_HOST_TYPE_ID 0xc000057
 
 
 #define RX_INTERNAL_APP_TYPE_NAME "InternalAppType"
@@ -302,7 +316,23 @@
 #define RX_NS_CHANGED_DATA_EVENT_ID 0xc000050
 
 
-// last is 0xc000050!!!! 
+#define RX_NS_HTTP_TYPE_NAME "HttpProtocol"
+#define RX_NS_HTTP_TYPE_ID 0xc000051
+
+#define RX_NS_HTTP_TCP_NAME "TcpHttp"
+#define RX_NS_HTTP_TCP_ID 0xc000052
+
+#define RX_NS_HTTP_NAME "Http"
+#define RX_NS_HTTP_ID 0xc000053
+
+
+#define RX_TCP_HTTP_PORT_TYPE_ID 0xc000058
+#define RX_TCP_HTTP_PORT_TYPE_NAME "SystemHttpPort"
+#define RX_TCP_RX_PORT_TYPE_ID 0xc000059
+#define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
+
+
+// last is 0xc000059!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

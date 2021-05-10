@@ -198,7 +198,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_data_.push_back(object_data_prototype());
 }
 
-rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
+runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(runtime_data_.rbegin()->runtime_data);
@@ -283,6 +283,16 @@ runtime::display_blocks::display_data& construct_context::display_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
 	return runtime_data_.rbegin()->displays.rbegin()->display;
+}
+
+void construct_context::register_warining (runtime_status_record data)
+{
+	runtime_status_data warning;
+	warning.type = runtime_status_type::warning;
+	warning.data = std::move(data);
+	for (auto& one : rt_names_)
+		warning.path += one;
+	warnings_.emplace_back(std::move(warning));
 }
 
 

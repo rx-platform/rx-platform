@@ -116,6 +116,37 @@ template rx_result register_host_simple_type<event_type>(rx_directory_ptr host_r
 template rx_result register_host_simple_type<struct_type>(rx_directory_ptr host_root, struct_type::smart_ptr what);
 
 
+rx_result register_host_relation_type(rx_directory_ptr host_root, relation_type_ptr what)
+{
+
+	if (what->meta_info.created_time.is_null())
+		what->meta_info.created_time = rx_time::now();
+
+	if (what->meta_info.modified_time.is_null())
+		what->meta_info.modified_time = rx_time::now();
+
+	auto result = rx_internal::model::algorithms::relation_types_algorithm::create_type_sync(what);
+	if (!result)
+		return result.errors();
+	else
+		return true;
+}
+rx_result register_host_data_type(rx_directory_ptr host_root, data_type_ptr what)
+{
+
+	if (what->meta_info.created_time.is_null())
+		what->meta_info.created_time = rx_time::now();
+
+	if (what->meta_info.modified_time.is_null())
+		what->meta_info.modified_time = rx_time::now();
+
+	auto result = rx_internal::model::algorithms::data_types_model_algorithm::create_type_sync(what);
+	if (!result)
+		return result.errors();
+	else
+		return true;
+}
+
 template<typename typeT>
 rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
 {
@@ -180,6 +211,12 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.meta_configuration.instance_name = row.second;
 		else if (row.first == "other.manuals" && config.other.manuals_path.empty())
 			config.other.manuals_path = row.second;
+		else if (row.first == "http.resources" && config.other.http_path.empty())
+			config.other.http_path = row.second;
+		else if (row.first == "http.port" && config.other.http_port == 0)
+			config.other.http_port = atoi(row.second.c_str());
+		else if (row.first == "rx.port" && config.other.rx_port == 0)
+			config.other.rx_port = atoi(row.second.c_str());
 		else if (row.first == "other.logs" && config.management.logs_directory.empty())
 			config.management.logs_directory = row.second;
 		else if (row.first == "processor.real-time" && !config.processor.real_time && get_bool_value(row.second))
@@ -312,6 +349,8 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			config.storage.user_storage_reference = host_directories.user_storage;
 		if (config.other.manuals_path.empty())
 			config.other.manuals_path = host_directories.manuals;
+		if (config.other.http_path.empty())
+			config.other.http_path = host_directories.http;
 
 		manuals_path_ = config.other.manuals_path;
 
@@ -334,6 +373,9 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 	// parsers tend do misbehave if send those arguments
 	if (argv == nullptr || argc == 0)
 		return true;// no command line options, so skip it!
+
+	config.other.http_port = 0;
+	config.other.rx_port = 0;
 
 	cxxopts::Options options("rx-interactive", "");
 
@@ -404,6 +446,11 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
 		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
+		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
+		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
+
+		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
+
 		("v,version", "Displays platform version")
 		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
 		("h,help", "Print help")

@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 2
-#define RX_SERVER_BUILD_NUMBER 6
+#define RX_SERVER_BUILD_NUMBER 8
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -31,4 +31,5 @@
 // version 1.1.1 code creation process done with plugins implementing it
 // version 1.2.0 data_type, display_type and method_type added to platform
 // version 1.2.1 block_data implemented in runtime
+// version 1.2.8 relations stuff
 

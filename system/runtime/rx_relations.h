@@ -45,14 +45,14 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace algorithms {
-template <class typeT> class runtime_holder_algorithms;
-} // namespace algorithms
-
 namespace relations {
 class relation_connector;
-
 } // namespace relations
+
+namespace algorithms {
+template <class typeT> class runtime_holder_algorithms;
+
+} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
@@ -254,10 +254,14 @@ class relations_holder
     typedef std::vector<relation_data::smart_ptr> source_relations_type;
     typedef std::vector<relation_data::smart_ptr> target_relations_type;
     typedef std::vector<relation_data::smart_ptr> implicit_relations_type;
+
+    typedef std::map<string_type, std::vector<relation_subscriber*> > relation_subscribers_type;
+
     template<class typeT>
     friend class meta::meta_algorithm::object_types_algorithm;
     template<class typeT>
     friend class meta::meta_algorithm::object_data_algorithm;
+    friend class algorithms::runtime_relation_algorithms;
 
   public:
 
@@ -289,6 +293,8 @@ class relations_holder
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
+      rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
+
 
   protected:
 
@@ -300,6 +306,9 @@ class relations_holder
       target_relations_type target_relations_;
 
       implicit_relations_type implicit_relations_;
+
+
+      relation_subscribers_type relation_subscribers_;
 
 
 };

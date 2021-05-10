@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace interfaces {
 
 namespace io_endpoints {
 
-// Class rx_internal::interfaces::io_endpoints::port_stack_relation 
+// Class rx_internal::interfaces::io_endpoints::port_stack_relation
 
 port_stack_relation::port_stack_relation()
 {
@@ -128,6 +128,59 @@ void port_stack_relation::relation_disconnected ()
     {
         RUNTIME_LOG_DEBUG("port_stack_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " DISCONNECTED");
     }
+}
+
+
+// Class rx_internal::interfaces::io_endpoints::port_reference_relation
+
+port_reference_relation::port_reference_relation()
+{
+}
+
+
+
+rx_result port_reference_relation::initialize_relation (runtime::runtime_init_context& ctx)
+{
+    return true;
+}
+
+rx_result port_reference_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+rx_result port_reference_relation::start_relation (runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result port_reference_relation::stop_relation (runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
+rx_result_with<platform_item_ptr> port_reference_relation::resolve_runtime_sync (const rx_node_id& id)
+{
+    auto port_ptr = rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().get_port(id);
+    if (!port_ptr)
+    {
+        return "Item not registered!";
+    }
+    else
+    {
+        auto ret = port_ptr->get_item_ptr();
+        to_ = port_ptr;
+        return ret;
+    }
+}
+
+void port_reference_relation::relation_connected ()
+{
+}
+
+void port_reference_relation::relation_disconnected ()
+{
+    to_ = rx_port_ptr::null_ptr;
 }
 
 

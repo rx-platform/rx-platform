@@ -50,6 +50,7 @@
 #include "terminal/rx_vt100.h"
 #include "terminal/rx_telnet.h"
 #include "protocols/opcua/rx_opcua_mapping.h"
+#include "protocols/http/rx_http_mapping.h"
 
 
 namespace rx_internal {
@@ -200,6 +201,10 @@ void server_command_manager::register_internal_commands ()
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_CONSOLE_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::terminal::console::console_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_NS_HTTP_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_http::rx_http_port>();
 		});
 }
 

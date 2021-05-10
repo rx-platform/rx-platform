@@ -192,7 +192,7 @@ runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (type
 template <class typeT>
 runtime_start_context runtime_holder_algorithms<typeT>::create_start_context (typename typeT::RType& whose)
 {
-    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.directories_);
+    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.directories_, &whose.relations_);
 }
 
 template <class typeT>
@@ -395,6 +395,32 @@ template class runtime_holder_algorithms<meta::object_types::port_type>;
 template class runtime_holder_algorithms<meta::object_types::object_type>;
 template class runtime_holder_algorithms<meta::object_types::domain_type>;
 template class runtime_holder_algorithms<meta::object_types::application_type>;
+
+// Class rx_platform::runtime::algorithms::runtime_relation_algorithms 
+
+
+void runtime_relation_algorithms::notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx)
+{
+    auto& subscribers = ctx->tags_.parent_relations_->relation_subscribers_;
+    auto it = subscribers.find(name);
+    if (it != subscribers.end())
+    {
+        for (auto& one : it->second)
+            one->relation_connected(name, item);
+    }
+}
+
+void runtime_relation_algorithms::notify_relation_disconnected (const string_type& name, runtime_process_context* ctx)
+{
+    auto& subscribers = ctx->tags_.parent_relations_->relation_subscribers_;
+    auto it = subscribers.find(name);
+    if (it != subscribers.end())
+    {
+        for (auto& one : it->second)
+            one->relation_disconnected(name);
+    }
+}
+
 
 } // namespace algorithms
 } // namespace runtime

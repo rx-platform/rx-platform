@@ -48,6 +48,7 @@
 #include "sys_internal/rx_inf.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "sys_internal/rx_async_functions.h"
+#include "protocols/http/rx_http_server.h"
 
 
 namespace rx_platform {
@@ -112,6 +113,7 @@ void rx_gate::cleanup ()
 
 rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
+	configuration_ = data;
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
@@ -141,6 +143,12 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 					result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
 					if (!result)
 						result.register_error("Error initializing platform types manager!");
+					else
+					{
+						result = protocols::rx_http::http_server::instance().initialize(host, data);
+						if (!result)
+							result.register_error("Error initializing http server!");
+					}
 				}
 				else
 				{

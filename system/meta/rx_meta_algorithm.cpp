@@ -700,6 +700,12 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 	if (!stream.write_bool("dynamic", whose.relation_data.dynamic))
 		return false;
 
+	if (stream.get_version() >= RX_RELATION_TARGET_VERSION)
+	{
+		if (!stream.write_item_reference("target", whose.relation_data.target))
+			return false;
+	}
+
 	if (!stream.end_object())
 		return false;
 	return true;
@@ -722,6 +728,12 @@ rx_result relation_type_algorithm::deserialize_type (relation_type& whose, base_
 		return false;
 	if (!stream.read_bool("dynamic", whose.relation_data.dynamic))
 		return false;
+
+	if (stream.get_version() >= RX_RELATION_TARGET_VERSION)
+	{
+		if (!stream.read_item_reference("target", whose.relation_data.target))
+			return false;
+	}
 
 	if (!stream.end_object())
 		return false;
@@ -1002,7 +1014,7 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 bool relation_blocks_algorithm::check_relation_attribute (object_types::relation_attribute& whose, type_check_context& ctx)
 {
 	rx_node_id target_id;
-	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.target, ctx.get_directories());
+	auto resolve_result = rx_internal::model::algorithms::resolve_relation_reference(whose.relation_type, ctx.get_directories());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -1034,21 +1046,26 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		return ret.errors();
 	}
 	auto relation_type_id = resolve_result.value();
-	resolve_result = rx_internal::model::algorithms::resolve_reference(whose.target, ctx.get_directories());
-	if (!resolve_result)
+	rx_node_id target_base_id;
+	if (!whose.target.is_null())
 	{
-		rx_result ret(resolve_result.errors());
-		ret.register_error("Unable to resolve relation target type");
-		return ret.errors();
+		resolve_result = rx_internal::model::algorithms::resolve_reference(whose.target, ctx.get_directories());
+		if (!resolve_result)
+		{
+			rx_result ret(resolve_result.errors());
+			ret.register_error("Unable to resolve relation target type");
+			return ret.errors();
+		}
+		target_base_id = resolve_result.value();
 	}
-	auto target_base_id = resolve_result.value();
 
 	auto ret_val = rx_internal::model::platform_types_manager::instance().get_relations_repository().create_runtime(relation_type_id, ctx.rt_name(), data, ctx.get_directories());
 	if (ret_val)
 	{
 		data.target_relation_name = replace_in_string(data.target_relation_name, RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR, ctx.rt_name());
 		data.name = whose.name;
-		data.target_base_id = target_base_id;
+		if(!target_base_id.is_null())
+			data.target_base_id = target_base_id;
 		rx_timed_value str_val;
 		str_val.assign_static<string_type>("", ctx.now);
 		data.value.value = str_val;

@@ -403,6 +403,8 @@ class relation_type_data
 
       bool dynamic;
 
+      rx_item_reference target;
+
 
   protected:
 
@@ -463,15 +465,6 @@ public:
 } // namespace meta
 } // namespace rx_platform
 
-namespace rx_platform
-{
-
-typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
-typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;
-typedef pointers::reference<meta::object_types::application_type> rx_application_type_ptr;
-typedef pointers::reference<meta::object_types::port_type> rx_port_type_ptr;
-typedef pointers::reference<meta::object_types::relation_type> relation_type_ptr;
-}
 
 
 #endif

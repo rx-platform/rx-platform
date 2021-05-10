@@ -52,26 +52,23 @@ namespace blocks_templates {
 
 
 
+
 template <class portT>
 class extern_mapper_impl : public mapper_runtime  
 {
     DECLARE_REFERENCE_PTR(extern_mapper_impl);
 
-    class mapper_resolver_user : public resolvers::resolver_user<meta::object_types::port_type>
+    class mapper_resolver_user : public relation_subscriber
     {
     public:
         extern_mapper_impl<portT>::smart_ptr my_mapper;
-        bool runtime_connected(platform_item_ptr&& item, rx_port_impl_ptr port)
+        void relation_connected(const string_type& name, const platform_item_ptr& item)
         {
-            return my_mapper->internal_port_connected(port, item->meta_info().id);
+            my_mapper->internal_port_connected(item);
         }
-        void runtime_disconnected()
+        void relation_disconnected(const string_type& name)
         {
             my_mapper->internal_port_disconnected();
-        }
-        rx_reference_ptr get_reference()
-        {
-            return my_mapper;
         }
     };
     mapper_resolver_user resolver_user_;
@@ -97,13 +94,10 @@ protected:
 
   private:
 
-      bool internal_port_connected (rx_port_impl_ptr port, rx_node_id id);
+      bool internal_port_connected (const platform_item_ptr& item);
 
       void internal_port_disconnected ();
 
-
-
-      resolvers::runtime_resolver<meta::object_types::port_type> resolver_;
 
 
       rx_thread_handle_t my_executer_;
@@ -118,26 +112,23 @@ protected:
 
 
 
+
 template <class portT>
 class extern_source_impl : public source_runtime  
 {
     DECLARE_REFERENCE_PTR(extern_source_impl);
 
-    class source_resolver_user : public resolvers::resolver_user<meta::object_types::port_type>
+    class source_resolver_user : public relation_subscriber
     {
     public:
         extern_source_impl<portT>::smart_ptr my_source;
-        bool runtime_connected(platform_item_ptr&& item, rx_port_impl_ptr port)
+        void relation_connected(const string_type& name, const platform_item_ptr& item)
         {
-            return my_source->internal_port_connected(port, item->meta_info().id);
+            my_source->internal_port_connected(item);
         }
-        void runtime_disconnected()
+        void relation_disconnected(const string_type& name)
         {
             my_source->internal_port_disconnected();
-        }
-        rx_reference_ptr get_reference()
-        {
-            return my_source;
         }
     };
     source_resolver_user resolver_user_;
@@ -163,13 +154,10 @@ protected:
 
   private:
 
-      bool internal_port_connected (rx_port_impl_ptr port, rx_node_id id);
+      bool internal_port_connected (const platform_item_ptr& item);
 
       void internal_port_disconnected ();
 
-
-
-      resolvers::runtime_resolver<meta::object_types::port_type> resolver_;
 
 
       rx_thread_handle_t my_executer_;
@@ -200,30 +188,32 @@ rx_result extern_mapper_impl<portT>::start_mapper (runtime::runtime_start_contex
         return ret;
 
     my_executer_ = rx_thread_context();
-    auto port_reference = rx_item_reference(ctx.structure.get_current_item().get_local_as<string_type>("Port", ""));
-    ret = this->resolver_.start_resolver(port_reference, &resolver_user_, ctx.directories);
+    auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
+    ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
     return ret;
 }
 
 template <class portT>
 rx_result extern_mapper_impl<portT>::stop_mapper (runtime::runtime_stop_context& ctx)
 {
-    this->resolver_.stop_resolver();
     auto ret = mapper_runtime::stop_mapper(ctx);
     return ret;
 }
 
 template <class portT>
-bool extern_mapper_impl<portT>::internal_port_connected (rx_port_impl_ptr port, rx_node_id id)
+bool extern_mapper_impl<portT>::internal_port_connected (const platform_item_ptr& item)
 {
-    auto result = rx_platform::get_runtime_instance<portT>(id);
-    if (result)
+    if (!my_port_)
     {
-        his_executer_ = port->get_executer();
-        my_port_ = result.value();
-        this->port_connected(my_port_);
-        map_current_value();
-        return true;
+        auto result = rx_platform::get_runtime_instance<portT>(item->meta_info().id);
+        if (result)
+        {
+            his_executer_ = item->get_executer();
+            my_port_ = result.value();
+            this->port_connected(my_port_);
+            map_current_value();
+            return true;
+        }
     }
     return false;
 }
@@ -256,29 +246,31 @@ rx_result extern_source_impl<portT>::start_source (runtime::runtime_start_contex
         return ret;
 
     my_executer_ = rx_thread_context();
-    auto port_reference = rx_item_reference(ctx.structure.get_current_item().get_local_as<string_type>("Port", ""));
-    ret = this->resolver_.start_resolver(port_reference, &resolver_user_, ctx.directories);
+    auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
+    ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
     return ret;
 }
 
 template <class portT>
 rx_result extern_source_impl<portT>::stop_source (runtime::runtime_stop_context& ctx)
 {
-    this->resolver_.stop_resolver();
     auto ret = source_runtime::stop_source(ctx);
     return ret;
 }
 
 template <class portT>
-bool extern_source_impl<portT>::internal_port_connected (rx_port_impl_ptr port, rx_node_id id)
+bool extern_source_impl<portT>::internal_port_connected (const platform_item_ptr& item)
 {
-    auto result = rx_platform::get_runtime_instance<portT>(id);
-    if (result)
+    if (!my_port_)
     {
-        his_executer_ = port->get_executer();
-        my_port_ = result.value();
-        this->port_connected(my_port_);
-        return true;
+        auto result = rx_platform::get_runtime_instance<portT>(item->meta_info().id);
+        if (result)
+        {
+            his_executer_ = item->get_executer();
+            my_port_ = result.value();
+            this->port_connected(my_port_);
+            return true;
+        }
     }
     return false;
 }
@@ -293,6 +285,7 @@ void extern_source_impl<portT>::internal_port_disconnected ()
         val.set_time(rx_time::now());
         source_value_changed(std::move(val));
         this->port_disconnected(my_port_);
+        my_port_ = portT::smart_ptr::null_ptr;
     }
 }
 

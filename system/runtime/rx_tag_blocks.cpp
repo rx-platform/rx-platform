@@ -80,6 +80,8 @@ rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations:
 	if (result)
 	{
 		connected_tags_.init_tags(ctx.context, relations);
+
+		result = common_tags_.initialize_runtime(ctx);
 	}
 	return result;
 }
@@ -132,6 +134,42 @@ void tags_holder::target_relation_removed (relations::relation_data::smart_ptr w
 rx_result tags_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
 {
 	return item_->get_value_ref(path, ref);
+}
+
+
+// Class rx_platform::runtime::tag_blocks::common_runtime_tags 
+
+
+rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
+{
+	auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
+	if (bind_result)
+	{
+		bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
+		if (bind_result)
+		{
+			bind_result = loop_count_.bind("Object.LoopCount", ctx);
+			if (bind_result)
+			{
+				bind_result = on_.bind("Object.On", ctx);
+				if (bind_result)
+				{
+					bind_result = test_.bind("Object.Test", ctx);
+					if (bind_result)
+					{
+						bind_result = blocked_.bind("Object.Blocked", ctx);
+						if (bind_result)
+						{
+							bind_result = simulate_.bind("Object.Simulate", ctx);
+						}
+					}
+				}
+			}
+		}
+	}
+	if (!bind_result)
+		bind_result.register_error("Unable to bind to common tag.");
+	return bind_result;
 }
 
 

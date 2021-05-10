@@ -84,6 +84,11 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
                 return rx_create_reference<port_stack_relation>();
             });
 
+		result = model::platform_types_manager::instance().get_relations_repository().register_constructor(
+			RX_NS_PORT_REF_ID, [] {
+				return rx_create_reference<port_reference_relation>();
+			});
+
         // register behavior creators
 
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
@@ -128,6 +133,14 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_server_port>();
             });
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_TCP_HTTP_PORT_TYPE_ID, [] {
+				return rx_create_reference<ip_endpoints::system_http_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_TCP_RX_PORT_TYPE_ID, [] {
+				return rx_create_reference<ip_endpoints::system_rx_port>();
+			});
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_CLIENT_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_client_port>();

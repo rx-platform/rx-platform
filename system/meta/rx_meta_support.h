@@ -484,6 +484,7 @@ class construct_context
     };
     typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
     typedef std::vector<object_data_prototype> runtime_data_type;
+    typedef std::vector<runtime_status_data> warnings_type;
  public:
     ~construct_context() = default;
     construct_context(const construct_context&) = delete;
@@ -507,7 +508,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
+      runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 
@@ -528,6 +529,8 @@ class construct_context
       void end_display ();
 
       runtime::display_blocks::display_data& display_data ();
+
+      void register_warining (runtime_status_record data);
 
 
       ns::rx_directory_resolver& get_directories ()
@@ -557,6 +560,8 @@ class construct_context
       data::runtime_values_data overrides_;
 
       active_state_t state_;
+
+      warnings_type warnings_;
 
 
 };

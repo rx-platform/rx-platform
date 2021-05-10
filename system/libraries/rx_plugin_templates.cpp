@@ -128,6 +128,34 @@ template rx_result register_plugin_simple_type<variable_type>(library::rx_plugin
 template rx_result register_plugin_simple_type<event_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, event_type::smart_ptr what);
 template rx_result register_plugin_simple_type<struct_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, struct_type::smart_ptr what);
 
+rx_result register_plugin_relation_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, relation_type_ptr what)
+{
+    if (what->meta_info.created_time.is_null())
+        what->meta_info.created_time = rx_time::now();
+
+    if (what->meta_info.modified_time.is_null())
+        what->meta_info.modified_time = rx_time::now();
+
+    auto result = rx_internal::model::algorithms::relation_types_algorithm::create_type_sync(what);
+    if (!result)
+        return result.errors();
+    else
+        return true;
+}
+rx_result register_plugin_data_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, data_type_ptr what)
+{
+    if (what->meta_info.created_time.is_null())
+        what->meta_info.created_time = rx_time::now();
+
+    if (what->meta_info.modified_time.is_null())
+        what->meta_info.modified_time = rx_time::now();
+
+    auto result = rx_internal::model::algorithms::data_types_model_algorithm::create_type_sync(what);
+    if (!result)
+        return result.errors();
+    else
+        return true;
+}
 
 template<typename typeT>
 rx_result register_plugin_runtime(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)

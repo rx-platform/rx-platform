@@ -125,17 +125,13 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     auto result = tags_.initialize_runtime(ctx, &relations_);
     if (result)
     {
-        result = common_tags_.initialize_runtime(ctx);
+        result = relations_.initialize_relations(ctx);
         if (result)
         {
-            result = relations_.initialize_relations(ctx);
+            result = logic_.initialize_logic(ctx);
             if (result)
             {
-                result = logic_.initialize_logic(ctx);
-                if (result)
-                {
-                    result = displays_.initialize_displays(ctx);
-                }
+                result = displays_.initialize_displays(ctx);
             }
         }
     }
@@ -311,43 +307,14 @@ void process_runtime_job<typeT>::process ()
 }
 
 
-// Class rx_platform::runtime::algorithms::common_runtime_tags 
-
-
-rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
-{
-    auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
-    if (bind_result)
-    {
-        bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
-        if (bind_result)
-        {
-            bind_result = loop_count_.bind("Object.LoopCount", ctx);
-            if (bind_result)
-            {
-                bind_result = on_.bind("Object.On", ctx);
-                if (bind_result)
-                {
-                    bind_result = test_.bind("Object.Test", ctx);
-                    if (bind_result)
-                    {
-                        bind_result = blocked_.bind("Object.Blocked", ctx);
-                        if (bind_result)
-                        {
-                            bind_result = simulate_.bind("Object.Simulate", ctx);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if (!bind_result)
-        bind_result.register_error("Unable to bind to common tag.");
-    return bind_result;
-}
-
-
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+
+#endif

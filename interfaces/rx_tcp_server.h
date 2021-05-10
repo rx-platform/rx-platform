@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 
@@ -191,6 +191,77 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
       runtime::local_value<uint32_t> recv_timeout_;
 
       runtime::local_value<uint32_t> send_timeout_;
+
+
+};
+
+
+
+
+
+
+class system_server_port_base : public tcp_server_port  
+{
+    DECLARE_REFERENCE_PTR(system_server_port_base);
+
+  public:
+
+      virtual uint16_t get_configuration_port () const = 0;
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_rx_port : public system_server_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+System rx-protocol TCP Server port class.");
+
+    DECLARE_REFERENCE_PTR(system_rx_port);
+
+  public:
+
+      uint16_t get_configuration_port () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_http_port : public system_server_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+System HTTP TCP Server port class.");
+
+    DECLARE_REFERENCE_PTR(system_http_port);
+
+  public:
+
+      uint16_t get_configuration_port () const;
+
+
+  protected:
+
+  private:
 
 
 };

@@ -45,6 +45,10 @@ using namespace rx::values;
 
 
 namespace rx_platform {
+namespace runtime {
+class relation_subscriber;
+} // namespace runtime
+
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
@@ -57,16 +61,19 @@ class mapper_data;
 class variable_data;
 } // namespace structure
 
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
+namespace relations {
+class relations_holder;
+} // namespace relations
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
 class runtime_process_context;
+namespace tag_blocks {
+class binded_tags;
 
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -135,6 +142,7 @@ template <class typeT>
 class runtime_holder_algorithms;
 template <class typeT>
 class runtime_scan_algorithms;
+class runtime_relation_algorithms;
 }
 }
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::domain_type> > rx_domain_ptr;
@@ -158,6 +166,22 @@ enum subscription_trigger_type
 	subscription_trigger_critical = 1,
 
 	max_trigger_type = 1
+};
+enum class runtime_status_type
+{
+    info = 0,
+    warning = 1,
+    error = 2
+};
+struct runtime_status_record
+{
+    string_type message;
+};
+struct runtime_status_data
+{
+    runtime_status_type type;
+    string_type path;
+    runtime_status_record data;
 };
 
 namespace runtime {
@@ -383,13 +407,16 @@ struct runtime_deinit_context
 
 
 
+
 struct runtime_start_context 
 {
 
-      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories);
+      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories, relations::relations_holder* relations);
 
 
       runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback);
+
+      rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
 
 
       runtime_path_resolver path;
@@ -410,6 +437,9 @@ struct runtime_start_context
   protected:
 
   private:
+
+
+      relations::relations_holder *relations_;
 
 
 };

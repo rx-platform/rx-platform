@@ -39,8 +39,8 @@
 namespace rx_platform {
 namespace runtime {
 namespace tag_blocks {
-class binded_tags;
 class connected_tags;
+class binded_tags;
 } // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
@@ -172,6 +172,28 @@ struct write_result_struct
     }
 };
 
+
+
+
+
+class relation_subscriber 
+{
+
+  public:
+
+      virtual void relation_connected (const string_type& name, const platform_item_ptr& item) = 0;
+
+      virtual void relation_disconnected (const string_type& name) = 0;
+
+      virtual ~relation_subscriber() = default;
+  protected:
+
+  private:
+
+
+};
+
+
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -261,6 +283,7 @@ class runtime_process_context
     friend class algorithms::runtime_holder_algorithms;
     template<typename typeT>
     friend class algorithms::runtime_scan_algorithms;
+    friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
     typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;

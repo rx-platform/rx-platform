@@ -84,7 +84,8 @@ namespace items {
 rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
 object_runtime::object_runtime()
-      : context_(nullptr)
+      : context_(nullptr),
+        executer_(-1)
 {
 }
 
@@ -116,13 +117,24 @@ rx_result object_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+threads::job_thread* object_runtime::get_jobs_queue ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
+
+void object_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
+}
+
 
 // Class rx_platform::runtime::items::application_runtime 
 
 rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
 application_runtime::application_runtime()
-      : context_(nullptr)
+      : context_(nullptr),
+        executer_(-1)
 {
 }
 
@@ -153,10 +165,14 @@ rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
-int application_runtime::get_executer ()
+threads::job_thread* application_runtime::get_jobs_queue ()
 {
-  return -1;
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
 
+void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
 }
 
 
@@ -165,7 +181,8 @@ int application_runtime::get_executer ()
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
 domain_runtime::domain_runtime()
-      : context_(nullptr)
+      : context_(nullptr),
+        executer_(-1)
 {
 }
 
@@ -196,10 +213,14 @@ rx_result domain_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
-int domain_runtime::get_executer ()
+threads::job_thread* domain_runtime::get_jobs_queue ()
 {
-  return -1;
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
 
+void domain_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
 }
 
 // has to be before call

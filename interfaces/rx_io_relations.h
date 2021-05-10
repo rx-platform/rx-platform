@@ -87,6 +87,45 @@ class port_stack_relation : public rx_platform::runtime::relations::relation_run
 };
 
 
+
+
+
+
+class port_reference_relation : public rx_platform::runtime::relations::relation_runtime  
+{
+    DECLARE_REFERENCE_PTR(port_reference_relation);
+
+  public:
+      port_reference_relation();
+
+
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_relation (runtime::runtime_start_context& ctx);
+
+      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
+
+      void relation_connected ();
+
+      void relation_disconnected ();
+
+
+
+      rx_port_ptr to_;
+
+
+};
+
+
 } // namespace io_endpoints
 } // namespace interfaces
 } // namespace rx_internal

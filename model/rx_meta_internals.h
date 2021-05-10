@@ -300,9 +300,11 @@ class instance_hash
 };
 
 
+
 template <class typeT>
 struct create_runtime_result
 {
+    std::vector<runtime_status_data> statuses;
     typename typeT::RTypePtr ptr;
     std::function<void(const rx_node_id&)> register_f;
     std::function<void(const rx_node_id&)> unregister_f;

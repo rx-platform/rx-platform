@@ -40,12 +40,13 @@
 
 namespace rx_platform {
 namespace runtime {
-class runtime_process_context;
 namespace relations {
 class relations_holder;
 class relation_data;
-
 } // namespace relations
+
+class runtime_process_context;
+
 } // namespace runtime
 } // namespace rx_platform
 
@@ -142,6 +143,8 @@ class connected_tags
 
     typedef std::map<string_type, relation_ptr> mapped_relations_type;
     typedef std::map<runtime_handle_t, relation_ptr> relation_handles_map_type;
+
+    friend class algorithms::runtime_relation_algorithms;
 
   public:
       connected_tags();
