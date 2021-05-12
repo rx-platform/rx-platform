@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\http\rx_http_handlers.cpp
+*  http_server\rx_http_handlers.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,109 +32,16 @@
 
 
 // rx_http_handlers
-#include "protocols/http/rx_http_handlers.h"
+#include "http_server/rx_http_handlers.h"
 
-#include "rx_http_mapping.h"
-
-
-namespace protocols {
-
-namespace rx_http {
-
-// Class protocols::rx_http::http_handler 
+#include "http_server/rx_http_server.h"
 
 
-// Class protocols::rx_http::http_file_handler 
+namespace rx_internal {
 
+namespace rx_http_server {
 
-rx_result http_file_handler::handle_request (http_request req, http_response& resp)
-{
-	if (req.method != rx_http_method::get)
-	{
-		resp.result = 405;
-		return true;
-	}
-	auto file_path = rx_combine_paths(http_server::instance().get_resources_path(), req.path);
-	auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	if (file)
-	{
-		resp.result = 403;// Forbidden
-		uint64_t size = 0;
-		auto result = rx_file_get_size(file, &size);
-		if (result == RX_OK)
-		{
-			resp.content.assign(size, 0);
-			uint32_t readed = 0;
-			result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
-			if (result == RX_OK)
-			{
-				resp.headers["Content-Type"] = get_content_type();
-				resp.cache_me = true;
-				resp.result = 200;// OK
-			}
-			else
-			{// clear this buffer
-				resp.content.clear();
-			}
-		}
-		rx_file_close(file);
-	}
-	else
-	{
-		resp.result = 404;// Not Found
-	}
-
-
-	return true;
-}
-
-
-// Class protocols::rx_http::png_file_handler 
-
-
-const char* png_file_handler::get_extension ()
-{
-	return "png";
-}
-
-const char* png_file_handler::get_content_type ()
-{
-	return "image/png";
-}
-
-
-// Class protocols::rx_http::html_file_handler 
-
-
-const char* html_file_handler::get_extension ()
-{
-	return "html";
-}
-
-const char* html_file_handler::get_content_type ()
-{
-	return "text/html";
-}
-
-
-// Class protocols::rx_http::css_file_handler 
-
-
-const char* css_file_handler::get_extension ()
-{
-	return "css";
-}
-
-const char* css_file_handler::get_content_type ()
-{
-	return "text/css";
-}
-
-
-// Class protocols::rx_http::text_file_handler 
-
-
-// Class protocols::rx_http::http_handlers_repository 
+// Class rx_internal::rx_http_server::http_handlers_repository 
 
 
 rx_result http_handlers_repository::initialize (hosting::rx_platform_host* host, configuration_data_t& config)
@@ -163,6 +70,105 @@ http_handler* http_handlers_repository::get_handler (const string_type& ext)
 }
 
 
-} // namespace rx_http
-} // namespace protocols
+// Class rx_internal::rx_http_server::http_file_handler 
+
+
+rx_result http_file_handler::handle_request (http_request& req, http_response& resp)
+{
+	if (req.method != rx_http_method::get)
+	{
+		resp.result = 405;
+		return true;
+	}
+	auto file_path = rx_combine_paths(rx_internal::rx_http_server::http_server::instance().get_resources_path(), req.path);
+	auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+	if (file)
+	{
+		resp.result = 403;// Forbidden
+		uint64_t size = 0;
+		auto result = rx_file_get_size(file, &size);
+		if (result == RX_OK)
+		{
+			resp.content.assign(size, 0);
+			uint32_t readed = 0;
+			result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
+			if (result == RX_OK)
+			{
+				resp.headers["Content-Type"] = get_content_type();
+				resp.cache_me = true;
+				resp.result = 200;// OK
+			}
+			else
+			{// clear this buffer
+				resp.content.clear();
+			}
+		}
+		if (resp.result != 200)
+		{
+			char buff[0x100];
+			auto err_msg = rx_last_os_error("Error processing request:", buff, sizeof(buff));
+			resp.set_string_content(buff);
+		}
+		rx_file_close(file);
+	}
+	else
+	{
+		resp.result = 404;// Not Found
+		char buff[0x100];
+		auto err_msg = rx_last_os_error("Error processing request:", buff, sizeof(buff));
+		resp.set_string_content(buff);
+	}
+
+
+	return true;
+}
+
+
+// Class rx_internal::rx_http_server::png_file_handler 
+
+
+const char* png_file_handler::get_extension ()
+{
+	return "png";
+}
+
+const char* png_file_handler::get_content_type ()
+{
+	return "image/png";
+}
+
+
+// Class rx_internal::rx_http_server::html_file_handler 
+
+
+const char* html_file_handler::get_extension ()
+{
+	return "html";
+}
+
+const char* html_file_handler::get_content_type ()
+{
+	return "text/html";
+}
+
+
+// Class rx_internal::rx_http_server::css_file_handler 
+
+
+const char* css_file_handler::get_extension ()
+{
+	return "css";
+}
+
+const char* css_file_handler::get_content_type ()
+{
+	return "text/css";
+}
+
+
+// Class rx_internal::rx_http_server::text_file_handler 
+
+
+} // namespace rx_http_server
+} // namespace rx_internal
 

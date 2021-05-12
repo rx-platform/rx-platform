@@ -48,7 +48,7 @@
 #include "sys_internal/rx_inf.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "sys_internal/rx_async_functions.h"
-#include "protocols/http/rx_http_server.h"
+#include "http_server/rx_http_server.h"
 
 
 namespace rx_platform {
@@ -145,7 +145,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 						result.register_error("Error initializing platform types manager!");
 					else
 					{
-						result = protocols::rx_http::http_server::instance().initialize(host, data);
+						result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
 						if (!result)
 							result.register_error("Error initializing http server!");
 					}

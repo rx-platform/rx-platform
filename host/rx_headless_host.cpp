@@ -98,7 +98,6 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 
 	debug_break_ = false;
 
-	std::cout << "Reading configuration file...";
 	std::cout << "Parsing command line...";
 	rx_result ret = parse_command_line(argc, argv, help_name, config_);
 	if (ret)

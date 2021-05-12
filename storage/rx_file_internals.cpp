@@ -81,7 +81,7 @@ rx_result rx_json_file::open_for_write (const string_type& file_path)
 	if (writer_)
 		return "File storage "s + file_path + " already opened for writing";
 
-	writer_ = std::make_unique<rx_platform::serialization::json_writer>();
+	writer_ = std::make_unique<rx_platform::serialization::pretty_json_writer>();
 	return true;
 }
 
@@ -105,7 +105,8 @@ rx_result rx_json_file::close_write (const string_type& file_path)
 
 rx_result rx_json_file::get_data (string_type& data)
 {
-	if (writer_->get_string(data, true))
+	data = writer_->get_string();
+	if (!data.empty())
 		return true;
 	else
 		return "Error creating Json!";

@@ -303,8 +303,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		}
 		else
 		{
-			string_type temp_str;
-			if (writer.get_string(const_cast<string_type&>(temp_str), true))
+			string_type temp_str(writer.get_string());
+			if (!temp_str.empty())
 			{
 				val.assign_static<string_type>(string_type(temp_str), ctx->now);
 				result = true;
@@ -2564,8 +2564,8 @@ rx_result block_data::get_value (const string_type& path, rx_value& val, runtime
 		}
 		else
 		{
-			string_type temp_str;
-			if (writer.get_string(const_cast<string_type&>(temp_str), true))
+			string_type temp_str(writer.get_string());
+			if (!temp_str.empty())
 			{
 				val.assign_static<string_type>(string_type(temp_str), ctx->now);
 				result = true;

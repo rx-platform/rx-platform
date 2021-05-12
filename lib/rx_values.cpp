@@ -271,6 +271,11 @@ rx_value_t inner_get_type(tl::type2type<typename std::string>)
 	return RX_STRING_TYPE;
 }
 template<>
+rx_value_t inner_get_type(tl::type2type<const char*>)
+{
+	return RX_STRING_TYPE;
+}
+template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>)
 {
 	return RX_TIME_TYPE;

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -216,6 +216,8 @@ rx_value_t inner_get_type(tl::type2type<double>);
 template<>
 rx_value_t inner_get_type(tl::type2type<typename std::string>);
 template<>
+rx_value_t inner_get_type(tl::type2type<const char*>);
+template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>);
 template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_node_id>);
@@ -285,7 +287,7 @@ typeT extract_value(const rx_value_storage& from, const typeT& default_value);
 
 
 
-class rx_value_storage 
+class rx_value_storage
 {
 public:
 	rx_value_storage(const rx_value_storage& right);
@@ -460,7 +462,7 @@ public:
 
 
 
-class rx_simple_value 
+class rx_simple_value
 {
   public:template<typename typeT>
 	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
@@ -552,7 +554,7 @@ class rx_simple_value
 
 
 
-class rx_value 
+class rx_value
 {
 public:
 	template<typename typeT>
@@ -738,7 +740,7 @@ public:
 
 
 
-class rx_timed_value 
+class rx_timed_value
 {
 public:
 	template<typename typeT>

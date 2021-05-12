@@ -32,21 +32,25 @@
 #define rx_ser_h 1
 
 
-#include "third-party/jsoncpp/json/json.h"
 
 // rx_mem
 #include "lib/rx_mem.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
 
+
 #define RX_JSON_SERIALIZATION_TYPE "json"
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
 using rx::memory::byte_order_type;
 
 
+
 namespace rx_platform {
 
 namespace serialization {
+struct json_reader_data;
+struct json_writer_data;
+struct json_pretty_writer_data;
 
 
 
@@ -54,18 +58,7 @@ namespace serialization {
 
 class json_reader : public rx::base_meta_reader  
 {
-	struct json_read_stack_data
-	{
-	public:
-		json_read_stack_data(Json::Value& vval)
-			: value(vval)
-			, index(0)
-		{
-		}
-		Json::Value& value;
-		int index;
-	};
-	typedef std::stack<json_read_stack_data, std::vector<json_read_stack_data> > stack_type;
+    friend struct json_reader_data;
 
   public:
       json_reader (int version = RX_CURRENT_SERIALIZE_VERSION);
@@ -132,25 +125,15 @@ class json_reader : public rx::base_meta_reader
 
   private:
 
-      Json::Value& get_current_value (int& index);
-
-      bool safe_read_int (int idx, const string_type& name, int val, const Json::Value& object);
-
-      bool safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object);
-
       bool parse_version_string (uint32_t& result, const string_type& version);
 
-      bool internal_read_init_values (data::runtime_values_data& values, Json::Value& val);
 
-
-
-      stack_type stack_;
-
-      Json::Value envelope_;
 
       string_type result_;
 
       string_array errors_;
+
+      std::unique_ptr<json_reader_data> data_;
 
 
 };
@@ -160,21 +143,16 @@ class json_reader : public rx::base_meta_reader
 
 
 
-class json_writer : public rx::base_meta_writer  
+template <class writerT>
+class json_writer_type : public rx::base_meta_writer  
 {
-	struct json_write_stack_data
-	{
-	public:
-		Json::Value value;
-		bool is_array;
-		std::string name;
-	};
-	typedef std::stack<json_write_stack_data, std::vector<json_write_stack_data> > stack_type;
+    friend struct json_writer_data;
+    friend struct json_pretty_writer_data;
 
   public:
-      json_writer (int version = RX_CURRENT_SERIALIZE_VERSION);
+      json_writer_type (int version = RX_CURRENT_SERIALIZE_VERSION);
 
-      ~json_writer();
+      ~json_writer_type();
 
 
       bool write_id (const char* name, const rx_node_id& id);
@@ -215,7 +193,7 @@ class json_writer : public rx::base_meta_writer
 
       bool write_bytes (const char* name, const uint8_t* val, size_t size);
 
-      bool get_string (string_type& result, bool decorated);
+      string_type get_string ();
 
       bool write_version (const char* name, uint32_t val);
 
@@ -234,23 +212,30 @@ class json_writer : public rx::base_meta_writer
 
   private:
 
-      Json::Value& get_current_value (bool& is_array);
+      bool is_current_array ();
 
       bool get_version_string (string_type& result, uint32_t version);
 
+      bool write_null (const char* name);
 
 
-      stack_type stack_;
-
-      Json::Value envelope_;
 
       string_type result_;
 
       int type_;
 
+      std::unique_ptr<writerT> data_;
+
 
 };
 
+#ifdef _DEBUG
+typedef json_writer_type<json_pretty_writer_data> json_writer;
+#else
+typedef json_writer_type<json_writer_data> json_writer;
+#endif// _DEBUG
+
+typedef json_writer_type<json_pretty_writer_data> pretty_json_writer;
 
 
 
@@ -357,7 +342,6 @@ class binary_writer : public rx::base_meta_writer
 	struct json_write_stack_data
 	{
 	public:
-		Json::Value value;
 		bool is_array;
 		std::string name;
 	};

@@ -367,6 +367,8 @@ void rx_platform_host::read_config_options (const std::map<string_type, string_t
 
 bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config)
 {
+	config.other.http_port = 0;
+	config.other.rx_port = 0;
 
 	// had to do stuff, but if we do not have actual command line
 	// it must be safe to send 0, nullptr as command line arguments
@@ -374,10 +376,7 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 	if (argv == nullptr || argc == 0)
 		return true;// no command line options, so skip it!
 
-	config.other.http_port = 0;
-	config.other.rx_port = 0;
-
-	cxxopts::Options options("rx-interactive", "");
+	cxxopts::Options options(help_name, "");
 
 	add_command_line_options(options, config);
 

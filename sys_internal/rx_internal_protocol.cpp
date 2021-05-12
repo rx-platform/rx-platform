@@ -306,7 +306,7 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 			buff_result.value().write_to_buffer((uint8_t)1);
 			buff_result.value().write_to_buffer((uint16_t)0x7fff);
 			string_type ret_data;
-			writter.get_string(ret_data, true);
+			ret_data = writter.get_string();
 			result = buff_result.value().write_string(ret_data);
 
 			send_protocol_packet packet = rx_create_send_packet(request->request_id, &buff_result.value(), 0, 0);
@@ -338,7 +338,7 @@ void rx_protocol_connection::data_processed (message_ptr result)
 			buff_result.value().write_to_buffer((uint8_t)1);
 			buff_result.value().write_to_buffer((uint16_t)0x7fff);
 			string_type ret_data;
-			writter.get_string(ret_data, true);
+			ret_data = writter.get_string();
 			auto ret = buff_result.value().write_string(ret_data);
 
 			send_protocol_packet packet = rx_create_send_packet(0, &buff_result.value(), 0, 0);
@@ -524,7 +524,7 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 				buff_result.value().write_to_buffer((uint8_t)1);
 				buff_result.value().write_to_buffer((uint16_t)0x7fff);
 				string_type ret_data;
-				writter.get_string(ret_data, true);
+				ret_data = writter.get_string();
 				auto ret = buff_result.value().write_string(ret_data);
 
 				send_protocol_packet packet = rx_create_send_packet(request_id, &buff_result.value(), 0, 0);

@@ -96,6 +96,8 @@ class rx_system_info_response : public rx_message_base
 
       string_type memory;
 
+      string_type http;
+
 
   protected:
 

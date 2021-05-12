@@ -283,10 +283,11 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
             if (result)
             {
 #ifdef _DEBUG
-                if (writer.get_string(const_cast<string_type&>(whose.json_cache_), true))
+                const_cast<string_type&>(whose.json_cache_) = writer.get_string();
 #else
-                if (writer.get_string(const_cast<string_type&>(whose.json_cache_), false))
+                const_cast<string_type&>(whose.json_cache_) = writer.get_string();
 #endif
+                if(!whose.json_cache_.empty())
                     value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
             }
         }
@@ -311,8 +312,8 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
         result = serialize_runtime_value(writer, runtime_value_type::persistent_runtime_value, whose);
         if (result)
         {
-            string_type temp_str;
-            if (writer.get_string(const_cast<string_type&>(temp_str), true))
+            string_type temp_str(writer.get_string());
+            if (!temp_str.empty())
             {
                 value.assign_static<string_type>(string_type(temp_str), whose.meta_info_.modified_time);
             }

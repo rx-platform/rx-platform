@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\http\rx_http_handlers.h
+*  http_server\rx_http_handlers.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,32 +34,43 @@
 
 
 // rx_http_request
-#include "protocols/http/rx_http_request.h"
+#include "system/http_support/rx_http_request.h"
+// rx_http
+#include "system/http_support/rx_http.h"
 
 #include "system/server/rx_server.h"
+using namespace rx_platform::http;
 
 
-namespace protocols {
+namespace rx_internal {
 
-namespace rx_http {
-
-
+namespace rx_http_server {
 
 
 
-class http_handler 
+
+
+
+class http_handlers_repository 
 {
+    typedef std::map<string_type, std::unique_ptr<http_handler> > handlers_type;
 
   public:
 
-      virtual rx_result handle_request (http_request req, http_response& resp) = 0;
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& config);
 
-      virtual const char* get_extension () = 0;
+      http_handler* get_handler (const string_type& ext);
 
 
   protected:
 
   private:
+
+      void register_standard_handlers ();
+
+
+
+      handlers_type handlers_;
 
 
 };
@@ -69,12 +80,12 @@ class http_handler
 
 
 
-class http_file_handler : public http_handler  
+class http_file_handler : public rx_platform::http::http_handler  
 {
 
   public:
 
-      rx_result handle_request (http_request req, http_response& resp);
+      rx_result handle_request (http_request& req, http_response& resp);
 
       virtual const char* get_content_type () = 0;
 
@@ -170,38 +181,8 @@ class css_file_handler : public text_file_handler
 };
 
 
-
-
-
-
-
-class http_handlers_repository 
-{
-    typedef std::map<string_type, std::unique_ptr<http_handler> > handlers_type;
-
-  public:
-
-      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& config);
-
-      http_handler* get_handler (const string_type& ext);
-
-
-  protected:
-
-  private:
-
-      void register_standard_handlers ();
-
-
-
-      handlers_type handlers_;
-
-
-};
-
-
-} // namespace rx_http
-} // namespace protocols
+} // namespace rx_http_server
+} // namespace rx_internal
 
 
 

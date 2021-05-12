@@ -34,8 +34,6 @@
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
 
-#include "protocols/ansi_c/http_c/rx_http_c_impl.h"
-#include "rx_http_server.h"
 
 
 namespace protocols {
@@ -196,7 +194,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 	request.whose = smart_this();
 	port_->send_function([](http_request&& request)
 		{
-			auto result = http_server::instance().handle_request(request);
+			auto result = rx_internal::rx_http_server::http_server::instance().handle_request(request);
 
 		}, std::move(request));
 	return RX_PROTOCOL_OK;
@@ -223,7 +221,8 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	rx_packet_buffer buffer;
 	rx_init_packet_buffer(&buffer, pack_text.size(), nullptr);
 	rx_push_to_packet(&buffer, pack_text.c_str(), pack_text.size());
-	rx_push_to_packet(&buffer, &response.content[0], response.content.size());
+	if(!response.content.empty())
+		rx_push_to_packet(&buffer, &response.content[0], response.content.size());
 	send_protocol_packet ret_packet = rx_create_send_packet(0, &buffer, 0, 0);
 	auto result = rx_move_packet_down(&stack_entry_, ret_packet);
 

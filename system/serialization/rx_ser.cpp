@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,29 +34,163 @@
 // rx_ser
 #include "system/serialization/rx_ser.h"
 
-
-#include "third-party/cpp-base64/base64.h"
-#include "third-party/cpp-base64/base64.cpp"
-
+#include "third-party/rapidjson/include/rapidjson/document.h"
+#include "third-party/rapidjson/include/rapidjson/prettywriter.h"
 #include "base64.h"
-
-
-#ifdef _DEBUG
-typedef Json::StyledWriter json_writer_type;
-#else
-typedef Json::FastWriter json_writer_type;
-#endif// _DEBUG
-
 
 
 namespace rx_platform {
 
 namespace serialization {
 
-// Class rx_platform::serialization::json_reader 
+struct json_read_stack_data
+{
+public:
+	json_read_stack_data(rapidjson::Value& vval)
+		: value(vval)
+		, index(0)
+	{
+	}
+	string_type name;
+	rapidjson::Value& value;
+	int index;
+};
+
+struct json_reader_data
+{
+	std::stack<json_read_stack_data, std::vector<json_read_stack_data> > stack;
+	rapidjson::Document envelope;
+
+	rapidjson::Value& get_current_value(int& index)
+	{
+		if (stack.empty())
+		{
+			index = -1;
+			return envelope;
+		}
+		else
+		{
+			json_read_stack_data& current = stack.top();
+			index = current.index;
+			if (index >= 0)
+				current.index = current.index + 1;
+			return current.value;
+		}
+	}
+	bool safe_read_int(int idx, const string_type& name, int val, const rapidjson::Value& object)
+	{
+
+		if (idx < 0)
+		{
+			if (object.HasMember(name.c_str()))
+			{
+				const rapidjson::Value& temp = object[name.c_str()];
+				if (temp.IsInt())
+				{
+					val = temp.GetInt();
+					return true;
+				}
+			}
+		}
+		else
+		{
+			if (object.IsArray() && (int)object.GetArray().Size() > idx)
+			{
+				const rapidjson::Value& temp = object[idx];
+				if (temp.IsInt())
+				{
+					val = temp.GetInt();
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	bool safe_read_string(int idx, const string_type& name, string_type& val, const rapidjson::Value& object)
+	{
+
+		if (idx < 0)
+		{
+			if (object.HasMember(name.c_str()))
+			{
+				const rapidjson::Value& temp = object[name.c_str()];
+				if (temp.IsString())
+				{
+					val = temp.GetString();
+					return true;
+				}
+				else if (temp.IsNull())
+				{
+					val.clear();
+					return true;
+				}
+			}
+		}
+		else
+		{
+			if (object.IsArray() && (int)object.GetArray().Size() > idx)
+			{
+				const rapidjson::Value& temp = object[idx];
+				if (temp.IsString())
+				{
+					val = temp.GetString();
+					return true;
+				}
+				else if (temp.IsNull())
+				{
+					val.clear();
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	bool internal_read_init_values(data::runtime_values_data& values, rapidjson::Value& val)
+	{
+		for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++)
+		{
+			rapidjson::Value& temp = it->value;
+			const char* name = it->name.GetString();
+			if (temp.IsBool())
+			{
+				values.add_value_static(name, temp.GetBool());
+			}
+			else if (temp.IsInt())
+			{
+				values.add_value_static(name, temp.GetInt());
+			}
+			/*else if (temp.isInt64())
+			{
+				values.add_value_static(one, temp.asInt64());
+			}*/
+			else if (temp.IsDouble())
+			{
+				values.add_value_static(name, temp.GetDouble());
+			}
+			else if (temp.IsString())
+			{
+				values.add_value_static(name, temp.GetString());
+			}
+			else if (temp.IsObject())
+			{
+				auto& child = values.add_child(name);
+				if (!internal_read_init_values(child, temp))
+					return false;
+			}
+			else if (!temp.IsNull())
+			{// unknown format
+				return false;
+			}
+		}
+		return true;
+	}
+};
+
+// Class rx_platform::serialization::json_reader
 
 json_reader::json_reader (int version)
-	: base_meta_reader(version)
+      : data_(std::make_unique<json_reader_data>())
+	, base_meta_reader(version)
 {
 }
 
@@ -71,9 +205,9 @@ bool json_reader::read_id (const char* name, rx_node_id& id)
 {
 	string_type str;
 	int index = 0;
-	Json::Value& val = get_current_value(index);
+	rapidjson::Value& val = data_->get_current_value(index);
 
-	if (safe_read_string(index, name, str, val))
+	if (data_->safe_read_string(index, name, str, val))
 	{
 		id = rx_node_id::from_string(str.c_str());
 		return true;
@@ -85,9 +219,9 @@ bool json_reader::read_string (const char* name, string_type& str)
 {
 	string_type sstr;
 	int index = 0;
-	Json::Value& val = get_current_value(index);
+	rapidjson::Value& val = data_->get_current_value(index);
 
-	if (safe_read_string(index, name, sstr, val))
+	if (data_->safe_read_string(index, name, sstr, val))
 	{
 		str = sstr.c_str();
 		return true;
@@ -98,27 +232,27 @@ bool json_reader::read_string (const char* name, string_type& str)
 bool json_reader::read_bool (const char* name, bool& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isBool())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsBool())
 			{
-				val = temp.asBool();
+				val = temp.GetBool();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isBool())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsBool())
 			{
-				val = temp.asBool();
+				val = temp.GetBool();
 				return true;
 			}
 		}
@@ -129,27 +263,27 @@ bool json_reader::read_bool (const char* name, bool& val)
 bool json_reader::read_double (const char* name, double& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isNumeric())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsNumber())
 			{
-				val = temp.asDouble();
+				val = temp.GetDouble();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isNumeric())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsNumber())
 			{
-				val = temp.asDouble();
+				val = temp.GetDouble();
 				return true;
 			}
 		}
@@ -161,9 +295,9 @@ bool json_reader::read_time (const char* name, rx_time_struct_t& val)
 {
 	string_type str;
 	int index = 0;
-	Json::Value& object = get_current_value(index);
+	rapidjson::Value& object = data_->get_current_value(index);
 
-	if (safe_read_string(index, name, str, object))
+	if (data_->safe_read_string(index, name, str, object))
 	{
 		rx_time temp = rx_time::from_IEC_string(str.c_str());
 		if (temp.is_null())
@@ -180,9 +314,9 @@ bool json_reader::read_uuid (const char* name, rx_uuid_t& val)
 {
 	string_type str;
 	int index = 0;
-	Json::Value& object = get_current_value(index);
+	rapidjson::Value& object = data_->get_current_value(index);
 
-	if (safe_read_string(index, name, str, object))
+	if (data_->safe_read_string(index, name, str, object))
 	{
 		val = rx_uuid::create_from_string(str.c_str()).uuid();
 		return true;
@@ -193,27 +327,27 @@ bool json_reader::read_uuid (const char* name, rx_uuid_t& val)
 bool json_reader::read_int (const char* name, int& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsInt())
 			{
-				val = temp.asInt();
+				val = temp.GetInt();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsInt())
 			{
-				val = temp.asInt();
+				val = temp.GetInt();
 				return true;
 			}
 		}
@@ -224,27 +358,27 @@ bool json_reader::read_int (const char* name, int& val)
 bool json_reader::read_uint (const char* name, uint32_t& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsUint())
 			{
-				val = temp.asUInt();
+				val = temp.GetUint();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsUint())
 			{
-				val = temp.asUInt();
+				val = temp.GetUint();
 				return true;
 			}
 		}
@@ -255,33 +389,47 @@ bool json_reader::read_uint (const char* name, uint32_t& val)
 bool json_reader::start_array (const char* name)
 {
 	int index = -1;
-	Json::Value& current = get_current_value(index);
+	rapidjson::Value& current = data_->get_current_value(index);
 	if (index<0)
 	{
-		assert(!current.isArray());
-		if (current.isMember(name))
+		RX_ASSERT(!current.IsArray());
+		if (current.HasMember(name))
 		{
-			Json::Value& val = current[name];
-			if (val.isArray())
+			rapidjson::Value& val = current[name];
+			if (val.IsArray())
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = 0;
-				stack_.push(new_data);
+				data_->stack.push(new_data);
 				return true;
+			}
+			else if (val.IsNull())
+			{
+				json_read_stack_data new_data(val);
+				new_data.index = 0;
+				data_->stack.push(new_data);
+				return true;// empty array
 			}
 		}
 	}
 	else
 	{// array stuff
-		assert(current.isArray());
-		assert((int)current.size()>index);
-		Json::Value& val = current[index];
-		if (val.isArray())
+		RX_ASSERT(current.IsArray());
+		RX_ASSERT((int)current.GetArray().Size()>index);
+		rapidjson::Value& val = current[index];
+		if (val.IsArray())
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = 0;
-			stack_.push(new_data);
+			data_->stack.push(new_data);
 			return true;
+		}
+		else if (val.IsNull())
+		{
+			json_read_stack_data new_data(val);
+			new_data.index = 0;
+			data_->stack.push(new_data);
+			return true;// empty array
 		}
 	}
 
@@ -290,18 +438,24 @@ bool json_reader::start_array (const char* name)
 
 bool json_reader::array_end ()
 {
-	if (stack_.empty())
+	if (data_->stack.empty())
 	{
-		assert(false);
+		RX_ASSERT(false);
 		return true;
 	}
 
-	json_read_stack_data& data = stack_.top();
-	if (data.index >= 0 && data.index<(int)data.value.size())
+	json_read_stack_data& data = data_->stack.top();
+	if (data.value.IsNull())
+	{
+		RX_ASSERT(data.index == 0);
+		data_->stack.pop();
+		return true;
+	}
+	if (data.index >= 0 && data.value.IsArray() && data.index<(int)data.value.GetArray().Size())
 		return false;
 
-	assert(data.index >= 0);
-	stack_.pop();
+	RX_ASSERT(data.index >= 0);
+	data_->stack.pop();
 
 	return true;
 }
@@ -312,99 +466,99 @@ bool json_reader::read_header (int& type)
 	if (read_version("sversion", version))
 	{
 		set_version(version);
-		if (envelope_.isMember("object"))
+		if (data_->envelope.HasMember("object"))
 		{
-			Json::Value& temp = envelope_["object"];
-			if (temp.isObject())
+			rapidjson::Value& temp = data_->envelope["object"];
+			if (temp.IsObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_OBJECT;
 				return true;
 			}
 		}
-		else if (envelope_.isMember("type"))
+		else if (data_->envelope.HasMember("type"))
 		{
-			Json::Value& temp = envelope_["type"];
-			if (temp.isObject())
+			rapidjson::Value& temp = data_->envelope["type"];
+			if (temp.IsObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_TYPE;
 				return true;
 			}
 		}
-		if (envelope_.isMember("body"))
+		if (data_->envelope.HasMember("body"))
 		{
-			Json::Value& temp = envelope_["body"];
-			if (temp.isObject())
+			rapidjson::Value& temp = data_->envelope["body"];
+			if (temp.IsObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_MESSAGE;
 				return true;
 			}
 		}
-		else if (envelope_.isMember("check_out"))
+		else if (data_->envelope.HasMember("check_out"))
 		{
-			Json::Value& temp = envelope_["check_out"];
-			if (temp.isObject())
+			rapidjson::Value& temp = data_->envelope["check_out"];
+			if (temp.IsObject())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_CHECKOUT;
 				return true;
 			}
 		}
-		else if (envelope_.isMember("objects"))
+		else if (data_->envelope.HasMember("objects"))
 		{
-			Json::Value& temp = envelope_["objects"];
-			if (temp.isArray())
+			rapidjson::Value& temp = data_->envelope["objects"];
+			if (temp.IsArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_OBJECTS;
 				return true;
 			}
 		}
 
-		else if (envelope_.isMember("types"))
+		else if (data_->envelope.HasMember("types"))
 		{
-			Json::Value& temp = envelope_["types"];
-			if (temp.isArray())
+			rapidjson::Value& temp = data_->envelope["types"];
+			if (temp.IsArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_TYPES;
 				return true;
 			}
 		}
-		else if (envelope_.isMember("details"))
+		else if (data_->envelope.HasMember("details"))
 		{
-			Json::Value& temp = envelope_["details"];
-			if (temp.isArray())
+			rapidjson::Value& temp = data_->envelope["details"];
+			if (temp.IsArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_DETAILS;
 				return true;
 			}
 		}
-		else if (envelope_.isMember("values"))
+		else if (data_->envelope.HasMember("values"))
 		{
-			Json::Value& temp = envelope_["values"];
-			if (temp.isArray())
+			rapidjson::Value& temp = data_->envelope["values"];
+			if (temp.IsArray())
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
-				stack_.push(temps);
+				data_->stack.push(temps);
 				type = STREAMING_TYPE_VALUES;
 				return true;
 			}
@@ -421,31 +575,45 @@ bool json_reader::read_footer ()
 bool json_reader::start_object (const char* name)
 {
 	int index = false;
-	Json::Value& current = get_current_value(index);
+	rapidjson::Value& current = data_->get_current_value(index);
 	if (index<0)
 	{
-		if (current.isMember(name))
+		if (current.HasMember(name))
 		{
-			Json::Value& val = current[name];
-			if (val.isObject())
+			rapidjson::Value& val = current[name];
+			if (val.IsObject())
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = -1;
-				stack_.push(new_data);
+				data_->stack.push(new_data);
+				return true;
+			}
+			else if (val.IsNull())
+			{
+				json_read_stack_data new_data(val);
+				new_data.index = -1;
+				data_->stack.push(new_data);
 				return true;
 			}
 		}
 	}
 	else
 	{
-		assert(current.isArray());
-		assert((int)current.size()>index);
-		Json::Value& val = current[index];
-		if (val.isObject())
+		RX_ASSERT(current.IsNull() || current.IsArray());
+		RX_ASSERT(current.IsNull() || (int)current.GetArray().Size()>index);
+		rapidjson::Value& val = current[index];
+		if (val.IsObject())
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = -1;
-			stack_.push(new_data);
+			data_->stack.push(new_data);
+			return true;
+		}
+		else if (val.IsNull())
+		{
+			json_read_stack_data new_data(val);
+			new_data.index = -1;
+			data_->stack.push(new_data);
 			return true;
 		}
 	}
@@ -454,14 +622,14 @@ bool json_reader::start_object (const char* name)
 
 bool json_reader::end_object ()
 {
-	if (stack_.empty())
+	if (data_->stack.empty())
 		return false;
 
-	json_read_stack_data data = stack_.top();
+	json_read_stack_data data = data_->stack.top();
 	if (data.index >= 0)
 		return false;
 
-	stack_.pop();
+	data_->stack.pop();
 
 	return true;
 }
@@ -469,27 +637,27 @@ bool json_reader::end_object ()
 bool json_reader::read_byte (const char* name, uint8_t& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsUint())
 			{
-				val = (uint8_t)temp.asUInt();
+				val = (uint8_t)temp.GetUint();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsUint())
 			{
-				val = (uint8_t)temp.asUInt();
+				val = (uint8_t)temp.GetUint();
 				return true;
 			}
 		}
@@ -508,27 +676,27 @@ bool json_reader::read_value (const char* name, rx_value& val)
 bool json_reader::read_int64 (const char* name, int64_t& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[name];
+			if (temp.IsInt64())
 			{
-				val = temp.asInt64();
+				val = temp.GetInt64();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsInt64())
 			{
-				val = temp.asInt64();
+				val = temp.GetInt64();
 				return true;
 			}
 		}
@@ -539,27 +707,27 @@ bool json_reader::read_int64 (const char* name, int64_t& val)
 bool json_reader::read_uint64 (const string_type& name, uint64_t& val)
 {
 	int idx = 0;
-	Json::Value& object = get_current_value(idx);
+	rapidjson::Value& object = data_->get_current_value(idx);
 	if (idx<0)
 	{
-		if (object.isMember(name))
+		if (object.HasMember(name.c_str()))
 		{
-			Json::Value& temp = object[name];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[name.c_str()];
+			if (temp.IsUint64())
 			{
-				val = temp.asUInt64();
+				val = temp.GetUint64();
 				return true;
 			}
 		}
 	}
 	else
 	{
-		if (object.isArray() && (int)object.size()>idx)
+		if (object.IsArray() && (int)object.GetArray().Size()>idx)
 		{
-			Json::Value& temp = object[idx];
-			if (temp.isIntegral())
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsUint64())
 			{
-				val = temp.asUInt64();
+				val = temp.GetUint64();
 				return true;
 			}
 		}
@@ -571,9 +739,9 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 {
 	string_type sstr;
 	int index = 0;
-	Json::Value& jval = get_current_value(index);
+	rapidjson::Value& jval = data_->get_current_value(index);
 
-	if (safe_read_string(index, name, sstr, jval))
+	if (data_->safe_read_string(index, name, sstr, jval))
 	{
 		/*string_type temp_val = base64_decode(sstr);
 		val.assign(temp_val.size(), 0);
@@ -584,108 +752,24 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 	return false;
 }
 
-Json::Value& json_reader::get_current_value (int& index)
-{
-	if (stack_.empty())
-	{
-		index = -1;
-		return envelope_;
-	}
-	else
-	{
-		json_read_stack_data& current = stack_.top();
-		index = current.index;
-		if (index >= 0)
-			current.index = current.index + 1;
-		return current.value;
-	}
-}
-
 bool json_reader::parse_data (const string_type& data)
 {
+	bool ret = false;
 	errors_.clear();
-	Json::Reader reader;
-	auto ret = reader.parse(data, envelope_, false);
-	if (!ret)
-	{
-		std::istringstream stream(reader.getFormattedErrorMessages());
-		while (!stream.eof())
-		{
-			string_type temp;
-			std::getline(stream, temp);
-			if (!temp.empty())
-				errors_.emplace_back(temp);
-		}
+	data_->envelope.Parse(data.c_str());
+	if (!data_->envelope.HasParseError()) {
+		ret = true;
 	}
+	else
+	{
+		auto err = data_->envelope.GetParseError();
+		auto offset = data_->envelope.GetErrorOffset();
+		std::ostringstream stream;
+		stream << "Parsing error " << err << " at string position " << offset << ".";
+		errors_.emplace_back(stream.str());
+	}
+
 	return ret;
-}
-
-bool json_reader::safe_read_int (int idx, const string_type& name, int val, const Json::Value& object)
-{
-	if (idx<0)
-	{
-		if (object.isMember(name))
-		{
-			const Json::Value& temp = object[name];
-			if (temp.isIntegral())
-			{
-				val = temp.asInt();
-				return true;
-			}
-		}
-	}
-	else
-	{
-		if (object.isArray() && (int)object.size()>idx)
-		{
-			const Json::Value& temp = object[idx];
-			if (temp.isIntegral())
-			{
-				val = temp.asInt();
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-bool json_reader::safe_read_string (int idx, const string_type& name, string_type& val, const Json::Value& object)
-{
-	if (idx<0)
-	{
-		if (object.isMember(name))
-		{
-			const Json::Value& temp = object[name];
-			if (temp.isString())
-			{
-				val = temp.asCString();
-				return true;
-			}
-			else if (temp.isNull())
-			{
-				val.clear();
-				return true;
-			}
-		}
-	}
-	else
-	{
-		if (object.isArray() && (int)object.size()>idx)
-		{
-			const Json::Value& temp = object[idx];
-			if (temp.isString())
-			{
-				val = temp.asCString();
-				return true;
-			}
-			else if (temp.isNull())
-			{
-				val.clear();
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 bool json_reader::read_version (const char* name, uint32_t& val)
@@ -724,58 +808,22 @@ bool json_reader::read_init_values (const char* name, data::runtime_values_data&
 
 	// now enumerate objects
 	int index = 0;
-	Json::Value& val = get_current_value(index);
+	rapidjson::Value& val = data_->get_current_value(index);
 
-	if (!val.isObject())
+	if (val.IsObject())
+	{
+		if (!data_->internal_read_init_values(values, val))
+			return false;
+	}
+	else if(!val.IsNull())
+	{
 		return false;
-
-	if (!internal_read_init_values(values, val))
-		return false;
+	}
 
 	if (name)
 	{
 		if (!end_object())
 			return false;
-	}
-	return true;
-}
-
-bool json_reader::internal_read_init_values (data::runtime_values_data& values, Json::Value& val)
-{
-	auto names = val.getMemberNames();
-	for (auto& one : names)
-	{
-		Json::Value& temp = val[one];
-		if (temp.isBool())
-		{
-			values.add_value_static(one, temp.asBool());
-		}
-		else if (temp.isInt())
-		{
-			values.add_value_static(one, temp.asInt());
-		}
-		/*else if (temp.isInt64())
-		{
-			values.add_value_static(one, temp.asInt64());
-		}*/
-		else if (temp.isDouble())
-		{
-			values.add_value_static(one, temp.asDouble());
-		}
-		else if (temp.isString())
-		{
-			values.add_value_static(one, temp.asString());
-		}
-		else if (temp.isObject())
-		{
-			auto& child = values.add_child(one);
-			if (!internal_read_init_values(child, temp))
-				return false;
-		}
-		else
-		{// unknown format
-			return false;
-		}
 	}
 	return true;
 }
@@ -798,19 +846,19 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 		return false;
 
 	int index = 0;
-	Json::Value& val = get_current_value(index);
+	rapidjson::Value& val = data_->get_current_value(index);
 
-	if (!val.isObject())
+	if (!val.IsObject())
 		return false;
 
-	if (val.isMember("id"))
+	if (val.HasMember("id"))
 	{
 		rx_node_id temp_id;
 		if (!read_id("id", temp_id))
 			return false;
 		ref = std::move(temp_id);
 	}
-	else if (val.isMember("path"))
+	else if (val.HasMember("path"))
 	{
 		string_type temp_str;
 		if (!read_string("path", temp_str))
@@ -864,170 +912,186 @@ bool json_reader::read_value_type (const char* name, rx_value_t& val)
 	}
 }
 
+struct json_write_stack_data
+{
+public:
+	bool is_array;
+	std::string name;
+};
+struct json_writer_data
+{
+	std::stack<json_write_stack_data, std::vector<json_write_stack_data> > stack;
 
-// Class rx_platform::serialization::json_writer 
+	rapidjson::StringBuffer stream;
+	rapidjson::Writer<rapidjson::StringBuffer> writer;
+};
+struct json_pretty_writer_data
+{
+	std::stack<json_write_stack_data, std::vector<json_write_stack_data> > stack;
+	json_pretty_writer_data() : writer(stream) {}
+	rapidjson::StringBuffer stream;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer;
+};
+// Parameterized Class rx_platform::serialization::json_writer_type
 
-json_writer::json_writer (int version)
-	: base_meta_writer(version)
+template <class writerT>
+json_writer_type<writerT>::json_writer_type (int version)
+      : data_(std::make_unique<writerT>())
+	, base_meta_writer(version)
 	, type_(0)
 {
 }
 
 
-json_writer::~json_writer()
+template <class writerT>
+json_writer_type<writerT>::~json_writer_type()
 {
 }
 
 
 
-bool json_writer::write_id (const char* name, const rx_node_id& id)
+template <class writerT>
+bool json_writer_type<writerT>::write_id (const char* name, const rx_node_id& id)
 {
 	string_type buff;
 	id.to_string(buff);
 
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(buff);
-	else
-		value[name] = buff;
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.String(buff.c_str());
 
 	return true;
 }
 
-bool json_writer::write_string (const char* name, const string_type& str)
+template <class writerT>
+bool json_writer_type<writerT>::write_string (const char* name, const string_type& str)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(str);
-	else
-		value[name] = str;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.String(str.c_str());
 
 	return true;
 }
 
-bool json_writer::write_bool (const char* name, bool val)
+template <class writerT>
+bool json_writer_type<writerT>::write_bool (const char* name, bool val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(val);
-	else
-		value[name] = val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Bool(val);
 
 	return true;
 }
 
-bool json_writer::write_double (const char* name, double val)
+template <class writerT>
+bool json_writer_type<writerT>::write_double (const char* name, double val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(val);
-	else
-		value[name] = val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Double(val);
 
 	return true;
 }
 
-bool json_writer::write_time (const char* name, const rx_time_struct_t& val)
+template <class writerT>
+bool json_writer_type<writerT>::write_time (const char* name, const rx_time_struct_t& val)
 {
 	rx_time tval(val);
 	string_type str = tval.get_IEC_string();
 
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(str.c_str());
-	else
-		value[name] = str.c_str();
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.String(str.c_str());
 
 	return true;
 }
 
-bool json_writer::write_uuid (const char* name, const rx_uuid_t& val)
+template <class writerT>
+bool json_writer_type<writerT>::write_uuid (const char* name, const rx_uuid_t& val)
 {
 	string_type buff;
 	rx_uuid vval(val);
 	vval.to_string(buff);
 
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(buff);
-	else
-		value[name] = buff;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.String(buff.c_str());
 
 	return true;
 }
 
-bool json_writer::write_int (const char* name, int val)
+template <class writerT>
+bool json_writer_type<writerT>::write_int (const char* name, int val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(val);
-	else
-		value[name] = val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Int(val);
 
 	return true;
 }
 
-bool json_writer::write_uint (const char* name, uint32_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_uint (const char* name, uint32_t val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append(val);
-	else
-		value[name] = val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Uint(val);
 
 	return true;
 }
 
-bool json_writer::start_array (const char* name, size_t size)
+template <class writerT>
+bool json_writer_type<writerT>::start_array (const char* name, size_t size)
 {
 	json_write_stack_data data;
 	data.is_array = true;
 	data.name = name;
 
-	stack_.push(data);
+	bool is_array = is_current_array();
+
+	data_->stack.push(data);
+
+	if(!is_array)
+		data_->writer.Key(name);
+	data_->writer.StartArray();
 
 	return true;
 }
 
-bool json_writer::end_array ()
+template <class writerT>
+bool json_writer_type<writerT>::end_array ()
 {
-	if (stack_.empty())
+	if (data_->stack.empty())
 		return false;
 
-	json_write_stack_data data = stack_.top();
+	json_write_stack_data& data = data_->stack.top();
 	if (!data.is_array)
 		return false;
 
-	stack_.pop();
-
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-
-	if (is_array)
-		value.append(data.value);
-	else
-		value[data.name] = data.value;
+	data_->stack.pop();
+	data_->writer.EndArray();
 
 	return true;
 }
 
-bool json_writer::write_header (int type, size_t size)
+template <class writerT>
+bool json_writer_type<writerT>::write_header (int type, size_t size)
 {
+	data_->writer.StartObject();
 	type_ = type;
 	if (type_ == STREAMING_TYPE_MESSAGE)
 	{
 		json_write_stack_data data;
 		data.is_array = false;
-		data.name = "perica";
-		stack_.push(data);
+		data.name = "msg";
+		data_->stack.push(data);
 		return true;
 	}
 
@@ -1035,7 +1099,8 @@ bool json_writer::write_header (int type, size_t size)
 	if (!get_version_string(ver, (uint32_t)get_version()))
 		return false;
 
-	envelope_["sversion"] = ver;
+	data_->writer.Key("sversion");
+	data_->writer.String(ver.c_str());
 
 
 	json_write_stack_data data;
@@ -1075,110 +1140,130 @@ bool json_writer::write_header (int type, size_t size)
 		data.name = "values";
 		break;
 	default:
-		assert(false);
+		RX_ASSERT(false);
 		return false;
 	}
 
-	stack_.push(data);
+	data_->stack.push(data);
+
+	data_->writer.Key(data.name.c_str());
+	if (data.is_array)
+	{
+		data_->writer.StartArray();
+	}
+	else
+	{
+		data_->writer.StartObject();
+	}
 
 	return true;
 }
 
-bool json_writer::write_footer ()
+template <class writerT>
+bool json_writer_type<writerT>::write_footer ()
 {
 	if (type_ == STREAMING_TYPE_MESSAGE)
 	{
+		data_->writer.EndObject();
 		return true;
 	}
 	else
 	{
-		if (stack_.empty())
+		if (data_->stack.empty())
 			return false;
 
-		json_write_stack_data data = stack_.top();
-		envelope_[data.name] = data.value;
+		json_write_stack_data& data = data_->stack.top();
+		if (data.is_array)
+		{
+			data_->writer.EndArray();
+		}
+		else
+		{
+			data_->writer.EndObject();
+		}
+		data_->writer.EndObject();
 
 		return true;
 	}
 }
 
-bool json_writer::start_object (const char* name)
+template <class writerT>
+bool json_writer_type<writerT>::start_object (const char* name)
 {
 	json_write_stack_data data;
 	data.is_array = false;
 	data.name = name;
 
-	stack_.push(data);
+	bool is_array = is_current_array();
+
+	data_->stack.push(data);
+
+	if(!is_array)
+		data_->writer.Key(name);
+	data_->writer.StartObject();
 
 	return true;
 }
 
-bool json_writer::end_object ()
+template <class writerT>
+bool json_writer_type<writerT>::end_object ()
 {
-	if (stack_.empty())
+	if (data_->stack.empty())
 		return false;
 
-	json_write_stack_data data = stack_.top();
+	json_write_stack_data& data = data_->stack.top();
 	if (data.is_array)
 		return false;
 
-	stack_.pop();
-
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-
-	if (is_array)
-		value.append(data.value);
-	else
-		value[data.name] = data.value;
+	data_->stack.pop();
+	data_->writer.EndObject();
 
 	return true;
 }
 
-bool json_writer::write_byte (const char* name, uint8_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_byte (const char* name, uint8_t val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append((uint32_t)val);
-	else
-		value[name] = val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Uint(val);
 
 	return true;
 }
 
-bool json_writer::write_value (const char* name, const rx_value& val)
+template <class writerT>
+bool json_writer_type<writerT>::write_value (const char* name, const rx_value& val)
 {
 	if (!val.serialize(name, *this))
 		return false;
 	return true;
 }
 
-bool json_writer::write_int64 (const char* name, int64_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_int64 (const char* name, int64_t val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append((double)val);
-	else
-		value[name] = (double)val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Int64(val);
 
 	return true;
 }
 
-bool json_writer::write_uint64 (const char* name, uint64_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_uint64 (const char* name, uint64_t val)
 {
-	bool is_array = false;
-	Json::Value& value = get_current_value(is_array);
-	if (is_array)
-		value.append((double)val);
-	else
-		value[name] = (double)val;
+
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Uint64(val);
 
 	return true;
 }
 
-bool json_writer::write_bytes (const char* name, const uint8_t* val, size_t size)
+template <class writerT>
+bool json_writer_type<writerT>::write_bytes (const char* name, const uint8_t* val, size_t size)
 {
 	//string_type temp = base64_encode(val, size);
 	string_type temp = urke::get_base64(val, size);
@@ -1186,52 +1271,30 @@ bool json_writer::write_bytes (const char* name, const uint8_t* val, size_t size
 	return write_string(name, temp.c_str());
 }
 
-Json::Value& json_writer::get_current_value (bool& is_array)
+template <class writerT>
+bool json_writer_type<writerT>::is_current_array ()
 {
-	if (stack_.empty())
+	if (data_->stack.empty())
 	{
 		if(type_!= STREAMING_TYPE_MESSAGE)
-			assert(false);
-		return envelope_;
+			RX_ASSERT(false);
+		return false;
 	}
 	else
 	{
-		json_write_stack_data& current = stack_.top();
-		is_array = current.is_array;
-		return current.value;
+		json_write_stack_data& current = data_->stack.top();
+		return current.is_array;
 	}
 }
 
-bool json_writer::get_string (string_type& result, bool decorated)
+template <class writerT>
+string_type json_writer_type<writerT>::get_string ()
 {
-	if (type_ == STREAMING_TYPE_MESSAGE)
-	{
-		json_writer_type writer;
-
-		if (stack_.empty())
-			return false;
-
-		json_write_stack_data data = stack_.top();
-
-		result = writer.write(data.value);
-	}
-	else
-	{
-		if (decorated)
-		{
-			Json::StyledWriter writer;
-			result = writer.write(envelope_);
-		}
-		else
-		{
-			json_writer_type writer;
-			result = writer.write(envelope_);
-		}
-	}
-	return true;
+	return data_->stream.GetString();
 }
 
-bool json_writer::write_version (const char* name, uint32_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_version (const char* name, uint32_t val)
 {
 	string_type str;
 	if (!get_version_string(str, val))
@@ -1239,7 +1302,8 @@ bool json_writer::write_version (const char* name, uint32_t val)
 	return write_string(name, str.c_str());
 }
 
-bool json_writer::get_version_string (string_type& result, uint32_t version)
+template <class writerT>
+bool json_writer_type<writerT>::get_version_string (string_type& result, uint32_t version)
 {
 	int major = (version >> 16);
 	int minor = (version & 0xffff);
@@ -1249,7 +1313,8 @@ bool json_writer::get_version_string (string_type& result, uint32_t version)
 	return true;
 }
 
-bool json_writer::write_init_values (const char* name, const data::runtime_values_data& values)
+template <class writerT>
+bool json_writer_type<writerT>::write_init_values (const char* name, const data::runtime_values_data& values)
 {
 	if (name)
 	{
@@ -1274,18 +1339,21 @@ bool json_writer::write_init_values (const char* name, const data::runtime_value
 	return true;
 }
 
-bool json_writer::is_string_based () const
+template <class writerT>
+bool json_writer_type<writerT>::is_string_based () const
 {
   return true;
 
 }
 
-bool json_writer::write_item_reference (const char* name, const rx_item_reference& ref)
+template <class writerT>
+bool json_writer_type<writerT>::write_item_reference (const char* name, const rx_item_reference& ref)
 {
-	if (!start_object(name))
-		return false;
 	if (!ref.is_null())
 	{
+		if (!start_object(name))
+			return false;
+
 		if (ref.is_node_id())
 		{
 			if (!write_id("id", ref.get_node_id()))
@@ -1296,20 +1364,26 @@ bool json_writer::write_item_reference (const char* name, const rx_item_referenc
 			if (!write_string("path", ref.get_path()))
 				return false;
 		}
+		if (!end_object())
+			return false;
 	}
-	if (!end_object())
-		return false;
+	else
+	{
+		write_null(name);
+	}
 	return true;
 }
 
-bool json_writer::write_value (const char* name, const rx_simple_value& val)
+template <class writerT>
+bool json_writer_type<writerT>::write_value (const char* name, const rx_simple_value& val)
 {
 	if (!val.serialize(name, *this))
 		return false;
 	return true;
 }
 
-bool json_writer::write_value_type (const char* name, rx_value_t val)
+template <class writerT>
+bool json_writer_type<writerT>::write_value_type (const char* name, rx_value_t val)
 {
 	if (get_version() >= RX_VALUE_TYPE_VERSION)
 	{
@@ -1322,7 +1396,22 @@ bool json_writer::write_value_type (const char* name, rx_value_t val)
 	}
 }
 
+template <class writerT>
+bool json_writer_type<writerT>::write_null (const char* name)
+{
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Null();
+	return true;
+}
+
+template class json_writer_type<json_writer_data>;
+template class json_writer_type<json_pretty_writer_data>;
+
+
 
 } // namespace serialization
 } // namespace rx_platform
+
+
 

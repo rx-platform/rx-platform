@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\http\rx_http_request.h
+*  system\http_support\rx_http_request.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -42,11 +42,12 @@ class rx_http_endpoint;
 } // namespace protocols
 
 
+using protocols::rx_http::rx_http_endpoint;
 
 
-namespace protocols {
+namespace rx_platform {
 
-namespace rx_http {
+namespace http {
 typedef rx_reference<rx_http_endpoint> rx_http_endpoint_ptr;
 
 enum class rx_http_method
@@ -58,6 +59,7 @@ enum class rx_http_method
     del
 };
 
+typedef std::map<string_type, string_type> rx_http_params_type;
 typedef std::map<string_type, string_type> rx_http_headers_type;
 typedef std::vector<string_type> rx_acceptable_types_type;
 
@@ -82,6 +84,8 @@ struct http_request
 
       rx_acceptable_types_type acceptable_types;
 
+      rx_http_params_type params;
+
   public:
 
   protected:
@@ -98,6 +102,9 @@ struct http_request
 
 struct http_response 
 {
+
+
+      void set_string_content (const string_type& str);
 
 
       int result;
@@ -119,11 +126,11 @@ struct http_response
 
 };
 
-typedef std::unique_ptr<http_response> http_response_ptr;
 
-} // namespace rx_http
-} // namespace protocols
+} // namespace http
+} // namespace rx_platform
 
 
 
 #endif
+

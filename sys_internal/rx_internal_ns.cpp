@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace rx_internal {
 
 namespace internal_ns {
 
-// Class rx_internal::internal_ns::platform_root 
+// Class rx_internal::internal_ns::platform_root
 
 rx_platform::ns::rx_names_cache platform_root::cache_;
 
@@ -78,7 +78,7 @@ rx_result platform_root::remove_cached_item (const string_type& name, const rx_n
 }
 
 
-// Class rx_internal::internal_ns::user_directory 
+// Class rx_internal::internal_ns::user_directory
 
 user_directory::user_directory (const string_type& name)
 	: rx_platform_directory(name, namespace_item_read_access | namespace_item_write_access | namespace_item_delete_access)
@@ -92,7 +92,7 @@ user_directory::~user_directory()
 
 
 
-// Class rx_internal::internal_ns::unassigned_directory 
+// Class rx_internal::internal_ns::unassigned_directory
 
 unassigned_directory::unassigned_directory()
 	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access, rx_create_reference<storage_base::rx_code_storage>())
@@ -113,7 +113,7 @@ unassigned_directory::~unassigned_directory()
 
 
 
-// Class rx_internal::internal_ns::world_directory 
+// Class rx_internal::internal_ns::world_directory
 
 world_directory::world_directory()
 	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage().value())
@@ -134,7 +134,7 @@ world_directory::~world_directory()
 
 
 
-// Parameterized Class rx_internal::internal_ns::rx_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_item_implementation
 
 template <class TImpl>
 rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
@@ -254,13 +254,7 @@ string_type rx_item_implementation<TImpl>::get_definition_as_json () const
 
 	writer.write_footer();
 
-	string_type result;
-	bool out = writer.get_string(result, true);
-
-	if (out)
-		return result;
-	else
-		return string_type();
+	return writer.get_string();
 }
 
 template <class TImpl>
@@ -294,7 +288,7 @@ rx_result rx_item_implementation<TImpl>::save () const
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation
 
 template <class TImpl>
 rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
@@ -417,22 +411,12 @@ string_type rx_meta_item_implementation<TImpl>::get_definition_as_json () const
 
 	rx_platform::serialization::json_writer writer;
 	writer.write_header(STREAMING_TYPE_TYPE, 0);
-	bool out = false;
 
-	out = algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_TYPE);
+	algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_TYPE);
 
 	writer.write_footer();
 
-	string_type result;
-	if (out)
-	{
-		out = writer.get_string(result, true);
-	}
-
-    if (out)
-        return result;
-    else
-        return string_type();
+	return writer.get_string();
 }
 
 template <class TImpl>
@@ -466,7 +450,7 @@ rx_result rx_meta_item_implementation<TImpl>::save () const
 }
 
 
-// Class rx_internal::internal_ns::internal_directory 
+// Class rx_internal::internal_ns::internal_directory
 
 internal_directory::internal_directory (const string_type& name)
 	: rx_platform_directory(name, namespace_item_internal_access)
@@ -480,7 +464,7 @@ internal_directory::~internal_directory()
 
 
 
-// Parameterized Class rx_internal::internal_ns::rx_other_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_other_implementation
 
 template <class TImpl>
 rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
@@ -629,7 +613,7 @@ rx_result rx_other_implementation<TImpl>::save () const
 }
 
 
-// Class rx_internal::internal_ns::system_directory 
+// Class rx_internal::internal_ns::system_directory
 
 system_directory::system_directory()
 	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys").value())
@@ -650,7 +634,7 @@ system_directory::~system_directory()
 
 
 
-// Class rx_internal::internal_ns::host_directory 
+// Class rx_internal::internal_ns::host_directory
 
 host_directory::host_directory()
 	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
@@ -674,7 +658,7 @@ host_directory::~host_directory()
 
 
 
-// Class rx_internal::internal_ns::plugin_directory 
+// Class rx_internal::internal_ns::plugin_directory
 
 plugin_directory::plugin_directory (rx_plugin_ptr plugin)
 	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access

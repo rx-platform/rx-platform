@@ -195,11 +195,7 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 
 void server_runtime::stop ()
 {
-	if (dispatcher_timer_)
-	{
-		dispatcher_timer_->cancel();
-		dispatcher_timer_ = dispatcher_subscribers_job::smart_ptr::null_ptr;
-	}
+	
 	if (io_pool_)
 		io_pool_->get_pool().end();
 	if (unassigned_pool_)
@@ -210,7 +206,11 @@ void server_runtime::stop ()
 		if (one)
 			one->end();
 	}
-
+	if (dispatcher_timer_)
+	{
+		dispatcher_timer_->cancel();
+		dispatcher_timer_ = dispatcher_subscribers_job::smart_ptr::null_ptr;
+	}
 	if (general_timer_)
 	{
 		general_timer_->stop();

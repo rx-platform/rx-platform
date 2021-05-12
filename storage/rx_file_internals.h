@@ -73,7 +73,7 @@ public:
 
       std::unique_ptr<rx_platform::serialization::json_reader> reader_;
 
-      std::unique_ptr<rx_platform::serialization::json_writer> writer_;
+      std::unique_ptr<rx_platform::serialization::pretty_json_writer> writer_;
 
 
 };

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\http\rx_http_server.h
+*  http_server\rx_http_server.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -35,30 +35,42 @@
 #include "system/server/rx_server.h"
 
 // rx_http_request
-#include "protocols/http/rx_http_request.h"
+#include "system/http_support/rx_http_request.h"
 // rx_http_handlers
-#include "protocols/http/rx_http_handlers.h"
+#include "http_server/rx_http_handlers.h"
+// rx_http_mapping
+#include "protocols/http/rx_http_mapping.h"
+// rx_http
+#include "system/http_support/rx_http.h"
+
+/////////////////////////////////////////////////////////////
+// logging macros for http library
+#define HTTP_LOG_INFO(src,lvl,msg) RX_LOG_INFO("HTTP",src,lvl,msg)
+#define HTTP_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("HTTP",src,lvl,msg)
+#define HTTP_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("HTTP",src,lvl,msg)
+#define HTTP_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("HTTP",src,lvl,msg)
+#define HTTP_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("HTTP",src,lvl,msg)
+#define HTTP_LOG_TRACE(src,lvl,msg) RX_TRACE("HTTP",src,lvl,msg)
+
+
+namespace rx_internal {
+
+namespace rx_http_server {
 
 
 
-namespace protocols {
-
-namespace rx_http {
 
 
-
-
-
-class http_request_filter 
+class standard_request_filter : public rx_platform::http::http_request_filter  
 {
 
   public:
 
-      virtual rx_result handle_request_before (http_request req, http_response& resp) = 0;
+      rx_result handle_request_after (http_request& req, http_response& resp);
 
-      virtual rx_result handle_request_after (http_request req, http_response& resp) = 0;
+      rx_result handle_request_before (http_request& req, http_response& resp);
 
-      virtual ~http_request_filter() = default;
+
   protected:
 
   private:
@@ -86,6 +98,10 @@ class http_server
 
       rx_result handle_request (http_request req);
 
+      static string_type get_server_info ();
+
+      static string_type get_server_header_info ();
+
 
       const string_type& get_resources_path () const
       {
@@ -101,6 +117,8 @@ class http_server
 
 
       void register_standard_filters ();
+
+      void send_response (http_request& request, http_response response);
 
 
 
@@ -119,30 +137,8 @@ class http_server
 };
 
 
-
-
-
-
-class standard_request_filter : public http_request_filter  
-{
-
-  public:
-
-      rx_result handle_request_after (http_request req, http_response& resp);
-
-      rx_result handle_request_before (http_request req, http_response& resp);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace rx_http
-} // namespace protocols
+} // namespace rx_http_server
+} // namespace rx_internal
 
 
 

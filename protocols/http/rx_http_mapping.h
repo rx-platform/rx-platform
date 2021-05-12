@@ -33,29 +33,21 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
+// dummy
+#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_http_server
-#include "protocols/http/rx_http_server.h"
+#include "http_server/rx_http_server.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
 
 
-/////////////////////////////////////////////////////////////
-// logging macros for opcua library
-#define HTTP_LOG_INFO(src,lvl,msg) RX_LOG_INFO("HTTP",src,lvl,msg)
-#define HTTP_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("HTTP",src,lvl,msg)
-#define HTTP_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("HTTP",src,lvl,msg)
-#define HTTP_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("HTTP",src,lvl,msg)
-#define HTTP_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("HTTP",src,lvl,msg)
-#define HTTP_LOG_TRACE(src,lvl,msg) RX_TRACE("HTTP",src,lvl,msg)
 
 
 namespace protocols {

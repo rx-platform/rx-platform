@@ -37,6 +37,7 @@
 #include "sys_internal/rx_internal_protocol.h"
 #include "system//server/rx_server.h"
 #include "terminal/rx_console.h"
+#include "http_server/rx_http_server.h"
 
 
 namespace rx_internal {
@@ -72,6 +73,8 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
         return "Unable to write lib";
     if (!stream.write_string("term", terminal))
         return "Unable to write term";
+    if (!stream.write_string("http", http))
+        return "Unable to write http";
     if (!stream.write_string("comp", compiler))
         return "Unable to write comp";
     if (!stream.write_string("platform_host", platform_host))
@@ -99,14 +102,32 @@ rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
         return "Unable to read instance";
     if (!stream.read_string("node", node))
         return "Unable to read node";
+    if (!stream.read_time("started", start_time))
+        return "Unable to read start time";
+    if (!stream.read_time("current", current_time))
+        return "Unable to read current time";
     if (!stream.read_string("platform", platform))
         return "Unable to read platform";
     if (!stream.read_string("lib", library))
         return "Unable to read lib";
+    if (!stream.read_string("term", terminal))
+        return "Unable to read term";
+    if (!stream.read_string("http", http))
+        return "Unable to read http";
+    if (!stream.read_string("comp", compiler))
+        return "Unable to read comp";
+    if (!stream.read_string("platform_host", platform_host))
+        return "Unable to read platform_host";
+    if (!stream.read_string("os_host", os_host))
+        return "Unable to read os_host";
     if (!stream.read_string("os_itf", os_itf))
         return "Unable to read os_itf";
     if (!stream.read_string("os", os))
         return "Unable to read os";
+    if (!stream.read_string("cpu", cpu))
+        return "Unable to read cpu";
+    if (!stream.read_string("memory", memory))
+        return "Unable to read memory";
     if (!stream.end_object())
         return "Unable to end object general";
     return true;
@@ -152,6 +173,7 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     response->library = rx_gate::instance().get_lib_version();
     response->os_itf = rx_gate::instance().get_hal_version();
     response->terminal = terminal::console::console_runtime::get_terminal_info();
+    response->http = rx_http_server::http_server::get_server_info();
     response->compiler = rx_gate::instance().get_comp_version();
     std::ostringstream out3;
     out3 << rx_gate::instance().get_os_info() << " [PID:" << rx_gate::instance().get_pid() << "]";

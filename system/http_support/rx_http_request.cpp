@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\http\rx_http_request.cpp
+*  system\http_support\rx_http_request.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,20 +34,26 @@
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
 // rx_http_request
-#include "protocols/http/rx_http_request.h"
+#include "system/http_support/rx_http_request.h"
 
 
 
-namespace protocols {
+namespace rx_platform {
 
-namespace rx_http {
+namespace http {
 
-// Class protocols::rx_http::http_request 
-
-
-// Class protocols::rx_http::http_response 
+// Class rx_platform::http::http_request 
 
 
-} // namespace rx_http
-} // namespace protocols
+// Class rx_platform::http::http_response 
+
+
+void http_response::set_string_content (const string_type& str)
+{
+	content.assign(str.begin(), str.end());
+}
+
+
+} // namespace http
+} // namespace rx_platform
 
