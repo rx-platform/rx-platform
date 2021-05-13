@@ -55,14 +55,14 @@ rx_message_type_t rx_make_directory_request::type_id = rx_make_directory_request
 rx_result rx_make_directory_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("path", path.c_str()))
-		return "Error serializing path";
+		return stream.get_error();
 	return true;
 }
 
 rx_result rx_make_directory_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("path", path))
-		return "Error reading path";
+		return stream.get_error();
 	return true;
 }
 
@@ -104,14 +104,14 @@ rx_message_type_t rx_remove_directory_request::type_id = rx_remove_directory_req
 rx_result rx_remove_directory_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("path", path.c_str()))
-		return "Error serializing path";
+		return stream.get_error();
 	return true;
 }
 
 rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("path", path))
-		return "Error reading path";
+		return stream.get_error();
 	return true;
 }
 

@@ -220,23 +220,24 @@ rx_result logic_holder::browse (const string_type& prefix, const string_type& pa
     return ret;
 }
 
-bool logic_holder::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result logic_holder::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_array("programs", runtime_programs_.size()))
-        return false;
+        return stream.get_error();
     for (const auto& one : runtime_programs_)
     {
         ///!!!!! this is wrong stuff need to reconsider this serialization
-        if (!one.program_ptr->save_program(stream, type))
-            return false;
+        auto ret = one.program_ptr->save_program(stream, type);
+        if (!ret)
+            return ret;
     }
     if (!stream.end_array())
-        return false;
+        return stream.get_error();
     
     return true;
 }
 
-bool logic_holder::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result logic_holder::deserialize (base_meta_reader& stream, uint8_t type)
 {
     return true;
 }

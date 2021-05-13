@@ -50,29 +50,31 @@ template<typename typeT>
 rx_result serialize_runtime_data(const typeT& what,base_meta_writer& stream, uint8_t type)
 {
     using target_type = typename typeT::targetType::RImplType;
-    if (!what.meta_info.serialize_meta_data(stream, type, target_type::type_id))
-        return false;
+    auto ret = what.meta_info.serialize_meta_data(stream, type, target_type::type_id);
+    if (!ret)
+        return ret;
 
     if (!stream.start_object("def"))
-        return false;
+        return stream.get_error();
 
-    if (!what.instance_data.serialize(stream, type))
-        return false;
+    ret = what.instance_data.serialize(stream, type);
+    if(!ret)
+        return ret;
 
     if (!stream.write_init_values("overrides", what.overrides))
-        return false;
+        return stream.get_error();
     if (!stream.start_array("programs", 0))
-        return false;
+        return stream.get_error();
     /*for (const auto& one : programs_)
     {
         if (!one->save_program(stream, type))
-            return false;
+		return stream.get_error();
     }*/
     if (!stream.end_array())
-        return false;
+        return stream.get_error();
 
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
 
     return true;
 }
@@ -80,22 +82,23 @@ template<typename typeT>
 rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, uint8_t type, const meta_data& meta)
 {
     if (!stream.start_object("def"))
-        return false;
+        return stream.get_error();
 
-    if (!what.instance_data.deserialize(stream, type))
-        return false;
+    auto ret = what.instance_data.deserialize(stream, type);
+    if (!ret)
+        return ret;
 
     if (!stream.read_init_values("overrides", what.overrides))
-        return false;
+        return stream.get_error();
 
     if (!stream.start_array("programs"))
-        return false;
+        return stream.get_error();
 
     if (!stream.array_end())
         return RX_NOT_IMPLEMENTED;
 
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
 
     what.meta_info = meta;
 
@@ -112,22 +115,23 @@ rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, rx_ite
         return "Wrong item type readed!";
 
     if (!stream.start_object("def"))
-        return false;
+        return stream.get_error();
 
-    if (!what.instance_data.deserialize(stream, type))
-        return false;
+    auto ret = what.instance_data.deserialize(stream, type);
+    if (!ret)
+        return ret;
 
     if (!stream.read_init_values("overrides", what.overrides))
-        return false;
+        return stream.get_error();
 
     if (!stream.start_array("programs"))
-        return false;
+        return stream.get_error();
 
     if (!stream.array_end())
         return RX_NOT_IMPLEMENTED;
 
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
 
     return true;
 }
@@ -136,43 +140,43 @@ rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, rx_ite
 // Class rx_platform::meta::runtime_data::application_data 
 
 
-bool application_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result application_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (!stream.write_int("processor", processor))
-        return false;
+        return stream.get_error();
     if (!stream.write_byte("priority", (uint8_t)priority))
-        return false;
+        return stream.get_error();
     if (identity.empty())
     {
         if (!stream.write_bytes("identity", nullptr, 0))
-            return false;
+            return stream.get_error();
     }
     else
     {
         if (!stream.write_bytes("identity", &identity[0], identity.size()))
-            return false;
+            return stream.get_error();
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
-bool application_data::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result application_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (!stream.read_int("processor", processor))
-        return false;
+        return stream.get_error();
     uint8_t temp;
     if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
-        return false;
+        return stream.get_error();
     priority = (rx_domain_priority)temp;
     if (!stream.read_bytes("identity", identity))
-        return false;
+        return stream.get_error();
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
@@ -180,62 +184,62 @@ bool application_data::deserialize (base_meta_reader& stream, uint8_t type)
 // Class rx_platform::meta::runtime_data::domain_data 
 
 
-bool domain_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result domain_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (!stream.write_int("processor", processor))
-        return false;
+        return stream.get_error();
     if (!stream.write_byte("priority", (uint8_t)priority))
-        return false;
+        return stream.get_error();
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.write_item_reference("app", app_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         if (app_ref.is_node_id())
         {
             if (!stream.write_id("app", app_ref.get_node_id()))
-                return false;
+                return stream.get_error();
         }
         else
         {
             if (!stream.write_id("app", rx_node_id::null_id))
-                return false;
+                return stream.get_error();
         }
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
-bool domain_data::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result domain_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (!stream.read_int("processor", processor))
-        return false;
+        return stream.get_error();
     uint8_t temp;
     if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
-        return false;
+        return stream.get_error();
     priority = (rx_domain_priority)temp;
 
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.read_item_reference("app", app_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         rx_node_id id;
         if (!stream.read_id("app", id))
-            return false;
+            return stream.get_error();
         app_ref = id;
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
@@ -243,51 +247,51 @@ bool domain_data::deserialize (base_meta_reader& stream, uint8_t type)
 // Class rx_platform::meta::runtime_data::object_data 
 
 
-bool object_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result object_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.write_item_reference("domain", domain_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         if (domain_ref.is_node_id())
         {
             if (!stream.write_id("domain", domain_ref.get_node_id()))
-                return false;
+                return stream.get_error();
         }
         else
         {
             if (!stream.write_id("domain", rx_node_id::null_id))
-                return false;
+                return stream.get_error();
         }
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
-bool object_data::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result object_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.read_item_reference("domain", domain_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         rx_node_id id;
         if (!stream.read_id("domain", id))
-            return false;
+            return stream.get_error();
         domain_ref = id;
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
@@ -295,63 +299,63 @@ bool object_data::deserialize (base_meta_reader& stream, uint8_t type)
 // Class rx_platform::meta::runtime_data::port_data 
 
 
-bool port_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result port_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.write_item_reference("app", app_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         if (app_ref.is_node_id())
         {
             if (!stream.write_id("app", app_ref.get_node_id()))
-                return false;
+                return stream.get_error();
         }
         else
         {
             if (!stream.write_id("app", rx_node_id::null_id))
-                return false;
+                return stream.get_error();
         }
     }
     if (identity.empty())
     {
         if (!stream.write_bytes("identity", nullptr, 0))
-            return false;
+            return stream.get_error();
     }
     else
     {
         if (!stream.write_bytes("identity", &identity[0], identity.size()))
-            return false;
+            return stream.get_error();
     }
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
-bool port_data::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result port_data::deserialize (base_meta_reader& stream, uint8_t type)
 {
     if (!stream.start_object("instance"))
-        return false;
+        return stream.get_error();
     if (stream.get_version() >= RX_PARENT_REF_VERSION)
     {
         if (!stream.read_item_reference("app", app_ref))
-            return false;
+            return stream.get_error();
     }
     else
     {// old version <= RX_FIRST_SERIZALIZE_VERSION
         rx_node_id id;
         if (!stream.read_id("app", id))
-            return false;
+            return stream.get_error();
         app_ref = id;
     }
     if (!stream.read_bytes("identity", identity))
-        return false;
+        return stream.get_error();
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
     return true;
 }
 
@@ -362,7 +366,7 @@ bool port_data::deserialize (base_meta_reader& stream, uint8_t type)
 // Class rx_platform::meta::runtime_data::object_runtime_data 
 
 
-bool object_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result object_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     return serialize_runtime_data(*this, stream, type);
 }
@@ -381,7 +385,7 @@ rx_result object_runtime_data::deserialize (base_meta_reader& stream, uint8_t ty
 // Class rx_platform::meta::runtime_data::domain_runtime_data 
 
 
-bool domain_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result domain_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     return serialize_runtime_data(*this, stream, type);
 }
@@ -400,7 +404,7 @@ rx_result domain_runtime_data::deserialize (base_meta_reader& stream, uint8_t ty
 // Class rx_platform::meta::runtime_data::port_runtime_data 
 
 
-bool port_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result port_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     return serialize_runtime_data(*this, stream, type);
 }
@@ -419,7 +423,7 @@ rx_result port_runtime_data::deserialize (base_meta_reader& stream, uint8_t type
 // Class rx_platform::meta::runtime_data::application_runtime_data 
 
 
-bool application_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result application_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
 {
     return serialize_runtime_data(*this, stream, type);
 }

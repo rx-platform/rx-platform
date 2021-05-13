@@ -1108,6 +1108,7 @@ void system_types_builder::build_instance_info_struct_type(rx_directory_ptr dir,
 	what->complex_data.register_const_value_static("PlatformVer", ""s);
 	what->complex_data.register_const_value_static("LibraryVer", ""s);
 	what->complex_data.register_const_value_static("TerminalVer", ""s);
+	what->complex_data.register_const_value_static("HttpVer", ""s);
 	what->complex_data.register_const_value_static("CompilerVer", ""s);
 }
 

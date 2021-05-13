@@ -62,10 +62,10 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 	if(!result)
 		return result;
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_array("items", whose.complex_data.names_cache_.size()))
-		return false;
+		return stream.get_error();
 
 	for (const auto& one : whose.complex_data.names_cache_)
 	{
@@ -74,26 +74,26 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 		case data_type_def::simple_values_mask:
 			{
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 
 				if (!stream.write_bool("simple", true))
-					return false;
+					return stream.get_error();
 
 				result = whose.complex_data.values_[one.second & data_type_def::index_mask].serialize_definition(stream);
 				if (!result)
 					return result;
 
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		case data_type_def::child_values_mask:
 			{
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 
 				if (!stream.write_bool("simple", false))
-					return false;
+					return stream.get_error();
 
 				result = data_blocks_algorithm::serialize_data_attribute(
 					whose.complex_data.children_[one.second & data_type_def::index_mask], stream);
@@ -102,46 +102,46 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 					return result;
 
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		}
 	}
 
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 	if (!stream.write_init_values("overrides", whose.complex_data.overrides_))
-		return false;
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!whose.meta_info.deserialize_meta_data(stream, type, data_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_array("items"))
-		return false;
+		return stream.get_error();
 
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;		
+			return stream.get_error();
 		bool is_value;
 		if (!stream.read_bool("simple", is_value))
-			return false;
+			return stream.get_error();
 
 		if (is_value)
 		{// simple value
 			const_value_def val;
 			if (!val.deserialize_definition(stream))
-				return false;
+				return stream.get_error();
 			auto ret = whose.complex_data.check_name(val.get_name()
 				, (static_cast<int>(whose.complex_data.values_.size() | data_type_def::simple_values_mask)));
 			if (ret)
@@ -155,7 +155,7 @@ rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_re
 		{// complex value
 			data_attribute attr;
 			if (!data_blocks_algorithm::deserialize_data_attribute(attr, stream))
-				return false;
+				return stream.get_error();
 			auto ret = whose.complex_data.check_name(attr.get_name()
 				, (static_cast<int>(whose.complex_data.children_.size() | data_type_def::child_values_mask)));
 			if (ret)
@@ -167,14 +167,14 @@ rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_re
 		}
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 
 	if (!stream.read_init_values("overrides", whose.complex_data.overrides_))
-		return false;
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -246,14 +246,14 @@ template <class typeT>
 rx_result basic_types_algorithm<typeT>::serialize_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -261,12 +261,12 @@ template <class typeT>
 rx_result basic_types_algorithm<typeT>::deserialize_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -290,9 +290,9 @@ template <>
 rx_result basic_types_algorithm<variable_type>::serialize_type(const variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, variable_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -303,16 +303,16 @@ rx_result basic_types_algorithm<variable_type>::serialize_type(const variable_ty
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 template <>
 rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, struct_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -320,7 +320,7 @@ rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& 
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -328,9 +328,9 @@ template <>
 rx_result basic_types_algorithm<source_type>::serialize_type(const source_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, source_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -338,7 +338,7 @@ rx_result basic_types_algorithm<source_type>::serialize_type(const source_type& 
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -346,9 +346,9 @@ template <>
 rx_result basic_types_algorithm<mapper_type>::serialize_type(const mapper_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, mapper_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -356,7 +356,7 @@ rx_result basic_types_algorithm<mapper_type>::serialize_type(const mapper_type& 
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -365,19 +365,19 @@ template <>
 rx_result basic_types_algorithm<event_type>::serialize_type(const event_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, event_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
 	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
 		if (!stream.write_item_reference("args", whose.arguments))
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -385,7 +385,7 @@ template <>
 rx_result basic_types_algorithm<variable_type>::deserialize_type(variable_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -396,7 +396,7 @@ rx_result basic_types_algorithm<variable_type>::deserialize_type(variable_type& 
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -404,7 +404,7 @@ template <>
 rx_result basic_types_algorithm<struct_type>::deserialize_type(struct_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -412,7 +412,7 @@ rx_result basic_types_algorithm<struct_type>::deserialize_type(struct_type& whos
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -420,7 +420,7 @@ template <>
 rx_result basic_types_algorithm<source_type>::deserialize_type(source_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -428,7 +428,7 @@ rx_result basic_types_algorithm<source_type>::deserialize_type(source_type& whos
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -436,7 +436,7 @@ template <>
 rx_result basic_types_algorithm<mapper_type>::deserialize_type(mapper_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -444,7 +444,7 @@ rx_result basic_types_algorithm<mapper_type>::deserialize_type(mapper_type& whos
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -453,17 +453,17 @@ template <>
 rx_result basic_types_algorithm<event_type>::deserialize_type(event_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
 	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
 		if (!stream.read_item_reference("args", whose.arguments))
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -607,9 +607,9 @@ template <class typeT>
 rx_result object_types_algorithm<typeT>::serialize_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -620,7 +620,7 @@ rx_result object_types_algorithm<typeT>::serialize_type (const typeT& whose, bas
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -628,7 +628,7 @@ template <class typeT>
 rx_result object_types_algorithm<typeT>::deserialize_type (typeT& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
@@ -641,7 +641,7 @@ rx_result object_types_algorithm<typeT>::deserialize_type (typeT& whose, base_me
 		return ret;
 	// end object data
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -683,60 +683,60 @@ template class object_types_algorithm<object_types::domain_type>;
 rx_result relation_type_algorithm::serialize_type (const relation_type& whose, base_meta_writer& stream, uint8_t type)
 {
 	if (!whose.meta_info.serialize_meta_data(stream, type, relation_type::type_id))
-		return false;
+		return stream.get_error();
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 
 	if (!stream.write_bool("sealed", whose.relation_data.sealed_type))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("abstract", whose.relation_data.abstract_type))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("hierarchical", whose.relation_data.hierarchical))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("symmetrical", whose.relation_data.symmetrical))
-		return false;
+		return stream.get_error();
 	if (!stream.write_string("inverse", whose.relation_data.inverse_name))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("dynamic", whose.relation_data.dynamic))
-		return false;
+		return stream.get_error();
 
 	if (stream.get_version() >= RX_RELATION_TARGET_VERSION)
 	{
 		if (!stream.write_item_reference("target", whose.relation_data.target))
-			return false;
+			return stream.get_error();
 	}
 
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result relation_type_algorithm::deserialize_type (relation_type& whose, base_meta_reader& stream, uint8_t type)
 {
 	if (!stream.start_object("def"))
-		return false;
+		return stream.get_error();
 
 	if (!stream.read_bool("sealed", whose.relation_data.sealed_type))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("abstract", whose.relation_data.abstract_type))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("hierarchical", whose.relation_data.hierarchical))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("symmetrical", whose.relation_data.symmetrical))
-		return false;
+		return stream.get_error();
 	if (!stream.read_string("inverse", whose.relation_data.inverse_name))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("dynamic", whose.relation_data.dynamic))
-		return false;
+		return stream.get_error();
 
 	if (stream.get_version() >= RX_RELATION_TARGET_VERSION)
 	{
 		if (!stream.read_item_reference("target", whose.relation_data.target))
-			return false;
+			return stream.get_error();
 	}
 
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -762,55 +762,58 @@ template <class typeT>
 rx_result object_data_algorithm<typeT>::serialize_object_data (const object_types::object_data_type& whose, base_meta_writer& stream)
 {
 	if (!stream.write_bool("constructable", whose.is_constructable))
-		return false;
+		return stream.get_error();
 	if (!stream.start_array("relations", whose.relations_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.relations_)
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		auto ret = relation_attribute::AlgorithmType::serialize_relation_attribute(one, stream);
 		if (!ret)
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_array("programs", whose.programs_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.programs_)
 	{
-		if (!program_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-			return false;
+		auto one_result = program_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
+		if(!one_result)
+			return one_result;
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
 		if (!stream.start_array("methods", whose.methods_.size()))
-			return false;
+			return stream.get_error();
 		for (const auto& one : whose.methods_)
 		{
-			if (!method_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-				return false;
+			auto one_result = method_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
+			if (!one_result)
+				return one_result;
 		}
 		if (!stream.end_array())
-			return false;
+			return stream.get_error();
 
 		if (!stream.start_array("displays", whose.displays_.size()))
-			return false;
+			return stream.get_error();
 		for (const auto& one : whose.displays_)
 		{
-			if (!display_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-				return false;
+			auto one_result = display_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
+			if (!one_result)
+				return one_result;
 		}
 		if (!stream.end_array())
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -819,18 +822,19 @@ template <class typeT>
 rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::object_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
 	if (!stream.read_bool("constructable", whose.is_constructable))
-		return false;
+		return stream.get_error();
 	if (!stream.start_array("relations"))
-		return false;
+		return stream.get_error();
 
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		relation_attribute one;
-		if (!relation_attribute::AlgorithmType::deserialize_relation_attribute(one, stream))
-			return false;
+		auto one_result = relation_attribute::AlgorithmType::deserialize_relation_attribute(one, stream);
+		if (!one_result)
+			return one_result;
 		auto ret = complex_data.check_name(one.name, (static_cast<int>(whose.relations_.size() | complex_data_type::relations_mask)));
 		if (ret)
 		{
@@ -840,19 +844,20 @@ rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::o
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 
 	if (!stream.start_array("programs"))
-		return false;
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		program_attribute temp;
-		if (!program_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-			return false;
+		auto one_result = program_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream);
+		if (!one_result)
+			return one_result;
 		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.programs_.size() | complex_data_type::programs_mask)));
 		if (ret)
 		{
@@ -862,21 +867,22 @@ rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::o
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 
 	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
 		if (!stream.start_array("methods"))
-			return false;
+			return stream.get_error();
 		while (!stream.array_end())
 		{
 			if (!stream.start_object("item"))
-				return false;
+				return stream.get_error();
 
 			method_attribute temp;
-			if (!method_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-				return false;
+			auto one_result = method_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream);
+			if (!one_result)
+				return one_result;
 			auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.methods_.size() | complex_data_type::methods_mask)));
 			if (ret)
 			{
@@ -886,19 +892,20 @@ rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::o
 				return ret;
 
 			if (!stream.end_object())
-				return false;
+				return stream.get_error();
 		}
 
 		if (!stream.start_array("displays"))
-			return false;
+			return stream.get_error();
 		while (!stream.array_end())
 		{
 			if (!stream.start_object("item"))
-				return false;
+				return stream.get_error();
 
 			display_attribute temp;
-			if (!display_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-				return false;
+			auto one_result = display_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream);
+			if (!one_result)
+				return one_result;
 			auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.displays_.size() | complex_data_type::displays_mask)));
 			if (ret)
 			{
@@ -908,7 +915,7 @@ rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::o
 				return ret;
 
 			if (!stream.end_object())
-				return false;
+				return stream.get_error();
 		}
 	}
 	return true;
@@ -992,22 +999,22 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("relation", whose.relation_type))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_types::relation_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("relation", whose.relation_type))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target))
-		return false;
+		return stream.get_error();
 	return true;
 }
 

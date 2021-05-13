@@ -65,9 +65,9 @@ struct application_data
 {
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
       int processor;
@@ -94,9 +94,9 @@ struct domain_data
 {
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
       rx_item_reference app_ref;
@@ -123,9 +123,9 @@ struct object_data
 {
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
       rx_item_reference domain_ref;
@@ -148,9 +148,9 @@ struct port_data
 {
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
       rx_item_reference app_ref;
@@ -200,7 +200,7 @@ public:
 
   public:
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 
@@ -229,7 +229,7 @@ public:
 
   public:
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 
@@ -258,7 +258,7 @@ public:
 
   public:
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 
@@ -287,7 +287,7 @@ public:
 
   public:
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 

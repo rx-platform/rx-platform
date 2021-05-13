@@ -648,7 +648,7 @@ rx_result types_repository<typeT>::check_type (const rx_node_id& id, type_check_
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_critical_severity, temp.errors());
-		return false;
+		return true;
 	}
 }
 
@@ -1899,7 +1899,7 @@ rx_result data_type_repository::check_type (const rx_node_id& id, type_check_con
 			<< " with node_id "
 			<< id;
 		ctx.add_error(ss.str(), RX_ITEM_NOT_FOUND, rx_critical_severity, temp.errors());
-		return false;
+		return true;
 	}
 }
 

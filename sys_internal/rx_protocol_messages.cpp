@@ -90,18 +90,18 @@ rx_message_type_t error_message::type_id = rx_error_message_id;
 rx_result error_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uint("errCode", error_code))
-		return "Error serializing error code";
+		return stream.get_error();
 	if (!stream.write_string("errMsg", error_text.c_str()))
-		return "Error serializing error message";
+		return stream.get_error();
 	return true;
 }
 
 rx_result error_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_uint("errCode", error_code))
-		return "Error reading error code";
+		return stream.get_error();
 	if (!stream.read_string("errMsg", error_text))
-		return "Error reading error message";
+		return stream.get_error();
 	return true;
 }
 
@@ -130,13 +130,13 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_from_stre
 	string_type msgType;
 
 	if (!reader.start_object("header"))
-		return "Header object missing";
+		return reader.get_error();
 	if (!reader.read_int("requestId", request_id))
-		return "No request Id";
+		return reader.get_error();
 	if (!reader.read_string("msgType", msgType))
-		return "No message type";
+		return reader.get_error();
 	if (!reader.end_object())
-		return "Error closing header object";
+		return reader.get_error();
 
 	auto result = create_request_message(msgType);
 	if (!result)
@@ -145,14 +145,14 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_from_stre
 	result.value()->request_id = request_id;
 
 	if (!reader.start_object("body"))
-		return "Body object missing";
+		return reader.get_error();
 
 	auto ser_result = result.value()->deserialize(reader);
 	if (!ser_result)
 		return ser_result.errors();
 
 	if (!reader.end_object())
-		return "Error closing body object";
+		return reader.get_error();
 
 	return result;
 }
@@ -257,26 +257,26 @@ rx_message_type_t rx_connection_context_request::type_id = rx_connection_context
 rx_result rx_connection_context_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("dir", directory))
-		return "Error writing directory";
+		return stream.get_error();
 	if (!stream.write_string("app", application))
-		return "Error writing application";
+		return stream.get_error();
 	if (!stream.write_string("domain", domain))
-		return "Error writing domain";
+		return stream.get_error();
 	if (!stream.write_version("sversion", stream_version))
-		return "Error writing stream version";
+		return stream.get_error();
 	return true;
 }
 
 rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("dir", directory))
-		return "Error reading directory";
+		return stream.get_error();
 	if (!stream.read_string("app", application))
-		return "Error reading application";
+		return stream.get_error();
 	if (!stream.read_string("domain", domain))
-		return "Error reading domain";
+		return stream.get_error();
 	if (!stream.read_version("sversion", stream_version))
-		return "Error reading stream version";
+		return stream.get_error();
 	return true;
 }
 
@@ -308,34 +308,34 @@ rx_message_type_t rx_connection_context_response::type_id = rx_connection_contex
 rx_result rx_connection_context_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("dir", directory))
-		return "Error writing directory";
+		return stream.get_error();
 	if (!stream.write_string("app", application))
-		return "Error writing application";
+		return stream.get_error();
 	if (!stream.write_string("domain", domain))
-		return "Error writing domain";
+		return stream.get_error();
 	if (!stream.write_id("appid", application_id))
-		return "Error writing application id";
+		return stream.get_error();
 	if (!stream.write_id("domainid", domain_id))
-		return "Error writing domain id";
+		return stream.get_error();
 	if (!stream.write_version("sversion", stream_version))
-		return "Error writing stream version";
+		return stream.get_error();
 	return true;
 }
 
 rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("dir", directory))
-		return "Error reading directory";
+		return stream.get_error();
 	if (!stream.read_string("app", application))
-		return "Error reading application";
+		return stream.get_error();
 	if (!stream.read_string("domain", domain))
-		return "Error reading domain";
+		return stream.get_error();
 	if (!stream.read_id("appid", application_id))
-		return "Error reading application";
+		return stream.get_error();
 	if (!stream.read_id("domainid", domain_id))
-		return "Error reading domain id";
+		return stream.get_error();
 	if (!stream.read_version("sversion", stream_version))
-		return "Error reading stream version";
+		return stream.get_error();
 	return true;
 }
 
@@ -399,9 +399,9 @@ rx_message_type_t rx_connection_notify_message::type_id = rx_connection_notify_i
 rx_result rx_connection_notify_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_id("changed_id", changed_id))
-		return "Error writing changed id";
+		return stream.get_error();
 	if (!stream.write_string("changed_path", changed_path))
-		return "Error reading changed path";
+		return stream.get_error();
 	return true;
 }
 
@@ -420,9 +420,9 @@ rx_message_type_t rx_connection_notify_message::get_type_id ()
 rx_result rx_connection_notify_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_id("changed_id", changed_id))
-		return "Error reading changed id";
+		return stream.get_error();
 	if (!stream.read_string("changed_path", changed_path))
-		return "Error reading changed path";
+		return stream.get_error();
 	return true;
 }
 

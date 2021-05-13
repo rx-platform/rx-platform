@@ -341,7 +341,7 @@ rx_result runtime_holder_algorithms<typeT>::serialize_runtime_value (base_meta_w
     data::runtime_values_data data;
     collect_data(data, type, whose);
     if (!stream.write_init_values(nullptr, data))
-        return "Error writing values to the stream";
+        return stream.get_error();
     else
         return true;
 }

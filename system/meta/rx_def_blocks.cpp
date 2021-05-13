@@ -257,15 +257,15 @@ simple_value_def::simple_value_def (const string_type& name, const rx_simple_val
 rx_result simple_value_def::serialize_definition (base_meta_writer& stream) const
 {
 	if (!stream.write_string("name", name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("ro", read_only_))
-		return false;
+		return stream.get_error();
 	if (!storage_.serialize("value", stream))
-		return false;
+		return stream.get_error();
 	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
 	{
 		if (!stream.write_bool("persist", persistent_))
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -273,15 +273,15 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 {
 	if (!stream.read_string("name", name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("ro", read_only_))
-		return false;
+		return stream.get_error();
 	if (!storage_.deserialize("value", stream))
-		return false;
+		return stream.get_error();
 	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
 	{
 		if (!stream.read_bool("persist", persistent_))
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -461,18 +461,18 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 {
 	if (!stream.write_string("name", name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!storage_.serialize("value", stream))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 {
 	if (!stream.read_string("name", name_))
-		return false;
+		return stream.get_error();
 	if (!storage_.deserialize("value", stream))
-		return false;
+		return stream.get_error();
 	return true;
 }
 

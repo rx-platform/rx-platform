@@ -34,12 +34,12 @@
 
 #include "system/meta/rx_meta_data.h"
 
-// soft_plc
-#include "soft_logic/soft_plc.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// soft_plc
+#include "soft_logic/soft_plc.h"
 
 
 
@@ -66,11 +66,11 @@ public:
       ~program_runtime();
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
-      bool save_program (base_meta_writer& stream, uint8_t type) const;
+      rx_result save_program (base_meta_writer& stream, uint8_t type) const;
 
       bool load_program (base_meta_reader& stream, uint8_t type);
 
@@ -131,9 +131,9 @@ ladder program class.");
 
   protected:
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
   private:

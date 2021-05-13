@@ -90,25 +90,26 @@ runtime_holder<typeT>::~runtime_holder()
 
 
 template <class typeT>
-bool runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
 {
-    if (!meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id))
-        return false;
+    auto ret = meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id);
+    if (!ret)
+        return ret;
 
     if (!stream.start_object("def"))
-        return false;
+        return stream.get_error();
 
     if (!instance_data_.get_data().serialize(stream, type))
-        return false;
+        return stream.get_error();
 
     if (!stream.write_init_values("overrides", overrides_))
-        return false;
+        return stream.get_error();
 
     if (!logic_.serialize(stream, type))
-        return false;
+        return stream.get_error();
     
     if (!stream.end_object())
-        return false;
+        return stream.get_error();
 
     return true;
 }
@@ -311,10 +312,3 @@ void process_runtime_job<typeT>::process ()
 } // namespace runtime
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-
-#endif

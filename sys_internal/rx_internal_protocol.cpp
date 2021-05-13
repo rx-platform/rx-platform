@@ -58,26 +58,27 @@ rx_result_with<runtime::io_types::rx_io_buffer> allocate_io_buffer(rx_protocol_s
 rx_result serialize_message(base_meta_writer& stream, int requestId, messages::rx_message_base& what)
 {
 	if (!stream.write_header(STREAMING_TYPE_MESSAGE, 0))
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_object("header"))
-		return false;
+		return stream.get_error();
 	if (!stream.write_int("requestId", requestId))
-		return false;
+		return stream.get_error();
 	if (!stream.write_string("msgType", what.get_type_name()))
-		return false;
+		return stream.get_error();
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_object("body"))
-		return false;
-	if (!what.serialize(stream))
-		return false;
+		return stream.get_error();
+	auto ret = what.serialize(stream);
+	if(!ret)
+		return ret;
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 
 	if (!stream.write_footer())
-		return false;
+		return stream.get_error();
 
 
 	return true;

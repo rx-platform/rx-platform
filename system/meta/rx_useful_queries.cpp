@@ -50,13 +50,14 @@ string_type ns_suggetions_query::query_name = "suggestion";
 
 rx_result ns_suggetions_query::serialize (base_meta_writer& stream) const
 {
-	return "Error serializing type_name";
+	if (!stream.write_string("typeName", instance_name))
+		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name))
-		return "Error serializing instance name";
+		return stream.get_error();
 	if (!stream.write_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.write_string("subfolder", suggested_path))
-		return "Error serializing subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -64,13 +65,13 @@ rx_result ns_suggetions_query::serialize (base_meta_writer& stream) const
 rx_result ns_suggetions_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
-		return "Error reading type_name";
+		return stream.get_error();
 	if (!stream.read_string("instanceName", instance_name))
-		return "Error reading instance name";
+		return stream.get_error();
 	if (!stream.read_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.read_string("suggestion", suggested_path))
-		return "Error reading suggestion";
+		return stream.get_error();
 
 	return true;
 }

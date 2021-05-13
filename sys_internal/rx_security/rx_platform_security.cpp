@@ -115,21 +115,21 @@ built_in_security_context::~built_in_security_context()
 
 
 
-bool built_in_security_context::serialize (base_meta_writer& stream) const
+rx_result built_in_security_context::serialize (base_meta_writer& stream) const
 {
     if (!stream.write_string("name", user_name_))
-        return false;
+        return stream.get_error();
     if (!stream.write_string("description", description_))
-        return false;
+        return stream.get_error();
     return true;
 }
 
-bool built_in_security_context::deserialize (base_meta_reader& stream)
+rx_result built_in_security_context::deserialize (base_meta_reader& stream)
 {
     if (!stream.read_string("name", user_name_))
-        return false;
+        return stream.get_error();
     if (!stream.read_string("description", description_))
-        return false;
+        return stream.get_error();
     full_name_ = user_name_ + '@' + location_;
     return true;
 }

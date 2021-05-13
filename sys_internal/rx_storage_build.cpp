@@ -210,7 +210,10 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
+	{
+		result.register_error("Error building "s + meta.get_full_path());
 		return result;
+	}
 	bool do_save = false;
 	bool meta_changed = storage->preprocess_meta_data(meta);
 	if (meta_changed)
@@ -248,6 +251,9 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 		result = dir.errors();
 		result.register_error("Error retrieving directory for the new item!");
 	}
+	if (!result)
+		result.register_error("Error building "s + meta.get_full_path());
+
 	return result;
 }
 
@@ -257,7 +263,10 @@ rx_result configuration_storage_builder::create_type_from_storage (rx_storage_it
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_TYPE, target_type);
 	if (!result)
+	{
+		result.register_error("Error building "s + meta.get_full_path());
 		return result;
+	}
 
 	bool do_save = false;
 	bool meta_changed = storage->preprocess_meta_data(meta);

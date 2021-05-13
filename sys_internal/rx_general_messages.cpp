@@ -58,78 +58,78 @@ rx_message_type_t rx_system_info_response::type_id = rx_info_response_id;
 rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
 {
     if (!stream.start_object("general"))
-        return "Unable to start object general";
+        return stream.get_error();
     if(!stream.write_string("instance", instance))
-        return "Unable to write instance";
+        return stream.get_error();
     if (!stream.write_string("node", node))
-        return "Unable to write node";
+        return stream.get_error();
     if (!stream.write_time("started", start_time))
-        return "Unable to write start time";
+        return stream.get_error();
     if (!stream.write_time("current", current_time))
-        return "Unable to write current time";
+        return stream.get_error();
     if (!stream.write_string("platform", platform))
-        return "Unable to write platform";
+        return stream.get_error();
     if (!stream.write_string("lib", library))
-        return "Unable to write lib";
+        return stream.get_error();
     if (!stream.write_string("term", terminal))
-        return "Unable to write term";
+        return stream.get_error();
     if (!stream.write_string("http", http))
-        return "Unable to write http";
+        return stream.get_error();
     if (!stream.write_string("comp", compiler))
-        return "Unable to write comp";
+        return stream.get_error();
     if (!stream.write_string("platform_host", platform_host))
-        return "Unable to write platform_host";
+        return stream.get_error();
     if (!stream.write_string("os_host", os_host))
-        return "Unable to write os_host";
+        return stream.get_error();
     if (!stream.write_string("os_itf", os_itf))
-        return "Unable to write os_itf";
+        return stream.get_error();
     if (!stream.write_string("os", os))
-        return "Unable to write os";
+        return stream.get_error();
     if (!stream.write_string("cpu", cpu))
-        return "Unable to write cpu";
+        return stream.get_error();
     if (!stream.write_string("memory", memory))
-        return "Unable to write memory";
+        return stream.get_error();
     if (!stream.end_object())
-        return "Unable to end object general";
+        return stream.get_error();
     return true;
 }
 
 rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
 {
     if (!stream.start_object("general"))
-        return "Unable to start object general";
+        return stream.get_error();
     if (!stream.read_string("instance", instance))
-        return "Unable to read instance";
+        return stream.get_error();
     if (!stream.read_string("node", node))
-        return "Unable to read node";
+        return stream.get_error();
     if (!stream.read_time("started", start_time))
-        return "Unable to read start time";
+        return stream.get_error();
     if (!stream.read_time("current", current_time))
-        return "Unable to read current time";
+        return stream.get_error();
     if (!stream.read_string("platform", platform))
-        return "Unable to read platform";
+        return stream.get_error();
     if (!stream.read_string("lib", library))
-        return "Unable to read lib";
+        return stream.get_error();
     if (!stream.read_string("term", terminal))
-        return "Unable to read term";
+        return stream.get_error();
     if (!stream.read_string("http", http))
-        return "Unable to read http";
+        return stream.get_error();
     if (!stream.read_string("comp", compiler))
-        return "Unable to read comp";
+        return stream.get_error();
     if (!stream.read_string("platform_host", platform_host))
-        return "Unable to read platform_host";
+        return stream.get_error();
     if (!stream.read_string("os_host", os_host))
-        return "Unable to read os_host";
+        return stream.get_error();
     if (!stream.read_string("os_itf", os_itf))
-        return "Unable to read os_itf";
+        return stream.get_error();
     if (!stream.read_string("os", os))
-        return "Unable to read os";
+        return stream.get_error();
     if (!stream.read_string("cpu", cpu))
-        return "Unable to read cpu";
+        return stream.get_error();
     if (!stream.read_string("memory", memory))
-        return "Unable to read memory";
+        return stream.get_error();
     if (!stream.end_object())
-        return "Unable to end object general";
+        return stream.get_error();
     return true;
 }
 

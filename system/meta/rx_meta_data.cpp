@@ -286,63 +286,63 @@ meta_data::meta_data (const type_creation_data& type_data)
 rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type, rx_item_type object_type) const
 {
 	if (!stream.start_object("meta"))
-		return false;
+		return stream.get_error();
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(object_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", object_type))
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.write_id("nodeId", id))
-		return false;
+		return stream.get_error();
 	if (!stream.write_string("name", name.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_byte("attrs", (uint8_t)attributes))
-		return false;
+		return stream.get_error();
 	if (stream.get_version() >= RX_PARENT_REF_VERSION)
 	{
 		if (!stream.write_item_reference("super", parent))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{// old version <= RX_FIRST_SERIZALIZE_VERSION
 		if (parent.is_node_id())
 		{
 			if (!stream.write_id("superId", parent.get_node_id()))
-				return false;
+				return stream.get_error();
 		}
 		else
 		{
 			if (!stream.write_id("superId", rx_node_id::null_id))
-				return false;
+				return stream.get_error();
 		}
 	}
 	if (!stream.write_time("created", created_time))
-		return false;
+		return stream.get_error();
 	if (!stream.write_time("modified", modified_time))
-		return false;
+		return stream.get_error();
 	if (!stream.write_version("ver", version))
-		return false;
+		return stream.get_error();
 	if (!stream.write_string("path", path))
-		return false;
+		return stream.get_error();
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t type, rx_item_type& object_type)
 {
 	if (!stream.start_object("meta"))
-		return false;
+		return stream.get_error();
 	if (stream.is_string_based())
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		object_type = rx_parse_type_name(temp);
 		if (object_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -351,41 +351,41 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		object_type = (rx_item_type)temp;
 	}
 	if (!stream.read_id("nodeId", id))
-		return false;
+		return stream.get_error();
 	if (!stream.read_string("name", name))
-		return false;
+		return stream.get_error();
 	uint8_t temp_byte;
 	if (!stream.read_byte("attrs", temp_byte))
-		return false;
+		return stream.get_error();
 	attributes = (namespace_item_attributes)temp_byte;
 	if (stream.get_version() >= RX_PARENT_REF_VERSION)
 	{
 		if (!stream.read_item_reference("super", parent))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{// old version <= RX_FIRST_SERIZALIZE_VERSION
 		rx_node_id parent_id;
 		if (!stream.read_id("superId", parent_id))
-			return false;
+			return stream.get_error();
 		parent = parent_id;
 	}
 	if (!stream.read_time("created", created_time))
-		return false;
+		return stream.get_error();
 	if (!stream.read_time("modified", modified_time))
-		return false;
+		return stream.get_error();
 	if (!stream.read_string("path", path))
-		return false;
+		return stream.get_error();
 	if (!stream.read_version("ver", version))
-		return false;
+		return stream.get_error();
 	if (!stream.end_object())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -397,14 +397,14 @@ rx_result meta_data::check_in (base_meta_reader& stream)
 rx_result meta_data::check_out (base_meta_writer& stream) const
 {
 	if (!stream.write_header(STREAMING_TYPE_CHECKOUT, 0))
-		return false;
+		return stream.get_error();
 
 	/*std::function<void(base_meta_writter& stream, uint8_t)> func(std::bind(&metaT::serialize_definition, this, _1, _2));
 	func(stream, STREAMING_TYPE_CHECKOUT);
 */
 
 	if (!stream.write_footer())
-		return false;
+		return stream.get_error();
 
 	return true;
 }

@@ -204,8 +204,7 @@ string_type http_server::get_server_header_info ()
 		std::ostringstream ss;
 		ss << "{rx-platform}/"
 			<< RX_HTTP_MAJOR_VERSION << '.'
-			<< RX_HTTP_MINOR_VERSION << '.'
-			<< RX_HTTP_BUILD_NUMBER;
+			<< RX_HTTP_MINOR_VERSION;
 		ret = ss.str();
 	}
 	return ret;

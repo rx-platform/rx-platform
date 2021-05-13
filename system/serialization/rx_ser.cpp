@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -35,6 +35,7 @@
 #include "system/serialization/rx_ser.h"
 
 #include "third-party/rapidjson/include/rapidjson/document.h"
+#include "third-party/rapidjson/include/rapidjson/error/en.h"
 #include "third-party/rapidjson/include/rapidjson/prettywriter.h"
 #include "base64.h"
 
@@ -42,6 +43,38 @@
 namespace rx_platform {
 
 namespace serialization {
+
+namespace
+{
+string_type get_parser_error(rapidjson::ParseErrorCode err, size_t pos, const string_type& data)
+{
+	size_t row = 0, col = 0;
+	size_t max = std::min(pos, data.size());
+	size_t i = 0;
+	while (i < max)
+	{
+		if (data[i] == '\r' || data[i] == '\n')
+		{
+			i++;
+			if (i < max && (data[i] == '\r' || data[i] == '\n'))
+				i++;
+			col = 0;
+			row++;
+		}
+		else
+		{
+			i++;
+			col++;
+		}
+	}
+	std::ostringstream ss;
+	ss << "Parsing error at line " << row
+		<< ", column " << col
+		<< ": "
+		<< rapidjson::GetParseError_En(err);
+	return ss.str();
+}
+}
 
 struct json_read_stack_data
 {
@@ -186,7 +219,7 @@ struct json_reader_data
 	}
 };
 
-// Class rx_platform::serialization::json_reader
+// Class rx_platform::serialization::json_reader 
 
 json_reader::json_reader (int version)
       : data_(std::make_unique<json_reader_data>())
@@ -400,6 +433,7 @@ bool json_reader::start_array (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = 0;
+				new_data.name = name;
 				data_->stack.push(new_data);
 				return true;
 			}
@@ -407,6 +441,7 @@ bool json_reader::start_array (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = 0;
+				new_data.name = name;
 				data_->stack.push(new_data);
 				return true;// empty array
 			}
@@ -421,6 +456,7 @@ bool json_reader::start_array (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = 0;
+			new_data.name = name;
 			data_->stack.push(new_data);
 			return true;
 		}
@@ -428,6 +464,7 @@ bool json_reader::start_array (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = 0;
+			new_data.name = name;
 			data_->stack.push(new_data);
 			return true;// empty array
 		}
@@ -473,6 +510,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
+				temps.name = "object";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_OBJECT;
 				return true;
@@ -485,6 +523,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
+				temps.name = "type";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_TYPE;
 				return true;
@@ -497,6 +536,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
+				temps.name = "body";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_MESSAGE;
 				return true;
@@ -509,6 +549,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = -1;
+				temps.name = "check_out";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_CHECKOUT;
 				return true;
@@ -521,6 +562,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
+				temps.name = "objects";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_OBJECTS;
 				return true;
@@ -534,6 +576,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
+				temps.name = "types";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_TYPES;
 				return true;
@@ -546,6 +589,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
+				temps.name = "details";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_DETAILS;
 				return true;
@@ -558,6 +602,7 @@ bool json_reader::read_header (int& type)
 			{
 				json_read_stack_data temps(temp);
 				temps.index = 0;
+				temps.name = "values";
 				data_->stack.push(temps);
 				type = STREAMING_TYPE_VALUES;
 				return true;
@@ -585,6 +630,7 @@ bool json_reader::start_object (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = -1;
+				new_data.name = name;
 				data_->stack.push(new_data);
 				return true;
 			}
@@ -592,6 +638,7 @@ bool json_reader::start_object (const char* name)
 			{
 				json_read_stack_data new_data(val);
 				new_data.index = -1;
+				new_data.name = name;
 				data_->stack.push(new_data);
 				return true;
 			}
@@ -606,6 +653,7 @@ bool json_reader::start_object (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = -1;
+			new_data.name = name;
 			data_->stack.push(new_data);
 			return true;
 		}
@@ -613,6 +661,7 @@ bool json_reader::start_object (const char* name)
 		{
 			json_read_stack_data new_data(val);
 			new_data.index = -1;
+			new_data.name = name;
 			data_->stack.push(new_data);
 			return true;
 		}
@@ -764,9 +813,8 @@ bool json_reader::parse_data (const string_type& data)
 	{
 		auto err = data_->envelope.GetParseError();
 		auto offset = data_->envelope.GetErrorOffset();
-		std::ostringstream stream;
-		stream << "Parsing error " << err << " at string position " << offset << ".";
-		errors_.emplace_back(stream.str());
+		
+		errors_.emplace_back(get_parser_error(err, offset, data));
 	}
 
 	return ret;
@@ -848,8 +896,24 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 	int index = 0;
 	rapidjson::Value& val = data_->get_current_value(index);
 
+	if (val.IsNull())
+	{
+		ref = rx_item_reference::null_ref;
+		if (!end_object())
+			return false;
+		return true;
+	}
+
 	if (!val.IsObject())
 		return false;
+
+	if(val.ObjectEmpty()) 
+	{
+		ref = rx_item_reference::null_ref;
+		if (!end_object())
+			return false;
+		return true;
+	}
 
 	if (val.HasMember("id"))
 	{
@@ -912,6 +976,37 @@ bool json_reader::read_value_type (const char* name, rx_value_t& val)
 	}
 }
 
+string_type json_reader::get_error () const
+{
+	std::ostringstream ss;
+	bool first = true;
+	if (errors_.empty())
+	{
+		ss << "JSON stream error:";
+		for (const auto& one : errors_)
+		{
+			if (first)
+				first = false;
+			else
+				ss << ";";
+		}
+		ss << " ";
+		first = true;
+	}
+	ss << "[";
+	while(!data_->stack.empty())
+	{
+		if (first)
+			first = false;
+		else
+			ss << '.';
+		ss << data_->stack.top().name;
+		data_->stack.pop();
+	}
+	ss << "]";
+	return ss.str();
+}
+
 struct json_write_stack_data
 {
 public:
@@ -932,7 +1027,7 @@ struct json_pretty_writer_data
 	rapidjson::StringBuffer stream;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer;
 };
-// Parameterized Class rx_platform::serialization::json_writer_type
+// Parameterized Class rx_platform::serialization::json_writer_type 
 
 template <class writerT>
 json_writer_type<writerT>::json_writer_type (int version)
@@ -1405,6 +1500,25 @@ bool json_writer_type<writerT>::write_null (const char* name)
 	return true;
 }
 
+template <class writerT>
+string_type json_writer_type<writerT>::get_error () const
+{
+	std::ostringstream ss;
+	bool first = true;
+	ss << "[";
+	while (!data_->stack.empty())
+	{
+		if (first)
+			first = false;
+		else
+			ss << '.';
+		ss << data_->stack.top().name;
+		data_->stack.pop();
+	}
+	ss << "]";
+	return ss.str();
+}
+
 template class json_writer_type<json_writer_data>;
 template class json_writer_type<json_pretty_writer_data>;
 
@@ -1412,6 +1526,4 @@ template class json_writer_type<json_pretty_writer_data>;
 
 } // namespace serialization
 } // namespace rx_platform
-
-
 

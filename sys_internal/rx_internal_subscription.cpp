@@ -55,15 +55,15 @@ rx_message_type_t create_subscription_request::type_id = rx_create_subscription_
 rx_result create_subscription_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.write_uint("rate", publish_rate))
-		return "error writing publish rate";
+		return stream.get_error();
 	if (!stream.write_uint("keepalive", keep_alive_period))
-		return "error writing keep alive period";
+		return stream.get_error();
 	if (!stream.write_bool("active", active))
-		return "error writing active";
+		return stream.get_error();
 	if (!stream.write_byte("priority", priority))
-		return "error writing active";
+		return stream.get_error();
 	return true;
 }
 
@@ -71,16 +71,16 @@ rx_result create_subscription_request::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.read_uint("rate", publish_rate))
-		return "error reading publish rate";
+		return stream.get_error();
 	if (!stream.read_uint("keepalive", keep_alive_period))
-		return "error reading keep alive period";
+		return stream.get_error();
 	if (!stream.read_bool("active", active))
-		return "error reading active";
+		return stream.get_error();
 	if (!stream.read_byte("priority", priority))
-		return "error reading active";
+		return stream.get_error();
 	return true;
 }
 
@@ -131,11 +131,11 @@ rx_message_type_t create_subscriptions_response::type_id = rx_create_subscriptio
 rx_result create_subscriptions_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.write_uint("rate", revised_publish_rate))
-		return "error writing publish rate";
+		return stream.get_error();
 	if (!stream.write_uint("keepalive", revised_keep_alive_period))
-		return "error writing keep alive period";
+		return stream.get_error();
 	return true;
 }
 
@@ -143,12 +143,12 @@ rx_result create_subscriptions_response::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.read_uint("rate", revised_publish_rate))
-		return "error reading publish rate";
+		return stream.get_error();
 	if (!stream.read_uint("keepalive", revised_keep_alive_period))
-		return "error reading keep alive period";
+		return stream.get_error();
 	return true;
 }
 
@@ -175,7 +175,7 @@ rx_message_type_t delete_subscription_request::type_id = rx_delete_subscription_
 rx_result delete_subscription_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	return true;
 }
 
@@ -183,7 +183,7 @@ rx_result delete_subscription_request::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	return true;
 }
@@ -227,15 +227,15 @@ rx_message_type_t update_subscription_request::type_id = rx_update_subscription_
 rx_result update_subscription_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.write_uint("rate", publish_rate))
-		return "error writing publish rate";
+		return stream.get_error();
 	if (!stream.write_uint("keepalive", keep_alive_period))
-		return "error writing keep alive period";
+		return stream.get_error();
 	if (!stream.write_bool("active", active))
-		return "error writing active";
+		return stream.get_error();
 	if (!stream.write_byte("priority", priority))
-		return "error writing active";
+		return stream.get_error();
 	return true;
 }
 
@@ -243,16 +243,16 @@ rx_result update_subscription_request::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error writing subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.read_uint("rate", publish_rate))
-		return "error writing publish rate";
+		return stream.get_error();
 	if (!stream.read_uint("keepalive", keep_alive_period))
-		return "error writing keep alive period";
+		return stream.get_error();
 	if (!stream.read_bool("active", active))
-		return "error writing active";
+		return stream.get_error();
 	if (!stream.read_byte("priority", priority))
-		return "error writing active";
+		return stream.get_error();
 	return true;
 }
 
@@ -284,7 +284,7 @@ rx_message_type_t delete_subscription_response::type_id = rx_delete_subscription
 rx_result delete_subscription_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	return true;
 }
 
@@ -292,7 +292,7 @@ rx_result delete_subscription_response::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	return true;
 }
@@ -320,11 +320,11 @@ rx_message_type_t update_subscription_response::type_id = rx_update_subscription
 rx_result update_subscription_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.write_uint("rate", revised_publish_rate))
-		return "error writing publish rate";
+		return stream.get_error();
 	if (!stream.write_uint("keepalive", revised_keep_alive_period))
-		return "error writing keep alive period";
+		return stream.get_error();
 	return true;
 }
 
@@ -332,12 +332,12 @@ rx_result update_subscription_response::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.read_uint("rate", revised_publish_rate))
-		return "error reading publish rate";
+		return stream.get_error();
 	if (!stream.read_uint("keepalive", revised_keep_alive_period))
-		return "error reading keep alive period";
+		return stream.get_error();
 	return true;
 }
 
@@ -364,24 +364,24 @@ rx_message_type_t subscription_items_change::type_id = rx_subscription_items_not
 rx_result subscription_items_change::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.start_array("items", items.size()))
-		return "unable to start items array";
+		return stream.get_error();
 	for (const auto one : items)
 	{
 		if (!stream.start_object("item"))
-			return "Unable to start item object";
+			return stream.get_error();
 
 		if (!stream.write_uint("handle", one.handle))
-			return "Unable to write item handle";
+			return stream.get_error();
 		if(!stream.write_value("value", one.value))
-			return "Unable to write item value";
+			return stream.get_error();
 
 		if (!stream.end_object())
-			return "Unable to end item object";
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return "unable to end items array";
+		return stream.get_error();
 	return true;
 }
 
@@ -389,24 +389,24 @@ rx_result subscription_items_change::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.start_array("items"))
-		return "unable to start items array";
+		return stream.get_error();
 	while(!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return "Unable to start item object";
+			return stream.get_error();
 		update_item temp;
 		if (!stream.read_uint("handle", temp.handle))
-			return "Unable to write item handle";
+			return stream.get_error();
 		if (!stream.read_value("value", temp.value))
-			return "Unable to write item value";
+			return stream.get_error();
 
 		items.emplace_back(std::move(temp));
 
 		if (!stream.end_object())
-			return "Unable to end item object";
+			return stream.get_error();
 	}
 	return true;
 }
@@ -434,30 +434,30 @@ rx_message_type_t subscription_write_done::type_id = rx_subscription_write_done_
 rx_result subscription_write_done::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id.uuid()))
-		return "error writing subscription id";
+		return stream.get_error();
 	if (!stream.write_uint("transId", transaction_id))
-		return "error writing transaction id";
+		return stream.get_error();
 	if (!stream.start_array("results", results.size()))
-		return "Unable to start results array";
+		return stream.get_error();
 	for (auto&& one : results)
 	{
 		if (!stream.start_object("result"))
-			return "Unable to start item";
+			return stream.get_error();
 
 		if (!stream.write_uint("handle", std::get<0>(one)))
-			return "error writing transaction id";
+			return stream.get_error();
 
 		if (!stream.write_uint("errCode", std::get<1>(one)))
-			return "error writing error code";
+			return stream.get_error();
 
 		if (!stream.write_string("errMsg", std::move(std::get<2>(one))))
-			return "error writing error message";
+			return stream.get_error();
 
 		if (!stream.end_object())
-			return "Unable to end item";
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return "Unable to end results array";
+		return stream.get_error();
 	return true;
 }
 
@@ -465,29 +465,29 @@ rx_result subscription_write_done::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
-		return "error reading subscription id";
+		return stream.get_error();
 	subscription_id = temp;
 	if (!stream.read_uint("transId", transaction_id))
-		return "error reading transaction id";
+		return stream.get_error();
 	if (!stream.start_array("results"))
-		return "Unable to start results array";
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		result_type one;
 		if (!stream.start_object("result"))
-			return "Unable to start item";
+			return stream.get_error();
 
 		if (!stream.read_uint("handle", std::get<0>(one)))
-			return "error writing transaction id";
+			return stream.get_error();
 
 		if (!stream.read_uint("errCode", std::get<1>(one)))
-			return "error writing error code";
+			return stream.get_error();
 
 		if (!stream.read_string("errMsg", std::get<2>(one)))
-			return "error writing error message";
+			return stream.get_error();
 
 		if (!stream.end_object())
-			return "Unable to end item";
+			return stream.get_error();
 		results.emplace_back(one);
 	}
 	return true;

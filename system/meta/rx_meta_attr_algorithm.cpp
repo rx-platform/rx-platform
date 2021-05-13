@@ -89,26 +89,26 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_complex_attribute(const def_blocks::variable_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("ro", whose.read_only_))
-		return false;
+		return stream.get_error();
 	if (!whose.storage_.serialize("value", stream))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_complex_attribute(def_blocks::variable_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("ro", whose.read_only_))
-		return false;
+		return stream.get_error();
 	if (!whose.storage_.deserialize("value", stream))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
@@ -140,26 +140,26 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex_attribute(const def_blocks::source_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("input", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("output", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_complex_attribute(def_blocks::source_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("input", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("output", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
@@ -194,26 +194,26 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex_attribute(const def_blocks::mapper_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("read", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("write", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_complex_attribute(def_blocks::mapper_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("read", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("write", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
@@ -252,26 +252,26 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::serialize_complex_attribute(const def_blocks::filter_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_.c_str()))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("input", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.write_bool("output", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::deserialize_complex_attribute(def_blocks::filter_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("input", whose.io_.input))
-		return false;
+		return stream.get_error();
 	if (!stream.read_bool("output", whose.io_.output))
-		return false;
+		return stream.get_error();
 	return true;
 }
 template<>
@@ -357,18 +357,18 @@ rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_comple
 rx_result variable_data_algorithm::serialize_complex_attribute (const variable_data_type& whose, base_meta_writer& stream)
 {
 	if (!stream.start_array("filters", whose.filters_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.filters_)
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 		if (!filter_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-			return false;
+			return stream.get_error();
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 
 	return true;
@@ -377,15 +377,15 @@ rx_result variable_data_algorithm::serialize_complex_attribute (const variable_d
 rx_result variable_data_algorithm::deserialize_complex_attribute (variable_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
 	if (!stream.start_array("filters"))
-		return false;
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		filter_attribute temp;
 		if (!filter_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-			return false;
+			return stream.get_error();
 		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.filters_.size() | complex_data_type::filters_mask)));
 		if (ret)
 		{
@@ -395,7 +395,7 @@ rx_result variable_data_algorithm::deserialize_complex_attribute (variable_data_
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -438,13 +438,13 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 {
 
 	if (!stream.write_bool("sealed", whose.is_sealed))
-		return false;
+		return stream.get_error();
 
 	if (!stream.write_bool("abstract", whose.is_abstract))
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_array("items", whose.names_cache_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.names_cache_)
 	{
 		switch (one.second & complex_data_type::type_mask)
@@ -453,113 +453,113 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 			{
 
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 				if (stream.is_string_based())
 				{
 					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_struct_subitem)))
-						return false;
+						return stream.get_error();
 				}
 				else
 				{
 					if (!stream.write_byte("type", rx_subitem_type::rx_struct_subitem))
-						return false;
+						return stream.get_error();
 				}
 				if (!struct_attribute::AlgorithmType::serialize_complex_attribute(whose.structs_[one.second & complex_data_type::index_mask], stream))
-					return false;
+					return stream.get_error();
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		case complex_data_type::variables_mask:
 			{
 
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 				if (stream.is_string_based())
 				{
 					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_variable_subitem)))
-						return false;
+						return stream.get_error();
 				}
 				else
 				{
 					if (!stream.write_byte("type", rx_subitem_type::rx_variable_subitem))
-						return false;
+						return stream.get_error();
 				}
 				if (!variable_attribute::AlgorithmType::serialize_complex_attribute(whose.variables_[one.second & complex_data_type::index_mask], stream))
-					return false;
+					return stream.get_error();
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		case complex_data_type::events_mask:
 			{
 
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 				if (stream.is_string_based())
 				{
 					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_event_subitem)))
-						return false;
+						return stream.get_error();
 				}
 				else
 				{
 					if (!stream.write_byte("type", rx_subitem_type::rx_event_subitem))
-						return false;
+						return stream.get_error();
 				}
 				if (!event_blocks_algorithm::serialize_complex_attribute(whose.events_[one.second & complex_data_type::index_mask], stream))
-					return false;
+					return stream.get_error();
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		case complex_data_type::simple_values_mask:
 			{
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 				if (stream.is_string_based())
 				{
 					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_value_subitem)))
-						return false;
+						return stream.get_error();
 				}
 				else
 				{
 					if (!stream.write_byte("type", rx_subitem_type::rx_value_subitem))
-						return false;
+						return stream.get_error();
 				}
 				if (!whose.simple_values_[one.second & complex_data_type::index_mask].serialize_definition(stream))
-					return false;
+					return stream.get_error();
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 		case complex_data_type::complex_data_type::const_values_mask:
 			{
 				if (!stream.start_object("item"))
-					return false;
+					return stream.get_error();
 				if (stream.is_string_based())
 				{
 					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_const_value_subitem)))
-						return false;
+						return stream.get_error();
 				}
 				else
 				{
 					if (!stream.write_byte("type", rx_subitem_type::rx_const_value_subitem))
-						return false;
+						return stream.get_error();
 				}
 				if (!whose.const_values_[one.second & complex_data_type::index_mask].serialize_definition(stream))
-					return false;
+					return stream.get_error();
 				if (!stream.end_object())
-					return false;
+					return stream.get_error();
 			}
 			break;
 
 		}
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 	if (!stream.write_init_values("overrides", whose.overrides_))
-		return false;
+		return stream.get_error();
 
 	return true;
 }
@@ -567,24 +567,24 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_type& whose, base_meta_reader& stream)
 {
 	if (!stream.read_bool("sealed", whose.is_sealed))
-		return false;
+		return stream.get_error();
 
 	if (!stream.read_bool("abstract", whose.is_abstract))
-		return false;
+		return stream.get_error();
 
 	if (!stream.start_array("items"))
-		return false;
+		return stream.get_error();
 
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 		rx_subitem_type item_type = rx_subitem_type::rx_invalid_subitem;
 		if (stream.is_string_based())
 		{
 			string_type temp;
 			if (!stream.read_string("type", temp))
-				return false;
+				return stream.get_error();
 			item_type = parse_subitem_type(temp);
 			if (item_type >= rx_subitem_type::rx_first_invalid_subitem)
 				return temp + " is invalid item type";
@@ -593,7 +593,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 		{
 			uint8_t temp;
 			if (!stream.read_byte("type", temp))
-				return false;
+				return stream.get_error();
 			if (item_type >= rx_subitem_type::rx_first_invalid_subitem)
 				return "Invalid item type";
 			item_type = (rx_subitem_type)temp;
@@ -604,7 +604,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			{
 				const_value_def temp;
 				if (!temp.deserialize_definition(stream))
-					return false;
+					return stream.get_error();
 				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.const_values_.size() | complex_data_type::complex_data_type::const_values_mask)));
 				if (ret)
 				{
@@ -618,7 +618,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			{
 				simple_value_def temp;
 				if (!temp.deserialize_definition(stream))
-					return false;
+					return stream.get_error();
 				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.simple_values_.size() | complex_data_type::simple_values_mask)));
 				if (ret)
 				{
@@ -632,7 +632,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			{
 				meta::def_blocks::struct_attribute temp;
 				if (!struct_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-					return false;
+					return stream.get_error();
 				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.structs_.size() | complex_data_type::structs_mask)));
 				if (ret)
 				{
@@ -646,7 +646,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			{
 				meta::def_blocks::variable_attribute temp;
 				if (!variable_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-					return false;
+					return stream.get_error();
 				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.variables_.size() | complex_data_type::variables_mask)));
 				if (ret)
 				{
@@ -661,7 +661,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			{
 				meta::def_blocks::event_attribute temp;
 				if (!event_blocks_algorithm::deserialize_complex_attribute(temp, stream))
-					return false;
+					return stream.get_error();
 				auto ret = whose.check_name(temp.get_name(), (static_cast<int>(whose.events_.size() | complex_data_type::events_mask)));
 				if (ret)
 				{
@@ -677,11 +677,11 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 		}
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 
 	if (!stream.read_init_values("overrides", whose.overrides_))
-		return false;
+		return stream.get_error();
 
 	return true;//!!!! NOT DONE
 }
@@ -767,18 +767,18 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 rx_result filtered_data_algorithm::serialize_complex_attribute (const filtered_data_type& whose, base_meta_writer& stream)
 {
 	if (!stream.start_array("filters", whose.filters_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.filters_)
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 		if (!filter_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-			return false;
+			return stream.get_error();
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 
 	return true;
 }
@@ -786,15 +786,15 @@ rx_result filtered_data_algorithm::serialize_complex_attribute (const filtered_d
 rx_result filtered_data_algorithm::deserialize_complex_attribute (filtered_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
 	if (!stream.start_array("filters"))
-		return false;
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		filter_attribute temp;
 		if (!filter_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-			return false;
+			return stream.get_error();
 		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.filters_.size() | complex_data_type::filters_mask)));
 		if (ret)
 		{
@@ -804,7 +804,7 @@ rx_result filtered_data_algorithm::deserialize_complex_attribute (filtered_data_
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -846,46 +846,46 @@ rx_result filtered_data_algorithm::construct_complex_attribute (const filtered_d
 rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
 {
 	if (!stream.start_array("sources", whose.sources_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.sources_)
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 		if (!source_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-			return false;
+			return stream.get_error();
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 	if (!stream.start_array("mappers", whose.mappers_.size()))
-		return false;
+		return stream.get_error();
 	for (const auto& one : whose.mappers_)
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 		if (!mapper_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
-			return false;
+			return stream.get_error();
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
 	if (!stream.start_array("sources"))
-		return false;
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		source_attribute temp;
 		if (!source_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-			return false;
+			return stream.get_error();
 		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.sources_.size() | complex_data_type::sources_mask)));
 		if (ret)
 		{
@@ -895,18 +895,18 @@ rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	if (!stream.start_array("mappers"))
-		return false;
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		if (!stream.start_object("item"))
-			return false;
+			return stream.get_error();
 
 		mapper_attribute temp;
 		if (!mapper_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
-			return false;
+			return stream.get_error();
 		auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.mappers_.size() | complex_data_type::mappings_mask)));
 		if (ret)
 		{
@@ -916,7 +916,7 @@ rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type
 			return ret;
 
 		if (!stream.end_object())
-			return false;
+			return stream.get_error();
 	}
 	return true;
 }
@@ -971,18 +971,18 @@ rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_
 rx_result data_blocks_algorithm::serialize_data_attribute (const def_blocks::data_attribute& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
 rx_result data_blocks_algorithm::deserialize_data_attribute (def_blocks::data_attribute& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -992,7 +992,7 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 	if (!result)
 	{
 		ctx.add_error("Unable to resolve attribute", RX_ITEM_NOT_FOUND, rx_medium_severity, result.errors());
-		return false;
+		return true;
 	}
 	else
 		return ctx.is_check_ok();
@@ -1046,7 +1046,7 @@ rx_result event_blocks_algorithm::serialize_complex_attribute (const def_blocks:
 	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 	{
 		if (!stream.write_item_reference("args", whose.arguments_))
-			return false;
+			return stream.get_error();
 	}
 	auto ret = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(whose, stream);
 	return ret;
@@ -1060,7 +1060,7 @@ rx_result event_blocks_algorithm::deserialize_complex_attribute (def_blocks::eve
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
 			if (!stream.read_item_reference("args", whose.arguments_))
-				return false;
+				return stream.get_error();
 		}
 	}
 	return ret;
@@ -1102,9 +1102,9 @@ template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
 	if (!stream.write_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -1112,9 +1112,9 @@ template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& whose, base_meta_reader& stream)
 {
 	if (!stream.read_string("name", whose.name_))
-		return false;
+		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return false;
+		return stream.get_error();
 	return true;
 }
 
@@ -1126,7 +1126,7 @@ bool meta_blocks_algorithm<typeT>::check_complex_attribute (typeT& whose, type_c
 	if (!resolve_result)
 	{
 		ctx.add_error("Unable to resolve attribute", RX_ITEM_NOT_FOUND, rx_medium_severity, resolve_result.errors());
-		return false;
+		return true;
 	}
 	target_id = resolve_result.value();
 	auto target = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().get_type_definition(target_id);
@@ -1187,9 +1187,9 @@ rx_result method_blocks_algorithm::serialize_complex_attribute (const def_blocks
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
 			if (!stream.write_item_reference("inputs", whose.inputs_))
-				return false;
+				return stream.get_error();
 			if (!stream.write_item_reference("outputs", whose.outputs_))
-				return false;
+				return stream.get_error();
 		}
 	}
 	return ret;
@@ -1203,9 +1203,9 @@ rx_result method_blocks_algorithm::deserialize_complex_attribute (def_blocks::me
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
 			if (!stream.read_item_reference("inputs", whose.inputs_))
-				return false;
+				return stream.get_error();
 			if (!stream.read_item_reference("outputs", whose.outputs_))
-				return false;
+				return stream.get_error();
 		}
 	}
 	return ret;

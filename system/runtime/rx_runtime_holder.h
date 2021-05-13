@@ -36,8 +36,6 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -54,6 +52,8 @@
 #include "system/runtime/rx_objbase.h"
 // rx_callback
 #include "system/callbacks/rx_callback.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -142,7 +142,7 @@ public:
       ~runtime_holder();
 
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 
@@ -249,12 +249,5 @@ public:
 } // namespace rx_platform
 
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
 
 #endif

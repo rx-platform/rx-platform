@@ -82,9 +82,9 @@ class built_in_security_context : public rx::security::security_context
       ~built_in_security_context();
 
 
-      virtual bool serialize (base_meta_writer& stream) const;
+      virtual rx_result serialize (base_meta_writer& stream) const;
 
-      virtual bool deserialize (base_meta_reader& stream);
+      virtual rx_result deserialize (base_meta_reader& stream);
 
 
       const string_type& get_description () const

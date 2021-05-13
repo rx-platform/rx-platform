@@ -52,13 +52,13 @@ string_type derived_types_query::query_name = "derived";
 rx_result derived_types_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("typeName", type_name))
-		return "Error serializing type_name";
+		return stream.get_error();
 	if (!stream.write_string("baseType", base_type))
-		return "Error serializing base_type";
+		return stream.get_error();
 	if(!stream.write_bool("subTypes", include_subtypes))
-		return "Error serializing subtypes";
+		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder))
-		return "Error serializing subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -66,13 +66,13 @@ rx_result derived_types_query::serialize (base_meta_writer& stream) const
 rx_result derived_types_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
-		return "Error reading type_name";
+		return stream.get_error();
 	if (!stream.read_string("baseType", base_type))
-		return "Error reading base_type";
+		return stream.get_error();
 	if (!stream.read_bool("subTypes", include_subtypes))
-		return "Error reading subtypes";
+		return stream.get_error();
 	if (!stream.read_string("subfolder", subfolder))
-		return "Error reading subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -243,21 +243,21 @@ rx_result rx_query::init_query_types ()
 rx_result_with<query_ptr> rx_query::create_query (base_meta_reader& stream)
 {
 	if (!stream.start_object("query"))
-		return "Query object missing";
+		return stream.get_error();
 	string_type query_type;
 	if (!stream.read_string("queryType", query_type))
-		return "No query type";
+		return stream.get_error();
 
 	auto result = create_query_from_name(query_type);
 	if (!result)
-		return result;
+		return result.errors();
 
 	auto ret = result.value()->deserialize(stream);
 	if (!ret)
 		return ret.errors();
 
 	if (!stream.end_object())
-		return "Error closing query object";
+		return stream.get_error();
 
 	return result;
 }
@@ -271,13 +271,13 @@ string_type runtime_objects_query::query_name = "runtime";
 rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("typeName", type_name))
-		return "Error serializing type_name";
+		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name))
-		return "Error serializing instance name";
+		return stream.get_error();
 	if (!stream.write_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder))
-		return "Error serializing subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -285,13 +285,13 @@ rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 rx_result runtime_objects_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
-		return "Error reading type_name";
+		return stream.get_error();
 	if (!stream.read_string("instanceName", instance_name))
-		return "Error reading instance name";
+		return stream.get_error();
 	if (!stream.read_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.read_string("subfolder", subfolder))
-		return "Error reading subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -387,28 +387,28 @@ string_type translate_query::query_name = "translate";
 rx_result translate_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
-		return "Error writing array";
+		return stream.get_error();
 	for(const auto& one : items)
 	{
 
 		if (!stream.write_item_reference("ref", one))
-			return "Error writing item reference";
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return "Error writing end of paths array";
+		return stream.get_error();
 	return true;
 }
 
 rx_result translate_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
-		return "Error reading array of paths";
+		return stream.get_error();
 	items.clear();
 	while (!stream.array_end())
 	{
 		rx_item_reference temp;
 		if (!stream.read_item_reference("ref", temp))
-			return "Error reading item reference";
+			return stream.get_error();
 		items.emplace_back(std::move(temp));
 	}
 	return true;
@@ -455,13 +455,13 @@ string_type port_stack_query::query_name = "io";
 rx_result port_stack_query::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("typeName", type_name))
-		return "Error serializing type_name";
+		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name))
-		return "Error serializing instance name";
+		return stream.get_error();
 	if (!stream.write_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder))
-		return "Error serializing subfolder";
+		return stream.get_error();
 
 	return true;
 }
@@ -469,13 +469,13 @@ rx_result port_stack_query::serialize (base_meta_writer& stream) const
 rx_result port_stack_query::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("typeName", type_name))
-		return "Error reading type_name";
+		return stream.get_error();
 	if (!stream.read_string("instanceName", instance_name))
-		return "Error reading instance name";
+		return stream.get_error();
 	if (!stream.read_id("instance", instance))
-		return "Error reading instance";
+		return stream.get_error();
 	if (!stream.read_string("subfolder", subfolder))
-		return "Error reading subfolder";
+		return stream.get_error();
 
 	return true;
 }

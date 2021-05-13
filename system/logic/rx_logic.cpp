@@ -60,17 +60,17 @@ program_runtime::~program_runtime()
 
 
 
-bool program_runtime::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result program_runtime::serialize (base_meta_writer& stream, uint8_t type) const
 {
 	return true;
 }
 
-bool program_runtime::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result program_runtime::deserialize (base_meta_reader& stream, uint8_t type)
 {
 	return true;
 }
 
-bool program_runtime::save_program (base_meta_writer& stream, uint8_t type) const
+rx_result program_runtime::save_program (base_meta_writer& stream, uint8_t type) const
 {
 	return serialize(stream, type);
 }
@@ -129,18 +129,20 @@ ladder_program::~ladder_program()
 
 
 
-bool ladder_program::serialize (base_meta_writer& stream, uint8_t type) const
+rx_result ladder_program::serialize (base_meta_writer& stream, uint8_t type) const
 {
-	if (!program_runtime::serialize(stream, type))
-		return false;
+	auto result = program_runtime::serialize(stream, type);
+	if (!result)
+		return result;
 
 	return true;
 }
 
-bool ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
+rx_result ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
 {
-	if (!program_runtime::deserialize(stream, type))
-		return false;
+	auto result = program_runtime::deserialize(stream, type);
+	if (!result)
+		return result;
 
 	return true;
 }

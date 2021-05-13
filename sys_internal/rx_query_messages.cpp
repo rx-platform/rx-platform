@@ -77,18 +77,18 @@ rx_message_type_t browse_request_message::type_id = rx_browse_request_id;
 rx_result browse_request_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("path", path.c_str()))
-		return "Error serializing path";
+		return stream.get_error();
 	if (!stream.write_string("filter", filter.c_str()))
-		return "Error serializing filter";
+		return stream.get_error();
 	return true;
 }
 
 rx_result browse_request_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("path", path))
-		return "Error reading path";
+		return stream.get_error();
 	if (!stream.read_string("filter", filter))
-		return "Error reading filter";
+		return stream.get_error();
 	return true;
 }
 
@@ -141,18 +141,17 @@ rx_message_type_t browse_response_message::type_id = rx_browse_response_id;
 rx_result browse_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
-		return "Error serializing array of items";
+		return stream.get_error();
 	for (const auto& one : items)
 	{
 		auto result = one.second.serialize_meta_data(stream, 0, one.first);
 		if (!result)
 		{
-			result.register_error("Error serializing meta item "s + one.second.name);
 			return result;
 		}
 	}
 	if (!stream.end_array())
-		return "Error serializing array of items at the end";
+		return stream.get_error();
 
 	return true;
 }
@@ -160,7 +159,7 @@ rx_result browse_response_message::serialize (base_meta_writer& stream) const
 rx_result browse_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
-		return "Error reading array of items";
+		return stream.get_error();
 	items.clear();
 	while (!stream.array_end())
 	{
@@ -203,16 +202,16 @@ rx_result get_type_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return false;
+			return stream.get_error();
 	}
 	auto result = stream.write_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -223,7 +222,7 @@ rx_result get_type_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -232,14 +231,14 @@ rx_result get_type_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	auto result = stream.read_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -482,7 +481,7 @@ rx_message_type_t query_request_message::type_id = rx_query_request_id;
 rx_result query_request_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("queries", queries.size()))
-		return "Error serializing queries array";
+		return stream.get_error();
 	for (const auto& one : queries)
 	{
 		auto ret = one->serialize(stream);
@@ -490,10 +489,10 @@ rx_result query_request_message::serialize (base_meta_writer& stream) const
 			return ret;
 	}
 	if (!stream.end_array())
-		return "Error serializing queries array end";
+		return stream.get_error();
 
 	if (!stream.write_bool("intersection", intersection))
-		return "Error serializing all";
+		return stream.get_error();
 
 	return true;
 }
@@ -501,7 +500,7 @@ rx_result query_request_message::serialize (base_meta_writer& stream) const
 rx_result query_request_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("queries"))
-		return "Error serializing queries array";
+		return stream.get_error();
 	while (!stream.array_end())
 	{
 		auto one = meta::queries::rx_query::create_query(stream);
@@ -511,7 +510,7 @@ rx_result query_request_message::deserialize (base_meta_reader& stream)
 	}
 
 	if (!stream.read_bool("intersection", intersection))
-		return "Error serializing all";
+		return stream.get_error();
 
 	return true;
 }
@@ -580,7 +579,7 @@ rx_message_type_t query_response_message::type_id = rx_query_response_id;
 rx_result query_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
-		return "Error serializing array of items";
+		return stream.get_error();
 	for (const auto& one : items)
 	{
 		auto result = one.second.serialize_meta_data(stream, 0, one.first);
@@ -591,7 +590,7 @@ rx_result query_response_message::serialize (base_meta_writer& stream) const
 		}
 	}
 	if (!stream.end_array())
-		return "Error serializing array of items at the end";
+		return stream.get_error();
 
 	return true;
 }
@@ -599,7 +598,7 @@ rx_result query_response_message::serialize (base_meta_writer& stream) const
 rx_result query_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
-		return "Error reading array of items";
+		return stream.get_error();
 	items.clear();
 	while (!stream.array_end())
 	{
@@ -639,14 +638,14 @@ rx_result type_response_message<itemT>::serialize (base_meta_writer& stream) con
 	using algorithm_type = typename itemT::algorithm_type;
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	auto result = algorithm_type::serialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -657,14 +656,14 @@ rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 	using algorithm_type = typename itemT::algorithm_type;
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
 	if (!result)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return result;
 }
@@ -682,16 +681,16 @@ rx_result get_runtime_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return false;
+			return stream.get_error();
 	}
 	auto result = stream.write_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -702,7 +701,7 @@ rx_result get_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -711,14 +710,14 @@ rx_result get_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	auto result = stream.read_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -800,14 +799,14 @@ template <class itemT>
 rx_result runtime_response_message<itemT>::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 	
 	auto result = item.serialize(stream, STREAMING_TYPE_OBJECT);
 	if (!result)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -816,14 +815,14 @@ template <class itemT>
 rx_result runtime_response_message<itemT>::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	auto result = item.deserialize(stream, STREAMING_TYPE_OBJECT);
 	if (!result)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return result;
 }
@@ -865,19 +864,19 @@ rx_result browse_runtime_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return "Error serializing type string";
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return "Error serializing type binary";
+			return stream.get_error();
 	}
 	if (!stream.write_id("id", id))
-		return "Error serializing id";
+		return stream.get_error();
 	if (!stream.write_string("path", path))
-		return "Error serializing path";
+		return stream.get_error();
 	if (!stream.write_string("filter", filter))
-		return "Error serializing filter";
+		return stream.get_error();
 	return true;
 }
 
@@ -887,7 +886,7 @@ rx_result browse_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -896,17 +895,17 @@ rx_result browse_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	if (!stream.read_id("id", id))
-		return "Error reading id";
+		return stream.get_error();
 	if (!stream.read_string("path", path))
-		return "Error reading path";
+		return stream.get_error();
 	if (!stream.read_string("filter", filter))
-		return "Error reading filter";
+		return stream.get_error();
 	return true;
 }
 
@@ -986,22 +985,22 @@ rx_message_type_t browse_runtime_response_message::type_id = rx_browse_runtime_r
 rx_result browse_runtime_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_array("items", items.size()))
-		return "Error serializing array of items";
+		return stream.get_error();
 	for (const auto& one : items)
 	{
 		if (!stream.start_object("item"))
-			return "Error starting item object";
+			return stream.get_error();
 		if (!stream.write_byte("type", (uint8_t)one.type))
-			return false;
+			return stream.get_error();
 		if (!stream.write_string("name", one.name))
-			return "Error reading item name";
+			return stream.get_error();
 		if (!stream.write_string("path", one.full_path))
-			return "Error reading item path";
+			return stream.get_error();
 		if (!stream.end_object())
-			return "Error ending item object";
+			return stream.get_error();
 	}
 	if (!stream.end_array())
-		return "Error serializing array of items at the end";
+		return stream.get_error();
 
 	return true;
 }
@@ -1009,27 +1008,27 @@ rx_result browse_runtime_response_message::serialize (base_meta_writer& stream) 
 rx_result browse_runtime_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_array("items"))
-		return "Error reading array of items";
+		return stream.get_error();
 	items.clear();
 	while (!stream.array_end())
 	{
 		runtime_item_attribute one;
 
 		if (!stream.start_object("item"))
-			return "Error starting item object";
+			return stream.get_error();
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		one.type = (rx_attribute_type)temp;
 		if(!stream.read_string("name", one.name))
-			return "Error reading item name";
+			return stream.get_error();
 		if (!stream.read_string("path", one.full_path))
-			return "Error reading item path";
+			return stream.get_error();
 
 		if (!stream.end_object())
-			return "Error ending item object";
+			return stream.get_error();
 
 		items.emplace_back(std::move(one));
 	}
@@ -1062,16 +1061,16 @@ rx_result get_code_info_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return false;
+			return stream.get_error();
 	}
 	auto result = stream.write_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -1082,7 +1081,7 @@ rx_result get_code_info_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -1091,14 +1090,14 @@ rx_result get_code_info_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	auto result = stream.read_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -1176,7 +1175,7 @@ rx_message_type_t get_code_info_response_message::type_id = rx_code_response_id;
 rx_result get_code_info_response_message::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_string("code", code_info))
-		return "Error writing code info";
+		return stream.get_error();
 
 	return true;
 }
@@ -1184,7 +1183,7 @@ rx_result get_code_info_response_message::serialize (base_meta_writer& stream) c
 rx_result get_code_info_response_message::deserialize (base_meta_reader& stream)
 {
 	if (!stream.read_string("code", code_info))
-		return "Error reading code info";
+		return stream.get_error();
 	
 	return true;
 }

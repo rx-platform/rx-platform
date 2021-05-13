@@ -64,16 +64,16 @@ rx_result delete_type_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return false;
+			return stream.get_error();
 	}
 	auto result = stream.write_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -84,7 +84,7 @@ rx_result delete_type_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -93,14 +93,14 @@ rx_result delete_type_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	auto result = stream.read_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -438,7 +438,7 @@ uint16_t set_type_request::type_id = rx_set_type_request_id;
 rx_result set_type_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	if (!creator_)
 		return "Message not defined!";
@@ -447,7 +447,7 @@ rx_result set_type_request::serialize (base_meta_writer& stream) const
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -455,7 +455,7 @@ rx_result set_type_request::serialize (base_meta_writer& stream) const
 rx_result set_type_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -525,7 +525,7 @@ rx_result set_type_request::deserialize (base_meta_reader& stream)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -590,19 +590,19 @@ uint16_t update_type_request::type_id = rx_update_type_request_id;
 rx_result update_type_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("update"))
-		return "Error starting update object";
+		return stream.get_error();
 
 	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
-		return "Error writing checkout value";
+		return stream.get_error();
 
 	if (!stream.write_bool("version", update_data.increment_version))
-		return "Error reading increment version value";
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return "Error ending update object";
+		return stream.get_error();
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	if (!updater_)
 		return "Message not defined!";
@@ -611,7 +611,7 @@ rx_result update_type_request::serialize (base_meta_writer& stream) const
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -619,21 +619,21 @@ rx_result update_type_request::serialize (base_meta_writer& stream) const
 rx_result update_type_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("update"))
-		return "Error starting update object";
+		return stream.get_error();
 
 	rx_uuid_t temp;
 	if (!stream.read_uuid("checkout", temp))
-		return "Error reading checkout value";
+		return stream.get_error();
 	update_data.checkout = temp;
 
 	if (!stream.read_bool("version", update_data.increment_version))
-		return "Error reading increment version value";
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return "Error ending update object";
+		return stream.get_error();
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -701,7 +701,7 @@ rx_result update_type_request::deserialize (base_meta_reader& stream)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1030,16 +1030,16 @@ rx_result delete_runtime_request::serialize (base_meta_writer& stream) const
 	if (stream.is_string_based())
 	{
 		if (!stream.write_string("type", rx_item_type_name(item_type)))
-			return false;
+			return stream.get_error();
 	}
 	else
 	{
 		if (!stream.write_byte("type", item_type))
-			return false;
+			return stream.get_error();
 	}
 	auto result = stream.write_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -1050,7 +1050,7 @@ rx_result delete_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		string_type temp;
 		if (!stream.read_string("type", temp))
-			return false;
+			return stream.get_error();
 		item_type = rx_parse_type_name(temp);
 		if (item_type >= rx_item_type::rx_first_invalid)
 			return temp + " is invalid type name";
@@ -1059,14 +1059,14 @@ rx_result delete_runtime_request::deserialize (base_meta_reader& stream)
 	{
 		uint8_t temp;
 		if (!stream.read_byte("type", temp))
-			return false;
+			return stream.get_error();
 		if (temp >= rx_item_type::rx_first_invalid)
 			return "Invalid type";
 		item_type = (rx_item_type)temp;
 	}
 	auto result = stream.read_item_reference("target", reference);
 	if (!result)
-		return result;
+		return stream.get_error();
 
 	return result;
 }
@@ -1281,7 +1281,7 @@ uint16_t set_runtime_request::type_id = rx_set_runtime_request_id;
 rx_result set_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	if (!creator_)
 		return "Message not defined!";
@@ -1290,7 +1290,7 @@ rx_result set_runtime_request::serialize (base_meta_writer& stream) const
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1298,7 +1298,7 @@ rx_result set_runtime_request::serialize (base_meta_writer& stream) const
 rx_result set_runtime_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -1329,7 +1329,7 @@ rx_result set_runtime_request::deserialize (base_meta_reader& stream)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1394,25 +1394,25 @@ uint16_t update_runtime_request::type_id = rx_update_runtime_request_id;
 rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("update"))
-		return "Error starting update object";
+		return stream.get_error();
 
 	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
-		return "Error writing checkout value";
+		return stream.get_error();
 
 	if (!stream.write_bool("version", update_data.increment_version))
-		return "Error writing increment version value";
+		return stream.get_error();
 
 	if (!stream.write_bool("reinit", update_data.initialize_data))
-		return "Error writing increment initialize data value";
+		return stream.get_error();
 
 	if (!stream.write_bool("release", update_data.release_forced))
-		return "Error writing release forced data value";
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return "Error ending update object";
+		return stream.get_error();
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	if (!updater_)
 		return "Message not defined!";
@@ -1421,7 +1421,7 @@ rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1429,27 +1429,27 @@ rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 rx_result update_runtime_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("update"))
-		return "Error starting update object";
+		return stream.get_error();
 
 	rx_uuid_t temp;
 	if (!stream.read_uuid("checkout", temp))
-		return "Error reading checkout value";
+		return stream.get_error();
 	update_data.checkout = temp;
 
 	if (!stream.read_bool("version", update_data.increment_version))
-		return "Error reading increment version value";
+		return stream.get_error();
 
 	if (!stream.read_bool("reinit", update_data.initialize_data))
-		return "Error reading increment initialize data value";
+		return stream.get_error();
 
 	if (!stream.read_bool("release", update_data.release_forced))
-		return "Error reading release forced data value";
+		return stream.get_error();
 
 	if (!stream.end_object())
-		return "Error ending update object";
+		return stream.get_error();
 
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -1480,7 +1480,7 @@ rx_result update_runtime_request::deserialize (base_meta_reader& stream)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1569,7 +1569,7 @@ rx_message_type_t prototype_runtime_request::type_id = rx_proto_runtime_request_
 rx_result prototype_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	if (!creator_)
 		return "Message not defined!";
@@ -1578,7 +1578,7 @@ rx_result prototype_runtime_request::serialize (base_meta_writer& stream) const
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }
@@ -1586,7 +1586,7 @@ rx_result prototype_runtime_request::serialize (base_meta_writer& stream) const
 rx_result prototype_runtime_request::deserialize (base_meta_reader& stream)
 {
 	if (!stream.start_object("item"))
-		return "Error starting item object";
+		return stream.get_error();
 
 	meta::meta_data meta;
 	rx_item_type target_type;
@@ -1617,7 +1617,7 @@ rx_result prototype_runtime_request::deserialize (base_meta_reader& stream)
 		return result;
 
 	if (!stream.end_object())
-		return "Error ending item object";
+		return stream.get_error();
 
 	return true;
 }

@@ -155,9 +155,9 @@ class logic_holder
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
 
-      bool serialize (base_meta_writer& stream, uint8_t type) const;
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
-      bool deserialize (base_meta_reader& stream, uint8_t type);
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
       bool is_this_yours (const string_type& path) const;
 

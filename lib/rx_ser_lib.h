@@ -139,6 +139,8 @@ public:
 
       virtual bool write_value_type (const char* name, rx_value_t val) = 0;
 
+      virtual string_type get_error () const = 0;
+
 
       const size_t get_version () const
       {
@@ -230,6 +232,8 @@ class base_meta_reader
       virtual bool read_value (const char* name, rx_simple_value& val) = 0;
 
       virtual bool read_value_type (const char* name, rx_value_t& val) = 0;
+
+      virtual string_type get_error () const = 0;
 
 
       const uint32_t get_version () const

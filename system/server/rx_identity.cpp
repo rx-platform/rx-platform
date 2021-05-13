@@ -77,7 +77,7 @@ rx_result_with<security::security_context_ptr> security_context_holder::create_c
     serialization::std_buffer_reader reader(buffer);
 
     if (!reader.read_byte("type", type_))
-        return "Error reading type";
+        return reader.get_error();
     if (type_)
     {
         switch (type_ & ACCOUNT_TYPE_MASK)
@@ -100,7 +100,9 @@ rx_result_with<security::security_context_ptr> security_context_holder::create_c
                 default:
                     return security::active_security();// wrong type!?!
                 }
-                ptr->deserialize(reader);
+                auto result = ptr->deserialize(reader);
+                if (!result)
+                    return result.errors();
                 return rx_result_with<security::security_context_ptr>(ptr);
             }
             break;
